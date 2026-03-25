@@ -1,0 +1,16 @@
+node_modules/
+.next/
+.turbo/
+dist/
+build/
+coverage/
+storage/
+.env
+.env.*
+!.env.example
+*.log
+*.tsbuildinfo
+.DS_Store
+Thumbs.db
+apps/web/.runtime/
+apps/web/.tmp-valuations.json

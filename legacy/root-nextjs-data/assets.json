@@ -1,0 +1,118 @@
+[
+  {
+    "id": "asset-seoul-dc-001",
+    "name": "Seoul Edge Data Campus 1",
+    "assetType": "Data Center",
+    "country": "KR",
+    "city": "Seoul",
+    "address": "Gangseo-gu, Seoul",
+    "status": "Structuring",
+    "powerCapacityMW": 28,
+    "landArea": 18500,
+    "grossFloorArea": 74200,
+    "tenantStatus": "Pre-lease 52%",
+    "capex": 210000000000,
+    "opex": 9800000000,
+    "expectedIRR": "12.8%",
+    "targetEquity": 90000000000,
+    "debtStructure": "Senior 58% + Mezz 10%",
+    "summary": "수도권 하이퍼스케일 수요 대응형 코어+ 데이터센터 개발/운영 딜.",
+    "riskNotes": "한전 인입 일정 지연, 인허가 변경, 주요 임차인 LOI 전환 실패 가능성.",
+    "thesis": [
+      "전력 병목 구간에서 희소성 높은 MW 확보",
+      "클라우드/AI 워크로드 확대로 중장기 수요 견조",
+      "선임차 기반으로 초기 공실 리스크 축소"
+    ],
+    "risks": [
+      "전력 인입 일정 지연",
+      "건설원가 상승",
+      "핵심 임차인 계약 조건 재협상"
+    ],
+    "ddChecklist": [
+      "전력 인입 확약서 및 공정표",
+      "주요 임차인 신용등급/계약조건",
+      "EPC 계약의 지체상금 조항"
+    ],
+    "dataroom": [
+      {
+        "id": "doc-1773651451670",
+        "title": "Stage4_Upload.pdf",
+        "category": "Contract",
+        "visibility": [
+          "investor",
+          "admin"
+        ],
+        "uploadedAt": "2026-03-16T08:57:31.670Z",
+        "filePath": "data/uploads/asset-seoul-dc-001-doc-1773651451670.pdf"
+      },
+      {
+        "id": "doc-1",
+        "title": "IM_v1.pdf",
+        "category": "IM",
+        "visibility": [
+          "public",
+          "investor",
+          "admin"
+        ],
+        "uploadedAt": "2026-03-15T09:00:00.000Z"
+      },
+      {
+        "id": "doc-2",
+        "title": "PPA_Draft.pdf",
+        "category": "Power",
+        "visibility": [
+          "investor",
+          "admin"
+        ],
+        "uploadedAt": "2026-03-15T10:00:00.000Z"
+      }
+    ]
+  },
+  {
+    "id": "asset-busan-dc-002",
+    "name": "Busan Coastal Compute Hub",
+    "assetType": "Data Center",
+    "country": "KR",
+    "city": "Busan",
+    "address": "Gangseo-gu, Busan",
+    "status": "DD",
+    "powerCapacityMW": 16,
+    "landArea": 12300,
+    "grossFloorArea": 46800,
+    "tenantStatus": "Anchor tenant under review",
+    "capex": 136000000000,
+    "opex": 6400000000,
+    "expectedIRR": "11.9%",
+    "targetEquity": 52000000000,
+    "debtStructure": "Senior 62% + Construction facility",
+    "summary": "남부권 클라우드 엣지 수요 대응형 고효율 데이터센터 자산.",
+    "riskNotes": "냉각 인프라 유지비 증가, 지역 전력 수급 정책 변화.",
+    "thesis": [
+      "저지연 수요 대응 가능한 지역 거점",
+      "부지/전력 조합 대비 합리적 진입 밸류",
+      "모듈형 증설로 단계적 CAPEX 집행"
+    ],
+    "risks": [
+      "냉각비용 변동성",
+      "운영인력 확보 난이도",
+      "초기 램프업 기간 장기화"
+    ],
+    "ddChecklist": [
+      "냉각 설비 성능 보증 조건",
+      "부산권 전력공급 계획 확인",
+      "임차인 확정 타임라인 검증"
+    ],
+    "dataroom": [
+      {
+        "id": "doc-3",
+        "title": "DD_Summary.pdf",
+        "category": "DD",
+        "visibility": [
+          "investor",
+          "admin"
+        ],
+        "uploadedAt": "2026-03-15T11:00:00.000Z"
+      }
+    ]
+  }
+]

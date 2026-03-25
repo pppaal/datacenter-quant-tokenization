@@ -1,0 +1,6 @@
+ALTER TABLE "LeaseStep"
+ADD COLUMN "rentFreeMonths" INTEGER,
+ADD COLUMN "recoverableOpexRatioPct" DOUBLE PRECISION,
+ADD COLUMN "fixedRecoveriesKrw" DOUBLE PRECISION,
+ADD COLUMN "expenseStopKrwPerKwMonth" DOUBLE PRECISION,
+ADD COLUMN "utilityPassThroughPct" DOUBLE PRECISION;

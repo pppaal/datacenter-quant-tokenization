@@ -1,0 +1,4 @@
+ALTER TABLE "Lease"
+ADD COLUMN "fixedRecoveriesKrw" DOUBLE PRECISION,
+ADD COLUMN "expenseStopKrwPerKwMonth" DOUBLE PRECISION,
+ADD COLUMN "utilityPassThroughPct" DOUBLE PRECISION;

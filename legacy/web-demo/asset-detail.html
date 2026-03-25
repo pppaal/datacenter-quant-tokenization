@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>자산 상세 | K-RWA Realty Chain</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <nav class="nav">
+        <strong>K-RWA Realty Chain</strong>
+        <div class="nav-links">
+          <a href="index.html">랜딩</a>
+          <a href="assets.html">자산 리스트</a>
+          <a href="admin.html">관리자</a>
+        </div>
+      </nav>
+
+      <section class="section" id="asset-section"></section>
+
+      <section class="section grid two">
+        <article class="card">
+          <h2>AI 투자 메모 자동 생성</h2>
+          <button id="generate-memo">메모 생성</button>
+          <pre id="memo-output">버튼을 눌러 투자 메모를 생성하세요.</pre>
+        </article>
+
+        <article class="card">
+          <h2>문의 남기기</h2>
+          <form id="lead-form">
+            <input name="name" placeholder="이름" required />
+            <input name="email" type="email" placeholder="이메일" required />
+            <input name="interest" placeholder="관심 자산" required />
+            <textarea name="message" placeholder="문의 내용"></textarea>
+            <button type="submit">문의 저장</button>
+          </form>
+          <p id="lead-status" class="meta"></p>
+        </article>
+      </section>
+
+      <section class="section grid two">
+        <article class="card">
+          <h2>데이터룸 (권한별 조회)</h2>
+          <label>조회 권한</label>
+          <select id="role-filter">
+            <option value="public">public</option>
+            <option value="investor">investor</option>
+            <option value="admin">admin</option>
+          </select>
+          <ul id="dataroom-list"></ul>
+        </article>
+
+        <article class="card">
+          <h2>PDF 업로드</h2>
+          <form id="upload-form">
+            <input name="fileName" placeholder="파일명 (예: New_IM.pdf)" required />
+            <input name="category" placeholder="카테고리 (IM/DD/Contract/Power)" required />
+            <label>접근권한(복수선택)</label>
+            <select name="visibility" multiple size="3" required>
+              <option value="public">public</option>
+              <option value="investor">investor</option>
+              <option value="admin">admin</option>
+            </select>
+            <textarea name="pdfText" placeholder="PDF 대체 텍스트(데모용, 서버에서 PDF로 저장됨)" required></textarea>
+            <button type="submit">PDF 업로드</button>
+          </form>
+          <p id="upload-status" class="meta"></p>
+        </article>
+      </section>
+
+      <footer><small>실서비스 전 법률/보안/권한모델 강화 필요</small></footer>
+    </div>
+    <script src="js/asset-detail.js"></script>
+  </body>
+</html>

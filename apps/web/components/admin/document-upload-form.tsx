@@ -1,0 +1,101 @@
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { DocumentType } from '@prisma/client';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { documentUploadSchema, type DocumentUploadInput } from '@/lib/validations/document';
+
+export function DocumentUploadForm({ assetId }: { assetId?: string }) {
+  const router = useRouter();
+  const [submitting, setSubmitting] = useState(false);
+  const form = useForm<DocumentUploadInput>({
+    resolver: zodResolver(documentUploadSchema),
+    defaultValues: {
+      assetId
+    }
+  });
+
+  const onSubmit = form.handleSubmit(async (values) => {
+    const fileInput = document.getElementById('document-file') as HTMLInputElement | null;
+    const file = fileInput?.files?.[0];
+    if (!file) return;
+
+    setSubmitting(true);
+    try {
+      const body = new FormData();
+      Object.entries(values).forEach(([key, value]) => {
+        if (value) body.append(key, String(value));
+      });
+      body.append('file', file);
+
+      const response = await fetch('/api/documents/upload', {
+        method: 'POST',
+        body
+      });
+
+      if (!response.ok) throw new Error('Upload failed');
+      form.reset({ assetId });
+      fileInput.value = '';
+      router.refresh();
+    } finally {
+      setSubmitting(false);
+    }
+  });
+
+  return (
+    <form className="space-y-5" onSubmit={onSubmit}>
+      <div className="grid gap-4 md:grid-cols-2">
+        <label className="space-y-2">
+          <span className="fine-print">Asset ID</span>
+          <Input {...form.register('assetId')} readOnly={Boolean(assetId)} />
+        </label>
+        <label className="space-y-2">
+          <span className="fine-print">Title</span>
+          <Input placeholder="Power approval memo" {...form.register('title')} />
+        </label>
+        <label className="space-y-2">
+          <span className="fine-print">Document Type</span>
+          <Select {...form.register('documentType')}>
+            {Object.values(DocumentType).map((type) => (
+              <option key={type} value={type}>
+                {type}
+              </option>
+            ))}
+          </Select>
+        </label>
+        <label className="space-y-2">
+          <span className="fine-print">Source Link</span>
+          <Input placeholder="https://..." {...form.register('sourceLink')} />
+        </label>
+        <label className="space-y-2 md:col-span-2">
+          <span className="fine-print">File</span>
+          <Input id="document-file" type="file" />
+        </label>
+      </div>
+
+      <label className="space-y-2">
+        <span className="fine-print">Extracted Text / Notes</span>
+        <Textarea
+          className="min-h-[150px]"
+          placeholder="Paste OCR text, analyst summary, or clauses worth preserving in the diligence trail."
+          {...form.register('extractedText')}
+        />
+      </label>
+
+      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-4">
+        <p className="max-w-xl text-sm text-slate-400">
+          Uploads are stored through the Next.js backend and immediately linked into document history, summaries, and future memo evidence.
+        </p>
+        <Button type="submit" disabled={submitting}>
+          {submitting ? 'Uploading...' : 'Upload Document'}
+        </Button>
+      </div>
+    </form>
+  );
+}

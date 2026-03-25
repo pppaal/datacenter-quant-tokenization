@@ -1,0 +1,1242 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  ANALYST
+  VIEWER
+}
+
+enum AssetStage {
+  SCREENING
+  LAND_SECURED
+  POWER_REVIEW
+  PERMITTING
+  CONSTRUCTION
+  LIVE
+  STABILIZED
+}
+
+enum AssetStatus {
+  INTAKE
+  ENRICHING
+  UNDER_REVIEW
+  IC_READY
+  APPROVED
+  DECLINED
+  ON_HOLD
+}
+
+enum AssetClass {
+  OFFICE
+  INDUSTRIAL
+  RETAIL
+  MULTIFAMILY
+  HOTEL
+  DATA_CENTER
+  LAND
+  MIXED_USE
+}
+
+enum DocumentType {
+  IM
+  POWER_STUDY
+  PERMIT
+  LEASE
+  MODEL
+  SITE_PHOTO
+  GRID_NOTICE
+  REPORT
+  OTHER
+}
+
+enum SourceStatus {
+  FRESH
+  STALE
+  FAILED
+  MANUAL
+}
+
+enum ValuationStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum ReadinessStatus {
+  NOT_STARTED
+  READY
+  ANCHORED
+  ERROR
+
+  @@map("RegistryStatus")
+}
+
+enum CapexCategory {
+  LAND
+  SHELL_CORE
+  ELECTRICAL
+  MECHANICAL
+  IT_FIT_OUT
+  SOFT_COST
+  CONTINGENCY
+}
+
+enum LeaseStatus {
+  PIPELINE
+  SIGNED
+  ACTIVE
+  EXPIRED
+}
+
+enum DebtFacilityType {
+  CONSTRUCTION
+  TERM
+  REVOLVER
+}
+
+enum AmortizationProfile {
+  INTEREST_ONLY
+  MORTGAGE
+  SCULPTED
+  BULLET
+}
+
+model User {
+  id            String            @id @default(cuid())
+  name          String
+  email         String            @unique
+  role          UserRole          @default(ANALYST)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  valuationRuns ValuationRun[]
+  documents     DocumentVersion[]
+  overrides     SourceOverride[]
+  approvedFeatureSnapshots AssetFeatureSnapshot[]
+}
+
+model Asset {
+  id                    String            @id @default(cuid())
+  assetCode             String            @unique
+  slug                  String            @unique
+  name                  String
+  assetClass            AssetClass        @default(DATA_CENTER)
+  assetType             String
+  assetSubtype          String?
+  market                String            @default("KR")
+  status                AssetStatus       @default(INTAKE)
+  stage                 AssetStage        @default(SCREENING)
+  description           String
+  ownerName             String?
+  sponsorName           String?
+  developmentSummary    String?
+  targetItLoadMw        Float?
+  powerCapacityMw       Float?
+  landAreaSqm           Float?
+  grossFloorAreaSqm     Float?
+  rentableAreaSqm       Float?
+  purchasePriceKrw      Float?
+  occupancyAssumptionPct Float?
+  stabilizedOccupancyPct Float?
+  tenantAssumption      String?
+  capexAssumptionKrw    Float?
+  opexAssumptionKrw     Float?
+  financingLtvPct       Float?
+  financingRatePct      Float?
+  holdingPeriodYears    Float?
+  exitCapRatePct        Float?
+  currentValuationKrw   Float?
+  lastEnrichedAt        DateTime?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  address               Address?
+  siteProfile           SiteProfile?
+  buildingSnapshot      BuildingSnapshot?
+  permitSnapshot        PermitSnapshot?
+  energySnapshot        EnergySnapshot?
+  marketSnapshot        MarketSnapshot?
+  dataCenterDetail      DataCenterDetail?
+  officeDetail          OfficeDetail?
+  valuations            ValuationRun[]
+  documents             Document[]
+  inquiries             Inquiry[]
+  overrides             SourceOverride[]
+  readinessProject      ReadinessProject?
+  comparableSet         ComparableSet?
+  capexLineItems        CapexLineItem[]
+  leases                Lease[]
+  taxAssumption         TaxAssumption?
+  spvStructure          SpvStructure?
+  debtFacilities        DebtFacility[]
+  parcels               Parcel[]
+  buildingRecords       BuildingRecord[]
+  planningConstraints   PlanningConstraint[]
+  ownershipRecords      OwnershipRecord[]
+  encumbranceRecords    EncumbranceRecord[]
+  transactionComps      TransactionComp[]
+  rentComps             RentComp[]
+  marketIndicatorSeries MarketIndicatorSeries[]
+  macroSeries           MacroSeries[]
+  macroFactors          MacroFactor[]
+  pipelineProjects      PipelineProject[]
+  geoFeatures           GeoFeature[]
+  satelliteScenes       SatelliteScene[]
+  satelliteObservations SatelliteObservation[]
+  hazardObservations    HazardObservation[]
+  constructionProgressObservations ConstructionProgressObservation[]
+  documentFacts         DocumentFact[]
+  featureSnapshots      AssetFeatureSnapshot[]
+  aiInsights            AiInsight[]
+  counterparties        Counterparty[]
+  financialStatements   FinancialStatement[]
+  creditAssessments     CreditAssessment[]
+}
+
+model Address {
+  id          String   @id @default(cuid())
+  assetId      String   @unique
+  line1       String
+  line2       String?
+  district    String?
+  city        String
+  province    String
+  postalCode  String?
+  country     String   @default("KR")
+  latitude    Float?
+  longitude   Float?
+  parcelId    String?
+  sourceLabel String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  asset       Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+}
+
+model SiteProfile {
+  id               String       @id @default(cuid())
+  assetId           String       @unique
+  gridAvailability String
+  fiberAccess      String
+  latencyProfile   String
+  floodRiskScore   Float?
+  wildfireRiskScore Float?
+  seismicRiskScore Float?
+  siteNotes        String
+  sourceStatus     SourceStatus @default(MANUAL)
+  sourceUpdatedAt  DateTime?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  asset            Asset        @relation(fields: [assetId], references: [id], onDelete: Cascade)
+}
+
+model BuildingSnapshot {
+  id                  String       @id @default(cuid())
+  assetId              String       @unique
+  zoning              String
+  buildingCoveragePct Float?
+  floorAreaRatioPct   Float?
+  grossFloorAreaSqm   Float?
+  structureDescription String?
+  redundancyTier      String?
+  coolingType         String?
+  sourceStatus        SourceStatus @default(MANUAL)
+  sourceUpdatedAt     DateTime?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+  asset               Asset        @relation(fields: [assetId], references: [id], onDelete: Cascade)
+}
+
+model PermitSnapshot {
+  id                        String       @id @default(cuid())
+  assetId                    String       @unique
+  permitStage               String
+  zoningApprovalStatus      String
+  environmentalReviewStatus String
+  powerApprovalStatus       String
+  timelineNotes             String
+  sourceStatus              SourceStatus @default(MANUAL)
+  sourceUpdatedAt           DateTime?
+  createdAt                 DateTime     @default(now())
+  updatedAt                 DateTime     @updatedAt
+  asset                     Asset        @relation(fields: [assetId], references: [id], onDelete: Cascade)
+}
+
+model EnergySnapshot {
+  id                     String       @id @default(cuid())
+  assetId                 String       @unique
+  utilityName            String
+  substationDistanceKm   Float?
+  tariffKrwPerKwh        Float?
+  renewableAvailabilityPct Float?
+  pueTarget              Float?
+  backupFuelHours        Float?
+  sourceStatus           SourceStatus @default(MANUAL)
+  sourceUpdatedAt        DateTime?
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
+  asset                  Asset        @relation(fields: [assetId], references: [id], onDelete: Cascade)
+}
+
+model MarketSnapshot {
+  id                      String       @id @default(cuid())
+  assetId                  String       @unique
+  metroRegion             String
+  vacancyPct              Float?
+  colocationRatePerKwKrw  Float?
+  capRatePct              Float?
+  debtCostPct             Float?
+  inflationPct            Float?
+  constructionCostPerMwKrw Float?
+  discountRatePct         Float?
+  marketNotes             String?
+  sourceStatus            SourceStatus @default(MANUAL)
+  sourceUpdatedAt         DateTime?
+  createdAt               DateTime     @default(now())
+  updatedAt               DateTime     @updatedAt
+  asset                   Asset        @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  dataCenterMarketDetail  DataCenterMarketDetail?
+}
+
+model DataCenterDetail {
+  id                   String   @id @default(cuid())
+  assetId              String   @unique
+  powerCapacityMw      Float?
+  targetItLoadMw       Float?
+  pueTarget            Float?
+  utilityName          String?
+  substationDistanceKm Float?
+  renewablePct         Float?
+  redundancyTier       String?
+  coolingType          String?
+  fiberAccess          String?
+  latencyProfile       String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  asset                Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+}
+
+model OfficeDetail {
+  id                           String   @id @default(cuid())
+  assetId                      String   @unique
+  stabilizedRentPerSqmMonthKrw Float?
+  otherIncomeKrw               Float?
+  vacancyAllowancePct          Float?
+  creditLossPct                Float?
+  tenantImprovementReserveKrw  Float?
+  leasingCommissionReserveKrw  Float?
+  annualCapexReserveKrw        Float?
+  weightedAverageLeaseTermYears Float?
+  createdAt                    DateTime @default(now())
+  updatedAt                    DateTime @updatedAt
+  asset                        Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+}
+
+model DataCenterMarketDetail {
+  id                       String         @id @default(cuid())
+  marketSnapshotId         String         @unique
+  colocationRatePerKwKrw   Float?
+  constructionCostPerMwKrw Float?
+  aiDemandIndex            Float?
+  utilityQueueMonths       Float?
+  createdAt                DateTime       @default(now())
+  updatedAt                DateTime       @updatedAt
+  marketSnapshot           MarketSnapshot @relation(fields: [marketSnapshotId], references: [id], onDelete: Cascade)
+}
+
+model ValuationRun {
+  id               String          @id @default(cuid())
+  assetId           String
+  runLabel         String
+  status           ValuationStatus @default(COMPLETED)
+  engineVersion    String
+  confidenceScore  Float
+  baseCaseValueKrw Float
+  underwritingMemo String
+  keyRisks         String[]
+  ddChecklist      String[]
+  assumptions      Json
+  provenance       Json
+  createdById      String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  asset            Asset           @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  createdBy        User?           @relation(fields: [createdById], references: [id])
+  scenarios        ValuationScenario[]
+  sensitivityRuns  SensitivityRun[]
+  aiInsights       AiInsight[]
+}
+
+model ValuationScenario {
+  id                 String       @id @default(cuid())
+  valuationRunId      String
+  name               String
+  valuationKrw       Float
+  impliedYieldPct    Float?
+  exitCapRatePct     Float?
+  debtServiceCoverage Float?
+  notes              String
+  scenarioOrder      Int
+  createdAt          DateTime     @default(now())
+  valuationRun       ValuationRun @relation(fields: [valuationRunId], references: [id], onDelete: Cascade)
+
+  @@unique([valuationRunId, name])
+}
+
+model SensitivityRun {
+  id                  String             @id @default(cuid())
+  valuationRunId      String
+  runType             String             @default("ONE_WAY")
+  title               String
+  baselineMetricName  String
+  baselineMetricValue Float
+  summary             Json?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  valuationRun        ValuationRun       @relation(fields: [valuationRunId], references: [id], onDelete: Cascade)
+  points              SensitivityPoint[]
+
+  @@index([valuationRunId, runType])
+}
+
+model SensitivityPoint {
+  id               String         @id @default(cuid())
+  sensitivityRunId String
+  variableKey      String
+  variableLabel    String
+  shockLabel       String
+  shockValue       Float?
+  metricName       String
+  metricValue      Float
+  deltaPct         Float
+  sortOrder        Int            @default(0)
+  createdAt        DateTime       @default(now())
+  sensitivityRun   SensitivityRun @relation(fields: [sensitivityRunId], references: [id], onDelete: Cascade)
+
+  @@index([sensitivityRunId, sortOrder])
+}
+
+model ComparableSet {
+  id              String            @id @default(cuid())
+  assetId         String            @unique
+  name            String
+  valuationDate   DateTime?
+  calibrationMode String            @default("Weighted market calibration")
+  notes           String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  asset           Asset             @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  entries         ComparableEntry[]
+}
+
+model ComparableEntry {
+  id                  String        @id @default(cuid())
+  comparableSetId     String
+  label               String
+  location            String
+  assetType           String
+  stage               AssetStage?
+  sourceLink          String?
+  powerCapacityMw     Float?
+  grossFloorAreaSqm   Float?
+  occupancyPct        Float?
+  pricePerMwKrw       Float?
+  valuationKrw        Float?
+  monthlyRatePerKwKrw Float?
+  capRatePct          Float?
+  discountRatePct     Float?
+  weightPct           Float?
+  notes               String?
+  createdAt           DateTime      @default(now())
+  comparableSet       ComparableSet @relation(fields: [comparableSetId], references: [id], onDelete: Cascade)
+}
+
+model CapexLineItem {
+  id         String        @id @default(cuid())
+  assetId     String
+  category   CapexCategory
+  label      String
+  amountKrw  Float
+  spendYear  Int           @default(0)
+  isEmbedded Boolean       @default(false)
+  notes      String?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  asset      Asset         @relation(fields: [assetId], references: [id], onDelete: Cascade)
+}
+
+model Lease {
+  id                   String       @id @default(cuid())
+  assetId               String
+  tenantName           String
+  status               LeaseStatus  @default(PIPELINE)
+  leasedKw             Float
+  startYear            Int          @default(1)
+  termYears            Int
+  baseRatePerKwKrw     Float
+  annualEscalationPct  Float?
+  probabilityPct       Float?
+  renewProbabilityPct  Float?
+  downtimeMonths       Int?
+  rentFreeMonths       Int?
+  tenantImprovementKrw Float?
+  leasingCommissionKrw Float?
+  recoverableOpexRatioPct Float?
+  fixedRecoveriesKrw   Float?
+  expenseStopKrwPerKwMonth Float?
+  utilityPassThroughPct Float?
+  fitOutCostKrw        Float?
+  notes                String?
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+  asset                Asset        @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  steps                LeaseStep[]
+}
+
+model LeaseStep {
+  id                  String   @id @default(cuid())
+  leaseId              String
+  stepOrder           Int
+  startYear           Int
+  endYear             Int
+  ratePerKwKrw        Float
+  leasedKw            Float?
+  annualEscalationPct Float?
+  occupancyPct        Float?
+  rentFreeMonths      Int?
+  tenantImprovementKrw Float?
+  leasingCommissionKrw Float?
+  recoverableOpexRatioPct Float?
+  fixedRecoveriesKrw  Float?
+  expenseStopKrwPerKwMonth Float?
+  utilityPassThroughPct Float?
+  notes               String?
+  createdAt           DateTime @default(now())
+  lease               Lease    @relation(fields: [leaseId], references: [id], onDelete: Cascade)
+
+  @@unique([leaseId, stepOrder])
+}
+
+model TaxAssumption {
+  id                 String   @id @default(cuid())
+  assetId             String   @unique
+  acquisitionTaxPct  Float?
+  vatRecoveryPct     Float?
+  propertyTaxPct     Float?
+  insurancePct       Float?
+  corporateTaxPct    Float?
+  withholdingTaxPct  Float?
+  exitTaxPct         Float?
+  notes              String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  asset              Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+}
+
+model SpvStructure {
+  id                    String   @id @default(cuid())
+  assetId                String   @unique
+  legalStructure        String
+  managementFeePct      Float?
+  performanceFeePct     Float?
+  promoteThresholdPct   Float?
+  promoteSharePct       Float?
+  reserveTargetMonths   Float?
+  distributionWaterfall String?
+  notes                 String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  asset                 Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+}
+
+model DebtFacility {
+  id                     String               @id @default(cuid())
+  assetId                 String
+  facilityType           DebtFacilityType
+  lenderName             String?
+  commitmentKrw          Float
+  drawnAmountKrw         Float?
+  interestRatePct        Float
+  upfrontFeePct          Float?
+  commitmentFeePct       Float?
+  gracePeriodMonths      Int?
+  amortizationTermMonths Int?
+  amortizationProfile    AmortizationProfile  @default(INTEREST_ONLY)
+  sculptedTargetDscr     Float?
+  balloonPct             Float?
+  reserveMonths          Float?
+  notes                  String?
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
+  asset                  Asset                @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  draws                  DebtDraw[]
+}
+
+model DebtDraw {
+  id             String       @id @default(cuid())
+  debtFacilityId String
+  drawYear       Int
+  drawMonth      Int?
+  amountKrw      Float
+  notes          String?
+  createdAt      DateTime     @default(now())
+  debtFacility   DebtFacility @relation(fields: [debtFacilityId], references: [id], onDelete: Cascade)
+}
+
+model Document {
+  id                String       @id @default(cuid())
+  assetId            String
+  title             String
+  documentType      DocumentType @default(OTHER)
+  currentVersion    Int          @default(1)
+  sourceLink        String?
+  aiSummary         String?
+  documentHash      String
+  latestStoragePath String?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  asset             Asset        @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  versions          DocumentVersion[]
+  onchainRecords    OnchainRecord[]
+}
+
+model DocumentVersion {
+  id            String   @id @default(cuid())
+  documentId     String
+  versionNumber Int
+  fileName      String
+  fileType      String
+  fileSize      Int
+  storagePath   String
+  sourceLink    String?
+  extractedText String?
+  aiSummary     String?
+  documentHash  String
+  uploadedById  String?
+  createdAt     DateTime @default(now())
+  document      Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  uploadedBy    User?    @relation(fields: [uploadedById], references: [id])
+  extractionRuns DocumentExtractionRun[]
+  chunks        DocumentChunk[]
+  facts         DocumentFact[]
+  aiInsights    AiInsight[]
+  financialStatements FinancialStatement[]
+  creditAssessments   CreditAssessment[]
+
+  @@unique([documentId, versionNumber])
+}
+
+model Counterparty {
+  id                  String               @id @default(cuid())
+  assetId             String
+  name                String
+  role                String
+  shortName           String?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  asset               Asset                @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  financialStatements FinancialStatement[]
+  creditAssessments   CreditAssessment[]
+
+  @@index([assetId, role, createdAt])
+}
+
+model FinancialStatement {
+  id                 String             @id @default(cuid())
+  assetId            String
+  counterpartyId     String
+  documentVersionId  String?
+  statementType      String
+  fiscalYear         Int?
+  fiscalPeriod       String?
+  periodEndDate      DateTime?
+  currency           String             @default("KRW")
+  revenueKrw         Float?
+  ebitdaKrw          Float?
+  cashKrw            Float?
+  totalDebtKrw       Float?
+  totalAssetsKrw     Float?
+  totalEquityKrw     Float?
+  interestExpenseKrw Float?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  asset              Asset              @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  counterparty       Counterparty       @relation(fields: [counterpartyId], references: [id], onDelete: Cascade)
+  documentVersion    DocumentVersion?   @relation(fields: [documentVersionId], references: [id], onDelete: SetNull)
+  lineItems          FinancialLineItem[]
+  creditAssessments  CreditAssessment[]
+
+  @@index([assetId, counterpartyId, createdAt])
+  @@index([documentVersionId, createdAt])
+}
+
+model FinancialLineItem {
+  id                   String             @id @default(cuid())
+  financialStatementId String
+  lineKey              String
+  lineLabel            String
+  valueKrw             Float
+  createdAt            DateTime           @default(now())
+  financialStatement   FinancialStatement @relation(fields: [financialStatementId], references: [id], onDelete: Cascade)
+
+  @@unique([financialStatementId, lineKey])
+  @@index([financialStatementId, lineKey])
+}
+
+model CreditAssessment {
+  id                   String              @id @default(cuid())
+  assetId              String
+  counterpartyId       String
+  financialStatementId String?
+  documentVersionId    String?
+  assessmentType       String              @default("COUNTERPARTY_CREDIT")
+  score                Float
+  riskLevel            String
+  summary              String
+  metrics              Json
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  asset                Asset               @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  counterparty         Counterparty        @relation(fields: [counterpartyId], references: [id], onDelete: Cascade)
+  financialStatement   FinancialStatement? @relation(fields: [financialStatementId], references: [id], onDelete: SetNull)
+  documentVersion      DocumentVersion?    @relation(fields: [documentVersionId], references: [id], onDelete: SetNull)
+
+  @@index([assetId, createdAt])
+  @@index([counterpartyId, createdAt])
+  @@index([documentVersionId, createdAt])
+}
+
+model Parcel {
+  id                   String       @id @default(cuid())
+  assetId              String
+  parcelId             String
+  landUseType          String?
+  zoningCode           String?
+  landAreaSqm          Float?
+  officialLandValueKrw Float?
+  roadAccess           String?
+  sourceSystem         String
+  sourceStatus         SourceStatus @default(MANUAL)
+  sourceUpdatedAt      DateTime?
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+  asset                Asset        @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([assetId, parcelId])
+}
+
+model BuildingRecord {
+  id                   String       @id @default(cuid())
+  assetId              String
+  buildingIdentifier   String?
+  buildingName         String?
+  useType              String?
+  approvalDate         DateTime?
+  completionDate       DateTime?
+  floorCount           Int?
+  basementCount        Int?
+  grossFloorAreaSqm    Float?
+  rentableAreaSqm      Float?
+  structureType        String?
+  occupancyCertificate String?
+  sourceSystem         String
+  sourceStatus         SourceStatus @default(MANUAL)
+  sourceUpdatedAt      DateTime?
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+  asset                Asset        @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([assetId, completionDate])
+}
+
+model PlanningConstraint {
+  id                   String       @id @default(cuid())
+  assetId              String
+  constraintType       String
+  title                String
+  description          String?
+  severity             String?
+  effectiveFrom        DateTime?
+  effectiveTo          DateTime?
+  sourceLink           String?
+  sourceSystem         String
+  sourceStatus         SourceStatus @default(MANUAL)
+  sourceUpdatedAt      DateTime?
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+  asset                Asset        @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([assetId, constraintType])
+}
+
+model OwnershipRecord {
+  id                   String       @id @default(cuid())
+  assetId              String
+  ownerName            String
+  entityType           String?
+  ownershipPct         Float?
+  effectiveDate        DateTime?
+  endDate              DateTime?
+  sourceLink           String?
+  sourceSystem         String
+  sourceStatus         SourceStatus @default(MANUAL)
+  sourceUpdatedAt      DateTime?
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+  asset                Asset        @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([assetId, effectiveDate])
+}
+
+model EncumbranceRecord {
+  id                   String       @id @default(cuid())
+  assetId              String
+  encumbranceType      String
+  holderName           String?
+  securedAmountKrw     Float?
+  priorityRank         Int?
+  effectiveDate        DateTime?
+  releaseDate          DateTime?
+  statusLabel          String?
+  sourceLink           String?
+  sourceSystem         String
+  sourceStatus         SourceStatus @default(MANUAL)
+  sourceUpdatedAt      DateTime?
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+  asset                Asset        @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([assetId, encumbranceType, effectiveDate])
+}
+
+model TransactionComp {
+  id              String       @id @default(cuid())
+  assetId         String?
+  market          String
+  region          String
+  comparableType  String
+  transactionDate DateTime?
+  priceKrw        Float?
+  pricePerSqmKrw  Float?
+  pricePerMwKrw   Float?
+  capRatePct      Float?
+  buyerType       String?
+  sellerType      String?
+  sourceLink      String?
+  sourceSystem    String
+  sourceStatus    SourceStatus @default(MANUAL)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  asset           Asset?       @relation(fields: [assetId], references: [id], onDelete: SetNull)
+
+  @@index([assetId, transactionDate])
+  @@index([market, region, transactionDate])
+}
+
+model RentComp {
+  id                   String       @id @default(cuid())
+  assetId              String?
+  market               String
+  region               String
+  comparableType       String
+  observationDate      DateTime?
+  monthlyRentPerSqmKrw Float?
+  monthlyRatePerKwKrw  Float?
+  occupancyPct         Float?
+  escalationPct        Float?
+  sourceLink           String?
+  sourceSystem         String
+  sourceStatus         SourceStatus @default(MANUAL)
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+  asset                Asset?       @relation(fields: [assetId], references: [id], onDelete: SetNull)
+
+  @@index([assetId, observationDate])
+  @@index([market, region, observationDate])
+}
+
+model MarketIndicatorSeries {
+  id              String       @id @default(cuid())
+  assetId         String?
+  market          String
+  region          String?
+  indicatorKey    String
+  observationDate DateTime
+  value           Float?
+  unit            String?
+  sourceSystem    String
+  sourceStatus    SourceStatus @default(MANUAL)
+  createdAt       DateTime     @default(now())
+  asset           Asset?       @relation(fields: [assetId], references: [id], onDelete: SetNull)
+
+  @@index([assetId, indicatorKey, observationDate])
+  @@index([market, region, indicatorKey, observationDate])
+}
+
+model MacroSeries {
+  id              String       @id @default(cuid())
+  assetId         String?
+  market          String
+  seriesKey       String
+  label           String
+  frequency       String       @default("monthly")
+  observationDate DateTime
+  value           Float
+  unit            String?
+  sourceSystem    String       @default("manual")
+  sourceStatus    SourceStatus @default(MANUAL)
+  sourceUpdatedAt DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  asset           Asset?       @relation(fields: [assetId], references: [id], onDelete: SetNull)
+
+  @@unique([market, seriesKey, observationDate, assetId])
+  @@index([market, seriesKey, observationDate])
+}
+
+model MacroFactor {
+  id              String       @id @default(cuid())
+  assetId         String?
+  market          String
+  factorKey       String
+  label           String
+  observationDate DateTime
+  value           Float
+  unit            String?
+  direction       String
+  commentary      String?
+  sourceSystem    String       @default("macro-factor-engine")
+  sourceStatus    SourceStatus @default(MANUAL)
+  sourceUpdatedAt DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  asset           Asset?       @relation(fields: [assetId], references: [id], onDelete: SetNull)
+
+  @@unique([market, factorKey, observationDate, assetId])
+  @@index([market, factorKey, observationDate])
+}
+
+model MacroProfileOverride {
+  id                          String      @id @default(cuid())
+  assetClass                  AssetClass?
+  country                     String?
+  submarketPattern            String?
+  label                       String
+  capitalRateMultiplier       Float?
+  liquidityMultiplier         Float?
+  leasingMultiplier           Float?
+  constructionMultiplier      Float?
+  priority                    Int         @default(100)
+  isActive                    Boolean     @default(true)
+  notes                       String?
+  createdAt                   DateTime    @default(now())
+  updatedAt                   DateTime    @updatedAt
+
+  @@index([isActive, priority])
+  @@index([country, assetClass])
+}
+
+model PipelineProject {
+  id                   String       @id @default(cuid())
+  assetId              String?
+  projectName          String
+  market               String
+  region               String?
+  stageLabel           String?
+  expectedDeliveryDate DateTime?
+  expectedPowerMw      Float?
+  expectedAreaSqm      Float?
+  sponsorName          String?
+  sourceLink           String?
+  sourceSystem         String
+  sourceStatus         SourceStatus @default(MANUAL)
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+  asset                Asset?       @relation(fields: [assetId], references: [id], onDelete: SetNull)
+
+  @@index([market, region, expectedDeliveryDate])
+}
+
+model GeoFeature {
+  id              String       @id @default(cuid())
+  assetId         String
+  featureType     String
+  featureKey      String
+  valueText       String?
+  valueNumber     Float?
+  unit            String?
+  geometryRef     String?
+  sourceSystem    String
+  sourceStatus    SourceStatus @default(MANUAL)
+  sourceUpdatedAt DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  asset           Asset        @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([assetId, featureType, featureKey])
+}
+
+model SatelliteScene {
+  id                                 String                          @id @default(cuid())
+  assetId                            String?
+  sourceSystem                       String
+  sceneIdentifier                    String
+  capturedAt                         DateTime
+  cloudCoverPct                      Float?
+  resolutionMeters                   Float?
+  sceneUrl                           String?
+  footprintRef                       String?
+  metadata                           Json?
+  createdAt                          DateTime                        @default(now())
+  asset                              Asset?                          @relation(fields: [assetId], references: [id], onDelete: SetNull)
+  observations                       SatelliteObservation[]
+  hazardObservations                 HazardObservation[]
+  constructionProgressObservations   ConstructionProgressObservation[]
+
+  @@unique([sourceSystem, sceneIdentifier])
+  @@index([assetId, capturedAt])
+}
+
+model SatelliteObservation {
+  id               String          @id @default(cuid())
+  assetId          String
+  satelliteSceneId String?
+  observationDate  DateTime
+  metricKey        String
+  metricValue      Float?
+  metricText       String?
+  unit             String?
+  geometryRef      String?
+  rasterRef        String?
+  sourceSystem     String
+  freshnessLabel   String?
+  createdAt        DateTime        @default(now())
+  asset            Asset           @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  satelliteScene   SatelliteScene? @relation(fields: [satelliteSceneId], references: [id], onDelete: SetNull)
+
+  @@index([assetId, metricKey, observationDate])
+}
+
+model HazardObservation {
+  id               String          @id @default(cuid())
+  assetId          String
+  satelliteSceneId String?
+  hazardType       String
+  observationDate  DateTime
+  score            Float?
+  value            Float?
+  unit             String?
+  geometryRef      String?
+  rasterRef        String?
+  sourceSystem     String
+  sourceSceneId    String?
+  freshnessLabel   String?
+  createdAt        DateTime        @default(now())
+  asset            Asset           @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  satelliteScene   SatelliteScene? @relation(fields: [satelliteSceneId], references: [id], onDelete: SetNull)
+
+  @@index([assetId, hazardType, observationDate])
+}
+
+model ConstructionProgressObservation {
+  id               String          @id @default(cuid())
+  assetId          String
+  satelliteSceneId String?
+  observationDate  DateTime
+  progressPct      Float?
+  changeScore      Float?
+  confidenceScore  Float?
+  method           String
+  imageRef         String?
+  note             String?
+  sourceSystem     String
+  createdAt        DateTime        @default(now())
+  asset            Asset           @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  satelliteScene   SatelliteScene? @relation(fields: [satelliteSceneId], references: [id], onDelete: SetNull)
+
+  @@index([assetId, observationDate])
+}
+
+model DocumentExtractionRun {
+  id               String          @id @default(cuid())
+  documentVersionId String
+  modelName        String
+  taskType         String
+  status           String
+  rawOutput        Json?
+  structuredOutput Json?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  documentVersion  DocumentVersion @relation(fields: [documentVersionId], references: [id], onDelete: Cascade)
+  facts            DocumentFact[]
+
+  @@index([documentVersionId, taskType, createdAt])
+}
+
+model DocumentChunk {
+  id                 String          @id @default(cuid())
+  documentVersionId  String
+  chunkIndex         Int
+  text               String
+  embeddingModel     String?
+  embeddingVectorRef String?
+  pageNumber         Int?
+  createdAt          DateTime        @default(now())
+  documentVersion    DocumentVersion @relation(fields: [documentVersionId], references: [id], onDelete: Cascade)
+
+  @@unique([documentVersionId, chunkIndex])
+}
+
+model DocumentFact {
+  id                String                 @id @default(cuid())
+  assetId           String?
+  documentVersionId String
+  factType          String
+  factKey           String
+  factValueText     String?
+  factValueNumber   Float?
+  factValueDate     DateTime?
+  unit              String?
+  confidenceScore   Float?
+  extractionRunId   String?
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+  asset             Asset?                 @relation(fields: [assetId], references: [id], onDelete: SetNull)
+  documentVersion   DocumentVersion        @relation(fields: [documentVersionId], references: [id], onDelete: Cascade)
+  extractionRun     DocumentExtractionRun? @relation(fields: [extractionRunId], references: [id], onDelete: SetNull)
+
+  @@index([assetId, factType, factKey])
+  @@index([documentVersionId, factType])
+}
+
+model AssetFeatureSnapshot {
+  id               String         @id @default(cuid())
+  assetId          String
+  snapshotDate     DateTime       @default(now())
+  featureNamespace String
+  sourceVersion    String?
+  approvedById     String?
+  createdAt        DateTime       @default(now())
+  asset            Asset          @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  approvedBy       User?          @relation(fields: [approvedById], references: [id])
+  values           FeatureValue[]
+
+  @@index([assetId, featureNamespace, snapshotDate])
+}
+
+model FeatureValue {
+  id                     String               @id @default(cuid())
+  assetFeatureSnapshotId String
+  key                    String
+  numberValue            Float?
+  textValue              String?
+  jsonValue              Json?
+  unit                   String?
+  sourceRef              String?
+  createdAt              DateTime             @default(now())
+  snapshot               AssetFeatureSnapshot @relation(fields: [assetFeatureSnapshotId], references: [id], onDelete: Cascade)
+
+  @@index([assetFeatureSnapshotId, key])
+}
+
+model AiInsight {
+  id                String           @id @default(cuid())
+  assetId           String?
+  valuationRunId    String?
+  documentVersionId String?
+  insightType       String
+  title             String?
+  content           String
+  evidence          Json?
+  modelName         String
+  status            String
+  createdAt         DateTime         @default(now())
+  asset             Asset?           @relation(fields: [assetId], references: [id], onDelete: SetNull)
+  valuationRun      ValuationRun?    @relation(fields: [valuationRunId], references: [id], onDelete: SetNull)
+  documentVersion   DocumentVersion? @relation(fields: [documentVersionId], references: [id], onDelete: SetNull)
+
+  @@index([assetId, insightType, createdAt])
+  @@index([valuationRunId, insightType])
+}
+
+model Inquiry {
+  id          String   @id @default(cuid())
+  assetId      String?
+  name        String
+  company     String
+  email       String
+  requestType String
+  message     String
+  status      String   @default("NEW")
+  createdAt   DateTime @default(now())
+  asset       Asset?   @relation(fields: [assetId], references: [id], onDelete: SetNull)
+}
+
+model SourceCache {
+  id            String       @id @default(cuid())
+  sourceKey     String
+  sourceSystem  String
+  cacheKey      String
+  status        SourceStatus
+  payload       Json
+  fetchedAt     DateTime     @default(now())
+  expiresAt     DateTime
+  freshnessLabel String
+  errorMessage  String?
+  attempts      Int          @default(1)
+
+  @@unique([sourceSystem, cacheKey])
+}
+
+model SourceOverride {
+  id           String   @id @default(cuid())
+  sourceSystem String
+  cacheKey     String
+  assetId      String?
+  payload      Json
+  note         String?
+  createdById  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  asset        Asset?   @relation(fields: [assetId], references: [id], onDelete: SetNull)
+  createdBy    User?    @relation(fields: [createdById], references: [id])
+
+  @@unique([sourceSystem, cacheKey])
+}
+
+model ReadinessProject {
+  id              String          @id @default(cuid())
+  assetId         String          @unique
+  readinessStatus ReadinessStatus @default(NOT_STARTED) @map("registryStatus")
+  packageName     String          @map("registryName")
+  chainName       String?
+  reviewPhase     String          @map("tokenizationPhase")
+  legalStructure  String?
+  nextAction      String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  asset           Asset           @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  onchainRecords  OnchainRecord[]
+
+  @@map("RwaProject")
+}
+
+model OnchainRecord {
+  id                 String          @id @default(cuid())
+  readinessProjectId String          @map("rwaProjectId")
+  documentId         String?
+  recordType         String
+  txHash             String?
+  chainId            String?
+  status             ReadinessStatus @default(NOT_STARTED)
+  payload            Json
+  anchoredAt         DateTime?
+  createdAt          DateTime        @default(now())
+  readinessProject   ReadinessProject @relation(fields: [readinessProjectId], references: [id], onDelete: Cascade)
+  document           Document?       @relation(fields: [documentId], references: [id], onDelete: SetNull)
+}

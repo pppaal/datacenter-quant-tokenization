@@ -1,0 +1,128 @@
+:root {
+  --bg: #0b1020;
+  --bg-soft: #131a30;
+  --line: #2a3660;
+  --text: #edf1ff;
+  --muted: #a7b2d6;
+  --primary: #5d8fff;
+  --accent: #36d3a8;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: linear-gradient(180deg, #070b17, #0b1020 35%, #101933);
+  color: var(--text);
+  line-height: 1.6;
+}
+
+a { color: #9fc0ff; }
+
+.container {
+  width: min(1100px, 92vw);
+  margin: 0 auto;
+}
+
+.nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 1.1rem 0;
+}
+
+.nav-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+}
+
+.nav-links a {
+  text-decoration: none;
+  border: 1px solid var(--line);
+  color: var(--text);
+  padding: 0.45rem 0.7rem;
+  border-radius: 999px;
+}
+
+.hero { padding: 3rem 0 2rem; }
+.hero h1 { font-size: clamp(2rem, 5vw, 3.4rem); line-height: 1.15; margin: 0.6rem 0; }
+.badge {
+  display: inline-block;
+  background: rgba(54, 211, 168, 0.13);
+  border: 1px solid rgba(54, 211, 168, 0.45);
+  color: var(--accent);
+  border-radius: 999px;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.9rem;
+}
+
+.btn {
+  display: inline-block;
+  margin-top: 0.8rem;
+  text-decoration: none;
+  color: var(--text);
+  border: 1px solid transparent;
+  background: var(--primary);
+  padding: 0.65rem 0.95rem;
+  border-radius: 999px;
+}
+
+.section { padding: 2.2rem 0; }
+.section h2 { margin: 0 0 0.7rem; }
+
+.grid {
+  display: grid;
+  gap: 1rem;
+}
+.grid.three { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.grid.two { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+
+.card {
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.asset-card h3 { margin-top: 0.1rem; }
+.meta { color: var(--muted); font-size: 0.94rem; }
+
+form {
+  display: grid;
+  gap: 0.7rem;
+}
+input, select, textarea, button {
+  padding: 0.66rem;
+  border-radius: 8px;
+  border: 1px solid #3a4977;
+  background: #0d1428;
+  color: var(--text);
+}
+button {
+  background: var(--primary);
+  border-color: transparent;
+  cursor: pointer;
+}
+
+.kpi {
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin: 0.2rem 0;
+}
+
+footer {
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  padding: 1.4rem 0 2.6rem;
+  margin-top: 1.5rem;
+}
+
+pre {
+  white-space: pre-wrap;
+  background: #0c1327;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.8rem;
+}

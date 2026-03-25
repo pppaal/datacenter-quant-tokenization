@@ -1,0 +1,12 @@
+[
+  {
+    "id": "lead-1773650553649",
+    "name": "테스트",
+    "email": "test@example.com",
+    "interest": "강남 프라임 오피스 A동",
+    "message": "상담원합니다",
+    "source": "web",
+    "status": "신규",
+    "createdAt": "2026-03-16T08:42:33.649Z"
+  }
+]

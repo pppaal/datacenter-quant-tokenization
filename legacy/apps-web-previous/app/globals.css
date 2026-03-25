@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-background text-slate-100;
+}
+
+main {
+  @apply mx-auto w-[min(1100px,92vw)] py-8;
+}
