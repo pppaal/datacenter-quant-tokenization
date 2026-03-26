@@ -3,6 +3,8 @@ import test from 'node:test';
 import {
   buildBreachPointSensitivityRun,
   buildDebtNoiMatrixSensitivityRun,
+  buildForecastSensitivityRun,
+  buildMonteCarloSensitivityRun,
   buildOneWaySensitivityRun,
   buildSensitivityRuns,
   buildTwoWayMatrixSensitivityRun
@@ -110,11 +112,73 @@ test('buildSensitivityRuns returns one-way, breach-point, and matrix runs', () =
     scenarios: [{ name: 'Base', debtServiceCoverage: 1.42 }]
   });
 
-  assert.equal(result.length, 4);
+  assert.equal(result.length, 6);
   assert.deepEqual(
     result.map((run) => run.runType),
-    ['ONE_WAY', 'BREACH_POINT', 'MATRIX', 'MATRIX']
+    ['ONE_WAY', 'BREACH_POINT', 'MATRIX', 'MATRIX', 'FORECAST', 'MONTE_CARLO']
   );
+});
+
+test('forecast sensitivity engine creates five-year value and dscr path', () => {
+  const result = buildForecastSensitivityRun({
+    baseCaseValueKrw: 100_000_000_000,
+    assumptions: {
+      macroRegime: {
+        guidance: {
+          occupancyShiftPct: -2,
+          growthShiftPct: 0.4,
+          debtCostShiftPct: 0.2
+        },
+        impacts: {
+          dimensions: [
+            { key: 'pricing', score: -0.4 },
+            { key: 'leasing', score: 0.5 },
+            { key: 'financing', score: -0.3 },
+            { key: 'refinancing', score: -0.2 },
+            { key: 'allocation', score: 0.2 }
+          ]
+        }
+      }
+    },
+    scenarios: [{ name: 'Base', debtServiceCoverage: 1.42 }]
+  });
+
+  assert.equal(result.runType, 'FORECAST');
+  assert.equal(result.points.length, 10);
+  assert.ok(result.points.some((point) => point.variableKey === 'forecast_value_path' && point.shockLabel === 'Year 5'));
+  assert.ok(result.points.some((point) => point.variableKey === 'forecast_dscr_path' && point.shockLabel === 'Year 5'));
+});
+
+test('monte carlo sensitivity engine creates deterministic percentile envelope', () => {
+  const result = buildMonteCarloSensitivityRun({
+    baseCaseValueKrw: 100_000_000_000,
+    assumptions: {
+      capRatePct: 5.8,
+      occupancyPct: 91,
+      debtCostPct: 4.9,
+      macroRegime: {
+        guidance: {
+          growthShiftPct: -0.2
+        },
+        impacts: {
+          dimensions: [
+            { key: 'pricing', score: -0.5 },
+            { key: 'leasing', score: -0.2 },
+            { key: 'financing', score: -0.4 },
+            { key: 'refinancing', score: -0.3 },
+            { key: 'allocation', score: 0.1 }
+          ]
+        }
+      }
+    },
+    scenarios: [{ name: 'Base', debtServiceCoverage: 1.32 }]
+  });
+
+  assert.equal(result.runType, 'MONTE_CARLO');
+  assert.equal(result.points.length, 10);
+  assert.ok(result.points.some((point) => point.variableKey === 'monte_carlo_value' && point.shockLabel === 'P10'));
+  assert.ok(result.points.some((point) => point.variableKey === 'monte_carlo_dscr' && point.shockLabel === 'P90'));
+  assert.equal((result.summary as { simulations?: number }).simulations, 250);
 });
 
 test('two-way matrix sensitivity engine creates a 3x3 occupancy-cap matrix', () => {

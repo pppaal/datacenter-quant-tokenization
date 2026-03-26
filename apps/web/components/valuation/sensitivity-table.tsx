@@ -25,6 +25,16 @@ type SensitivityRun = {
   points: SensitivityPoint[];
 };
 
+function groupPoints(points: SensitivityPoint[]) {
+  const grouped = new Map<string, SensitivityPoint[]>();
+  for (const point of points) {
+    const group = grouped.get(point.shockLabel) ?? [];
+    group.push(point);
+    grouped.set(point.shockLabel, group.sort((left, right) => left.sortOrder - right.sortOrder));
+  }
+  return [...grouped.entries()];
+}
+
 function formatMetric(point: SensitivityPoint, displayCurrency: SupportedCurrency, fxRateToKrw?: number | null) {
   if (point.metricName === 'Value') {
     return formatCurrencyFromKrwAtRate(point.metricValue, displayCurrency, fxRateToKrw);
@@ -158,6 +168,37 @@ export function SensitivityTable({
 
               {run.runType === 'MATRIX' ? (
                 <MatrixRun run={run} summary={summary} displayCurrency={displayCurrency} fxRateToKrw={fxRateToKrw} />
+              ) : run.runType === 'FORECAST' || run.runType === 'MONTE_CARLO' ? (
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+                  {groupPoints(run.points).map(([shockLabel, points]) => (
+                    <div
+                      key={`${run.id}-${shockLabel}`}
+                      className="rounded-[20px] border border-white/10 bg-white/[0.03] px-4 py-4 text-sm"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="font-semibold text-white">{shockLabel}</span>
+                        {run.runType === 'MONTE_CARLO' ? (
+                          <Badge>{shockLabel}</Badge>
+                        ) : (
+                          <Badge tone="neutral">forecast</Badge>
+                        )}
+                      </div>
+                      <div className="mt-3 space-y-3">
+                        {points.map((point) => (
+                          <div key={point.id}>
+                            <div className="text-xs uppercase tracking-[0.12em] text-slate-500">{point.variableLabel}</div>
+                            <div className="mt-1 flex items-center justify-between gap-3">
+                              <div className="text-white">{formatMetric(point, displayCurrency, fxRateToKrw)}</div>
+                              <div className={point.deltaPct < 0 ? 'text-rose-300' : 'text-emerald-300'}>
+                                {formatPercent(point.deltaPct)}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               ) : (
                 <div className="grid gap-3 md:grid-cols-2">
                   {run.points.map((point) => (

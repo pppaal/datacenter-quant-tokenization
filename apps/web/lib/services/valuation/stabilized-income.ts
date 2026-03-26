@@ -84,6 +84,98 @@ export type StabilizedIncomeProvenanceConfig = {
   rent?: OptionalProvenanceFieldConfig;
 };
 
+type StabilizedIncomeRiskConfig = {
+  vacancyThreshold: number;
+  vacancyHighRisk: string;
+  vacancyFallbackRisk: string;
+  comparablePresentRisk: string;
+  comparableMarketRisk: string;
+  comparableMissingRisk: string;
+  entryDefinedRisk: string;
+  entryMissingRisk: string;
+  capexDefinedRisk: string;
+  capexMissingRisk: string;
+  leverageThresholdRatio: number;
+  leverageHighRisk: string;
+  leverageFallbackRisk: string;
+  extraRisks?: string[];
+};
+
+export function buildStabilizedIncomeAssumptions(
+  assetClass: string,
+  valuation: StabilizedIncomeValuation,
+  comparableEntryCount: number,
+  extra: Record<string, unknown> = {}
+) {
+  return {
+    assetClass,
+    rentableAreaSqm: valuation.rentableAreaSqm,
+    occupancyPct: Number(valuation.adjustedOccupancyPct.toFixed(2)),
+    monthlyRentPerSqmKrw: roundKrw(valuation.monthlyRentPerSqmKrw),
+    grossPotentialRentKrw: roundKrw(valuation.grossPotentialRentKrw),
+    effectiveRentalRevenueKrw: roundKrw(valuation.effectiveRentalRevenueKrw),
+    otherIncomeKrw: roundKrw(valuation.otherIncomeKrw),
+    purchasePriceKrw: roundKrw(valuation.purchasePriceKrw),
+    annualOpexKrw: roundKrw(valuation.annualOpexKrw),
+    annualCapexReserveKrw: roundKrw(valuation.annualCapexReserveKrw),
+    stabilizedNoiKrw: roundKrw(valuation.stabilizedNoiKrw),
+    capRatePct: Number(valuation.capRatePct.toFixed(2)),
+    debtLtvPct: Number(valuation.debtLtvPct.toFixed(2)),
+    debtCostPct: Number(valuation.debtCostPct.toFixed(2)),
+    vacancyAllowancePct: Number(valuation.vacancyAllowancePct.toFixed(2)),
+    creditLossPct:
+      typeof valuation.creditLossPct === 'number'
+        ? Number(valuation.creditLossPct.toFixed(2))
+        : valuation.creditLossPct,
+    comparableEntryCount,
+    comparableValuePerSqmKrw: valuation.comparableValuePerSqm ? roundKrw(valuation.comparableValuePerSqm) : null,
+    marketTransactionCompCount: valuation.marketEvidence.transactionCompCount,
+    marketRentCompCount: valuation.marketEvidence.rentCompCount,
+    marketIndicatorCount: valuation.marketEvidence.indicatorCount,
+    marketEvidencePricePerSqmKrw: valuation.marketEvidence.averageTransactionPricePerSqmKrw
+      ? roundKrw(valuation.marketEvidence.averageTransactionPricePerSqmKrw)
+      : null,
+    marketEvidenceRentPerSqmKrw: valuation.marketEvidence.averageMonthlyRentPerSqmKrw
+      ? roundKrw(valuation.marketEvidence.averageMonthlyRentPerSqmKrw)
+      : null,
+    marketEvidenceCapRatePct: valuation.marketEvidence.averageCapRatePct
+      ? Number(valuation.marketEvidence.averageCapRatePct.toFixed(2))
+      : null,
+    marketEvidenceOccupancyPct: valuation.marketEvidence.averageOccupancyPct
+      ? Number(valuation.marketEvidence.averageOccupancyPct.toFixed(2))
+      : null,
+    macroRegime: valuation.macroRegime,
+    ...extra
+  };
+}
+
+export function buildStabilizedIncomeKeyRisks(
+  bundle: UnderwritingBundle,
+  valuation: StabilizedIncomeValuation,
+  config: StabilizedIncomeRiskConfig
+) {
+  return [
+    bundle.marketSnapshot?.vacancyPct != null && bundle.marketSnapshot.vacancyPct > config.vacancyThreshold
+      ? config.vacancyHighRisk
+      : config.vacancyFallbackRisk,
+    ...(config.extraRisks ?? []),
+    valuation.comparableValuePerSqm
+      ? config.comparablePresentRisk
+      : valuation.marketEvidence.transactionCompCount > 0
+        ? config.comparableMarketRisk
+        : config.comparableMissingRisk,
+    bundle.asset.purchasePriceKrw ? config.entryDefinedRisk : config.entryMissingRisk,
+    bundle.asset.capexAssumptionKrw ? config.capexDefinedRisk : config.capexMissingRisk,
+    valuation.debtPrincipalKrw > config.leverageThresholdRatio * valuation.purchasePriceKrw
+      ? config.leverageHighRisk
+      : config.leverageFallbackRisk
+  ];
+}
+
+export function buildStabilizedIncomeDdChecklist(baseItems: string[], debtItem: string) {
+  return [...baseItems, debtItem];
+}
+
 export type StabilizedIncomeScenarioInput = {
   name: UnderwritingScenario['name'];
   scenarioOrder: number;

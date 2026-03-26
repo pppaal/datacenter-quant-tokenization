@@ -43,6 +43,14 @@ export type BundleComparableSet =
 
 export type BundleLeaseStep = LeaseStep & {
   rentFreeMonths: number | null;
+  renewProbabilityPct: number | null;
+  rolloverDowntimeMonths: number | null;
+  renewalRentFreeMonths: number | null;
+  renewalTermYears: number | null;
+  renewalCount: number | null;
+  markToMarketRatePerKwKrw: number | null;
+  renewalTenantImprovementKrw: number | null;
+  renewalLeasingCommissionKrw: number | null;
   tenantImprovementKrw: number | null;
   leasingCommissionKrw: number | null;
   recoverableOpexRatioPct: number | null;
@@ -52,6 +60,14 @@ export type BundleLeaseStep = LeaseStep & {
 };
 
 export type BundleLease = Lease & {
+  renewProbabilityPct: number | null;
+  rolloverDowntimeMonths: number | null;
+  renewalRentFreeMonths: number | null;
+  renewalTermYears: number | null;
+  renewalCount: number | null;
+  markToMarketRatePerKwKrw: number | null;
+  renewalTenantImprovementKrw: number | null;
+  renewalLeasingCommissionKrw: number | null;
   steps: BundleLeaseStep[];
 };
 
@@ -290,9 +306,12 @@ export type LeaseCashFlowYear = {
   residualOccupiedKw: number;
   grossPotentialRevenueKrw: number;
   contractedRevenueKrw: number;
+  renewalRevenueKrw: number;
   residualRevenueKrw: number;
   downtimeLossKrw: number;
+  renewalDowntimeLossKrw: number;
   rentFreeLossKrw: number;
+  renewalRentFreeLossKrw: number;
   fixedRecoveriesKrw: number;
   siteRecoveriesKrw: number;
   utilityPassThroughRevenueKrw: number;
@@ -307,9 +326,12 @@ export type LeaseCashFlowYear = {
   tenantImprovementKrw: number;
   leasingCommissionKrw: number;
   tenantCapitalCostKrw: number;
+  renewalTenantCapitalCostKrw: number;
   fitOutCostKrw: number;
   noiKrw: number;
   cfadsBeforeDebtKrw: number;
+  activeRenewalLeaseCount: number;
+  weightedRenewalRatePerKwKrw: number | null;
 };
 
 export type LeaseDcfResult = {
@@ -320,6 +342,7 @@ export type LeaseDcfResult = {
   incomeApproachValueKrw: number;
   leaseDrivenValueKrw: number;
   terminalValueKrw: number;
+  terminalYear: number;
 };
 
 export type DebtScheduleYear = {
@@ -367,6 +390,7 @@ export type ProFormaSummary = {
   annualOpexKrw: number;
   stabilizedNoiKrw: number;
   terminalValueKrw: number;
+  terminalYear: number;
   reserveRequirementKrw: number;
   endingDebtBalanceKrw: number;
   grossExitValueKrw: number;
@@ -381,9 +405,12 @@ export type ProFormaYear = {
   residualOccupiedKw: number;
   grossPotentialRevenueKrw: number;
   contractedRevenueKrw: number;
+  renewalRevenueKrw: number;
   residualRevenueKrw: number;
   downtimeLossKrw: number;
+  renewalDowntimeLossKrw: number;
   rentFreeLossKrw: number;
+  renewalRentFreeLossKrw: number;
   fixedRecoveriesKrw: number;
   siteRecoveriesKrw: number;
   utilityPassThroughRevenueKrw: number;
@@ -398,9 +425,12 @@ export type ProFormaYear = {
   tenantImprovementKrw: number;
   leasingCommissionKrw: number;
   tenantCapitalCostKrw: number;
+  renewalTenantCapitalCostKrw: number;
   fitOutCostKrw: number;
   noiKrw: number;
   cfadsBeforeDebtKrw: number;
+  activeRenewalLeaseCount: number;
+  weightedRenewalRatePerKwKrw: number | null;
   drawAmountKrw: number;
   interestKrw: number;
   principalKrw: number;

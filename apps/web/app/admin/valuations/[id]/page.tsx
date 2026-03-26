@@ -9,10 +9,15 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ConfidenceBreakdown } from '@/components/valuation/confidence-breakdown';
 import { CreditAssessmentPanel } from '@/components/valuation/credit-assessment-panel';
+import { ForecastDecisionPanel } from '@/components/valuation/forecast-decision-panel';
+import { ForecastPredictionPanel } from '@/components/valuation/forecast-prediction-panel';
+import { MacroDecompositionPanel } from '@/components/valuation/macro-decomposition-panel';
 import { MacroImpactHistoryPanel } from '@/components/valuation/macro-impact-history-panel';
+import { buildMacroDecomposition } from '@/lib/services/macro/decomposition';
 import { FeatureAssumptionMapping } from '@/components/valuation/feature-assumption-mapping';
 import { MacroRegimePanel } from '@/components/valuation/macro-regime-panel';
 import { MarketEvidencePanel } from '@/components/valuation/market-evidence-panel';
+import { RealizedOutcomePanel } from '@/components/valuation/realized-outcome-panel';
 import { SatelliteRiskSummary } from '@/components/valuation/satellite-risk-summary';
 import { SensitivityTable } from '@/components/valuation/sensitivity-table';
 import { ValuationBreakdown } from '@/components/valuation/valuation-breakdown';
@@ -20,7 +25,10 @@ import { ValuationProvenance } from '@/components/valuation/valuation-provenance
 import { ValuationRunBadges } from '@/components/valuation/valuation-run-badges';
 import { ValuationSignals } from '@/components/valuation/valuation-signals';
 import { getFxRateMap } from '@/lib/services/fx';
+import { getGradientBoostingForecastForRun } from '@/lib/services/forecast/gradient-boosting';
+import { buildForecastDecisionNarrative, getForecastDecisionGuideForRun } from '@/lib/services/forecast/decision';
 import { buildMacroImpactHistory } from '@/lib/services/macro/history';
+import { buildRealizedOutcomeComparison } from '@/lib/services/realized-outcomes';
 import { getValuationRunById } from '@/lib/services/valuations';
 import type { MacroInterpretation } from '@/lib/services/macro/regime';
 import { formatDate, formatNumber, formatPercent } from '@/lib/utils';
@@ -73,7 +81,16 @@ export default async function ValuationRunDetailPage({ params }: { params: Promi
     typeof run.assumptions.macroRegime === 'object'
       ? (run.assumptions.macroRegime as MacroInterpretation)
       : null;
+  const macroDecomposition = buildMacroDecomposition(run.id, macroRegime, run.asset.valuations);
   const macroImpactHistory = buildMacroImpactHistory(run.asset.valuations);
+  const boostedForecast = await getGradientBoostingForecastForRun(run.id);
+  const forecastDecisionGuide = await getForecastDecisionGuideForRun(run.id, boostedForecast);
+  const forecastDecisionNarrative = buildForecastDecisionNarrative(forecastDecisionGuide);
+  const realizedOutcomeComparison = buildRealizedOutcomeComparison({
+    run,
+    outcomes: run.asset.realizedOutcomes,
+    forecast: boostedForecast
+  });
 
   return (
     <div className="space-y-6">
@@ -257,6 +274,23 @@ export default async function ValuationRunDetailPage({ params }: { params: Promi
                   )}
                 </div>
               </div>
+              {forecastDecisionNarrative ? (
+                <div className="rounded-[22px] border border-accent/20 bg-accent/10 p-4">
+                  <div className="fine-print text-accent">Forecast Committee Readout</div>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <Badge tone="good">{forecastDecisionNarrative.leadLabel}</Badge>
+                    <Badge>{forecastDecisionNarrative.leadModelKey}</Badge>
+                    {forecastDecisionNarrative.challengerModelKey ? (
+                      <Badge tone="neutral">{forecastDecisionNarrative.challengerModelKey}</Badge>
+                    ) : null}
+                  </div>
+                  <div className="mt-3 space-y-2 text-sm leading-7 text-slate-200">
+                    <p>{forecastDecisionNarrative.leadSentence}</p>
+                    <p>{forecastDecisionNarrative.constraintSentence}</p>
+                    <p>{forecastDecisionNarrative.downsideSentence}</p>
+                  </div>
+                </div>
+              ) : null}
             </div>
           </Card>
 
@@ -298,7 +332,25 @@ export default async function ValuationRunDetailPage({ params }: { params: Promi
 
       <MacroRegimePanel macroRegime={macroRegime} />
 
+      <MacroDecompositionPanel decomposition={macroDecomposition} />
+
       <MacroImpactHistoryPanel history={macroImpactHistory} />
+
+      <ForecastDecisionPanel guide={forecastDecisionGuide} />
+
+      <ForecastPredictionPanel
+        forecast={boostedForecast}
+        decisionGuide={forecastDecisionGuide}
+        displayCurrency={displayCurrency}
+        fxRateToKrw={fxRateToKrw}
+      />
+
+      <RealizedOutcomePanel
+        comparison={realizedOutcomeComparison}
+        outcomes={run.asset.realizedOutcomes}
+        displayCurrency={displayCurrency}
+        fxRateToKrw={fxRateToKrw}
+      />
 
       <MarketEvidencePanel
         assetClass={run.asset.assetClass}

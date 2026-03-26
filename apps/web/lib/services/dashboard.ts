@@ -1,6 +1,11 @@
 import type { PrismaClient } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
+import { buildForecastModelStack } from '@/lib/services/forecast/model-stack';
+import { buildForecastEnsemblePolicy } from '@/lib/services/forecast/ensemble';
+import { buildGradientBoostingRealizedBacktest } from '@/lib/services/forecast/realized-backtest';
 import { listAssets, getAssetBySlug } from '@/lib/services/assets';
+import { buildMacroBacktest } from '@/lib/services/macro/backtest';
+import { buildMacroForecastBacktest } from '@/lib/services/macro/forecast-backtest';
 import { listDocuments } from '@/lib/services/documents';
 import { listInquiries } from '@/lib/services/inquiries';
 import {
@@ -8,6 +13,8 @@ import {
   buildQuantAssetClassAllocationView,
   buildQuantMarketSignals
 } from '@/lib/services/macro/quant';
+import { buildMacroMonitor } from '@/lib/services/macro/monitor';
+import { buildRealizedOutcomeSummary } from '@/lib/services/realized-outcomes';
 import { listReadinessProjects } from '@/lib/services/readiness';
 import { getSourceRefreshHealth } from '@/lib/services/source-refresh';
 import { listValuationRuns } from '@/lib/services/valuations';
@@ -239,7 +246,7 @@ export async function getSampleReport(db: PrismaClient = prisma) {
 }
 
 export async function getAdminData(db: PrismaClient = prisma) {
-  const [summary, assets, valuations, documents, inquiries, readiness, sourceHealth, riskRuns, creditAssessments, macroFactors] =
+  const [summary, assets, valuations, documents, inquiries, readiness, sourceHealth, riskRuns, creditAssessments, macroFactors, realizedOutcomes] =
     await Promise.all([
     getDashboardSummary(db),
     listAssets(db),
@@ -298,10 +305,90 @@ export async function getAdminData(db: PrismaClient = prisma) {
         observationDate: 'desc'
       },
       take: 120
+    }),
+    db.realizedOutcome.findMany({
+      select: {
+        id: true,
+        assetId: true,
+        observationDate: true,
+        occupancyPct: true,
+        noiKrw: true,
+        rentGrowthPct: true,
+        valuationKrw: true,
+        debtServiceCoverage: true,
+        exitCapRatePct: true,
+        notes: true,
+        asset: {
+          select: {
+            id: true,
+            name: true,
+            assetCode: true
+          }
+        }
+      },
+      orderBy: {
+        observationDate: 'desc'
+      }
     })
   ]);
 
   const quantSignals = buildQuantMarketSignals(macroFactors);
+  const quantAllocation = buildQuantAllocationView(quantSignals);
+  const macroBacktest = buildMacroBacktest(macroFactors);
+  const macroForecastBacktest = buildMacroForecastBacktest(macroFactors);
+  const forecastRealizedBacktest = buildGradientBoostingRealizedBacktest({
+    runs: valuations.map((run) => ({
+      id: run.id,
+      assetId: run.assetId,
+      createdAt: run.createdAt,
+      baseCaseValueKrw: run.baseCaseValueKrw,
+      confidenceScore: run.confidenceScore,
+      assumptions: run.assumptions,
+      asset: {
+        id: run.asset.id,
+        name: run.asset.name,
+        assetCode: run.asset.assetCode,
+        assetClass: run.asset.assetClass,
+        market: run.asset.market
+      },
+      scenarios: run.scenarios.map((scenario) => ({
+        name: scenario.name,
+        debtServiceCoverage: scenario.debtServiceCoverage
+      }))
+    })),
+    outcomes: realizedOutcomes
+  });
+  const forecastModelStack = buildForecastModelStack({
+    assets,
+    documents,
+    macroObservationCount: macroFactors.length,
+    realizedBacktest: forecastRealizedBacktest
+  });
+  const forecastEnsemblePolicy = buildForecastEnsemblePolicy({
+    modelStack: forecastModelStack,
+    macroBacktest,
+    macroForecastBacktest,
+    forecastRealizedBacktest
+  });
+  const realizedOutcomeSummary = buildRealizedOutcomeSummary({
+    runs: valuations.map((run) => ({
+      id: run.id,
+      assetId: run.assetId,
+      createdAt: run.createdAt,
+      baseCaseValueKrw: run.baseCaseValueKrw,
+      asset: {
+        id: run.asset.id,
+        name: run.asset.name,
+        assetCode: run.asset.assetCode,
+        assetClass: run.asset.assetClass
+      },
+      scenarios: run.scenarios.map((scenario) => ({
+        name: scenario.name,
+        debtServiceCoverage: scenario.debtServiceCoverage
+      }))
+    })),
+    outcomes: realizedOutcomes
+  });
 
   return {
     summary,
@@ -314,7 +401,15 @@ export async function getAdminData(db: PrismaClient = prisma) {
     portfolioRisk: buildPortfolioRiskSummary(riskRuns),
     counterpartyRisk: buildCounterpartyRiskSummary(creditAssessments),
     quantSignals,
-    quantAllocation: buildQuantAllocationView(quantSignals),
+    quantAllocation,
     quantAssetClassAllocation: buildQuantAssetClassAllocationView(quantSignals)
+      ,
+    macroMonitor: buildMacroMonitor(macroFactors, quantSignals, quantAllocation),
+    forecastModelStack,
+    macroBacktest,
+    macroForecastBacktest,
+    forecastRealizedBacktest,
+    forecastEnsemblePolicy,
+    realizedOutcomeSummary
   };
 }

@@ -1,5 +1,8 @@
 import type { Prisma, PrismaClient } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
+import { generateUnderwritingMemo } from '@/lib/ai/openai';
+import { buildForecastDecisionNarrative, getForecastDecisionGuideForRun } from '@/lib/services/forecast/decision';
+import { getGradientBoostingForecastForRun } from '@/lib/services/forecast/gradient-boosting';
 import { buildMacroRegimeProvenance, buildMacroRegimeSnapshot } from '@/lib/services/macro/series';
 import { assetBundleInclude, enrichAssetFromSources } from '@/lib/services/assets';
 import { buildSensitivityRuns } from '@/lib/services/sensitivity/engine';
@@ -145,7 +148,41 @@ export async function createValuationRun(input: unknown, db: PrismaClient = pris
     }
   });
 
-  return run;
+  const enrichedMemo = await rebuildValuationMemoIfPossible({
+    runId: run.id,
+    analysis,
+    db
+  });
+
+  if (!enrichedMemo) {
+    return run;
+  }
+
+  const finalizedRun = await db.valuationRun.update({
+    where: { id: run.id },
+    data: {
+      underwritingMemo: enrichedMemo
+    },
+    include: {
+      asset: true,
+      scenarios: {
+        orderBy: {
+          scenarioOrder: 'asc'
+        }
+      },
+      sensitivityRuns: {
+        include: {
+          points: {
+            orderBy: {
+              sortOrder: 'asc'
+            }
+          }
+        }
+      }
+    }
+  });
+
+  return finalizedRun;
 }
 
 export async function listValuationRuns(db: PrismaClient = prisma) {
@@ -208,6 +245,12 @@ export async function getValuationRunById(id: string, db: PrismaClient = prisma)
             },
             take: 12
           },
+          realizedOutcomes: {
+            orderBy: {
+              observationDate: 'desc'
+            },
+            take: 12
+          },
           creditAssessments: {
             include: {
               counterparty: true,
@@ -261,4 +304,35 @@ export async function getValuationRunById(id: string, db: PrismaClient = prisma)
       }
     }
   });
+}
+
+async function rebuildValuationMemoIfPossible({
+  runId,
+  analysis,
+  db
+}: {
+  runId: string;
+  analysis: Awaited<ReturnType<typeof runValuationAnalysis>>['analysis'];
+  db: PrismaClient;
+}) {
+  if (
+    !db.valuationRun ||
+    typeof db.valuationRun.findUnique !== 'function' ||
+    typeof db.valuationRun.findMany !== 'function' ||
+    typeof db.macroFactor?.findMany !== 'function' ||
+    typeof db.realizedOutcome?.findMany !== 'function'
+  ) {
+    return null;
+  }
+
+  try {
+    const boostedForecast = await getGradientBoostingForecastForRun(runId, db);
+    const forecastDecisionGuide = await getForecastDecisionGuideForRun(runId, boostedForecast, db);
+    const forecastDecisionNarrative = buildForecastDecisionNarrative(forecastDecisionGuide);
+    return await generateUnderwritingMemo(analysis, {
+      forecastDecisionNarrative
+    });
+  } catch {
+    return null;
+  }
 }

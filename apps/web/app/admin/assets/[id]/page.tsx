@@ -10,6 +10,7 @@ import { DocumentUploadForm } from '@/components/admin/document-upload-form';
 import { FeatureSnapshotPanel } from '@/components/admin/feature-snapshot-panel';
 import { LeaseBookForm } from '@/components/admin/lease-book-form';
 import { MicroDataForm } from '@/components/admin/micro-data-form';
+import { RealizedOutcomeForm } from '@/components/admin/realized-outcome-form';
 import { ValuationRunForm } from '@/components/admin/valuation-run-form';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -17,8 +18,11 @@ import { Card } from '@/components/ui/card';
 import { ConfidenceBreakdown } from '@/components/valuation/confidence-breakdown';
 import { FeatureAssumptionMapping } from '@/components/valuation/feature-assumption-mapping';
 import { MarketEvidencePanel } from '@/components/valuation/market-evidence-panel';
+import { LeaseExpiryLadder } from '@/components/valuation/lease-expiry-ladder';
+import { LeaseRolloverDrilldown } from '@/components/valuation/lease-rollover-drilldown';
 import { ProFormaPanel } from '@/components/valuation/pro-forma-panel';
 import { SatelliteRiskSummary } from '@/components/valuation/satellite-risk-summary';
+import { RealizedOutcomePanel } from '@/components/valuation/realized-outcome-panel';
 import { ValuationBreakdown } from '@/components/valuation/valuation-breakdown';
 import { ValuationHistoryTable } from '@/components/valuation/valuation-history-table';
 import { ValuationProvenance } from '@/components/valuation/valuation-provenance';
@@ -28,6 +32,7 @@ import { ValuationSignals } from '@/components/valuation/valuation-signals';
 import { shortenHash } from '@/lib/blockchain/registry';
 import { getAssetById } from '@/lib/services/assets';
 import { getFxRateMap } from '@/lib/services/fx';
+import { buildRealizedOutcomeComparison } from '@/lib/services/realized-outcomes';
 import { formatDate, formatNumber, formatPercent } from '@/lib/utils';
 import { buildFeatureAssumptionMappings } from '@/lib/valuation/feature-assumption-mapping';
 import { filterValuationFeatureSnapshots } from '@/lib/valuation/feature-snapshot-usage';
@@ -53,8 +58,20 @@ function toInputCurrencyValue(amountKrw: number | null | undefined, currency: Re
   return convertFromKrw(amountKrw, currency) ?? undefined;
 }
 
-export default async function AssetDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function AssetDetailPage({
+  params,
+  searchParams
+}: {
+  params: Promise<{ id: string }>;
+  searchParams?: Promise<{ rolloverYear?: string | string[] }>;
+}) {
   const { id } = await params;
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
+  const rolloverYearParam = Array.isArray(resolvedSearchParams?.rolloverYear)
+    ? resolvedSearchParams?.rolloverYear[0]
+    : resolvedSearchParams?.rolloverYear;
+  const selectedRolloverYear =
+    rolloverYearParam && Number.isFinite(Number(rolloverYearParam)) ? Number(rolloverYearParam) : null;
   const asset = await getAssetById(id);
   if (!asset) notFound();
 
@@ -77,6 +94,32 @@ export default async function AssetDetailPage({ params }: { params: Promise<{ id
   const latestOnchainRecord = asset.readinessProject?.onchainRecords[0];
   const displayCurrency = resolveDisplayCurrency(asset.address?.country ?? asset.market);
   const fxRateToKrw = (await getFxRateMap([displayCurrency]))[displayCurrency];
+  const realizedOutcomeComparison = latestRun
+    ? buildRealizedOutcomeComparison({
+        run: {
+          id: latestRun.id,
+          assetId: latestRun.assetId,
+          createdAt: latestRun.createdAt,
+          baseCaseValueKrw: latestRun.baseCaseValueKrw,
+          assumptions: latestRun.assumptions,
+          asset: {
+            id: asset.id,
+            name: asset.name,
+            assetCode: asset.assetCode,
+            assetClass: asset.assetClass
+          },
+          scenarios: latestRun.scenarios.map((scenario) => ({
+            name: scenario.name,
+            debtServiceCoverage: scenario.debtServiceCoverage
+          }))
+        },
+        outcomes: asset.realizedOutcomes
+      })
+    : {
+        status: 'NO_MATCH' as const,
+        match: null,
+        commentary: 'Run an analysis first, then capture a later realized outcome to validate the macro view.'
+      };
 
   return (
     <div className="space-y-8">
@@ -317,7 +360,20 @@ export default async function AssetDetailPage({ params }: { params: Promise<{ id
               probabilityPct: lease.probabilityPct ?? undefined,
               renewProbabilityPct: lease.renewProbabilityPct ?? undefined,
               downtimeMonths: lease.downtimeMonths ?? undefined,
+              rolloverDowntimeMonths: lease.rolloverDowntimeMonths ?? undefined,
+              renewalRentFreeMonths: lease.renewalRentFreeMonths ?? undefined,
+              renewalTermYears: lease.renewalTermYears ?? undefined,
+              renewalCount: lease.renewalCount ?? undefined,
               rentFreeMonths: lease.rentFreeMonths ?? undefined,
+              markToMarketRatePerKwKrw: toInputCurrencyValue(lease.markToMarketRatePerKwKrw, displayCurrency),
+              renewalTenantImprovementKrw: toInputCurrencyValue(
+                lease.renewalTenantImprovementKrw,
+                displayCurrency
+              ),
+              renewalLeasingCommissionKrw: toInputCurrencyValue(
+                lease.renewalLeasingCommissionKrw,
+                displayCurrency
+              ),
               tenantImprovementKrw: toInputCurrencyValue(lease.tenantImprovementKrw, displayCurrency),
               leasingCommissionKrw: toInputCurrencyValue(lease.leasingCommissionKrw, displayCurrency),
               recoverableOpexRatioPct: lease.recoverableOpexRatioPct ?? undefined,
@@ -329,6 +385,14 @@ export default async function AssetDetailPage({ params }: { params: Promise<{ id
               steps: lease.steps.map((step) => {
                 const underwritingStep = step as typeof step & {
                   rentFreeMonths?: number | null;
+                  renewProbabilityPct?: number | null;
+                  rolloverDowntimeMonths?: number | null;
+                  renewalRentFreeMonths?: number | null;
+                  renewalTermYears?: number | null;
+                  renewalCount?: number | null;
+                  markToMarketRatePerKwKrw?: number | null;
+                  renewalTenantImprovementKrw?: number | null;
+                  renewalLeasingCommissionKrw?: number | null;
                   tenantImprovementKrw?: number | null;
                   leasingCommissionKrw?: number | null;
                   recoverableOpexRatioPct?: number | null;
@@ -345,6 +409,23 @@ export default async function AssetDetailPage({ params }: { params: Promise<{ id
                   annualEscalationPct: step.annualEscalationPct ?? undefined,
                   occupancyPct: step.occupancyPct ?? undefined,
                   rentFreeMonths: underwritingStep.rentFreeMonths ?? undefined,
+                  renewProbabilityPct: underwritingStep.renewProbabilityPct ?? undefined,
+                  rolloverDowntimeMonths: underwritingStep.rolloverDowntimeMonths ?? undefined,
+                  renewalRentFreeMonths: underwritingStep.renewalRentFreeMonths ?? undefined,
+                  renewalTermYears: underwritingStep.renewalTermYears ?? undefined,
+                  renewalCount: underwritingStep.renewalCount ?? undefined,
+                  markToMarketRatePerKwKrw: toInputCurrencyValue(
+                    underwritingStep.markToMarketRatePerKwKrw,
+                    displayCurrency
+                  ),
+                  renewalTenantImprovementKrw: toInputCurrencyValue(
+                    underwritingStep.renewalTenantImprovementKrw,
+                    displayCurrency
+                  ),
+                  renewalLeasingCommissionKrw: toInputCurrencyValue(
+                    underwritingStep.renewalLeasingCommissionKrw,
+                    displayCurrency
+                  ),
                   tenantImprovementKrw: toInputCurrencyValue(
                     underwritingStep.tenantImprovementKrw,
                     displayCurrency
@@ -473,6 +554,29 @@ export default async function AssetDetailPage({ params }: { params: Promise<{ id
         </div>
       </Card>
 
+      <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+        <Card>
+          <div>
+            <div className="eyebrow">Realized Outcome Capture</div>
+            <h3 className="mt-2 text-2xl font-semibold text-white">Observed asset performance after the underwriting run</h3>
+            <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400">
+              Capture actual occupancy, NOI, value, and DSCR after the run closes. This is the feedback loop the macro
+              team needs to validate regime overlays against real asset outcomes.
+            </p>
+          </div>
+          <div className="mt-5">
+            <RealizedOutcomeForm assetId={asset.id} inputCurrency={displayCurrency} />
+          </div>
+        </Card>
+
+        <RealizedOutcomePanel
+          comparison={realizedOutcomeComparison}
+          outcomes={asset.realizedOutcomes}
+          displayCurrency={displayCurrency}
+          fxRateToKrw={fxRateToKrw}
+        />
+      </div>
+
       <Card>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -559,7 +663,26 @@ export default async function AssetDetailPage({ params }: { params: Promise<{ id
             debtFacilities={asset.debtFacilities}
             scenarios={latestRun.scenarios}
           />
-          <ProFormaPanel assumptions={latestRun.assumptions} displayCurrency={displayCurrency} fxRateToKrw={fxRateToKrw} />
+          <ProFormaPanel
+            assumptions={latestRun.assumptions}
+            rolloverBasePath={`/admin/assets/${asset.id}`}
+            selectedRolloverYear={selectedRolloverYear}
+            displayCurrency={displayCurrency}
+            fxRateToKrw={fxRateToKrw}
+          />
+          <LeaseExpiryLadder
+            leases={asset.leases}
+            leaseBasePath={`/admin/assets/${asset.id}`}
+            displayCurrency={displayCurrency}
+            fxRateToKrw={fxRateToKrw}
+          />
+          <LeaseRolloverDrilldown
+            leases={asset.leases}
+            focusYear={selectedRolloverYear}
+            leaseBasePath={`/admin/assets/${asset.id}`}
+            displayCurrency={displayCurrency}
+            fxRateToKrw={fxRateToKrw}
+          />
           <ConfidenceBreakdown
             engineVersion={latestRun.engineVersion}
             confidenceScore={latestRun.confidenceScore}

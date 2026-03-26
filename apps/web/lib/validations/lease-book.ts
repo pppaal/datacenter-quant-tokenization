@@ -41,6 +41,14 @@ const leaseStepSchema = z
     annualEscalationPct: optionalNumberField,
     occupancyPct: optionalNumberField,
     rentFreeMonths: optionalIntField,
+    renewProbabilityPct: optionalNumberField,
+    rolloverDowntimeMonths: optionalIntField,
+    renewalRentFreeMonths: optionalIntField,
+    renewalTermYears: optionalIntField,
+    renewalCount: optionalIntField,
+    markToMarketRatePerKwKrw: optionalNumberField,
+    renewalTenantImprovementKrw: optionalNumberField,
+    renewalLeasingCommissionKrw: optionalNumberField,
     tenantImprovementKrw: optionalNumberField,
     leasingCommissionKrw: optionalNumberField,
     recoverableOpexRatioPct: optionalNumberField,
@@ -58,6 +66,14 @@ const leaseStepSchema = z
       value.annualEscalationPct !== undefined ||
       value.occupancyPct !== undefined ||
       value.rentFreeMonths !== undefined ||
+      value.renewProbabilityPct !== undefined ||
+      value.rolloverDowntimeMonths !== undefined ||
+      value.renewalRentFreeMonths !== undefined ||
+      value.renewalTermYears !== undefined ||
+      value.renewalCount !== undefined ||
+      value.markToMarketRatePerKwKrw !== undefined ||
+      value.renewalTenantImprovementKrw !== undefined ||
+      value.renewalLeasingCommissionKrw !== undefined ||
       value.tenantImprovementKrw !== undefined ||
       value.leasingCommissionKrw !== undefined ||
       value.recoverableOpexRatioPct !== undefined ||
@@ -117,7 +133,14 @@ export const leaseBookInputSchema = z
     probabilityPct: optionalNumberField,
     renewProbabilityPct: optionalNumberField,
     downtimeMonths: optionalIntField,
+    rolloverDowntimeMonths: optionalIntField,
+    renewalRentFreeMonths: optionalIntField,
+    renewalTermYears: optionalIntField,
+    renewalCount: optionalIntField,
     rentFreeMonths: optionalIntField,
+    markToMarketRatePerKwKrw: optionalNumberField,
+    renewalTenantImprovementKrw: optionalNumberField,
+    renewalLeasingCommissionKrw: optionalNumberField,
     tenantImprovementKrw: optionalNumberField,
     leasingCommissionKrw: optionalNumberField,
     recoverableOpexRatioPct: optionalNumberField,

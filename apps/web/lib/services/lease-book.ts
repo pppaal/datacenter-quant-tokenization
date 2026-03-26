@@ -29,6 +29,18 @@ function normalizeLeaseInput(asset: Awaited<ReturnType<typeof getAssetContext>>,
     ...parsed,
     baseRatePerKwKrw:
       typeof parsed.baseRatePerKwKrw === 'number' ? convertToKrw(parsed.baseRatePerKwKrw, inputCurrency) : undefined,
+    markToMarketRatePerKwKrw:
+      typeof parsed.markToMarketRatePerKwKrw === 'number'
+        ? convertToKrw(parsed.markToMarketRatePerKwKrw, inputCurrency)
+        : undefined,
+    renewalTenantImprovementKrw:
+      typeof parsed.renewalTenantImprovementKrw === 'number'
+        ? convertToKrw(parsed.renewalTenantImprovementKrw, inputCurrency)
+        : undefined,
+    renewalLeasingCommissionKrw:
+      typeof parsed.renewalLeasingCommissionKrw === 'number'
+        ? convertToKrw(parsed.renewalLeasingCommissionKrw, inputCurrency)
+        : undefined,
     tenantImprovementKrw:
       typeof parsed.tenantImprovementKrw === 'number'
         ? convertToKrw(parsed.tenantImprovementKrw, inputCurrency)
@@ -58,6 +70,23 @@ function normalizeLeaseInput(asset: Awaited<ReturnType<typeof getAssetContext>>,
         annualEscalationPct: step.annualEscalationPct,
         occupancyPct: step.occupancyPct,
         rentFreeMonths: step.rentFreeMonths,
+        renewProbabilityPct: step.renewProbabilityPct,
+        rolloverDowntimeMonths: step.rolloverDowntimeMonths,
+        renewalRentFreeMonths: step.renewalRentFreeMonths,
+        renewalTermYears: step.renewalTermYears,
+        renewalCount: step.renewalCount,
+        markToMarketRatePerKwKrw:
+          typeof step.markToMarketRatePerKwKrw === 'number'
+            ? convertToKrw(step.markToMarketRatePerKwKrw, inputCurrency)
+            : undefined,
+        renewalTenantImprovementKrw:
+          typeof step.renewalTenantImprovementKrw === 'number'
+            ? convertToKrw(step.renewalTenantImprovementKrw, inputCurrency)
+            : undefined,
+        renewalLeasingCommissionKrw:
+          typeof step.renewalLeasingCommissionKrw === 'number'
+            ? convertToKrw(step.renewalLeasingCommissionKrw, inputCurrency)
+            : undefined,
         tenantImprovementKrw:
           typeof step.tenantImprovementKrw === 'number'
             ? convertToKrw(step.tenantImprovementKrw, inputCurrency)
@@ -108,7 +137,14 @@ export async function createAssetLease(assetId: string, input: unknown, deps?: L
       probabilityPct: normalized.probabilityPct,
       renewProbabilityPct: normalized.renewProbabilityPct,
       downtimeMonths: normalized.downtimeMonths,
+      rolloverDowntimeMonths: normalized.rolloverDowntimeMonths,
+      renewalRentFreeMonths: normalized.renewalRentFreeMonths,
+      renewalTermYears: normalized.renewalTermYears,
+      renewalCount: normalized.renewalCount,
       rentFreeMonths: normalized.rentFreeMonths,
+      markToMarketRatePerKwKrw: normalized.markToMarketRatePerKwKrw,
+      renewalTenantImprovementKrw: normalized.renewalTenantImprovementKrw,
+      renewalLeasingCommissionKrw: normalized.renewalLeasingCommissionKrw,
       tenantImprovementKrw: normalized.tenantImprovementKrw,
       leasingCommissionKrw: normalized.leasingCommissionKrw,
       recoverableOpexRatioPct: normalized.recoverableOpexRatioPct,
@@ -128,6 +164,14 @@ export async function createAssetLease(assetId: string, input: unknown, deps?: L
               annualEscalationPct: step.annualEscalationPct,
               occupancyPct: step.occupancyPct,
               rentFreeMonths: step.rentFreeMonths,
+              renewProbabilityPct: step.renewProbabilityPct,
+              rolloverDowntimeMonths: step.rolloverDowntimeMonths,
+              renewalRentFreeMonths: step.renewalRentFreeMonths,
+              renewalTermYears: step.renewalTermYears,
+              renewalCount: step.renewalCount,
+              markToMarketRatePerKwKrw: step.markToMarketRatePerKwKrw,
+              renewalTenantImprovementKrw: step.renewalTenantImprovementKrw,
+              renewalLeasingCommissionKrw: step.renewalLeasingCommissionKrw,
               tenantImprovementKrw: step.tenantImprovementKrw,
               leasingCommissionKrw: step.leasingCommissionKrw,
               recoverableOpexRatioPct: step.recoverableOpexRatioPct,
@@ -138,7 +182,7 @@ export async function createAssetLease(assetId: string, input: unknown, deps?: L
             }))
           }
         : undefined
-    },
+    } as any,
     include: {
       steps: {
         orderBy: {
@@ -167,6 +211,14 @@ export async function updateAssetLease(assetId: string, leaseId: string, input: 
     throw new Error('Lease not found');
   }
 
+  const existingLease = existing as typeof existing & {
+    renewalRentFreeMonths?: number | null;
+    renewalTermYears?: number | null;
+    renewalCount?: number | null;
+    renewalTenantImprovementKrw?: number | null;
+    renewalLeasingCommissionKrw?: number | null;
+  };
+
   const lease = await db.lease.update({
     where: { id: leaseId },
     data: {
@@ -180,7 +232,19 @@ export async function updateAssetLease(assetId: string, leaseId: string, input: 
       probabilityPct: normalized.probabilityPct ?? existing.probabilityPct,
       renewProbabilityPct: normalized.renewProbabilityPct ?? existing.renewProbabilityPct,
       downtimeMonths: normalized.downtimeMonths ?? existing.downtimeMonths,
+      rolloverDowntimeMonths:
+        normalized.rolloverDowntimeMonths ?? existing.rolloverDowntimeMonths,
+      renewalRentFreeMonths:
+        normalized.renewalRentFreeMonths ?? existingLease.renewalRentFreeMonths,
+      renewalTermYears: normalized.renewalTermYears ?? existingLease.renewalTermYears,
+      renewalCount: normalized.renewalCount ?? existingLease.renewalCount,
       rentFreeMonths: normalized.rentFreeMonths ?? existing.rentFreeMonths,
+      markToMarketRatePerKwKrw:
+        normalized.markToMarketRatePerKwKrw ?? existing.markToMarketRatePerKwKrw,
+      renewalTenantImprovementKrw:
+        normalized.renewalTenantImprovementKrw ?? existingLease.renewalTenantImprovementKrw,
+      renewalLeasingCommissionKrw:
+        normalized.renewalLeasingCommissionKrw ?? existingLease.renewalLeasingCommissionKrw,
       tenantImprovementKrw: normalized.tenantImprovementKrw ?? existing.tenantImprovementKrw,
       leasingCommissionKrw: normalized.leasingCommissionKrw ?? existing.leasingCommissionKrw,
       recoverableOpexRatioPct:
@@ -204,6 +268,14 @@ export async function updateAssetLease(assetId: string, leaseId: string, input: 
                 annualEscalationPct: step.annualEscalationPct,
                 occupancyPct: step.occupancyPct,
                 rentFreeMonths: step.rentFreeMonths,
+                renewProbabilityPct: step.renewProbabilityPct,
+                rolloverDowntimeMonths: step.rolloverDowntimeMonths,
+                renewalRentFreeMonths: step.renewalRentFreeMonths,
+                renewalTermYears: step.renewalTermYears,
+                renewalCount: step.renewalCount,
+                markToMarketRatePerKwKrw: step.markToMarketRatePerKwKrw,
+                renewalTenantImprovementKrw: step.renewalTenantImprovementKrw,
+                renewalLeasingCommissionKrw: step.renewalLeasingCommissionKrw,
                 tenantImprovementKrw: step.tenantImprovementKrw,
                 leasingCommissionKrw: step.leasingCommissionKrw,
                 recoverableOpexRatioPct: step.recoverableOpexRatioPct,
@@ -214,7 +286,7 @@ export async function updateAssetLease(assetId: string, leaseId: string, input: 
               }))
             }
           : undefined
-    },
+    } as any,
     include: {
       steps: {
         orderBy: {

@@ -173,7 +173,7 @@ test('valuation run persists scenario analysis with provenance', async () => {
   assert.match(capturedCreate.data.engineVersion, /^kdc-kr-(py|ts)-v1$/);
   assert.ok(Array.isArray(capturedCreate.data.provenance));
   assert.ok(capturedCreate.data.baseCaseValueKrw > 0);
-  assert.equal(capturedCreate.data.sensitivityRuns.create.length, 4);
+  assert.equal(capturedCreate.data.sensitivityRuns.create.length, 6);
   assert.equal(capturedCreate.data.sensitivityRuns.create[0].runType, 'ONE_WAY');
   assert.equal(capturedCreate.data.sensitivityRuns.create[0].points.create.length, 8);
   assert.equal(capturedCreate.data.sensitivityRuns.create[1].runType, 'BREACH_POINT');
@@ -182,5 +182,9 @@ test('valuation run persists scenario analysis with provenance', async () => {
   assert.equal(capturedCreate.data.sensitivityRuns.create[2].points.create.length, 9);
   assert.equal(capturedCreate.data.sensitivityRuns.create[3].runType, 'MATRIX');
   assert.equal(capturedCreate.data.sensitivityRuns.create[3].points.create.length, 9);
+  assert.equal(capturedCreate.data.sensitivityRuns.create[4].runType, 'FORECAST');
+  assert.equal(capturedCreate.data.sensitivityRuns.create[4].points.create.length, 10);
+  assert.equal(capturedCreate.data.sensitivityRuns.create[5].runType, 'MONTE_CARLO');
+  assert.equal(capturedCreate.data.sensitivityRuns.create[5].points.create.length, 10);
   assert.equal(capturedUpdate.data.currentValuationKrw, capturedCreate.data.baseCaseValueKrw);
 });

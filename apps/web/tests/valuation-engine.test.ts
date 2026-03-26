@@ -293,7 +293,14 @@ test('early-stage valuation keeps scenario dispersion above the downside floor',
         probabilityPct: 88,
         renewProbabilityPct: 56,
         downtimeMonths: 3,
+        rolloverDowntimeMonths: 4,
+        renewalRentFreeMonths: 2,
+        renewalTermYears: 4,
+        renewalCount: 2,
         rentFreeMonths: 2,
+        markToMarketRatePerKwKrw: 232000,
+        renewalTenantImprovementKrw: 260000000,
+        renewalLeasingCommissionKrw: 32000000,
         tenantImprovementKrw: 1700000000,
         leasingCommissionKrw: 300000000,
         recoverableOpexRatioPct: 48,
@@ -316,6 +323,14 @@ test('early-stage valuation keeps scenario dispersion above the downside floor',
             annualEscalationPct: 2.5,
             occupancyPct: 94,
             rentFreeMonths: 1,
+            renewProbabilityPct: 61,
+            rolloverDowntimeMonths: 2,
+            renewalRentFreeMonths: 1,
+            renewalTermYears: 3,
+            renewalCount: 2,
+            markToMarketRatePerKwKrw: 238000,
+            renewalTenantImprovementKrw: 180000000,
+            renewalLeasingCommissionKrw: 22000000,
             tenantImprovementKrw: 480000000,
             leasingCommissionKrw: 72000000,
             recoverableOpexRatioPct: 55,
@@ -702,13 +717,13 @@ test('early-stage valuation keeps scenario dispersion above the downside floor',
     130000000000
   );
   assert.ok(
-    Math.abs((analysis.assumptions.metrics as { debtCostPct: number }).debtCostPct - 6.35) < 0.001
+    Math.abs((analysis.assumptions.metrics as { debtCostPct: number }).debtCostPct - 6.56) < 0.001
   );
   assert.equal(
     (
       (analysis.assumptions.macroRegime as { guidance: { debtCostShiftPct: number } }).guidance
     ).debtCostShiftPct,
-    0.45
+    0.66
   );
   assert.equal(
     (analysis.assumptions.curatedFeatures as { marketInputs: { sourceVersion: string | null } }).marketInputs.sourceVersion,

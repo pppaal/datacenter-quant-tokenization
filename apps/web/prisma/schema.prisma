@@ -185,6 +185,7 @@ model Asset {
   marketIndicatorSeries MarketIndicatorSeries[]
   macroSeries           MacroSeries[]
   macroFactors          MacroFactor[]
+  realizedOutcomes      RealizedOutcome[]
   pipelineProjects      PipelineProject[]
   geoFeatures           GeoFeature[]
   satelliteScenes       SatelliteScene[]
@@ -483,7 +484,14 @@ model Lease {
   probabilityPct       Float?
   renewProbabilityPct  Float?
   downtimeMonths       Int?
+  rolloverDowntimeMonths Int?
   rentFreeMonths       Int?
+  renewalRentFreeMonths Int?
+  renewalTermYears     Int?
+  renewalCount         Int?
+  markToMarketRatePerKwKrw Float?
+  renewalTenantImprovementKrw Float?
+  renewalLeasingCommissionKrw Float?
   tenantImprovementKrw Float?
   leasingCommissionKrw Float?
   recoverableOpexRatioPct Float?
@@ -509,6 +517,14 @@ model LeaseStep {
   annualEscalationPct Float?
   occupancyPct        Float?
   rentFreeMonths      Int?
+  renewProbabilityPct Float?
+  rolloverDowntimeMonths Int?
+  renewalRentFreeMonths Int?
+  renewalTermYears    Int?
+  renewalCount        Int?
+  markToMarketRatePerKwKrw Float?
+  renewalTenantImprovementKrw Float?
+  renewalLeasingCommissionKrw Float?
   tenantImprovementKrw Float?
   leasingCommissionKrw Float?
   recoverableOpexRatioPct Float?
@@ -919,6 +935,27 @@ model MacroFactor {
 
   @@unique([market, factorKey, observationDate, assetId])
   @@index([market, factorKey, observationDate])
+}
+
+model RealizedOutcome {
+  id                  String       @id @default(cuid())
+  assetId             String
+  observationDate     DateTime
+  occupancyPct        Float?
+  noiKrw              Float?
+  rentGrowthPct       Float?
+  valuationKrw        Float?
+  debtServiceCoverage Float?
+  exitCapRatePct      Float?
+  notes               String?
+  sourceSystem        String       @default("manual_realized_capture")
+  sourceStatus        SourceStatus @default(MANUAL)
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+  asset               Asset        @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@unique([assetId, observationDate])
+  @@index([assetId, observationDate])
 }
 
 model MacroProfileOverride {

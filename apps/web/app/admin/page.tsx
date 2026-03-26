@@ -4,6 +4,13 @@ import { formatCurrencyFromKrwAtRate, resolveDisplayCurrency } from '@/lib/finan
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { ForecastModelStackPanel } from '@/components/admin/forecast-model-stack-panel';
+import { ForecastEnsemblePanel } from '@/components/admin/forecast-ensemble-panel';
+import { ForecastRealizedBacktestPanel } from '@/components/admin/forecast-realized-backtest-panel';
+import { MacroBacktestPanel } from '@/components/admin/macro-backtest-panel';
+import { MacroForecastBacktestPanel } from '@/components/admin/macro-forecast-backtest-panel';
+import { MacroMonitorPanel } from '@/components/admin/macro-monitor-panel';
+import { RealizedOutcomeSummaryPanel } from '@/components/admin/realized-outcome-summary-panel';
 import { ValuationRunBadges } from '@/components/valuation/valuation-run-badges';
 import { getAdminData } from '@/lib/services/dashboard';
 import { getFxRateMap } from '@/lib/services/fx';
@@ -24,7 +31,14 @@ export default async function AdminOverviewPage() {
     counterpartyRisk,
     quantSignals,
     quantAllocation,
-    quantAssetClassAllocation
+    quantAssetClassAllocation,
+    macroMonitor,
+    forecastModelStack,
+    macroBacktest,
+    macroForecastBacktest,
+    forecastRealizedBacktest,
+    forecastEnsemblePolicy,
+    realizedOutcomeSummary
   } =
     await getAdminData();
   const fxRateMap = await getFxRateMap([
@@ -80,6 +94,34 @@ export default async function AdminOverviewPage() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
+        <div className="xl:col-span-2">
+          <MacroMonitorPanel monitor={macroMonitor} />
+        </div>
+
+        <div className="xl:col-span-2">
+          <ForecastModelStackPanel stack={forecastModelStack} />
+        </div>
+
+        <div className="xl:col-span-2">
+          <ForecastEnsemblePanel policy={forecastEnsemblePolicy} />
+        </div>
+
+        <div className="xl:col-span-2">
+          <MacroBacktestPanel backtest={macroBacktest} />
+        </div>
+
+        <div className="xl:col-span-2">
+          <MacroForecastBacktestPanel backtest={macroForecastBacktest} />
+        </div>
+
+        <div className="xl:col-span-2">
+          <ForecastRealizedBacktestPanel backtest={forecastRealizedBacktest} />
+        </div>
+
+        <div className="xl:col-span-2">
+          <RealizedOutcomeSummaryPanel summary={realizedOutcomeSummary} />
+        </div>
+
         <Card>
           <div className="flex items-center justify-between gap-4">
             <div>

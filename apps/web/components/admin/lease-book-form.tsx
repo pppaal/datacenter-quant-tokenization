@@ -22,7 +22,14 @@ type LeaseDraft = {
   probabilityPct: string;
   renewProbabilityPct: string;
   downtimeMonths: string;
+  rolloverDowntimeMonths: string;
+  renewalRentFreeMonths: string;
+  renewalTermYears: string;
+  renewalCount: string;
   rentFreeMonths: string;
+  markToMarketRatePerKwKrw: string;
+  renewalTenantImprovementKrw: string;
+  renewalLeasingCommissionKrw: string;
   tenantImprovementKrw: string;
   leasingCommissionKrw: string;
   recoverableOpexRatioPct: string;
@@ -43,6 +50,14 @@ type LeaseStepDraft = {
   annualEscalationPct: string;
   occupancyPct: string;
   rentFreeMonths: string;
+  renewProbabilityPct: string;
+  rolloverDowntimeMonths: string;
+  renewalRentFreeMonths: string;
+  renewalTermYears: string;
+  renewalCount: string;
+  markToMarketRatePerKwKrw: string;
+  renewalTenantImprovementKrw: string;
+  renewalLeasingCommissionKrw: string;
   tenantImprovementKrw: string;
   leasingCommissionKrw: string;
   recoverableOpexRatioPct: string;
@@ -64,7 +79,14 @@ type LeaseDefaultValue = {
   probabilityPct?: number | null;
   renewProbabilityPct?: number | null;
   downtimeMonths?: number | null;
+  rolloverDowntimeMonths?: number | null;
+  renewalRentFreeMonths?: number | null;
+  renewalTermYears?: number | null;
+  renewalCount?: number | null;
   rentFreeMonths?: number | null;
+  markToMarketRatePerKwKrw?: number | null;
+  renewalTenantImprovementKrw?: number | null;
+  renewalLeasingCommissionKrw?: number | null;
   tenantImprovementKrw?: number | null;
   leasingCommissionKrw?: number | null;
   recoverableOpexRatioPct?: number | null;
@@ -81,6 +103,14 @@ type LeaseDefaultValue = {
     annualEscalationPct?: number | null;
     occupancyPct?: number | null;
     rentFreeMonths?: number | null;
+    renewProbabilityPct?: number | null;
+    rolloverDowntimeMonths?: number | null;
+    renewalRentFreeMonths?: number | null;
+    renewalTermYears?: number | null;
+    renewalCount?: number | null;
+    markToMarketRatePerKwKrw?: number | null;
+    renewalTenantImprovementKrw?: number | null;
+    renewalLeasingCommissionKrw?: number | null;
     tenantImprovementKrw?: number | null;
     leasingCommissionKrw?: number | null;
     recoverableOpexRatioPct?: number | null;
@@ -110,7 +140,14 @@ function buildDraft(lease?: LeaseDefaultValue): LeaseDraft {
     probabilityPct: stringifyValue(lease?.probabilityPct),
     renewProbabilityPct: stringifyValue(lease?.renewProbabilityPct),
     downtimeMonths: stringifyValue(lease?.downtimeMonths),
+    rolloverDowntimeMonths: stringifyValue(lease?.rolloverDowntimeMonths),
+    renewalRentFreeMonths: stringifyValue(lease?.renewalRentFreeMonths),
+    renewalTermYears: stringifyValue(lease?.renewalTermYears),
+    renewalCount: stringifyValue(lease?.renewalCount),
     rentFreeMonths: stringifyValue(lease?.rentFreeMonths),
+    markToMarketRatePerKwKrw: stringifyValue(lease?.markToMarketRatePerKwKrw),
+    renewalTenantImprovementKrw: stringifyValue(lease?.renewalTenantImprovementKrw),
+    renewalLeasingCommissionKrw: stringifyValue(lease?.renewalLeasingCommissionKrw),
     tenantImprovementKrw: stringifyValue(lease?.tenantImprovementKrw),
     leasingCommissionKrw: stringifyValue(lease?.leasingCommissionKrw),
     recoverableOpexRatioPct: stringifyValue(lease?.recoverableOpexRatioPct),
@@ -129,6 +166,14 @@ function buildDraft(lease?: LeaseDefaultValue): LeaseDraft {
         annualEscalationPct: stringifyValue(step.annualEscalationPct),
         occupancyPct: stringifyValue(step.occupancyPct),
         rentFreeMonths: stringifyValue(step.rentFreeMonths),
+        renewProbabilityPct: stringifyValue(step.renewProbabilityPct),
+        rolloverDowntimeMonths: stringifyValue(step.rolloverDowntimeMonths),
+        renewalRentFreeMonths: stringifyValue(step.renewalRentFreeMonths),
+        renewalTermYears: stringifyValue(step.renewalTermYears),
+        renewalCount: stringifyValue(step.renewalCount),
+        markToMarketRatePerKwKrw: stringifyValue(step.markToMarketRatePerKwKrw),
+        renewalTenantImprovementKrw: stringifyValue(step.renewalTenantImprovementKrw),
+        renewalLeasingCommissionKrw: stringifyValue(step.renewalLeasingCommissionKrw),
         tenantImprovementKrw: stringifyValue(step.tenantImprovementKrw),
         leasingCommissionKrw: stringifyValue(step.leasingCommissionKrw),
         recoverableOpexRatioPct: stringifyValue(step.recoverableOpexRatioPct),
@@ -204,6 +249,14 @@ export function LeaseBookForm({
                   annualEscalationPct: '',
                   occupancyPct: '',
                   rentFreeMonths: '',
+                  renewProbabilityPct: '',
+                  rolloverDowntimeMonths: '',
+                  renewalRentFreeMonths: '',
+                  renewalTermYears: '',
+                  renewalCount: '',
+                  markToMarketRatePerKwKrw: '',
+                  renewalTenantImprovementKrw: '',
+                  renewalLeasingCommissionKrw: '',
                   tenantImprovementKrw: '',
                   leasingCommissionKrw: '',
                   recoverableOpexRatioPct: '',
@@ -248,7 +301,14 @@ export function LeaseBookForm({
         probabilityPct: lease.probabilityPct,
         renewProbabilityPct: lease.renewProbabilityPct,
         downtimeMonths: lease.downtimeMonths,
+        rolloverDowntimeMonths: lease.rolloverDowntimeMonths,
+        renewalRentFreeMonths: lease.renewalRentFreeMonths,
+        renewalTermYears: lease.renewalTermYears,
+        renewalCount: lease.renewalCount,
         rentFreeMonths: lease.rentFreeMonths,
+        markToMarketRatePerKwKrw: lease.markToMarketRatePerKwKrw,
+        renewalTenantImprovementKrw: lease.renewalTenantImprovementKrw,
+        renewalLeasingCommissionKrw: lease.renewalLeasingCommissionKrw,
         tenantImprovementKrw: lease.tenantImprovementKrw,
         leasingCommissionKrw: lease.leasingCommissionKrw,
         recoverableOpexRatioPct: lease.recoverableOpexRatioPct,
@@ -265,6 +325,14 @@ export function LeaseBookForm({
           annualEscalationPct: step.annualEscalationPct,
           occupancyPct: step.occupancyPct,
           rentFreeMonths: step.rentFreeMonths,
+          renewProbabilityPct: step.renewProbabilityPct,
+          rolloverDowntimeMonths: step.rolloverDowntimeMonths,
+          renewalRentFreeMonths: step.renewalRentFreeMonths,
+          renewalTermYears: step.renewalTermYears,
+          renewalCount: step.renewalCount,
+          markToMarketRatePerKwKrw: step.markToMarketRatePerKwKrw,
+          renewalTenantImprovementKrw: step.renewalTenantImprovementKrw,
+          renewalLeasingCommissionKrw: step.renewalLeasingCommissionKrw,
           tenantImprovementKrw: step.tenantImprovementKrw,
           leasingCommissionKrw: step.leasingCommissionKrw,
           recoverableOpexRatioPct: step.recoverableOpexRatioPct,
@@ -330,10 +398,14 @@ export function LeaseBookForm({
   };
 
   return (
-    <div className="space-y-5">
+    <div id="lease-book" className="space-y-5">
       <div className="grid gap-4">
         {leases.map((lease, index) => (
-          <div key={lease.localId} className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+          <div
+            id={lease.id ? `lease-${lease.id}` : undefined}
+            key={lease.localId}
+            className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5 scroll-mt-24"
+          >
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <div className="eyebrow">Lease {index + 1}</div>
@@ -409,8 +481,36 @@ export function LeaseBookForm({
                 <Input type="number" step="1" value={lease.downtimeMonths} onChange={(event) => updateLease(lease.localId, 'downtimeMonths', event.target.value)} />
               </label>
               <label className="space-y-2">
+                <span className="fine-print">Rollover Downtime (Months)</span>
+                <Input type="number" step="1" value={lease.rolloverDowntimeMonths} onChange={(event) => updateLease(lease.localId, 'rolloverDowntimeMonths', event.target.value)} />
+              </label>
+              <label className="space-y-2">
+                <span className="fine-print">Renewal Term (Years)</span>
+                <Input type="number" step="1" value={lease.renewalTermYears} onChange={(event) => updateLease(lease.localId, 'renewalTermYears', event.target.value)} />
+              </label>
+              <label className="space-y-2">
+                <span className="fine-print">Renewal Rent-Free (Months)</span>
+                <Input type="number" step="1" value={lease.renewalRentFreeMonths} onChange={(event) => updateLease(lease.localId, 'renewalRentFreeMonths', event.target.value)} />
+              </label>
+              <label className="space-y-2">
+                <span className="fine-print">Renewal Count</span>
+                <Input type="number" step="1" value={lease.renewalCount} onChange={(event) => updateLease(lease.localId, 'renewalCount', event.target.value)} />
+              </label>
+              <label className="space-y-2">
                 <span className="fine-print">Rent-Free (Months)</span>
                 <Input type="number" step="1" value={lease.rentFreeMonths} onChange={(event) => updateLease(lease.localId, 'rentFreeMonths', event.target.value)} />
+              </label>
+              <label className="space-y-2">
+                <span className="fine-print">{moneyLabel('MTM Rollover Rate / kW (KRW)', inputCurrency)}</span>
+                <Input type="number" step="any" value={lease.markToMarketRatePerKwKrw} onChange={(event) => updateLease(lease.localId, 'markToMarketRatePerKwKrw', event.target.value)} />
+              </label>
+              <label className="space-y-2">
+                <span className="fine-print">{moneyLabel('Renewal TI (KRW)', inputCurrency)}</span>
+                <Input type="number" step="any" value={lease.renewalTenantImprovementKrw} onChange={(event) => updateLease(lease.localId, 'renewalTenantImprovementKrw', event.target.value)} />
+              </label>
+              <label className="space-y-2">
+                <span className="fine-print">{moneyLabel('Renewal LC (KRW)', inputCurrency)}</span>
+                <Input type="number" step="any" value={lease.renewalLeasingCommissionKrw} onChange={(event) => updateLease(lease.localId, 'renewalLeasingCommissionKrw', event.target.value)} />
               </label>
               <label className="space-y-2">
                 <span className="fine-print">{moneyLabel('Tenant Improvement (KRW)', inputCurrency)}</span>
@@ -511,6 +611,38 @@ export function LeaseBookForm({
                         <label className="space-y-2">
                           <span className="fine-print">Rent-Free (Months)</span>
                           <Input type="number" step="1" value={step.rentFreeMonths} onChange={(event) => updateStep(lease.localId, step.localId, 'rentFreeMonths', event.target.value)} />
+                        </label>
+                        <label className="space-y-2">
+                          <span className="fine-print">Step Renewal Probability (%)</span>
+                          <Input type="number" step="any" value={step.renewProbabilityPct} onChange={(event) => updateStep(lease.localId, step.localId, 'renewProbabilityPct', event.target.value)} />
+                        </label>
+                        <label className="space-y-2">
+                          <span className="fine-print">Step Rollover Downtime (Months)</span>
+                          <Input type="number" step="1" value={step.rolloverDowntimeMonths} onChange={(event) => updateStep(lease.localId, step.localId, 'rolloverDowntimeMonths', event.target.value)} />
+                        </label>
+                        <label className="space-y-2">
+                          <span className="fine-print">Step Renewal Term (Years)</span>
+                          <Input type="number" step="1" value={step.renewalTermYears} onChange={(event) => updateStep(lease.localId, step.localId, 'renewalTermYears', event.target.value)} />
+                        </label>
+                        <label className="space-y-2">
+                          <span className="fine-print">Step Renewal Rent-Free (Months)</span>
+                          <Input type="number" step="1" value={step.renewalRentFreeMonths} onChange={(event) => updateStep(lease.localId, step.localId, 'renewalRentFreeMonths', event.target.value)} />
+                        </label>
+                        <label className="space-y-2">
+                          <span className="fine-print">Step Renewal Count</span>
+                          <Input type="number" step="1" value={step.renewalCount} onChange={(event) => updateStep(lease.localId, step.localId, 'renewalCount', event.target.value)} />
+                        </label>
+                        <label className="space-y-2">
+                          <span className="fine-print">{moneyLabel('Step MTM Rollover Rate / kW (KRW)', inputCurrency)}</span>
+                          <Input type="number" step="any" value={step.markToMarketRatePerKwKrw} onChange={(event) => updateStep(lease.localId, step.localId, 'markToMarketRatePerKwKrw', event.target.value)} />
+                        </label>
+                        <label className="space-y-2">
+                          <span className="fine-print">{moneyLabel('Step Renewal TI (KRW)', inputCurrency)}</span>
+                          <Input type="number" step="any" value={step.renewalTenantImprovementKrw} onChange={(event) => updateStep(lease.localId, step.localId, 'renewalTenantImprovementKrw', event.target.value)} />
+                        </label>
+                        <label className="space-y-2">
+                          <span className="fine-print">{moneyLabel('Step Renewal LC (KRW)', inputCurrency)}</span>
+                          <Input type="number" step="any" value={step.renewalLeasingCommissionKrw} onChange={(event) => updateStep(lease.localId, step.localId, 'renewalLeasingCommissionKrw', event.target.value)} />
                         </label>
                         <label className="space-y-2">
                           <span className="fine-print">{moneyLabel('Step TI (KRW)', inputCurrency)}</span>

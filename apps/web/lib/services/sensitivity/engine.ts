@@ -14,7 +14,7 @@ export type SensitivityPointResult = {
 };
 
 export type SensitivityRunResult = {
-  runType: 'ONE_WAY' | 'BREACH_POINT' | 'MATRIX';
+  runType: 'ONE_WAY' | 'BREACH_POINT' | 'MATRIX' | 'FORECAST' | 'MONTE_CARLO';
   title: string;
   baselineMetricName: SensitivityMetricName;
   baselineMetricValue: number;
@@ -26,6 +26,12 @@ export type SensitivityRunResult = {
     columnLabels?: string[];
     rowAxisLabel?: string;
     columnAxisLabel?: string;
+    forecastYears?: number;
+    yearFiveValueDeltaPct?: number | null;
+    yearFiveDscrDeltaPct?: number | null;
+    simulations?: number;
+    downsideProbabilityPct?: number;
+    covenantBreachProbabilityPct?: number;
   };
   points: SensitivityPointResult[];
 };
@@ -37,6 +43,23 @@ type AnalysisLike = {
     name: string;
     debtServiceCoverage?: number | null;
   }>;
+};
+
+type MacroRegimeLike = {
+  guidance?: {
+    discountRateShiftPct?: number;
+    exitCapRateShiftPct?: number;
+    debtCostShiftPct?: number;
+    occupancyShiftPct?: number;
+    growthShiftPct?: number;
+    replacementCostShiftPct?: number;
+  };
+  impacts?: {
+    dimensions?: Array<{
+      key?: string;
+      score?: number | null;
+    }>;
+  };
 };
 
 function toNumber(value: unknown) {
@@ -85,12 +108,60 @@ function getAssetClass(assumptions: Record<string, unknown>) {
   return typeof metricsValue === 'string' && metricsValue.length > 0 ? metricsValue : null;
 }
 
+function getMacroRegime(assumptions: Record<string, unknown>): MacroRegimeLike | null {
+  return typeof assumptions.macroRegime === 'object' && assumptions.macroRegime !== null
+    ? (assumptions.macroRegime as MacroRegimeLike)
+    : null;
+}
+
+function getMacroImpactScore(assumptions: Record<string, unknown>, key: string) {
+  const macroRegime = getMacroRegime(assumptions);
+  const dimensions = macroRegime?.impacts?.dimensions;
+  if (!Array.isArray(dimensions)) return 0;
+  const point = dimensions.find((dimension) => dimension?.key === key);
+  return toNumber(point?.score) ?? 0;
+}
+
+function getMacroGuidanceShift(assumptions: Record<string, unknown>, key: keyof NonNullable<MacroRegimeLike['guidance']>) {
+  const macroRegime = getMacroRegime(assumptions);
+  return toNumber(macroRegime?.guidance?.[key]) ?? 0;
+}
+
 function roundMetric(value: number) {
   return Number(value.toFixed(2));
 }
 
 function roundDelta(value: number) {
   return Number(value.toFixed(2));
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function percentile(sortedValues: number[], pct: number) {
+  if (sortedValues.length === 0) return 0;
+  const index = (sortedValues.length - 1) * pct;
+  const lower = Math.floor(index);
+  const upper = Math.ceil(index);
+  if (lower === upper) return sortedValues[lower] ?? 0;
+  const weight = index - lower;
+  return (sortedValues[lower] ?? 0) * (1 - weight) + (sortedValues[upper] ?? 0) * weight;
+}
+
+function createSeededRandom(seed: number) {
+  let state = seed >>> 0;
+  return () => {
+    state += 0x6d2b79f5;
+    let t = state;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function drawCentered(random: () => number) {
+  return (random() + random() + random()) / 3 - 0.5;
 }
 
 function buildValuePoint(args: {
@@ -470,11 +541,193 @@ export function buildDebtNoiMatrixSensitivityRun(analysis: AnalysisLike): Sensit
   };
 }
 
+export function buildForecastSensitivityRun(analysis: AnalysisLike): SensitivityRunResult {
+  const baselineValue = Math.max(analysis.baseCaseValueKrw, 1);
+  const baselineDscr = pickBaseDscr(analysis.scenarios) ?? 1;
+  const assumptions = analysis.assumptions;
+  const pricingScore = getMacroImpactScore(assumptions, 'pricing');
+  const leasingScore = getMacroImpactScore(assumptions, 'leasing');
+  const financingScore = getMacroImpactScore(assumptions, 'financing');
+  const refinancingScore = getMacroImpactScore(assumptions, 'refinancing');
+  const allocationScore = getMacroImpactScore(assumptions, 'allocation');
+  const occupancyShiftPct = getMacroGuidanceShift(assumptions, 'occupancyShiftPct');
+  const growthShiftPct = getMacroGuidanceShift(assumptions, 'growthShiftPct');
+  const debtCostShiftPct = getMacroGuidanceShift(assumptions, 'debtCostShiftPct');
+
+  const annualValueDriftPct =
+    leasingScore * 2.2 +
+    allocationScore * 1.3 +
+    pricingScore * 1.8 -
+    refinancingScore * 1.1 +
+    growthShiftPct * 0.8 -
+    Math.abs(debtCostShiftPct) * 0.9;
+  const annualDscrDriftPct =
+    leasingScore * 3 +
+    pricingScore * 0.8 -
+    financingScore * 2.8 -
+    refinancingScore * 1.5 +
+    occupancyShiftPct * 0.4 -
+    debtCostShiftPct * 4;
+
+  const points: SensitivityPointResult[] = [];
+
+  for (let year = 1; year <= 5; year += 1) {
+    const valueMetric = baselineValue * clamp(1 + (annualValueDriftPct / 100) * year, 0.55, 1.65);
+    const dscrMetric = baselineDscr * clamp(1 + (annualDscrDriftPct / 100) * year, 0.55, 1.55);
+
+    points.push(
+      buildValuePoint({
+        variableKey: 'forecast_value_path',
+        variableLabel: 'Forecast Value Path',
+        shockLabel: `Year ${year}`,
+        shockValue: year,
+        metricValue: valueMetric,
+        baselineValue,
+        sortOrder: year - 1
+      }),
+      buildDscrPoint({
+        variableKey: 'forecast_dscr_path',
+        variableLabel: 'Forecast DSCR Path',
+        shockLabel: `Year ${year}`,
+        shockValue: year,
+        metricValue: dscrMetric,
+        baselineValue: baselineDscr,
+        sortOrder: 100 + year - 1
+      })
+    );
+  }
+
+  const yearFiveValue = points.find((point) => point.variableKey === 'forecast_value_path' && point.shockValue === 5);
+  const yearFiveDscr = points.find((point) => point.variableKey === 'forecast_dscr_path' && point.shockValue === 5);
+
+  return {
+    runType: 'FORECAST',
+    title: 'Five-year macro forecast path',
+    baselineMetricName: 'Value',
+    baselineMetricValue: roundMetric(baselineValue),
+    summary: {
+      strongestDownsideDriver:
+        yearFiveValue && yearFiveValue.deltaPct < 0 ? `Year 5 value ${yearFiveValue.deltaPct}%` : null,
+      strongestDownsideDeltaPct: yearFiveValue?.deltaPct ?? null,
+      pointCount: points.length,
+      forecastYears: 5,
+      yearFiveValueDeltaPct: yearFiveValue?.deltaPct ?? null,
+      yearFiveDscrDeltaPct: yearFiveDscr?.deltaPct ?? null
+    },
+    points
+  };
+}
+
+export function buildMonteCarloSensitivityRun(analysis: AnalysisLike): SensitivityRunResult {
+  const baselineValue = Math.max(analysis.baseCaseValueKrw, 1);
+  const baselineDscr = pickBaseDscr(analysis.scenarios) ?? 1;
+  const assumptions = analysis.assumptions;
+  const pricingScore = getMacroImpactScore(assumptions, 'pricing');
+  const leasingScore = getMacroImpactScore(assumptions, 'leasing');
+  const financingScore = getMacroImpactScore(assumptions, 'financing');
+  const refinancingScore = getMacroImpactScore(assumptions, 'refinancing');
+  const allocationScore = getMacroImpactScore(assumptions, 'allocation');
+  const baseCapRatePct = getMetric(assumptions, 'capRatePct') ?? 6;
+  const baseOccupancyPct = getMetric(assumptions, 'occupancyPct') ?? 90;
+  const baseDebtCostPct = getMetric(assumptions, 'debtCostPct') ?? 5;
+  const growthShiftPct = getMacroGuidanceShift(assumptions, 'growthShiftPct');
+
+  const random = createSeededRandom(
+    Math.round(baselineValue / 1_000_000) ^
+      Math.round(baseCapRatePct * 100) ^
+      Math.round(baseOccupancyPct * 10) ^
+      Math.round(baseDebtCostPct * 100)
+  );
+  const valueOutcomes: number[] = [];
+  const dscrOutcomes: number[] = [];
+  const iterations = 250;
+
+  for (let i = 0; i < iterations; i += 1) {
+    const occupancyShockPts = drawCentered(random) * (8 + Math.abs(leasingScore) * 3) + leasingScore * 2;
+    const exitCapShockPct = drawCentered(random) * 0.75 + (refinancingScore - pricingScore) * 0.08;
+    const debtShockPct = drawCentered(random) * 1.1 + (financingScore - allocationScore) * 0.12;
+    const growthShockPct = drawCentered(random) * 1.4 + growthShiftPct * 0.6 + leasingScore * 0.35;
+
+    const shockedOccupancyPct = clamp(baseOccupancyPct + occupancyShockPts, 45, 100);
+    const shockedExitCapPct = clamp(baseCapRatePct + exitCapShockPct, 0.5, 15);
+    const shockedDebtCostPct = clamp(baseDebtCostPct + debtShockPct, 0.5, 15);
+
+    const occupancyFactor = shockedOccupancyPct / Math.max(baseOccupancyPct, 1);
+    const capFactor = baseCapRatePct / shockedExitCapPct;
+    const growthFactor = clamp(1 + growthShockPct / 100, 0.85, 1.2);
+    const debtDrag = clamp(baseDebtCostPct / shockedDebtCostPct, 0.7, 1.25);
+
+    valueOutcomes.push(baselineValue * occupancyFactor * capFactor * growthFactor * (0.9 + debtDrag * 0.1));
+    dscrOutcomes.push(baselineDscr * occupancyFactor * debtDrag);
+  }
+
+  valueOutcomes.sort((left, right) => left - right);
+  dscrOutcomes.sort((left, right) => left - right);
+
+  const percentileDefs = [
+    { pct: 0.1, label: 'P10' },
+    { pct: 0.25, label: 'P25' },
+    { pct: 0.5, label: 'P50' },
+    { pct: 0.75, label: 'P75' },
+    { pct: 0.9, label: 'P90' }
+  ];
+
+  const points: SensitivityPointResult[] = percentileDefs.flatMap((item, index) => {
+    const valueMetric = percentile(valueOutcomes, item.pct);
+    const dscrMetric = percentile(dscrOutcomes, item.pct);
+    return [
+      buildValuePoint({
+        variableKey: 'monte_carlo_value',
+        variableLabel: 'Monte Carlo Value',
+        shockLabel: item.label,
+        shockValue: item.pct * 100,
+        metricValue: valueMetric,
+        baselineValue,
+        sortOrder: index
+      }),
+      buildDscrPoint({
+        variableKey: 'monte_carlo_dscr',
+        variableLabel: 'Monte Carlo DSCR',
+        shockLabel: item.label,
+        shockValue: item.pct * 100,
+        metricValue: dscrMetric,
+        baselineValue: baselineDscr,
+        sortOrder: 100 + index
+      })
+    ];
+  });
+
+  const downsideProbabilityPct = roundMetric(
+    (valueOutcomes.filter((value) => value < baselineValue * 0.9).length / iterations) * 100
+  );
+  const covenantBreachProbabilityPct = roundMetric(
+    (dscrOutcomes.filter((value) => value < 1).length / iterations) * 100
+  );
+
+  return {
+    runType: 'MONTE_CARLO',
+    title: 'Monte Carlo distribution envelope',
+    baselineMetricName: 'Value',
+    baselineMetricValue: roundMetric(baselineValue),
+    summary: {
+      strongestDownsideDriver: 'Value < -10% or DSCR < 1.0x',
+      strongestDownsideDeltaPct: -10,
+      pointCount: points.length,
+      simulations: iterations,
+      downsideProbabilityPct,
+      covenantBreachProbabilityPct
+    },
+    points
+  };
+}
+
 export function buildSensitivityRuns(analysis: AnalysisLike): SensitivityRunResult[] {
   return [
     buildOneWaySensitivityRun(analysis),
     buildBreachPointSensitivityRun(analysis),
     buildTwoWayMatrixSensitivityRun(analysis),
-    buildDebtNoiMatrixSensitivityRun(analysis)
+    buildDebtNoiMatrixSensitivityRun(analysis),
+    buildForecastSensitivityRun(analysis),
+    buildMonteCarloSensitivityRun(analysis)
   ];
 }

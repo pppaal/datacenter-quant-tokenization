@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import type { ExtractedDocumentFactInput } from '@/lib/services/document-extraction';
+import type { ForecastDecisionNarrative } from '@/lib/services/forecast/decision';
 import type { ParsedFinancialStatement } from '@/lib/services/financial-statements';
 import type { UnderwritingAnalysis } from '@/lib/services/valuation-engine';
 
@@ -10,15 +11,25 @@ function getClient() {
   return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 }
 
-export async function generateUnderwritingMemo(analysis: UnderwritingAnalysis) {
+export async function generateUnderwritingMemo(
+  analysis: UnderwritingAnalysis,
+  options?: {
+    forecastDecisionNarrative?: ForecastDecisionNarrative | null;
+  }
+) {
   const assetClassLabel =
     analysis.asset.assetClass === 'DATA_CENTER'
       ? 'data-center'
       : analysis.asset.assetClass.toLowerCase().replace(/_/g, ' ');
+  const forecastNarrative = options?.forecastDecisionNarrative;
+  const forecastSummary = forecastNarrative
+    ? ` Forecast readout: ${forecastNarrative.leadSentence} ${forecastNarrative.constraintSentence} ${forecastNarrative.downsideSentence}`
+    : '';
   const fallback = [
     `${analysis.asset.name} is positioned as a ${assetClassLabel} investment opportunity with a base scenario value of ${analysis.baseCaseValueKrw.toLocaleString()} KRW.`,
     `The investment memo highlights ${analysis.keyRisks[0]?.toLowerCase() ?? 'power and permit diligence'}, while the confidence score of ${analysis.confidenceScore.toFixed(1)} reflects current source coverage and fallback usage.`,
-    `Use this IM as committee material for internal review rather than as a public offering or personalized recommendation.`
+    ...(forecastSummary ? [forecastSummary.trim()] : []),
+    'Use this IM as committee material for internal review rather than as a public offering or personalized recommendation.'
   ].join(' ');
 
   const client = getClient();
@@ -41,7 +52,8 @@ export async function generateUnderwritingMemo(analysis: UnderwritingAnalysis) {
             scenarios: analysis.scenarios,
             confidenceScore: analysis.confidenceScore,
             keyRisks: analysis.keyRisks,
-            dueDiligenceChecklist: analysis.ddChecklist
+            dueDiligenceChecklist: analysis.ddChecklist,
+            forecastDecisionNarrative: forecastNarrative
           })
         }
       ]

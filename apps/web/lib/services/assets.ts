@@ -50,6 +50,12 @@ export const assetBundleInclude = {
     ],
     take: 24
   },
+  realizedOutcomes: {
+    orderBy: {
+      observationDate: 'desc' as const
+    },
+    take: 12
+  },
   officeDetail: true,
   counterparties: {
     orderBy: {

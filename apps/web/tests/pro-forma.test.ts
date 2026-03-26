@@ -13,9 +13,12 @@ test('pro forma serializer aligns lease, debt, and equity years into one stored 
           residualOccupiedKw: 4,
           grossPotentialRevenueKrw: 1000,
           contractedRevenueKrw: 600,
+          renewalRevenueKrw: 120,
           residualRevenueKrw: 300,
           downtimeLossKrw: 50,
+          renewalDowntimeLossKrw: 15,
           rentFreeLossKrw: 50,
+          renewalRentFreeLossKrw: 10,
           fixedRecoveriesKrw: 40,
           siteRecoveriesKrw: 20,
           utilityPassThroughRevenueKrw: 10,
@@ -30,9 +33,12 @@ test('pro forma serializer aligns lease, debt, and equity years into one stored 
           tenantImprovementKrw: 30,
           leasingCommissionKrw: 5,
           tenantCapitalCostKrw: 35,
+          renewalTenantCapitalCostKrw: 12,
           fitOutCostKrw: 35,
           noiKrw: 720,
-          cfadsBeforeDebtKrw: 685
+          cfadsBeforeDebtKrw: 685,
+          activeRenewalLeaseCount: 1,
+          weightedRenewalRatePerKwKrw: 110000
         }
       ],
       annualRevenueKrw: 970,
@@ -40,7 +46,8 @@ test('pro forma serializer aligns lease, debt, and equity years into one stored 
       stabilizedNoiKrw: 720,
       incomeApproachValueKrw: 10000,
       leaseDrivenValueKrw: 11000,
-      terminalValueKrw: 12000
+      terminalValueKrw: 12000,
+      terminalYear: 10
     },
     debtSchedule: {
       years: [
@@ -83,10 +90,13 @@ test('pro forma serializer aligns lease, debt, and equity years into one stored 
   });
 
   assert.equal(proForma.summary.annualRevenueKrw, 970);
+  assert.equal(proForma.summary.terminalYear, 10);
   assert.equal(proForma.summary.endingDebtBalanceKrw, 185);
   assert.equal(proForma.years[0]?.debtServiceKrw, 25);
   assert.equal(proForma.years[0]?.propertyTaxKrw, 11);
   assert.equal(proForma.years[0]?.tenantCapitalCostKrw, 35);
+  assert.equal(proForma.years[0]?.renewalRevenueKrw, 120);
+  assert.equal(proForma.years[0]?.weightedRenewalRatePerKwKrw, 110000);
 });
 
 test('pro forma reader returns null for non-pro-forma assumptions and parses stored shape', () => {
@@ -100,6 +110,7 @@ test('pro forma reader returns null for non-pro-forma assumptions and parses sto
           annualOpexKrw: 2,
           stabilizedNoiKrw: 3,
           terminalValueKrw: 4,
+          terminalYear: 10,
           reserveRequirementKrw: 5,
           endingDebtBalanceKrw: 6,
           grossExitValueKrw: 7,

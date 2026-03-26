@@ -1,5 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { MacroTransmissionMap } from '@/components/valuation/macro-transmission-map';
 import type { MacroInterpretation } from '@/lib/services/macro/regime';
 import { formatDate, formatNumber, formatPercent } from '@/lib/utils';
 
@@ -165,6 +166,9 @@ export function MacroRegimePanel({ macroRegime }: { macroRegime: MacroInterpreta
               </div>
             </div>
           ))}
+        </div>
+        <div className="mt-4">
+          <MacroTransmissionMap impacts={macroRegime.impacts} />
         </div>
         <div className="mt-4 rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
           <div className="fine-print">Transmission Paths</div>
