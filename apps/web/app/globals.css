@@ -56,6 +56,10 @@ a {
   text-decoration: none;
 }
 
+.print-only {
+  display: none !important;
+}
+
 ::selection {
   background: rgba(34, 211, 238, 0.26);
 }
@@ -179,6 +183,10 @@ a {
     display: none !important;
   }
 
+  .print-only {
+    display: block !important;
+  }
+
   .panel,
   .surface,
   .metric-card,
@@ -209,5 +217,118 @@ a {
 
   .print-break {
     break-before: page;
+  }
+
+  .report-cover-page {
+    break-after: page;
+    page-break-after: always;
+  }
+
+  .report-teaser-sheet {
+    gap: 0.8rem !important;
+    padding-bottom: 0 !important;
+  }
+
+  .report-teaser-sheet .panel,
+  .report-teaser-sheet .surface,
+  .report-teaser-sheet .metric-card {
+    border-radius: 14px !important;
+  }
+
+  .report-teaser-hero {
+    padding: 1rem !important;
+  }
+
+  .report-teaser-summary,
+  .report-teaser-block {
+    gap: 0.75rem !important;
+  }
+
+  .report-teaser-sheet h1 {
+    font-size: 2rem !important;
+    line-height: 1 !important;
+  }
+
+  .report-teaser-sheet h2 {
+    font-size: 1.1rem !important;
+    line-height: 1.25 !important;
+  }
+
+  .report-teaser-sheet p,
+  .report-teaser-sheet li {
+    line-height: 1.45 !important;
+  }
+
+  .report-teaser-doc-summary {
+    display: none !important;
+  }
+
+  .report-teaser-footer {
+    margin-top: 0.25rem !important;
+    background: #fff !important;
+    border: 1px solid rgba(17, 24, 39, 0.12) !important;
+  }
+
+  .report-ic-sheet,
+  .report-risk-sheet,
+  .report-dd-sheet {
+    gap: 0.9rem !important;
+    padding-bottom: 0 !important;
+  }
+
+  .report-ic-sheet .panel,
+  .report-ic-sheet .surface,
+  .report-ic-sheet .metric-card,
+  .report-risk-sheet .panel,
+  .report-risk-sheet .surface,
+  .report-risk-sheet .metric-card,
+  .report-dd-sheet .panel,
+  .report-dd-sheet .surface,
+  .report-dd-sheet .metric-card {
+    border-radius: 14px !important;
+  }
+
+  .report-ic-hero,
+  .report-risk-hero,
+  .report-dd-hero {
+    padding: 1rem !important;
+  }
+
+  .report-ic-sheet h1,
+  .report-risk-sheet h1,
+  .report-dd-sheet h1 {
+    font-size: 2rem !important;
+    line-height: 1 !important;
+  }
+
+  .report-ic-sheet h2,
+  .report-risk-sheet h2,
+  .report-dd-sheet h2 {
+    font-size: 1.1rem !important;
+    line-height: 1.25 !important;
+  }
+
+  .report-ic-sheet p,
+  .report-ic-sheet li,
+  .report-risk-sheet p,
+  .report-risk-sheet li,
+  .report-dd-sheet p,
+  .report-dd-sheet li {
+    line-height: 1.45 !important;
+  }
+
+  .report-ic-sheet section,
+  .report-risk-sheet section,
+  .report-dd-sheet section {
+    break-inside: avoid;
+  }
+
+  .report-export-appendix {
+    break-before: page;
+    page-break-before: always;
+  }
+
+  .report-export-doc-summary {
+    display: none !important;
   }
 }
