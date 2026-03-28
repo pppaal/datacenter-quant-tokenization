@@ -17,6 +17,56 @@ npx prisma migrate deploy
 
 If local `prisma migrate dev` is blocked by the current Windows/engine setup, the checked-in SQL migration under `prisma/migrations/20260325133000_add_macro_profile_overrides` is the source of truth for deployment.
 
+## Deal Workflow
+
+The admin surface now includes a production-minded deal execution workflow at `/admin/deals`.
+
+Pipeline state machine:
+
+- `sourced`
+- `screened`
+- `nda`
+- `loi`
+- `dd`
+- `ic`
+- `closing`
+- `asset_management`
+
+Core entities added for execution work:
+
+- `Deal`
+- `Counterparty` deal linkage
+- `Task`
+- `RiskFlag`
+- `ActivityLog`
+
+What the workflow supports:
+
+- deal list with stage, next action, open tasks, and open risks
+- active / actionable / archived views on the deal list
+- deal detail page for one-operator execution
+- stage updates with activity logging
+- stage-specific required checklist with seedable required tasks
+- structured DD request tracker with counterparty, due date, and received / waived status
+- next action and close date tracking
+- overdue / due-soon reminder cues for solo execution
+- broker / seller / buyer notes
+- counterparty tracking
+- task queue
+- risk flag queue
+- restore from archive when a process needs to be reopened
+- combined deal activity + valuation timeline on the detail page
+- archive and close-out actions with final summary logging
+
+Required migration for the deal execution workflow:
+
+```bash
+npm run prisma:generate
+npx prisma migrate deploy
+```
+
+The additive SQL migration is checked in at `prisma/migrations/20260326153000_add_deal_execution_workflow`.
+
 ## Scheduled Source Refresh
 
 Near-real-time NASA overlays are now designed to be refreshed by a protected server route:

@@ -109,6 +109,66 @@ enum AmortizationProfile {
   BULLET
 }
 
+enum DealStage {
+  SOURCED
+  SCREENED
+  NDA
+  LOI
+  DD
+  IC
+  CLOSING
+  ASSET_MANAGEMENT
+}
+
+enum TaskStatus {
+  OPEN
+  IN_PROGRESS
+  BLOCKED
+  DONE
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum RiskSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ActivityType {
+  GENERAL
+  NOTE
+  STAGE_CHANGED
+  NEXT_ACTION
+  TASK_CREATED
+  TASK_UPDATED
+  RISK_CREATED
+  RISK_UPDATED
+  COUNTERPARTY_ADDED
+}
+
+enum DealRequestStatus {
+  REQUESTED
+  RECEIVED
+  WAIVED
+}
+
+enum DealBidStatus {
+  DRAFT
+  SUBMITTED
+  COUNTERED
+  BAFO
+  ACCEPTED
+  DECLINED
+  WITHDRAWN
+}
+
 model User {
   id            String            @id @default(cuid())
   name          String
@@ -167,6 +227,7 @@ model Asset {
   valuations            ValuationRun[]
   documents             Document[]
   inquiries             Inquiry[]
+  deals                 Deal[]
   overrides             SourceOverride[]
   readinessProject      ReadinessProject?
   comparableSet         ComparableSet?
@@ -619,6 +680,7 @@ model Document {
   asset             Asset        @relation(fields: [assetId], references: [id], onDelete: Cascade)
   versions          DocumentVersion[]
   onchainRecords    OnchainRecord[]
+  dealRequests      DealDocumentRequest[]
 }
 
 model DocumentVersion {
@@ -649,17 +711,170 @@ model DocumentVersion {
 
 model Counterparty {
   id                  String               @id @default(cuid())
-  assetId             String
+  assetId             String?
+  dealId              String?
   name                String
   role                String
   shortName           String?
+  company             String?
+  email               String?
+  phone               String?
+  notes               String?
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
-  asset               Asset                @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  asset               Asset?               @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  deal                Deal?                @relation(fields: [dealId], references: [id], onDelete: Cascade)
   financialStatements FinancialStatement[]
   creditAssessments   CreditAssessment[]
+  activityLogs        ActivityLog[]
+  documentRequests    DealDocumentRequest[]
+  bidRevisions        DealBidRevision[]
 
   @@index([assetId, role, createdAt])
+  @@index([dealId, role, createdAt])
+}
+
+model Deal {
+  id               String        @id @default(cuid())
+  dealCode         String        @unique
+  slug             String        @unique
+  title            String
+  stage            DealStage     @default(SOURCED)
+  market           String        @default("KR")
+  city             String?
+  country          String?
+  assetClass       AssetClass?
+  strategy         String?
+  headline         String?
+  nextAction       String?
+  nextActionAt     DateTime?
+  targetCloseDate  DateTime?
+  sellerGuidanceKrw Float?
+  bidGuidanceKrw   Float?
+  purchasePriceKrw Float?
+  statusLabel      String        @default("ACTIVE")
+  archivedAt       DateTime?
+  closedAt         DateTime?
+  closeOutcome     String?
+  closeSummary     String?
+  dealLead         String?
+  assetId          String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  asset            Asset?        @relation(fields: [assetId], references: [id], onDelete: SetNull)
+  counterparties   Counterparty[]
+  tasks            Task[]
+  documentRequests DealDocumentRequest[]
+  bidRevisions     DealBidRevision[]
+  riskFlags        RiskFlag[]
+  activityLogs     ActivityLog[]
+
+  @@index([stage, targetCloseDate])
+  @@index([market, assetClass, stage])
+}
+
+model DealDocumentRequest {
+  id             String            @id @default(cuid())
+  dealId         String
+  counterpartyId String?
+  documentId     String?
+  title          String
+  category       String?
+  status         DealRequestStatus @default(REQUESTED)
+  priority       TaskPriority      @default(MEDIUM)
+  dueDate        DateTime?
+  requestedAt    DateTime          @default(now())
+  receivedAt     DateTime?
+  notes          String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  deal           Deal              @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  counterparty   Counterparty?     @relation(fields: [counterpartyId], references: [id], onDelete: SetNull)
+  document       Document?         @relation(fields: [documentId], references: [id], onDelete: SetNull)
+
+  @@index([dealId, status, dueDate])
+  @@index([counterpartyId, createdAt])
+  @@index([documentId, createdAt])
+}
+
+model DealBidRevision {
+  id                String        @id @default(cuid())
+  dealId            String
+  counterpartyId    String?
+  label             String
+  status            DealBidStatus @default(DRAFT)
+  bidPriceKrw       Float
+  depositKrw        Float?
+  exclusivityDays   Int?
+  diligenceDays     Int?
+  closeTimelineDays Int?
+  submittedAt       DateTime?
+  notes             String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  deal              Deal          @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  counterparty      Counterparty? @relation(fields: [counterpartyId], references: [id], onDelete: SetNull)
+
+  @@index([dealId, submittedAt, createdAt])
+  @@index([dealId, status, updatedAt])
+  @@index([counterpartyId, createdAt])
+}
+
+model Task {
+  id           String       @id @default(cuid())
+  dealId        String
+  title        String
+  description  String?
+  status       TaskStatus   @default(OPEN)
+  priority     TaskPriority @default(MEDIUM)
+  ownerLabel   String?
+  checklistKey String?
+  isRequired   Boolean      @default(false)
+  dueDate      DateTime?
+  completedAt  DateTime?
+  sortOrder    Int          @default(0)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  deal         Deal         @relation(fields: [dealId], references: [id], onDelete: Cascade)
+
+  @@index([dealId, status, dueDate])
+  @@index([dealId, priority, createdAt])
+}
+
+model RiskFlag {
+  id          String       @id @default(cuid())
+  dealId       String
+  title       String
+  detail      String?
+  severity    RiskSeverity @default(MEDIUM)
+  statusLabel String       @default("OPEN")
+  isResolved  Boolean      @default(false)
+  resolvedAt  DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  deal        Deal         @relation(fields: [dealId], references: [id], onDelete: Cascade)
+
+  @@index([dealId, isResolved, severity])
+}
+
+model ActivityLog {
+  id             String       @id @default(cuid())
+  dealId          String
+  counterpartyId  String?
+  activityType   ActivityType @default(GENERAL)
+  title          String
+  body           String?
+  stageFrom      DealStage?
+  stageTo        DealStage?
+  metadata       Json?
+  createdByLabel String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  deal           Deal         @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  counterparty   Counterparty? @relation(fields: [counterpartyId], references: [id], onDelete: SetNull)
+
+  @@index([dealId, createdAt])
+  @@index([counterpartyId, createdAt])
 }
 
 model FinancialStatement {

@@ -1,0 +1,141 @@
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { DealDataCoveragePanel } from '@/components/admin/deal-data-coverage-panel';
+import { DealOperatorConsole } from '@/components/admin/deal-operator-console';
+import { DealTimelinePanel } from '@/components/admin/deal-timeline-panel';
+import { formatDealStage, getDealStageTone } from '@/lib/deals/config';
+import { buildDealDataCoverage, buildDealExecutionSnapshot, buildDealTimeline, getDealById } from '@/lib/services/deals';
+import { formatCurrency, formatDate } from '@/lib/utils';
+
+export const dynamic = 'force-dynamic';
+
+type Props = {
+  params: Promise<{
+    id: string;
+  }>;
+};
+
+export default async function DealDetailPage({ params }: Props) {
+  const { id } = await params;
+  const deal = await getDealById(id);
+
+  if (!deal) {
+    notFound();
+  }
+
+  const snapshot = buildDealExecutionSnapshot(deal);
+  if (!snapshot) {
+    notFound();
+  }
+  const latestValuation = deal.asset?.valuations[0] ?? null;
+  const latestBid = deal.bidRevisions[0] ?? null;
+  const timeline = buildDealTimeline(deal);
+  const coverage = buildDealDataCoverage(deal, snapshot);
+
+  return (
+    <div className="space-y-8">
+      <Card className="hero-mesh">
+        <div className="flex flex-wrap items-start justify-between gap-6">
+          <div className="max-w-4xl">
+            <div className="flex flex-wrap items-center gap-3">
+              <Badge tone={getDealStageTone(deal.stage)}>{formatDealStage(deal.stage)}</Badge>
+              <Badge>{deal.dealCode}</Badge>
+              {deal.asset ? <Badge>{deal.asset.assetCode}</Badge> : null}
+            </div>
+            <h2 className="mt-5 text-4xl font-semibold tracking-[-0.04em] text-white">{deal.title}</h2>
+            <p className="mt-4 text-sm leading-7 text-slate-300">
+              {deal.headline ?? 'No headline yet. Use the operator console below to set the live process readout.'}
+            </p>
+            <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+              <div className="metric-card">
+                <div className="fine-print">Next Action</div>
+                <div className="mt-3 text-base font-semibold text-white">{deal.nextActionAt ? formatDate(deal.nextActionAt) : 'No date'}</div>
+                <p className="mt-2 text-sm text-slate-400">{deal.nextAction ?? 'No next action set yet.'}</p>
+              </div>
+              <div className="metric-card">
+                <div className="fine-print">Target Close</div>
+                <div className="mt-3 text-base font-semibold text-white">{formatDate(deal.targetCloseDate)}</div>
+                <p className="mt-2 text-sm text-slate-400">{deal.strategy ?? 'Strategy not set'}</p>
+              </div>
+              <div className="metric-card">
+                <div className="fine-print">Seller Guidance</div>
+                <div className="mt-3 text-base font-semibold text-white">{formatCurrency(deal.sellerGuidanceKrw)}</div>
+                <p className="mt-2 text-sm text-slate-400">Bid {formatCurrency(deal.bidGuidanceKrw)}</p>
+              </div>
+              <div className="metric-card">
+                <div className="fine-print">Latest Bid Revision</div>
+                <div className="mt-3 text-base font-semibold text-white">
+                  {latestBid ? formatCurrency(latestBid.bidPriceKrw) : 'No bid yet'}
+                </div>
+                <p className="mt-2 text-sm text-slate-400">
+                  {latestBid ? `${latestBid.label} / ${latestBid.status.toLowerCase()}` : 'Log negotiation terms once price discovery starts.'}
+                </p>
+              </div>
+              <div className="metric-card">
+                <div className="fine-print">Linked Asset</div>
+                <div className="mt-3 text-base font-semibold text-white">{deal.asset?.name ?? 'Standalone deal'}</div>
+                <p className="mt-2 text-sm text-slate-400">
+                  {deal.city ?? deal.asset?.address?.city ?? deal.market} / {deal.assetClass?.replaceAll('_', ' ') ?? 'Class pending'}
+                </p>
+              </div>
+              <div className="metric-card">
+                <div className="fine-print">Latest Valuation</div>
+                <div className="mt-3 text-base font-semibold text-white">
+                  {latestValuation ? formatCurrency(latestValuation.baseCaseValueKrw) : 'No run yet'}
+                </div>
+                <p className="mt-2 text-sm text-slate-400">
+                  {latestValuation ? `Run ${formatDate(latestValuation.createdAt)}` : 'Link a valuation run to commercial decisions.'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Link href="/admin/deals">
+              <Button variant="secondary">Back To Deals</Button>
+            </Link>
+            {deal.asset ? (
+              <Link href={`/admin/assets/${deal.asset.id}`}>
+                <Button variant="ghost">Open Linked Asset</Button>
+              </Link>
+            ) : null}
+            {latestValuation ? (
+              <Link href={`/admin/valuations/${latestValuation.id}`}>
+                <Button variant="ghost">Open Latest Valuation</Button>
+              </Link>
+            ) : null}
+          </div>
+        </div>
+      </Card>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="metric-card">
+          <div className="fine-print">Checklist Completion</div>
+          <div className="mt-3 text-3xl font-semibold text-white">{snapshot.checklistCompletionPct.toFixed(0)}%</div>
+          <p className="mt-2 text-sm text-slate-400">
+            {snapshot.completedChecklistCount} of {snapshot.requiredChecklistCount} stage requirements are complete.
+          </p>
+        </div>
+        <div className="metric-card">
+          <div className="fine-print">Overdue Tasks</div>
+          <div className="mt-3 text-3xl font-semibold text-white">{snapshot.overdueTaskCount}</div>
+          <p className="mt-2 text-sm text-slate-400">{snapshot.reminderSummary}</p>
+        </div>
+        <div className="metric-card">
+          <div className="fine-print">Due Soon</div>
+          <div className="mt-3 text-3xl font-semibold text-white">{snapshot.dueSoonTaskCount}</div>
+          <p className="mt-2 text-sm text-slate-400">Tasks due inside the next 72 hours.</p>
+        </div>
+      </div>
+
+      <DealOperatorConsole deal={deal} snapshot={snapshot} />
+
+      <DealDataCoveragePanel coverage={coverage} />
+
+      <DealTimelinePanel events={timeline} />
+    </div>
+  );
+}

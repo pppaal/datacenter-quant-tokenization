@@ -185,6 +185,12 @@ export default async function AssetDetailPage({
               <Button className="w-full">Open Latest IM Detail</Button>
             </Link>
           ) : null}
+
+          <Link href={`/admin/assets/${asset.id}/reports`}>
+            <Button className="w-full" variant="ghost">
+              Reports & Exports
+            </Button>
+          </Link>
         </Card>
       </div>
 
@@ -673,6 +679,8 @@ export default async function AssetDetailPage({
           <LeaseExpiryLadder
             leases={asset.leases}
             leaseBasePath={`/admin/assets/${asset.id}`}
+            rolloverBasePath={`/admin/assets/${asset.id}`}
+            selectedRolloverYear={selectedRolloverYear}
             displayCurrency={displayCurrency}
             fxRateToKrw={fxRateToKrw}
           />

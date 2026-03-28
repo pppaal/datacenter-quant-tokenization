@@ -81,9 +81,14 @@ test('credit overlay reduces confidence and adds diligence when a counterparty s
         counterparty: {
           id: 'cp_1',
           assetId: 'asset_1',
+          dealId: null,
           name: 'Han River Sponsor',
           role: 'SPONSOR',
           shortName: null,
+          company: null,
+          email: null,
+          phone: null,
+          notes: null,
           createdAt: now,
           updatedAt: now
         },

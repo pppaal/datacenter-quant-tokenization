@@ -14,11 +14,15 @@ function formatMaybe(value: number | null, digits = 1) {
 export function LeaseExpiryLadder({
   leases,
   leaseBasePath,
+  rolloverBasePath,
+  selectedRolloverYear,
   displayCurrency = 'KRW',
   fxRateToKrw
 }: {
   leases: BundleLease[];
   leaseBasePath?: string;
+  rolloverBasePath?: string;
+  selectedRolloverYear?: number | null;
   displayCurrency?: SupportedCurrency;
   fxRateToKrw?: number | null;
 }) {
@@ -86,7 +90,22 @@ export function LeaseExpiryLadder({
           <tbody>
             {ladder.rows.map((row) => (
               <tr key={row.expiryYear} className="rounded-2xl border border-white/10 bg-white/[0.03] text-slate-200">
-                <td className="px-3 py-3 font-medium text-white">Year {row.expiryYear}</td>
+                <td className="px-3 py-3 font-medium text-white">
+                  {rolloverBasePath ? (
+                    <Link
+                      href={`${rolloverBasePath}?rolloverYear=${row.expiryYear}#lease-rollover-drilldown`}
+                      className={`rounded-full border px-3 py-1 text-xs uppercase tracking-[0.16em] transition ${
+                        selectedRolloverYear === row.expiryYear
+                          ? 'border-amber-300/40 bg-amber-200/15 text-white'
+                          : 'border-white/10 bg-slate-950/40 text-slate-200 hover:border-amber-300/30 hover:text-white'
+                      }`}
+                    >
+                      Year {row.expiryYear}
+                    </Link>
+                  ) : (
+                    `Year ${row.expiryYear}`
+                  )}
+                </td>
                 <td className="px-3 py-3 text-right">{formatNumber(row.expiringKw, 0)} kW</td>
                 <td className="px-3 py-3 text-right">{formatNumber(row.leaseCount, 0)}</td>
                 <td className="px-3 py-3 text-right">{formatMaybe(row.weightedRenewProbabilityPct)}%</td>
@@ -99,9 +118,20 @@ export function LeaseExpiryLadder({
                     : 'N/A'}
                 </td>
                 <td className="px-3 py-3 text-right">
-                  {row.firstRenewalStartYear !== null && row.lastModeledRenewalEndYear !== null
-                    ? `Y${row.firstRenewalStartYear} - Y${row.lastModeledRenewalEndYear}`
-                    : 'N/A'}
+                  {row.firstRenewalStartYear !== null && row.lastModeledRenewalEndYear !== null ? (
+                    rolloverBasePath ? (
+                      <Link
+                        href={`${rolloverBasePath}?rolloverYear=${row.expiryYear}#lease-rollover-drilldown`}
+                        className="rounded-full border border-amber-400/15 bg-amber-500/[0.06] px-3 py-1 text-xs text-amber-50/85 transition hover:border-amber-300/30 hover:text-white"
+                      >
+                        {`Y${row.firstRenewalStartYear} - Y${row.lastModeledRenewalEndYear}`}
+                      </Link>
+                    ) : (
+                      `Y${row.firstRenewalStartYear} - Y${row.lastModeledRenewalEndYear}`
+                    )
+                  ) : (
+                    'N/A'
+                  )}
                 </td>
               </tr>
             ))}

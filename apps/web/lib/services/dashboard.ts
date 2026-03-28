@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import { DealStage, RiskSeverity, TaskPriority, type PrismaClient } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { buildForecastModelStack } from '@/lib/services/forecast/model-stack';
 import { buildForecastEnsemblePolicy } from '@/lib/services/forecast/ensemble';
@@ -194,6 +194,204 @@ export function buildCounterpartyRiskSummary(assessments: CounterpartyRiskSource
   };
 }
 
+export function buildDealPipelineSummary(
+  deals: Array<{
+    id: string;
+    dealCode: string;
+    title: string;
+    stage: DealStage;
+    nextAction: string | null;
+    targetCloseDate: Date | null;
+    updatedAt: Date;
+    tasks: Array<{
+      status: string;
+      priority: string;
+    }>;
+    riskFlags: Array<{
+      isResolved: boolean;
+      severity: RiskSeverity;
+    }>;
+    counterparties: Array<{
+      role: string;
+    }>;
+    asset: {
+      valuations: Array<{
+        id: string;
+        baseCaseValueKrw: number;
+        confidenceScore: number;
+        createdAt: Date;
+      }>;
+    } | null;
+  }>
+) {
+  const byStage = Object.values(DealStage).map((stage) => ({
+    stage,
+    count: deals.filter((deal) => deal.stage === stage).length
+  }));
+
+  const watchlist = [...deals]
+    .map((deal) => {
+      const urgentTaskCount = deal.tasks.filter(
+        (task) =>
+          task.status !== 'DONE' &&
+          (task.priority === TaskPriority.URGENT || task.priority === TaskPriority.HIGH)
+      ).length;
+      const openRiskCount = deal.riskFlags.filter((risk) => !risk.isResolved).length;
+      const criticalRiskCount = deal.riskFlags.filter(
+        (risk) => !risk.isResolved && risk.severity === RiskSeverity.CRITICAL
+      ).length;
+
+      return {
+        ...deal,
+        urgentTaskCount,
+        openRiskCount,
+        criticalRiskCount,
+        latestCounterpartyRoles: [...new Set(deal.counterparties.map((counterparty) => counterparty.role))].slice(0, 3),
+        latestValuation: deal.asset?.valuations[0] ?? null
+      };
+    })
+    .sort((left, right) => {
+      const leftScore = left.criticalRiskCount * 5 + left.openRiskCount * 2 + left.urgentTaskCount;
+      const rightScore = right.criticalRiskCount * 5 + right.openRiskCount * 2 + right.urgentTaskCount;
+      return rightScore - leftScore || left.updatedAt.getTime() - right.updatedAt.getTime();
+    })
+    .slice(0, 5);
+
+  return {
+    totalDeals: deals.length,
+    urgentDeals: deals.filter((deal) =>
+      deal.tasks.some(
+        (task) =>
+          task.status !== 'DONE' && (task.priority === TaskPriority.URGENT || task.priority === TaskPriority.HIGH)
+      )
+    ).length,
+    blockedDeals: deals.filter((deal) => deal.riskFlags.some((risk) => !risk.isResolved)).length,
+    closingDeals: deals.filter((deal) => deal.stage === DealStage.CLOSING).length,
+    byStage,
+    watchlist
+  };
+}
+
+export function buildDealReminderSummary(
+  deals: Array<{
+    id: string;
+    dealCode: string;
+    title: string;
+    stage: DealStage;
+    statusLabel: string;
+    archivedAt: Date | null;
+    updatedAt: Date;
+    nextAction: string | null;
+    nextActionAt: Date | null;
+    tasks: Array<{
+      status: string;
+      priority: string;
+      dueDate: Date | null;
+      checklistKey: string | null;
+      isRequired: boolean;
+    }>;
+    counterparties: Array<{
+      role: string;
+    }>;
+  }>
+) {
+  const now = Date.now();
+  const normalized = deals.map((deal) => {
+    const openTasks = deal.tasks.filter((task) => task.status !== 'DONE');
+    const datedOpenTasks = openTasks
+      .filter((task) => task.dueDate != null)
+      .sort((left, right) => (left.dueDate?.getTime() ?? Number.MAX_SAFE_INTEGER) - (right.dueDate?.getTime() ?? Number.MAX_SAFE_INTEGER));
+    const overdueTaskCount = openTasks.filter((task) => task.dueDate && task.dueDate.getTime() < now).length;
+    const dueSoonTaskCount = openTasks.filter((task) => {
+      if (!task.dueDate) return false;
+      const due = task.dueDate.getTime();
+      return due >= now && due <= now + 1000 * 60 * 60 * 24 * 3;
+    }).length;
+    const requiredChecklistCount = deal.tasks.filter((task) => task.isRequired || task.checklistKey != null).length;
+    const completedChecklistCount = deal.tasks.filter(
+      (task) => (task.isRequired || task.checklistKey != null) && task.status === 'DONE'
+    ).length;
+    const checklistCompletionPct =
+      requiredChecklistCount > 0 ? (completedChecklistCount / requiredChecklistCount) * 100 : 100;
+    const nextDueAt = datedOpenTasks[0]?.dueDate ?? deal.nextActionAt ?? null;
+    const isStale = deal.updatedAt.getTime() <= now - 1000 * 60 * 60 * 24 * 7;
+
+    const reminder =
+      overdueTaskCount > 0
+        ? `${overdueTaskCount} overdue task${overdueTaskCount === 1 ? '' : 's'} need immediate follow-up.`
+        : dueSoonTaskCount > 0
+          ? `${dueSoonTaskCount} task${dueSoonTaskCount === 1 ? '' : 's'} due within 72 hours.`
+          : !deal.nextAction
+            ? 'No next action is set for this deal.'
+            : isStale
+              ? 'No material update logged in the last 7 days.'
+            : checklistCompletionPct < 100
+              ? 'Current stage checklist is incomplete.'
+              : 'Queue looks current.';
+
+    return {
+      ...deal,
+      overdueTaskCount,
+      dueSoonTaskCount,
+      nextDueAt,
+      isStale,
+      checklistCompletionPct,
+      reminder
+    };
+  });
+
+  return {
+    overdueDeals: normalized.filter((deal) => deal.overdueTaskCount > 0).length,
+    dueSoonDeals: normalized.filter((deal) => deal.dueSoonTaskCount > 0).length,
+    staleDeals: normalized.filter((deal) => deal.isStale && deal.statusLabel !== 'ARCHIVED').length,
+    missingNextActionDeals: normalized.filter((deal) => !deal.nextAction && deal.statusLabel !== 'ARCHIVED').length,
+    archivedDeals: normalized.filter((deal) => deal.statusLabel === 'ARCHIVED' || deal.archivedAt != null).length,
+    reminders: normalized
+      .filter(
+        (deal) =>
+          deal.statusLabel !== 'ARCHIVED' &&
+          (deal.overdueTaskCount > 0 ||
+            deal.dueSoonTaskCount > 0 ||
+            !deal.nextAction ||
+            deal.isStale ||
+            deal.checklistCompletionPct < 100)
+      )
+      .sort((left, right) => {
+        const leftScore =
+          left.overdueTaskCount * 5 +
+          left.dueSoonTaskCount * 3 +
+          (left.nextAction ? 0 : 2) +
+          (left.isStale ? 1.5 : 0) +
+          (100 - left.checklistCompletionPct) / 20;
+        const rightScore =
+          right.overdueTaskCount * 5 +
+          right.dueSoonTaskCount * 3 +
+          (right.nextAction ? 0 : 2) +
+          (right.isStale ? 1.5 : 0) +
+          (100 - right.checklistCompletionPct) / 20;
+        const scoreDelta = rightScore - leftScore;
+        if (scoreDelta !== 0) return scoreDelta;
+        const leftDue = left.nextDueAt?.getTime() ?? Number.MAX_SAFE_INTEGER;
+        const rightDue = right.nextDueAt?.getTime() ?? Number.MAX_SAFE_INTEGER;
+        return leftDue - rightDue;
+      })
+      .slice(0, 6)
+      .map((deal) => ({
+        id: deal.id,
+        dealCode: deal.dealCode,
+        title: deal.title,
+        stage: deal.stage,
+        reminder: deal.reminder,
+        nextActionAt: deal.nextActionAt,
+        nextDueAt: deal.nextDueAt,
+        overdueTaskCount: deal.overdueTaskCount,
+        dueSoonTaskCount: deal.dueSoonTaskCount,
+        isStale: deal.isStale,
+        checklistCompletionPct: deal.checklistCompletionPct
+      }))
+  };
+}
+
 export async function getDashboardSummary(db: PrismaClient = prisma) {
   const [assetCount, underReviewCount, documentCount, valuationCount] = await Promise.all([
     db.asset.count(),
@@ -246,7 +444,7 @@ export async function getSampleReport(db: PrismaClient = prisma) {
 }
 
 export async function getAdminData(db: PrismaClient = prisma) {
-  const [summary, assets, valuations, documents, inquiries, readiness, sourceHealth, riskRuns, creditAssessments, macroFactors, realizedOutcomes] =
+  const [summary, assets, valuations, documents, inquiries, readiness, sourceHealth, riskRuns, creditAssessments, macroFactors, realizedOutcomes, deals] =
     await Promise.all([
     getDashboardSummary(db),
     listAssets(db),
@@ -329,6 +527,59 @@ export async function getAdminData(db: PrismaClient = prisma) {
       orderBy: {
         observationDate: 'desc'
       }
+    }),
+    db.deal.findMany({
+      select: {
+        id: true,
+        dealCode: true,
+        title: true,
+        stage: true,
+        statusLabel: true,
+        archivedAt: true,
+        nextAction: true,
+        nextActionAt: true,
+        targetCloseDate: true,
+        updatedAt: true,
+        tasks: {
+          select: {
+            status: true,
+            priority: true,
+            dueDate: true,
+            checklistKey: true,
+            isRequired: true
+          }
+        },
+        riskFlags: {
+          select: {
+            isResolved: true,
+            severity: true
+          }
+        },
+        counterparties: {
+          select: {
+            role: true
+          }
+        },
+        asset: {
+          select: {
+            valuations: {
+              select: {
+                id: true,
+                baseCaseValueKrw: true,
+                confidenceScore: true,
+                createdAt: true
+              },
+              orderBy: {
+                createdAt: 'desc'
+              },
+              take: 1
+            }
+          }
+        }
+      },
+      orderBy: {
+        updatedAt: 'desc'
+      }
     })
   ]);
 
@@ -398,6 +649,8 @@ export async function getAdminData(db: PrismaClient = prisma) {
     inquiries,
     readiness,
     sourceHealth,
+    dealPipeline: buildDealPipelineSummary(deals),
+    dealReminders: buildDealReminderSummary(deals),
     portfolioRisk: buildPortfolioRiskSummary(riskRuns),
     counterpartyRisk: buildCounterpartyRiskSummary(creditAssessments),
     quantSignals,

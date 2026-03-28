@@ -11,10 +11,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               Nexus Seoul
             </Link>
             <h1 className="mt-3 text-4xl font-semibold tracking-[-0.04em] text-white">
-              Institutional Underwriting Console
+              Underwriting And Deal Execution Console
             </h1>
             <p className="mt-3 text-sm leading-7 text-slate-400">
-              Manage intake, source enrichment, valuations, diligence documents, and review readiness inside one Next.js operating surface.
+              Manage sourcing, screening, diligence, valuations, counterparties, and closing workflow inside one Next.js operating surface.
             </p>
           </div>
           <div className="grid gap-2 text-sm text-slate-300 sm:grid-cols-3">

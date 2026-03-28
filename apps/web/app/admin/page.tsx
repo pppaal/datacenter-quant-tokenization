@@ -4,6 +4,8 @@ import { formatCurrencyFromKrwAtRate, resolveDisplayCurrency } from '@/lib/finan
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { DealPipelinePanel } from '@/components/admin/deal-pipeline-panel';
+import { DealReminderPanel } from '@/components/admin/deal-reminder-panel';
 import { ForecastModelStackPanel } from '@/components/admin/forecast-model-stack-panel';
 import { ForecastEnsemblePanel } from '@/components/admin/forecast-ensemble-panel';
 import { ForecastRealizedBacktestPanel } from '@/components/admin/forecast-realized-backtest-panel';
@@ -27,6 +29,8 @@ export default async function AdminOverviewPage() {
     inquiries,
     readiness,
     sourceHealth,
+    dealPipeline,
+    dealReminders,
     portfolioRisk,
     counterpartyRisk,
     quantSignals,
@@ -94,6 +98,14 @@ export default async function AdminOverviewPage() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
+        <div className="xl:col-span-2">
+          <DealReminderPanel summary={dealReminders} />
+        </div>
+
+        <div className="xl:col-span-2">
+          <DealPipelinePanel summary={dealPipeline} />
+        </div>
+
         <div className="xl:col-span-2">
           <MacroMonitorPanel monitor={macroMonitor} />
         </div>
