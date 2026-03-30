@@ -3,11 +3,21 @@ import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { DealClosingReadinessPanel } from '@/components/admin/deal-closing-readiness-panel';
+import { DealCloseProbabilityHistoryPanel } from '@/components/admin/deal-close-probability-history-panel';
 import { DealDataCoveragePanel } from '@/components/admin/deal-data-coverage-panel';
 import { DealOperatorConsole } from '@/components/admin/deal-operator-console';
 import { DealTimelinePanel } from '@/components/admin/deal-timeline-panel';
 import { formatDealStage, getDealStageTone } from '@/lib/deals/config';
-import { buildDealDataCoverage, buildDealExecutionSnapshot, buildDealTimeline, getDealById } from '@/lib/services/deals';
+import {
+  buildDealCloseProbability,
+  buildDealCloseProbabilityHistory,
+  buildDealClosingReadiness,
+  buildDealDataCoverage,
+  buildDealExecutionSnapshot,
+  buildDealTimeline,
+  getDealById
+} from '@/lib/services/deals';
 import { formatCurrency, formatDate } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
@@ -32,8 +42,16 @@ export default async function DealDetailPage({ params }: Props) {
   }
   const latestValuation = deal.asset?.valuations[0] ?? null;
   const latestBid = deal.bidRevisions[0] ?? null;
+  const latestLenderQuote = deal.lenderQuotes[0] ?? null;
+  const latestNegotiationEvent = deal.negotiationEvents[0] ?? null;
   const timeline = buildDealTimeline(deal);
   const coverage = buildDealDataCoverage(deal, snapshot);
+  const closingReadiness = buildDealClosingReadiness(deal, snapshot);
+  const closeProbability = buildDealCloseProbability(deal, snapshot, closingReadiness);
+  const closeProbabilityHistory = buildDealCloseProbabilityHistory(deal, {
+    readiness: closingReadiness,
+    probability: closeProbability
+  });
 
   return (
     <div className="space-y-8">
@@ -72,6 +90,28 @@ export default async function DealDetailPage({ params }: Props) {
                 </div>
                 <p className="mt-2 text-sm text-slate-400">
                   {latestBid ? `${latestBid.label} / ${latestBid.status.toLowerCase()}` : 'Log negotiation terms once price discovery starts.'}
+                </p>
+              </div>
+              <div className="metric-card">
+                <div className="fine-print">Latest Lender Quote</div>
+                <div className="mt-3 text-base font-semibold text-white">
+                  {latestLenderQuote ? formatCurrency(latestLenderQuote.amountKrw) : 'No quote yet'}
+                </div>
+                <p className="mt-2 text-sm text-slate-400">
+                  {latestLenderQuote
+                    ? `${latestLenderQuote.facilityLabel} / ${latestLenderQuote.status.toLowerCase()}`
+                    : 'Track financing certainty once the process reaches IC or closing.'}
+                </p>
+              </div>
+              <div className="metric-card">
+                <div className="fine-print">Latest Negotiation Event</div>
+                <div className="mt-3 text-base font-semibold text-white">
+                  {latestNegotiationEvent ? latestNegotiationEvent.eventType.toLowerCase().replaceAll('_', ' ') : 'No event yet'}
+                </div>
+                <p className="mt-2 text-sm text-slate-400">
+                  {latestNegotiationEvent?.expiresAt
+                    ? `Clock ends ${formatDate(latestNegotiationEvent.expiresAt)}`
+                    : latestNegotiationEvent?.title ?? 'Log seller counters, feedback, and exclusivity changes.'}
                 </p>
               </div>
               <div className="metric-card">
@@ -125,13 +165,21 @@ export default async function DealDetailPage({ params }: Props) {
           <p className="mt-2 text-sm text-slate-400">{snapshot.reminderSummary}</p>
         </div>
         <div className="metric-card">
-          <div className="fine-print">Due Soon</div>
-          <div className="mt-3 text-3xl font-semibold text-white">{snapshot.dueSoonTaskCount}</div>
-          <p className="mt-2 text-sm text-slate-400">Tasks due inside the next 72 hours.</p>
+          <div className="fine-print">Exclusivity / Due Soon</div>
+          <div className="mt-3 text-3xl font-semibold text-white">{snapshot.exclusivityExpiresSoon ? 'Live' : snapshot.dueSoonTaskCount}</div>
+          <p className="mt-2 text-sm text-slate-400">
+            {snapshot.activeExclusivityEvent?.expiresAt
+              ? `Exclusivity until ${formatDate(snapshot.activeExclusivityEvent.expiresAt)}`
+              : 'Tasks due inside the next 72 hours.'}
+          </p>
         </div>
       </div>
 
       <DealOperatorConsole deal={deal} snapshot={snapshot} />
+
+      <DealClosingReadinessPanel readiness={closingReadiness} probability={closeProbability} />
+
+      <DealCloseProbabilityHistoryPanel history={closeProbabilityHistory} />
 
       <DealDataCoveragePanel coverage={coverage} />
 

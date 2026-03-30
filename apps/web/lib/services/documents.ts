@@ -3,6 +3,7 @@ import type { PrismaClient } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { generateDocumentSummary } from '@/lib/ai/openai';
 import { ingestDocumentExtraction } from '@/lib/services/document-extraction';
+import { autoMatchDealDocumentRequestsForAsset } from '@/lib/services/deals';
 import { ingestFinancialStatement } from '@/lib/services/financial-statements';
 import { promoteDocumentFactsToFeatures } from '@/lib/services/feature-promotion';
 import {
@@ -135,6 +136,20 @@ export async function uploadDocumentVersion(
       });
 
   const latestVersion = document.versions[0];
+  try {
+    await autoMatchDealDocumentRequestsForAsset(
+      parsed.assetId,
+      {
+        documentId: document.id,
+        documentTitle: document.title,
+        documentType: document.documentType
+      },
+      db
+    );
+  } catch {
+    // Keep upload non-blocking even if deal request matching fails.
+  }
+
   if (parsed.extractedText && latestVersion?.id) {
     try {
       await extractor({

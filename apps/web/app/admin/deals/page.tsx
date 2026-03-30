@@ -8,7 +8,12 @@ import { DealRestoreButton } from '@/components/admin/deal-restore-button';
 import { DealViewTabs } from '@/components/admin/deal-view-tabs';
 import { formatDealStage, getDealStageTone } from '@/lib/deals/config';
 import { prisma } from '@/lib/db/prisma';
-import { buildDealExecutionSnapshot, listDeals } from '@/lib/services/deals';
+import {
+  buildDealCloseProbability,
+  buildDealClosingReadiness,
+  buildDealExecutionSnapshot,
+  listDeals
+} from '@/lib/services/deals';
 import { formatCurrency, formatDate, formatNumber } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
@@ -54,10 +59,16 @@ export default async function DealsPage({ searchParams }: Props) {
   const blockedDeals = deals.filter((deal) => deal.riskFlags.some((risk) => !risk.isResolved));
   const view = resolvedSearchParams.view ?? 'active';
   const visibleDeals = deals
-    .map((deal) => ({
-      deal,
-      snapshot: buildDealExecutionSnapshot(deal as any)
-    }))
+    .map((deal) => {
+      const snapshot = buildDealExecutionSnapshot(deal as any);
+      const readiness = buildDealClosingReadiness(deal as any, snapshot);
+      return {
+        deal,
+        snapshot,
+        readiness,
+        closeProbability: buildDealCloseProbability(deal as any, snapshot, readiness)
+      };
+    })
     .filter(({ deal }) => {
       const isArchived = deal.statusLabel === 'ARCHIVED' || deal.archivedAt != null;
       if (view === 'archived') return isArchived;
@@ -87,7 +98,11 @@ export default async function DealsPage({ searchParams }: Props) {
       if (rightScore !== leftScore) return rightScore - leftScore;
       const leftDue = leftSnapshot?.nextTask?.dueDate?.getTime() ?? left.deal.nextActionAt?.getTime() ?? Number.MAX_SAFE_INTEGER;
       const rightDue = rightSnapshot?.nextTask?.dueDate?.getTime() ?? right.deal.nextActionAt?.getTime() ?? Number.MAX_SAFE_INTEGER;
-      return leftDue - rightDue;
+      return (
+        leftDue - rightDue ||
+        right.closeProbability.scorePct - left.closeProbability.scorePct ||
+        left.readiness.scorePct - right.readiness.scorePct
+      );
     });
 
   return (
@@ -161,12 +176,14 @@ export default async function DealsPage({ searchParams }: Props) {
       </Card>
 
       <div className="grid gap-5">
-        {visibleDeals.map(({ deal, snapshot }) => {
+        {visibleDeals.map(({ deal, snapshot, readiness, closeProbability }) => {
           const openTasks = deal.tasks.filter((task) => task.status !== 'DONE').length;
           const openRisks = deal.riskFlags.filter((risk) => !risk.isResolved).length;
           const lastActivity = deal.activityLogs[0] ?? null;
           const latestValuation = deal.asset?.valuations[0] ?? null;
           const latestBid = deal.bidRevisions[0] ?? null;
+          const latestLenderQuote = deal.lenderQuotes[0] ?? null;
+          const latestNegotiationEvent = deal.negotiationEvents[0] ?? null;
           const isStale = deal.updatedAt.getTime() <= Date.now() - 1000 * 60 * 60 * 24 * 7;
 
           return (
@@ -190,6 +207,20 @@ export default async function DealsPage({ searchParams }: Props) {
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Badge tone={snapshot && snapshot.checklistCompletionPct < 100 ? 'warn' : 'good'}>
                       checklist {snapshot ? `${formatNumber(snapshot.checklistCompletionPct, 0)}%` : 'N/A'}
+                    </Badge>
+                    <Badge tone={readiness.readyToClose ? 'good' : readiness.scorePct >= 60 ? 'warn' : 'danger'}>
+                      close {formatNumber(readiness.scorePct, 0)}%
+                    </Badge>
+                    <Badge
+                      tone={
+                        closeProbability.band === 'HIGH'
+                          ? 'good'
+                          : closeProbability.band === 'MEDIUM'
+                            ? 'warn'
+                            : 'danger'
+                      }
+                    >
+                      p-close {formatNumber(closeProbability.scorePct, 0)}%
                     </Badge>
                     {snapshot?.overdueTaskCount ? <Badge tone="danger">{snapshot.overdueTaskCount} overdue</Badge> : null}
                     {snapshot?.dueSoonTaskCount ? <Badge tone="warn">{snapshot.dueSoonTaskCount} due soon</Badge> : null}
@@ -225,9 +256,33 @@ export default async function DealsPage({ searchParams }: Props) {
                     </div>
                   </div>
                   <div>
+                    <div className="fine-print">Lender Quote</div>
+                    <div className="mt-2 text-sm text-white">
+                      {latestLenderQuote ? formatCurrency(latestLenderQuote.amountKrw) : 'No lender quote'}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="fine-print">Negotiation</div>
+                    <div className="mt-2 text-sm text-white">
+                      {latestNegotiationEvent ? latestNegotiationEvent.eventType.toLowerCase().replaceAll('_', ' ') : 'No event'}
+                    </div>
+                  </div>
+                  <div>
                     <div className="fine-print">Latest Valuation</div>
                     <div className="mt-2 text-sm text-white">
                       {latestValuation ? formatCurrency(latestValuation.baseCaseValueKrw) : 'No run'}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="fine-print">Close Readiness</div>
+                    <div className="mt-2 text-sm text-white">
+                      {formatNumber(readiness.scorePct, 0)}% / {formatNumber(readiness.blockerCount, 0)} blockers
+                    </div>
+                  </div>
+                  <div>
+                    <div className="fine-print">P(Close)</div>
+                    <div className="mt-2 text-sm text-white">
+                      {formatNumber(closeProbability.scorePct, 0)}% / {closeProbability.band.toLowerCase()}
                     </div>
                   </div>
                 </div>
@@ -246,6 +301,7 @@ export default async function DealsPage({ searchParams }: Props) {
                   ))}
                   {deal.counterparties.length > 3 ? <Badge>+{deal.counterparties.length - 3}</Badge> : null}
                   {latestBid ? <Badge>{latestBid.status.toLowerCase()}</Badge> : null}
+                  {snapshot?.exclusivityExpiresSoon ? <Badge tone="warn">exclusivity expiring</Badge> : null}
                   <Link href={`/admin/deals/${deal.id}`}>
                     <Button variant="ghost">Open</Button>
                   </Link>

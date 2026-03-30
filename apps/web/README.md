@@ -47,7 +47,14 @@ What the workflow supports:
 - deal detail page for one-operator execution
 - stage updates with activity logging
 - stage-specific required checklist with seedable required tasks
-- structured DD request tracker with counterparty, due date, and received / waived status
+- structured DD request tracker with counterparty, due date, received / waived status, and automatic document upload matching
+- bid revision history for first bid, revised bid, BAFO, accepted, or lost pricing paths
+- lender quote tracker for term sheets, approved credit, leverage, pricing, and DSCR terms
+- negotiation event tracker for seller counters, buyer feedback, and exclusivity clock changes
+- closing readiness score covering accepted bid, financing, exclusivity, DD clearance, valuation freshness, and checklist completion
+- close probability readout that combines stage, readiness, risks, overdue tasks, and financing / exclusivity certainty
+- admin dashboard watchlist for fragile live deals ranked by probability to close
+- close probability history on the deal detail page so execution drift is visible over time
 - next action and close date tracking
 - overdue / due-soon reminder cues for solo execution
 - broker / seller / buyer notes
@@ -65,7 +72,13 @@ npm run prisma:generate
 npx prisma migrate deploy
 ```
 
-The additive SQL migration is checked in at `prisma/migrations/20260326153000_add_deal_execution_workflow`.
+The additive SQL migrations are checked in at:
+
+- `prisma/migrations/20260326153000_add_deal_execution_workflow`
+- `prisma/migrations/20260328093000_add_deal_document_requests`
+- `prisma/migrations/20260328111500_add_deal_bid_revisions`
+- `prisma/migrations/20260328124500_add_deal_lender_quotes`
+- `prisma/migrations/20260328143000_add_deal_negotiation_events`
 
 ## Scheduled Source Refresh
 

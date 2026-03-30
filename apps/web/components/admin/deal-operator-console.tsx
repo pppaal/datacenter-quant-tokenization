@@ -1,15 +1,19 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ActivityType, DealBidStatus, DealRequestStatus, DealStage, RiskSeverity, TaskPriority, TaskStatus } from '@prisma/client';
+import { ActivityType, DealBidStatus, DealLenderQuoteStatus, DealNegotiationEventType, DealRequestStatus, DealStage, RiskSeverity, TaskPriority, TaskStatus } from '@prisma/client';
 import { useRouter } from 'next/navigation';
 import type { DealDetailRecord, DealExecutionSnapshot } from '@/lib/services/deals';
 import {
   dealBidStatusOptions,
   dealCounterpartyRoleOptions,
+  dealLenderQuoteStatusOptions,
+  dealNegotiationEventTypeOptions,
   dealStageOptions,
   formatDealStage,
   getDealBidStatusTone,
+  getDealLenderQuoteStatusTone,
+  getDealNegotiationEventTone,
   getDealStageTone,
   getRiskSeverityTone,
   getTaskStatusTone,
@@ -92,6 +96,25 @@ export function DealOperatorConsole({ deal, snapshot }: Props) {
   const [bidCloseTimelineDays, setBidCloseTimelineDays] = useState('');
   const [bidSubmittedAt, setBidSubmittedAt] = useState('');
   const [bidNotes, setBidNotes] = useState('');
+  const [lenderCounterpartyId, setLenderCounterpartyId] = useState('');
+  const [lenderFacilityLabel, setLenderFacilityLabel] = useState('');
+  const [lenderStatus, setLenderStatus] = useState<DealLenderQuoteStatus>(DealLenderQuoteStatus.INDICATED);
+  const [lenderAmountKrw, setLenderAmountKrw] = useState('');
+  const [lenderLtvPct, setLenderLtvPct] = useState('');
+  const [lenderSpreadBps, setLenderSpreadBps] = useState('');
+  const [lenderAllInRatePct, setLenderAllInRatePct] = useState('');
+  const [lenderDscrFloor, setLenderDscrFloor] = useState('');
+  const [lenderTermMonths, setLenderTermMonths] = useState('');
+  const [lenderIoMonths, setLenderIoMonths] = useState('');
+  const [lenderQuotedAt, setLenderQuotedAt] = useState('');
+  const [lenderNotes, setLenderNotes] = useState('');
+  const [negotiationCounterpartyId, setNegotiationCounterpartyId] = useState('');
+  const [negotiationBidRevisionId, setNegotiationBidRevisionId] = useState('');
+  const [negotiationEventType, setNegotiationEventType] = useState<DealNegotiationEventType>(DealNegotiationEventType.SELLER_COUNTER);
+  const [negotiationTitle, setNegotiationTitle] = useState('');
+  const [negotiationEffectiveAt, setNegotiationEffectiveAt] = useState('');
+  const [negotiationExpiresAt, setNegotiationExpiresAt] = useState('');
+  const [negotiationSummary, setNegotiationSummary] = useState('');
   const [riskTitle, setRiskTitle] = useState('');
   const [riskDetail, setRiskDetail] = useState('');
   const [riskSeverity, setRiskSeverity] = useState<RiskSeverity>(RiskSeverity.HIGH);
@@ -111,9 +134,21 @@ export function DealOperatorConsole({ deal, snapshot }: Props) {
   }, [deal.counterparties, noteCounterpartyId, noteRole]);
 
   const noteCounterparties = deal.counterparties.filter((counterparty) => counterparty.role === noteRole);
+  const lenderCounterparties = deal.counterparties.filter((counterparty) => counterparty.role === 'LENDER');
   const openTasks = deal.tasks.filter((task) => task.status !== TaskStatus.DONE);
   const openRequests = deal.documentRequests.filter((request) => request.status === DealRequestStatus.REQUESTED);
-  const liveBidRevisions = deal.bidRevisions.filter((bidRevision) => ![DealBidStatus.DECLINED, DealBidStatus.WITHDRAWN].includes(bidRevision.status));
+  const liveBidRevisions = deal.bidRevisions.filter(
+    (bidRevision) => bidRevision.status !== DealBidStatus.DECLINED && bidRevision.status !== DealBidStatus.WITHDRAWN
+  );
+  const liveLenderQuotes = deal.lenderQuotes.filter(
+    (lenderQuote) =>
+      lenderQuote.status !== DealLenderQuoteStatus.DECLINED &&
+      lenderQuote.status !== DealLenderQuoteStatus.WITHDRAWN
+  );
+  const liveNegotiationEvents = deal.negotiationEvents.filter((event) => {
+    if (!event.expiresAt) return true;
+    return event.expiresAt.getTime() >= Date.now();
+  });
   const openRisks = deal.riskFlags.filter((risk) => !risk.isResolved);
 
   async function run(key: string, work: () => Promise<void>) {
@@ -720,6 +755,267 @@ export function DealOperatorConsole({ deal, snapshot }: Props) {
                       {toSentenceCase(value)}
                     </Button>
                   ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        <Card className="space-y-5">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <div className="eyebrow">Lender Quotes</div>
+              <h2 className="mt-2 text-2xl font-semibold text-white">Financing process</h2>
+            </div>
+            <Badge tone={liveLenderQuotes.length > 0 ? 'warn' : 'neutral'}>
+              {deal.lenderQuotes.length > 0 ? `${deal.lenderQuotes.length} tracked` : 'empty'}
+            </Badge>
+          </div>
+          <form
+            className="grid gap-4 rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void run('lender-create', async () => {
+                await request(`/api/deals/${deal.id}/lender-quotes`, 'POST', {
+                  counterpartyId: lenderCounterpartyId || null,
+                  facilityLabel: lenderFacilityLabel,
+                  status: lenderStatus,
+                  amountKrw: Number(lenderAmountKrw),
+                  ltvPct: lenderLtvPct === '' ? null : Number(lenderLtvPct),
+                  spreadBps: lenderSpreadBps === '' ? null : Number(lenderSpreadBps),
+                  allInRatePct: lenderAllInRatePct === '' ? null : Number(lenderAllInRatePct),
+                  dscrFloor: lenderDscrFloor === '' ? null : Number(lenderDscrFloor),
+                  termMonths: lenderTermMonths === '' ? null : Number(lenderTermMonths),
+                  ioMonths: lenderIoMonths === '' ? null : Number(lenderIoMonths),
+                  quotedAt: lenderQuotedAt || null,
+                  notes: lenderNotes || null
+                });
+                setLenderCounterpartyId('');
+                setLenderFacilityLabel('');
+                setLenderStatus(DealLenderQuoteStatus.INDICATED);
+                setLenderAmountKrw('');
+                setLenderLtvPct('');
+                setLenderSpreadBps('');
+                setLenderAllInRatePct('');
+                setLenderDscrFloor('');
+                setLenderTermMonths('');
+                setLenderIoMonths('');
+                setLenderQuotedAt('');
+                setLenderNotes('');
+              });
+            }}
+          >
+            <div className="grid gap-4 md:grid-cols-[1fr_220px_220px]">
+              <Input value={lenderFacilityLabel} onChange={(event) => setLenderFacilityLabel(event.target.value)} placeholder="Facility label (Senior term loan, bridge, etc.)" />
+              <Select value={lenderCounterpartyId} onChange={(event) => setLenderCounterpartyId(event.target.value)}>
+                <option value="">{lenderCounterparties.length === 0 ? 'Add lender counterparty first' : 'Select lender'}</option>
+                {lenderCounterparties.map((counterparty) => (
+                  <option key={counterparty.id} value={counterparty.id}>
+                    {counterparty.name}
+                  </option>
+                ))}
+              </Select>
+              <Select value={lenderStatus} onChange={(event) => setLenderStatus(event.target.value as DealLenderQuoteStatus)}>
+                {dealLenderQuoteStatusOptions.map((value) => (
+                  <option key={value} value={value}>
+                    {toSentenceCase(value)}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+              <Input type="number" step="any" value={lenderAmountKrw} onChange={(event) => setLenderAmountKrw(event.target.value)} placeholder="Amount KRW" />
+              <Input type="number" step="any" value={lenderLtvPct} onChange={(event) => setLenderLtvPct(event.target.value)} placeholder="LTV %" />
+              <Input type="number" step="any" value={lenderSpreadBps} onChange={(event) => setLenderSpreadBps(event.target.value)} placeholder="Spread bps" />
+              <Input type="number" step="any" value={lenderAllInRatePct} onChange={(event) => setLenderAllInRatePct(event.target.value)} placeholder="All-in rate %" />
+              <Input type="number" step="any" value={lenderDscrFloor} onChange={(event) => setLenderDscrFloor(event.target.value)} placeholder="DSCR floor" />
+            </div>
+            <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-4">
+              <Input type="number" value={lenderTermMonths} onChange={(event) => setLenderTermMonths(event.target.value)} placeholder="Term months" />
+              <Input type="number" value={lenderIoMonths} onChange={(event) => setLenderIoMonths(event.target.value)} placeholder="IO months" />
+              <Input type="date" value={lenderQuotedAt} onChange={(event) => setLenderQuotedAt(event.target.value)} />
+            </div>
+            <Textarea className="min-h-[90px]" value={lenderNotes} onChange={(event) => setLenderNotes(event.target.value)} placeholder="Term sheet notes, hold points, conditions, covenant comments, or process blockers." />
+            <div className="flex justify-end">
+              <Button
+                type="submit"
+                disabled={busy === 'lender-create' || lenderFacilityLabel.trim() === '' || lenderAmountKrw.trim() === ''}
+              >
+                {busy === 'lender-create' ? 'Logging...' : 'Log Lender Quote'}
+              </Button>
+            </div>
+          </form>
+          <div className="space-y-3">
+            {deal.lenderQuotes.map((lenderQuote) => (
+              <div key={lenderQuote.id} className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <div className="text-base font-semibold text-white">{lenderQuote.facilityLabel}</div>
+                    <div className="mt-1 text-sm text-slate-400">
+                      {lenderQuote.counterparty ? `${lenderQuote.counterparty.name} / ` : ''}
+                      Quoted {formatDate(lenderQuote.quotedAt)}
+                    </div>
+                    <div className="mt-3 text-sm text-slate-300">
+                      {formatCurrency(lenderQuote.amountKrw)}
+                      {lenderQuote.ltvPct != null ? ` / ${formatNumber(lenderQuote.ltvPct, 1)}% LTV` : ''}
+                    </div>
+                    <div className="mt-2 text-sm text-slate-500">
+                      {lenderQuote.spreadBps != null ? `${formatNumber(lenderQuote.spreadBps, 0)} bps spread` : 'No spread'}
+                      {' / '}
+                      {lenderQuote.allInRatePct != null ? `${formatNumber(lenderQuote.allInRatePct, 2)}% all-in` : 'No all-in rate'}
+                      {' / '}
+                      {lenderQuote.dscrFloor != null ? `${formatNumber(lenderQuote.dscrFloor, 2)}x DSCR floor` : 'No DSCR floor'}
+                    </div>
+                    <div className="mt-2 text-sm text-slate-500">
+                      {lenderQuote.termMonths != null ? `${formatNumber(lenderQuote.termMonths, 0)}m term` : 'No term'}
+                      {' / '}
+                      {lenderQuote.ioMonths != null ? `${formatNumber(lenderQuote.ioMonths, 0)}m IO` : 'No IO period'}
+                    </div>
+                    {lenderQuote.notes ? <p className="mt-3 text-sm leading-7 text-slate-400">{lenderQuote.notes}</p> : null}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge tone={getDealLenderQuoteStatusTone(lenderQuote.status)}>{toSentenceCase(lenderQuote.status)}</Badge>
+                  </div>
+                </div>
+                <div className="mt-4 flex flex-wrap justify-end gap-2">
+                  {dealLenderQuoteStatusOptions.filter((value) => value !== lenderQuote.status).map((value) => (
+                    <Button
+                      key={`${lenderQuote.id}-${value}`}
+                      type="button"
+                      variant="secondary"
+                      disabled={busy === `${lenderQuote.id}-${value}`}
+                      onClick={() => {
+                        void run(`${lenderQuote.id}-${value}`, async () => {
+                          await request(`/api/deals/${deal.id}/lender-quotes/${lenderQuote.id}`, 'PATCH', {
+                            status: value
+                          });
+                        });
+                      }}
+                    >
+                      {toSentenceCase(value)}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        <Card className="space-y-5">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <div className="eyebrow">Negotiation Events</div>
+              <h2 className="mt-2 text-2xl font-semibold text-white">Seller counters and exclusivity clock</h2>
+            </div>
+            <Badge tone={liveNegotiationEvents.length > 0 ? 'warn' : 'neutral'}>
+              {deal.negotiationEvents.length > 0 ? `${deal.negotiationEvents.length} tracked` : 'empty'}
+            </Badge>
+          </div>
+          <form
+            className="grid gap-4 rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void run('negotiation-create', async () => {
+                await request(`/api/deals/${deal.id}/negotiation-events`, 'POST', {
+                  counterpartyId: negotiationCounterpartyId || null,
+                  bidRevisionId: negotiationBidRevisionId || null,
+                  eventType: negotiationEventType,
+                  title: negotiationTitle,
+                  effectiveAt: negotiationEffectiveAt || null,
+                  expiresAt: negotiationExpiresAt || null,
+                  summary: negotiationSummary || null
+                });
+                setNegotiationCounterpartyId('');
+                setNegotiationBidRevisionId('');
+                setNegotiationEventType(DealNegotiationEventType.SELLER_COUNTER);
+                setNegotiationTitle('');
+                setNegotiationEffectiveAt('');
+                setNegotiationExpiresAt('');
+                setNegotiationSummary('');
+              });
+            }}
+          >
+            <div className="grid gap-4 md:grid-cols-[220px_220px_1fr]">
+              <Select value={negotiationEventType} onChange={(event) => setNegotiationEventType(event.target.value as DealNegotiationEventType)}>
+                {dealNegotiationEventTypeOptions.map((value) => (
+                  <option key={value} value={value}>
+                    {toSentenceCase(value)}
+                  </option>
+                ))}
+              </Select>
+              <Select value={negotiationCounterpartyId} onChange={(event) => setNegotiationCounterpartyId(event.target.value)}>
+                <option value="">Select counterparty</option>
+                {deal.counterparties.map((counterparty) => (
+                  <option key={counterparty.id} value={counterparty.id}>
+                    {counterparty.name} / {counterparty.role}
+                  </option>
+                ))}
+              </Select>
+              <Input value={negotiationTitle} onChange={(event) => setNegotiationTitle(event.target.value)} placeholder="Title (Seller countered on price, exclusivity granted, etc.)" />
+            </div>
+            <div className="grid gap-4 md:grid-cols-[220px_220px_1fr]">
+              <Input type="date" value={negotiationEffectiveAt} onChange={(event) => setNegotiationEffectiveAt(event.target.value)} />
+              <Input type="date" value={negotiationExpiresAt} onChange={(event) => setNegotiationExpiresAt(event.target.value)} />
+              <Select value={negotiationBidRevisionId} onChange={(event) => setNegotiationBidRevisionId(event.target.value)}>
+                <option value="">Link bid revision optionally</option>
+                {deal.bidRevisions.map((bidRevision) => (
+                  <option key={bidRevision.id} value={bidRevision.id}>
+                    {bidRevision.label}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <Textarea className="min-h-[90px]" value={negotiationSummary} onChange={(event) => setNegotiationSummary(event.target.value)} placeholder="What changed in the process, how the seller reacted, what feedback came back, and when the exclusivity clock ends." />
+            <div className="flex justify-end">
+              <Button type="submit" disabled={busy === 'negotiation-create' || negotiationTitle.trim() === ''}>
+                {busy === 'negotiation-create' ? 'Logging...' : 'Log Negotiation Event'}
+              </Button>
+            </div>
+          </form>
+          <div className="space-y-3">
+            {deal.negotiationEvents.map((event) => (
+              <div key={event.id} className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <div className="text-base font-semibold text-white">{event.title}</div>
+                    <div className="mt-1 text-sm text-slate-400">
+                      {event.counterparty ? `${event.counterparty.name} / ` : ''}
+                      Effective {formatDate(event.effectiveAt)}
+                      {event.expiresAt ? ` / Expires ${formatDate(event.expiresAt)}` : ''}
+                    </div>
+                    {event.bidRevision ? (
+                      <div className="mt-2 text-sm text-slate-500">Linked bid: {event.bidRevision.label}</div>
+                    ) : null}
+                    {event.summary ? <p className="mt-3 text-sm leading-7 text-slate-400">{event.summary}</p> : null}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge tone={getDealNegotiationEventTone(event.eventType)}>{toSentenceCase(event.eventType)}</Badge>
+                  </div>
+                </div>
+                <div className="mt-4 flex flex-wrap justify-end gap-2">
+                  {(event.eventType === DealNegotiationEventType.EXCLUSIVITY_GRANTED ||
+                    event.eventType === DealNegotiationEventType.EXCLUSIVITY_EXTENDED) &&
+                  event.expiresAt ? (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      disabled={busy === `${event.id}-extend`}
+                      onClick={() => {
+                        const currentExpiry = event.expiresAt;
+                        if (!currentExpiry) return;
+                        const nextExpiry = new Date(currentExpiry);
+                        nextExpiry.setDate(nextExpiry.getDate() + 7);
+                        void run(`${event.id}-extend`, async () => {
+                          await request(`/api/deals/${deal.id}/negotiation-events/${event.id}`, 'PATCH', {
+                            eventType: 'EXCLUSIVITY_EXTENDED',
+                            expiresAt: nextExpiry.toISOString()
+                          });
+                        });
+                      }}
+                    >
+                      Extend +7d
+                    </Button>
+                  ) : null}
                 </div>
               </div>
             ))}

@@ -16,7 +16,7 @@ const items = [
 ];
 
 export function AdminNav() {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? '';
 
   return (
     <nav className="flex flex-wrap gap-2">

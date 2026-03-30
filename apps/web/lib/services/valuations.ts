@@ -278,6 +278,9 @@ export async function getValuationRunById(id: string, db: PrismaClient = prisma)
             select: {
               id: true,
               runLabel: true,
+              baseCaseValueKrw: true,
+              confidenceScore: true,
+              engineVersion: true,
               createdAt: true,
               assumptions: true
             },

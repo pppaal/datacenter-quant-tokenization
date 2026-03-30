@@ -24,6 +24,10 @@ type DealPipelineSummary = {
     targetCloseDate: Date | null;
     urgentTaskCount: number;
     openRiskCount: number;
+    readinessScorePct: number;
+    readinessBlockerCount: number;
+    closeProbabilityPct: number;
+    closeProbabilityBand: 'LOW' | 'MEDIUM' | 'HIGH';
     latestCounterpartyRoles: string[];
     latestValuation: {
       id: string;
@@ -111,18 +115,30 @@ export function DealPipelinePanel({ summary }: Props) {
                   <div className="mt-1">{formatNumber(deal.openRiskCount, 0)}</div>
                 </div>
                 <div>
+                  <div className="fine-print">Readiness</div>
+                  <div className="mt-1">
+                    {formatNumber(deal.readinessScorePct, 0)}% / {formatNumber(deal.readinessBlockerCount, 0)} blockers
+                  </div>
+                </div>
+                <div>
+                  <div className="fine-print">P(Close)</div>
+                  <div className="mt-1">
+                    {formatNumber(deal.closeProbabilityPct, 0)}% / {deal.closeProbabilityBand.toLowerCase()}
+                  </div>
+                </div>
+                <div>
                   <div className="fine-print">Valuation</div>
                   <div className="mt-1">
                     {deal.latestValuation ? `${formatNumber(deal.latestValuation.confidenceScore, 0)} / ${formatDate(deal.latestValuation.createdAt)}` : 'No run'}
                   </div>
                 </div>
-                <div className="md:col-span-3">
+                <div className="md:col-span-4">
                   <div className="fine-print">Roles</div>
                   <div className="mt-1">
                     {deal.latestCounterpartyRoles.length > 0 ? deal.latestCounterpartyRoles.join(', ') : 'No contacts'}
                   </div>
                 </div>
-                <div className="md:col-span-3">
+                <div className="md:col-span-4">
                   <div className="fine-print">Latest Value</div>
                   <div className="mt-1">
                     {deal.latestValuation ? formatCurrency(deal.latestValuation.baseCaseValueKrw) : 'No linked value yet'}

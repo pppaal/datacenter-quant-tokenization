@@ -2,6 +2,8 @@ import {
   ActivityType,
   AssetClass,
   DealBidStatus,
+  DealLenderQuoteStatus,
+  DealNegotiationEventType,
   DealStage,
   RiskSeverity,
   TaskPriority,
@@ -230,6 +232,96 @@ export const dealBidRevisionUpdateSchema = z.object({
   notes: optionalStringField
 });
 
+export const dealLenderQuoteCreateSchema = z.object({
+  facilityLabel: z.preprocess(emptyStringToUndefined, z.string().trim().min(1, 'Facility label is required')),
+  counterpartyId: optionalStringField,
+  status: z.nativeEnum(DealLenderQuoteStatus).default(DealLenderQuoteStatus.INDICATED),
+  amountKrw: z.preprocess((value) => {
+    if (value === null || value === undefined || value === '') return undefined;
+    if (typeof value === 'number') return Number.isFinite(value) ? value : undefined;
+    if (typeof value === 'string') {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : undefined;
+    }
+    return value;
+  }, z.number().positive('Amount must be positive')),
+  ltvPct: optionalNumberField,
+  spreadBps: optionalNumberField,
+  allInRatePct: optionalNumberField,
+  dscrFloor: optionalNumberField,
+  termMonths: z.preprocess((value) => {
+    if (value === null || value === undefined || value === '') return undefined;
+    if (typeof value === 'number') return Number.isFinite(value) ? Math.trunc(value) : undefined;
+    if (typeof value === 'string') {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? Math.trunc(parsed) : undefined;
+    }
+    return value;
+  }, z.number().int().nonnegative().optional()),
+  ioMonths: z.preprocess((value) => {
+    if (value === null || value === undefined || value === '') return undefined;
+    if (typeof value === 'number') return Number.isFinite(value) ? Math.trunc(value) : undefined;
+    if (typeof value === 'string') {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? Math.trunc(parsed) : undefined;
+    }
+    return value;
+  }, z.number().int().nonnegative().optional()),
+  quotedAt: optionalDateField,
+  notes: optionalStringField
+});
+
+export const dealLenderQuoteUpdateSchema = z.object({
+  facilityLabel: optionalStringField,
+  counterpartyId: optionalStringField,
+  status: z.nativeEnum(DealLenderQuoteStatus).optional(),
+  amountKrw: optionalNumberField,
+  ltvPct: optionalNumberField,
+  spreadBps: optionalNumberField,
+  allInRatePct: optionalNumberField,
+  dscrFloor: optionalNumberField,
+  termMonths: z.preprocess((value) => {
+    if (value === null || value === undefined || value === '') return undefined;
+    if (typeof value === 'number') return Number.isFinite(value) ? Math.trunc(value) : undefined;
+    if (typeof value === 'string') {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? Math.trunc(parsed) : undefined;
+    }
+    return value;
+  }, z.number().int().nonnegative().optional()),
+  ioMonths: z.preprocess((value) => {
+    if (value === null || value === undefined || value === '') return undefined;
+    if (typeof value === 'number') return Number.isFinite(value) ? Math.trunc(value) : undefined;
+    if (typeof value === 'string') {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? Math.trunc(parsed) : undefined;
+    }
+    return value;
+  }, z.number().int().nonnegative().optional()),
+  quotedAt: optionalDateField,
+  notes: optionalStringField
+});
+
+export const dealNegotiationEventCreateSchema = z.object({
+  counterpartyId: optionalStringField,
+  bidRevisionId: optionalStringField,
+  eventType: z.nativeEnum(DealNegotiationEventType),
+  title: z.preprocess(emptyStringToUndefined, z.string().trim().min(1, 'Event title is required')),
+  effectiveAt: optionalDateField,
+  expiresAt: optionalDateField,
+  summary: optionalStringField
+});
+
+export const dealNegotiationEventUpdateSchema = z.object({
+  counterpartyId: optionalStringField,
+  bidRevisionId: optionalStringField,
+  eventType: z.nativeEnum(DealNegotiationEventType).optional(),
+  title: optionalStringField,
+  effectiveAt: optionalDateField,
+  expiresAt: optionalDateField,
+  summary: optionalStringField
+});
+
 export const dealRiskFlagSchema = z.object({
   title: z.preprocess(emptyStringToUndefined, z.string().trim().min(1, 'Risk title is required')),
   detail: optionalStringField,
@@ -275,6 +367,10 @@ export type DealDocumentRequestCreateInput = z.infer<typeof dealDocumentRequestC
 export type DealDocumentRequestUpdateInput = z.infer<typeof dealDocumentRequestUpdateSchema>;
 export type DealBidRevisionCreateInput = z.infer<typeof dealBidRevisionCreateSchema>;
 export type DealBidRevisionUpdateInput = z.infer<typeof dealBidRevisionUpdateSchema>;
+export type DealLenderQuoteCreateInput = z.infer<typeof dealLenderQuoteCreateSchema>;
+export type DealLenderQuoteUpdateInput = z.infer<typeof dealLenderQuoteUpdateSchema>;
+export type DealNegotiationEventCreateInput = z.infer<typeof dealNegotiationEventCreateSchema>;
+export type DealNegotiationEventUpdateInput = z.infer<typeof dealNegotiationEventUpdateSchema>;
 export type DealRiskFlagInput = z.infer<typeof dealRiskFlagSchema>;
 export type DealRiskFlagUpdateInput = z.infer<typeof dealRiskFlagUpdateSchema>;
 export type DealActivityInput = z.infer<typeof dealActivitySchema>;

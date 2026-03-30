@@ -1,4 +1,4 @@
-import { DealBidStatus, DealStage, RiskSeverity, TaskPriority, TaskStatus } from '@prisma/client';
+import { DealBidStatus, DealLenderQuoteStatus, DealNegotiationEventType, DealStage, RiskSeverity, TaskPriority, TaskStatus } from '@prisma/client';
 import { toSentenceCase } from '@/lib/utils';
 
 export const dealStageOptions = [
@@ -37,6 +37,23 @@ export const dealBidStatusOptions = [
   DealBidStatus.DECLINED,
   DealBidStatus.WITHDRAWN
 ] as const;
+
+export const dealLenderQuoteStatusOptions = [
+  'INDICATED',
+  'TERM_SHEET',
+  'CREDIT_APPROVED',
+  'DECLINED',
+  'WITHDRAWN',
+  'CLOSED'
+] as const satisfies readonly DealLenderQuoteStatus[];
+
+export const dealNegotiationEventTypeOptions = [
+  'SELLER_COUNTER',
+  'BUYER_FEEDBACK',
+  'EXCLUSIVITY_GRANTED',
+  'EXCLUSIVITY_EXTENDED',
+  'PROCESS_UPDATE'
+] as const satisfies readonly DealNegotiationEventType[];
 
 export const riskSeverityOptions = [
   RiskSeverity.LOW,
@@ -99,6 +116,34 @@ export function getDealBidStatusTone(status: DealBidStatus) {
       return 'danger' as const;
     default:
       return 'neutral' as const;
+  }
+}
+
+export function getDealLenderQuoteStatusTone(status: DealLenderQuoteStatus) {
+  switch (status) {
+    case DealLenderQuoteStatus.CREDIT_APPROVED:
+    case DealLenderQuoteStatus.CLOSED:
+      return 'good' as const;
+    case DealLenderQuoteStatus.TERM_SHEET:
+      return 'warn' as const;
+    case DealLenderQuoteStatus.DECLINED:
+    case DealLenderQuoteStatus.WITHDRAWN:
+      return 'danger' as const;
+    default:
+      return 'neutral' as const;
+  }
+}
+
+export function getDealNegotiationEventTone(eventType: DealNegotiationEventType) {
+  switch (eventType) {
+    case DealNegotiationEventType.SELLER_COUNTER:
+    case DealNegotiationEventType.EXCLUSIVITY_GRANTED:
+    case DealNegotiationEventType.EXCLUSIVITY_EXTENDED:
+      return 'warn' as const;
+    case DealNegotiationEventType.BUYER_FEEDBACK:
+      return 'neutral' as const;
+    default:
+      return 'good' as const;
   }
 }
 

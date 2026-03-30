@@ -2,8 +2,15 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { ActivityType, DealStage, RiskSeverity, TaskPriority, TaskStatus } from '@prisma/client';
 import {
+  autoMatchDealDocumentRequestsForAsset,
   archiveDeal,
+  buildDealCloseProbability,
+  buildDealCloseProbabilityHistory,
+  buildDealClosingReadiness,
+  createDealBidRevision,
   createDealDocumentRequest,
+  createDealLenderQuote,
+  createDealNegotiationEvent,
   buildDealDataCoverage,
   buildDealExecutionSnapshot,
   buildDealStageChecklist,
@@ -12,10 +19,17 @@ import {
   closeOutDeal,
   restoreDeal,
   seedDealStageChecklist,
+  updateDealBidRevision,
   updateDealDocumentRequest,
+  updateDealLenderQuote,
+  updateDealNegotiationEvent,
   updateDealStage
 } from '@/lib/services/deals';
-import { buildDealPipelineSummary, buildDealReminderSummary } from '@/lib/services/dashboard';
+import {
+  buildDealCloseProbabilitySummary,
+  buildDealPipelineSummary,
+  buildDealReminderSummary
+} from '@/lib/services/dashboard';
 
 test('buildDealStageSummary marks completed current and upcoming stages', () => {
   const summary = buildDealStageSummary(DealStage.DD);
@@ -120,6 +134,7 @@ test('buildDealExecutionSnapshot surfaces next task and grouped notes', () => {
         updatedAt: now
       }
     ],
+    negotiationEvents: [],
     activityLogs: [
       {
         id: 'act_1',
@@ -191,6 +206,9 @@ test('buildDealDataCoverage surfaces missing execution evidence', () => {
     updatedAt: now,
     counterparties: [],
     documentRequests: [],
+    bidRevisions: [],
+    lenderQuotes: [],
+    negotiationEvents: [],
     tasks: [],
     riskFlags: [],
     activityLogs: [],
@@ -202,6 +220,431 @@ test('buildDealDataCoverage surfaces missing execution evidence', () => {
   assert.equal(coverage.evidence.linkedAsset, false);
   assert.ok(coverage.gaps.includes('Linked asset record'));
   assert.ok(coverage.gaps.includes('Commercial pricing guardrails'));
+});
+
+test('buildDealClosingReadiness scores accepted bid, financing, and exclusivity gates', () => {
+  const now = new Date('2026-03-28T12:00:00.000Z');
+  const snapshot = {
+    stageTrack: [],
+    stageChecklist: [],
+    requiredChecklistCount: 4,
+    completedChecklistCount: 4,
+    checklistCompletionPct: 100,
+    openTaskCount: 0,
+    urgentTaskCount: 0,
+    overdueTaskCount: 0,
+    dueSoonTaskCount: 0,
+    openRiskCount: 0,
+    activeExclusivityEvent: {
+      id: 'neg_1',
+      expiresAt: new Date('2026-04-05T00:00:00.000Z')
+    },
+    exclusivityExpiresSoon: false,
+    nextTask: null,
+    reminderSummary: 'No open tasks right now.',
+    notesByRole: []
+  } as any;
+
+  const readiness = buildDealClosingReadiness(
+    {
+      id: 'deal_1',
+      dealCode: 'DEAL-0001',
+      slug: 'deal-0001',
+      title: 'Closeable deal',
+      stage: DealStage.CLOSING,
+      market: 'KR',
+      city: 'Seoul',
+      country: 'KR',
+      assetClass: null,
+      strategy: null,
+      headline: null,
+      nextAction: 'Close docs',
+      nextActionAt: now,
+      targetCloseDate: now,
+      sellerGuidanceKrw: 120_000_000_000,
+      bidGuidanceKrw: 118_000_000_000,
+      purchasePriceKrw: 118_000_000_000,
+      statusLabel: 'ACTIVE',
+      archivedAt: null,
+      closedAt: null,
+      closeOutcome: null,
+      closeSummary: null,
+      dealLead: 'solo_operator',
+      assetId: 'asset_1',
+      createdAt: now,
+      updatedAt: now,
+      counterparties: [
+        { id: 'cp_1', role: 'LENDER' },
+        { id: 'cp_2', role: 'BUYER' }
+      ],
+      documentRequests: [
+        { id: 'req_1', status: 'RECEIVED' },
+        { id: 'req_2', status: 'WAIVED' }
+      ],
+      bidRevisions: [
+        { id: 'bid_1', label: 'Signed LOI', status: 'ACCEPTED' }
+      ],
+      lenderQuotes: [
+        { id: 'lender_1', facilityLabel: 'Senior facility', status: 'CREDIT_APPROVED' }
+      ],
+      negotiationEvents: [
+        { id: 'neg_1', eventType: 'EXCLUSIVITY_GRANTED', expiresAt: new Date('2026-04-05T00:00:00.000Z') }
+      ],
+      asset: {
+        valuations: [
+          {
+            id: 'val_1',
+            createdAt: new Date('2026-03-20T00:00:00.000Z')
+          }
+        ]
+      }
+    } as any,
+    snapshot
+  );
+
+  assert.equal(readiness.readyToClose, true);
+  assert.equal(readiness.blockerCount, 0);
+  assert.ok(readiness.scorePct >= 95);
+});
+
+test('buildDealCloseProbability drops when financing and exclusivity are missing', () => {
+  const now = new Date('2026-03-28T12:00:00.000Z');
+  const snapshot = {
+    stageTrack: [],
+    stageChecklist: [],
+    requiredChecklistCount: 4,
+    completedChecklistCount: 2,
+    checklistCompletionPct: 50,
+    openTaskCount: 3,
+    urgentTaskCount: 1,
+    overdueTaskCount: 2,
+    dueSoonTaskCount: 1,
+    openRiskCount: 2,
+    activeExclusivityEvent: null,
+    exclusivityExpiresSoon: false,
+    nextTask: null,
+    reminderSummary: '2 overdue tasks need attention.',
+    notesByRole: []
+  } as any;
+
+  const readiness = buildDealClosingReadiness(
+    {
+      id: 'deal_1',
+      dealCode: 'DEAL-0001',
+      slug: 'deal-0001',
+      title: 'Fragile close',
+      stage: DealStage.CLOSING,
+      market: 'KR',
+      city: 'Seoul',
+      country: 'KR',
+      assetClass: null,
+      strategy: null,
+      headline: null,
+      nextAction: null,
+      nextActionAt: null,
+      targetCloseDate: now,
+      sellerGuidanceKrw: 120_000_000_000,
+      bidGuidanceKrw: 118_000_000_000,
+      purchasePriceKrw: 118_000_000_000,
+      statusLabel: 'ACTIVE',
+      archivedAt: null,
+      closedAt: null,
+      closeOutcome: null,
+      closeSummary: null,
+      dealLead: 'solo_operator',
+      assetId: 'asset_1',
+      createdAt: now,
+      updatedAt: now,
+      counterparties: [{ id: 'cp_1', role: 'BUYER' }],
+      documentRequests: [{ id: 'req_1', status: 'REQUESTED' }],
+      bidRevisions: [{ id: 'bid_1', label: 'Countered LOI', status: 'COUNTERED' }],
+      lenderQuotes: [],
+      negotiationEvents: [{ id: 'neg_1', eventType: 'SELLER_COUNTER', effectiveAt: now }],
+      riskFlags: [
+        { id: 'risk_1', severity: RiskSeverity.CRITICAL, isResolved: false },
+        { id: 'risk_2', severity: RiskSeverity.HIGH, isResolved: false }
+      ],
+      asset: {
+        valuations: [
+          {
+            id: 'val_1',
+            createdAt: new Date('2026-01-20T00:00:00.000Z')
+          }
+        ]
+      }
+    } as any,
+    snapshot
+  );
+
+  const probability = buildDealCloseProbability(
+    {
+      id: 'deal_1',
+      dealCode: 'DEAL-0001',
+      slug: 'deal-0001',
+      title: 'Fragile close',
+      stage: DealStage.CLOSING,
+      market: 'KR',
+      city: 'Seoul',
+      country: 'KR',
+      assetClass: null,
+      strategy: null,
+      headline: null,
+      nextAction: null,
+      nextActionAt: null,
+      targetCloseDate: now,
+      sellerGuidanceKrw: 120_000_000_000,
+      bidGuidanceKrw: 118_000_000_000,
+      purchasePriceKrw: 118_000_000_000,
+      statusLabel: 'ACTIVE',
+      archivedAt: null,
+      closedAt: null,
+      closeOutcome: null,
+      closeSummary: null,
+      dealLead: 'solo_operator',
+      assetId: 'asset_1',
+      createdAt: now,
+      updatedAt: now,
+      counterparties: [{ id: 'cp_1', role: 'BUYER' }],
+      documentRequests: [{ id: 'req_1', status: 'REQUESTED' }],
+      bidRevisions: [{ id: 'bid_1', label: 'Countered LOI', status: 'COUNTERED' }],
+      lenderQuotes: [],
+      negotiationEvents: [{ id: 'neg_1', eventType: 'SELLER_COUNTER', effectiveAt: now }],
+      riskFlags: [
+        { id: 'risk_1', severity: RiskSeverity.CRITICAL, isResolved: false },
+        { id: 'risk_2', severity: RiskSeverity.HIGH, isResolved: false }
+      ],
+      asset: {
+        valuations: [
+          {
+            id: 'val_1',
+            createdAt: new Date('2026-01-20T00:00:00.000Z')
+          }
+        ]
+      }
+    } as any,
+    snapshot,
+    readiness
+  );
+
+  assert.equal(probability.band, 'LOW');
+  assert.ok(probability.scorePct < 50);
+});
+
+test('createDealBidRevision logs structured negotiation history', async () => {
+  const fakeDb = {
+    deal: {
+      async findUnique() {
+        return { id: 'deal_1' };
+      }
+    },
+    dealBidRevision: {
+      async create(args: any) {
+        return {
+          id: 'bid_1',
+          submittedAt: args.data.submittedAt ?? null,
+          counterparty: null,
+          ...args.data
+        };
+      }
+    },
+    activityLog: {
+      async create() {
+        return null;
+      }
+    }
+  };
+
+  const bidRevision = await createDealBidRevision(
+    'deal_1',
+    { label: 'Initial LOI', bidPriceKrw: 120_000_000_000, status: 'SUBMITTED' },
+    fakeDb as any
+  );
+
+  assert.equal(bidRevision.label, 'Initial LOI');
+  assert.equal(bidRevision.status, 'SUBMITTED');
+  assert.equal(bidRevision.bidPriceKrw, 120_000_000_000);
+});
+
+test('updateDealBidRevision advances negotiation status', async () => {
+  let updatedData: any;
+  const fakeDb = {
+    dealBidRevision: {
+      async findFirst() {
+        return {
+          id: 'bid_1',
+          dealId: 'deal_1',
+          label: 'Initial LOI',
+          status: 'SUBMITTED',
+          bidPriceKrw: 120_000_000_000,
+          submittedAt: new Date('2026-03-25T00:00:00.000Z')
+        };
+      },
+      async update(args: any) {
+        updatedData = args.data;
+        return {
+          id: 'bid_1',
+          counterparty: null,
+          ...args.data
+        };
+      }
+    },
+    activityLog: {
+      async create() {
+        return null;
+      }
+    }
+  };
+
+  await updateDealBidRevision('deal_1', 'bid_1', { status: 'BAFO' }, fakeDb as any);
+  assert.equal(updatedData.status, 'BAFO');
+});
+
+test('createDealLenderQuote logs structured financing coverage', async () => {
+  const fakeDb = {
+    deal: {
+      async findUnique() {
+        return { id: 'deal_1' };
+      }
+    },
+    dealLenderQuote: {
+      async create(args: any) {
+        return {
+          id: 'lender_1',
+          quotedAt: args.data.quotedAt ?? null,
+          counterparty: null,
+          ...args.data
+        };
+      }
+    },
+    activityLog: {
+      async create() {
+        return null;
+      }
+    }
+  };
+
+  const lenderQuote = await createDealLenderQuote(
+    'deal_1',
+    { facilityLabel: 'Senior term sheet', amountKrw: 80_000_000_000, status: 'TERM_SHEET' },
+    fakeDb as any
+  );
+
+  assert.equal(lenderQuote.facilityLabel, 'Senior term sheet');
+  assert.equal(lenderQuote.status, 'TERM_SHEET');
+  assert.equal(lenderQuote.amountKrw, 80_000_000_000);
+});
+
+test('updateDealLenderQuote advances financing status', async () => {
+  let updatedData: any;
+  const fakeDb = {
+    dealLenderQuote: {
+      async findFirst() {
+        return {
+          id: 'lender_1',
+          dealId: 'deal_1',
+          facilityLabel: 'Senior term sheet',
+          status: 'TERM_SHEET',
+          amountKrw: 80_000_000_000,
+          quotedAt: new Date('2026-03-25T00:00:00.000Z')
+        };
+      },
+      async update(args: any) {
+        updatedData = args.data;
+        return {
+          id: 'lender_1',
+          counterparty: null,
+          ...args.data
+        };
+      }
+    },
+    activityLog: {
+      async create() {
+        return null;
+      }
+    }
+  };
+
+  await updateDealLenderQuote('deal_1', 'lender_1', { status: 'CREDIT_APPROVED' }, fakeDb as any);
+  assert.equal(updatedData.status, 'CREDIT_APPROVED');
+});
+
+test('createDealNegotiationEvent logs seller counter or exclusivity state', async () => {
+  const fakeDb = {
+    deal: {
+      async findUnique() {
+        return { id: 'deal_1' };
+      }
+    },
+    dealNegotiationEvent: {
+      async create(args: any) {
+        return {
+          id: 'neg_1',
+          counterparty: null,
+          bidRevision: null,
+          ...args.data
+        };
+      }
+    },
+    activityLog: {
+      async create() {
+        return null;
+      }
+    }
+  };
+
+  const negotiationEvent = await createDealNegotiationEvent(
+    'deal_1',
+    {
+      eventType: 'EXCLUSIVITY_GRANTED',
+      title: 'Exclusivity granted',
+      effectiveAt: '2026-03-25',
+      expiresAt: '2026-03-30'
+    },
+    fakeDb as any
+  );
+
+  assert.equal(negotiationEvent.eventType, 'EXCLUSIVITY_GRANTED');
+  assert.equal(negotiationEvent.title, 'Exclusivity granted');
+});
+
+test('updateDealNegotiationEvent extends exclusivity clock', async () => {
+  let updatedData: any;
+  const fakeDb = {
+    dealNegotiationEvent: {
+      async findFirst() {
+        return {
+          id: 'neg_1',
+          dealId: 'deal_1',
+          eventType: 'EXCLUSIVITY_GRANTED',
+          title: 'Exclusivity granted',
+          effectiveAt: new Date('2026-03-25T00:00:00.000Z'),
+          expiresAt: new Date('2026-03-30T00:00:00.000Z')
+        };
+      },
+      async update(args: any) {
+        updatedData = args.data;
+        return {
+          id: 'neg_1',
+          counterparty: null,
+          bidRevision: null,
+          ...args.data
+        };
+      }
+    },
+    activityLog: {
+      async create() {
+        return null;
+      }
+    }
+  };
+
+  await updateDealNegotiationEvent(
+    'deal_1',
+    'neg_1',
+    { eventType: 'EXCLUSIVITY_EXTENDED', expiresAt: '2026-04-06' },
+    fakeDb as any
+  );
+  assert.equal(updatedData.eventType, 'EXCLUSIVITY_EXTENDED');
 });
 
 test('createDealDocumentRequest logs a diligence request', async () => {
@@ -281,6 +724,63 @@ test('updateDealDocumentRequest marks a request received', async () => {
   assert.ok(updatedData.receivedAt instanceof Date || typeof updatedData.receivedAt === 'object');
 });
 
+test('autoMatchDealDocumentRequestsForAsset links obvious DD matches on upload', async () => {
+  const updatedIds: string[] = [];
+  const fakeDb = {
+    dealDocumentRequest: {
+      async findMany() {
+        return [
+          {
+            id: 'req_1',
+            dealId: 'deal_1',
+            title: 'Title report',
+            category: 'title',
+            notes: null,
+            requestedAt: new Date('2026-03-20T00:00:00.000Z'),
+            receivedAt: null
+          },
+          {
+            id: 'req_2',
+            dealId: 'deal_1',
+            title: 'Utility load letter',
+            category: 'power',
+            notes: null,
+            requestedAt: new Date('2026-03-21T00:00:00.000Z'),
+            receivedAt: null
+          }
+        ];
+      },
+      async update(args: any) {
+        updatedIds.push(args.where.id);
+        return {
+          id: args.where.id,
+          counterparty: null,
+          document: { id: args.data.documentId, title: 'Title Report March' },
+          ...args.data
+        };
+      }
+    },
+    activityLog: {
+      async create() {
+        return null;
+      }
+    }
+  };
+
+  const matched = await autoMatchDealDocumentRequestsForAsset(
+    'asset_1',
+    {
+      documentId: 'doc_1',
+      documentTitle: 'Title Report March',
+      documentType: 'REPORT'
+    },
+    fakeDb as any
+  );
+
+  assert.equal(matched.length, 1);
+  assert.deepEqual(updatedIds, ['req_1']);
+});
+
 test('updateDealStage enforces closing before asset management', async () => {
   const now = new Date('2026-03-26T12:00:00.000Z');
   const fakeDb = {
@@ -351,6 +851,7 @@ test('buildDealStageChecklist reports missing stage requirements', () => {
     counterparties: [],
     tasks: [],
     riskFlags: [],
+    negotiationEvents: [],
     activityLogs: []
   } as any);
 
@@ -372,6 +873,10 @@ test('buildDealPipelineSummary ranks blocked and urgent deals first', () => {
       tasks: [{ status: 'OPEN', priority: 'URGENT' }],
       riskFlags: [{ isResolved: false, severity: RiskSeverity.CRITICAL }],
       counterparties: [{ role: 'BROKER' }],
+      documentRequests: [],
+      bidRevisions: [],
+      lenderQuotes: [],
+      negotiationEvents: [],
       asset: {
         valuations: [
           {
@@ -394,6 +899,10 @@ test('buildDealPipelineSummary ranks blocked and urgent deals first', () => {
       tasks: [],
       riskFlags: [],
       counterparties: [],
+      documentRequests: [],
+      bidRevisions: [],
+      lenderQuotes: [],
+      negotiationEvents: [],
       asset: null
     }
   ]);
@@ -557,6 +1066,7 @@ test('seedDealStageChecklist creates required tasks for the current stage', asyn
           counterparties: [],
           tasks: [],
           riskFlags: [],
+          negotiationEvents: [],
           activityLogs: []
         };
       }
@@ -713,6 +1223,7 @@ test('buildDealTimeline mixes activities and valuations in reverse time order', 
     counterparties: [],
     tasks: [],
     riskFlags: [],
+    negotiationEvents: [],
     activityLogs: [
       {
         id: 'act_1',
@@ -792,6 +1303,7 @@ test('buildDealTimeline compresses same-day task churn into one event', () => {
     counterparties: [],
     tasks: [],
     riskFlags: [],
+    negotiationEvents: [],
     activityLogs: [
       {
         id: 'act_1',
@@ -864,6 +1376,7 @@ test('buildDealTimeline tags note and risk categories for filtering', () => {
     counterparties: [],
     tasks: [],
     riskFlags: [],
+    negotiationEvents: [],
     activityLogs: [
       {
         id: 'act_note',
@@ -901,4 +1414,171 @@ test('buildDealTimeline tags note and risk categories for filtering', () => {
 
   assert.equal(timeline[0]?.category, 'note');
   assert.equal(timeline[1]?.category, 'risk');
+});
+
+test('buildDealCloseProbabilitySummary prioritizes fragile live execution deals', () => {
+  const now = new Date('2026-03-28T12:00:00.000Z');
+  const summary = buildDealCloseProbabilitySummary([
+    {
+      id: 'deal_low',
+      dealCode: 'DEAL-LOW',
+      title: 'Fragile closing',
+      stage: DealStage.CLOSING,
+      nextAction: 'Fix lender issues',
+      targetCloseDate: new Date('2026-04-03T00:00:00.000Z'),
+      updatedAt: new Date('2026-03-20T00:00:00.000Z'),
+      tasks: [
+        { status: TaskStatus.OPEN, priority: TaskPriority.URGENT, dueDate: now, checklistKey: null, isRequired: true }
+      ],
+      riskFlags: [{ isResolved: false, severity: RiskSeverity.CRITICAL }],
+      counterparties: [{ role: 'BUYER' }],
+      documentRequests: [{ status: 'REQUESTED' }],
+      bidRevisions: [{ status: 'COUNTERED', label: 'Counter LOI' }],
+      lenderQuotes: [],
+      negotiationEvents: [{ eventType: 'SELLER_COUNTER', expiresAt: null, effectiveAt: now }],
+      activityLogs: [],
+      asset: {
+        valuations: [
+          {
+            id: 'val_low',
+            baseCaseValueKrw: 1000000,
+            confidenceScore: 62,
+            createdAt: new Date('2026-01-15T00:00:00.000Z')
+          }
+        ]
+      }
+    },
+    {
+      id: 'deal_high',
+      dealCode: 'DEAL-HIGH',
+      title: 'Ready to close',
+      stage: DealStage.CLOSING,
+      nextAction: 'Execute close docs',
+      targetCloseDate: new Date('2026-04-01T00:00:00.000Z'),
+      updatedAt: now,
+      tasks: [],
+      riskFlags: [],
+      counterparties: [{ role: 'BUYER' }, { role: 'LENDER' }],
+      documentRequests: [{ status: 'RECEIVED' }],
+      bidRevisions: [{ status: 'ACCEPTED', label: 'Accepted LOI' }],
+      lenderQuotes: [{ status: 'CREDIT_APPROVED', facilityLabel: 'Senior' }],
+      negotiationEvents: [{ eventType: 'EXCLUSIVITY_GRANTED', expiresAt: new Date('2026-04-10T00:00:00.000Z'), effectiveAt: now }],
+      activityLogs: [],
+      asset: {
+        valuations: [
+          {
+            id: 'val_high',
+            baseCaseValueKrw: 1000000,
+            confidenceScore: 81,
+            createdAt: new Date('2026-03-25T00:00:00.000Z')
+          }
+        ]
+      }
+    },
+    {
+      id: 'deal_screened',
+      dealCode: 'DEAL-SCREENED',
+      title: 'Too early',
+      stage: DealStage.SCREENED,
+      nextAction: null,
+      targetCloseDate: null,
+      updatedAt: now,
+      tasks: [],
+      riskFlags: [],
+      counterparties: [],
+      documentRequests: [],
+      bidRevisions: [],
+      lenderQuotes: [],
+      negotiationEvents: [],
+      activityLogs: [],
+      asset: null
+    }
+  ] as any);
+
+  assert.equal(summary.lowProbabilityCount, 1);
+  assert.equal(summary.highProbabilityCount, 1);
+  assert.equal(summary.watchlist[0]?.id, 'deal_low');
+  assert.equal(summary.watchlist.some((item) => item.id === 'deal_screened'), false);
+});
+
+test('buildDealCloseProbabilityHistory returns persisted snapshots in reverse time order', () => {
+  const history = buildDealCloseProbabilityHistory(
+    {
+      id: 'deal_1',
+      dealCode: 'DEAL-0001',
+      slug: 'deal-0001',
+      title: 'Tracked deal',
+      stage: DealStage.CLOSING,
+      market: 'KR',
+      city: 'Seoul',
+      country: 'KR',
+      assetClass: null,
+      strategy: null,
+      headline: null,
+      nextAction: null,
+      nextActionAt: null,
+      targetCloseDate: null,
+      sellerGuidanceKrw: null,
+      bidGuidanceKrw: null,
+      purchasePriceKrw: null,
+      statusLabel: 'ACTIVE',
+      archivedAt: null,
+      closedAt: null,
+      closeOutcome: null,
+      closeSummary: null,
+      dealLead: 'solo_operator',
+      assetId: null,
+      createdAt: new Date('2026-03-01T00:00:00.000Z'),
+      updatedAt: new Date('2026-03-28T00:00:00.000Z'),
+      counterparties: [],
+      documentRequests: [],
+      bidRevisions: [],
+      lenderQuotes: [],
+      negotiationEvents: [],
+      tasks: [],
+      riskFlags: [],
+      activityLogs: [],
+      asset: null,
+      probabilitySnapshots: [
+        {
+          id: 'snap_2',
+          stage: DealStage.CLOSING,
+          snapshotReason: 'lender_quote_updated',
+          readinessScorePct: 84,
+          readinessBlockerCount: 1,
+          closeProbabilityPct: 76,
+          closeProbabilityBand: 'HIGH',
+          headline: 'Close path is credible if the current checklist stays clean.',
+          openRiskCount: 0,
+          overdueTaskCount: 1,
+          hasAcceptedBid: true,
+          hasApprovedFinancing: true,
+          hasLiveExclusivity: true,
+          createdAt: new Date('2026-03-27T00:00:00.000Z')
+        },
+        {
+          id: 'snap_1',
+          stage: DealStage.IC,
+          snapshotReason: 'stage_changed',
+          readinessScorePct: 62,
+          readinessBlockerCount: 2,
+          closeProbabilityPct: 58,
+          closeProbabilityBand: 'MEDIUM',
+          headline: 'Deal can close, but execution gaps still need active management.',
+          openRiskCount: 1,
+          overdueTaskCount: 0,
+          hasAcceptedBid: true,
+          hasApprovedFinancing: false,
+          hasLiveExclusivity: true,
+          createdAt: new Date('2026-03-22T00:00:00.000Z')
+        }
+      ]
+    } as any,
+    null as any
+  );
+
+  assert.equal(history.length, 2);
+  assert.equal(history[0]?.id, 'snap_2');
+  assert.equal(history[0]?.flags.includes('approved financing'), true);
+  assert.equal(history[1]?.flags.includes('accepted bid'), true);
 });

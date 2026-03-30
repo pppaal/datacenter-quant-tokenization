@@ -3,6 +3,7 @@ type ProvenanceEntry = {
   sourceSystem: string;
   value: unknown;
   mode: string;
+  fetchedAt?: string;
   freshnessLabel: string;
 };
 
@@ -19,7 +20,14 @@ type RunHealthInput = {
 };
 
 export type RunHealthFlag = {
-  key: 'fresh' | 'stale_age' | 'fallback_heavy' | 'low_confidence' | 'compressed_spread' | 'rerun_recommended';
+  key:
+    | 'fresh'
+    | 'stale_age'
+    | 'stale_source'
+    | 'fallback_heavy'
+    | 'low_confidence'
+    | 'compressed_spread'
+    | 'rerun_recommended';
   label: string;
   tone: 'neutral' | 'good' | 'warn' | 'danger';
 };
@@ -38,10 +46,23 @@ export function getRunHealthFlags(input: RunHealthInput): RunHealthFlag[] {
   const ageDays = createdAt ? (Date.now() - createdAt.getTime()) / (1000 * 60 * 60 * 24) : null;
   const provenance = input.provenance ?? [];
   const fallbackCount = provenance.filter((entry) => entry.mode.toLowerCase() === 'fallback').length;
+  const staleSourceEntry = provenance.find((entry) => {
+    const fetchedAtValue =
+      'fetchedAt' in (entry as Record<string, unknown>) && typeof entry.fetchedAt === 'string'
+        ? entry.fetchedAt
+        : null;
+    const fetchedAt = fetchedAtValue ? new Date(fetchedAtValue) : null;
+    const fetchedAgeDays = fetchedAt ? (Date.now() - fetchedAt.getTime()) / (1000 * 60 * 60 * 24) : 0;
+    return entry.freshnessLabel.toLowerCase().includes('stale') || fetchedAgeDays > 14;
+  });
   const spreadRatio = getRunSpreadRatio(input.scenarios);
 
   if (ageDays !== null && ageDays > 14) {
     flags.push({ key: 'stale_age', label: 'Stale run', tone: 'warn' });
+  }
+
+  if (staleSourceEntry) {
+    flags.push({ key: 'stale_source', label: 'Stale source', tone: 'warn' });
   }
 
   if (fallbackCount >= 2) {
@@ -56,7 +77,7 @@ export function getRunHealthFlags(input: RunHealthInput): RunHealthFlag[] {
     flags.push({ key: 'compressed_spread', label: 'Tight spread', tone: 'neutral' });
   }
 
-  if (flags.some((flag) => ['stale_age', 'fallback_heavy', 'low_confidence'].includes(flag.key))) {
+  if (flags.some((flag) => ['stale_age', 'stale_source', 'fallback_heavy', 'low_confidence'].includes(flag.key))) {
     flags.push({ key: 'rerun_recommended', label: 'Re-run recommended', tone: 'danger' });
   }
 
@@ -66,4 +87,3 @@ export function getRunHealthFlags(input: RunHealthInput): RunHealthFlag[] {
 
   return flags;
 }
-

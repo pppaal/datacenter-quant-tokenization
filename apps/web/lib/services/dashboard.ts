@@ -4,6 +4,7 @@ import { buildForecastModelStack } from '@/lib/services/forecast/model-stack';
 import { buildForecastEnsemblePolicy } from '@/lib/services/forecast/ensemble';
 import { buildGradientBoostingRealizedBacktest } from '@/lib/services/forecast/realized-backtest';
 import { listAssets, getAssetBySlug } from '@/lib/services/assets';
+import { buildDealCloseProbability, buildDealClosingReadiness, buildDealExecutionSnapshot } from '@/lib/services/deals';
 import { buildMacroBacktest } from '@/lib/services/macro/backtest';
 import { buildMacroForecastBacktest } from '@/lib/services/macro/forecast-backtest';
 import { listDocuments } from '@/lib/services/documents';
@@ -214,6 +215,21 @@ export function buildDealPipelineSummary(
     counterparties: Array<{
       role: string;
     }>;
+    documentRequests: Array<{
+      status: string;
+    }>;
+    bidRevisions: Array<{
+      status: string;
+      label: string;
+    }>;
+    lenderQuotes: Array<{
+      status: string;
+      facilityLabel: string;
+    }>;
+    negotiationEvents: Array<{
+      eventType: string;
+      expiresAt: Date | null;
+    }>;
     asset: {
       valuations: Array<{
         id: string;
@@ -231,6 +247,11 @@ export function buildDealPipelineSummary(
 
   const watchlist = [...deals]
     .map((deal) => {
+      const snapshot =
+        'activityLogs' in deal && Array.isArray((deal as Record<string, unknown>).activityLogs)
+          ? buildDealExecutionSnapshot(deal as any)
+          : null;
+      const readiness = buildDealClosingReadiness(deal as any, snapshot);
       const urgentTaskCount = deal.tasks.filter(
         (task) =>
           task.status !== 'DONE' &&
@@ -246,6 +267,8 @@ export function buildDealPipelineSummary(
         urgentTaskCount,
         openRiskCount,
         criticalRiskCount,
+        readiness,
+        closeProbability: buildDealCloseProbability(deal as any, snapshot, readiness),
         latestCounterpartyRoles: [...new Set(deal.counterparties.map((counterparty) => counterparty.role))].slice(0, 3),
         latestValuation: deal.asset?.valuations[0] ?? null
       };
@@ -253,7 +276,12 @@ export function buildDealPipelineSummary(
     .sort((left, right) => {
       const leftScore = left.criticalRiskCount * 5 + left.openRiskCount * 2 + left.urgentTaskCount;
       const rightScore = right.criticalRiskCount * 5 + right.openRiskCount * 2 + right.urgentTaskCount;
-      return rightScore - leftScore || left.updatedAt.getTime() - right.updatedAt.getTime();
+      return (
+        rightScore - leftScore ||
+        right.closeProbability.scorePct - left.closeProbability.scorePct ||
+        left.readiness.scorePct - right.readiness.scorePct ||
+        left.updatedAt.getTime() - right.updatedAt.getTime()
+      );
     })
     .slice(0, 5);
 
@@ -268,6 +296,116 @@ export function buildDealPipelineSummary(
     blockedDeals: deals.filter((deal) => deal.riskFlags.some((risk) => !risk.isResolved)).length,
     closingDeals: deals.filter((deal) => deal.stage === DealStage.CLOSING).length,
     byStage,
+    watchlist: watchlist.map((deal) => ({
+      id: deal.id,
+      dealCode: deal.dealCode,
+      title: deal.title,
+      stage: deal.stage,
+      nextAction: deal.nextAction,
+      targetCloseDate: deal.targetCloseDate,
+      urgentTaskCount: deal.urgentTaskCount,
+      openRiskCount: deal.openRiskCount,
+      readinessScorePct: deal.readiness.scorePct,
+      readinessBlockerCount: deal.readiness.blockerCount,
+      closeProbabilityPct: deal.closeProbability.scorePct,
+      closeProbabilityBand: deal.closeProbability.band,
+      latestCounterpartyRoles: deal.latestCounterpartyRoles,
+      latestValuation: deal.latestValuation
+    }))
+  };
+}
+
+export function buildDealCloseProbabilitySummary(
+  deals: Array<{
+    id: string;
+    dealCode: string;
+    title: string;
+    stage: DealStage;
+    nextAction: string | null;
+    targetCloseDate: Date | null;
+    updatedAt: Date;
+    tasks: Array<{
+      status: string;
+      priority: string;
+      dueDate?: Date | null;
+      checklistKey?: string | null;
+      isRequired?: boolean;
+      title?: string;
+      sortOrder?: number;
+    }>;
+    riskFlags: Array<{
+      isResolved: boolean;
+      severity: RiskSeverity;
+    }>;
+    counterparties: Array<{
+      role: string;
+    }>;
+    documentRequests: Array<{
+      status: string;
+    }>;
+    bidRevisions: Array<{
+      status: string;
+      label: string;
+    }>;
+    lenderQuotes: Array<{
+      status: string;
+      facilityLabel: string;
+    }>;
+    negotiationEvents: Array<{
+      eventType: string;
+      expiresAt: Date | null;
+      effectiveAt?: Date;
+    }>;
+    asset: {
+      valuations: Array<{
+        id: string;
+        baseCaseValueKrw: number;
+        confidenceScore: number;
+        createdAt: Date;
+      }>;
+    } | null;
+    activityLogs?: Array<unknown>;
+  }>
+) {
+  const normalized = deals
+    .filter((deal) => deal.stage !== DealStage.SOURCED && deal.stage !== DealStage.SCREENED)
+    .map((deal) => {
+      const snapshot =
+        'activityLogs' in deal && Array.isArray((deal as Record<string, unknown>).activityLogs)
+          ? buildDealExecutionSnapshot(deal as any)
+          : null;
+      const readiness = buildDealClosingReadiness(deal as any, snapshot);
+      const probability = buildDealCloseProbability(deal as any, snapshot, readiness);
+      const openRiskCount = deal.riskFlags.filter((risk) => !risk.isResolved).length;
+      return {
+        id: deal.id,
+        dealCode: deal.dealCode,
+        title: deal.title,
+        stage: deal.stage,
+        probability,
+        readiness,
+        nextAction: deal.nextAction,
+        targetCloseDate: deal.targetCloseDate,
+        openRiskCount,
+        latestValuation: deal.asset?.valuations[0] ?? null
+      };
+    });
+
+  const watchlist = [...normalized]
+    .sort((left, right) => {
+      const leftPenalty = left.stage === DealStage.CLOSING ? 20 : 0;
+      const rightPenalty = right.stage === DealStage.CLOSING ? 20 : 0;
+      return (
+        left.probability.scorePct - right.probability.scorePct - leftPenalty + rightPenalty ||
+        right.openRiskCount - left.openRiskCount
+      );
+    })
+    .slice(0, 5);
+
+  return {
+    highProbabilityCount: normalized.filter((deal) => deal.probability.band === 'HIGH').length,
+    mediumProbabilityCount: normalized.filter((deal) => deal.probability.band === 'MEDIUM').length,
+    lowProbabilityCount: normalized.filter((deal) => deal.probability.band === 'LOW').length,
     watchlist
   };
 }
@@ -542,11 +680,13 @@ export async function getAdminData(db: PrismaClient = prisma) {
         updatedAt: true,
         tasks: {
           select: {
+            title: true,
             status: true,
             priority: true,
             dueDate: true,
             checklistKey: true,
-            isRequired: true
+            isRequired: true,
+            sortOrder: true
           }
         },
         riskFlags: {
@@ -558,6 +698,55 @@ export async function getAdminData(db: PrismaClient = prisma) {
         counterparties: {
           select: {
             role: true
+          }
+        },
+        documentRequests: {
+          select: {
+            status: true
+          }
+        },
+        bidRevisions: {
+          select: {
+            status: true,
+            label: true
+          },
+          orderBy: {
+            submittedAt: 'desc'
+          },
+          take: 4
+        },
+        lenderQuotes: {
+          select: {
+            status: true,
+            facilityLabel: true
+          },
+          orderBy: {
+            quotedAt: 'desc'
+          },
+          take: 4
+        },
+        negotiationEvents: {
+          select: {
+            eventType: true,
+            expiresAt: true
+          },
+          orderBy: {
+            effectiveAt: 'desc'
+          },
+          take: 4
+        },
+        activityLogs: {
+          select: {
+            activityType: true,
+            counterparty: {
+              select: {
+                role: true
+              }
+            }
+          },
+          take: 4,
+          orderBy: {
+            createdAt: 'desc'
           }
         },
         asset: {
@@ -650,6 +839,7 @@ export async function getAdminData(db: PrismaClient = prisma) {
     readiness,
     sourceHealth,
     dealPipeline: buildDealPipelineSummary(deals),
+    dealCloseProbability: buildDealCloseProbabilitySummary(deals),
     dealReminders: buildDealReminderSummary(deals),
     portfolioRisk: buildPortfolioRiskSummary(riskRuns),
     counterpartyRisk: buildCounterpartyRiskSummary(creditAssessments),

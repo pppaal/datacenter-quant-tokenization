@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { DealPipelinePanel } from '@/components/admin/deal-pipeline-panel';
+import { DealCloseProbabilityPanel } from '@/components/admin/deal-close-probability-panel';
 import { DealReminderPanel } from '@/components/admin/deal-reminder-panel';
 import { ForecastModelStackPanel } from '@/components/admin/forecast-model-stack-panel';
 import { ForecastEnsemblePanel } from '@/components/admin/forecast-ensemble-panel';
@@ -30,6 +31,7 @@ export default async function AdminOverviewPage() {
     readiness,
     sourceHealth,
     dealPipeline,
+    dealCloseProbability,
     dealReminders,
     portfolioRisk,
     counterpartyRisk,
@@ -100,6 +102,10 @@ export default async function AdminOverviewPage() {
       <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
         <div className="xl:col-span-2">
           <DealReminderPanel summary={dealReminders} />
+        </div>
+
+        <div className="xl:col-span-2">
+          <DealCloseProbabilityPanel summary={dealCloseProbability} />
         </div>
 
         <div className="xl:col-span-2">

@@ -3,6 +3,7 @@ import {
   DealBidStatus,
   DealRequestStatus,
   DealStage,
+  DocumentType,
   Prisma,
   RiskSeverity,
   TaskPriority,
@@ -22,6 +23,10 @@ import {
   dealCreateSchema,
   dealDocumentRequestCreateSchema,
   dealDocumentRequestUpdateSchema,
+  dealLenderQuoteCreateSchema,
+  dealLenderQuoteUpdateSchema,
+  dealNegotiationEventCreateSchema,
+  dealNegotiationEventUpdateSchema,
   dealRiskFlagSchema,
   dealRiskFlagUpdateSchema,
   dealRestoreSchema,
@@ -76,6 +81,21 @@ export const dealListInclude = Prisma.validator<Prisma.DealInclude>()({
     },
     orderBy: [{ submittedAt: 'desc' }, { createdAt: 'desc' }],
     take: 6
+  },
+  lenderQuotes: {
+    include: {
+      counterparty: true
+    },
+    orderBy: [{ quotedAt: 'desc' }, { createdAt: 'desc' }],
+    take: 6
+  },
+  negotiationEvents: {
+    include: {
+      counterparty: true,
+      bidRevision: true
+    },
+    orderBy: [{ effectiveAt: 'desc' }, { createdAt: 'desc' }],
+    take: 10
   },
   riskFlags: {
     orderBy: [{ isResolved: 'asc' }, { createdAt: 'desc' }]
@@ -132,6 +152,19 @@ export const dealDetailInclude = Prisma.validator<Prisma.DealInclude>()({
     },
     orderBy: [{ submittedAt: 'desc' }, { createdAt: 'desc' }]
   },
+  lenderQuotes: {
+    include: {
+      counterparty: true
+    },
+    orderBy: [{ quotedAt: 'desc' }, { createdAt: 'desc' }]
+  },
+  negotiationEvents: {
+    include: {
+      counterparty: true,
+      bidRevision: true
+    },
+    orderBy: [{ effectiveAt: 'desc' }, { createdAt: 'desc' }]
+  },
   riskFlags: {
     orderBy: [{ isResolved: 'asc' }, { severity: 'desc' }, { createdAt: 'desc' }]
   },
@@ -143,6 +176,12 @@ export const dealDetailInclude = Prisma.validator<Prisma.DealInclude>()({
       createdAt: 'desc'
     },
     take: 40
+  },
+  probabilitySnapshots: {
+    orderBy: {
+      createdAt: 'desc'
+    },
+    take: 12
   }
 });
 
@@ -173,6 +212,8 @@ export type DealDataCoverage = {
     requestCount: number;
     fulfilledRequestCount: number;
     bidRevisionCount: number;
+    lenderQuoteCount: number;
+    negotiationEventCount: number;
     counterpartyCount: number;
     requiredChecklistPct: number;
   };
@@ -183,6 +224,44 @@ export type DealDataCoverage = {
     detail: string;
   }>;
   gaps: string[];
+};
+
+export type DealClosingReadiness = {
+  scorePct: number;
+  completedCount: number;
+  totalCount: number;
+  blockerCount: number;
+  readyToClose: boolean;
+  checks: Array<{
+    key: string;
+    title: string;
+    status: 'done' | 'open' | 'missing';
+    detail: string;
+    isBlocker: boolean;
+  }>;
+  blockers: string[];
+};
+
+export type DealCloseProbability = {
+  scorePct: number;
+  band: 'LOW' | 'MEDIUM' | 'HIGH';
+  headline: string;
+  drivers: string[];
+};
+
+export type DealCloseProbabilityHistoryPoint = {
+  id: string;
+  createdAt: Date;
+  stage: DealStage;
+  scorePct: number;
+  band: 'LOW' | 'MEDIUM' | 'HIGH';
+  readinessScorePct: number;
+  blockerCount: number;
+  reason: string;
+  headline: string;
+  openRiskCount: number;
+  overdueTaskCount: number;
+  flags: string[];
 };
 
 function sameUtcDay(left: Date, right: Date) {
@@ -248,6 +327,83 @@ function getChecklistTaskKey(stage: DealStage, key: string) {
 
 function formatStageLabel(stage: DealStage) {
   return stage.toLowerCase().replaceAll('_', ' ');
+}
+
+function formatProbabilitySnapshotReason(reason: string) {
+  return reason.replaceAll('_', ' ');
+}
+
+function normalizeExecutionText(value: string | null | undefined) {
+  return (value ?? '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+function buildExecutionTokenSet(value: string | null | undefined) {
+  return new Set(
+    normalizeExecutionText(value)
+      .split(' ')
+      .filter((token) => token.length >= 3)
+  );
+}
+
+const documentTypeKeywords: Record<DocumentType, string[]> = {
+  IM: ['im', 'investment memo', 'memo', 'committee'],
+  POWER_STUDY: ['power', 'utility', 'load study', 'electrical'],
+  PERMIT: ['permit', 'entitlement', 'approval', 'zoning', 'license'],
+  LEASE: ['lease', 'tenant', 'rent roll', 'lease abstract'],
+  MODEL: ['model', 'underwriting', 'cash flow', 'financial model'],
+  SITE_PHOTO: ['photo', 'site', 'image'],
+  GRID_NOTICE: ['grid', 'interconnection', 'notice', 'utility'],
+  REPORT: ['report', 'survey', 'environmental', 'engineering', 'title'],
+  OTHER: []
+};
+
+function scoreDealDocumentRequestMatch(input: {
+  requestTitle: string;
+  requestCategory: string | null;
+  documentTitle: string;
+  documentType: DocumentType;
+}) {
+  const requestTitleNormalized = normalizeExecutionText(input.requestTitle);
+  const requestCategoryNormalized = normalizeExecutionText(input.requestCategory);
+  const documentTitleNormalized = normalizeExecutionText(input.documentTitle);
+  const requestTokens = buildExecutionTokenSet(`${input.requestTitle} ${input.requestCategory ?? ''}`);
+  const documentTokens = buildExecutionTokenSet(
+    `${input.documentTitle} ${documentTypeKeywords[input.documentType].join(' ')}`
+  );
+
+  let score = 0;
+
+  if (
+    requestTitleNormalized &&
+    documentTitleNormalized &&
+    (documentTitleNormalized.includes(requestTitleNormalized) ||
+      requestTitleNormalized.includes(documentTitleNormalized))
+  ) {
+    score += 4;
+  }
+
+  if (
+    requestCategoryNormalized &&
+    (documentTitleNormalized.includes(requestCategoryNormalized) ||
+      documentTypeKeywords[input.documentType].some((keyword) => {
+        const normalizedKeyword = normalizeExecutionText(keyword);
+        return (
+          normalizedKeyword.includes(requestCategoryNormalized) ||
+          requestCategoryNormalized.includes(normalizedKeyword)
+        );
+      }))
+  ) {
+    score += 3;
+  }
+
+  for (const token of requestTokens) {
+    if (documentTokens.has(token)) score += 1;
+  }
+
+  return score;
 }
 
 async function buildNextDealCode(db: PrismaClient) {
@@ -353,6 +509,7 @@ export async function createDeal(input: unknown, db: PrismaClient = prisma) {
     });
   }
 
+  await recordDealProbabilitySnapshot(created.id, 'deal_created', db);
   return getDealById(created.id, db);
 }
 
@@ -418,6 +575,7 @@ export async function updateDeal(id: string, input: unknown, db: PrismaClient = 
     });
   }
 
+  await recordDealProbabilitySnapshot(updated.id, 'deal_updated', db);
   return getDealById(updated.id, db);
 }
 
@@ -455,6 +613,7 @@ export async function updateDealStage(id: string, input: unknown, db: PrismaClie
     });
   }
 
+  await recordDealProbabilitySnapshot(id, 'stage_changed', db);
   return getDealById(id, db);
 }
 
@@ -484,6 +643,7 @@ export async function createDealCounterparty(dealId: string, input: unknown, db:
     body: `${counterparty.name} added as ${counterparty.role.toLowerCase()}.`
   });
 
+  await recordDealProbabilitySnapshot(dealId, 'counterparty_added', db);
   return counterparty;
 }
 
@@ -550,6 +710,7 @@ export async function createDealTask(dealId: string, input: unknown, db: PrismaC
     body: `${task.title} (${task.priority.toLowerCase()})`
   });
 
+  await recordDealProbabilitySnapshot(dealId, 'task_created', db);
   return task;
 }
 
@@ -600,6 +761,7 @@ export async function createDealDocumentRequest(dealId: string, input: unknown, 
     body: `${request.title} (${request.status.toLowerCase()})`
   });
 
+  await recordDealProbabilitySnapshot(dealId, 'dd_request_created', db);
   return request;
 }
 
@@ -658,7 +820,90 @@ export async function updateDealDocumentRequest(
     body: `${updated.title} is ${updated.status.toLowerCase()}.`
   });
 
+  await recordDealProbabilitySnapshot(dealId, 'dd_request_updated', db);
   return updated;
+}
+
+export async function autoMatchDealDocumentRequestsForAsset(
+  assetId: string,
+  input: {
+    documentId: string;
+    documentTitle: string;
+    documentType: DocumentType;
+  },
+  db: PrismaClient = prisma
+) {
+  const openRequests = await db.dealDocumentRequest.findMany({
+    where: {
+      status: DealRequestStatus.REQUESTED,
+      documentId: null,
+      deal: {
+        assetId
+      }
+    },
+    include: {
+      deal: {
+        select: {
+          id: true
+        }
+      }
+    },
+    orderBy: [{ priority: 'desc' }, { dueDate: 'asc' }, { requestedAt: 'asc' }]
+  });
+
+  const candidates = openRequests
+    .map((request) => ({
+      request,
+      score: scoreDealDocumentRequestMatch({
+        requestTitle: request.title,
+        requestCategory: request.category,
+        documentTitle: input.documentTitle,
+        documentType: input.documentType
+      })
+    }))
+    .filter((entry) => entry.score >= 3)
+    .sort(
+      (left, right) =>
+        right.score - left.score ||
+        left.request.requestedAt.getTime() - right.request.requestedAt.getTime()
+    );
+
+  const matched = [];
+
+  for (const { request, score } of candidates) {
+    const updated = await db.dealDocumentRequest.update({
+      where: { id: request.id },
+      data: {
+        documentId: input.documentId,
+        status: DealRequestStatus.RECEIVED,
+        receivedAt: request.receivedAt ?? new Date(),
+        notes: request.notes
+          ? `${request.notes}\n\nAuto-matched to uploaded document "${input.documentTitle}" (score ${score}).`
+          : `Auto-matched to uploaded document "${input.documentTitle}" (score ${score}).`
+      },
+      include: {
+        counterparty: true,
+        document: true
+      }
+    });
+
+    await createActivityLog(db, {
+      dealId: request.dealId,
+      activityType: ActivityType.GENERAL,
+      title: 'DD request auto-matched',
+      body: `"${request.title}" matched to "${input.documentTitle}".`,
+      metadata: {
+        requestId: request.id,
+        documentId: input.documentId,
+        score
+      }
+    });
+
+    await recordDealProbabilitySnapshot(request.dealId, 'dd_request_auto_matched', db);
+    matched.push(updated);
+  }
+
+  return matched;
 }
 
 export async function createDealBidRevision(dealId: string, input: unknown, db: PrismaClient = prisma) {
@@ -705,6 +950,7 @@ export async function createDealBidRevision(dealId: string, input: unknown, db: 
     }
   });
 
+  await recordDealProbabilitySnapshot(dealId, 'bid_created', db);
   return bidRevision;
 }
 
@@ -757,14 +1003,235 @@ export async function updateDealBidRevision(
     activityType: ActivityType.GENERAL,
     counterpartyId: updated.counterpartyId,
     title: 'Bid revision updated',
-    body: `${updated.label} is now ${updated.status.toLowerCase()} at ${updated.bidPriceKrw.toLocaleString()} KRW.`,
+    body: `${updated.label} is now ${updated.status.toLowerCase()} at ${(updated.bidPriceKrw ?? bidRevision.bidPriceKrw).toLocaleString()} KRW.`,
     metadata: {
       bidRevisionId: updated.id,
       status: updated.status,
-      bidPriceKrw: updated.bidPriceKrw
+      bidPriceKrw: updated.bidPriceKrw ?? bidRevision.bidPriceKrw
     }
   });
 
+  await recordDealProbabilitySnapshot(dealId, 'bid_updated', db);
+  return updated;
+}
+
+export async function createDealLenderQuote(dealId: string, input: unknown, db: PrismaClient = prisma) {
+  const parsed = dealLenderQuoteCreateSchema.parse(input);
+  const deal = await db.deal.findUnique({ where: { id: dealId } });
+  if (!deal) throw new Error('Deal not found');
+
+  if (parsed.counterpartyId) {
+    const counterparty = await db.counterparty.findFirst({
+      where: { id: parsed.counterpartyId, dealId }
+    });
+    if (!counterparty) throw new Error('Counterparty not found for this deal');
+  }
+
+  const lenderQuote = await db.dealLenderQuote.create({
+    data: {
+      dealId,
+      counterpartyId: parsed.counterpartyId ?? null,
+      status: parsed.status,
+      facilityLabel: parsed.facilityLabel,
+      amountKrw: parsed.amountKrw,
+      ltvPct: parsed.ltvPct ?? null,
+      spreadBps: parsed.spreadBps ?? null,
+      allInRatePct: parsed.allInRatePct ?? null,
+      dscrFloor: parsed.dscrFloor ?? null,
+      termMonths: parsed.termMonths ?? null,
+      ioMonths: parsed.ioMonths ?? null,
+      quotedAt: parsed.quotedAt ?? new Date(),
+      notes: parsed.notes ?? null
+    },
+    include: {
+      counterparty: true
+    }
+  });
+
+  await createActivityLog(db, {
+    dealId,
+    activityType: ActivityType.GENERAL,
+    counterpartyId: lenderQuote.counterpartyId,
+    title: 'Lender quote logged',
+    body: `${lenderQuote.facilityLabel} at ${lenderQuote.amountKrw.toLocaleString()} KRW (${lenderQuote.status.toLowerCase()}).`,
+    metadata: {
+      lenderQuoteId: lenderQuote.id,
+      status: lenderQuote.status,
+      amountKrw: lenderQuote.amountKrw
+    }
+  });
+
+  await recordDealProbabilitySnapshot(dealId, 'lender_quote_created', db);
+  return lenderQuote;
+}
+
+export async function updateDealLenderQuote(
+  dealId: string,
+  lenderQuoteId: string,
+  input: unknown,
+  db: PrismaClient = prisma
+) {
+  const parsed = dealLenderQuoteUpdateSchema.parse(input);
+  const lenderQuote = await db.dealLenderQuote.findFirst({
+    where: { id: lenderQuoteId, dealId }
+  });
+  if (!lenderQuote) throw new Error('Lender quote not found');
+
+  if (parsed.counterpartyId) {
+    const counterparty = await db.counterparty.findFirst({
+      where: { id: parsed.counterpartyId, dealId }
+    });
+    if (!counterparty) throw new Error('Counterparty not found for this deal');
+  }
+
+  const updated = await db.dealLenderQuote.update({
+    where: { id: lenderQuoteId },
+    data: {
+      facilityLabel: parsed.facilityLabel ?? undefined,
+      counterpartyId: parsed.counterpartyId ?? undefined,
+      status: parsed.status ?? undefined,
+      amountKrw: parsed.amountKrw ?? undefined,
+      ltvPct: parsed.ltvPct ?? undefined,
+      spreadBps: parsed.spreadBps ?? undefined,
+      allInRatePct: parsed.allInRatePct ?? undefined,
+      dscrFloor: parsed.dscrFloor ?? undefined,
+      termMonths: parsed.termMonths ?? undefined,
+      ioMonths: parsed.ioMonths ?? undefined,
+      quotedAt: parsed.quotedAt ?? undefined,
+      notes: parsed.notes ?? undefined
+    },
+    include: {
+      counterparty: true
+    }
+  });
+
+  await createActivityLog(db, {
+    dealId,
+    activityType: ActivityType.GENERAL,
+    counterpartyId: updated.counterpartyId,
+    title: 'Lender quote updated',
+    body: `${updated.facilityLabel} is now ${updated.status.toLowerCase()} at ${(updated.amountKrw ?? lenderQuote.amountKrw).toLocaleString()} KRW.`,
+    metadata: {
+      lenderQuoteId: updated.id,
+      status: updated.status,
+      amountKrw: updated.amountKrw ?? lenderQuote.amountKrw
+    }
+  });
+
+  await recordDealProbabilitySnapshot(dealId, 'lender_quote_updated', db);
+  return updated;
+}
+
+export async function createDealNegotiationEvent(dealId: string, input: unknown, db: PrismaClient = prisma) {
+  const parsed = dealNegotiationEventCreateSchema.parse(input);
+  const deal = await db.deal.findUnique({ where: { id: dealId } });
+  if (!deal) throw new Error('Deal not found');
+
+  if (parsed.counterpartyId) {
+    const counterparty = await db.counterparty.findFirst({
+      where: { id: parsed.counterpartyId, dealId }
+    });
+    if (!counterparty) throw new Error('Counterparty not found for this deal');
+  }
+
+  if (parsed.bidRevisionId) {
+    const bidRevision = await db.dealBidRevision.findFirst({
+      where: { id: parsed.bidRevisionId, dealId }
+    });
+    if (!bidRevision) throw new Error('Bid revision not found for this deal');
+  }
+
+  const negotiationEvent = await db.dealNegotiationEvent.create({
+    data: {
+      dealId,
+      counterpartyId: parsed.counterpartyId ?? null,
+      bidRevisionId: parsed.bidRevisionId ?? null,
+      eventType: parsed.eventType,
+      title: parsed.title,
+      effectiveAt: parsed.effectiveAt ?? new Date(),
+      expiresAt: parsed.expiresAt ?? null,
+      summary: parsed.summary ?? null
+    },
+    include: {
+      counterparty: true,
+      bidRevision: true
+    }
+  });
+
+  await createActivityLog(db, {
+    dealId,
+    activityType: ActivityType.GENERAL,
+    counterpartyId: negotiationEvent.counterpartyId,
+    title: 'Negotiation event logged',
+    body: `${negotiationEvent.title} (${negotiationEvent.eventType.toLowerCase().replaceAll('_', ' ')}).`,
+    metadata: {
+      negotiationEventId: negotiationEvent.id,
+      eventType: negotiationEvent.eventType,
+      expiresAt: negotiationEvent.expiresAt?.toISOString() ?? null
+    }
+  });
+
+  await recordDealProbabilitySnapshot(dealId, 'negotiation_event_created', db);
+  return negotiationEvent;
+}
+
+export async function updateDealNegotiationEvent(
+  dealId: string,
+  negotiationEventId: string,
+  input: unknown,
+  db: PrismaClient = prisma
+) {
+  const parsed = dealNegotiationEventUpdateSchema.parse(input);
+  const negotiationEvent = await db.dealNegotiationEvent.findFirst({
+    where: { id: negotiationEventId, dealId }
+  });
+  if (!negotiationEvent) throw new Error('Negotiation event not found');
+
+  if (parsed.counterpartyId) {
+    const counterparty = await db.counterparty.findFirst({
+      where: { id: parsed.counterpartyId, dealId }
+    });
+    if (!counterparty) throw new Error('Counterparty not found for this deal');
+  }
+
+  if (parsed.bidRevisionId) {
+    const bidRevision = await db.dealBidRevision.findFirst({
+      where: { id: parsed.bidRevisionId, dealId }
+    });
+    if (!bidRevision) throw new Error('Bid revision not found for this deal');
+  }
+
+  const updated = await db.dealNegotiationEvent.update({
+    where: { id: negotiationEventId },
+    data: {
+      counterpartyId: parsed.counterpartyId ?? undefined,
+      bidRevisionId: parsed.bidRevisionId ?? undefined,
+      eventType: parsed.eventType ?? undefined,
+      title: parsed.title ?? undefined,
+      effectiveAt: parsed.effectiveAt ?? undefined,
+      expiresAt: parsed.expiresAt ?? undefined,
+      summary: parsed.summary ?? undefined
+    },
+    include: {
+      counterparty: true,
+      bidRevision: true
+    }
+  });
+
+  await createActivityLog(db, {
+    dealId,
+    activityType: ActivityType.GENERAL,
+    counterpartyId: updated.counterpartyId,
+    title: 'Negotiation event updated',
+    body: `${updated.title} (${updated.eventType.toLowerCase().replaceAll('_', ' ')}).`,
+    metadata: {
+      negotiationEventId: updated.id,
+      eventType: updated.eventType,
+      expiresAt: updated.expiresAt?.toISOString() ?? null
+    }
+  });
+
+  await recordDealProbabilitySnapshot(dealId, 'negotiation_event_updated', db);
   return updated;
 }
 
@@ -796,6 +1263,7 @@ export async function updateDealTask(dealId: string, taskId: string, input: unkn
     body: `${updated.title} moved to ${updated.status.toLowerCase().replaceAll('_', ' ')}.`
   });
 
+  await recordDealProbabilitySnapshot(dealId, 'task_updated', db);
   return updated;
 }
 
@@ -821,6 +1289,7 @@ export async function createDealRiskFlag(dealId: string, input: unknown, db: Pri
     body: `${riskFlag.title} (${riskFlag.severity.toLowerCase()})`
   });
 
+  await recordDealProbabilitySnapshot(dealId, 'risk_created', db);
   return riskFlag;
 }
 
@@ -856,6 +1325,7 @@ export async function updateDealRiskFlag(
     body: `${updated.title} is ${nextResolved ? 'resolved' : updated.statusLabel.toLowerCase()}.`
   });
 
+  await recordDealProbabilitySnapshot(dealId, 'risk_updated', db);
   return updated;
 }
 
@@ -877,13 +1347,15 @@ export async function createDealActivity(dealId: string, input: unknown, db: Pri
     throw new Error('Counterparty not found for this deal');
   }
 
-  return createActivityLog(db, {
+  const activity = await createActivityLog(db, {
     dealId,
     activityType: parsed.activityType,
     title: parsed.title,
     body: parsed.body ?? null,
     counterpartyId: parsed.counterpartyId ?? null
   });
+  await recordDealProbabilitySnapshot(dealId, 'activity_logged', db);
+  return activity;
 }
 
 export async function seedDealStageChecklist(dealId: string, db: PrismaClient = prisma) {
@@ -921,6 +1393,9 @@ export async function seedDealStageChecklist(dealId: string, db: PrismaClient = 
     });
   }
 
+  if (createdTasks.length > 0) {
+    await recordDealProbabilitySnapshot(dealId, 'checklist_seeded', db);
+  }
   return createdTasks;
 }
 
@@ -946,6 +1421,7 @@ export async function archiveDeal(dealId: string, input: unknown, db: PrismaClie
     body: parsed.summary ?? 'Execution record archived.'
   });
 
+  await recordDealProbabilitySnapshot(dealId, 'archived', db);
   return getDealById(dealId, db);
 }
 
@@ -975,6 +1451,7 @@ export async function restoreDeal(dealId: string, input: unknown, db: PrismaClie
     body: parsed.summary ?? 'Execution record restored from archive.'
   });
 
+  await recordDealProbabilitySnapshot(dealId, 'restored', db);
   return getDealById(dealId, db);
 }
 
@@ -1048,6 +1525,7 @@ export async function closeOutDeal(dealId: string, input: unknown, db: PrismaCli
     body: followUpTask.title
   });
 
+  await recordDealProbabilitySnapshot(dealId, 'close_out', db);
   return getDealById(dealId, db);
 }
 
@@ -1120,6 +1598,16 @@ export function buildDealExecutionSnapshot(deal: Awaited<ReturnType<typeof getDe
       (entry) => entry.activityType === ActivityType.NOTE && entry.counterparty?.role === role
     )
   }));
+  const activeExclusivityEvent =
+    deal.negotiationEvents.find(
+      (event) =>
+        (event.eventType === 'EXCLUSIVITY_GRANTED' || event.eventType === 'EXCLUSIVITY_EXTENDED') &&
+        event.expiresAt &&
+        event.expiresAt.getTime() >= now
+    ) ?? null;
+  const exclusivityExpiresSoon =
+    activeExclusivityEvent?.expiresAt &&
+    activeExclusivityEvent.expiresAt.getTime() <= now + 1000 * 60 * 60 * 24 * 3;
 
   return {
     stageTrack: buildDealStageSummary(deal.stage),
@@ -1133,10 +1621,14 @@ export function buildDealExecutionSnapshot(deal: Awaited<ReturnType<typeof getDe
     overdueTaskCount: overdueTasks.length,
     dueSoonTaskCount: dueSoonTasks.length,
     openRiskCount: openRisks.length,
+    activeExclusivityEvent,
+    exclusivityExpiresSoon: !!exclusivityExpiresSoon,
     nextTask,
     reminderSummary:
       overdueTasks.length > 0
         ? `${overdueTasks.length} overdue task${overdueTasks.length === 1 ? '' : 's'} need attention.`
+        : exclusivityExpiresSoon
+          ? `Exclusivity expires ${activeExclusivityEvent?.expiresAt?.toLocaleDateString()}.`
         : dueSoonTasks.length > 0
           ? `${dueSoonTasks.length} task${dueSoonTasks.length === 1 ? '' : 's'} due in the next 72 hours.`
           : openTasks.length > 0
@@ -1157,6 +1649,8 @@ export function buildDealDataCoverage(
   const requestCount = deal.documentRequests.length;
   const fulfilledRequestCount = deal.documentRequests.filter((request) => request.status === DealRequestStatus.RECEIVED).length;
   const bidRevisionCount = deal.bidRevisions.length;
+  const lenderQuoteCount = deal.lenderQuotes.length;
+  const negotiationEventCount = deal.negotiationEvents.length;
   const requiredChecklistPct = snapshot?.checklistCompletionPct ?? 0;
   const hasBrokerOrSeller = deal.counterparties.some(
     (counterparty) => counterparty.role === 'BROKER' || counterparty.role === 'SELLER'
@@ -1228,6 +1722,26 @@ export function buildDealDataCoverage(
           : 'Log the first executable bid before moving deeper in the process.'
     },
     {
+      key: 'lender-process',
+      title: 'Financing quotes tracked',
+      status:
+        getStageIndex(deal.stage) >= getStageIndex(DealStage.IC) && lenderQuoteCount === 0 ? 'missing' : 'done',
+      detail:
+        lenderQuoteCount > 0
+          ? `${lenderQuoteCount} lender quote${lenderQuoteCount === 1 ? '' : 's'} captured.`
+          : 'No structured lender quote or term sheet tracked yet.'
+    },
+    {
+      key: 'negotiation-events',
+      title: 'Counter and feedback log',
+      status:
+        getStageIndex(deal.stage) >= getStageIndex(DealStage.LOI) && negotiationEventCount === 0 ? 'missing' : 'done',
+      detail:
+        negotiationEventCount > 0
+          ? `${negotiationEventCount} negotiation event${negotiationEventCount === 1 ? '' : 's'} captured.`
+          : 'No structured seller counter, buyer feedback, or exclusivity event logged yet.'
+    },
+    {
       key: 'commercial-guardrails',
       title: 'Commercial pricing guardrails',
       status: deal.sellerGuidanceKrw || deal.bidGuidanceKrw ? 'done' : 'missing',
@@ -1261,12 +1775,394 @@ export function buildDealDataCoverage(
       requestCount,
       fulfilledRequestCount,
       bidRevisionCount,
+      lenderQuoteCount,
+      negotiationEventCount,
       counterpartyCount: deal.counterparties.length,
       requiredChecklistPct
     },
     checks,
     gaps
   };
+}
+
+export function buildDealClosingReadiness(
+  deal: DealListRecord | DealDetailRecord,
+  snapshot?: DealExecutionSnapshot | null
+): DealClosingReadiness {
+  const stageIndex = getStageIndex(deal.stage);
+  const latestValuation = deal.asset?.valuations[0] ?? null;
+  const acceptedBid =
+    deal.bidRevisions.find((bid) => bid.status === DealBidStatus.ACCEPTED) ?? deal.bidRevisions[0] ?? null;
+  const approvedLenderQuote =
+    deal.lenderQuotes.find(
+      (quote) =>
+        quote.status === 'CREDIT_APPROVED' ||
+        quote.status === 'CLOSED'
+    ) ?? null;
+  const hasLiveExclusivity = !!snapshot?.activeExclusivityEvent;
+  const totalRequestCount = deal.documentRequests.length;
+  const clearedRequestCount = deal.documentRequests.filter(
+    (request) => request.status === DealRequestStatus.RECEIVED || request.status === DealRequestStatus.WAIVED
+  ).length;
+  const requestCompletionPct =
+    totalRequestCount > 0 ? (clearedRequestCount / totalRequestCount) * 100 : 0;
+  const hasExecutionContacts = deal.counterparties.some(
+    (counterparty) => counterparty.role === 'BUYER' || counterparty.role === 'LENDER'
+  );
+  const valuationFreshnessDays = latestValuation
+    ? Math.floor((Date.now() - latestValuation.createdAt.getTime()) / (1000 * 60 * 60 * 24))
+    : null;
+
+  const checks: DealClosingReadiness['checks'] = [
+    {
+      key: 'accepted-bid',
+      title: 'Accepted executable bid',
+      status:
+        acceptedBid?.status === DealBidStatus.ACCEPTED
+          ? 'done'
+          : stageIndex >= getStageIndex(DealStage.LOI)
+            ? 'missing'
+            : 'open',
+      detail:
+        acceptedBid?.status === DealBidStatus.ACCEPTED
+          ? `${acceptedBid.label} is marked accepted.`
+          : acceptedBid
+            ? `Latest bid is ${acceptedBid.status.toLowerCase()}.`
+            : 'No accepted bid or signed commercial paper is logged yet.',
+      isBlocker: true
+    },
+    {
+      key: 'financing-approved',
+      title: 'Financing approval',
+      status:
+        approvedLenderQuote
+          ? 'done'
+          : stageIndex >= getStageIndex(DealStage.IC)
+            ? 'missing'
+            : 'open',
+      detail:
+        approvedLenderQuote
+          ? `${approvedLenderQuote.facilityLabel} is ${approvedLenderQuote.status.toLowerCase()}.`
+          : 'No approved lender quote or closed financing is logged.',
+      isBlocker: true
+    },
+    {
+      key: 'live-exclusivity',
+      title: 'Live exclusivity clock',
+      status:
+        hasLiveExclusivity
+          ? 'done'
+          : stageIndex >= getStageIndex(DealStage.LOI)
+            ? 'missing'
+            : 'open',
+      detail: hasLiveExclusivity
+        ? `Exclusivity runs until ${snapshot?.activeExclusivityEvent?.expiresAt?.toLocaleDateString()}.`
+        : 'No live exclusivity event is protecting the process.',
+      isBlocker: stageIndex >= getStageIndex(DealStage.DD)
+    },
+    {
+      key: 'dd-cleared',
+      title: 'DD request tracker cleared',
+      status:
+        totalRequestCount === 0
+          ? stageIndex >= getStageIndex(DealStage.DD)
+            ? 'missing'
+            : 'open'
+          : requestCompletionPct >= 100
+            ? 'done'
+            : requestCompletionPct >= 50
+              ? 'open'
+              : 'missing',
+      detail:
+        totalRequestCount > 0
+          ? `${clearedRequestCount} of ${totalRequestCount} diligence requests are cleared.`
+          : 'No diligence request tracker has been opened yet.',
+      isBlocker: stageIndex >= getStageIndex(DealStage.DD)
+    },
+    {
+      key: 'recent-valuation',
+      title: 'Recent valuation anchor',
+      status:
+        !latestValuation
+          ? 'missing'
+          : valuationFreshnessDays !== null && valuationFreshnessDays <= 30
+            ? 'done'
+            : 'open',
+      detail:
+        latestValuation
+          ? valuationFreshnessDays !== null && valuationFreshnessDays <= 30
+            ? `Latest valuation is ${valuationFreshnessDays} day${valuationFreshnessDays === 1 ? '' : 's'} old.`
+            : `Latest valuation is ${valuationFreshnessDays ?? '?'} days old and should be refreshed.`
+          : 'No linked valuation is available.',
+      isBlocker: stageIndex >= getStageIndex(DealStage.IC)
+    },
+    {
+      key: 'stage-checklist',
+      title: 'Current stage checklist complete',
+      status:
+        (snapshot?.checklistCompletionPct ?? 0) >= 100
+          ? 'done'
+          : (snapshot?.checklistCompletionPct ?? 0) > 0
+            ? 'open'
+            : 'missing',
+      detail:
+        snapshot
+          ? `${snapshot.completedChecklistCount} of ${snapshot.requiredChecklistCount} required items are complete.`
+          : 'Stage checklist has not been evaluated.',
+      isBlocker: true
+    },
+    {
+      key: 'execution-contacts',
+      title: 'Execution counterparties assigned',
+      status:
+        hasExecutionContacts
+          ? 'done'
+          : stageIndex >= getStageIndex(DealStage.CLOSING)
+            ? 'missing'
+            : 'open',
+      detail: hasExecutionContacts
+        ? 'Buyer or lender execution contacts are logged.'
+        : 'Assign at least one buyer or lender execution contact.',
+      isBlocker: stageIndex >= getStageIndex(DealStage.CLOSING)
+    }
+  ];
+
+  const weightedCompletion = checks.reduce((sum, check) => {
+    if (check.status === 'done') return sum + 1;
+    if (check.status === 'open') return sum + 0.5;
+    return sum;
+  }, 0);
+  const blockerCount = checks.filter((check) => check.isBlocker && check.status !== 'done').length;
+  const blockers = checks.filter((check) => check.isBlocker && check.status !== 'done').map((check) => check.title);
+
+  return {
+    scorePct: checks.length > 0 ? (weightedCompletion / checks.length) * 100 : 100,
+    completedCount: checks.filter((check) => check.status === 'done').length,
+    totalCount: checks.length,
+    blockerCount,
+    readyToClose: blockerCount === 0,
+    checks,
+    blockers
+  };
+}
+
+export function buildDealCloseProbability(
+  deal: DealListRecord | DealDetailRecord,
+  snapshot?: DealExecutionSnapshot | null,
+  readiness?: DealClosingReadiness | null
+): DealCloseProbability {
+  const readinessView = readiness ?? buildDealClosingReadiness(deal, snapshot);
+  const stageBaseScore: Record<DealStage, number> = {
+    SOURCED: 15,
+    SCREENED: 25,
+    NDA: 35,
+    LOI: 50,
+    DD: 60,
+    IC: 72,
+    CLOSING: 82,
+    ASSET_MANAGEMENT: 98
+  };
+  const acceptedBid = deal.bidRevisions.some((bid) => bid.status === DealBidStatus.ACCEPTED);
+  const approvedLenderQuote = deal.lenderQuotes.some(
+    (quote) => quote.status === 'CREDIT_APPROVED' || quote.status === 'CLOSED'
+  );
+  const latestLenderQuote = deal.lenderQuotes[0] ?? null;
+  const latestNegotiationEvent = deal.negotiationEvents[0] ?? null;
+  const recentSellerCounter =
+    latestNegotiationEvent?.eventType === 'SELLER_COUNTER' &&
+    Date.now() - latestNegotiationEvent.effectiveAt.getTime() <= 1000 * 60 * 60 * 24 * 14;
+  const latestValuation = deal.asset?.valuations[0] ?? null;
+  const staleValuation =
+    latestValuation != null &&
+    Date.now() - latestValuation.createdAt.getTime() > 1000 * 60 * 60 * 24 * 30;
+  const staleExecution = Date.now() - deal.updatedAt.getTime() > 1000 * 60 * 60 * 24 * 7;
+  const openRiskCount = deal.riskFlags.filter((risk) => !risk.isResolved).length;
+  const criticalRiskCount = deal.riskFlags.filter(
+    (risk) => !risk.isResolved && risk.severity === RiskSeverity.CRITICAL
+  ).length;
+  const overdueTaskCount = snapshot?.overdueTaskCount ?? 0;
+  const hasNextAction = !!deal.nextAction;
+  const closingLikeStage = stageBaseScore[deal.stage] >= stageBaseScore[DealStage.IC];
+  const lenderStatusAdjustment =
+    latestLenderQuote?.status === 'CLOSED' || latestLenderQuote?.status === 'CREDIT_APPROVED'
+      ? 6
+      : latestLenderQuote?.status === 'TERM_SHEET'
+        ? 2
+        : latestLenderQuote?.status === 'DECLINED' || latestLenderQuote?.status === 'WITHDRAWN'
+          ? -7
+          : 0;
+
+  let score =
+    stageBaseScore[deal.stage] +
+    (readinessView.scorePct - 50) * 0.25 +
+    (acceptedBid ? 8 : 0) +
+    (approvedLenderQuote ? 8 : closingLikeStage ? -8 : 0) +
+    lenderStatusAdjustment +
+    (snapshot?.activeExclusivityEvent ? 5 : 0) -
+    (closingLikeStage && !snapshot?.activeExclusivityEvent ? 5 : 0) -
+    openRiskCount * 3 -
+    criticalRiskCount * 6 -
+    overdueTaskCount * 2 -
+    (hasNextAction ? 0 : 5) -
+    (staleValuation ? 4 : 0) -
+    (staleExecution ? 5 : 0) -
+    (snapshot?.exclusivityExpiresSoon ? 3 : 0) -
+    (recentSellerCounter ? 6 : 0) -
+    (closingLikeStage && !acceptedBid ? 8 : 0) -
+    readinessView.blockerCount * 2;
+
+  score = Math.max(5, Math.min(98, score));
+
+  const band: DealCloseProbability['band'] = score >= 75 ? 'HIGH' : score >= 50 ? 'MEDIUM' : 'LOW';
+  const drivers = [
+    acceptedBid ? 'Accepted bid is logged.' : 'No accepted bid is in the record.',
+    approvedLenderQuote
+      ? 'Financing is approved or closed.'
+      : latestLenderQuote
+        ? `Latest lender signal is ${latestLenderQuote.status.toLowerCase()}.`
+        : 'No approved financing is logged.',
+    snapshot?.activeExclusivityEvent
+      ? `Exclusivity is live until ${snapshot.activeExclusivityEvent.expiresAt?.toLocaleDateString()}.`
+      : 'No live exclusivity clock is protecting the process.',
+    overdueTaskCount > 0
+      ? `${overdueTaskCount} overdue task${overdueTaskCount === 1 ? '' : 's'} are dragging execution.`
+      : 'No overdue tasks are sitting in the queue.',
+    criticalRiskCount > 0
+      ? `${criticalRiskCount} critical risk${criticalRiskCount === 1 ? '' : 's'} remain unresolved.`
+      : 'No critical risk flags are open.',
+    recentSellerCounter
+      ? 'Seller has recently countered, so commercial certainty is still moving.'
+      : 'No recent seller counter is disrupting the current path.',
+    staleExecution
+      ? 'Execution record is stale and has not been updated in the last 7 days.'
+      : 'Execution record is fresh.'
+  ];
+
+  return {
+    scorePct: score,
+    band,
+    headline:
+      band === 'HIGH'
+        ? 'Close path is credible if the current checklist stays clean.'
+        : band === 'MEDIUM'
+          ? 'Deal can close, but execution gaps still need active management.'
+          : 'Close path is fragile until commercial, financing, or process blockers are cleared.',
+    drivers
+  };
+}
+
+export function buildDealCloseProbabilityHistory(
+  deal: DealDetailRecord,
+  current?: {
+    readiness: DealClosingReadiness;
+    probability: DealCloseProbability;
+  }
+): DealCloseProbabilityHistoryPoint[] {
+  const persisted = deal.probabilitySnapshots.map((item) => ({
+    id: item.id,
+    createdAt: item.createdAt,
+    stage: item.stage,
+    scorePct: item.closeProbabilityPct,
+    band: item.closeProbabilityBand as DealCloseProbability['band'],
+    readinessScorePct: item.readinessScorePct,
+    blockerCount: item.readinessBlockerCount,
+    reason: formatProbabilitySnapshotReason(item.snapshotReason),
+    headline: item.headline,
+    openRiskCount: item.openRiskCount,
+    overdueTaskCount: item.overdueTaskCount,
+    flags: [
+      item.hasAcceptedBid ? 'accepted bid' : null,
+      item.hasApprovedFinancing ? 'approved financing' : null,
+      item.hasLiveExclusivity ? 'live exclusivity' : null
+    ].filter(Boolean) as string[]
+  }));
+
+  if (persisted.length > 0) {
+    return persisted;
+  }
+
+  if (!current) {
+    return [];
+  }
+
+  return [
+    {
+      id: 'current',
+      createdAt: deal.updatedAt,
+      stage: deal.stage,
+      scorePct: current.probability.scorePct,
+      band: current.probability.band,
+      readinessScorePct: current.readiness.scorePct,
+      blockerCount: current.readiness.blockerCount,
+      reason: 'current state',
+      headline: current.probability.headline,
+      openRiskCount: deal.riskFlags.filter((risk) => !risk.isResolved).length,
+      overdueTaskCount: deal.tasks.filter(
+        (task) => task.status !== TaskStatus.DONE && task.dueDate && task.dueDate.getTime() < Date.now()
+      ).length,
+      flags: [
+        deal.bidRevisions.some((bid) => bid.status === DealBidStatus.ACCEPTED) ? 'accepted bid' : null,
+        deal.lenderQuotes.some((quote) => quote.status === 'CREDIT_APPROVED' || quote.status === 'CLOSED')
+          ? 'approved financing'
+          : null
+      ].filter(Boolean) as string[]
+    }
+  ];
+}
+
+async function recordDealProbabilitySnapshot(
+  dealId: string,
+  snapshotReason: string,
+  db: PrismaClient
+) {
+  try {
+    if (!('dealExecutionProbabilitySnapshot' in db) || !db.dealExecutionProbabilitySnapshot) {
+      return null;
+    }
+
+    const deal = await getDealById(dealId, db);
+    if (
+      !deal ||
+      !Array.isArray(deal.tasks) ||
+      !Array.isArray(deal.riskFlags) ||
+      !Array.isArray(deal.counterparties) ||
+      !Array.isArray(deal.documentRequests) ||
+      !Array.isArray(deal.bidRevisions) ||
+      !Array.isArray(deal.lenderQuotes) ||
+      !Array.isArray(deal.negotiationEvents) ||
+      !Array.isArray(deal.activityLogs)
+    ) {
+      return null;
+    }
+
+    const executionSnapshot = buildDealExecutionSnapshot(deal);
+    if (!executionSnapshot) return null;
+
+    const readiness = buildDealClosingReadiness(deal, executionSnapshot);
+    const probability = buildDealCloseProbability(deal, executionSnapshot, readiness);
+
+    return db.dealExecutionProbabilitySnapshot.create({
+      data: {
+        dealId,
+        stage: deal.stage,
+        snapshotReason,
+        readinessScorePct: readiness.scorePct,
+        readinessBlockerCount: readiness.blockerCount,
+        closeProbabilityPct: probability.scorePct,
+        closeProbabilityBand: probability.band,
+        headline: probability.headline,
+        openRiskCount: executionSnapshot.openRiskCount,
+        overdueTaskCount: executionSnapshot.overdueTaskCount,
+        hasAcceptedBid: deal.bidRevisions.some((bid) => bid.status === DealBidStatus.ACCEPTED),
+        hasApprovedFinancing: deal.lenderQuotes.some(
+          (quote) => quote.status === 'CREDIT_APPROVED' || quote.status === 'CLOSED'
+        ),
+        hasLiveExclusivity: !!executionSnapshot.activeExclusivityEvent
+      }
+    });
+  } catch {
+    return null;
+  }
 }
 
 export function buildDealTimeline(deal: DealDetailRecord): DealTimelineEvent[] {
@@ -1332,7 +2228,29 @@ export function buildDealTimeline(deal: DealDetailRecord): DealTimelineEvent[] {
     meta: ['valuation', valuation.runLabel ?? 'latest run']
   }));
 
-  return [...activityEvents, ...valuationEvents]
+  const negotiationEvents: DealTimelineEvent[] = deal.negotiationEvents.map((event) => ({
+    id: `negotiation-${event.id}`,
+    kind: 'activity',
+    category: 'execution',
+    title: event.title,
+    body: [event.summary, event.expiresAt ? `expires ${event.expiresAt.toLocaleDateString()}` : null]
+      .filter(Boolean)
+      .join(' / ') || null,
+    createdAt: event.effectiveAt,
+    href: null,
+    tone:
+      event.eventType === 'SELLER_COUNTER' || event.eventType === 'EXCLUSIVITY_GRANTED' || event.eventType === 'EXCLUSIVITY_EXTENDED'
+        ? 'warn'
+        : 'neutral',
+    meta: [
+      'negotiation',
+      event.eventType.toLowerCase().replaceAll('_', ' '),
+      event.counterparty ? event.counterparty.role.toLowerCase() : null,
+      event.bidRevision ? event.bidRevision.label : null
+    ].filter(Boolean) as string[]
+  }));
+
+  return [...activityEvents, ...negotiationEvents, ...valuationEvents]
     .sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime())
     .slice(0, 20);
 }

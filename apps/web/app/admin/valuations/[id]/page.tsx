@@ -1,7 +1,10 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { AssetClass } from '@prisma/client';
+import { AssetEnrichmentButton } from '@/components/admin/asset-enrichment-button';
+import { QuickValuationRunButton } from '@/components/admin/quick-valuation-run-button';
 import { formatCurrencyFromKrwAtRate, resolveDisplayCurrency } from '@/lib/finance/currency';
+import { ValuationRunForm } from '@/components/admin/valuation-run-form';
 import { FeatureSnapshotPanel } from '@/components/admin/feature-snapshot-panel';
 import { PrintImButton } from '@/components/marketing/print-im-button';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +23,7 @@ import { MarketEvidencePanel } from '@/components/valuation/market-evidence-pane
 import { RealizedOutcomePanel } from '@/components/valuation/realized-outcome-panel';
 import { SatelliteRiskSummary } from '@/components/valuation/satellite-risk-summary';
 import { SensitivityTable } from '@/components/valuation/sensitivity-table';
+import { ValuationDeltaCard } from '@/components/valuation/valuation-delta-card';
 import { ValuationBreakdown } from '@/components/valuation/valuation-breakdown';
 import { ValuationProvenance } from '@/components/valuation/valuation-provenance';
 import { ValuationRunBadges } from '@/components/valuation/valuation-run-badges';
@@ -86,6 +90,7 @@ export default async function ValuationRunDetailPage({ params }: { params: Promi
   const boostedForecast = await getGradientBoostingForecastForRun(run.id);
   const forecastDecisionGuide = await getForecastDecisionGuideForRun(run.id, boostedForecast);
   const forecastDecisionNarrative = buildForecastDecisionNarrative(forecastDecisionGuide);
+  const previousRun = run.asset.valuations.find((entry) => entry.id !== run.id) ?? null;
   const realizedOutcomeComparison = buildRealizedOutcomeComparison({
     run,
     outcomes: run.asset.realizedOutcomes,
@@ -363,6 +368,8 @@ export default async function ValuationRunDetailPage({ params }: { params: Promi
 
       <SensitivityTable runs={run.sensitivityRuns} displayCurrency={displayCurrency} fxRateToKrw={fxRateToKrw} />
 
+      <ValuationDeltaCard currentRun={run} previousRun={previousRun} />
+
       <ValuationBreakdown
         assumptions={run.assumptions as Record<string, number | string | null>}
         provenance={provenance}
@@ -427,6 +434,18 @@ export default async function ValuationRunDetailPage({ params }: { params: Promi
             <p className="mt-4 text-sm leading-7 text-slate-300">
               Move back to the asset record to refresh source enrichment, upload new diligence materials, or rerun the analysis with updated assumptions.
             </p>
+            <div className="mt-6 rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+              <ValuationRunForm assetId={run.assetId} />
+            </div>
+            <div className="mt-4 grid gap-3">
+              <QuickValuationRunButton
+                assetId={run.assetId}
+                assetCode={run.asset.assetCode}
+                fullWidth
+                label="Re-run Analysis"
+              />
+              <AssetEnrichmentButton assetId={run.assetId} fullWidth />
+            </div>
             <div className="mt-6 flex flex-wrap gap-3">
               <Link href={`/admin/assets/${run.assetId}`}>
                 <Button>Open Asset Dossier</Button>

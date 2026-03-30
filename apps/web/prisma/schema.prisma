@@ -169,6 +169,23 @@ enum DealBidStatus {
   WITHDRAWN
 }
 
+enum DealLenderQuoteStatus {
+  INDICATED
+  TERM_SHEET
+  CREDIT_APPROVED
+  DECLINED
+  WITHDRAWN
+  CLOSED
+}
+
+enum DealNegotiationEventType {
+  SELLER_COUNTER
+  BUYER_FEEDBACK
+  EXCLUSIVITY_GRANTED
+  EXCLUSIVITY_EXTENDED
+  PROCESS_UPDATE
+}
+
 model User {
   id            String            @id @default(cuid())
   name          String
@@ -729,6 +746,8 @@ model Counterparty {
   activityLogs        ActivityLog[]
   documentRequests    DealDocumentRequest[]
   bidRevisions        DealBidRevision[]
+  lenderQuotes        DealLenderQuote[]
+  negotiationEvents   DealNegotiationEvent[]
 
   @@index([assetId, role, createdAt])
   @@index([dealId, role, createdAt])
@@ -766,11 +785,36 @@ model Deal {
   tasks            Task[]
   documentRequests DealDocumentRequest[]
   bidRevisions     DealBidRevision[]
+  lenderQuotes     DealLenderQuote[]
+  negotiationEvents DealNegotiationEvent[]
   riskFlags        RiskFlag[]
   activityLogs     ActivityLog[]
+  probabilitySnapshots DealExecutionProbabilitySnapshot[]
 
   @@index([stage, targetCloseDate])
   @@index([market, assetClass, stage])
+}
+
+model DealExecutionProbabilitySnapshot {
+  id                     String    @id @default(cuid())
+  dealId                 String
+  stage                  DealStage
+  snapshotReason         String
+  readinessScorePct      Float
+  readinessBlockerCount  Int
+  closeProbabilityPct    Float
+  closeProbabilityBand   String
+  headline               String
+  openRiskCount          Int
+  overdueTaskCount       Int
+  hasAcceptedBid         Boolean   @default(false)
+  hasApprovedFinancing   Boolean   @default(false)
+  hasLiveExclusivity     Boolean   @default(false)
+  createdAt              DateTime  @default(now())
+  deal                   Deal      @relation(fields: [dealId], references: [id], onDelete: Cascade)
+
+  @@index([dealId, createdAt])
+  @@index([dealId, closeProbabilityBand, createdAt])
 }
 
 model DealDocumentRequest {
@@ -814,10 +858,58 @@ model DealBidRevision {
   updatedAt         DateTime      @updatedAt
   deal              Deal          @relation(fields: [dealId], references: [id], onDelete: Cascade)
   counterparty      Counterparty? @relation(fields: [counterpartyId], references: [id], onDelete: SetNull)
+  negotiationEvents DealNegotiationEvent[]
 
   @@index([dealId, submittedAt, createdAt])
   @@index([dealId, status, updatedAt])
   @@index([counterpartyId, createdAt])
+}
+
+model DealLenderQuote {
+  id               String                @id @default(cuid())
+  dealId           String
+  counterpartyId   String?
+  status           DealLenderQuoteStatus @default(INDICATED)
+  facilityLabel    String
+  amountKrw        Float
+  ltvPct           Float?
+  spreadBps        Float?
+  allInRatePct     Float?
+  dscrFloor        Float?
+  termMonths       Int?
+  ioMonths         Int?
+  quotedAt         DateTime?
+  notes            String?
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  deal             Deal                  @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  counterparty     Counterparty?         @relation(fields: [counterpartyId], references: [id], onDelete: SetNull)
+
+  @@index([dealId, quotedAt, createdAt])
+  @@index([dealId, status, updatedAt])
+  @@index([counterpartyId, createdAt])
+}
+
+model DealNegotiationEvent {
+  id             String                   @id @default(cuid())
+  dealId         String
+  counterpartyId String?
+  bidRevisionId  String?
+  eventType      DealNegotiationEventType
+  title          String
+  effectiveAt    DateTime
+  expiresAt      DateTime?
+  summary        String?
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+  deal           Deal                     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  counterparty   Counterparty?            @relation(fields: [counterpartyId], references: [id], onDelete: SetNull)
+  bidRevision    DealBidRevision?         @relation(fields: [bidRevisionId], references: [id], onDelete: SetNull)
+
+  @@index([dealId, effectiveAt, createdAt])
+  @@index([dealId, eventType, updatedAt])
+  @@index([counterpartyId, createdAt])
+  @@index([bidRevisionId, createdAt])
 }
 
 model Task {

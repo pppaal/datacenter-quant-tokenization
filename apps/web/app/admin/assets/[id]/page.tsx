@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { AssetClass } from '@prisma/client';
+import { AssetEnrichmentButton } from '@/components/admin/asset-enrichment-button';
 import { convertFromKrw, formatCurrencyFromKrwAtRate, resolveDisplayCurrency } from '@/lib/finance/currency';
 import { AssetIntakeForm } from '@/components/admin/asset-intake-form';
 import { CapexBookForm } from '@/components/admin/capex-book-form';
@@ -10,6 +11,7 @@ import { DocumentUploadForm } from '@/components/admin/document-upload-form';
 import { FeatureSnapshotPanel } from '@/components/admin/feature-snapshot-panel';
 import { LeaseBookForm } from '@/components/admin/lease-book-form';
 import { MicroDataForm } from '@/components/admin/micro-data-form';
+import { QuickValuationRunButton } from '@/components/admin/quick-valuation-run-button';
 import { RealizedOutcomeForm } from '@/components/admin/realized-outcome-form';
 import { ValuationRunForm } from '@/components/admin/valuation-run-form';
 import { Badge } from '@/components/ui/badge';
@@ -166,11 +168,10 @@ export default async function AssetDetailPage({
 
           <ValuationRunForm assetId={asset.id} />
 
-          <form action={`/api/assets/${asset.id}/enrich`} method="post">
-            <Button className="w-full" variant="secondary">
-              Refresh Source Enrichment
-            </Button>
-          </form>
+          <div className="grid gap-3">
+            <QuickValuationRunButton assetId={asset.id} assetCode={asset.assetCode} fullWidth label="Quick Re-run" />
+            <AssetEnrichmentButton assetId={asset.id} fullWidth />
+          </div>
 
           <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
             <div className="fine-print">Committee Readiness</div>

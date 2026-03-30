@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import { AssetClass } from '@prisma/client';
+import { AssetEnrichmentButton } from '@/components/admin/asset-enrichment-button';
+import { QuickValuationRunButton } from '@/components/admin/quick-valuation-run-button';
 import { formatCurrencyFromKrwAtRate, resolveDisplayCurrency } from '@/lib/finance/currency';
 import { SatelliteRiskSummary } from '@/components/valuation/satellite-risk-summary';
 import { ValuationRunBadges } from '@/components/valuation/valuation-run-badges';
@@ -178,6 +180,12 @@ export default async function ValuationsPage() {
                     <Link href={`/admin/assets/${run.assetId}`}>
                       <Button variant="secondary">Open Asset</Button>
                     </Link>
+                    <QuickValuationRunButton
+                      assetId={run.assetId}
+                      assetCode={run.asset.assetCode}
+                      variant="secondary"
+                    />
+                    <AssetEnrichmentButton assetId={run.assetId} />
                   </div>
                 </div>
               </div>
