@@ -15,32 +15,33 @@ const storageKey = 'deal-list-view-preference';
 export function DealViewTabs({ initialView }: Props) {
   const router = useRouter();
   const pathname = usePathname();
+  const resolvedPathname = pathname ?? '/admin/deals';
   const searchParams = useSearchParams();
   const [view, setView] = useState<DealView>(initialView);
 
   useEffect(() => {
     const stored = window.localStorage.getItem(storageKey) as DealView | null;
     if (stored && stored !== initialView) {
-      const params = new URLSearchParams(searchParams.toString());
+      const params = new URLSearchParams(searchParams?.toString() ?? '');
       if (stored === 'active') {
         params.delete('view');
       } else {
         params.set('view', stored);
       }
-      router.replace(params.size > 0 ? `${pathname}?${params.toString()}` : pathname);
+      router.replace(params.size > 0 ? `${resolvedPathname}?${params.toString()}` : resolvedPathname);
     }
-  }, [initialView, pathname, router, searchParams]);
+  }, [initialView, resolvedPathname, router, searchParams]);
 
   function applyView(nextView: DealView) {
     setView(nextView);
     window.localStorage.setItem(storageKey, nextView);
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(searchParams?.toString() ?? '');
     if (nextView === 'active') {
       params.delete('view');
     } else {
       params.set('view', nextView);
     }
-    router.push(params.size > 0 ? `${pathname}?${params.toString()}` : pathname);
+    router.push(params.size > 0 ? `${resolvedPathname}?${params.toString()}` : resolvedPathname);
   }
 
   return (
