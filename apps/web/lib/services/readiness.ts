@@ -8,6 +8,7 @@ import {
 } from '@/lib/blockchain/registry';
 import { prisma } from '@/lib/db/prisma';
 import { promoteAssetSnapshotsToFeatures } from '@/lib/services/feature-promotion';
+import { buildReviewPacketManifest } from '@/lib/services/review';
 
 export async function listReadinessProjects(db: PrismaClient = prisma) {
   return db.readinessProject.findMany({
@@ -32,6 +33,40 @@ async function getReadinessAssetContext(assetId: string, db: PrismaClient) {
   return db.asset.findUnique({
     where: { id: assetId },
     include: {
+      energySnapshot: true,
+      permitSnapshot: true,
+      ownershipRecords: {
+        orderBy: {
+          updatedAt: 'desc'
+        }
+      },
+      encumbranceRecords: {
+        orderBy: {
+          updatedAt: 'desc'
+        }
+      },
+      planningConstraints: {
+        orderBy: {
+          updatedAt: 'desc'
+        }
+      },
+      leases: {
+        orderBy: {
+          updatedAt: 'desc'
+        }
+      },
+      featureSnapshots: {
+        orderBy: {
+          snapshotDate: 'desc'
+        },
+        take: 16
+      },
+      valuations: {
+        orderBy: {
+          createdAt: 'desc'
+        },
+        take: 1
+      },
       documents: {
         orderBy: {
           updatedAt: 'desc'
@@ -51,10 +86,11 @@ async function getReadinessAssetContext(assetId: string, db: PrismaClient) {
   });
 }
 
-async function upsertDocumentHashRecord(args: {
+async function upsertReadinessRecord(args: {
   db: PrismaClient;
   readinessProjectId: string;
-  documentId: string;
+  recordType: string;
+  documentId?: string | null;
   status: ReadinessStatus;
   payload: Record<string, unknown>;
   txHash?: string | null;
@@ -65,8 +101,8 @@ async function upsertDocumentHashRecord(args: {
   const existing = await args.db.onchainRecord.findFirst({
     where: {
       readinessProjectId: args.readinessProjectId,
-      documentId: args.documentId,
-      recordType: 'DOCUMENT_HASH'
+      documentId: args.documentId ?? null,
+      recordType: args.recordType
     },
     orderBy: {
       createdAt: 'desc'
@@ -89,8 +125,8 @@ async function upsertDocumentHashRecord(args: {
   return args.db.onchainRecord.create({
     data: {
       readinessProjectId: args.readinessProjectId,
-      documentId: args.documentId,
-      recordType: 'DOCUMENT_HASH',
+      documentId: args.documentId ?? null,
+      recordType: args.recordType,
       status: args.status,
       payload,
       txHash: args.txHash,
@@ -104,45 +140,74 @@ export async function stageReviewReadiness(assetId: string, db: PrismaClient = p
   const asset = await getReadinessAssetContext(assetId, db);
 
   if (!asset || !asset.readinessProject) throw new Error('Readiness project not found');
-  const latestDocument = asset.documents[0];
-
-  if (!latestDocument) {
-    return db.readinessProject.update({
-      where: { id: asset.readinessProject.id },
-      data: {
-        readinessStatus: ReadinessStatus.NOT_STARTED,
-        nextAction: 'Upload diligence documents before packaging the review set.'
-      }
-    });
-  }
-
-  await upsertDocumentHashRecord({
-    db,
-    readinessProjectId: asset.readinessProject.id,
-    documentId: latestDocument.id,
-    status: ReadinessStatus.READY,
-    payload: {
-      assetCode: asset.assetCode,
-      documentHash: latestDocument.documentHash
-    }
-  });
-
-  const project = await db.readinessProject.update({
-    where: { id: asset.readinessProject.id },
-    data: {
-      readinessStatus: ReadinessStatus.READY,
-      nextAction: 'Ready for committee evidence packaging.'
-    },
-    include: {
-      onchainRecords: true
-    }
-  });
-
   try {
     await promoteAssetSnapshotsToFeatures(assetId, db);
   } catch {
     // Readiness staging should not fail if feature promotion sidecar work fails.
   }
+
+  const refreshedAsset = await getReadinessAssetContext(assetId, db);
+  if (!refreshedAsset || !refreshedAsset.readinessProject) throw new Error('Readiness project not found');
+  const latestDocument = refreshedAsset.documents[0];
+  const latestValuation = refreshedAsset.valuations[0];
+  const latestFeatureSnapshot = refreshedAsset.featureSnapshots[0];
+  const packet = buildReviewPacketManifest(refreshedAsset as Parameters<typeof buildReviewPacketManifest>[0]);
+  const packetPayload = {
+    assetCode: refreshedAsset.assetCode,
+    packetFingerprint: packet.fingerprint,
+    approvedEvidenceCount: packet.reviewSummary.totals.approved,
+    pendingEvidenceCount: packet.reviewSummary.totals.pending,
+    rejectedEvidenceCount: packet.reviewSummary.totals.rejected,
+    latestValuationId: latestValuation?.id ?? null,
+    latestValuationRunLabel: latestValuation?.runLabel ?? null,
+    latestDocumentHash: latestDocument?.documentHash ?? null,
+    latestFeatureSnapshotId: latestFeatureSnapshot?.id ?? null,
+    manifest: packet.manifest
+  };
+
+  await upsertReadinessRecord({
+    db,
+    readinessProjectId: refreshedAsset.readinessProject.id,
+    recordType: 'REVIEW_PACKET',
+    status: latestDocument ? ReadinessStatus.READY : ReadinessStatus.NOT_STARTED,
+    payload: packetPayload
+  });
+
+  if (!latestDocument) {
+    return db.readinessProject.update({
+      where: { id: refreshedAsset.readinessProject.id },
+      data: {
+        readinessStatus: ReadinessStatus.NOT_STARTED,
+        nextAction: 'Upload diligence documents before packaging the review set.',
+        reviewPhase: 'Evidence review'
+      }
+    });
+  }
+
+  await upsertReadinessRecord({
+    db,
+    readinessProjectId: refreshedAsset.readinessProject.id,
+    recordType: 'DOCUMENT_HASH',
+    documentId: latestDocument.id,
+    status: ReadinessStatus.READY,
+    payload: {
+      assetCode: refreshedAsset.assetCode,
+      documentHash: latestDocument.documentHash,
+      packetFingerprint: packet.fingerprint
+    }
+  });
+
+  const project = await db.readinessProject.update({
+    where: { id: refreshedAsset.readinessProject.id },
+    data: {
+      readinessStatus: ReadinessStatus.READY,
+      nextAction: 'Ready for committee evidence packaging.',
+      reviewPhase: 'Evidence packaged'
+    },
+    include: {
+      onchainRecords: true
+    }
+  });
 
   return project;
 }
@@ -264,9 +329,10 @@ export async function anchorLatestDocumentOnchain(assetId: string, db: PrismaCli
     await publicClient.waitForTransactionReceipt({ hash: txHash as `0x${string}` });
   }
 
-  await upsertDocumentHashRecord({
+  await upsertReadinessRecord({
     db,
     readinessProjectId: asset.readinessProject.id,
+    recordType: 'DOCUMENT_HASH',
     documentId: latestDocument.id,
     status: ReadinessStatus.ANCHORED,
     payload: {

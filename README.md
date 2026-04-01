@@ -9,7 +9,7 @@ This platform is an institutional asset-review product for Korean data center op
 ## Product Surface
 
 - Public pages: `/`, `/product`, `/sample-report`
-- Admin pages: `/admin`, `/admin/assets`, `/admin/assets/new`, `/admin/assets/[id]`, `/admin/valuations`, `/admin/documents`, `/admin/sources`, `/admin/registry`
+- Admin pages: `/admin`, `/admin/assets`, `/admin/assets/new`, `/admin/assets/[id]`, `/admin/review`, `/admin/valuations`, `/admin/documents`, `/admin/sources`, `/admin/registry`
 - Core models: `Asset`, `SiteProfile`, `Address`, `BuildingSnapshot`, `PermitSnapshot`, `EnergySnapshot`, `MarketSnapshot`, `ValuationRun`, `ValuationScenario`, `Document`, `Inquiry`, `User`, `RwaProject`, `OnchainRecord`
 
 ## Quick Start
@@ -65,6 +65,23 @@ Valuation variable reference:
 - Micro data roadmap: [`apps/web/docs/micro-data-roadmap.md`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/docs/micro-data-roadmap.md)
 - Report generation notes: [`apps/web/docs/report-generation.md`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/docs/report-generation.md)
 - Blockchain registry wiring guide: [`docs/blockchain-integration.md`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/docs/blockchain-integration.md)
+
+## Review-Gated Underwriting Flow
+
+The underwriting workflow now follows the repo roadmap literally for `DATA_CENTER` assets:
+
+1. source and raw record layer
+2. normalized asset record layer
+3. approved feature layer
+4. valuation and quant layer
+
+In practice:
+
+- manual micro, legal, and lease rows now save as `PENDING`
+- `/admin/review` and the asset-level review panel are used to approve or reject normalized evidence
+- only `APPROVED` energy, permit, ownership, encumbrance, planning, and lease rows are promoted into curated feature snapshots
+- valuation, DD checklist, risk memo, and readiness packaging prefer approved promoted features first and only fall back to raw normalized rows when approved curated features are missing
+- readiness staging now creates a deterministic offchain review packet manifest / fingerprint while anchoring only registry metadata and document hashes onchain
 
 ## Deliverables In Repo
 

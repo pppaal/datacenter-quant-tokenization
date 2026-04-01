@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { LeaseStatus, SourceStatus } from '@prisma/client';
+import { LeaseStatus, ReviewStatus, SourceStatus } from '@prisma/client';
 import { updateAssetMicroData } from '@/lib/services/micro-data';
 
 test('micro data update upserts energy and permit snapshots and creates a primary lease', async () => {
@@ -53,9 +53,12 @@ test('micro data update upserts energy and permit snapshots and creates a primar
   assert.equal(result.id, 'asset_1');
   assert.equal(capturedUpdate.data.energySnapshot.upsert.create.utilityName, 'KEPCO');
   assert.equal(capturedUpdate.data.energySnapshot.upsert.create.sourceStatus, SourceStatus.MANUAL);
+  assert.equal(capturedUpdate.data.energySnapshot.upsert.create.reviewStatus, ReviewStatus.PENDING);
   assert.equal(capturedUpdate.data.permitSnapshot.upsert.create.permitStage, 'Power allocation review');
+  assert.equal(capturedUpdate.data.permitSnapshot.upsert.create.reviewStatus, ReviewStatus.PENDING);
   assert.equal(capturedUpdate.data.leases.create.tenantName, 'Anchor Cloud Co.');
   assert.equal(capturedUpdate.data.leases.create.status, LeaseStatus.SIGNED);
+  assert.equal(capturedUpdate.data.leases.create.reviewStatus, ReviewStatus.PENDING);
   assert.equal(promotedAssetId, 'asset_1');
 });
 
@@ -107,8 +110,11 @@ test('micro data update creates legal ownership, encumbrance, and planning recor
 
   assert.equal(capturedUpdate.data.ownerName, 'Seoul Infra SPV');
   assert.equal(capturedUpdate.data.ownershipRecords.create.ownerName, 'Seoul Infra SPV');
+  assert.equal(capturedUpdate.data.ownershipRecords.create.reviewStatus, ReviewStatus.PENDING);
   assert.equal(capturedUpdate.data.encumbranceRecords.create.encumbranceType, 'Senior mortgage');
+  assert.equal(capturedUpdate.data.encumbranceRecords.create.reviewStatus, ReviewStatus.PENDING);
   assert.equal(capturedUpdate.data.planningConstraints.create.title, 'Shared ingress corridor');
+  assert.equal(capturedUpdate.data.planningConstraints.create.reviewStatus, ReviewStatus.PENDING);
 });
 
 test('micro data update normalizes non-KRW money inputs using the asset market currency', async () => {

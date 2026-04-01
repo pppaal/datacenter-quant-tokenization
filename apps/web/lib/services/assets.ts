@@ -1,4 +1,4 @@
-import { AssetClass, AssetStatus, type Prisma, type PrismaClient } from '@prisma/client';
+import { AssetClass, AssetStatus, ReviewStatus, type Prisma, type PrismaClient } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { buildMacroFactorCreateInputs } from '@/lib/services/macro/factors';
 import { buildMacroSeriesCreateInputs, normalizeMacroObservationDate } from '@/lib/services/macro/series';
@@ -619,6 +619,10 @@ export async function enrichAssetFromSources(assetId: string, db: PrismaClient =
             environmentalReviewStatus: building.data.environmentalReviewStatus,
             powerApprovalStatus: building.data.powerApprovalStatus,
             timelineNotes: climate.data.climateRiskNote,
+            reviewStatus: ReviewStatus.PENDING,
+            reviewedAt: null,
+            reviewedById: null,
+            reviewNotes: null,
             sourceStatus: building.status,
             sourceUpdatedAt
           },
@@ -628,6 +632,7 @@ export async function enrichAssetFromSources(assetId: string, db: PrismaClient =
             environmentalReviewStatus: building.data.environmentalReviewStatus,
             powerApprovalStatus: building.data.powerApprovalStatus,
             timelineNotes: climate.data.climateRiskNote,
+            reviewStatus: ReviewStatus.PENDING,
             sourceStatus: building.status,
             sourceUpdatedAt
           }
@@ -642,6 +647,10 @@ export async function enrichAssetFromSources(assetId: string, db: PrismaClient =
             renewableAvailabilityPct: energy.data.renewableAvailabilityPct,
             pueTarget: energy.data.pueTarget,
             backupFuelHours: energy.data.backupFuelHours,
+            reviewStatus: ReviewStatus.PENDING,
+            reviewedAt: null,
+            reviewedById: null,
+            reviewNotes: null,
             sourceStatus: energy.status,
             sourceUpdatedAt
           },
@@ -652,6 +661,7 @@ export async function enrichAssetFromSources(assetId: string, db: PrismaClient =
             renewableAvailabilityPct: energy.data.renewableAvailabilityPct,
             pueTarget: energy.data.pueTarget,
             backupFuelHours: energy.data.backupFuelHours,
+            reviewStatus: ReviewStatus.PENDING,
             sourceStatus: energy.status,
             sourceUpdatedAt
           }

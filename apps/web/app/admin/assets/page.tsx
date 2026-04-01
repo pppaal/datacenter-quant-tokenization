@@ -36,11 +36,11 @@ export default async function AssetsPage() {
         <Card className="hero-mesh">
           <div className="eyebrow">Asset Pipeline</div>
           <h2 className="mt-3 text-4xl font-semibold tracking-[-0.04em] text-white">
-            Multi-asset deals moving through analysis and IM generation.
+            Korean data-center dossiers moving through evidence, valuation, and committee review.
           </h2>
           <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-400">
-            Track which assets are ready for committee review, which still need diligence, and which dossiers need
-            updated analysis before the next memo run.
+            Track which opportunities are still in intake, which have approved underwriting evidence, and which are
+            ready for refreshed valuation, IC material, and registry-ready packaging.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Link href="/admin/assets/new">
@@ -69,6 +69,13 @@ export default async function AssetsPage() {
       </div>
 
       <div className="grid gap-5">
+        {assets.length === 0 ? (
+          <Card className="rounded-[24px] border border-white/10 bg-white/[0.03] p-6 text-sm leading-7 text-slate-400">
+            No asset dossiers exist yet. Start with <span className="font-semibold text-slate-200">New Asset Intake</span>{' '}
+            to create the first institutional underwriting file.
+          </Card>
+        ) : null}
+
         {assets.map((asset) => {
           const latestRun = asset.valuations[0];
           const displayCurrency = resolveDisplayCurrency(asset.address?.country ?? asset.market);

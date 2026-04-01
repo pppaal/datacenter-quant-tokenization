@@ -1,7 +1,9 @@
-import type { PrismaClient } from '@prisma/client';
+import { ReviewStatus, type PrismaClient } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 
-type PromotionDb = Pick<PrismaClient, 'documentVersion' | 'assetFeatureSnapshot' | 'asset'>;
+type PromotionDb = Pick<PrismaClient, 'documentVersion' | 'asset'> & {
+  assetFeatureSnapshot: Pick<PrismaClient['assetFeatureSnapshot'], 'create' | 'deleteMany'>;
+};
 
 type PromotedFeature = {
   key: string;
@@ -171,7 +173,8 @@ async function createNamespaceSnapshot(
   assetId: string,
   featureNamespace: string,
   sourceVersion: string,
-  features: Array<CuratedFeatureValue | null>
+  features: Array<CuratedFeatureValue | null>,
+  approvedById?: string | null
 ) {
   const values = features.filter((feature): feature is CuratedFeatureValue => feature !== null);
   if (values.length === 0) return null;
@@ -181,6 +184,7 @@ async function createNamespaceSnapshot(
       assetId,
       featureNamespace,
       sourceVersion,
+      approvedById: approvedById ?? null,
       values: {
         create: values.map((feature) => ({
           key: feature.key,
@@ -241,7 +245,45 @@ export async function promoteAssetSnapshotsToFeatures(assetId: string, db: Promo
 
   if (!asset) return [];
 
+  if (typeof db.assetFeatureSnapshot.deleteMany === 'function') {
+    await db.assetFeatureSnapshot.deleteMany({
+      where: {
+        assetId,
+        featureNamespace: {
+          in: [
+            'satellite_risk',
+            'site_micro',
+            'market_inputs',
+            'permit_inputs',
+            'power_micro',
+            'revenue_micro',
+            'legal_micro',
+            'readiness_legal'
+          ]
+        }
+      }
+    });
+  }
+
   const results: CuratedFeatureSnapshotResult[] = [];
+  const approvedEnergySnapshot =
+    asset.energySnapshot?.reviewStatus === ReviewStatus.APPROVED ? asset.energySnapshot : null;
+  const approvedPermitSnapshot =
+    asset.permitSnapshot?.reviewStatus === ReviewStatus.APPROVED ? asset.permitSnapshot : null;
+  const approvedOwnershipRecords = (asset.ownershipRecords ?? []).filter(
+    (record) => record.reviewStatus === ReviewStatus.APPROVED
+  );
+  const approvedEncumbranceRecords = (asset.encumbranceRecords ?? []).filter(
+    (record) => record.reviewStatus === ReviewStatus.APPROVED
+  );
+  const approvedPlanningConstraints = (asset.planningConstraints ?? []).filter(
+    (record) => record.reviewStatus === ReviewStatus.APPROVED
+  );
+  const approvedLeases = (asset.leases ?? []).filter((record) => record.reviewStatus === ReviewStatus.APPROVED);
+  const primaryApprovedLease = approvedLeases[0] ?? null;
+  const primaryOwner = approvedOwnershipRecords[0] ?? null;
+  const primaryEncumbrance = approvedEncumbranceRecords[0] ?? null;
+  const primaryConstraint = approvedPlanningConstraints[0] ?? null;
 
   const satelliteSnapshot = await createNamespaceSnapshot(
     db,
@@ -260,9 +302,33 @@ export async function promoteAssetSnapshotsToFeatures(assetId: string, db: Promo
       createCuratedFeature('satellite.climate_note', 'site_profile:climate_note', {
         textValue: asset.siteProfile?.siteNotes ?? null
       })
-    ]
+    ],
+    null
   );
   if (satelliteSnapshot) results.push(satelliteSnapshot);
+
+  const siteSnapshot = await createNamespaceSnapshot(
+    db,
+    asset.id,
+    'site_micro',
+    `siteProfile:${asset.siteProfile?.sourceUpdatedAt?.toISOString() ?? asset.updatedAt.toISOString()}`,
+    [
+      createCuratedFeature('site.grid_availability', 'site_profile:grid_availability', {
+        textValue: asset.siteProfile?.gridAvailability ?? null
+      }),
+      createCuratedFeature('site.fiber_access', 'site_profile:fiber_access', {
+        textValue: asset.siteProfile?.fiberAccess ?? null
+      }),
+      createCuratedFeature('site.latency_profile', 'site_profile:latency_profile', {
+        textValue: asset.siteProfile?.latencyProfile ?? null
+      }),
+      createCuratedFeature('site.note', 'site_profile:site_note', {
+        textValue: asset.siteProfile?.siteNotes ?? null
+      })
+    ],
+    null
+  );
+  if (siteSnapshot) results.push(siteSnapshot);
 
   const marketSnapshot = await createNamespaceSnapshot(
     db,
@@ -293,7 +359,8 @@ export async function promoteAssetSnapshotsToFeatures(assetId: string, db: Promo
       createCuratedFeature('market.note', 'market_snapshot:note', {
         textValue: asset.marketSnapshot?.marketNotes ?? null
       })
-    ]
+    ],
+    null
   );
   if (marketSnapshot) results.push(marketSnapshot);
 
@@ -301,18 +368,19 @@ export async function promoteAssetSnapshotsToFeatures(assetId: string, db: Promo
     db,
     asset.id,
     'permit_inputs',
-    `permitSnapshot:${asset.permitSnapshot?.sourceUpdatedAt?.toISOString() ?? asset.updatedAt.toISOString()}`,
+    `permitSnapshot:${approvedPermitSnapshot?.sourceUpdatedAt?.toISOString() ?? approvedPermitSnapshot?.updatedAt?.toISOString() ?? asset.updatedAt.toISOString()}`,
     [
-      createCuratedFeature('permit.stage', 'permit_snapshot:stage', {
-        textValue: asset.permitSnapshot?.permitStage ?? null
+      createCuratedFeature('permit.stage', `permit_snapshot:${approvedPermitSnapshot?.id}:stage`, {
+        textValue: approvedPermitSnapshot?.permitStage ?? null
       }),
-      createCuratedFeature('permit.power_approval_status', 'permit_snapshot:power_status', {
-        textValue: asset.permitSnapshot?.powerApprovalStatus ?? null
+      createCuratedFeature('permit.power_approval_status', `permit_snapshot:${approvedPermitSnapshot?.id}:power_status`, {
+        textValue: approvedPermitSnapshot?.powerApprovalStatus ?? null
       }),
-      createCuratedFeature('permit.timeline_note', 'permit_snapshot:timeline', {
-        textValue: asset.permitSnapshot?.timelineNotes ?? null
+      createCuratedFeature('permit.timeline_note', `permit_snapshot:${approvedPermitSnapshot?.id}:timeline`, {
+        textValue: approvedPermitSnapshot?.timelineNotes ?? null
       })
-    ]
+    ],
+    approvedPermitSnapshot?.reviewedById ?? null
   );
   if (permitSnapshot) results.push(permitSnapshot);
 
@@ -320,110 +388,109 @@ export async function promoteAssetSnapshotsToFeatures(assetId: string, db: Promo
     db,
     asset.id,
     'power_micro',
-    `energySnapshot:${asset.energySnapshot?.sourceUpdatedAt?.toISOString() ?? asset.updatedAt.toISOString()}`,
+    `energySnapshot:${approvedEnergySnapshot?.sourceUpdatedAt?.toISOString() ?? approvedEnergySnapshot?.updatedAt?.toISOString() ?? asset.updatedAt.toISOString()}`,
     [
-      createCuratedFeature('power.utility_name', 'energy_snapshot:utility_name', {
-        textValue: asset.energySnapshot?.utilityName ?? null
+      createCuratedFeature('power.utility_name', `energy_snapshot:${approvedEnergySnapshot?.id}:utility_name`, {
+        textValue: approvedEnergySnapshot?.utilityName ?? null
       }),
-      createCuratedFeature('power.substation_distance_km', 'energy_snapshot:substation_distance_km', {
-        numberValue: asset.energySnapshot?.substationDistanceKm ?? null,
+      createCuratedFeature('power.substation_distance_km', `energy_snapshot:${approvedEnergySnapshot?.id}:substation_distance_km`, {
+        numberValue: approvedEnergySnapshot?.substationDistanceKm ?? null,
         unit: 'km'
       }),
-      createCuratedFeature('power.tariff_krw_per_kwh', 'energy_snapshot:tariff_krw_per_kwh', {
-        numberValue: asset.energySnapshot?.tariffKrwPerKwh ?? null,
+      createCuratedFeature('power.tariff_krw_per_kwh', `energy_snapshot:${approvedEnergySnapshot?.id}:tariff_krw_per_kwh`, {
+        numberValue: approvedEnergySnapshot?.tariffKrwPerKwh ?? null,
         unit: 'KRW'
       }),
-      createCuratedFeature('power.renewable_availability_pct', 'energy_snapshot:renewable_pct', {
-        numberValue: asset.energySnapshot?.renewableAvailabilityPct ?? null,
+      createCuratedFeature('power.renewable_availability_pct', `energy_snapshot:${approvedEnergySnapshot?.id}:renewable_pct`, {
+        numberValue: approvedEnergySnapshot?.renewableAvailabilityPct ?? null,
         unit: 'pct'
       }),
-      createCuratedFeature('power.pue_target', 'energy_snapshot:pue_target', {
-        numberValue: asset.energySnapshot?.pueTarget ?? null
+      createCuratedFeature('power.pue_target', `energy_snapshot:${approvedEnergySnapshot?.id}:pue_target`, {
+        numberValue: approvedEnergySnapshot?.pueTarget ?? null
       }),
-      createCuratedFeature('power.backup_fuel_hours', 'energy_snapshot:backup_fuel_hours', {
-        numberValue: asset.energySnapshot?.backupFuelHours ?? null,
+      createCuratedFeature('power.backup_fuel_hours', `energy_snapshot:${approvedEnergySnapshot?.id}:backup_fuel_hours`, {
+        numberValue: approvedEnergySnapshot?.backupFuelHours ?? null,
         unit: 'hours'
       })
-    ]
+    ],
+    approvedEnergySnapshot?.reviewedById ?? null
   );
   if (powerSnapshot) results.push(powerSnapshot);
 
-  const primaryLease = Array.isArray(asset.leases) ? asset.leases[0] : null;
   const revenueSnapshot = await createNamespaceSnapshot(
     db,
     asset.id,
     'revenue_micro',
-    `lease:${primaryLease?.updatedAt?.toISOString() ?? asset.updatedAt.toISOString()}`,
+    `lease:${primaryApprovedLease?.updatedAt?.toISOString() ?? asset.updatedAt.toISOString()}`,
     [
-      createCuratedFeature('revenue.primary_tenant', 'lease:tenant_name', {
-        textValue: primaryLease?.tenantName ?? null
+      createCuratedFeature('revenue.primary_tenant', `lease:${primaryApprovedLease?.id}:tenant_name`, {
+        textValue: primaryApprovedLease?.tenantName ?? null
       }),
-      createCuratedFeature('revenue.leased_kw', 'lease:leased_kw', {
-        numberValue: primaryLease?.leasedKw ?? null,
+      createCuratedFeature('revenue.leased_kw', `lease:${primaryApprovedLease?.id}:leased_kw`, {
+        numberValue: primaryApprovedLease?.leasedKw ?? null,
         unit: 'kW'
       }),
-      createCuratedFeature('revenue.base_rate_per_kw_krw', 'lease:base_rate_per_kw_krw', {
-        numberValue: primaryLease?.baseRatePerKwKrw ?? null,
+      createCuratedFeature('revenue.base_rate_per_kw_krw', `lease:${primaryApprovedLease?.id}:base_rate_per_kw_krw`, {
+        numberValue: primaryApprovedLease?.baseRatePerKwKrw ?? null,
         unit: 'KRW'
       }),
-      createCuratedFeature('revenue.term_years', 'lease:term_years', {
-        numberValue: primaryLease?.termYears ?? null,
+      createCuratedFeature('revenue.term_years', `lease:${primaryApprovedLease?.id}:term_years`, {
+        numberValue: primaryApprovedLease?.termYears ?? null,
         unit: 'years'
       }),
-      createCuratedFeature('revenue.probability_pct', 'lease:probability_pct', {
-        numberValue: primaryLease?.probabilityPct ?? null,
+      createCuratedFeature('revenue.probability_pct', `lease:${primaryApprovedLease?.id}:probability_pct`, {
+        numberValue: primaryApprovedLease?.probabilityPct ?? null,
         unit: 'pct'
       }),
-      createCuratedFeature('revenue.annual_escalation_pct', 'lease:annual_escalation_pct', {
-        numberValue: primaryLease?.annualEscalationPct ?? null,
+      createCuratedFeature('revenue.annual_escalation_pct', `lease:${primaryApprovedLease?.id}:annual_escalation_pct`, {
+        numberValue: primaryApprovedLease?.annualEscalationPct ?? null,
         unit: 'pct'
       })
-    ]
+    ],
+    primaryApprovedLease?.reviewedById ?? null
   );
   if (revenueSnapshot) results.push(revenueSnapshot);
 
-  const primaryOwner = Array.isArray(asset.ownershipRecords) ? asset.ownershipRecords[0] : null;
-  const primaryEncumbrance = Array.isArray(asset.encumbranceRecords) ? asset.encumbranceRecords[0] : null;
-  const primaryConstraint = Array.isArray(asset.planningConstraints) ? asset.planningConstraints[0] : null;
   const legalSnapshot = await createNamespaceSnapshot(
     db,
     asset.id,
     'legal_micro',
     `legal:${primaryConstraint?.updatedAt?.toISOString() ?? primaryEncumbrance?.updatedAt?.toISOString() ?? primaryOwner?.updatedAt?.toISOString() ?? asset.updatedAt.toISOString()}`,
     [
-      createCuratedFeature('legal.owner_name', 'ownership_record:owner_name', {
+      createCuratedFeature('legal.owner_name', `ownership_record:${primaryOwner?.id}:owner_name`, {
         textValue: primaryOwner?.ownerName ?? null
       }),
-      createCuratedFeature('legal.owner_entity_type', 'ownership_record:entity_type', {
+      createCuratedFeature('legal.owner_entity_type', `ownership_record:${primaryOwner?.id}:entity_type`, {
         textValue: primaryOwner?.entityType ?? null
       }),
-      createCuratedFeature('legal.ownership_pct', 'ownership_record:ownership_pct', {
+      createCuratedFeature('legal.ownership_pct', `ownership_record:${primaryOwner?.id}:ownership_pct`, {
         numberValue: primaryOwner?.ownershipPct ?? null,
         unit: 'pct'
       }),
-      createCuratedFeature('legal.encumbrance_type', 'encumbrance_record:type', {
+      createCuratedFeature('legal.encumbrance_type', `encumbrance_record:${primaryEncumbrance?.id}:type`, {
         textValue: primaryEncumbrance?.encumbranceType ?? null
       }),
-      createCuratedFeature('legal.encumbrance_holder', 'encumbrance_record:holder_name', {
+      createCuratedFeature('legal.encumbrance_holder', `encumbrance_record:${primaryEncumbrance?.id}:holder_name`, {
         textValue: primaryEncumbrance?.holderName ?? null
       }),
-      createCuratedFeature('legal.secured_amount_krw', 'encumbrance_record:secured_amount_krw', {
+      createCuratedFeature('legal.secured_amount_krw', `encumbrance_record:${primaryEncumbrance?.id}:secured_amount_krw`, {
         numberValue: primaryEncumbrance?.securedAmountKrw ?? null,
         unit: 'KRW'
       }),
-      createCuratedFeature('legal.priority_rank', 'encumbrance_record:priority_rank', {
+      createCuratedFeature('legal.priority_rank', `encumbrance_record:${primaryEncumbrance?.id}:priority_rank`, {
         numberValue: primaryEncumbrance?.priorityRank ?? null
       }),
-      createCuratedFeature('legal.constraint_type', 'planning_constraint:type', {
+      createCuratedFeature('legal.constraint_type', `planning_constraint:${primaryConstraint?.id}:type`, {
         textValue: primaryConstraint?.constraintType ?? null
       }),
-      createCuratedFeature('legal.constraint_title', 'planning_constraint:title', {
+      createCuratedFeature('legal.constraint_title', `planning_constraint:${primaryConstraint?.id}:title`, {
         textValue: primaryConstraint?.title ?? null
       }),
-      createCuratedFeature('legal.constraint_severity', 'planning_constraint:severity', {
+      createCuratedFeature('legal.constraint_severity', `planning_constraint:${primaryConstraint?.id}:severity`, {
         textValue: primaryConstraint?.severity ?? null
       })
-    ]
+    ],
+    primaryOwner?.reviewedById ?? primaryEncumbrance?.reviewedById ?? primaryConstraint?.reviewedById ?? null
   );
   if (legalSnapshot) results.push(legalSnapshot);
 
@@ -445,7 +512,8 @@ export async function promoteAssetSnapshotsToFeatures(assetId: string, db: Promo
       createCuratedFeature('readiness.next_action', 'review_package:next_action', {
         textValue: asset.readinessProject?.nextAction ?? null
       })
-    ]
+    ],
+    null
   );
   if (readinessSnapshot) results.push(readinessSnapshot);
 

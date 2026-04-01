@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { LeaseStatus } from '@prisma/client';
+import { LeaseStatus, ReviewStatus } from '@prisma/client';
 import { createAssetLease, deleteAssetLease, updateAssetLease } from '@/lib/services/lease-book';
 
 test('lease book create normalizes currency and creates a new lease row', async () => {
@@ -86,6 +86,7 @@ test('lease book create normalizes currency and creates a new lease row', async 
   );
 
   assert.equal(capturedCreate.data.assetId, 'asset_lease_1');
+  assert.equal(capturedCreate.data.reviewStatus, ReviewStatus.PENDING);
   assert.equal(capturedCreate.data.baseRatePerKwKrw, 202500);
   assert.equal(capturedCreate.data.markToMarketRatePerKwKrw, 222750);
   assert.equal(capturedCreate.data.renewalTermYears, 4);
@@ -261,6 +262,7 @@ test('lease book update and delete enforce asset ownership and re-promote featur
   });
 
   assert.equal(capturedUpdate.where.id, 'lease_1');
+  assert.equal(capturedUpdate.data.reviewStatus, ReviewStatus.PENDING);
   assert.equal(capturedUpdate.data.tenantName, 'Updated Tenant');
   assert.equal(capturedUpdate.data.status, LeaseStatus.ACTIVE);
   assert.equal(capturedUpdate.data.rentFreeMonths, 2);

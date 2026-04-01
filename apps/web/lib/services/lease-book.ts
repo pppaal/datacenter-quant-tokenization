@@ -1,4 +1,4 @@
-import { LeaseStatus, type PrismaClient } from '@prisma/client';
+import { LeaseStatus, ReviewStatus, type PrismaClient } from '@prisma/client';
 import { convertToKrw, resolveInputCurrency } from '@/lib/finance/currency';
 import { promoteAssetSnapshotsToFeatures } from '@/lib/services/feature-promotion';
 import { prisma } from '@/lib/db/prisma';
@@ -153,6 +153,10 @@ export async function createAssetLease(assetId: string, input: unknown, deps?: L
       utilityPassThroughPct: normalized.utilityPassThroughPct,
       fitOutCostKrw: normalized.fitOutCostKrw,
       notes: normalized.leaseNotes,
+      reviewStatus: ReviewStatus.PENDING,
+      reviewedAt: null,
+      reviewedById: null,
+      reviewNotes: null,
       steps: normalized.steps?.length
         ? {
             create: normalized.steps.map((step) => ({
@@ -255,6 +259,10 @@ export async function updateAssetLease(assetId: string, leaseId: string, input: 
       utilityPassThroughPct: normalized.utilityPassThroughPct ?? existing.utilityPassThroughPct,
       fitOutCostKrw: normalized.fitOutCostKrw ?? existing.fitOutCostKrw,
       notes: normalized.leaseNotes ?? existing.notes,
+      reviewStatus: ReviewStatus.PENDING,
+      reviewedAt: null,
+      reviewedById: null,
+      reviewNotes: null,
       steps:
         normalized.steps !== undefined
           ? {

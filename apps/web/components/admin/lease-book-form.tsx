@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { LeaseStatus } from '@prisma/client';
+import { LeaseStatus, ReviewStatus } from '@prisma/client';
 import { type SupportedCurrency } from '@/lib/finance/currency';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
@@ -12,6 +13,8 @@ import { Textarea } from '@/components/ui/textarea';
 type LeaseDraft = {
   id?: string;
   localId: string;
+  reviewStatus?: ReviewStatus | null;
+  reviewNotes?: string | null;
   tenantName: string;
   leaseStatus: string;
   leasedKw: string;
@@ -71,6 +74,8 @@ type LeaseDefaultValue = {
   id: string;
   tenantName: string;
   leaseStatus: LeaseStatus;
+  reviewStatus?: ReviewStatus | null;
+  reviewNotes?: string | null;
   leasedKw?: number;
   startYear?: number;
   termYears?: number;
@@ -130,6 +135,8 @@ function buildDraft(lease?: LeaseDefaultValue): LeaseDraft {
   return {
     id: lease?.id,
     localId: lease?.id ?? `draft_${Math.random().toString(36).slice(2, 10)}`,
+    reviewStatus: lease?.reviewStatus ?? null,
+    reviewNotes: lease?.reviewNotes ?? '',
     tenantName: lease?.tenantName ?? '',
     leaseStatus: lease?.leaseStatus ?? '',
     leasedKw: stringifyValue(lease?.leasedKw),
@@ -400,6 +407,10 @@ export function LeaseBookForm({
   return (
     <div id="lease-book" className="space-y-5">
       <div className="grid gap-4">
+        <div className="rounded-[24px] border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-100">
+          New or edited lease rows save into the normalized lease layer as <span className="font-semibold">PENDING</span>.
+          Only approved leases are promoted into `revenue_micro` and treated as committee-ready evidence.
+        </div>
         {leases.map((lease, index) => (
           <div
             id={lease.id ? `lease-${lease.id}` : undefined}
@@ -412,6 +423,24 @@ export function LeaseBookForm({
                 <h4 className="mt-2 text-xl font-semibold text-white">
                   {lease.tenantName || `Contracted load tranche ${index + 1}`}
                 </h4>
+                {lease.reviewStatus ? (
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <Badge
+                      tone={
+                        lease.reviewStatus === ReviewStatus.APPROVED
+                          ? 'good'
+                          : lease.reviewStatus === ReviewStatus.REJECTED
+                            ? 'danger'
+                            : 'warn'
+                      }
+                    >
+                      {lease.reviewStatus}
+                    </Badge>
+                    {lease.reviewNotes ? (
+                      <span className="text-xs text-slate-500">Review note: {lease.reviewNotes}</span>
+                    ) : null}
+                  </div>
+                ) : null}
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button
@@ -685,7 +714,8 @@ export function LeaseBookForm({
       <div className="flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-4">
         <p className="max-w-3xl text-sm text-slate-400">
           Capture each tenant or capacity tranche separately. Monetary inputs are entered in {inputCurrency} and
-          normalized to KRW internally before the valuation engine rebuilds revenue micro snapshots.
+          normalized to KRW internally before the valuation engine rebuilds revenue micro snapshots. Saving a row sends
+          it back to the review queue.
         </p>
         <div className="flex items-center gap-3">
           {errorMessage ? <span className="text-sm text-rose-300">{errorMessage}</span> : null}

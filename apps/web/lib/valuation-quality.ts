@@ -17,13 +17,16 @@ type AssetQualityInput = {
   energySnapshot?: {
     tariffKrwPerKwh?: number | null;
     pueTarget?: number | null;
+    reviewStatus?: string | null;
   } | null;
   permitSnapshot?: {
     powerApprovalStatus?: string | null;
+    reviewStatus?: string | null;
   } | null;
-  ownershipRecords?: Array<unknown> | null;
-  encumbranceRecords?: Array<unknown> | null;
-  planningConstraints?: Array<unknown> | null;
+  ownershipRecords?: Array<{ reviewStatus?: string | null } | unknown> | null;
+  encumbranceRecords?: Array<{ reviewStatus?: string | null } | unknown> | null;
+  planningConstraints?: Array<{ reviewStatus?: string | null } | unknown> | null;
+  permits?: Array<{ reviewStatus?: string | null } | unknown> | null;
 };
 
 type CoverageItem = {
@@ -33,9 +36,18 @@ type CoverageItem = {
   detail: string;
 };
 
+type ReviewCount = {
+  approved: number;
+  pending: number;
+  rejected: number;
+};
+
 export type ValuationQualitySummary = {
   coverage: CoverageItem[];
   missingInputs: string[];
+  approvedEvidenceCount: number;
+  pendingEvidenceCount: number;
+  rejectedEvidenceCount: number;
   sourceStats: {
     apiCount: number;
     manualCount: number;
@@ -50,9 +62,23 @@ export type ValuationQualitySummary = {
 
 function hasLegalCoverage(input: AssetQualityInput) {
   return (
-    (input.ownershipRecords?.length ?? 0) > 0 ||
-    (input.encumbranceRecords?.length ?? 0) > 0 ||
-    (input.planningConstraints?.length ?? 0) > 0
+    input.ownershipRecords?.some((record: any) => record?.reviewStatus === 'APPROVED') ||
+    input.encumbranceRecords?.some((record: any) => record?.reviewStatus === 'APPROVED') ||
+    input.planningConstraints?.some((record: any) => record?.reviewStatus === 'APPROVED')
+  );
+}
+
+function countByReviewStatus(
+  records: Array<{ reviewStatus?: string | null } | unknown> | null | undefined
+): ReviewCount {
+  return (records ?? []).reduce<ReviewCount>(
+    (acc, record: any) => {
+      if (record?.reviewStatus === 'APPROVED') acc.approved += 1;
+      else if (record?.reviewStatus === 'PENDING') acc.pending += 1;
+      else if (record?.reviewStatus === 'REJECTED') acc.rejected += 1;
+      return acc;
+    },
+    { approved: 0, pending: 0, rejected: 0 }
   );
 }
 
@@ -61,19 +87,51 @@ export function buildValuationQualitySummary(
   assumptions: unknown,
   provenance: ProvenanceEntry[] = []
 ): ValuationQualitySummary {
-  const leaseCount = asset.leases?.length ?? 0;
+  const leaseReview = countByReviewStatus(asset.leases as Array<{ reviewStatus?: string | null } | unknown>);
+  const ownershipReview = countByReviewStatus(asset.ownershipRecords);
+  const encumbranceReview = countByReviewStatus(asset.encumbranceRecords);
+  const planningReview = countByReviewStatus(asset.planningConstraints);
   const comparableCount = asset.comparableSet?.entries?.length ?? 0;
   const capexCount = asset.capexLineItems?.length ?? 0;
-  const hasPowerCoverage = Boolean(asset.energySnapshot?.tariffKrwPerKwh && asset.energySnapshot?.pueTarget);
-  const hasPermitCoverage = Boolean(asset.permitSnapshot?.powerApprovalStatus);
+  const hasPowerCoverage =
+    asset.energySnapshot?.reviewStatus === 'APPROVED' &&
+    Boolean(asset.energySnapshot?.tariffKrwPerKwh && asset.energySnapshot?.pueTarget);
+  const hasPermitCoverage =
+    asset.permitSnapshot?.reviewStatus === 'APPROVED' && Boolean(asset.permitSnapshot?.powerApprovalStatus);
   const hasLegal = hasLegalCoverage(asset);
+  const approvedEvidenceCount =
+    leaseReview.approved +
+    ownershipReview.approved +
+    encumbranceReview.approved +
+    planningReview.approved +
+    (asset.energySnapshot?.reviewStatus === 'APPROVED' ? 1 : 0) +
+    (asset.permitSnapshot?.reviewStatus === 'APPROVED' ? 1 : 0);
+  const pendingEvidenceCount =
+    leaseReview.pending +
+    ownershipReview.pending +
+    encumbranceReview.pending +
+    planningReview.pending +
+    (asset.energySnapshot?.reviewStatus === 'PENDING' ? 1 : 0) +
+    (asset.permitSnapshot?.reviewStatus === 'PENDING' ? 1 : 0);
+  const rejectedEvidenceCount =
+    leaseReview.rejected +
+    ownershipReview.rejected +
+    encumbranceReview.rejected +
+    planningReview.rejected +
+    (asset.energySnapshot?.reviewStatus === 'REJECTED' ? 1 : 0) +
+    (asset.permitSnapshot?.reviewStatus === 'REJECTED' ? 1 : 0);
 
   const coverage: CoverageItem[] = [
     {
       key: 'lease',
       label: 'Lease Book',
-      status: leaseCount > 0 ? 'good' : 'warn',
-      detail: leaseCount > 0 ? `${leaseCount} lease rows loaded into the DCF.` : 'No lease rows; valuation still leans on residual synthetic lease-up.'
+      status: leaseReview.approved > 0 ? 'good' : 'warn',
+      detail:
+        leaseReview.approved > 0
+          ? `${leaseReview.approved} approved lease row(s) are valuation-ready${leaseReview.pending > 0 ? `, ${leaseReview.pending} pending review` : ''}.`
+          : leaseReview.pending > 0
+            ? `${leaseReview.pending} lease row(s) are pending review; valuation falls back to raw revenue inputs.`
+            : 'No lease rows; valuation still leans on residual synthetic lease-up.'
     },
     {
       key: 'comparable',
@@ -97,19 +155,31 @@ export function buildValuationQualitySummary(
       key: 'power',
       label: 'Power Micro',
       status: hasPowerCoverage ? 'good' : 'warn',
-      detail: hasPowerCoverage ? 'Tariff and PUE are both populated.' : 'Tariff and PUE are not both populated yet.'
+      detail: hasPowerCoverage
+        ? 'Approved power evidence includes tariff and PUE.'
+        : asset.energySnapshot?.reviewStatus === 'PENDING'
+          ? 'Power evidence is present but still pending review.'
+          : 'Approved tariff and PUE evidence are not both populated yet.'
     },
     {
       key: 'permit',
       label: 'Permit Visibility',
       status: hasPermitCoverage ? 'good' : 'warn',
-      detail: hasPermitCoverage ? 'Power approval status is present.' : 'Power approval status is missing.'
+      detail: hasPermitCoverage
+        ? 'Approved permit evidence includes current power approval status.'
+        : asset.permitSnapshot?.reviewStatus === 'PENDING'
+          ? 'Permit evidence is present but still pending review.'
+          : 'Approved power approval status is missing.'
     },
     {
       key: 'legal',
       label: 'Legal Micro',
       status: hasLegal ? 'good' : 'warn',
-      detail: hasLegal ? 'Ownership, encumbrance, or planning detail is present.' : 'No legal micro coverage yet.'
+      detail: hasLegal
+        ? `Approved legal evidence is present${ownershipReview.pending + encumbranceReview.pending + planningReview.pending > 0 ? `, with ${ownershipReview.pending + encumbranceReview.pending + planningReview.pending} pending item(s)` : ''}.`
+        : ownershipReview.pending + encumbranceReview.pending + planningReview.pending > 0
+          ? `${ownershipReview.pending + encumbranceReview.pending + planningReview.pending} legal item(s) are pending review.`
+          : 'No legal micro coverage yet.'
     }
   ];
 
@@ -146,6 +216,9 @@ export function buildValuationQualitySummary(
   return {
     coverage,
     missingInputs,
+    approvedEvidenceCount,
+    pendingEvidenceCount,
+    rejectedEvidenceCount,
     sourceStats,
     featureSources: getValuationFeatureSourceDescriptors(assumptions)
   };

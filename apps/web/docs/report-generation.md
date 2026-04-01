@@ -12,10 +12,10 @@ This repo includes a document/report layer for small private distressed real est
   - Uses underwriting memo, scenario outputs, pro forma, diligence coverage, and document traceability
 - `DD Checklist`
   - Audience: operator
-  - Uses lease / comparable / legal / permit / debt coverage and current document room
+  - Uses approved vs pending lease / comparable / legal / permit / debt coverage and current document room
 - `Risk Memo`
   - Audience: operator
-  - Uses key risks, missing inputs, mitigants, and document support
+  - Uses key risks, approved evidence coverage, pending blockers, mitigants, and document support
 
 ## How To Generate
 
@@ -58,6 +58,8 @@ Each report version is derived from:
 
 - latest valuation run id / timestamp
 - current document versions and hashes
+- approved evidence counts and pending review counts
+- latest staged review packet fingerprint when present
 - latest linked on-chain anchor state when present
 
 The printable page and markdown export both include:
@@ -65,7 +67,17 @@ The printable page and markdown export both include:
 - deterministic version label
 - linked valuation source
 - latest document version / hash
+- approved evidence count / pending evidence count
+- latest valuation run id
+- latest staged review packet fingerprint when present
 - optional blockchain anchor reference
+
+## Approved vs Pending Evidence
+
+- manual micro, legal, and lease records first enter the normalized layer as `PENDING`
+- only `APPROVED` normalized evidence is promoted into curated feature snapshots used by the report layer
+- if approved curated features are missing, reports fall back to raw normalized records but visibly call out pending blockers and open gaps
+- DD checklist and risk memo now surface approval-state coverage instead of treating all normalized rows as equivalent evidence
 
 ## Production-Ready vs Placeholder
 

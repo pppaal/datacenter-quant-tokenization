@@ -38,13 +38,19 @@ function toLabel(namespace: string) {
 
 export function FeatureSnapshotPanel({
   snapshots,
-  title = 'Feature Snapshots',
-  emptyMessage = 'No promoted feature snapshots yet.'
+  title = 'Approved Feature Layer',
+  emptyMessage = 'No approved feature snapshots yet. Approve normalized evidence or run enrichment before using this asset in committee material.'
 }: Props) {
   return (
     <Card>
       <div className="flex items-center justify-between gap-3">
-        <div className="eyebrow">{title}</div>
+        <div>
+          <div className="eyebrow">{title}</div>
+          <p className="mt-2 max-w-3xl text-sm leading-7 text-slate-400">
+            These promoted namespaces are the approved underwriting layer used first by valuation, IC material, and
+            readiness packaging.
+          </p>
+        </div>
         <Badge>{formatNumber(snapshots.length, 0)} namespaces</Badge>
       </div>
       {snapshots.length === 0 ? (

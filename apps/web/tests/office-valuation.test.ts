@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { AssetClass, AssetStage, AssetStatus, SourceStatus } from '@prisma/client';
+import { AssetClass, AssetStage, AssetStatus, ReviewStatus, SourceStatus } from '@prisma/client';
 import { buildValuationAnalysis } from '@/lib/services/valuation-engine';
 
 test('office valuation uses office detail assumptions and produces scenarios', async () => {
@@ -99,6 +99,10 @@ test('office valuation uses office detail assumptions and produces scenarios', a
       timelineNotes: 'Existing operating asset',
       sourceStatus: SourceStatus.MANUAL,
       sourceUpdatedAt: now,
+      reviewStatus: ReviewStatus.APPROVED,
+      reviewedAt: now,
+      reviewedById: null,
+      reviewNotes: null,
       createdAt: now,
       updatedAt: now
     },
@@ -113,6 +117,10 @@ test('office valuation uses office detail assumptions and produces scenarios', a
       backupFuelHours: null,
       sourceStatus: SourceStatus.MANUAL,
       sourceUpdatedAt: now,
+      reviewStatus: ReviewStatus.APPROVED,
+      reviewedAt: now,
+      reviewedById: null,
+      reviewNotes: null,
       createdAt: now,
       updatedAt: now
     },

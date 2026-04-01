@@ -34,6 +34,13 @@ This repository already supports that shape:
 - approved feature snapshots via `AssetFeatureSnapshot`
 - valuation-ready handoff through curated features and valuation inputs
 
+Implemented now:
+
+- `EnergySnapshot`, `PermitSnapshot`, `OwnershipRecord`, `EncumbranceRecord`, `PlanningConstraint`, and `Lease` carry `reviewStatus`, `reviewedAt`, `reviewedById`, and `reviewNotes`
+- manual micro and lease saves default back to `PENDING`
+- `/admin/review` and the asset dossier review panel allow approve / reject decisions
+- curated feature promotion only promotes approved normalized evidence
+
 ## Priority Order
 
 ### Priority 1: Power And Permit Certainty
@@ -329,13 +336,10 @@ Example transformations:
 
 ### Phase 1
 
-Build admin ingestion and review paths for:
+Implemented:
 
-- `PermitSnapshot`
-- `EnergySnapshot`
-- `Lease`
-- `OwnershipRecord`
-- `EncumbranceRecord`
+- admin ingestion and review paths for `PermitSnapshot`, `EnergySnapshot`, `Lease`, `OwnershipRecord`, `EncumbranceRecord`, and `PlanningConstraint`
+- approved-only promotion into `power_micro`, `permit_inputs`, `revenue_micro`, `legal_micro`, and `site_micro`
 
 ### Phase 2
 
@@ -351,15 +355,29 @@ Improve document extraction coverage for:
 
 Add feature-promotion jobs that create these namespaces:
 
-- `power_permit_micro`
+- `power_permit_micro` or compatible split namespaces
 - `revenue_micro`
 - `build_micro`
 - `legal_micro`
 - `site_micro`
 
+Implemented currently:
+
+- `power_micro`
+- `permit_inputs`
+- `revenue_micro`
+- `legal_micro`
+- `site_micro`
+- `readiness_legal`
+
 ### Phase 4
 
 Refactor quant and valuation preparation to read those promoted features first and fall back to snapshots only when approved features are missing.
+
+Implemented currently:
+
+- valuation preparation still prefers curated feature snapshots first
+- because promotion is now approval-gated, approved evidence is naturally preferred before raw fallback
 
 ## Practical Recommendation
 

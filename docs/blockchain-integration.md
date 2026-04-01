@@ -7,6 +7,7 @@ This repository is already structured for a registry-only blockchain layer.
 - Asset registry id derived from `assetCode`
 - Metadata pointer served by `GET /api/registry/assets/[id]`
 - Latest diligence document hash
+- Offchain review packet manifest / fingerprint metadata stored in Postgres and referenced during staging
 
 Valuation runs, documents, extracted text, and underwriting logic remain offchain.
 
@@ -37,9 +38,15 @@ Valuation runs, documents, extracted text, and underwriting logic remain offchai
 
 ## Runtime Flow
 
-1. `Stage Latest Hash` marks the newest document hash as ready in Postgres.
+1. `Stage Latest Hash` builds a deterministic offchain review packet manifest / fingerprint from the latest approved evidence, valuation run, and document set, then marks the newest document hash as ready in Postgres.
 2. `Register Asset` sends `registerAsset` or `updateAssetMetadata` to the registry contract.
 3. `Anchor Hash` sends `anchorDocumentHash` for the latest uploaded document.
+
+## Registry-Only Rule
+
+- valuations, extracted text, normalized evidence rows, and underwriting logic stay offchain
+- staged packet metadata is stored in Postgres inside the readiness payload
+- the chain is used only for registry identity and document integrity anchoring
 
 ## Practical Local Dev
 

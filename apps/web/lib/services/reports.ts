@@ -4,6 +4,12 @@ import { formatCurrencyFromKrwAtRate, resolveDisplayCurrency, type SupportedCurr
 import { getAssetById } from '@/lib/services/assets';
 import { getFxRateMap } from '@/lib/services/fx';
 import { readStoredBaseCaseProForma } from '@/lib/services/valuation/pro-forma';
+import {
+  buildAssetEvidenceReviewSummary,
+  extractReviewPacketSummary,
+  getLatestReviewPacketRecord,
+  type AssetEvidenceReviewSummary
+} from '@/lib/services/review';
 import type { ProFormaBaseCase } from '@/lib/services/valuation/types';
 import { formatDate, formatNumber, formatPercent, slugify, toSentenceCase } from '@/lib/utils';
 import { buildValuationQualitySummary, type ValuationQualitySummary } from '@/lib/valuation-quality';
@@ -130,6 +136,7 @@ export type DealReportBundle = {
   };
   proForma: ProFormaBaseCase | null;
   valuationQuality: ValuationQualitySummary | null;
+  reviewSummary: AssetEvidenceReviewSummary;
   documents: ReportDocumentTrace[];
   latestOnchainRecord: null | {
     txHash: string | null;
@@ -137,6 +144,15 @@ export type DealReportBundle = {
     anchoredAt: Date | null;
     status: ReadinessStatus;
     recordType: string;
+  };
+  latestReviewPacket: null | {
+    fingerprint: string | null;
+    stagedAt: Date | null;
+    latestValuationId: string | null;
+    latestDocumentHash: string | null;
+    approvedEvidenceCount: number | null;
+    pendingEvidenceCount: number | null;
+    anchorReference: string | null;
   };
   reportFingerprint: string;
   generatedAt: Date;
@@ -298,6 +314,14 @@ function buildReportFingerprint(asset: AssetBundle) {
       version: document.currentVersion,
       hash: document.documentHash
     })),
+    review: {
+      energy: asset.energySnapshot?.reviewStatus ?? null,
+      permit: asset.permitSnapshot?.reviewStatus ?? null,
+      ownership: asset.ownershipRecords.map((record) => ({ id: record.id, status: (record as { reviewStatus?: string | null }).reviewStatus ?? null })),
+      encumbrance: asset.encumbranceRecords.map((record) => ({ id: record.id, status: (record as { reviewStatus?: string | null }).reviewStatus ?? null })),
+      planning: asset.planningConstraints.map((record) => ({ id: record.id, status: (record as { reviewStatus?: string | null }).reviewStatus ?? null })),
+      leases: asset.leases.map((lease) => ({ id: lease.id, status: (lease as { reviewStatus?: string | null }).reviewStatus ?? null }))
+    },
     onchain: asset.readinessProject?.onchainRecords.map((record) => ({
       id: record.id,
       txHash: record.txHash,
@@ -348,12 +372,27 @@ function buildTraceabilityFacts(bundle: DealReportBundle, kind: ReportKind): Rep
     {
       label: 'Valuation Source',
       value: latestRun ? `${latestRun.runLabel} / ${formatDate(latestRun.createdAt)}` : 'No valuation run',
-      detail: latestRun ? `Engine ${latestRun.engineVersion}` : 'Generate a valuation run to tighten the memo package.'
+      detail: latestRun ? `Run ${latestRun.id} / Engine ${latestRun.engineVersion}` : 'Generate a valuation run to tighten the memo package.'
     },
     {
       label: 'Latest Document',
       value: latestDoc ? `${latestDoc.title} v${latestDoc.currentVersion}` : 'No documents uploaded',
       detail: latestDoc ? `Hash ${shortHash(latestDoc.hash)}` : 'Document schedule is empty.'
+    },
+    {
+      label: 'Approved Evidence',
+      value: String(bundle.reviewSummary.totals.approved),
+      detail:
+        bundle.reviewSummary.totals.pending > 0
+          ? `${bundle.reviewSummary.totals.pending} pending / ${bundle.reviewSummary.totals.rejected} rejected`
+          : 'No pending evidence blockers in the normalized review queue.'
+    },
+    {
+      label: 'Review Packet',
+      value: bundle.latestReviewPacket?.fingerprint ? shortHash(bundle.latestReviewPacket.fingerprint, 16) : 'Not staged',
+      detail: bundle.latestReviewPacket?.stagedAt
+        ? `Staged ${formatDate(bundle.latestReviewPacket.stagedAt)} / valuation ${bundle.latestReviewPacket.latestValuationId ?? 'none'}`
+        : 'Stage readiness to lock the current approved evidence set into a deterministic packet.'
     },
     {
       label: 'On-Chain Integrity',
@@ -420,6 +459,11 @@ function buildControlSheet(bundle: DealReportBundle, reportVersion: string): Rep
       detail: latestRun ? `${latestRun.runLabel} / ${formatDate(latestRun.createdAt)}` : 'No valuation run linked'
     },
     {
+      label: 'Approved / Pending Evidence',
+      value: `${bundle.reviewSummary.totals.approved} / ${bundle.reviewSummary.totals.pending}`,
+      detail: `${bundle.reviewSummary.totals.rejected} rejected evidence row(s)`
+    },
+    {
       label: 'Document Count',
       value: String(bundle.counts.documents)
     },
@@ -432,6 +476,13 @@ function buildControlSheet(bundle: DealReportBundle, reportVersion: string): Rep
       label: 'Anchor Reference',
       value: bundle.latestOnchainRecord?.txHash ? shortHash(bundle.latestOnchainRecord.txHash, 16) : 'Not anchored',
       detail: bundle.latestOnchainRecord?.chainId ?? 'No linked chain'
+    },
+    {
+      label: 'Review Packet Fingerprint',
+      value: bundle.latestReviewPacket?.fingerprint ? shortHash(bundle.latestReviewPacket.fingerprint, 16) : 'Not staged',
+      detail: bundle.latestReviewPacket?.stagedAt
+        ? `Staged ${formatDate(bundle.latestReviewPacket.stagedAt)}`
+        : 'No deterministic review packet has been staged yet.'
     }
   ];
 }
@@ -728,6 +779,9 @@ function buildDdChecklistSections(bundle: DealReportBundle): ReportSection[] {
     technical: bundle.documents.filter((document) => inferDocumentTopic(document) === 'technical').length
   };
   const yearOne = bundle.proForma?.years[0];
+  const powerPermitReview = bundle.reviewSummary.disciplines.find((discipline) => discipline.key === 'power_permit');
+  const legalReview = bundle.reviewSummary.disciplines.find((discipline) => discipline.key === 'legal_title');
+  const leaseReview = bundle.reviewSummary.disciplines.find((discipline) => discipline.key === 'lease_revenue');
 
   return [
     {
@@ -736,12 +790,17 @@ function buildDdChecklistSections(bundle: DealReportBundle): ReportSection[] {
       title: 'Revenue And Market',
       checklist: [
         {
-          label: 'Lease book loaded',
+          label: 'Approved lease evidence',
           detail:
-            bundle.counts.leases > 0
-              ? `${bundle.counts.leases} lease row(s) are present in the valuation bundle.`
-              : 'No lease rows are loaded; the current DCF still leans on residual lease-up.',
-          status: buildChecklistStatus({ ready: bundle.counts.leases > 0 }),
+            (leaseReview?.approvedCount ?? 0) > 0
+              ? `${leaseReview?.approvedCount ?? 0} approved lease row(s) are valuation-ready${(leaseReview?.pendingCount ?? 0) > 0 ? `, with ${leaseReview?.pendingCount} pending review` : ''}.`
+              : (leaseReview?.pendingCount ?? 0) > 0
+                ? `${leaseReview?.pendingCount ?? 0} lease row(s) are pending review; revenue still falls back to raw snapshots.`
+                : 'No approved lease rows are loaded; the current DCF still leans on residual lease-up.',
+          status: buildChecklistStatus({
+            ready: (leaseReview?.approvedCount ?? 0) > 0,
+            partial: (leaseReview?.pendingCount ?? 0) > 0
+          }),
           sources: pickSupportingDocuments(bundle.documents, 'lease revenue occupancy rent roll')
         },
         {
@@ -763,6 +822,21 @@ function buildDdChecklistSections(bundle: DealReportBundle): ReportSection[] {
             : 'No opening-year pro forma is stored yet.',
           status: buildChecklistStatus({ ready: Boolean(yearOne), partial: Boolean(bundle.latestValuation) }),
           sources: pickSupportingDocuments(bundle.documents, 'revenue noi cash flow lease')
+        },
+        {
+          label: 'Pending commercial blockers',
+          detail:
+            (leaseReview?.pendingCount ?? 0) > 0
+              ? bundle.reviewSummary.pendingBlockers
+                  .filter((blocker) => blocker.startsWith('Lease / Revenue'))
+                  .slice(0, 2)
+                  .join(' / ')
+              : 'No commercial evidence is currently waiting on approval.',
+          status: buildChecklistStatus({
+            ready: (leaseReview?.pendingCount ?? 0) === 0,
+            partial: (leaseReview?.approvedCount ?? 0) > 0
+          }),
+          sources: pickSupportingDocuments(bundle.documents, 'lease revenue diligence pending')
         }
       ]
     },
@@ -802,6 +876,21 @@ function buildDdChecklistSections(bundle: DealReportBundle): ReportSection[] {
             ready: bundle.valuationQuality?.coverage.find((item) => item.key === 'permit')?.status === 'good'
           }),
           sources: pickSupportingDocuments(bundle.documents, 'permit zoning environmental')
+        },
+        {
+          label: 'Pending technical blockers',
+          detail:
+            (powerPermitReview?.pendingCount ?? 0) > 0
+              ? bundle.reviewSummary.pendingBlockers
+                  .filter((blocker) => blocker.startsWith('Power / Permit'))
+                  .slice(0, 2)
+                  .join(' / ')
+              : 'No pending power or permit records are blocking the review packet.',
+          status: buildChecklistStatus({
+            ready: (powerPermitReview?.pendingCount ?? 0) === 0,
+            partial: (powerPermitReview?.approvedCount ?? 0) > 0
+          }),
+          sources: pickSupportingDocuments(bundle.documents, 'permit power pending diligence')
         }
       ]
     },
@@ -820,12 +909,17 @@ function buildDdChecklistSections(bundle: DealReportBundle): ReportSection[] {
           sources: pickSupportingDocuments(bundle.documents, 'title mortgage legal ownership')
         },
         {
-          label: 'Ownership record',
+          label: 'Approved legal evidence',
           detail:
-            bundle.counts.ownershipRecords > 0
-              ? `${bundle.counts.ownershipRecords} ownership record(s) are captured.`
-              : 'Ownership chain is not yet recorded in the current asset bundle.',
-          status: buildChecklistStatus({ ready: bundle.counts.ownershipRecords > 0 }),
+            (legalReview?.approvedCount ?? 0) > 0
+              ? `${legalReview?.approvedCount ?? 0} approved legal record(s) are staged${(legalReview?.pendingCount ?? 0) > 0 ? `, with ${legalReview?.pendingCount} pending review` : ''}.`
+              : (legalReview?.pendingCount ?? 0) > 0
+                ? `${legalReview?.pendingCount ?? 0} legal record(s) are pending review before the committee packet is complete.`
+                : 'Ownership chain, encumbrance, or planning evidence is not yet recorded in approved form.',
+          status: buildChecklistStatus({
+            ready: (legalReview?.approvedCount ?? 0) > 0,
+            partial: (legalReview?.pendingCount ?? 0) > 0
+          }),
           sources: pickSupportingDocuments(bundle.documents, 'ownership title register')
         },
         {
@@ -836,6 +930,21 @@ function buildDdChecklistSections(bundle: DealReportBundle): ReportSection[] {
               : 'Debt stack is still synthetic or absent in the model.',
           status: buildChecklistStatus({ ready: bundle.counts.debtFacilities > 0 }),
           sources: pickSupportingDocuments(bundle.documents, 'debt term sheet financing dscr')
+        },
+        {
+          label: 'Pending legal blockers',
+          detail:
+            (legalReview?.pendingCount ?? 0) > 0
+              ? bundle.reviewSummary.pendingBlockers
+                  .filter((blocker) => blocker.startsWith('Legal / Title'))
+                  .slice(0, 2)
+                  .join(' / ')
+              : 'No pending title or legal evidence blockers.',
+          status: buildChecklistStatus({
+            ready: (legalReview?.pendingCount ?? 0) === 0,
+            partial: (legalReview?.approvedCount ?? 0) > 0
+          }),
+          sources: pickSupportingDocuments(bundle.documents, 'title mortgage legal diligence pending')
         }
       ]
     }
@@ -845,6 +954,7 @@ function buildDdChecklistSections(bundle: DealReportBundle): ReportSection[] {
 function buildRiskMemoSections(bundle: DealReportBundle): ReportSection[] {
   const latestRun = bundle.latestValuation;
   const quality = bundle.valuationQuality;
+  const reviewSummary = bundle.reviewSummary;
   const riskChecklist =
     latestRun?.keyRisks.length
       ? latestRun.keyRisks.map((risk) => ({
@@ -905,11 +1015,19 @@ function buildRiskMemoSections(bundle: DealReportBundle): ReportSection[] {
         {
           label: 'Anchored Docs',
           value: String(bundle.counts.anchoredDocuments)
+        },
+        {
+          label: 'Approved / Pending Evidence',
+          value: `${reviewSummary.totals.approved} / ${reviewSummary.totals.pending}`,
+          tone: reviewSummary.totals.pending > 0 ? 'warn' : 'good'
         }
       ],
       body: [
         'This note is intended to isolate the current downside drivers before a small private distressed process moves further toward committee or external outreach.',
-        takeSentences(bundle.latestValuation?.underwritingMemo, 2) || 'No current underwriting memo is available.'
+        takeSentences(bundle.latestValuation?.underwritingMemo, 2) || 'No current underwriting memo is available.',
+        reviewSummary.pendingBlockers.length > 0
+          ? `Open approval blockers: ${reviewSummary.pendingBlockers.slice(0, 3).join('; ')}.`
+          : 'No normalized evidence rows are currently pending review.'
       ]
     },
     {
@@ -990,18 +1108,23 @@ export async function buildReportBundleFromAsset(
     (await getFxRateMap([displayCurrency]).then((rates) => rates[displayCurrency] ?? null));
   const provenance = Array.isArray(latestValuation?.provenance) ? (latestValuation.provenance as ProvenanceEntry[]) : [];
   const quality = latestValuation ? buildValuationQualitySummary(asset, latestValuation.assumptions, provenance) : null;
+  const reviewSummary = buildAssetEvidenceReviewSummary(asset as unknown as Parameters<typeof buildAssetEvidenceReviewSummary>[0]);
   const baseScenario = resolveBaseScenario(latestValuation);
   const proForma = latestValuation ? readStoredBaseCaseProForma(latestValuation.assumptions) : null;
   const documents = buildDocumentTrace(asset);
-  const latestOnchainRecord = asset.readinessProject?.onchainRecords[0]
+  const latestReviewPacketRecord = getLatestReviewPacketRecord(asset.readinessProject?.onchainRecords);
+  const latestAnchoredRecord =
+    asset.readinessProject?.onchainRecords.find((record) => Boolean(record.txHash)) ?? null;
+  const latestOnchainRecord = latestAnchoredRecord
     ? {
-        txHash: asset.readinessProject.onchainRecords[0].txHash,
-        chainId: asset.readinessProject.onchainRecords[0].chainId,
-        anchoredAt: asset.readinessProject.onchainRecords[0].anchoredAt,
-        status: asset.readinessProject.onchainRecords[0].status,
-        recordType: asset.readinessProject.onchainRecords[0].recordType
+        txHash: latestAnchoredRecord.txHash,
+        chainId: latestAnchoredRecord.chainId,
+        anchoredAt: latestAnchoredRecord.anchoredAt,
+        status: latestAnchoredRecord.status,
+        recordType: latestAnchoredRecord.recordType
       }
     : null;
+  const latestReviewPacket = extractReviewPacketSummary(latestReviewPacketRecord);
   const locationLabel = [asset.address?.city, asset.address?.province, asset.address?.country].filter(Boolean).join(', ') || asset.market;
   const sizeLabel = asset.assetClass === AssetClass.DATA_CENTER ? 'Power Capacity' : 'Rentable Area';
   const sizeValue =
@@ -1066,8 +1189,10 @@ export async function buildReportBundleFromAsset(
       : null,
     proForma,
     valuationQuality: quality,
+    reviewSummary,
     documents,
     latestOnchainRecord,
+    latestReviewPacket,
     reportFingerprint: buildReportFingerprint(asset),
     generatedAt: options?.generatedAt ?? new Date()
   };

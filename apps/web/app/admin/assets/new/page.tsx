@@ -7,17 +7,18 @@ export default function NewAssetPage() {
       <Card className="hero-mesh h-fit">
         <div className="eyebrow">New Asset Intake</div>
         <h2 className="mt-3 text-4xl font-semibold tracking-[-0.04em] text-white">
-          Create a beautiful front door for a real backend workflow.
+          Open a new Korean data-center underwriting dossier.
         </h2>
         <p className="mt-4 text-sm leading-7 text-slate-400">
-          This intake page now looks like a product surface, but it still feeds the existing service layer for assets, valuation readiness, document workflows, and review preparation.
+          Capture the institutional intake record first, then move the asset through enrichment, evidence review,
+          valuation, IC material, and registry-ready packaging.
         </p>
         <div className="mt-6 grid gap-3">
           {[
-            'Structured project identity and sponsor details',
-            'Site address, parcel context, and coordinates',
-            'Power, land, CAPEX, OPEX, and financing assumptions',
-            'Narrative notes for downstream diligence and memos'
+            'Project identity, sponsor, and execution ownership',
+            'Site address, parcel context, and Korean market location fields',
+            'Power, land, CAPEX, OPEX, and financing assumptions for initial underwriting',
+            'Narrative context that feeds diligence, IC memos, and readiness packaging'
           ].map((item) => (
             <div key={item} className="rounded-[22px] border border-white/10 bg-slate-950/45 p-4 text-sm text-slate-300">
               {item}

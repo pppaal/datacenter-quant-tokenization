@@ -28,16 +28,16 @@ export default async function AssetReportsPage({ params }: { params: Promise<{ i
         <div className="mt-6 grid gap-8 lg:grid-cols-[1.08fr_0.92fr]">
           <div className="space-y-5">
             <div>
-              <div className="eyebrow">Document / Memo Layer</div>
+              <div className="eyebrow">Underwriting Output Library</div>
               <h1 className="mt-3 text-5xl font-semibold leading-[0.96] tracking-[-0.05em] text-white md:text-6xl">
-                Reports And Exports
+                Underwriting Reports
                 <br />
                 {bundle.assetName}
               </h1>
             </div>
             <p className="max-w-4xl text-base leading-8 text-slate-200">
-              Generate external teasers, internal IC material, diligence outputs, and risk notes from the current
-              asset, valuation, document, and traceability bundle.
+              Generate committee-ready memos, diligence checklists, risk notes, and controlled teaser material from the
+              current valuation, approved evidence layer, document set, and registry traceability record.
             </p>
           </div>
 
@@ -53,12 +53,30 @@ export default async function AssetReportsPage({ params }: { params: Promise<{ i
                 <span>{bundle.reportFingerprint}</span>
               </div>
               <div className="flex items-center justify-between rounded-[20px] border border-white/10 bg-white/[0.03] px-4 py-3">
+                <span>Approved Evidence</span>
+                <span>{bundle.reviewSummary.totals.approved}</span>
+              </div>
+              <div className="flex items-center justify-between rounded-[20px] border border-white/10 bg-white/[0.03] px-4 py-3">
+                <span>Pending Evidence</span>
+                <span>{bundle.reviewSummary.totals.pending}</span>
+              </div>
+              <div className="flex items-center justify-between rounded-[20px] border border-white/10 bg-white/[0.03] px-4 py-3">
                 <span>Documents</span>
                 <span>{bundle.counts.documents}</span>
               </div>
               <div className="flex items-center justify-between rounded-[20px] border border-white/10 bg-white/[0.03] px-4 py-3">
                 <span>Anchored Docs</span>
                 <span>{bundle.counts.anchoredDocuments}</span>
+              </div>
+              <div className="flex items-center justify-between rounded-[20px] border border-white/10 bg-white/[0.03] px-4 py-3">
+                <span>Review Packet</span>
+                <span>{bundle.latestReviewPacket?.fingerprint ? 'Staged' : 'Not staged'}</span>
+              </div>
+              <div className="rounded-[20px] border border-accent/20 bg-accent/10 px-4 py-3 text-xs leading-6 text-slate-100">
+                Latest document hash: {bundle.documents[0]?.hash ?? 'No document hash yet'}{' '}
+                {bundle.latestReviewPacket?.fingerprint
+                  ? `/ packet ${bundle.latestReviewPacket.fingerprint.slice(0, 16)}`
+                  : '/ packet not yet staged'}
               </div>
             </div>
           </Card>
@@ -117,10 +135,10 @@ export default async function AssetReportsPage({ params }: { params: Promise<{ i
 
           <div>
             <div className="eyebrow">Investor Packet</div>
-            <h2 className="mt-2 text-2xl font-semibold text-white">External Teaser Bundle</h2>
+            <h2 className="mt-2 text-2xl font-semibold text-white">Institutional Teaser Bundle</h2>
             <p className="mt-3 text-sm leading-7 text-slate-400">
-              One-click packet for limited investor circulation. Best used with print / save-as-PDF from the packet
-              page.
+              One-click packet for limited institutional circulation. Best used with print or save-as-PDF from the
+              packet page.
             </p>
           </div>
 
@@ -188,16 +206,16 @@ export default async function AssetReportsPage({ params }: { params: Promise<{ i
         <h2 className="mt-2 text-2xl font-semibold text-white">Operator And Investor Flow</h2>
         <ul className="mt-5 space-y-3 text-sm text-slate-300">
           <li className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-3">
-            Use <strong>One-Page Teaser</strong> for external investor outreach. Open the page, review the document
-            schedule, then print or save as PDF.
+            Use <strong>One-Page Teaser</strong> for external institutional outreach. Open the page, review the
+            document schedule, then print or save as PDF.
           </li>
           <li className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-3">
-            Use <strong>IC Memo</strong>, <strong>DD Checklist</strong>, and <strong>Risk Memo</strong> as operator /
+            Use <strong>IC Memo</strong>, <strong>DD Checklist</strong>, and <strong>Risk Memo</strong> as operator and
             committee material. Export markdown if you need to mark up the draft outside the app.
           </li>
           <li className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-3">
             Every output carries a deterministic version fingerprint and a traceability panel showing the linked
-            valuation, latest document version, and optional blockchain anchor.
+            valuation, approved evidence counts, latest document hash, and optional registry anchor reference.
           </li>
         </ul>
 

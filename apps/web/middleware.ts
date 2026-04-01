@@ -92,6 +92,7 @@ export const config = {
   matcher: [
     '/admin/:path*',
     '/api/assets/:path*',
+    '/api/review/:path*',
     '/api/valuations/:path*',
     '/api/documents/:path*',
     '/api/readiness/:path*',

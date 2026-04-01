@@ -35,18 +35,38 @@ function makeAssetStub() {
     },
     siteProfile: {},
     permitSnapshot: {
-      powerApprovalStatus: 'Conditional'
+      powerApprovalStatus: 'Conditional',
+      reviewStatus: 'APPROVED',
+      id: 'permit-1',
+      reviewNotes: null,
+      reviewedAt: new Date('2026-03-24T00:00:00.000Z'),
+      reviewedById: 'user-1',
+      sourceStatus: 'MANUAL',
+      sourceUpdatedAt: new Date('2026-03-24T00:00:00.000Z'),
+      updatedAt: new Date('2026-03-24T00:00:00.000Z')
     },
     energySnapshot: {
       tariffKrwPerKwh: 158,
-      pueTarget: 1.29
+      pueTarget: 1.29,
+      reviewStatus: 'APPROVED',
+      id: 'energy-1',
+      reviewNotes: null,
+      reviewedAt: new Date('2026-03-24T00:00:00.000Z'),
+      reviewedById: 'user-1',
+      sourceStatus: 'MANUAL',
+      sourceUpdatedAt: new Date('2026-03-24T00:00:00.000Z'),
+      updatedAt: new Date('2026-03-24T00:00:00.000Z')
     },
     capexLineItems: [{ id: 'cap-1' }, { id: 'cap-2' }, { id: 'cap-3' }, { id: 'cap-4' }],
-    leases: [{ id: 'lease-1' }, { id: 'lease-2' }],
+    leases: [
+      { id: 'lease-1', reviewStatus: 'APPROVED', reviewNotes: null, reviewedAt: new Date(), reviewedById: 'user-1', updatedAt: new Date() },
+      { id: 'lease-2', reviewStatus: 'PENDING', reviewNotes: null, reviewedAt: null, reviewedById: null, updatedAt: new Date() }
+    ],
     debtFacilities: [{ id: 'debt-1' }],
-    ownershipRecords: [{ id: 'own-1' }],
-    encumbranceRecords: [{ id: 'enc-1' }],
-    planningConstraints: [{ id: 'plan-1' }],
+    ownershipRecords: [{ id: 'own-1', reviewStatus: 'APPROVED', updatedAt: new Date(), ownerName: 'Edge Holdings', entityType: 'SPV', ownershipPct: 100, reviewNotes: null, reviewedAt: new Date(), reviewedById: 'user-1', sourceStatus: 'MANUAL', sourceUpdatedAt: new Date() }],
+    encumbranceRecords: [{ id: 'enc-1', reviewStatus: 'APPROVED', updatedAt: new Date(), encumbranceType: 'Mortgage', holderName: 'Infra Bank', securedAmountKrw: 42000000000, priorityRank: 1, reviewNotes: null, reviewedAt: new Date(), reviewedById: 'user-1', sourceStatus: 'MANUAL', sourceUpdatedAt: new Date() }],
+    planningConstraints: [{ id: 'plan-1', reviewStatus: 'PENDING', updatedAt: new Date(), constraintType: 'Easement', title: 'Shared ingress', severity: 'Medium', description: 'Pending legal confirmation', reviewNotes: null, reviewedAt: null, reviewedById: null, sourceStatus: 'MANUAL', sourceUpdatedAt: new Date() }],
+    featureSnapshots: [],
     comparableSet: {
       entries: [{ id: 'comp-1' }, { id: 'comp-2' }, { id: 'comp-3' }]
     },
@@ -175,6 +195,23 @@ function makeAssetStub() {
           status: 'COMPLETED',
           anchoredAt: new Date('2026-03-26T00:00:00.000Z'),
           recordType: 'DOCUMENT_HASH'
+        },
+        {
+          id: 'packet-1',
+          documentId: null,
+          txHash: null,
+          chainId: null,
+          status: 'READY',
+          anchoredAt: new Date('2026-03-26T01:00:00.000Z'),
+          recordType: 'REVIEW_PACKET',
+          createdAt: new Date('2026-03-26T01:00:00.000Z'),
+          payload: {
+            packetFingerprint: 'packetfingerprint123456',
+            latestValuationId: 'run-1',
+            latestDocumentHash: 'abcdef1234567890',
+            approvedEvidenceCount: 5,
+            pendingEvidenceCount: 2
+          }
         }
       ]
     }
@@ -198,6 +235,8 @@ test('report bundle and markdown export reuse valuation and document traceabilit
   assert.match(markdown, /Traceability/);
   assert.match(markdown, /## Control Sheet/);
   assert.match(markdown, /Confirm mortgage release path\./);
+  assert.ok(report.traceability.some((fact) => fact.label === 'Approved Evidence' && fact.value === '5'));
+  assert.ok(report.controlSheet.some((fact) => fact.label === 'Review Packet Fingerprint'));
 });
 
 test('report template catalog exposes production-ready vs partial state', () => {

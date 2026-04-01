@@ -11,6 +11,7 @@ import { DocumentUploadForm } from '@/components/admin/document-upload-form';
 import { FeatureSnapshotPanel } from '@/components/admin/feature-snapshot-panel';
 import { LeaseBookForm } from '@/components/admin/lease-book-form';
 import { MicroDataForm } from '@/components/admin/micro-data-form';
+import { ReviewQueuePanel } from '@/components/admin/review-queue-panel';
 import { QuickValuationRunButton } from '@/components/admin/quick-valuation-run-button';
 import { RealizedOutcomeForm } from '@/components/admin/realized-outcome-form';
 import { ValuationRunForm } from '@/components/admin/valuation-run-form';
@@ -35,6 +36,7 @@ import { shortenHash } from '@/lib/blockchain/registry';
 import { getAssetById } from '@/lib/services/assets';
 import { getFxRateMap } from '@/lib/services/fx';
 import { buildRealizedOutcomeComparison } from '@/lib/services/realized-outcomes';
+import { buildAssetEvidenceReviewSummary, extractReviewPacketSummary, getLatestReviewPacketRecord } from '@/lib/services/review';
 import { formatDate, formatNumber, formatPercent } from '@/lib/utils';
 import { buildFeatureAssumptionMappings } from '@/lib/valuation/feature-assumption-mapping';
 import { filterValuationFeatureSnapshots } from '@/lib/valuation/feature-snapshot-usage';
@@ -93,7 +95,10 @@ export default async function AssetDetailPage({
     : [];
   const isDataCenter = asset.assetClass === AssetClass.DATA_CENTER;
   const latestDocument = asset.documents[0];
-  const latestOnchainRecord = asset.readinessProject?.onchainRecords[0];
+  const latestReviewPacketRecord = getLatestReviewPacketRecord(asset.readinessProject?.onchainRecords);
+  const latestReviewPacket = extractReviewPacketSummary(latestReviewPacketRecord);
+  const latestOnchainRecord = asset.readinessProject?.onchainRecords.find((record) => Boolean(record.txHash)) ?? null;
+  const reviewSummary = buildAssetEvidenceReviewSummary(asset as Parameters<typeof buildAssetEvidenceReviewSummary>[0]);
   const displayCurrency = resolveDisplayCurrency(asset.address?.country ?? asset.market);
   const fxRateToKrw = (await getFxRateMap([displayCurrency]))[displayCurrency];
   const realizedOutcomeComparison = latestRun
@@ -174,22 +179,22 @@ export default async function AssetDetailPage({
           </div>
 
           <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
-            <div className="fine-print">Committee Readiness</div>
+            <div className="fine-print">Underwriting Position</div>
             <div className="mt-3 text-2xl font-semibold text-white">{recommendation}</div>
             <p className="mt-2 text-sm leading-7 text-slate-400">
-              Based on the latest confidence score, scenario output, and available diligence evidence.
+              Based on the latest valuation confidence, approved evidence coverage, and current diligence blockers.
             </p>
           </div>
 
           {latestRun ? (
             <Link href={`/admin/valuations/${latestRun.id}`}>
-              <Button className="w-full">Open Latest IM Detail</Button>
+              <Button className="w-full">Open Valuation &amp; IC View</Button>
             </Link>
           ) : null}
 
           <Link href={`/admin/assets/${asset.id}/reports`}>
             <Button className="w-full" variant="ghost">
-              Reports & Exports
+              Open Report Library
             </Button>
           </Link>
         </Card>
@@ -286,9 +291,15 @@ export default async function AssetDetailPage({
       </div>
 
       <FeatureSnapshotPanel
-        title="Promoted Feature Layer"
+        title="Approved Feature Layer"
         snapshots={latestFeatureSnapshots}
-        emptyMessage="No promoted feature snapshots yet. Run enrichment or upload a document with extracted text."
+        emptyMessage="No approved feature snapshots yet. Approve normalized evidence or run enrichment before relying on this asset in committee materials."
+      />
+
+      <ReviewQueuePanel
+        summaries={[reviewSummary]}
+        title="Asset Evidence Review"
+        emptyMessage="All evidence rows for this asset are already reviewed."
       />
 
       <MarketEvidencePanel
@@ -313,6 +324,38 @@ export default async function AssetDetailPage({
           <MicroDataForm
             assetId={asset.id}
             inputCurrency={displayCurrency}
+            reviewStatuses={[
+              asset.energySnapshot
+                ? {
+                    label: 'Energy',
+                    status: asset.energySnapshot.reviewStatus
+                  }
+                : null,
+              asset.permitSnapshot
+                ? {
+                    label: 'Permit',
+                    status: asset.permitSnapshot.reviewStatus
+                  }
+                : null,
+              asset.ownershipRecords[0]
+                ? {
+                    label: 'Ownership',
+                    status: asset.ownershipRecords[0].reviewStatus
+                  }
+                : null,
+              asset.encumbranceRecords[0]
+                ? {
+                    label: 'Encumbrance',
+                    status: asset.encumbranceRecords[0].reviewStatus
+                  }
+                : null,
+              asset.planningConstraints[0]
+                ? {
+                    label: 'Planning',
+                    status: asset.planningConstraints[0].reviewStatus
+                  }
+                : null
+            ].filter(Boolean) as Array<{ label: string; status: any }>}
             defaultValues={{
               utilityName: asset.energySnapshot?.utilityName ?? '',
               substationDistanceKm: asset.energySnapshot?.substationDistanceKm ?? undefined,
@@ -357,6 +400,8 @@ export default async function AssetDetailPage({
             inputCurrency={displayCurrency}
             defaultLeases={asset.leases.map((lease) => ({
               id: lease.id,
+              reviewStatus: lease.reviewStatus,
+              reviewNotes: lease.reviewNotes ?? '',
               tenantName: lease.tenantName,
               leaseStatus: lease.status,
               leasedKw: lease.leasedKw ?? undefined,
@@ -588,7 +633,7 @@ export default async function AssetDetailPage({
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <div className="eyebrow">Review Readiness</div>
-            <h3 className="mt-2 text-2xl font-semibold text-white">Evidence packaging and review status</h3>
+            <h3 className="mt-2 text-2xl font-semibold text-white">Registry-ready evidence packaging</h3>
           </div>
           <div className="flex flex-wrap gap-2">
             <Badge tone={asset.readinessProject?.readinessStatus === 'ANCHORED' ? 'good' : 'warn'}>
@@ -602,7 +647,9 @@ export default async function AssetDetailPage({
           <div className="space-y-4 rounded-[24px] border border-white/10 bg-white/[0.03] p-5 text-sm text-slate-300">
             <div>
               <div className="text-slate-500">Next action</div>
-              <div className="mt-2 text-white">{asset.readinessProject?.nextAction ?? 'Prepare the review package.'}</div>
+              <div className="mt-2 text-white">
+                {asset.readinessProject?.nextAction ?? 'Prepare the institutional review packet.'}
+              </div>
             </div>
             <div>
               <div className="text-slate-500">Latest document hash</div>
@@ -617,8 +664,16 @@ export default async function AssetDetailPage({
               </div>
             </div>
             <div>
+              <div className="text-slate-500">Review packet</div>
+              <div className="mt-2 font-mono text-white">
+                {latestReviewPacket?.fingerprint
+                  ? shortenHash(latestReviewPacket.fingerprint, 12)
+                  : 'Not staged'}
+              </div>
+            </div>
+            <div>
               <div className="text-slate-500">Chain</div>
-              <div className="mt-2 text-white">{asset.readinessProject?.chainName ?? 'Not connected'}</div>
+              <div className="mt-2 text-white">{asset.readinessProject?.chainName ?? 'Registry not connected'}</div>
             </div>
           </div>
 
@@ -637,8 +692,8 @@ export default async function AssetDetailPage({
               </Button>
             </form>
             <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4 text-sm leading-7 text-slate-400 md:col-span-3">
-              Deploy the readiness contract, set the blockchain env vars, then run the three steps in order. The app keeps
-              valuations and files offchain and only publishes asset ids plus evidence hashes onchain.
+              Readiness remains registry-only. Valuations, files, and extracted text stay offchain while the workflow
+              stages a deterministic packet fingerprint and anchors document integrity hashes onchain.
             </div>
           </div>
         </div>

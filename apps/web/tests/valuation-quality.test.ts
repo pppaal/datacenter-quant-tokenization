@@ -5,14 +5,14 @@ import { buildValuationQualitySummary } from '@/lib/valuation-quality';
 test('valuation quality summary flags missing core inputs and exposes active feature sources', () => {
   const summary = buildValuationQualitySummary(
     {
-      leases: [],
+      leases: [{ reviewStatus: 'PENDING' }],
       capexLineItems: [{}, {}],
       comparableSet: { entries: [{}, {}] },
-      energySnapshot: { tariffKrwPerKwh: 158, pueTarget: null },
-      permitSnapshot: { powerApprovalStatus: '' },
+      energySnapshot: { tariffKrwPerKwh: 158, pueTarget: null, reviewStatus: 'PENDING' },
+      permitSnapshot: { powerApprovalStatus: '', reviewStatus: 'PENDING' },
       ownershipRecords: [],
       encumbranceRecords: [],
-      planningConstraints: []
+      planningConstraints: [{ reviewStatus: 'PENDING' }]
     },
     {
       documentFeatures: {
@@ -54,6 +54,8 @@ test('valuation quality summary flags missing core inputs and exposes active fea
   assert.equal(summary.coverage.find((item) => item.key === 'comparable')?.status, 'warn');
   assert.ok(summary.missingInputs.some((item) => item.includes('lease row')));
   assert.ok(summary.missingInputs.some((item) => item.includes('three comparable')));
+  assert.equal(summary.approvedEvidenceCount, 0);
+  assert.equal(summary.pendingEvidenceCount, 4);
   assert.deepEqual(
     summary.featureSources.map((item) => item.namespace),
     ['document_facts', 'market_inputs', 'power_micro']

@@ -36,7 +36,7 @@ export function ReportShell({
         <div className="mt-6 grid gap-8 lg:grid-cols-[1.08fr_0.92fr]">
           <div className="space-y-5">
             <div>
-              <div className="eyebrow">Distressed Deal Output</div>
+              <div className="eyebrow">Institutional Underwriting Output</div>
               <h1 className="mt-3 text-5xl font-semibold leading-[0.96] tracking-[-0.05em] text-white md:text-6xl">
                 {report.title}
                 <br />

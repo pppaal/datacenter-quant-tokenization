@@ -1,4 +1,4 @@
-import { AssetClass, LeaseStatus, SourceStatus, type PrismaClient } from '@prisma/client';
+import { AssetClass, LeaseStatus, ReviewStatus, SourceStatus, type PrismaClient } from '@prisma/client';
 import { convertToKrw, resolveInputCurrency } from '@/lib/finance/currency';
 import { assetBundleInclude } from '@/lib/services/assets';
 import { promoteAssetSnapshotsToFeatures } from '@/lib/services/feature-promotion';
@@ -160,6 +160,10 @@ export async function updateAssetMicroData(
                   normalized.renewableAvailabilityPct ?? asset.energySnapshot?.renewableAvailabilityPct ?? null,
                 pueTarget: normalized.pueTarget ?? asset.energySnapshot?.pueTarget ?? null,
                 backupFuelHours: normalized.backupFuelHours ?? asset.energySnapshot?.backupFuelHours ?? null,
+                reviewStatus: ReviewStatus.PENDING,
+                reviewedAt: null,
+                reviewedById: null,
+                reviewNotes: null,
                 sourceStatus: SourceStatus.MANUAL,
                 sourceUpdatedAt
               },
@@ -170,6 +174,7 @@ export async function updateAssetMicroData(
                 renewableAvailabilityPct: normalized.renewableAvailabilityPct,
                 pueTarget: normalized.pueTarget,
                 backupFuelHours: normalized.backupFuelHours,
+                reviewStatus: ReviewStatus.PENDING,
                 sourceStatus: SourceStatus.MANUAL,
                 sourceUpdatedAt
               }
@@ -190,6 +195,10 @@ export async function updateAssetMicroData(
                 powerApprovalStatus:
                   normalized.powerApprovalStatus ?? asset.permitSnapshot?.powerApprovalStatus ?? 'Pending review',
                 timelineNotes: normalized.timelineNotes ?? asset.permitSnapshot?.timelineNotes ?? 'Pending review',
+                reviewStatus: ReviewStatus.PENDING,
+                reviewedAt: null,
+                reviewedById: null,
+                reviewNotes: null,
                 sourceStatus: SourceStatus.MANUAL,
                 sourceUpdatedAt
               },
@@ -199,6 +208,7 @@ export async function updateAssetMicroData(
                 environmentalReviewStatus: normalized.environmentalReviewStatus ?? 'Pending review',
                 powerApprovalStatus: normalized.powerApprovalStatus ?? 'Pending review',
                 timelineNotes: normalized.timelineNotes ?? 'Pending review',
+                reviewStatus: ReviewStatus.PENDING,
                 sourceStatus: SourceStatus.MANUAL,
                 sourceUpdatedAt
               }
@@ -214,6 +224,10 @@ export async function updateAssetMicroData(
                   ownerName: normalized.legalOwnerName ?? ownershipRecord.ownerName,
                   entityType: normalized.legalOwnerEntityType ?? ownershipRecord.entityType,
                   ownershipPct: normalized.ownershipPct ?? ownershipRecord.ownershipPct,
+                  reviewStatus: ReviewStatus.PENDING,
+                  reviewedAt: null,
+                  reviewedById: null,
+                  reviewNotes: null,
                   sourceSystem: 'manual_micro_capture',
                   sourceStatus: SourceStatus.MANUAL,
                   sourceUpdatedAt
@@ -225,6 +239,7 @@ export async function updateAssetMicroData(
                 ownerName: normalized.legalOwnerName ?? 'Pending legal review',
                 entityType: normalized.legalOwnerEntityType,
                 ownershipPct: normalized.ownershipPct,
+                reviewStatus: ReviewStatus.PENDING,
                 sourceSystem: 'manual_micro_capture',
                 sourceStatus: SourceStatus.MANUAL,
                 sourceUpdatedAt
@@ -242,6 +257,10 @@ export async function updateAssetMicroData(
                   securedAmountKrw: normalized.securedAmountKrw ?? encumbranceRecord.securedAmountKrw,
                   priorityRank: normalized.priorityRank ?? encumbranceRecord.priorityRank,
                   statusLabel: normalized.encumbranceStatus ?? encumbranceRecord.statusLabel,
+                  reviewStatus: ReviewStatus.PENDING,
+                  reviewedAt: null,
+                  reviewedById: null,
+                  reviewNotes: null,
                   sourceSystem: 'manual_micro_capture',
                   sourceStatus: SourceStatus.MANUAL,
                   sourceUpdatedAt
@@ -255,6 +274,7 @@ export async function updateAssetMicroData(
                 securedAmountKrw: normalized.securedAmountKrw,
                 priorityRank: normalized.priorityRank,
                 statusLabel: normalized.encumbranceStatus,
+                reviewStatus: ReviewStatus.PENDING,
                 sourceSystem: 'manual_micro_capture',
                 sourceStatus: SourceStatus.MANUAL,
                 sourceUpdatedAt
@@ -271,6 +291,10 @@ export async function updateAssetMicroData(
                   title: normalized.planningConstraintTitle ?? planningConstraint.title,
                   severity: normalized.planningConstraintSeverity ?? planningConstraint.severity,
                   description: normalized.planningConstraintDescription ?? planningConstraint.description,
+                  reviewStatus: ReviewStatus.PENDING,
+                  reviewedAt: null,
+                  reviewedById: null,
+                  reviewNotes: null,
                   sourceSystem: 'manual_micro_capture',
                   sourceStatus: SourceStatus.MANUAL,
                   sourceUpdatedAt
@@ -283,6 +307,7 @@ export async function updateAssetMicroData(
                 title: normalized.planningConstraintTitle ?? 'Pending legal review',
                 severity: normalized.planningConstraintSeverity,
                 description: normalized.planningConstraintDescription,
+                reviewStatus: ReviewStatus.PENDING,
                 sourceSystem: 'manual_micro_capture',
                 sourceStatus: SourceStatus.MANUAL,
                 sourceUpdatedAt
@@ -306,7 +331,11 @@ export async function updateAssetMicroData(
                   renewProbabilityPct: normalized.renewProbabilityPct ?? primaryLease.renewProbabilityPct,
                   downtimeMonths: normalized.downtimeMonths ?? primaryLease.downtimeMonths,
                   fitOutCostKrw: normalized.fitOutCostKrw ?? primaryLease.fitOutCostKrw,
-                  notes: normalized.leaseNotes ?? primaryLease.notes
+                  notes: normalized.leaseNotes ?? primaryLease.notes,
+                  reviewStatus: ReviewStatus.PENDING,
+                  reviewedAt: null,
+                  reviewedById: null,
+                  reviewNotes: null
                 }
               }
             }
@@ -323,7 +352,8 @@ export async function updateAssetMicroData(
                 renewProbabilityPct: normalized.renewProbabilityPct,
                 downtimeMonths: normalized.downtimeMonths,
                 fitOutCostKrw: normalized.fitOutCostKrw,
-                notes: normalized.leaseNotes
+                notes: normalized.leaseNotes,
+                reviewStatus: ReviewStatus.PENDING
               }
             }
         : undefined

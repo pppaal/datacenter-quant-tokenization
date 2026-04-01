@@ -4,7 +4,9 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { ReviewStatus } from '@prisma/client';
 import { type SupportedCurrency } from '@/lib/finance/currency';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -76,11 +78,17 @@ function hasNumberField(key: keyof MicroDataInput) {
 export function MicroDataForm({
   assetId,
   defaultValues,
-  inputCurrency = 'KRW'
+  inputCurrency = 'KRW',
+  reviewStatuses = []
 }: {
   assetId: string;
   defaultValues?: Partial<MicroDataInput>;
   inputCurrency?: SupportedCurrency;
+  reviewStatuses?: Array<{
+    label: string;
+    status: ReviewStatus;
+    note?: string | null;
+  }>;
 }) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
@@ -129,6 +137,28 @@ export function MicroDataForm({
   return (
     <form className="space-y-6" onSubmit={onSubmit}>
       <input type="hidden" {...form.register('inputCurrency')} />
+      <div className="rounded-[24px] border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-100">
+        Saved micro updates now land in the normalized record layer as <span className="font-semibold">PENDING</span>.
+        Only approved evidence is promoted into curated feature snapshots used by committee outputs.
+        {reviewStatuses.length > 0 ? (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {reviewStatuses.map((item) => (
+              <Badge
+                key={item.label}
+                tone={
+                  item.status === ReviewStatus.APPROVED
+                    ? 'good'
+                    : item.status === ReviewStatus.REJECTED
+                      ? 'danger'
+                      : 'warn'
+                }
+              >
+                {item.label}: {item.status}
+              </Badge>
+            ))}
+          </div>
+        ) : null}
+      </div>
       <div className="grid gap-6 xl:grid-cols-2">
         <section className="space-y-4">
           <div>
@@ -188,7 +218,7 @@ export function MicroDataForm({
         <p className="max-w-2xl text-sm text-slate-400">
           This panel captures the non-lease micro layer for power, permit, and title/legal cleanliness without
           changing the broader intake form. Monetary inputs are entered in {inputCurrency} and normalized to KRW
-          internally.
+          internally. Editing any row sends it back to the review queue.
         </p>
         <div className="flex items-center gap-3">
           {errorMessage ? <span className="text-sm text-rose-300">{errorMessage}</span> : null}

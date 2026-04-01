@@ -63,6 +63,12 @@ enum SourceStatus {
   MANUAL
 }
 
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 enum ValuationStatus {
   QUEUED
   RUNNING
@@ -197,6 +203,12 @@ model User {
   documents     DocumentVersion[]
   overrides     SourceOverride[]
   approvedFeatureSnapshots AssetFeatureSnapshot[]
+  reviewedEnergySnapshots         EnergySnapshot[]       @relation("EnergySnapshotReviewedBy")
+  reviewedPermitSnapshots         PermitSnapshot[]       @relation("PermitSnapshotReviewedBy")
+  reviewedOwnershipRecords        OwnershipRecord[]      @relation("OwnershipRecordReviewedBy")
+  reviewedEncumbranceRecords      EncumbranceRecord[]    @relation("EncumbranceRecordReviewedBy")
+  reviewedPlanningConstraints     PlanningConstraint[]   @relation("PlanningConstraintReviewedBy")
+  reviewedLeases                  Lease[]                @relation("LeaseReviewedBy")
 }
 
 model Asset {
@@ -339,11 +351,16 @@ model PermitSnapshot {
   environmentalReviewStatus String
   powerApprovalStatus       String
   timelineNotes             String
+  reviewStatus              ReviewStatus @default(PENDING)
+  reviewedAt                DateTime?
+  reviewedById              String?
+  reviewNotes               String?
   sourceStatus              SourceStatus @default(MANUAL)
   sourceUpdatedAt           DateTime?
   createdAt                 DateTime     @default(now())
   updatedAt                 DateTime     @updatedAt
   asset                     Asset        @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  reviewedBy                User?        @relation("PermitSnapshotReviewedBy", fields: [reviewedById], references: [id])
 }
 
 model EnergySnapshot {
@@ -355,11 +372,16 @@ model EnergySnapshot {
   renewableAvailabilityPct Float?
   pueTarget              Float?
   backupFuelHours        Float?
+  reviewStatus           ReviewStatus @default(PENDING)
+  reviewedAt             DateTime?
+  reviewedById           String?
+  reviewNotes            String?
   sourceStatus           SourceStatus @default(MANUAL)
   sourceUpdatedAt        DateTime?
   createdAt              DateTime     @default(now())
   updatedAt              DateTime     @updatedAt
   asset                  Asset        @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  reviewedBy             User?        @relation("EnergySnapshotReviewedBy", fields: [reviewedById], references: [id])
 }
 
 model MarketSnapshot {
@@ -582,10 +604,15 @@ model Lease {
   utilityPassThroughPct Float?
   fitOutCostKrw        Float?
   notes                String?
+  reviewStatus         ReviewStatus @default(PENDING)
+  reviewedAt           DateTime?
+  reviewedById         String?
+  reviewNotes          String?
   createdAt            DateTime     @default(now())
   updatedAt            DateTime     @updatedAt
   asset                Asset        @relation(fields: [assetId], references: [id], onDelete: Cascade)
   steps                LeaseStep[]
+  reviewedBy           User?        @relation("LeaseReviewedBy", fields: [reviewedById], references: [id])
 }
 
 model LeaseStep {
@@ -1093,12 +1120,17 @@ model PlanningConstraint {
   effectiveFrom        DateTime?
   effectiveTo          DateTime?
   sourceLink           String?
+  reviewStatus         ReviewStatus @default(PENDING)
+  reviewedAt           DateTime?
+  reviewedById         String?
+  reviewNotes          String?
   sourceSystem         String
   sourceStatus         SourceStatus @default(MANUAL)
   sourceUpdatedAt      DateTime?
   createdAt            DateTime     @default(now())
   updatedAt            DateTime     @updatedAt
   asset                Asset        @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  reviewedBy           User?        @relation("PlanningConstraintReviewedBy", fields: [reviewedById], references: [id])
 
   @@index([assetId, constraintType])
 }
@@ -1112,12 +1144,17 @@ model OwnershipRecord {
   effectiveDate        DateTime?
   endDate              DateTime?
   sourceLink           String?
+  reviewStatus         ReviewStatus @default(PENDING)
+  reviewedAt           DateTime?
+  reviewedById         String?
+  reviewNotes          String?
   sourceSystem         String
   sourceStatus         SourceStatus @default(MANUAL)
   sourceUpdatedAt      DateTime?
   createdAt            DateTime     @default(now())
   updatedAt            DateTime     @updatedAt
   asset                Asset        @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  reviewedBy           User?        @relation("OwnershipRecordReviewedBy", fields: [reviewedById], references: [id])
 
   @@index([assetId, effectiveDate])
 }
@@ -1133,12 +1170,17 @@ model EncumbranceRecord {
   releaseDate          DateTime?
   statusLabel          String?
   sourceLink           String?
+  reviewStatus         ReviewStatus @default(PENDING)
+  reviewedAt           DateTime?
+  reviewedById         String?
+  reviewNotes          String?
   sourceSystem         String
   sourceStatus         SourceStatus @default(MANUAL)
   sourceUpdatedAt      DateTime?
   createdAt            DateTime     @default(now())
   updatedAt            DateTime     @updatedAt
   asset                Asset        @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  reviewedBy           User?        @relation("EncumbranceRecordReviewedBy", fields: [reviewedById], references: [id])
 
   @@index([assetId, encumbranceType, effectiveDate])
 }

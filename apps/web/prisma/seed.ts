@@ -9,12 +9,14 @@ import {
   AssetClass,
   PrismaClient,
   ReadinessStatus,
+  ReviewStatus,
   SourceStatus,
   UserRole
 } from '@prisma/client';
 import type { Prisma } from '@prisma/client';
 import { ingestFinancialStatement } from '../lib/services/financial-statements';
 import { buildMacroRegimeProvenance, buildMacroRegimeSnapshot } from '../lib/services/macro/series';
+import { stageReviewReadiness } from '../lib/services/readiness';
 import { buildSensitivityRuns } from '../lib/services/sensitivity/engine';
 import { buildValuationAnalysis } from '../lib/services/valuation-engine';
 
@@ -465,6 +467,68 @@ async function seedAsset(input: SeedAssetInput) {
     }
   });
 
+  const reviewer = await prisma.user.findUnique({
+    where: { email: 'analyst@nexusseoul.local' },
+    select: { id: true }
+  });
+
+  if (input.assetCode === 'SEOUL-GANGSEO-01') {
+    const approvedAt = new Date('2026-03-24T09:00:00.000Z');
+
+    if (asset.energySnapshot) {
+      await prisma.energySnapshot.update({
+        where: { id: asset.energySnapshot.id },
+        data: {
+          reviewStatus: ReviewStatus.APPROVED,
+          reviewedAt: approvedAt,
+          reviewedById: reviewer?.id ?? null,
+          reviewNotes: 'Utility tariff, resiliency assumptions, and substation distance verified against latest diligence pack.'
+        }
+      });
+    }
+
+    if (asset.permitSnapshot) {
+      await prisma.permitSnapshot.update({
+        where: { id: asset.permitSnapshot.id },
+        data: {
+          reviewStatus: ReviewStatus.APPROVED,
+          reviewedAt: approvedAt,
+          reviewedById: reviewer?.id ?? null,
+          reviewNotes: 'Power allocation timing and planning status confirmed for committee circulation.'
+        }
+      });
+    }
+
+    if (asset.leases[0]) {
+      await prisma.lease.update({
+        where: { id: asset.leases[0].id },
+        data: {
+          reviewStatus: ReviewStatus.APPROVED,
+          reviewedAt: approvedAt,
+          reviewedById: reviewer?.id ?? null,
+          reviewNotes: 'Anchor lease economics and staged ramp verified against sponsor-marked term sheet.'
+        }
+      });
+    }
+
+    await prisma.ownershipRecord.create({
+      data: {
+        assetId: asset.id,
+        ownerName: input.ownerName,
+        entityType: 'SPC',
+        ownershipPct: 100,
+        effectiveDate: approvedAt,
+        sourceSystem: 'seed-manual',
+        sourceStatus: SourceStatus.FRESH,
+        sourceUpdatedAt: approvedAt,
+        reviewStatus: ReviewStatus.APPROVED,
+        reviewedAt: approvedAt,
+        reviewedById: reviewer?.id ?? null,
+        reviewNotes: 'Title chain and SPC ownership structure validated for current underwriting package.'
+      }
+    });
+  }
+
   await ingestFinancialStatement({
     assetId: asset.id,
     assetName: asset.name,
@@ -575,24 +639,38 @@ async function seedAsset(input: SeedAssetInput) {
   });
 
   if (asset.readinessProject && input.readinessStatus === ReadinessStatus.READY) {
-    const latestDocument = await prisma.document.findFirst({
-      where: { assetId: asset.id },
-      orderBy: { updatedAt: 'desc' }
-    });
+    await stageReviewReadiness(asset.id, prisma);
 
-    if (latestDocument) {
-      await prisma.onchainRecord.create({
-        data: {
-          readinessProjectId: asset.readinessProject.id,
-          documentId: latestDocument.id,
-          recordType: 'DOCUMENT_HASH',
-          status: ReadinessStatus.READY,
-          payload: {
-            seededFrom: run.id,
-            documentHash: latestDocument.documentHash
-          }
-        }
+    if (input.assetCode === 'SEOUL-GANGSEO-01') {
+      const latestDocument = await prisma.document.findFirst({
+        where: { assetId: asset.id },
+        orderBy: { updatedAt: 'desc' }
       });
+
+      if (latestDocument) {
+        await prisma.onchainRecord.updateMany({
+          where: {
+            readinessProjectId: asset.readinessProject.id,
+            documentId: latestDocument.id,
+            recordType: 'DOCUMENT_HASH'
+          },
+          data: {
+            status: ReadinessStatus.ANCHORED,
+            txHash: '0x8a3f6a5d9b19c613e779241db24dc8fe9121f4ae7e3d8c9fbb0723b1d94c8c42',
+            chainId: 'demo-registry-sepolia',
+            anchoredAt: new Date('2026-03-25T01:30:00.000Z')
+          }
+        });
+        await prisma.readinessProject.update({
+          where: { id: asset.readinessProject.id },
+          data: {
+            readinessStatus: ReadinessStatus.ANCHORED,
+            reviewPhase: 'Evidence anchored',
+            chainName: 'Demo Registry / Sepolia',
+            nextAction: 'Institutional packet is staged and the latest document hash is anchored for committee review.'
+          }
+        });
+      }
     }
   }
 }
