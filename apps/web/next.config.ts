@@ -1,7 +1,6 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  distDir: 'build',
   experimental: {
     serverActions: { bodySizeLimit: '5mb' }
   }

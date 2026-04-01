@@ -3,11 +3,15 @@ import { prisma } from '@/lib/db/prisma';
 import { buildForecastModelStack } from '@/lib/services/forecast/model-stack';
 import { buildForecastEnsemblePolicy } from '@/lib/services/forecast/ensemble';
 import { buildGradientBoostingRealizedBacktest } from '@/lib/services/forecast/realized-backtest';
-import { listAssets, getAssetBySlug } from '@/lib/services/assets';
-import { buildDealCloseProbability, buildDealClosingReadiness, buildDealExecutionSnapshot } from '@/lib/services/deals';
+import { getAssetBySlug } from '@/lib/services/assets';
+import {
+  buildDealCloseProbability,
+  buildDealClosingReadiness,
+  buildDealExecutionSnapshot,
+  getDealMaterialUpdatedAt
+} from '@/lib/services/deals';
 import { buildMacroBacktest } from '@/lib/services/macro/backtest';
 import { buildMacroForecastBacktest } from '@/lib/services/macro/forecast-backtest';
-import { listDocuments } from '@/lib/services/documents';
 import { listInquiries } from '@/lib/services/inquiries';
 import {
   buildQuantAllocationView,
@@ -18,8 +22,6 @@ import { buildMacroMonitor } from '@/lib/services/macro/monitor';
 import { buildRealizedOutcomeSummary } from '@/lib/services/realized-outcomes';
 import { listReadinessProjects } from '@/lib/services/readiness';
 import { getSourceRefreshHealth } from '@/lib/services/source-refresh';
-import { listValuationRuns } from '@/lib/services/valuations';
-
 type CreditLiquiditySignals = {
   refinanceRiskLevel?: string;
   covenantPressureLevel?: string;
@@ -452,7 +454,7 @@ export function buildDealReminderSummary(
     const checklistCompletionPct =
       requiredChecklistCount > 0 ? (completedChecklistCount / requiredChecklistCount) * 100 : 100;
     const nextDueAt = datedOpenTasks[0]?.dueDate ?? deal.nextActionAt ?? null;
-    const isStale = deal.updatedAt.getTime() <= now - 1000 * 60 * 60 * 24 * 7;
+    const isStale = getDealMaterialUpdatedAt(deal as any).getTime() <= now - 1000 * 60 * 60 * 24 * 7;
 
     const reminder =
       overdueTaskCount > 0
@@ -582,35 +584,115 @@ export async function getSampleReport(db: PrismaClient = prisma) {
 }
 
 export async function getAdminData(db: PrismaClient = prisma) {
-  const [summary, assets, valuations, documents, inquiries, readiness, sourceHealth, riskRuns, creditAssessments, macroFactors, realizedOutcomes, deals] =
+  const [
+    summary,
+    recentAssets,
+    valuationRuns,
+    documentSummary,
+    inquiries,
+    readiness,
+    sourceHealth,
+    creditAssessments,
+    macroFactors,
+    realizedOutcomes,
+    deals,
+    forecastAssetFeatures,
+    financialStatementCount
+  ] =
     await Promise.all([
     getDashboardSummary(db),
-    listAssets(db),
-    listValuationRuns(db),
-    listDocuments(db),
-    listInquiries(db),
-    listReadinessProjects(db),
-    getSourceRefreshHealth(db),
+    db.asset.findMany({
+      select: {
+        id: true,
+        name: true,
+        assetCode: true,
+        assetClass: true,
+        market: true,
+        status: true,
+        powerCapacityMw: true,
+        rentableAreaSqm: true,
+        grossFloorAreaSqm: true,
+        currentValuationKrw: true,
+        address: {
+          select: {
+            city: true,
+            country: true
+          }
+        },
+        valuations: {
+          select: {
+            id: true,
+            baseCaseValueKrw: true,
+            confidenceScore: true,
+            createdAt: true
+          },
+          orderBy: {
+            createdAt: 'desc'
+          },
+          take: 1
+        }
+      },
+      orderBy: {
+        updatedAt: 'desc'
+      },
+      take: 4
+    }),
     db.valuationRun.findMany({
       select: {
         id: true,
         assetId: true,
+        runLabel: true,
         createdAt: true,
+        baseCaseValueKrw: true,
         confidenceScore: true,
         assumptions: true,
+        provenance: true,
+        scenarios: {
+          select: {
+            name: true,
+            valuationKrw: true,
+            debtServiceCoverage: true
+          },
+          orderBy: {
+            scenarioOrder: 'asc'
+          }
+        },
         asset: {
           select: {
             id: true,
             name: true,
             assetCode: true,
-            assetClass: true
+            assetClass: true,
+            market: true,
+            address: {
+              select: {
+                country: true
+              }
+            }
           }
         }
       },
       orderBy: {
         createdAt: 'desc'
-      }
+      },
+      take: 300
     }),
+    Promise.all([
+      db.document.count(),
+      db.document.findFirst({
+        select: {
+          id: true,
+          title: true,
+          updatedAt: true
+        },
+        orderBy: {
+          updatedAt: 'desc'
+        }
+      })
+    ]),
+    listInquiries(db),
+    listReadinessProjects(db),
+    getSourceRefreshHealth(db),
     db.creditAssessment.findMany({
       select: {
         id: true,
@@ -634,7 +716,8 @@ export async function getAdminData(db: PrismaClient = prisma) {
       },
       orderBy: {
         createdAt: 'desc'
-      }
+      },
+      take: 400
     }),
     db.macroFactor.findMany({
       orderBy: {
@@ -664,7 +747,8 @@ export async function getAdminData(db: PrismaClient = prisma) {
       },
       orderBy: {
         observationDate: 'desc'
-      }
+      },
+      take: 400
     }),
     db.deal.findMany({
       select: {
@@ -768,16 +852,34 @@ export async function getAdminData(db: PrismaClient = prisma) {
       },
       orderBy: {
         updatedAt: 'desc'
+      },
+      take: 200
+    }),
+    db.asset.findMany({
+      select: {
+        market: true,
+        assetClass: true,
+        _count: {
+          select: {
+            transactionComps: true,
+            rentComps: true,
+            marketIndicatorSeries: true,
+            valuations: true
+          }
+        }
       }
-    })
+    }),
+    db.financialStatement.count()
   ]);
+
+  const [documentCount, latestDocument] = documentSummary;
 
   const quantSignals = buildQuantMarketSignals(macroFactors);
   const quantAllocation = buildQuantAllocationView(quantSignals);
   const macroBacktest = buildMacroBacktest(macroFactors);
   const macroForecastBacktest = buildMacroForecastBacktest(macroFactors);
   const forecastRealizedBacktest = buildGradientBoostingRealizedBacktest({
-    runs: valuations.map((run) => ({
+    runs: valuationRuns.map((run) => ({
       id: run.id,
       assetId: run.assetId,
       createdAt: run.createdAt,
@@ -799,8 +901,20 @@ export async function getAdminData(db: PrismaClient = prisma) {
     outcomes: realizedOutcomes
   });
   const forecastModelStack = buildForecastModelStack({
-    assets,
-    documents,
+    featureSummary: {
+      assetCount: summary.assetCount,
+      marketCount: new Set(forecastAssetFeatures.map((asset) => asset.market)).size,
+      assetClassCoverage: new Set(forecastAssetFeatures.map((asset) => asset.assetClass)).size,
+      marketEvidenceAssets: forecastAssetFeatures.filter(
+        (asset) =>
+          asset._count.transactionComps > 0 ||
+          asset._count.rentComps > 0 ||
+          asset._count.marketIndicatorSeries > 0
+      ).length,
+      valuationHistoryCount: forecastAssetFeatures.reduce((sum, asset) => sum + asset._count.valuations, 0),
+      documentCount,
+      financialStatementCount
+    },
     macroObservationCount: macroFactors.length,
     realizedBacktest: forecastRealizedBacktest
   });
@@ -811,7 +925,7 @@ export async function getAdminData(db: PrismaClient = prisma) {
     forecastRealizedBacktest
   });
   const realizedOutcomeSummary = buildRealizedOutcomeSummary({
-    runs: valuations.map((run) => ({
+    runs: valuationRuns.map((run) => ({
       id: run.id,
       assetId: run.assetId,
       createdAt: run.createdAt,
@@ -832,16 +946,33 @@ export async function getAdminData(db: PrismaClient = prisma) {
 
   return {
     summary,
-    assets,
-    valuations,
-    documents,
+    assets: recentAssets,
+    valuations: valuationRuns.slice(0, 3),
+    documents: {
+      totalCount: documentCount,
+      latest: latestDocument
+    },
     inquiries,
     readiness,
     sourceHealth,
     dealPipeline: buildDealPipelineSummary(deals),
     dealCloseProbability: buildDealCloseProbabilitySummary(deals),
     dealReminders: buildDealReminderSummary(deals),
-    portfolioRisk: buildPortfolioRiskSummary(riskRuns),
+    portfolioRisk: buildPortfolioRiskSummary(
+      valuationRuns.map((run) => ({
+        id: run.id,
+        assetId: run.assetId,
+        createdAt: run.createdAt,
+        confidenceScore: run.confidenceScore,
+        assumptions: run.assumptions,
+        asset: {
+          id: run.asset.id,
+          name: run.asset.name,
+          assetCode: run.asset.assetCode,
+          assetClass: run.asset.assetClass
+        }
+      }))
+    ),
     counterpartyRisk: buildCounterpartyRiskSummary(creditAssessments),
     quantSignals,
     quantAllocation,

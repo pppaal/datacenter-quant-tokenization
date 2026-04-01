@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { ActivityType, DealStage, RiskSeverity, TaskPriority, TaskStatus } from '@prisma/client';
+import { ActivityType, DealRequestStatus, DealStage, RiskSeverity, TaskPriority, TaskStatus } from '@prisma/client';
 import {
   autoMatchDealDocumentRequestsForAsset,
   archiveDeal,
@@ -430,6 +430,107 @@ test('buildDealCloseProbability drops when financing and exclusivity are missing
   assert.ok(probability.scorePct < 50);
 });
 
+test('buildDealCloseProbability treats unconfirmed DD suggestions as execution drag', () => {
+  const now = new Date('2026-03-28T12:00:00.000Z');
+  const baseDeal = {
+    id: 'deal_1',
+    dealCode: 'DEAL-0001',
+    slug: 'deal-0001',
+    title: 'DD suggestions pending',
+    stage: DealStage.DD,
+    market: 'KR',
+    city: 'Seoul',
+    country: 'KR',
+    assetClass: null,
+    strategy: null,
+    headline: null,
+    nextAction: 'Confirm DD package',
+    nextActionAt: now,
+    targetCloseDate: now,
+    sellerGuidanceKrw: null,
+    bidGuidanceKrw: null,
+    purchasePriceKrw: null,
+    statusLabel: 'ACTIVE',
+    archivedAt: null,
+    closedAt: null,
+    closeOutcome: null,
+    closeSummary: null,
+    dealLead: 'solo_operator',
+    assetId: 'asset_1',
+    createdAt: now,
+    updatedAt: now,
+    counterparties: [],
+    bidRevisions: [],
+    lenderQuotes: [],
+    negotiationEvents: [],
+    riskFlags: [],
+    tasks: [],
+    asset: { valuations: [] }
+  } as any;
+
+  const cleanProbability = buildDealCloseProbability(
+    {
+      ...baseDeal,
+      documentRequests: [{ id: 'req_1', status: DealRequestStatus.REQUESTED, documentId: null, matchSuggestion: null }]
+    },
+    {
+      stageTrack: [],
+      stageChecklist: [],
+      requiredChecklistCount: 1,
+      completedChecklistCount: 0,
+      checklistCompletionPct: 0,
+      openTaskCount: 0,
+      urgentTaskCount: 0,
+      overdueTaskCount: 0,
+      dueSoonTaskCount: 0,
+      openRiskCount: 0,
+      suggestedRequestCount: 0,
+      activeExclusivityEvent: null,
+      exclusivityExpiresSoon: false,
+      nextTask: null,
+      reminderSummary: 'No open tasks right now.',
+      notesByRole: []
+    } as any
+  );
+
+  const suggestedProbability = buildDealCloseProbability(
+    {
+      ...baseDeal,
+      documentRequests: [
+        {
+          id: 'req_1',
+          status: DealRequestStatus.REQUESTED,
+          documentId: null,
+          matchSuggestion: { documentId: 'doc_1', documentTitle: 'Environmental update', score: 5 }
+        }
+      ]
+    },
+    {
+      stageTrack: [],
+      stageChecklist: [],
+      requiredChecklistCount: 1,
+      completedChecklistCount: 0,
+      checklistCompletionPct: 0,
+      openTaskCount: 0,
+      urgentTaskCount: 0,
+      overdueTaskCount: 0,
+      dueSoonTaskCount: 0,
+      openRiskCount: 0,
+      suggestedRequestCount: 1,
+      activeExclusivityEvent: null,
+      exclusivityExpiresSoon: false,
+      nextTask: null,
+      reminderSummary: '1 DD request suggestion still needs operator confirmation.',
+      notesByRole: []
+    } as any
+  );
+
+  assert.ok(suggestedProbability.scorePct < cleanProbability.scorePct);
+  assert.ok(
+    suggestedProbability.drivers.some((driver) => driver.includes('DD suggestion'))
+  );
+});
+
 test('createDealBidRevision logs structured negotiation history', async () => {
   const fakeDb = {
     deal: {
@@ -781,6 +882,124 @@ test('autoMatchDealDocumentRequestsForAsset links obvious DD matches on upload',
   assert.deepEqual(updatedIds, ['req_1']);
 });
 
+test('autoMatchDealDocumentRequestsForAsset only auto-links the best DD request candidate', async () => {
+  const updatedIds: string[] = [];
+  const fakeDb = {
+    dealDocumentRequest: {
+      async findMany() {
+        return [
+          {
+            id: 'req_1',
+            dealId: 'deal_1',
+            title: 'Title report',
+            category: 'title',
+            notes: null,
+            requestedAt: new Date('2026-03-20T00:00:00.000Z'),
+            receivedAt: null
+          },
+          {
+            id: 'req_2',
+            dealId: 'deal_1',
+            title: 'Title package',
+            category: 'title',
+            notes: null,
+            requestedAt: new Date('2026-03-21T00:00:00.000Z'),
+            receivedAt: null
+          }
+        ];
+      },
+      async update(args: any) {
+        updatedIds.push(args.where.id);
+        return {
+          id: args.where.id,
+          counterparty: null,
+          document: { id: args.data.documentId, title: 'Title Report March' },
+          ...args.data
+        };
+      }
+    },
+    activityLog: {
+      async create() {
+        return null;
+      }
+    }
+  };
+
+  const matched = await autoMatchDealDocumentRequestsForAsset(
+    'asset_1',
+    {
+      documentId: 'doc_1',
+      documentTitle: 'Title Report March',
+      documentType: 'REPORT'
+    },
+    fakeDb as any
+  );
+
+  assert.equal(matched.length, 1);
+  assert.deepEqual(updatedIds, ['req_1']);
+});
+
+test('autoMatchDealDocumentRequestsForAsset queues suggestions when the match is ambiguous', async () => {
+  const updatedRequests: Array<{ id: string; data: any }> = [];
+  const fakeDb = {
+    dealDocumentRequest: {
+      async findMany() {
+        return [
+          {
+            id: 'req_1',
+            dealId: 'deal_1',
+            title: 'Environmental report',
+            category: 'report',
+            notes: null,
+            requestedAt: new Date('2026-03-20T00:00:00.000Z'),
+            receivedAt: null
+          },
+          {
+            id: 'req_2',
+            dealId: 'deal_1',
+            title: 'Environmental memo',
+            category: 'report',
+            notes: null,
+            requestedAt: new Date('2026-03-21T00:00:00.000Z'),
+            receivedAt: null
+          }
+        ];
+      },
+      async update(args: any) {
+        updatedRequests.push({ id: args.where.id, data: args.data });
+        return {
+          id: args.where.id,
+          counterparty: null,
+          document: null,
+          ...args.data
+        };
+      }
+    },
+    activityLog: {
+      async create() {
+        return null;
+      }
+    }
+  };
+
+  const matched = await autoMatchDealDocumentRequestsForAsset(
+    'asset_1',
+    {
+      documentId: 'doc_1',
+      documentTitle: 'Environmental update',
+      documentType: 'REPORT'
+    },
+    fakeDb as any
+  );
+
+  assert.equal(matched.length, 0);
+  assert.equal(updatedRequests.length, 2);
+  assert.ok(updatedRequests.every((entry) => entry.data.matchSuggestion));
+  assert.ok(updatedRequests.every((entry) => entry.data.status === undefined));
+  assert.deepEqual(updatedRequests[0]?.data.matchSuggestion.competingRequestTitles, ['Environmental memo']);
+  assert.deepEqual(updatedRequests[1]?.data.matchSuggestion.competingRequestTitles, ['Environmental report']);
+});
+
 test('updateDealStage enforces closing before asset management', async () => {
   const now = new Date('2026-03-26T12:00:00.000Z');
   const fakeDb = {
@@ -1027,6 +1246,46 @@ test('buildDealReminderSummary flags stale deals after 7 days without update', (
 
   assert.equal(summary.staleDeals, 1);
   assert.equal(summary.reminders[0]?.isStale, true);
+});
+
+test('buildDealReminderSummary treats fresh child execution activity as non-stale', () => {
+  const now = new Date();
+  const summary = buildDealReminderSummary([
+    {
+      id: 'deal_1',
+      dealCode: 'DEAL-0001',
+      title: 'Fresh execution deal',
+      stage: DealStage.SCREENED,
+      statusLabel: 'ACTIVE',
+      archivedAt: null,
+      updatedAt: new Date(now.getTime() - 1000 * 60 * 60 * 24 * 9),
+      nextAction: 'Call broker',
+      nextActionAt: null,
+      tasks: [
+        {
+          id: 'task_1',
+          status: 'OPEN',
+          priority: 'MEDIUM',
+          dueDate: null,
+          checklistKey: null,
+          isRequired: false,
+          createdAt: new Date(now.getTime() - 1000 * 60 * 60 * 24 * 9),
+          updatedAt: new Date(now.getTime() - 1000 * 60 * 60 * 4),
+          completedAt: null
+        }
+      ],
+      documentRequests: [],
+      bidRevisions: [],
+      lenderQuotes: [],
+      negotiationEvents: [],
+      riskFlags: [],
+      activityLogs: [],
+      counterparties: []
+    }
+  ] as any);
+
+  assert.equal(summary.staleDeals, 0);
+  assert.equal(summary.reminders.length, 0);
 });
 
 test('seedDealStageChecklist creates required tasks for the current stage', async () => {
@@ -1551,6 +1810,7 @@ test('buildDealCloseProbabilityHistory returns persisted snapshots in reverse ti
           headline: 'Close path is credible if the current checklist stays clean.',
           openRiskCount: 0,
           overdueTaskCount: 1,
+          pendingSuggestedRequestCount: 2,
           hasAcceptedBid: true,
           hasApprovedFinancing: true,
           hasLiveExclusivity: true,
@@ -1567,6 +1827,7 @@ test('buildDealCloseProbabilityHistory returns persisted snapshots in reverse ti
           headline: 'Deal can close, but execution gaps still need active management.',
           openRiskCount: 1,
           overdueTaskCount: 0,
+          pendingSuggestedRequestCount: 0,
           hasAcceptedBid: true,
           hasApprovedFinancing: false,
           hasLiveExclusivity: true,
@@ -1580,5 +1841,91 @@ test('buildDealCloseProbabilityHistory returns persisted snapshots in reverse ti
   assert.equal(history.length, 2);
   assert.equal(history[0]?.id, 'snap_2');
   assert.equal(history[0]?.flags.includes('approved financing'), true);
+  assert.equal(history[0]?.flags.includes('pending DD suggestions (2)'), true);
   assert.equal(history[1]?.flags.includes('accepted bid'), true);
+});
+
+test('buildDealCloseProbabilityHistory prepends current state when it diverges from persisted history', () => {
+  const now = new Date('2026-03-30T12:00:00.000Z');
+  const history = buildDealCloseProbabilityHistory(
+    {
+      id: 'deal_1',
+      dealCode: 'DEAL-0001',
+      slug: 'deal-0001',
+      title: 'Tracked deal',
+      stage: DealStage.CLOSING,
+      market: 'KR',
+      city: 'Seoul',
+      country: 'KR',
+      assetClass: null,
+      strategy: null,
+      headline: null,
+      nextAction: 'Close docs',
+      nextActionAt: null,
+      targetCloseDate: null,
+      sellerGuidanceKrw: null,
+      bidGuidanceKrw: null,
+      purchasePriceKrw: null,
+      statusLabel: 'ACTIVE',
+      archivedAt: null,
+      closedAt: null,
+      closeOutcome: null,
+      closeSummary: null,
+      dealLead: 'solo_operator',
+      assetId: 'asset_1',
+      createdAt: new Date('2026-03-01T00:00:00.000Z'),
+      updatedAt: new Date('2026-03-20T00:00:00.000Z'),
+      counterparties: [],
+      bidRevisions: [],
+      lenderQuotes: [],
+      negotiationEvents: [],
+      tasks: [],
+      riskFlags: [],
+      activityLogs: [],
+      asset: {
+        valuations: [
+          {
+            id: 'val_1',
+            createdAt: now
+          }
+        ]
+      },
+      documentRequests: [
+        {
+          id: 'req_1',
+          status: DealRequestStatus.REQUESTED,
+          documentId: null,
+          matchSuggestion: { documentId: 'doc_1', documentTitle: 'Updated DD pack', score: 6 }
+        }
+      ],
+      probabilitySnapshots: [
+        {
+          id: 'snap_1',
+          stage: DealStage.CLOSING,
+          snapshotReason: 'lender_quote_updated',
+          readinessScorePct: 70,
+          readinessBlockerCount: 2,
+          closeProbabilityPct: 60,
+          closeProbabilityBand: 'MEDIUM',
+          headline: 'Older state',
+          openRiskCount: 1,
+          overdueTaskCount: 1,
+          pendingSuggestedRequestCount: 0,
+          hasAcceptedBid: false,
+          hasApprovedFinancing: false,
+          hasLiveExclusivity: false,
+          createdAt: new Date('2026-03-21T00:00:00.000Z')
+        }
+      ]
+    } as any,
+    {
+      readiness: { scorePct: 88, blockerCount: 1 } as any,
+      probability: { scorePct: 82, band: 'HIGH', headline: 'Current state' } as any
+    }
+  );
+
+  assert.equal(history[0]?.id, 'current');
+  assert.equal(history[0]?.scorePct, 82);
+  assert.equal(history[0]?.flags.includes('pending DD suggestions (1)'), true);
+  assert.equal(history[1]?.id, 'snap_1');
 });

@@ -144,7 +144,8 @@ export async function uploadDocumentVersion(
         documentTitle: document.title,
         documentType: document.documentType
       },
-      db
+      db,
+      parsed.dealId ?? undefined
     );
   } catch {
     // Keep upload non-blocking even if deal request matching fails.

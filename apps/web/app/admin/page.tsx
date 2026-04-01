@@ -652,9 +652,10 @@ export default async function AdminOverviewPage() {
           <div className="mt-5 grid gap-4">
             <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
               <div className="fine-print">Documents</div>
-              <div className="mt-3 text-3xl font-semibold text-white">{formatNumber(documents.length, 0)}</div>
+              <div className="mt-3 text-3xl font-semibold text-white">{formatNumber(documents.totalCount, 0)}</div>
               <p className="mt-2 text-sm text-slate-400">
-                Latest upload: {documents[0] ? `${documents[0].title} on ${formatDate(documents[0].updatedAt)}` : 'No documents yet'}
+                Latest upload:{' '}
+                {documents.latest ? `${documents.latest.title} on ${formatDate(documents.latest.updatedAt)}` : 'No documents yet'}
               </p>
             </div>
             <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">

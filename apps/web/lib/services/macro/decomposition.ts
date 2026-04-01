@@ -18,7 +18,7 @@ export type MacroDecomposition = {
     key: string;
     label: string;
     unit: 'pts' | '%';
-    currentValue: number;
+    currentValue: number | null;
     previousValue: number | null;
     delta: number | null;
   }>;
@@ -66,6 +66,24 @@ function compareNullable(current: number | null, previous: number | null) {
   return round(current - previous);
 }
 
+function getGuidanceValue(
+  regime: MacroInterpretation | null,
+  key: (typeof GUIDANCE_ORDER)[number][0]
+) {
+  const guidance = regime?.guidance;
+  if (!guidance || typeof guidance !== 'object') return null;
+  const value = guidance[key];
+  return typeof value === 'number' ? value : null;
+}
+
+function getImpactDimensions(regime: MacroInterpretation | null) {
+  return Array.isArray(regime?.impacts?.dimensions) ? regime.impacts.dimensions : [];
+}
+
+function getFactorList(regime: MacroInterpretation | null) {
+  return Array.isArray(regime?.factors) ? regime.factors : [];
+}
+
 const GUIDANCE_ORDER = [
   ['discountRateShiftPct', 'Discount Rate', 'pts'],
   ['exitCapRateShiftPct', 'Exit Cap', 'pts'],
@@ -90,21 +108,21 @@ export function buildMacroDecomposition(
   const previous = previousRun ? extractMacroRegime(previousRun.assumptions) : null;
 
   const guidanceChanges = GUIDANCE_ORDER.map(([key, label, unit]) => {
-    const currentValue = current.guidance[key];
-    const previousValue = previous ? previous.guidance[key] : null;
+    const currentValue = getGuidanceValue(current, key);
+    const previousValue = getGuidanceValue(previous, key);
 
     return {
       key,
       label,
       unit,
-      currentValue: round(currentValue),
+      currentValue: currentValue === null ? null : round(currentValue),
       previousValue: previousValue === null ? null : round(previousValue),
       delta: compareNullable(currentValue, previousValue)
     };
   });
 
-  const impactChanges = current.impacts.dimensions.map((dimension) => {
-    const previousDimension = previous?.impacts.dimensions.find((item) => item.key === dimension.key) ?? null;
+  const impactChanges = getImpactDimensions(current).map((dimension) => {
+    const previousDimension = getImpactDimensions(previous).find((item) => item.key === dimension.key) ?? null;
     return {
       key: dimension.key,
       label: dimension.label,
@@ -116,9 +134,9 @@ export function buildMacroDecomposition(
     };
   });
 
-  const factorDrivers = current.factors
+  const factorDrivers = getFactorList(current)
     .map((factor) => {
-      const previousFactor = previous?.factors.find((item) => item.key === factor.key) ?? null;
+      const previousFactor = getFactorList(previous).find((item) => item.key === factor.key) ?? null;
       const currentValue = factor.isObserved ? factor.value : null;
       const previousValue = previousFactor?.isObserved ? previousFactor.value : null;
       const delta = compareNullable(currentValue, previousValue);

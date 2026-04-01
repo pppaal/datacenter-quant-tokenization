@@ -8,6 +8,7 @@ import { DealCloseProbabilityHistoryPanel } from '@/components/admin/deal-close-
 import { DealDataCoveragePanel } from '@/components/admin/deal-data-coverage-panel';
 import { DealOperatorConsole } from '@/components/admin/deal-operator-console';
 import { DealTimelinePanel } from '@/components/admin/deal-timeline-panel';
+import { DocumentUploadForm } from '@/components/admin/document-upload-form';
 import { formatDealStage, getDealStageTone } from '@/lib/deals/config';
 import {
   buildDealCloseProbability,
@@ -182,6 +183,19 @@ export default async function DealDetailPage({ params }: Props) {
       <DealCloseProbabilityHistoryPanel history={closeProbabilityHistory} />
 
       <DealDataCoveragePanel coverage={coverage} />
+
+      {deal.asset ? (
+        <Card>
+          <div className="eyebrow">Deal Documents</div>
+          <h2 className="mt-2 text-2xl font-semibold text-white">Upload diligence directly into this process</h2>
+          <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400">
+            Uploading from the deal page scopes DD auto-match to this execution record and avoids cross-deal leakage on shared assets.
+          </p>
+          <div className="mt-6">
+            <DocumentUploadForm assetId={deal.asset.id} dealId={deal.id} />
+          </div>
+        </Card>
+      ) : null}
 
       <DealTimelinePanel events={timeline} />
     </div>

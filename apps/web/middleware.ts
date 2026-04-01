@@ -1,5 +1,10 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { getAdminAuthConfig, isAdminAuthorized } from '@/lib/security/admin-auth';
+import {
+  authorizeAdminHeader,
+  getAdminAuthConfig,
+  getRequiredAdminRoleForPath,
+  hasRequiredAdminRole
+} from '@/lib/security/admin-auth';
 
 function unauthorizedResponse(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith('/api/')) {
@@ -19,6 +24,19 @@ function unauthorizedResponse(request: NextRequest) {
     headers: {
       'Content-Type': 'text/plain; charset=utf-8',
       'WWW-Authenticate': 'Basic realm="admin"'
+    }
+  });
+}
+
+function forbiddenResponse(request: NextRequest, requiredRole: string) {
+  if (request.nextUrl.pathname.startsWith('/api/')) {
+    return NextResponse.json({ error: `Insufficient role. ${requiredRole} access required.` }, { status: 403 });
+  }
+
+  return new NextResponse(`Insufficient role. ${requiredRole} access required.`, {
+    status: 403,
+    headers: {
+      'Content-Type': 'text/plain; charset=utf-8'
     }
   });
 }
@@ -48,11 +66,26 @@ export function middleware(request: NextRequest) {
     });
   }
 
-  if (isAdminAuthorized(request.headers.get('authorization'), config)) {
-    return NextResponse.next();
+  const actor = authorizeAdminHeader(request.headers.get('authorization'), config);
+  if (!actor) {
+    return unauthorizedResponse(request);
   }
 
-  return unauthorizedResponse(request);
+  const requiredRole = getRequiredAdminRoleForPath(request.nextUrl.pathname);
+  if (!hasRequiredAdminRole(actor.role, requiredRole)) {
+    return forbiddenResponse(request, requiredRole);
+  }
+
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-admin-actor', actor.identifier);
+  requestHeaders.set('x-admin-role', actor.role);
+  requestHeaders.set('x-admin-required-role', requiredRole);
+
+  return NextResponse.next({
+    request: {
+      headers: requestHeaders
+    }
+  });
 }
 
 export const config = {

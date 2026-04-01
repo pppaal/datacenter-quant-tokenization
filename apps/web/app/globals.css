@@ -13,6 +13,8 @@
   --success: 150 58% 54%;
   --warning: 38 96% 63%;
   --danger: 8 88% 66%;
+  --font-sans: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
 }
 
 * {

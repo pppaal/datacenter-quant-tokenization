@@ -45,16 +45,17 @@ What the workflow supports:
 - deal list with stage, next action, open tasks, and open risks
 - active / actionable / archived views on the deal list
 - deal detail page for one-operator execution
+- deal detail page includes scoped document upload so DD auto-match stays inside the live execution record
 - stage updates with activity logging
 - stage-specific required checklist with seedable required tasks
-- structured DD request tracker with counterparty, due date, received / waived status, and automatic document upload matching
+- structured DD request tracker with counterparty, due date, received / waived status, automatic document upload matching for single-deal asset workflows, and suggestion fallback with competing-request hints when the match is ambiguous
 - bid revision history for first bid, revised bid, BAFO, accepted, or lost pricing paths
 - lender quote tracker for term sheets, approved credit, leverage, pricing, and DSCR terms
 - negotiation event tracker for seller counters, buyer feedback, and exclusivity clock changes
 - closing readiness score covering accepted bid, financing, exclusivity, DD clearance, valuation freshness, and checklist completion
 - close probability readout that combines stage, readiness, risks, overdue tasks, and financing / exclusivity certainty
 - admin dashboard watchlist for fragile live deals ranked by probability to close
-- close probability history on the deal detail page so execution drift is visible over time
+- close probability history on the deal detail page so execution drift, including pending DD suggestion drag, is visible over time
 - next action and close date tracking
 - overdue / due-soon reminder cues for solo execution
 - broker / seller / buyer notes
@@ -79,6 +80,9 @@ The additive SQL migrations are checked in at:
 - `prisma/migrations/20260328111500_add_deal_bid_revisions`
 - `prisma/migrations/20260328124500_add_deal_lender_quotes`
 - `prisma/migrations/20260328143000_add_deal_negotiation_events`
+- `prisma/migrations/20260331103000_add_deal_request_match_suggestions`
+- `prisma/migrations/20260331114500_add_pending_suggested_request_count_to_probability_snapshots`
+- `prisma/migrations/20260401103000_add_sequence_counters`
 
 ## Scheduled Source Refresh
 
@@ -94,8 +98,15 @@ Relevant environment variables:
 - `OPS_CRON_TOKEN`: required bearer token for the cron trigger route
 - `ADMIN_BASIC_AUTH_USER`: basic auth username for `/admin` and admin API routes
 - `ADMIN_BASIC_AUTH_PASSWORD`: basic auth password for `/admin` and admin API routes
+- `ADMIN_BASIC_AUTH_VIEWER_CREDENTIALS`: comma-separated `user:password` viewer credentials
+- `ADMIN_BASIC_AUTH_ANALYST_CREDENTIALS`: comma-separated `user:password` analyst credentials
+- `ADMIN_BASIC_AUTH_ADMIN_CREDENTIALS`: comma-separated `user:password` admin credentials
 - `DOCUMENT_UPLOAD_MAX_BYTES`: max upload size in bytes, default `26214400` (25 MB)
 - `DOCUMENT_UPLOAD_ALLOWED_TYPES`: comma-separated MIME allowlist for uploads
+- `DOCUMENT_STORAGE_BUCKET`: external object storage bucket name when moving off local disk
+- `DOCUMENT_STORAGE_ENDPOINT`: S3-compatible object storage endpoint
+- `DOCUMENT_STORAGE_ACCESS_KEY_ID`: object storage access key
+- `DOCUMENT_STORAGE_SECRET_ACCESS_KEY`: object storage secret
 - `SOURCE_REFRESH_STALE_HOURS`: asset re-enrichment threshold, default `24`
 - `SOURCE_REFRESH_BATCH_SIZE`: max stale assets refreshed per run, default `4`
 

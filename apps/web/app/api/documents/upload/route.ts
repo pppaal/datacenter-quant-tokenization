@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server';
 import { uploadDocumentVersion } from '@/lib/services/documents';
+import { getAdminActorFromHeaders, getRequestIpAddress } from '@/lib/security/admin-request';
 import { UploadPolicyError, validateDocumentUpload } from '@/lib/security/upload-policy';
+import { recordAuditEvent } from '@/lib/services/audit';
 
 export async function POST(request: Request) {
+  const actor = getAdminActorFromHeaders(request.headers);
   try {
     const formData = await request.formData();
     const file = formData.get('file');
@@ -20,9 +23,38 @@ export async function POST(request: Request) {
       size: file.size,
       buffer
     });
+    await recordAuditEvent({
+      actorIdentifier: actor?.identifier,
+      actorRole: actor?.role,
+      action: 'document.upload',
+      entityType: 'document',
+      entityId: document.id,
+      assetId: document.assetId,
+      requestPath: new URL(request.url).pathname,
+      requestMethod: request.method,
+      ipAddress: getRequestIpAddress(request.headers),
+      metadata: {
+        documentType: document.documentType,
+        currentVersion: document.currentVersion,
+        title: document.title
+      }
+    });
 
     return NextResponse.json(document, { status: 201 });
   } catch (error) {
+    await recordAuditEvent({
+      actorIdentifier: actor?.identifier,
+      actorRole: actor?.role,
+      action: 'document.upload',
+      entityType: 'document',
+      requestPath: new URL(request.url).pathname,
+      requestMethod: request.method,
+      ipAddress: getRequestIpAddress(request.headers),
+      statusLabel: 'FAILED',
+      metadata: {
+        error: error instanceof Error ? error.message : 'Failed to upload document'
+      }
+    });
     if (error instanceof UploadPolicyError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }

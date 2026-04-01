@@ -433,6 +433,10 @@ model ValuationRun {
   assetId           String
   runLabel         String
   status           ValuationStatus @default(COMPLETED)
+  approvalStatus   String          @default("PENDING_REVIEW")
+  approvalNotes    String?
+  approvedByLabel  String?
+  approvedAt       DateTime?
   engineVersion    String
   confidenceScore  Float
   baseCaseValueKrw Float
@@ -807,6 +811,7 @@ model DealExecutionProbabilitySnapshot {
   headline               String
   openRiskCount          Int
   overdueTaskCount       Int
+  pendingSuggestedRequestCount Int @default(0)
   hasAcceptedBid         Boolean   @default(false)
   hasApprovedFinancing   Boolean   @default(false)
   hasLiveExclusivity     Boolean   @default(false)
@@ -829,6 +834,7 @@ model DealDocumentRequest {
   dueDate        DateTime?
   requestedAt    DateTime          @default(now())
   receivedAt     DateTime?
+  matchSuggestion Json?
   notes          String?
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
@@ -1583,4 +1589,32 @@ model OnchainRecord {
   createdAt          DateTime        @default(now())
   readinessProject   ReadinessProject @relation(fields: [readinessProjectId], references: [id], onDelete: Cascade)
   document           Document?       @relation(fields: [documentId], references: [id], onDelete: SetNull)
+}
+
+model AuditEvent {
+  id              String   @id @default(cuid())
+  actorIdentifier String
+  actorRole       String
+  action          String
+  entityType      String
+  entityId        String?
+  assetId         String?
+  requestPath     String?
+  requestMethod   String?
+  ipAddress       String?
+  statusLabel     String   @default("SUCCESS")
+  metadata        Json?
+  createdAt       DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([actorIdentifier, createdAt])
+  @@index([entityType, entityId, createdAt])
+  @@index([assetId, createdAt])
+}
+
+model SequenceCounter {
+  key       String   @id
+  nextValue Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

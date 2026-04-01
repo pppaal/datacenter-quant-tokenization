@@ -34,6 +34,29 @@ type Props = {
   snapshot: DealExecutionSnapshot;
 };
 
+function getMatchSuggestion(
+  value: unknown
+): {
+  documentId: string;
+  documentTitle: string;
+  score: number;
+  suggestedAt?: string;
+  competingRequestTitles: string[];
+} | null {
+  if (!value || typeof value !== 'object') return null;
+  const candidate = value as Record<string, unknown>;
+  if (typeof candidate.documentId !== 'string' || typeof candidate.documentTitle !== 'string') return null;
+  return {
+    documentId: candidate.documentId,
+    documentTitle: candidate.documentTitle,
+    score: typeof candidate.score === 'number' ? candidate.score : 0,
+    suggestedAt: typeof candidate.suggestedAt === 'string' ? candidate.suggestedAt : undefined,
+    competingRequestTitles: Array.isArray(candidate.competingRequestTitles)
+      ? candidate.competingRequestTitles.filter((item): item is string => typeof item === 'string')
+      : []
+  };
+}
+
 function toDateValue(value?: string | Date | null) {
   if (!value) return '';
   const date = value instanceof Date ? value : new Date(value);
@@ -494,6 +517,10 @@ export function DealOperatorConsole({ deal, snapshot }: Props) {
           </form>
           <div className="space-y-3">
             {deal.documentRequests.map((requestItem) => (
+              (() => {
+                const matchSuggestion = getMatchSuggestion(requestItem.matchSuggestion);
+
+                return (
               <div key={requestItem.id} className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
@@ -508,6 +535,18 @@ export function DealOperatorConsole({ deal, snapshot }: Props) {
                     {requestItem.document ? (
                       <div className="mt-2 text-sm text-slate-300">Linked document: {requestItem.document.title}</div>
                     ) : null}
+                    {!requestItem.document && matchSuggestion ? (
+                      <div className="mt-3 rounded-[18px] border border-amber-400/20 bg-amber-500/10 p-3 text-sm text-amber-100">
+                        Suggested document: <span className="font-semibold">{matchSuggestion.documentTitle}</span>
+                        {` `}(score {formatNumber(matchSuggestion.score, 0)})
+                        {matchSuggestion.suggestedAt ? ` / queued ${formatDate(matchSuggestion.suggestedAt)}` : ''}
+                        {matchSuggestion.competingRequestTitles.length > 0 ? (
+                          <div className="mt-2 text-xs text-amber-200/90">
+                            Also matched against: {matchSuggestion.competingRequestTitles.join(', ')}
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : null}
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <Badge tone={requestItem.status === DealRequestStatus.RECEIVED ? 'good' : requestItem.status === DealRequestStatus.WAIVED ? 'neutral' : 'warn'}>
@@ -519,6 +558,26 @@ export function DealOperatorConsole({ deal, snapshot }: Props) {
                   </div>
                 </div>
                 <div className="mt-4 flex flex-wrap justify-end gap-2">
+                  {!requestItem.document && matchSuggestion ? (
+                    <Button
+                      type="button"
+                      disabled={busy === `${requestItem.id}-suggestion`}
+                      onClick={() => {
+                        void run(`${requestItem.id}-suggestion`, async () => {
+                          await request(`/api/deals/${deal.id}/document-requests/${requestItem.id}`, 'PATCH', {
+                            status: 'RECEIVED',
+                            receivedAt: new Date().toISOString(),
+                            documentId: matchSuggestion.documentId,
+                            notes: requestItem.notes
+                              ? `${requestItem.notes}\n\nAccepted suggested document "${matchSuggestion.documentTitle}".`
+                              : `Accepted suggested document "${matchSuggestion.documentTitle}".`
+                          });
+                        });
+                      }}
+                    >
+                      Accept Suggestion
+                    </Button>
+                  ) : null}
                   {requestItem.status !== DealRequestStatus.RECEIVED ? (
                     <Button
                       type="button"
@@ -555,6 +614,8 @@ export function DealOperatorConsole({ deal, snapshot }: Props) {
                   ) : null}
                 </div>
               </div>
+                );
+              })()
             ))}
           </div>
         </Card>

@@ -1,51 +1,52 @@
 import { NextResponse } from 'next/server';
-import { createAsset, listAssets } from '@/lib/services/assets';
 import { getAdminActorFromHeaders, getRequestIpAddress } from '@/lib/security/admin-request';
 import { recordAuditEvent } from '@/lib/services/audit';
+import { updateValuationApproval } from '@/lib/services/valuations';
 
-export async function GET() {
-  const assets = await listAssets();
-  return NextResponse.json(assets);
-}
-
-export async function POST(request: Request) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const actor = getAdminActorFromHeaders(request.headers);
+
   try {
+    const { id } = await params;
     const payload = await request.json();
-    const asset = await createAsset(payload);
+    const run = await updateValuationApproval(id, payload, actor ?? {});
+
     await recordAuditEvent({
       actorIdentifier: actor?.identifier,
       actorRole: actor?.role,
-      action: 'asset.create',
-      entityType: 'asset',
-      entityId: asset.id,
-      assetId: asset.id,
+      action: 'valuation.run.approval',
+      entityType: 'valuation_run',
+      entityId: run.id,
+      assetId: run.assetId,
       requestPath: new URL(request.url).pathname,
       requestMethod: request.method,
       ipAddress: getRequestIpAddress(request.headers),
       metadata: {
-        assetCode: asset.assetCode,
-        assetClass: asset.assetClass,
-        status: asset.status
+        approvalStatus: run.approvalStatus,
+        approvedByLabel: run.approvedByLabel
       }
     });
-    return NextResponse.json(asset, { status: 201 });
+
+    return NextResponse.json(run);
   } catch (error) {
+    const { id } = await params;
     await recordAuditEvent({
       actorIdentifier: actor?.identifier,
       actorRole: actor?.role,
-      action: 'asset.create',
-      entityType: 'asset',
+      action: 'valuation.run.approval',
+      entityType: 'valuation_run',
+      entityId: id,
       requestPath: new URL(request.url).pathname,
       requestMethod: request.method,
       ipAddress: getRequestIpAddress(request.headers),
       statusLabel: 'FAILED',
       metadata: {
-        error: error instanceof Error ? error.message : 'Failed to create asset'
+        error: error instanceof Error ? error.message : 'Failed to update valuation approval'
       }
     });
+
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to create asset' },
+      { error: error instanceof Error ? error.message : 'Failed to update valuation approval' },
       { status: 400 }
     );
   }

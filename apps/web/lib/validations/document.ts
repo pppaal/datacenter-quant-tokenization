@@ -7,6 +7,7 @@ const optionalString = z
 
 export const documentUploadSchema = z.object({
   assetId: z.string().min(1),
+  dealId: optionalString,
   documentId: optionalString,
   title: z.string().trim().min(3).max(140),
   documentType: z.nativeEnum(DocumentType).default(DocumentType.OTHER),

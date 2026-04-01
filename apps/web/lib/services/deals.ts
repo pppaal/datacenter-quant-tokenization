@@ -44,16 +44,23 @@ export const dealStageMeta = dealStageOrder.map((stage) => ({
 
 export const dealListInclude = Prisma.validator<Prisma.DealInclude>()({
   asset: {
-    include: {
-      address: true,
-      documents: {
-        take: 10,
-        orderBy: {
-          updatedAt: 'desc'
+    select: {
+      id: true,
+      assetCode: true,
+      address: {
+        select: {
+          city: true,
+          country: true
         }
       },
       valuations: {
-        take: 8,
+        select: {
+          id: true,
+          baseCaseValueKrw: true,
+          confidenceScore: true,
+          createdAt: true
+        },
+        take: 1,
         orderBy: {
           createdAt: 'desc'
         }
@@ -61,53 +68,111 @@ export const dealListInclude = Prisma.validator<Prisma.DealInclude>()({
     }
   },
   counterparties: {
+    select: {
+      id: true,
+      role: true
+    },
     orderBy: {
       createdAt: 'asc'
     }
   },
   tasks: {
+    select: {
+      id: true,
+      title: true,
+      status: true,
+      priority: true,
+      dueDate: true,
+      checklistKey: true,
+      isRequired: true,
+      sortOrder: true,
+      createdAt: true,
+      updatedAt: true
+    },
     orderBy: [{ status: 'asc' }, { dueDate: 'asc' }, { createdAt: 'asc' }]
   },
   documentRequests: {
-    include: {
-      counterparty: true,
-      document: true
+    select: {
+      id: true,
+      title: true,
+      category: true,
+      status: true,
+      dueDate: true,
+      requestedAt: true,
+      receivedAt: true,
+      matchSuggestion: true,
+      createdAt: true,
+      updatedAt: true,
+      counterpartyId: true,
+      documentId: true
     },
     orderBy: [{ status: 'asc' }, { dueDate: 'asc' }, { createdAt: 'asc' }]
   },
   bidRevisions: {
-    include: {
-      counterparty: true
+    select: {
+      id: true,
+      label: true,
+      status: true,
+      bidPriceKrw: true,
+      submittedAt: true,
+      createdAt: true,
+      updatedAt: true
     },
     orderBy: [{ submittedAt: 'desc' }, { createdAt: 'desc' }],
     take: 6
   },
   lenderQuotes: {
-    include: {
-      counterparty: true
+    select: {
+      id: true,
+      facilityLabel: true,
+      status: true,
+      amountKrw: true,
+      quotedAt: true,
+      createdAt: true,
+      updatedAt: true
     },
     orderBy: [{ quotedAt: 'desc' }, { createdAt: 'desc' }],
     take: 6
   },
   negotiationEvents: {
-    include: {
-      counterparty: true,
-      bidRevision: true
+    select: {
+      id: true,
+      eventType: true,
+      effectiveAt: true,
+      expiresAt: true,
+      createdAt: true,
+      updatedAt: true
     },
     orderBy: [{ effectiveAt: 'desc' }, { createdAt: 'desc' }],
     take: 10
   },
   riskFlags: {
+    select: {
+      id: true,
+      title: true,
+      severity: true,
+      isResolved: true,
+      createdAt: true,
+      updatedAt: true
+    },
     orderBy: [{ isResolved: 'asc' }, { createdAt: 'desc' }]
   },
   activityLogs: {
-    include: {
-      counterparty: true
+    select: {
+      id: true,
+      title: true,
+      activityType: true,
+      createdAt: true,
+      counterparty: {
+        select: {
+          role: true
+        }
+      }
     },
     orderBy: {
       createdAt: 'desc'
     },
-    take: 1
+    take: 12
   }
 });
 
@@ -140,7 +205,22 @@ export const dealDetailInclude = Prisma.validator<Prisma.DealInclude>()({
     orderBy: [{ status: 'asc' }, { dueDate: 'asc' }, { priority: 'desc' }, { createdAt: 'asc' }]
   },
   documentRequests: {
-    include: {
+    select: {
+      id: true,
+      dealId: true,
+      counterpartyId: true,
+      documentId: true,
+      title: true,
+      category: true,
+      status: true,
+      priority: true,
+      dueDate: true,
+      requestedAt: true,
+      receivedAt: true,
+      matchSuggestion: true,
+      notes: true,
+      createdAt: true,
+      updatedAt: true,
       counterparty: true,
       document: true
     },
@@ -261,6 +341,7 @@ export type DealCloseProbabilityHistoryPoint = {
   headline: string;
   openRiskCount: number;
   overdueTaskCount: number;
+  pendingSuggestedRequestCount: number;
   flags: string[];
 };
 
@@ -270,6 +351,12 @@ function sameUtcDay(left: Date, right: Date) {
     left.getUTCMonth() === right.getUTCMonth() &&
     left.getUTCDate() === right.getUTCDate()
   );
+}
+
+function getPendingSuggestedSnapshotCount(snapshot: unknown) {
+  if (!snapshot || typeof snapshot !== 'object') return 0;
+  const rawValue = (snapshot as Record<string, unknown>).pendingSuggestedRequestCount;
+  return typeof rawValue === 'number' && Number.isFinite(rawValue) ? rawValue : 0;
 }
 
 function getStageIndex(stage: DealStage) {
@@ -333,6 +420,25 @@ function formatProbabilitySnapshotReason(reason: string) {
   return reason.replaceAll('_', ' ');
 }
 
+function maxDate(left: Date | null, right: Date | null) {
+  if (!left) return right;
+  if (!right) return left;
+  return left.getTime() >= right.getTime() ? left : right;
+}
+
+function maxDateFromValues(values: Array<Date | null | undefined>) {
+  return values.reduce<Date | null>((latest, value) => maxDate(latest, value ?? null), null);
+}
+
+function isDealCodeConflict(error: unknown) {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === 'P2002' &&
+    Array.isArray(error.meta?.target) &&
+    error.meta.target.includes('dealCode')
+  );
+}
+
 function normalizeExecutionText(value: string | null | undefined) {
   return (value ?? '')
     .toLowerCase()
@@ -360,18 +466,55 @@ const documentTypeKeywords: Record<DocumentType, string[]> = {
   OTHER: []
 };
 
+const documentRequestCategoryAliases: Record<string, string[]> = {
+  title: ['title', 'ownership', 'legal', 'survey'],
+  power: ['power', 'utility', 'electrical', 'interconnection', 'grid', 'load'],
+  permit: ['permit', 'entitlement', 'approval', 'zoning', 'license', 'environmental'],
+  lease: ['lease', 'tenant', 'rent', 'rollover'],
+  model: ['model', 'underwriting', 'cash flow', 'finance'],
+  environmental: ['environmental', 'phase', 'soil', 'contamination'],
+  legal: ['legal', 'title', 'encumbrance', 'litigation'],
+  finance: ['finance', 'loan', 'lender', 'term sheet', 'debt']
+};
+
+function getCategoryAliasTokens(requestCategory: string | null | undefined, requestTitle: string) {
+  const categoryKey = normalizeExecutionText(requestCategory);
+  const titleKey = normalizeExecutionText(requestTitle);
+  const aliases = new Set<string>();
+  for (const [key, values] of Object.entries(documentRequestCategoryAliases)) {
+    if (categoryKey.includes(key) || titleKey.includes(key)) {
+      for (const value of values) aliases.add(value);
+    }
+  }
+  return [...aliases];
+}
+
 function scoreDealDocumentRequestMatch(input: {
   requestTitle: string;
   requestCategory: string | null;
   documentTitle: string;
   documentType: DocumentType;
+  documentSummary?: string | null;
+  documentFacts?: Array<{
+    factType: string;
+    factKey: string;
+    factValueText?: string | null;
+  }>;
 }) {
   const requestTitleNormalized = normalizeExecutionText(input.requestTitle);
   const requestCategoryNormalized = normalizeExecutionText(input.requestCategory);
   const documentTitleNormalized = normalizeExecutionText(input.documentTitle);
+  const categoryAliases = getCategoryAliasTokens(input.requestCategory, input.requestTitle);
+  const factTokens = new Set(
+    (input.documentFacts ?? []).flatMap((fact) =>
+      normalizeExecutionText(`${fact.factType} ${fact.factKey} ${fact.factValueText ?? ''}`)
+        .split(' ')
+        .filter((token) => token.length >= 3)
+    )
+  );
   const requestTokens = buildExecutionTokenSet(`${input.requestTitle} ${input.requestCategory ?? ''}`);
   const documentTokens = buildExecutionTokenSet(
-    `${input.documentTitle} ${documentTypeKeywords[input.documentType].join(' ')}`
+    `${input.documentTitle} ${input.documentSummary ?? ''} ${documentTypeKeywords[input.documentType].join(' ')}`
   );
 
   let score = 0;
@@ -403,12 +546,77 @@ function scoreDealDocumentRequestMatch(input: {
     if (documentTokens.has(token)) score += 1;
   }
 
+  for (const alias of categoryAliases) {
+    const normalizedAlias = normalizeExecutionText(alias);
+    if (!normalizedAlias) continue;
+    if (documentTokens.has(normalizedAlias) || factTokens.has(normalizedAlias)) {
+      score += 2;
+    }
+  }
+
+  if (
+    requestCategoryNormalized &&
+    (input.documentFacts ?? []).some((fact) => {
+      const factTypeNormalized = normalizeExecutionText(fact.factType);
+      const factKeyNormalized = normalizeExecutionText(fact.factKey);
+      return (
+        factTypeNormalized.includes(requestCategoryNormalized) ||
+        factKeyNormalized.includes(requestCategoryNormalized)
+      );
+    })
+  ) {
+    score += 2;
+  }
+
   return score;
 }
 
+function buildDocumentMatchSuggestion(input: {
+  documentId: string;
+  documentTitle: string;
+  documentType: DocumentType;
+  score: number;
+  competingRequestTitles?: string[];
+}) {
+  return {
+    documentId: input.documentId,
+    documentTitle: input.documentTitle,
+    documentType: input.documentType,
+    score: input.score,
+    competingRequestTitles: input.competingRequestTitles ?? [],
+    suggestedAt: new Date().toISOString()
+  } satisfies Prisma.InputJsonValue;
+}
+
 async function buildNextDealCode(db: PrismaClient) {
-  const count = await db.deal.count();
-  return `DEAL-${String(count + 1).padStart(4, '0')}`;
+  const allocate = async (tx: Prisma.TransactionClient | PrismaClient) => {
+    await tx.sequenceCounter.upsert({
+      where: { key: 'deal_code' },
+      create: {
+        key: 'deal_code',
+        nextValue: 0
+      },
+      update: {}
+    });
+
+    const updatedCounter = await tx.sequenceCounter.update({
+      where: { key: 'deal_code' },
+      data: {
+        nextValue: {
+          increment: 1
+        }
+      },
+      select: {
+        nextValue: true
+      }
+    });
+
+    return updatedCounter.nextValue;
+  };
+
+  const nextNumber = await db.$transaction((tx) => allocate(tx));
+
+  return `DEAL-${String(nextNumber).padStart(4, '0')}`;
 }
 
 async function createActivityLog(
@@ -462,35 +670,51 @@ export async function createDeal(input: unknown, db: PrismaClient = prisma) {
         include: { address: true }
       })
     : null;
-  const dealCode = await buildNextDealCode(db);
   const title = parsed.title.trim();
   const stage = parsed.stage;
   const nextAction = parsed.nextAction ?? getDefaultNextAction(stage);
+  let created: DealDetailRecord | null = null;
 
-  const created = await db.deal.create({
-    data: {
-      dealCode,
-      slug: slugify(`${dealCode} ${title}`),
-      title,
-      stage,
-      market: parsed.market ?? linkedAsset?.market ?? 'KR',
-      city: parsed.city ?? linkedAsset?.address?.city ?? null,
-      country: parsed.country ?? linkedAsset?.address?.country ?? null,
-      assetClass: parsed.assetClass ?? linkedAsset?.assetClass ?? null,
-      strategy: parsed.strategy ?? null,
-      headline: parsed.headline ?? null,
-      nextAction,
-      nextActionAt: parsed.nextActionAt ?? null,
-      targetCloseDate: parsed.targetCloseDate ?? null,
-      sellerGuidanceKrw: parsed.sellerGuidanceKrw ?? null,
-      bidGuidanceKrw: parsed.bidGuidanceKrw ?? null,
-      purchasePriceKrw: parsed.purchasePriceKrw ?? linkedAsset?.purchasePriceKrw ?? null,
-      statusLabel: parsed.statusLabel ?? 'ACTIVE',
-      dealLead: parsed.dealLead ?? 'solo_operator',
-      assetId: parsed.assetId ?? null
-    },
-    include: dealDetailInclude
-  });
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const dealCode = await buildNextDealCode(db);
+
+    try {
+      created = await db.deal.create({
+        data: {
+          dealCode,
+          slug: slugify(`${dealCode} ${title}`),
+          title,
+          stage,
+          market: parsed.market ?? linkedAsset?.market ?? 'KR',
+          city: parsed.city ?? linkedAsset?.address?.city ?? null,
+          country: parsed.country ?? linkedAsset?.address?.country ?? null,
+          assetClass: parsed.assetClass ?? linkedAsset?.assetClass ?? null,
+          strategy: parsed.strategy ?? null,
+          headline: parsed.headline ?? null,
+          nextAction,
+          nextActionAt: parsed.nextActionAt ?? null,
+          targetCloseDate: parsed.targetCloseDate ?? null,
+          sellerGuidanceKrw: parsed.sellerGuidanceKrw ?? null,
+          bidGuidanceKrw: parsed.bidGuidanceKrw ?? null,
+          purchasePriceKrw: parsed.purchasePriceKrw ?? linkedAsset?.purchasePriceKrw ?? null,
+          statusLabel: parsed.statusLabel ?? 'ACTIVE',
+          dealLead: parsed.dealLead ?? 'solo_operator',
+          assetId: parsed.assetId ?? null
+        },
+        include: dealDetailInclude
+      });
+      break;
+    } catch (error) {
+      if (isDealCodeConflict(error) && attempt < 4) {
+        continue;
+      }
+      throw error;
+    }
+  }
+
+  if (!created) {
+    throw new Error('Failed to allocate a unique deal code');
+  }
 
   await createActivityLog(db, {
     dealId: created.id,
@@ -785,27 +1009,33 @@ export async function updateDealDocumentRequest(
   }
 
   const nextStatus = parsed.status ?? request.status;
+  const shouldClearMatchSuggestion =
+    parsed.documentId !== undefined ||
+    nextStatus === DealRequestStatus.RECEIVED ||
+    nextStatus === DealRequestStatus.WAIVED;
+  const requestUpdateData: Prisma.DealDocumentRequestUncheckedUpdateInput = {
+    title: parsed.title ?? undefined,
+    category: parsed.category ?? undefined,
+    counterpartyId: parsed.counterpartyId ?? undefined,
+    documentId: parsed.documentId ?? undefined,
+    status: nextStatus as DealRequestStatus,
+    priority: parsed.priority ?? undefined,
+    dueDate: parsed.dueDate ?? undefined,
+    requestedAt: parsed.requestedAt ?? undefined,
+    receivedAt:
+      parsed.receivedAt !== undefined
+        ? parsed.receivedAt
+        : nextStatus === 'RECEIVED'
+          ? request.receivedAt ?? new Date()
+          : nextStatus === 'WAIVED'
+            ? null
+            : request.receivedAt,
+    matchSuggestion: shouldClearMatchSuggestion ? Prisma.DbNull : undefined,
+    notes: parsed.notes ?? undefined
+  };
   const updated = await db.dealDocumentRequest.update({
     where: { id: requestId },
-    data: {
-      title: parsed.title ?? undefined,
-      category: parsed.category ?? undefined,
-      counterpartyId: parsed.counterpartyId ?? undefined,
-      documentId: parsed.documentId ?? undefined,
-      status: nextStatus as DealRequestStatus,
-      priority: parsed.priority ?? undefined,
-      dueDate: parsed.dueDate ?? undefined,
-      requestedAt: parsed.requestedAt ?? undefined,
-      receivedAt:
-        parsed.receivedAt !== undefined
-          ? parsed.receivedAt
-          : nextStatus === 'RECEIVED'
-            ? request.receivedAt ?? new Date()
-            : nextStatus === 'WAIVED'
-              ? null
-              : request.receivedAt,
-      notes: parsed.notes ?? undefined
-    },
+    data: requestUpdateData,
     include: {
       counterparty: true,
       document: true
@@ -831,14 +1061,43 @@ export async function autoMatchDealDocumentRequestsForAsset(
     documentTitle: string;
     documentType: DocumentType;
   },
-  db: PrismaClient = prisma
+  db: PrismaClient = prisma,
+  dealId?: string
 ) {
+  const documentContext =
+    'document' in db && db.document && 'findUnique' in db.document
+      ? await db.document.findUnique({
+          where: { id: input.documentId },
+          select: {
+            aiSummary: true,
+            versions: {
+              select: {
+                facts: {
+                  select: {
+                    factType: true,
+                    factKey: true,
+                    factValueText: true
+                  },
+                  orderBy: [{ confidenceScore: 'desc' }, { createdAt: 'desc' }],
+                  take: 24
+                }
+              },
+              orderBy: {
+                versionNumber: 'desc'
+              },
+              take: 1
+            }
+          }
+        })
+      : null;
+
   const openRequests = await db.dealDocumentRequest.findMany({
     where: {
       status: DealRequestStatus.REQUESTED,
       documentId: null,
       deal: {
-        assetId
+        assetId,
+        ...(dealId ? { id: dealId } : {})
       }
     },
     include: {
@@ -851,6 +1110,11 @@ export async function autoMatchDealDocumentRequestsForAsset(
     orderBy: [{ priority: 'desc' }, { dueDate: 'asc' }, { requestedAt: 'asc' }]
   });
 
+  const openDealIds = new Set(openRequests.map((request) => request.dealId));
+  if (!dealId && openDealIds.size > 1) {
+    return [];
+  }
+
   const candidates = openRequests
     .map((request) => ({
       request,
@@ -858,7 +1122,9 @@ export async function autoMatchDealDocumentRequestsForAsset(
         requestTitle: request.title,
         requestCategory: request.category,
         documentTitle: input.documentTitle,
-        documentType: input.documentType
+        documentType: input.documentType,
+        documentSummary: documentContext?.aiSummary ?? null,
+        documentFacts: documentContext?.versions[0]?.facts ?? []
       })
     }))
     .filter((entry) => entry.score >= 3)
@@ -868,42 +1134,140 @@ export async function autoMatchDealDocumentRequestsForAsset(
         left.request.requestedAt.getTime() - right.request.requestedAt.getTime()
     );
 
-  const matched = [];
-
-  for (const { request, score } of candidates) {
-    const updated = await db.dealDocumentRequest.update({
-      where: { id: request.id },
-      data: {
-        documentId: input.documentId,
-        status: DealRequestStatus.RECEIVED,
-        receivedAt: request.receivedAt ?? new Date(),
-        notes: request.notes
-          ? `${request.notes}\n\nAuto-matched to uploaded document "${input.documentTitle}" (score ${score}).`
-          : `Auto-matched to uploaded document "${input.documentTitle}" (score ${score}).`
-      },
-      include: {
-        counterparty: true,
-        document: true
-      }
-    });
-
-    await createActivityLog(db, {
-      dealId: request.dealId,
-      activityType: ActivityType.GENERAL,
-      title: 'DD request auto-matched',
-      body: `"${request.title}" matched to "${input.documentTitle}".`,
-      metadata: {
-        requestId: request.id,
-        documentId: input.documentId,
-        score
-      }
-    });
-
-    await recordDealProbabilitySnapshot(request.dealId, 'dd_request_auto_matched', db);
-    matched.push(updated);
+  const bestCandidate = candidates[0];
+  if (!bestCandidate) {
+    return [];
   }
 
-  return matched;
+  const secondBestScore = candidates[1]?.score ?? null;
+  const shouldAutoMatch = bestCandidate.score >= 6 && (secondBestScore === null || bestCandidate.score - secondBestScore >= 2);
+
+  if (!shouldAutoMatch) {
+    const suggestedCandidates = candidates.slice(0, 3);
+    await Promise.all(
+      suggestedCandidates.map(({ request, score }) =>
+        db.dealDocumentRequest.update({
+          where: { id: request.id },
+          data: {
+            matchSuggestion: buildDocumentMatchSuggestion({
+              documentId: input.documentId,
+              documentTitle: input.documentTitle,
+              documentType: input.documentType,
+              score,
+              competingRequestTitles: suggestedCandidates
+                .filter((candidate) => candidate.request.id !== request.id)
+                .map((candidate) => candidate.request.title)
+            })
+          }
+        })
+      )
+    );
+
+    await createActivityLog(db, {
+      dealId: bestCandidate.request.dealId,
+      activityType: ActivityType.GENERAL,
+      title: 'DD match suggestions queued',
+      body: `"${input.documentTitle}" is a possible match for ${suggestedCandidates.length} open DD request${suggestedCandidates.length === 1 ? '' : 's'}. Review before marking received.`,
+      metadata: {
+        documentId: input.documentId,
+        candidateRequestIds: suggestedCandidates.map((candidate) => candidate.request.id),
+        topScore: bestCandidate.score
+      }
+    });
+
+    await recordDealProbabilitySnapshot(bestCandidate.request.dealId, 'dd_request_match_suggested', db);
+    return [];
+  }
+
+  const { request, score } = bestCandidate;
+  const autoMatchUpdateData: Prisma.DealDocumentRequestUncheckedUpdateInput = {
+    documentId: input.documentId,
+    status: DealRequestStatus.RECEIVED,
+    receivedAt: request.receivedAt ?? new Date(),
+    matchSuggestion: Prisma.DbNull,
+    notes: request.notes
+      ? `${request.notes}\n\nAuto-matched to uploaded document "${input.documentTitle}" (score ${score}).`
+      : `Auto-matched to uploaded document "${input.documentTitle}" (score ${score}).`
+  };
+  const updated = await db.dealDocumentRequest.update({
+    where: { id: request.id },
+    data: autoMatchUpdateData,
+    include: {
+      counterparty: true,
+      document: true
+    }
+  });
+
+  await createActivityLog(db, {
+    dealId: request.dealId,
+    activityType: ActivityType.GENERAL,
+    title: 'DD request auto-matched',
+    body: `"${request.title}" matched to "${input.documentTitle}".`,
+    metadata: {
+      requestId: request.id,
+      documentId: input.documentId,
+      score
+    }
+  });
+
+  await recordDealProbabilitySnapshot(request.dealId, 'dd_request_auto_matched', db);
+  return [updated];
+}
+
+export function getDealMaterialUpdatedAt(
+  deal: Pick<
+    DealListRecord | DealDetailRecord,
+    | 'updatedAt'
+    | 'tasks'
+    | 'riskFlags'
+    | 'documentRequests'
+    | 'bidRevisions'
+    | 'lenderQuotes'
+    | 'negotiationEvents'
+    | 'activityLogs'
+  >
+) {
+  const tasks = deal.tasks ?? [];
+  const riskFlags = deal.riskFlags ?? [];
+  const documentRequests = deal.documentRequests ?? [];
+  const bidRevisions = deal.bidRevisions ?? [];
+  const lenderQuotes = deal.lenderQuotes ?? [];
+  const negotiationEvents = deal.negotiationEvents ?? [];
+  const activityLogs = deal.activityLogs ?? [];
+
+  return maxDateFromValues([
+    deal.updatedAt,
+    ...tasks.flatMap((task) => [
+      task.updatedAt,
+      task.createdAt,
+      'completedAt' in task ? (task.completedAt ?? null) : null
+    ]),
+    ...riskFlags.flatMap((risk) => [
+      risk.updatedAt,
+      risk.createdAt,
+      'resolvedAt' in risk ? (risk.resolvedAt ?? null) : null
+    ]),
+    ...documentRequests.flatMap((request) => [
+      request.updatedAt,
+      request.createdAt,
+      request.requestedAt,
+      request.receivedAt
+    ]),
+    ...bidRevisions.flatMap((bid) => [bid.updatedAt, bid.createdAt, bid.submittedAt]),
+    ...lenderQuotes.flatMap((quote) => [quote.updatedAt, quote.createdAt, quote.quotedAt]),
+    ...negotiationEvents.flatMap((event) => [event.updatedAt, event.createdAt, event.effectiveAt]),
+    ...activityLogs.flatMap((activity) => [
+      'updatedAt' in activity ? activity.updatedAt : null,
+      activity.createdAt
+    ])
+  ]) ?? deal.updatedAt;
+}
+
+function getDealProbabilityObservedAt(deal: DealDetailRecord) {
+  return maxDate(
+    getDealMaterialUpdatedAt(deal),
+    deal.asset?.valuations[0]?.createdAt ?? null
+  ) ?? deal.updatedAt;
 }
 
 export async function createDealBidRevision(dealId: string, input: unknown, db: PrismaClient = prisma) {
@@ -1584,6 +1948,13 @@ export function buildDealExecutionSnapshot(deal: Awaited<ReturnType<typeof getDe
     return dueTime >= now && dueTime <= now + 1000 * 60 * 60 * 24 * 3;
   });
   const openRisks = deal.riskFlags.filter((risk) => !risk.isResolved);
+  const documentRequests = deal.documentRequests ?? [];
+  const suggestedRequestCount = documentRequests.filter(
+    (request) =>
+      request.status === DealRequestStatus.REQUESTED &&
+      request.documentId == null &&
+      ('matchSuggestion' in request ? request.matchSuggestion : null) != null
+  ).length;
   const nextTask = [...openTasks].sort((left, right) => {
     const leftDue = left.dueDate?.getTime() ?? Number.MAX_SAFE_INTEGER;
     const rightDue = right.dueDate?.getTime() ?? Number.MAX_SAFE_INTEGER;
@@ -1621,6 +1992,7 @@ export function buildDealExecutionSnapshot(deal: Awaited<ReturnType<typeof getDe
     overdueTaskCount: overdueTasks.length,
     dueSoonTaskCount: dueSoonTasks.length,
     openRiskCount: openRisks.length,
+    suggestedRequestCount,
     activeExclusivityEvent,
     exclusivityExpiresSoon: !!exclusivityExpiresSoon,
     nextTask,
@@ -1629,6 +2001,8 @@ export function buildDealExecutionSnapshot(deal: Awaited<ReturnType<typeof getDe
         ? `${overdueTasks.length} overdue task${overdueTasks.length === 1 ? '' : 's'} need attention.`
         : exclusivityExpiresSoon
           ? `Exclusivity expires ${activeExclusivityEvent?.expiresAt?.toLocaleDateString()}.`
+        : suggestedRequestCount > 0
+          ? `${suggestedRequestCount} DD request suggestion${suggestedRequestCount === 1 ? '' : 's'} still need operator confirmation.`
         : dueSoonTasks.length > 0
           ? `${dueSoonTasks.length} task${dueSoonTasks.length === 1 ? '' : 's'} due in the next 72 hours.`
           : openTasks.length > 0
@@ -1804,6 +2178,12 @@ export function buildDealClosingReadiness(
   const clearedRequestCount = deal.documentRequests.filter(
     (request) => request.status === DealRequestStatus.RECEIVED || request.status === DealRequestStatus.WAIVED
   ).length;
+  const suggestedRequestCount = deal.documentRequests.filter(
+    (request) =>
+      request.status === DealRequestStatus.REQUESTED &&
+      request.documentId == null &&
+      ('matchSuggestion' in request ? request.matchSuggestion : null) != null
+  ).length;
   const requestCompletionPct =
     totalRequestCount > 0 ? (clearedRequestCount / totalRequestCount) * 100 : 0;
   const hasExecutionContacts = deal.counterparties.some(
@@ -1875,7 +2255,7 @@ export function buildDealClosingReadiness(
               : 'missing',
       detail:
         totalRequestCount > 0
-          ? `${clearedRequestCount} of ${totalRequestCount} diligence requests are cleared.`
+          ? `${clearedRequestCount} of ${totalRequestCount} diligence requests are cleared.${suggestedRequestCount > 0 ? ` ${suggestedRequestCount} item${suggestedRequestCount === 1 ? '' : 's'} still have suggested documents pending operator confirmation.` : ''}`
           : 'No diligence request tracker has been opened yet.',
       isBlocker: stageIndex >= getStageIndex(DealStage.DD)
     },
@@ -1975,10 +2355,16 @@ export function buildDealCloseProbability(
   const staleValuation =
     latestValuation != null &&
     Date.now() - latestValuation.createdAt.getTime() > 1000 * 60 * 60 * 24 * 30;
-  const staleExecution = Date.now() - deal.updatedAt.getTime() > 1000 * 60 * 60 * 24 * 7;
+  const staleExecution = Date.now() - getDealMaterialUpdatedAt(deal).getTime() > 1000 * 60 * 60 * 24 * 7;
   const openRiskCount = deal.riskFlags.filter((risk) => !risk.isResolved).length;
   const criticalRiskCount = deal.riskFlags.filter(
     (risk) => !risk.isResolved && risk.severity === RiskSeverity.CRITICAL
+  ).length;
+  const suggestedRequestCount = deal.documentRequests.filter(
+    (request) =>
+      request.status === DealRequestStatus.REQUESTED &&
+      request.documentId == null &&
+      ('matchSuggestion' in request ? request.matchSuggestion : null) != null
   ).length;
   const overdueTaskCount = snapshot?.overdueTaskCount ?? 0;
   const hasNextAction = !!deal.nextAction;
@@ -2003,6 +2389,7 @@ export function buildDealCloseProbability(
     openRiskCount * 3 -
     criticalRiskCount * 6 -
     overdueTaskCount * 2 -
+    suggestedRequestCount * 1.5 -
     (hasNextAction ? 0 : 5) -
     (staleValuation ? 4 : 0) -
     (staleExecution ? 5 : 0) -
@@ -2027,6 +2414,9 @@ export function buildDealCloseProbability(
     overdueTaskCount > 0
       ? `${overdueTaskCount} overdue task${overdueTaskCount === 1 ? '' : 's'} are dragging execution.`
       : 'No overdue tasks are sitting in the queue.',
+    suggestedRequestCount > 0
+      ? `${suggestedRequestCount} DD suggestion${suggestedRequestCount === 1 ? '' : 's'} still need operator confirmation.`
+      : 'No unconfirmed DD document suggestions are sitting in the queue.',
     criticalRiskCount > 0
       ? `${criticalRiskCount} critical risk${criticalRiskCount === 1 ? '' : 's'} remain unresolved.`
       : 'No critical risk flags are open.',
@@ -2070,47 +2460,89 @@ export function buildDealCloseProbabilityHistory(
     headline: item.headline,
     openRiskCount: item.openRiskCount,
     overdueTaskCount: item.overdueTaskCount,
+    pendingSuggestedRequestCount: getPendingSuggestedSnapshotCount(item),
     flags: [
       item.hasAcceptedBid ? 'accepted bid' : null,
       item.hasApprovedFinancing ? 'approved financing' : null,
-      item.hasLiveExclusivity ? 'live exclusivity' : null
+      item.hasLiveExclusivity ? 'live exclusivity' : null,
+      getPendingSuggestedSnapshotCount(item) > 0
+        ? `pending DD suggestions (${getPendingSuggestedSnapshotCount(item)})`
+        : null
     ].filter(Boolean) as string[]
   }));
 
-  if (persisted.length > 0) {
+  if (!current) {
     return persisted;
   }
 
-  if (!current) {
-    return [];
+  const currentPoint: DealCloseProbabilityHistoryPoint = {
+    id: 'current',
+    createdAt: getDealProbabilityObservedAt(deal),
+    stage: deal.stage,
+    scorePct: current.probability.scorePct,
+    band: current.probability.band,
+    readinessScorePct: current.readiness.scorePct,
+    blockerCount: current.readiness.blockerCount,
+    reason: 'current state',
+    headline: current.probability.headline,
+    openRiskCount: deal.riskFlags.filter((risk) => !risk.isResolved).length,
+    overdueTaskCount: deal.tasks.filter(
+      (task) => task.status !== TaskStatus.DONE && task.dueDate && task.dueDate.getTime() < Date.now()
+    ).length,
+    pendingSuggestedRequestCount: deal.documentRequests.filter(
+      (request) =>
+        request.status === DealRequestStatus.REQUESTED &&
+        request.documentId == null &&
+        (request.matchSuggestion ?? null) != null
+    ).length,
+    flags: [
+      deal.bidRevisions.some((bid) => bid.status === DealBidStatus.ACCEPTED) ? 'accepted bid' : null,
+      deal.lenderQuotes.some((quote) => quote.status === 'CREDIT_APPROVED' || quote.status === 'CLOSED')
+        ? 'approved financing'
+        : null,
+      deal.negotiationEvents.some(
+        (event) =>
+          (event.eventType === 'EXCLUSIVITY_GRANTED' || event.eventType === 'EXCLUSIVITY_EXTENDED') &&
+          event.expiresAt &&
+          event.expiresAt.getTime() >= Date.now()
+      )
+        ? 'live exclusivity'
+        : null,
+      deal.documentRequests.some(
+        (request) =>
+          request.status === DealRequestStatus.REQUESTED &&
+          request.documentId == null &&
+          (request.matchSuggestion ?? null) != null
+      )
+        ? `pending DD suggestions (${deal.documentRequests.filter(
+            (request) =>
+              request.status === DealRequestStatus.REQUESTED &&
+              request.documentId == null &&
+              (request.matchSuggestion ?? null) != null
+          ).length})`
+        : null
+    ].filter(Boolean) as string[]
+  };
+
+  if (persisted.length === 0) {
+    return [currentPoint];
   }
 
-  return [
-    {
-      id: 'current',
-      createdAt: deal.updatedAt,
-      stage: deal.stage,
-      scorePct: current.probability.scorePct,
-      band: current.probability.band,
-      readinessScorePct: current.readiness.scorePct,
-      blockerCount: current.readiness.blockerCount,
-      reason: 'current state',
-      headline: current.probability.headline,
-      openRiskCount: deal.riskFlags.filter((risk) => !risk.isResolved).length,
-      overdueTaskCount: deal.tasks.filter(
-        (task) => task.status !== TaskStatus.DONE && task.dueDate && task.dueDate.getTime() < Date.now()
-      ).length,
-      flags: [
-        deal.bidRevisions.some((bid) => bid.status === DealBidStatus.ACCEPTED) ? 'accepted bid' : null,
-        deal.lenderQuotes.some((quote) => quote.status === 'CREDIT_APPROVED' || quote.status === 'CLOSED')
-          ? 'approved financing'
-          : null
-      ].filter(Boolean) as string[]
-    }
-  ];
+  const latestPersisted = persisted[0];
+  const currentMatchesLatest =
+    latestPersisted?.scorePct === currentPoint.scorePct &&
+    latestPersisted?.readinessScorePct === currentPoint.readinessScorePct &&
+    latestPersisted?.blockerCount === currentPoint.blockerCount &&
+    latestPersisted?.stage === currentPoint.stage &&
+    latestPersisted?.headline === currentPoint.headline &&
+    latestPersisted?.openRiskCount === currentPoint.openRiskCount &&
+    latestPersisted?.overdueTaskCount === currentPoint.overdueTaskCount &&
+    getPendingSuggestedSnapshotCount(latestPersisted) === currentPoint.pendingSuggestedRequestCount;
+
+  return currentMatchesLatest ? persisted : [currentPoint, ...persisted];
 }
 
-async function recordDealProbabilitySnapshot(
+export async function recordDealProbabilitySnapshot(
   dealId: string,
   snapshotReason: string,
   db: PrismaClient
@@ -2118,6 +2550,15 @@ async function recordDealProbabilitySnapshot(
   try {
     if (!('dealExecutionProbabilitySnapshot' in db) || !db.dealExecutionProbabilitySnapshot) {
       return null;
+    }
+
+    if ('deal' in db && db.deal && 'update' in db.deal) {
+      await db.deal.update({
+        where: { id: dealId },
+        data: {
+          updatedAt: new Date()
+        }
+      });
     }
 
     const deal = await getDealById(dealId, db);
@@ -2153,16 +2594,44 @@ async function recordDealProbabilitySnapshot(
         headline: probability.headline,
         openRiskCount: executionSnapshot.openRiskCount,
         overdueTaskCount: executionSnapshot.overdueTaskCount,
+        pendingSuggestedRequestCount: deal.documentRequests.filter(
+          (request) =>
+            request.status === DealRequestStatus.REQUESTED &&
+            request.documentId == null &&
+            (request.matchSuggestion ?? null) != null
+        ).length,
         hasAcceptedBid: deal.bidRevisions.some((bid) => bid.status === DealBidStatus.ACCEPTED),
         hasApprovedFinancing: deal.lenderQuotes.some(
           (quote) => quote.status === 'CREDIT_APPROVED' || quote.status === 'CLOSED'
         ),
         hasLiveExclusivity: !!executionSnapshot.activeExclusivityEvent
-      }
+      } as Prisma.DealExecutionProbabilitySnapshotUncheckedCreateInput
     });
   } catch {
     return null;
   }
+}
+
+export async function syncDealProbabilitySnapshotsForAssetDeals(
+  assetId: string,
+  snapshotReason: string,
+  db: PrismaClient = prisma
+) {
+  if (!('deal' in db) || !db.deal || !('findMany' in db.deal)) {
+    return [];
+  }
+
+  const deals = await db.deal.findMany({
+    where: {
+      assetId,
+      archivedAt: null
+    },
+    select: {
+      id: true
+    }
+  });
+
+  return Promise.all(deals.map((deal) => recordDealProbabilitySnapshot(deal.id, snapshotReason, db)));
 }
 
 export function buildDealTimeline(deal: DealDetailRecord): DealTimelineEvent[] {

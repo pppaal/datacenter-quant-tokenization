@@ -108,9 +108,10 @@ export function DealCloseProbabilityHistoryPanel({ history }: Props) {
                     <div className="mt-1">{formatNumber(point.readinessScorePct, 0)}%</div>
                   </div>
                   <div>
-                    <div className="fine-print">Risks / Overdue</div>
+                    <div className="fine-print">Risks / Overdue / DD</div>
                     <div className="mt-1">
-                      {formatNumber(point.openRiskCount, 0)} / {formatNumber(point.overdueTaskCount, 0)}
+                      {formatNumber(point.openRiskCount, 0)} / {formatNumber(point.overdueTaskCount, 0)} /{' '}
+                      {formatNumber(point.pendingSuggestedRequestCount, 0)}
                     </div>
                   </div>
                 </div>

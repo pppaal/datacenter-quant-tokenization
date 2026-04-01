@@ -5,9 +5,20 @@ import { buildForecastDecisionNarrative, getForecastDecisionGuideForRun } from '
 import { getGradientBoostingForecastForRun } from '@/lib/services/forecast/gradient-boosting';
 import { buildMacroRegimeProvenance, buildMacroRegimeSnapshot } from '@/lib/services/macro/series';
 import { assetBundleInclude, enrichAssetFromSources } from '@/lib/services/assets';
+import { syncDealProbabilitySnapshotsForAssetDeals } from '@/lib/services/deals';
 import { buildSensitivityRuns } from '@/lib/services/sensitivity/engine';
 import { runValuationAnalysis } from '@/lib/services/valuation-runner';
-import { valuationRunSchema } from '@/lib/validations/valuation';
+import { valuationApprovalSchema, valuationRunSchema } from '@/lib/validations/valuation';
+
+function canSyncDealProbabilitySnapshots(db: PrismaClient) {
+  return Boolean(
+    db &&
+      typeof db === 'object' &&
+      'deal' in db &&
+      db.deal &&
+      typeof db.deal.findMany === 'function'
+  );
+}
 
 export async function createValuationRun(input: unknown, db: PrismaClient = prisma) {
   const parsed = valuationRunSchema.parse(input);
@@ -147,6 +158,10 @@ export async function createValuationRun(input: unknown, db: PrismaClient = pris
       currentValuationKrw: analysis.baseCaseValueKrw
     }
   });
+
+  if (canSyncDealProbabilitySnapshots(db)) {
+    await syncDealProbabilitySnapshotsForAssetDeals(asset.id, 'valuation_refreshed', db);
+  }
 
   const enrichedMemo = await rebuildValuationMemoIfPossible({
     runId: run.id,
@@ -303,6 +318,50 @@ export async function getValuationRunById(id: string, db: PrismaClient = prisma)
               sortOrder: 'asc'
             }
           }
+        }
+      }
+    }
+  });
+}
+
+export async function updateValuationApproval(
+  id: string,
+  input: unknown,
+  actor: {
+    identifier?: string | null;
+  },
+  db: PrismaClient = prisma
+) {
+  const parsed = valuationApprovalSchema.parse(input);
+  const existing = await db.valuationRun.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      assetId: true
+    }
+  });
+
+  if (!existing) {
+    throw new Error('Valuation run not found');
+  }
+
+  return db.valuationRun.update({
+    where: { id },
+    data: {
+      approvalStatus: parsed.approvalStatus,
+      approvalNotes: parsed.approvalNotes?.trim() || null,
+      approvedByLabel: actor.identifier?.trim() || 'unknown_actor',
+      approvedAt: parsed.approvalStatus === 'PENDING_REVIEW' ? null : new Date()
+    },
+    include: {
+      asset: {
+        include: {
+          address: true
+        }
+      },
+      scenarios: {
+        orderBy: {
+          scenarioOrder: 'asc'
         }
       }
     }

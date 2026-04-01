@@ -52,6 +52,16 @@ export type ForecastModelStack = {
   models: ForecastModelCard[];
 };
 
+type ForecastModelFeatureSummary = {
+  assetCount: number;
+  marketCount: number;
+  assetClassCoverage: number;
+  marketEvidenceAssets: number;
+  valuationHistoryCount: number;
+  documentCount: number;
+  financialStatementCount: number;
+};
+
 function uniqueCount<T>(items: T[]) {
   return new Set(items).size;
 }
@@ -91,31 +101,46 @@ function buildRankingNote(model: Pick<ForecastModelCard, 'label' | 'confidenceBa
 }
 
 export function buildForecastModelStack(input: {
-  assets: AssetLike[];
-  documents: Array<unknown>;
+  assets?: AssetLike[];
+  documents?: Array<unknown>;
+  featureSummary?: ForecastModelFeatureSummary;
   macroObservationCount: number;
   realizedBacktest?: GradientBoostingRealizedBacktest | null;
 }) : ForecastModelStack {
-  const assetCount = input.assets.length;
-  const marketCount = uniqueCount(input.assets.map((asset) => asset.market));
-  const assetClassCoverage = uniqueCount(input.assets.map((asset) => asset.assetClass));
-  const marketEvidenceAssets = input.assets.filter(
-    (asset) =>
-      (asset.transactionComps?.length ?? 0) > 0 ||
-      (asset.rentComps?.length ?? 0) > 0 ||
-      (asset.marketIndicatorSeries?.length ?? 0) > 0
-  ).length;
-  const valuationHistoryCount = input.assets.reduce((sum, asset) => sum + (asset.valuations?.length ?? 0), 0);
-  const documentCount = input.documents.length;
-  const financialStatementCount = input.assets.reduce(
-    (sum, asset) =>
-      sum +
-      (asset.counterparties?.reduce(
-        (counterpartySum, counterparty) => counterpartySum + (counterparty.financialStatements?.length ?? 0),
-        0
-      ) ?? 0),
-    0
-  );
+  const featureSummary =
+    input.featureSummary ??
+    (() => {
+      const assets = input.assets ?? [];
+      return {
+        assetCount: assets.length,
+        marketCount: uniqueCount(assets.map((asset) => asset.market)),
+        assetClassCoverage: uniqueCount(assets.map((asset) => asset.assetClass)),
+        marketEvidenceAssets: assets.filter(
+          (asset) =>
+            (asset.transactionComps?.length ?? 0) > 0 ||
+            (asset.rentComps?.length ?? 0) > 0 ||
+            (asset.marketIndicatorSeries?.length ?? 0) > 0
+        ).length,
+        valuationHistoryCount: assets.reduce((sum, asset) => sum + (asset.valuations?.length ?? 0), 0),
+        documentCount: input.documents?.length ?? 0,
+        financialStatementCount: assets.reduce(
+          (sum, asset) =>
+            sum +
+            (asset.counterparties?.reduce(
+              (counterpartySum, counterparty) => counterpartySum + (counterparty.financialStatements?.length ?? 0),
+              0
+            ) ?? 0),
+          0
+        )
+      } satisfies ForecastModelFeatureSummary;
+    })();
+  const assetCount = featureSummary.assetCount;
+  const marketCount = featureSummary.marketCount;
+  const assetClassCoverage = featureSummary.assetClassCoverage;
+  const marketEvidenceAssets = featureSummary.marketEvidenceAssets;
+  const valuationHistoryCount = featureSummary.valuationHistoryCount;
+  const documentCount = featureSummary.documentCount;
+  const financialStatementCount = featureSummary.financialStatementCount;
   const macroObservationCount = input.macroObservationCount;
 
   const models = [

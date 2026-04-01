@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { AssetClass } from '@prisma/client';
 import { AssetEnrichmentButton } from '@/components/admin/asset-enrichment-button';
 import { QuickValuationRunButton } from '@/components/admin/quick-valuation-run-button';
+import { ValuationApprovalForm } from '@/components/admin/valuation-approval-form';
 import { formatCurrencyFromKrwAtRate, resolveDisplayCurrency } from '@/lib/finance/currency';
 import { ValuationRunForm } from '@/components/admin/valuation-run-form';
 import { FeatureSnapshotPanel } from '@/components/admin/feature-snapshot-panel';
@@ -57,6 +58,13 @@ function getRecommendation(confidenceScore?: number | null) {
   if ((confidenceScore ?? 0) >= 75) return 'Proceed To Committee';
   if ((confidenceScore ?? 0) >= 55) return 'Proceed With Conditions';
   return 'Further Diligence Required';
+}
+
+function getApprovalTone(approvalStatus: string) {
+  if (approvalStatus === 'APPROVED') return 'good' as const;
+  if (approvalStatus === 'CONDITIONAL') return 'warn' as const;
+  if (approvalStatus === 'REJECTED') return 'danger' as const;
+  return 'neutral' as const;
 }
 
 export default async function ValuationRunDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -123,6 +131,7 @@ export default async function ValuationRunDetailPage({ params }: { params: Promi
           <Badge tone="good">Generated IM</Badge>
           <Badge>{run.asset.assetCode}</Badge>
           <Badge>{recommendation}</Badge>
+          <Badge tone={getApprovalTone(run.approvalStatus)}>{run.approvalStatus.replaceAll('_', ' ')}</Badge>
         </div>
 
         <div className="mt-6 grid gap-8 xl:grid-cols-[1.05fr_0.95fr]">
@@ -319,6 +328,31 @@ export default async function ValuationRunDetailPage({ params }: { params: Promi
                 </li>
               ))}
             </ul>
+          </Card>
+
+          <Card>
+            <div className="eyebrow">Approval Control</div>
+            <div className="mt-4 space-y-4">
+              <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <div className="fine-print">Current Status</div>
+                    <div className="mt-2 text-lg font-semibold text-white">{run.approvalStatus.replaceAll('_', ' ')}</div>
+                  </div>
+                  <Badge tone={getApprovalTone(run.approvalStatus)}>{run.approvalStatus.replaceAll('_', ' ')}</Badge>
+                </div>
+                <div className="mt-3 text-sm text-slate-400">
+                  {run.approvedByLabel
+                    ? `Last reviewed by ${run.approvedByLabel}${run.approvedAt ? ` on ${formatDate(run.approvedAt)}` : ''}.`
+                    : 'No formal sign-off has been recorded yet.'}
+                </div>
+              </div>
+              <ValuationApprovalForm
+                runId={run.id}
+                approvalStatus={run.approvalStatus as 'PENDING_REVIEW' | 'APPROVED' | 'CONDITIONAL' | 'REJECTED'}
+                approvalNotes={run.approvalNotes}
+              />
+            </div>
           </Card>
         </div>
       </div>

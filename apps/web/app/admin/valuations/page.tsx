@@ -30,6 +30,13 @@ function getRecommendation(confidenceScore?: number | null) {
   return 'Further Diligence Required';
 }
 
+function getApprovalTone(approvalStatus: string) {
+  if (approvalStatus === 'APPROVED') return 'good' as const;
+  if (approvalStatus === 'CONDITIONAL') return 'warn' as const;
+  if (approvalStatus === 'REJECTED') return 'danger' as const;
+  return 'neutral' as const;
+}
+
 export default async function ValuationsPage() {
   const runs = await listValuationRuns();
   const fxRateMap = await getFxRateMap(
@@ -103,6 +110,7 @@ export default async function ValuationsPage() {
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <Badge tone="good">{run.status}</Badge>
+                      <Badge tone={getApprovalTone(run.approvalStatus)}>{run.approvalStatus.replaceAll('_', ' ')}</Badge>
                       <Badge>{recommendation}</Badge>
                     </div>
                   </div>

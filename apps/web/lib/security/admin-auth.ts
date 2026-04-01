@@ -1,9 +1,21 @@
 export type AdminAuthMode = 'disabled' | 'configured' | 'misconfigured';
+export type AdminAccessRole = 'VIEWER' | 'ANALYST' | 'ADMIN';
+
+export type AdminCredential = {
+  user: string;
+  password: string;
+  role: AdminAccessRole;
+};
+
+export type AuthorizedAdminActor = {
+  identifier: string;
+  role: AdminAccessRole;
+};
 
 export type AdminAuthConfig = {
   mode: AdminAuthMode;
-  user: string;
-  password: string;
+  credentials: AdminCredential[];
+  errors: string[];
 };
 
 function trimEnv(value: string | undefined) {
@@ -13,27 +25,67 @@ function trimEnv(value: string | undefined) {
 export function getAdminAuthConfig(env: NodeJS.ProcessEnv = process.env): AdminAuthConfig {
   const user = trimEnv(env.ADMIN_BASIC_AUTH_USER);
   const password = trimEnv(env.ADMIN_BASIC_AUTH_PASSWORD);
+  const credentials: AdminCredential[] = [];
+  const errors: string[] = [];
 
-  if (!user && !password) {
+  if (user && password) {
+    credentials.push({
+      user,
+      password,
+      role: 'ADMIN'
+    });
+  }
+
+  if ((user && !password) || (!user && password)) {
+    errors.push('Legacy admin basic auth credentials are incomplete.');
+  }
+
+  for (const [role, envKey] of [
+    ['VIEWER', 'ADMIN_BASIC_AUTH_VIEWER_CREDENTIALS'],
+    ['ANALYST', 'ADMIN_BASIC_AUTH_ANALYST_CREDENTIALS'],
+    ['ADMIN', 'ADMIN_BASIC_AUTH_ADMIN_CREDENTIALS']
+  ] as const) {
+    const raw = trimEnv(env[envKey]);
+    if (!raw) continue;
+
+    for (const entry of raw.split(',')) {
+      const trimmedEntry = entry.trim();
+      if (!trimmedEntry) continue;
+
+      const separatorIndex = trimmedEntry.indexOf(':');
+      if (separatorIndex <= 0 || separatorIndex === trimmedEntry.length - 1) {
+        errors.push(`${envKey} contains an invalid credential entry.`);
+        continue;
+      }
+
+      credentials.push({
+        user: trimmedEntry.slice(0, separatorIndex).trim(),
+        password: trimmedEntry.slice(separatorIndex + 1).trim(),
+        role
+      });
+    }
+  }
+
+  if (credentials.length === 0 && errors.length === 0) {
     return {
       mode: 'disabled',
-      user: '',
-      password: ''
+      credentials: [],
+      errors: []
     };
   }
 
-  if (!user || !password) {
+  if (credentials.length === 0 || errors.length > 0) {
     return {
       mode: 'misconfigured',
-      user,
-      password
+      credentials,
+      errors
     };
   }
 
   return {
     mode: 'configured',
-    user,
-    password
+    credentials,
+    errors: []
   };
 }
 
@@ -50,16 +102,16 @@ function safeEqual(left: string, right: string) {
   return difference === 0;
 }
 
-export function isAdminAuthorized(
+export function authorizeAdminHeader(
   authorizationHeader: string | null | undefined,
   config: AdminAuthConfig
 ) {
   if (config.mode !== 'configured') {
-    return false;
+    return null;
   }
 
   if (!authorizationHeader?.startsWith('Basic ')) {
-    return false;
+    return null;
   }
 
   let decoded = '';
@@ -67,16 +119,53 @@ export function isAdminAuthorized(
   try {
     decoded = Buffer.from(authorizationHeader.slice(6).trim(), 'base64').toString('utf8');
   } catch {
-    return false;
+    return null;
   }
 
   const separatorIndex = decoded.indexOf(':');
   if (separatorIndex < 0) {
-    return false;
+    return null;
   }
 
   const user = decoded.slice(0, separatorIndex);
   const password = decoded.slice(separatorIndex + 1);
 
-  return safeEqual(user, config.user) && safeEqual(password, config.password);
+  const credential = config.credentials.find(
+    (candidate) => safeEqual(user, candidate.user) && safeEqual(password, candidate.password)
+  );
+
+  if (!credential) {
+    return null;
+  }
+
+  return {
+    identifier: credential.user,
+    role: credential.role
+  } satisfies AuthorizedAdminActor;
+}
+
+const roleRank: Record<AdminAccessRole, number> = {
+  VIEWER: 1,
+  ANALYST: 2,
+  ADMIN: 3
+};
+
+export function hasRequiredAdminRole(actorRole: AdminAccessRole, requiredRole: AdminAccessRole) {
+  return roleRank[actorRole] >= roleRank[requiredRole];
+}
+
+export function getRequiredAdminRoleForPath(pathname: string): AdminAccessRole {
+  if (pathname.startsWith('/admin/security')) return 'ADMIN';
+  if (pathname.startsWith('/api/readiness')) return 'ADMIN';
+  if (pathname.startsWith('/api/registry')) return 'ADMIN';
+  if (pathname.startsWith('/api/valuations/') && pathname.endsWith('/approval')) return 'ADMIN';
+  if (pathname.startsWith('/api/')) return 'ANALYST';
+  return 'VIEWER';
+}
+
+export function isAdminAuthorized(
+  authorizationHeader: string | null | undefined,
+  config: AdminAuthConfig
+) {
+  return authorizeAdminHeader(authorizationHeader, config) !== null;
 }

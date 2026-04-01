@@ -11,6 +11,7 @@ const items = [
   { href: '/admin/valuations', label: 'Valuations' },
   { href: '/admin/documents', label: 'Documents' },
   { href: '/admin/sources', label: 'Sources' },
+  { href: '/admin/security', label: 'Security' },
   { href: '/admin/macro-profiles', label: 'Macro Profiles' },
   { href: '/admin/readiness', label: 'Readiness' }
 ];

@@ -12,6 +12,7 @@ import {
   buildDealCloseProbability,
   buildDealClosingReadiness,
   buildDealExecutionSnapshot,
+  getDealMaterialUpdatedAt,
   listDeals
 } from '@/lib/services/deals';
 import { formatCurrency, formatDate, formatNumber } from '@/lib/utils';
@@ -184,7 +185,8 @@ export default async function DealsPage({ searchParams }: Props) {
           const latestBid = deal.bidRevisions[0] ?? null;
           const latestLenderQuote = deal.lenderQuotes[0] ?? null;
           const latestNegotiationEvent = deal.negotiationEvents[0] ?? null;
-          const isStale = deal.updatedAt.getTime() <= Date.now() - 1000 * 60 * 60 * 24 * 7;
+          const materialUpdatedAt = getDealMaterialUpdatedAt(deal as any);
+          const isStale = materialUpdatedAt.getTime() <= Date.now() - 1000 * 60 * 60 * 24 * 7;
 
           return (
             <div

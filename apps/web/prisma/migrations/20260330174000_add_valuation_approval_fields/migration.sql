@@ -1,0 +1,5 @@
+ALTER TABLE "ValuationRun"
+ADD COLUMN "approvalStatus" TEXT NOT NULL DEFAULT 'PENDING_REVIEW',
+ADD COLUMN "approvalNotes" TEXT,
+ADD COLUMN "approvedByLabel" TEXT,
+ADD COLUMN "approvedAt" TIMESTAMP(3);

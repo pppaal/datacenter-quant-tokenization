@@ -11,13 +11,14 @@ import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { documentUploadSchema, type DocumentUploadInput } from '@/lib/validations/document';
 
-export function DocumentUploadForm({ assetId }: { assetId?: string }) {
+export function DocumentUploadForm({ assetId, dealId }: { assetId?: string; dealId?: string }) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const form = useForm<DocumentUploadInput>({
     resolver: zodResolver(documentUploadSchema),
     defaultValues: {
-      assetId
+      assetId,
+      dealId
     }
   });
 
@@ -40,7 +41,7 @@ export function DocumentUploadForm({ assetId }: { assetId?: string }) {
       });
 
       if (!response.ok) throw new Error('Upload failed');
-      form.reset({ assetId });
+      form.reset({ assetId, dealId });
       fileInput.value = '';
       router.refresh();
     } finally {
@@ -55,6 +56,12 @@ export function DocumentUploadForm({ assetId }: { assetId?: string }) {
           <span className="fine-print">Asset ID</span>
           <Input {...form.register('assetId')} readOnly={Boolean(assetId)} />
         </label>
+        {dealId ? (
+          <label className="space-y-2">
+            <span className="fine-print">Deal ID</span>
+            <Input {...form.register('dealId')} readOnly />
+          </label>
+        ) : null}
         <label className="space-y-2">
           <span className="fine-print">Title</span>
           <Input placeholder="Power approval memo" {...form.register('title')} />
