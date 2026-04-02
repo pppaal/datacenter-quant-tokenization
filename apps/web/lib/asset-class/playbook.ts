@@ -110,9 +110,9 @@ const playbooks: Record<AssetClass, AssetClassPlaybook> = {
     sizeUnitLabel: 'sqm',
     intakeHeading: 'Fit, access, and tenant durability',
     reviewQueueDescription:
-      'Review building fit, land access, legal, and lease evidence before industrial underwriting relies on them.',
-    researchHeadline: 'Industrial fit and logistics research',
-    marketHeadline: 'Logistics rent, vacancy, and access-driven market context',
+      'Review logistics fit, land access, lease durability, and legal evidence before industrial underwriting or committee material relies on them.',
+    researchHeadline: 'Industrial and logistics operating research',
+    marketHeadline: 'Logistics rent, vacancy, throughput, and access-driven market context',
     checklistLabels: {
       commercial: 'Tenant Durability And Market',
       technical: 'Physical Fit, Access, And Entitlement',
@@ -121,13 +121,14 @@ const playbooks: Record<AssetClass, AssetClassPlaybook> = {
     valuationVariableFamilies: [
       'market rent and stabilized occupancy',
       'physical fit, clear height, loading, and yard depth',
-      'tenant durability and downtime',
+      'tenant durability, rollover, and downtime',
+      'yard, dock, and access efficiency',
       'land access and permit readiness'
     ],
     researchDisciplineLabels: universalDisciplineLabels,
-    marketIndicators: ['market rent', 'vacancy', 'cap rate', 'discount rate', 'transaction volume'],
+    marketIndicators: ['market rent', 'vacancy', 'cap rate', 'discount rate', 'transaction volume', 'pipeline supply'],
     compCoverageLabels: ['transaction comps', 'rent comps', 'pipeline projects'],
-    operatorFocusPoints: ['access and yard fit', 'tenant covenant', 'land control', 'rent durability']
+    operatorFocusPoints: ['access and yard fit', 'tenant covenant', 'dock / loading fit', 'rent durability']
   },
   RETAIL: {
     assetClass: AssetClass.RETAIL,
@@ -200,22 +201,28 @@ const playbooks: Record<AssetClass, AssetClassPlaybook> = {
   },
   LAND: {
     assetClass: AssetClass.LAND,
-    label: 'Land',
+    label: 'Land / Development',
     shortLabel: 'Land',
-    verticalDescription: 'Institutional underwriting for Korean land and entitlement opportunities.',
+    verticalDescription: 'Institutional underwriting for Korean land, entitlement, and development opportunities.',
     sizeLabel: 'Land Area',
     sizeUnitLabel: 'sqm',
-    intakeHeading: 'Parcel, entitlement, and legal certainty',
+    intakeHeading: 'Parcel, entitlement, and development-path certainty',
     reviewQueueDescription:
-      'Review parcel, planning, permit, and legal evidence before land underwriting outputs rely on them.',
-    researchHeadline: 'Land and entitlement research',
-    marketHeadline: 'Land pricing, planning, and transaction context',
+      'Review parcel, planning, permit, and legal evidence before land and development underwriting outputs rely on them.',
+    researchHeadline: 'Land and development research',
+    marketHeadline: 'Land pricing, planning, entitlement, and transaction context',
     checklistLabels: {
       commercial: 'Land Pricing And Market',
       technical: 'Parcel, Zoning, And Permit',
       legal: 'Title, Encumbrance, And Structure'
     },
-    valuationVariableFamilies: ['land value', 'planning constraints', 'permit path', 'exit pricing'],
+    valuationVariableFamilies: [
+      'land value',
+      'planning constraints',
+      'permit path and entitlement risk',
+      'site servicing and infrastructure path',
+      'exit pricing'
+    ],
     researchDisciplineLabels: universalDisciplineLabels,
     marketIndicators: ['land price', 'transactions', 'official land value'],
     compCoverageLabels: ['transaction comps', 'parcel indicators'],

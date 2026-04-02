@@ -4,24 +4,24 @@ import { Card } from '@/components/ui/card';
 
 const sections = [
   {
-    title: 'Asset Intake And Deal Dossier',
+    title: 'Research Intake And Deal Dossier',
     body:
-      'Capture sponsor, location, market, pricing, operating assumptions, and financing inputs in one structured asset record across data center, office, industrial, retail, and multifamily.'
+      'Capture sponsor, location, market, pricing, operating assumptions, financing context, and live execution data in one structured investment record.'
   },
   {
-    title: 'Source Enrichment And Provenance',
+    title: 'Evidence Review And Provenance',
     body:
-      'Pull geospatial, permit, utility, macro, and climate overlays into the underwriting record while tracking freshness, fallback usage, and source provenance.'
+      'Pull geospatial, permit, utility, market, macro, and document-derived evidence into the same record while tracking freshness, fallback usage, provenance, and review state.'
   },
   {
-    title: 'Scenario Analysis And Memo Generation',
+    title: 'Underwriting, IC, And Readiness',
     body:
-      'Run bull, base, and bear analysis, calculate value and downside, and generate an investment memo with key risks, diligence items, and committee-ready language.'
+      'Run valuation, downside, diligence, and committee workflows, then package review-gated outputs with deterministic readiness metadata.'
   },
   {
-    title: 'Document Room And Review Trail',
+    title: 'Portfolio And Capital Shell',
     body:
-      'Store uploaded files, extracted notes, version history, and generated outputs in the same operating system so assumptions and evidence do not drift apart.'
+      'Track held-asset KPI history, covenant tests, capex plans, vehicles, investors, commitments, calls, distributions, and reporting shells in the same operating system.'
   }
 ];
 
@@ -34,25 +34,25 @@ export default function ProductOverviewPage() {
         <div className="surface hero-mesh">
           <div className="flex flex-wrap items-center gap-3">
             <Badge tone="good">Product Overview</Badge>
-            <Badge>Korea Real Estate Underwriting & Research OS</Badge>
+            <Badge>Korea Real Estate Investment-Firm OS</Badge>
           </div>
           <h1 className="mt-5 max-w-5xl text-5xl font-semibold leading-[0.95] tracking-[-0.05em] text-white md:text-6xl">
-            Underwrite Korean real estate
+            Operate Korean real-estate investments
             <br />
-            through one research, valuation, and IC workflow.
+            through one research, underwriting, and portfolio workflow.
           </h1>
           <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-300">
-            Nexus Seoul is an underwriting and research operating system for Korean real estate teams. Input an
-            asset, enrich the record, review evidence, run scenario analysis, and produce committee outputs from the
-            same application.
+            Nexus Seoul is an AI-native operating system for Korean real-estate investment teams. Open a case,
+            enrich the record, review evidence, underwrite the opportunity, manage the deal, and carry the asset
+            into portfolio and capital workflows from the same application.
           </p>
           <p className="mt-4 max-w-3xl text-base leading-7 text-slate-400">
-            DATA_CENTER remains a vertical pack, OFFICE is now the first full non-data-center pack, and
-            INDUSTRIAL / LOGISTICS is scaffolded on the same review-gated workflow.
+            DATA_CENTER remains one vertical pack, OFFICE is the first full non-data-center pack, and
+            INDUSTRIAL / LOGISTICS is the next native playbook on the same review-gated evidence stack.
           </p>
           <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-500">
             The blockchain layer remains registry-only: document hashes, registry ids, and packet metadata can be
-            anchored, while underwriting logic and evidence stay offchain.
+            anchored, while evidence, extracted text, valuations, and workflows stay offchain.
           </p>
         </div>
       </section>
@@ -61,8 +61,9 @@ export default function ProductOverviewPage() {
         <div className="mb-6 max-w-3xl">
           <div className="eyebrow">Why It Matters</div>
           <p className="mt-3 text-sm leading-7 text-slate-400">
-            The product combines underwriting math and memo creation in one operating system. Teams do not need to
-            split asset intake, scenario work, diligence tracking, and committee material across separate tools.
+            The product combines research, underwriting, execution, portfolio operations, and capital shell data in
+            one operating system. Teams do not need to split asset intake, diligence, IC material, portfolio
+            tracking, and investor reporting across separate tools.
           </p>
         </div>
         <div className="grid gap-5 lg:grid-cols-2">

@@ -192,6 +192,47 @@ enum DealNegotiationEventType {
   PROCESS_UPDATE
 }
 
+enum PortfolioAssetStatus {
+  ACTIVE
+  WATCHLIST
+  EXITING
+  EXITED
+}
+
+enum CovenantStatus {
+  PASS
+  WATCH
+  BREACH
+}
+
+enum CapitalCallStatus {
+  PLANNED
+  ISSUED
+  FUNDED
+  CANCELLED
+}
+
+enum DistributionStatus {
+  PLANNED
+  ISSUED
+  PAID
+  CANCELLED
+}
+
+enum VehicleType {
+  FUND
+  SMA
+  JV
+  SPV
+}
+
+enum InvestorReportType {
+  QUARTERLY_UPDATE
+  CAPITAL_ACCOUNT
+  DDQ_RESPONSE
+  OTHER
+}
+
 model User {
   id            String            @id @default(cuid())
   name          String
@@ -288,6 +329,7 @@ model Asset {
   counterparties        Counterparty[]
   financialStatements   FinancialStatement[]
   creditAssessments     CreditAssessment[]
+  portfolioAssets       PortfolioAsset[]
 }
 
 model Address {
@@ -700,6 +742,7 @@ model DebtFacility {
   updatedAt              DateTime             @updatedAt
   asset                  Asset                @relation(fields: [assetId], references: [id], onDelete: Cascade)
   draws                  DebtDraw[]
+  covenantTests          CovenantTest[]
 }
 
 model DebtDraw {
@@ -1659,4 +1702,378 @@ model SequenceCounter {
   nextValue Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Portfolio {
+  id           String           @id @default(cuid())
+  code         String           @unique
+  name         String
+  strategy     String?
+  baseCurrency String           @default("KRW")
+  thesis       String?
+  market       String           @default("KR")
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  assets       PortfolioAsset[]
+  funds        Fund[]
+
+  @@index([market, strategy])
+}
+
+model PortfolioAsset {
+  id                   String               @id @default(cuid())
+  portfolioId          String
+  assetId              String
+  status               PortfolioAssetStatus @default(ACTIVE)
+  acquisitionDate      DateTime?
+  acquisitionCostKrw   Float?
+  currentHoldValueKrw  Float?
+  ownershipPct         Float?
+  holdPeriodYears      Float?
+  assetManager         String?
+  notes                String?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  portfolio            Portfolio            @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  asset                Asset                @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  businessPlans        BusinessPlan[]
+  monthlyKpis          MonthlyAssetKpi[]
+  leaseRollSnapshots   LeaseRollSnapshot[]
+  budgets              Budget[]
+  capexProjects        CapexProject[]
+  covenantTests        CovenantTest[]
+  exitCases            ExitCase[]
+
+  @@unique([portfolioId, assetId])
+  @@index([status, updatedAt])
+}
+
+model BusinessPlan {
+  id                String         @id @default(cuid())
+  portfolioAssetId  String
+  title             String
+  executiveSummary  String?
+  holdStrategy      String?
+  leasingPlan       String?
+  capexPlan         String?
+  financingPlan     String?
+  dispositionPlan   String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  portfolioAsset    PortfolioAsset @relation(fields: [portfolioAssetId], references: [id], onDelete: Cascade)
+
+  @@index([portfolioAssetId, updatedAt])
+}
+
+model MonthlyAssetKpi {
+  id                         String         @id @default(cuid())
+  portfolioAssetId           String
+  periodStart                DateTime
+  occupancyPct               Float?
+  leasedAreaSqm              Float?
+  passingRentKrwPerSqmMonth  Float?
+  marketRentKrwPerSqmMonth   Float?
+  effectiveRentKrwPerSqmMonth Float?
+  noiKrw                     Float?
+  opexKrw                    Float?
+  capexKrw                   Float?
+  debtOutstandingKrw         Float?
+  debtServiceCoverage        Float?
+  ltvPct                     Float?
+  navKrw                     Float?
+  cashBalanceKrw             Float?
+  notes                      String?
+  createdAt                  DateTime       @default(now())
+  updatedAt                  DateTime       @updatedAt
+  portfolioAsset             PortfolioAsset @relation(fields: [portfolioAssetId], references: [id], onDelete: Cascade)
+
+  @@unique([portfolioAssetId, periodStart])
+  @@index([portfolioAssetId, periodStart])
+}
+
+model LeaseRollSnapshot {
+  id                        String         @id @default(cuid())
+  portfolioAssetId          String
+  asOfDate                  DateTime
+  next12MonthsExpiringPct   Float?
+  next24MonthsExpiringPct   Float?
+  weightedAverageLeaseTermYears Float?
+  passingRentKrwPerSqmMonth Float?
+  marketRentKrwPerSqmMonth  Float?
+  occupancyPct              Float?
+  watchlistSummary          String?
+  createdAt                 DateTime       @default(now())
+  updatedAt                 DateTime       @updatedAt
+  portfolioAsset            PortfolioAsset @relation(fields: [portfolioAssetId], references: [id], onDelete: Cascade)
+
+  @@unique([portfolioAssetId, asOfDate])
+  @@index([portfolioAssetId, asOfDate])
+}
+
+model Budget {
+  id               String         @id @default(cuid())
+  portfolioAssetId String
+  fiscalYear       Int
+  label            String
+  approvedAt       DateTime?
+  notes            String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  portfolioAsset   PortfolioAsset @relation(fields: [portfolioAssetId], references: [id], onDelete: Cascade)
+  lineItems        BudgetLineItem[]
+
+  @@unique([portfolioAssetId, fiscalYear])
+  @@index([portfolioAssetId, fiscalYear])
+}
+
+model BudgetLineItem {
+  id              String   @id @default(cuid())
+  budgetId        String
+  category        String
+  label           String
+  annualBudgetKrw Float
+  ytdActualKrw    Float?
+  varianceKrw     Float?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  budget          Budget   @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+
+  @@index([budgetId, category])
+}
+
+model CapexProject {
+  id                  String         @id @default(cuid())
+  portfolioAssetId    String
+  name                String
+  category            String?
+  statusLabel         String         @default("PLANNED")
+  budgetKrw           Float?
+  approvedBudgetKrw   Float?
+  spentToDateKrw      Float?
+  targetCompletionDate DateTime?
+  actualCompletionDate DateTime?
+  summary             String?
+  notes               String?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  portfolioAsset      PortfolioAsset @relation(fields: [portfolioAssetId], references: [id], onDelete: Cascade)
+
+  @@index([portfolioAssetId, statusLabel, targetCompletionDate])
+}
+
+model CovenantTest {
+  id               String         @id @default(cuid())
+  portfolioAssetId String
+  debtFacilityId   String?
+  asOfDate         DateTime
+  testName         String
+  thresholdValue   Float?
+  actualValue      Float?
+  unit             String?
+  status           CovenantStatus @default(PASS)
+  cureNotes        String?
+  notes            String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  portfolioAsset   PortfolioAsset @relation(fields: [portfolioAssetId], references: [id], onDelete: Cascade)
+  debtFacility     DebtFacility?  @relation(fields: [debtFacilityId], references: [id], onDelete: SetNull)
+
+  @@index([portfolioAssetId, asOfDate, status])
+  @@index([debtFacilityId, asOfDate])
+}
+
+model ExitCase {
+  id                String         @id @default(cuid())
+  portfolioAssetId  String
+  caseLabel         String
+  statusLabel       String         @default("ACTIVE")
+  underwritingValueKrw Float?
+  targetExitDate    DateTime?
+  targetCapRatePct  Float?
+  targetIrrPct      Float?
+  probabilityPct    Float?
+  buyerUniverse     String?
+  notes             String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  portfolioAsset    PortfolioAsset @relation(fields: [portfolioAssetId], references: [id], onDelete: Cascade)
+
+  @@index([portfolioAssetId, statusLabel, targetExitDate])
+}
+
+model Fund {
+  id                  String          @id @default(cuid())
+  code                String          @unique
+  name                String
+  strategy            String?
+  baseCurrency        String          @default("KRW")
+  targetSizeKrw       Float?
+  committedCapitalKrw Float?
+  investedCapitalKrw  Float?
+  dryPowderKrw        Float?
+  vintageYear         Int?
+  thesis              String?
+  portfolioId         String?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  portfolio           Portfolio?      @relation(fields: [portfolioId], references: [id], onDelete: SetNull)
+  vehicles            Vehicle[]
+  mandates            Mandate[]
+  commitments         Commitment[]
+  capitalCalls        CapitalCall[]
+  distributions       Distribution[]
+  investorReports     InvestorReport[]
+  ddqResponses        DdqResponse[]
+
+  @@index([strategy, vintageYear])
+}
+
+model Vehicle {
+  id              String        @id @default(cuid())
+  fundId          String?
+  name            String
+  vehicleType     VehicleType   @default(FUND)
+  jurisdiction    String?
+  assetClassFocus String?
+  notes           String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  fund            Fund?         @relation(fields: [fundId], references: [id], onDelete: SetNull)
+  mandates        Mandate[]
+  commitments     Commitment[]
+  capitalCalls    CapitalCall[]
+  distributions   Distribution[]
+
+  @@index([fundId, vehicleType])
+}
+
+model Mandate {
+  id             String   @id @default(cuid())
+  fundId         String?
+  vehicleId      String?
+  title          String
+  investorName   String?
+  strategy       String?
+  targetAumKrw   Float?
+  statusLabel    String   @default("ACTIVE")
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  fund           Fund?    @relation(fields: [fundId], references: [id], onDelete: SetNull)
+  vehicle        Vehicle? @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+
+  @@index([fundId, statusLabel])
+  @@index([vehicleId, statusLabel])
+}
+
+model Investor {
+  id            String          @id @default(cuid())
+  code          String          @unique
+  name          String
+  investorType  String?
+  domicile      String?
+  contactName   String?
+  contactEmail  String?
+  notes         String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  commitments   Commitment[]
+  investorReports InvestorReport[]
+  ddqResponses  DdqResponse[]
+
+  @@index([investorType, domicile])
+}
+
+model Commitment {
+  id             String    @id @default(cuid())
+  fundId         String
+  vehicleId      String?
+  investorId     String
+  commitmentKrw  Float
+  calledKrw      Float     @default(0)
+  distributedKrw Float     @default(0)
+  recallableKrw  Float?
+  signedAt       DateTime?
+  statusLabel    String    @default("ACTIVE")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  fund           Fund      @relation(fields: [fundId], references: [id], onDelete: Cascade)
+  vehicle        Vehicle?  @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+  investor       Investor  @relation(fields: [investorId], references: [id], onDelete: Cascade)
+
+  @@unique([fundId, investorId, vehicleId])
+  @@index([fundId, statusLabel])
+  @@index([investorId, statusLabel])
+}
+
+model CapitalCall {
+  id          String            @id @default(cuid())
+  fundId      String
+  vehicleId   String?
+  callDate    DateTime
+  dueDate     DateTime?
+  amountKrw   Float
+  purpose     String?
+  status      CapitalCallStatus @default(PLANNED)
+  notes       String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  fund        Fund              @relation(fields: [fundId], references: [id], onDelete: Cascade)
+  vehicle     Vehicle?          @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+
+  @@index([fundId, callDate, status])
+}
+
+model Distribution {
+  id          String             @id @default(cuid())
+  fundId      String
+  vehicleId   String?
+  distributionDate DateTime
+  amountKrw   Float
+  purpose     String?
+  status      DistributionStatus @default(PLANNED)
+  notes       String?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  fund        Fund               @relation(fields: [fundId], references: [id], onDelete: Cascade)
+  vehicle     Vehicle?           @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+
+  @@index([fundId, distributionDate, status])
+}
+
+model InvestorReport {
+  id           String             @id @default(cuid())
+  fundId        String
+  investorId    String?
+  reportType   InvestorReportType @default(QUARTERLY_UPDATE)
+  title        String
+  periodEnd    DateTime?
+  publishedAt  DateTime?
+  storagePath  String?
+  notes        String?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  fund         Fund               @relation(fields: [fundId], references: [id], onDelete: Cascade)
+  investor     Investor?          @relation(fields: [investorId], references: [id], onDelete: SetNull)
+
+  @@index([fundId, reportType, periodEnd])
+  @@index([investorId, reportType, periodEnd])
+}
+
+model DdqResponse {
+  id          String    @id @default(cuid())
+  fundId      String?
+  investorId  String?
+  title       String
+  question    String
+  answer      String?
+  statusLabel String    @default("DRAFT")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  fund        Fund?     @relation(fields: [fundId], references: [id], onDelete: SetNull)
+  investor    Investor? @relation(fields: [investorId], references: [id], onDelete: SetNull)
+
+  @@index([fundId, statusLabel])
+  @@index([investorId, statusLabel])
 }

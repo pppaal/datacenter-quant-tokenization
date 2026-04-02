@@ -18,42 +18,42 @@ export const dynamic = 'force-dynamic';
 const workflow = [
   {
     step: '01',
-    title: 'Asset Intake',
-    body: 'Capture pricing, area, sponsor, financing, and operating assumptions in one structured asset record.'
+    title: 'Research Intake',
+    body: 'Open a new investment case with asset, market, sponsor, financing, and document context in one operating record.'
   },
   {
     step: '02',
-    title: 'Enrichment',
-    body: 'Pull market, permit, utility, geospatial, and climate overlays into the same underwriting file.'
+    title: 'Evidence Review',
+    body: 'Pull market, permit, legal, lease, and geospatial evidence into the file and move only approved evidence into the underwriting layer.'
   },
   {
     step: '03',
-    title: 'Scenario Analysis',
-    body: 'Run bull, base, and bear cases to assess value, downside, and return sensitivity.'
+    title: 'Underwriting And IC',
+    body: 'Run valuation, downside, and diligence analysis, then generate committee-ready outputs from the same record.'
   },
   {
     step: '04',
-    title: 'Generate IM',
-    body: 'Turn the model into an investment memo with risks, diligence items, and committee-ready narrative.'
+    title: 'Portfolio And Capital Ops',
+    body: 'Track live deals, held-asset KPIs, covenant watchlists, and capital formation shells without moving evidence or logic onchain.'
   }
 ];
 
 const outputs = [
   {
     label: 'Valuation Surface',
-    detail: 'Base case value, implied yield, cap rate, and scenario dispersion in one view.'
+    detail: 'Base case value, downside, approved evidence coverage, and scenario dispersion in one investment view.'
   },
   {
-    label: 'Risk Overlay',
-    detail: 'Permits, climate, market context, and source confidence tied directly to the underwriting record.'
+    label: 'Research Dossier',
+    detail: 'Macro thesis, market indicators, comps, permit context, and approved micro evidence tied to the same asset record.'
   },
   {
-    label: 'Investment Memo',
-    detail: 'A generated IM summarizing thesis, downside, and next diligence steps.'
+    label: 'IC And DD Output',
+    detail: 'Committee memo, DD checklist, and risk memo grounded in approved evidence and current valuation state.'
   },
   {
-    label: 'Document Trail',
-    detail: 'Uploaded files, extracted notes, and version history linked back to each asset.'
+    label: 'Execution Trail',
+    detail: 'Deals, document hashes, review packets, and registry-only anchor references linked back to each opportunity.'
   }
 ];
 
@@ -94,40 +94,39 @@ export default async function LandingPage() {
             <div className="floating-orb absolute right-10 top-10 hidden h-28 w-28 rounded-full bg-accent/10 blur-2xl lg:block" />
             <div className="relative space-y-8">
               <div className="flex flex-wrap items-center gap-3">
-                <Badge tone="good">Korea Real Estate Underwriting & Research OS</Badge>
-                <Badge>Review-Gated Research + Valuation + IC Output</Badge>
+                <Badge tone="good">Korea Real Estate Investment-Firm OS</Badge>
+                <Badge>Research + Underwriting + Deals + Portfolio + Capital Shell</Badge>
               </div>
 
               <div className="space-y-5">
                 <h1 className="max-w-5xl text-5xl font-semibold leading-[0.95] tracking-[-0.05em] text-white md:text-7xl">
-                  Underwrite Korean real estate
+                  Operate Korean real-estate investments
                   <br />
-                  with one research and committee workflow.
+                  from research through portfolio management.
                 </h1>
                 <p className="max-w-3xl text-lg leading-8 text-slate-300">
-                  Analyze market thesis, approved evidence, downside, and scenario sensitivity across Korean real
-                  estate asset classes, then produce committee-ready outputs from the same operating workflow.
+                  Run research, review-gated underwriting, deal execution, portfolio operations, and capital-formation
+                  workflows in one operator system built for Korean real-estate investing.
                 </p>
                 <p className="max-w-3xl text-base leading-7 text-slate-400">
-                  DATA_CENTER remains one vertical pack, OFFICE is now the first full non-data-center pack, and the
-                  same platform also scaffolds industrial and other real-estate workflows without changing the
-                  registry-only design.
+                  DATA_CENTER remains one vertical pack, OFFICE is the first full non-data-center pack, and
+                  INDUSTRIAL / LOGISTICS is the next native playbook on the same review-gated evidence model.
                 </p>
                 <p className="max-w-3xl text-sm leading-7 text-slate-500">
-                  Files, diligence logic, valuation outputs, and workflows remain offchain. Only registry identifiers,
-                  document hashes, and packet metadata are anchorable onchain.
+                  Files, extracted text, valuation logic, and workflows remain offchain. Only registry identifiers,
+                  document hashes, and packet metadata are anchorable onchain under the registry-only model.
                 </p>
               </div>
 
               <div className="flex flex-wrap gap-3">
                 <Link href="/admin/assets/new">
-                  <Button>Start New Underwriting Case</Button>
+                  <Button>Open New Investment Case</Button>
                 </Link>
                 <Link href="/sample-report">
-                  <Button variant="secondary">View Sample IM</Button>
+                  <Button variant="secondary">View Sample IC Output</Button>
                 </Link>
                 <Link href="/admin">
-                  <Button variant="ghost">Open Console</Button>
+                  <Button variant="ghost">Open Investment Console</Button>
                 </Link>
               </div>
 
@@ -205,15 +204,15 @@ export default async function LandingPage() {
             <div className="eyebrow">Asset Pipeline</div>
             <h2 className="section-title mt-3">Current underwriting and research cases</h2>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-400">
-              Each asset below runs through the same workflow: intake, enrichment, scenario analysis, risk review,
-              and memo generation.
+              Each asset below runs through the same operating chain: intake, research enrichment, evidence review,
+              underwriting, execution, and readiness packaging.
             </p>
           </div>
           <Link
             href="/product"
             className="fine-print rounded-full border border-white/10 px-4 py-3 transition hover:border-white/20 hover:text-white"
           >
-            Product Overview
+            Investment OS Overview
           </Link>
         </div>
 

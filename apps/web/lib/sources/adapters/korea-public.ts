@@ -13,6 +13,7 @@ export type KoreaPublicDatasetKey =
   | 'molit_land_characteristics'
   | 'molit_official_land_price'
   | 'korea_cadastral_geometry'
+  | 'gis_building_integration'
   | 'korea_building_energy';
 
 export type KoreaPublicDatasetDefinition = {
@@ -115,6 +116,15 @@ const datasetDefinitions: Record<KoreaPublicDatasetKey, KoreaPublicDatasetDefini
     envApiKeyKey: 'KOREA_CADASTRAL_API_KEY',
     coverage: ['parcel geometry', 'site'],
     fallbackNote: 'Falls back to normalized address and site profile when cadastral geometry is unavailable.'
+  },
+  gis_building_integration: {
+    key: 'gis_building_integration',
+    label: 'GIS Building Integration',
+    sourceSystem: 'korea-gis-building-integration',
+    envBaseUrlKey: 'KOREA_GIS_BUILDING_API_URL',
+    envApiKeyKey: 'KOREA_GIS_BUILDING_API_KEY',
+    coverage: ['building geometry', 'parcel overlays', 'site context'],
+    fallbackNote: 'Falls back to building snapshot, address normalization, and geospatial overlays when GIS building integration is unavailable.'
   },
   korea_building_energy: {
     key: 'korea_building_energy',

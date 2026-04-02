@@ -1,15 +1,15 @@
-# Korea Real Estate Underwriting & Research OS
+# Korea Real Estate Investment-Firm OS
 
 `apps/web` is the only active product root.
 
 The legacy root Next.js app and the `/web` demo were archived under [`legacy/`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/legacy). New product code should only be built inside [`apps/web`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web).
 
-This platform is an institutional underwriting and research operating system for Korean real estate opportunities. It supports intake, source enrichment, evidence review, valuation, diligence workflows, document management, and a registry-only blockchain layer. It is not a retail token-sale app and it does not provide personalized investment advice.
+This platform is an AI-native operating system for a Korean real-estate investment firm. It now spans research, underwriting, deal execution, portfolio operations, and a capital-formation shell, while keeping documents, valuations, extracted text, and underwriting logic offchain. It remains registry-only onchain and it is not a retail token-sale app or investment-advice product.
 
 ## Product Surface
 
 - Public pages: `/`, `/product`, `/sample-report`
-- Admin pages: `/admin`, `/admin/assets`, `/admin/assets/new`, `/admin/assets/[id]`, `/admin/review`, `/admin/valuations`, `/admin/documents`, `/admin/sources`, `/admin/registry`
+- Admin pages: `/admin`, `/admin/deals`, `/admin/assets`, `/admin/assets/new`, `/admin/assets/[id]`, `/admin/review`, `/admin/valuations`, `/admin/documents`, `/admin/sources`, `/admin/portfolio`, `/admin/portfolio/[id]`, `/admin/funds`, `/admin/funds/[id]`, `/admin/investors`, `/admin/registry`
 - Core models: `Asset`, `SiteProfile`, `Address`, `BuildingSnapshot`, `PermitSnapshot`, `EnergySnapshot`, `MarketSnapshot`, `ValuationRun`, `ValuationScenario`, `Document`, `Inquiry`, `User`, `RwaProject`, `OnchainRecord`
 
 ## Quick Start
@@ -64,6 +64,8 @@ Valuation variable reference:
 - [`apps/web/docs/valuation-variables.md`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/docs/valuation-variables.md)
 - Micro data roadmap: [`apps/web/docs/micro-data-roadmap.md`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/docs/micro-data-roadmap.md)
 - Report generation notes: [`apps/web/docs/report-generation.md`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/docs/report-generation.md)
+- Investment-firm operating overview: [`apps/web/docs/investment-firm-os-overview.md`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/docs/investment-firm-os-overview.md)
+- Demo script: [`apps/web/docs/demo-script.md`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/docs/demo-script.md)
 - Blockchain registry wiring guide: [`docs/blockchain-integration.md`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/docs/blockchain-integration.md)
 
 ## Review-Gated Underwriting Flow
@@ -87,8 +89,22 @@ The current product stance is:
 
 - `DATA_CENTER` remains a full vertical pack
 - `OFFICE` is now the first full non-data-center underwriting pack
-- `INDUSTRIAL / LOGISTICS` is scaffolded for the next pass
+- `INDUSTRIAL / LOGISTICS` is the next playbook under active expansion
+- `LAND / DEVELOPMENT` now has a coherent shell playbook
 - other real-estate asset classes continue to share the same review-gated research, valuation, report, and readiness workflow
+
+## Investment-Firm Operating Layers
+
+- `Research`
+  - macro, market, comp, document, and approved micro evidence aggregation
+- `Underwriting`
+  - review-gated evidence, promoted features, valuation, committee memo, DD checklist, and risk memo
+- `Deal Execution`
+  - `/admin/deals` for next actions, lender quotes, bids, diligence requests, and close-probability snapshots
+- `Portfolio Operations`
+  - `/admin/portfolio` for held-asset KPI history, lease rollover watchlists, covenant tracking, capex vs budget, and exit cases
+- `Capital Formation Shell`
+  - `/admin/funds`, `/admin/funds/[id]`, and `/admin/investors` for fund, vehicle, investor, commitment, call, distribution, reporting, and DDQ shells
 
 ## Deliverables In Repo
 

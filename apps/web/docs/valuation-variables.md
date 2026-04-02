@@ -1,8 +1,8 @@
 # Valuation Variables
 
 Institutional underwriting variables are grouped into external, manual, derived, and policy-adjusted fields.
-The product is now a Korea real estate underwriting and research OS, with `DATA_CENTER` as one vertical pack and
-`OFFICE` as the first full non-data-center pack.
+The product is now a Korea real-estate investment-firm OS, with strong underwriting at the core, `DATA_CENTER` and
+`OFFICE` as native packs, `INDUSTRIAL / LOGISTICS` as the next playbook, and `LAND / DEVELOPMENT` as a shell.
 
 ## Asset Identity
 

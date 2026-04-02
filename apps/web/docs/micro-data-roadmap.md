@@ -1,6 +1,6 @@
 # Micro Data Roadmap
 
-This document defines the next layer of asset-level data collection for the underwriting and research OS.
+This document defines the next layer of asset-level data collection for the investment-firm OS.
 
 The goal is to move from market-aware underwriting to asset-aware underwriting.
 
@@ -200,7 +200,8 @@ First-round quant features:
 
 - `DATA_CENTER` remains a full vertical pack
 - `OFFICE` is the first full non-data-center pack
-- `INDUSTRIAL / LOGISTICS` is scaffolded on the same universal micro research workflow
+- `INDUSTRIAL / LOGISTICS` is the next playbook under active expansion on the same universal micro research workflow
+- `LAND / DEVELOPMENT` is scaffolded on the same review-gated micro research workflow
 
 ## The 30 Micro Fields To Collect First
 

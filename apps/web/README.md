@@ -1,5 +1,20 @@
 # apps/web
 
+`apps/web` is the active product root for the Korea real-estate investment-firm OS.
+
+Current operating layers inside this app:
+
+- research
+- underwriting
+- deal execution
+- portfolio operations
+- capital formation shell
+
+Registry-only remains explicit:
+
+- files, extracted text, valuations, underwriting logic, portfolio KPI history, and investor records stay offchain
+- only registry ids, hashes, and staged packet metadata are candidates for anchoring
+
 Active product root for the Korea real estate underwriting and research OS.
 
 Current positioning:
@@ -9,6 +24,11 @@ Current positioning:
 - `INDUSTRIAL / LOGISTICS` is scaffolded on the same review-gated workflow
 
 Use the repository root [`README.md`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/README.md) for setup and command entrypoints. This app contains the App Router UI, Prisma schema, source adapters, valuation engine, and tests.
+
+For the current product operating map, use:
+
+- [`apps/web/docs/investment-firm-os-overview.md`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/docs/investment-firm-os-overview.md)
+- [`apps/web/docs/demo-script.md`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/docs/demo-script.md)
 
 ## Prisma Migration
 

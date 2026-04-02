@@ -1,6 +1,6 @@
 # Report Generation
 
-This repo includes an operator-facing report layer for institutional Korean real-estate underwriting. It reuses existing asset, valuation, document, and traceability data and does not add a parallel reporting system.
+This repo includes an operator-facing report layer for an institutional Korean real-estate investment firm. It reuses existing asset, valuation, document, portfolio, and traceability data and does not add a parallel reporting system.
 
 ## Outputs
 
@@ -16,6 +16,9 @@ This repo includes an operator-facing report layer for institutional Korean real
 - `Risk Memo`
   - Audience: operator
   - Uses key risks, approved evidence coverage, pending blockers, mitigants, and document support
+- `Investor Update Draft`
+  - Audience: operator / IR
+  - Lives in the capital shell and is generated from fund, commitment, capital-call, distribution, and portfolio context
 
 The report layer is now asset-class-aware through the asset playbook abstraction:
 

@@ -1,6 +1,6 @@
 # Blockchain Integration
 
-This repository is already structured for a registry-only blockchain layer across Korean real-estate asset classes.
+This repository is structured for a registry-only blockchain layer across Korean real-estate research, underwriting, deal execution, portfolio operations, and capital-formation workflows.
 
 ## What Goes Onchain
 
@@ -9,7 +9,7 @@ This repository is already structured for a registry-only blockchain layer acros
 - Latest diligence document hash
 - Offchain review packet manifest / fingerprint metadata stored in Postgres and referenced during staging
 
-Valuation runs, documents, extracted text, and underwriting logic remain offchain.
+Valuation runs, documents, extracted text, underwriting logic, portfolio KPI history, and capital-formation records remain offchain.
 
 ## Files Added For The Integration
 
@@ -44,7 +44,7 @@ Valuation runs, documents, extracted text, and underwriting logic remain offchai
 
 ## Registry-Only Rule
 
-- valuations, extracted text, normalized evidence rows, and underwriting logic stay offchain
+- valuations, extracted text, normalized evidence rows, portfolio KPI histories, and underwriting logic stay offchain
 - staged packet metadata is stored in Postgres inside the readiness payload
 - the chain is used only for registry identity and document integrity anchoring
 

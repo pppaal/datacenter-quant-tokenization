@@ -1,4 +1,4 @@
-# Korea Real Estate Underwriting & Research OS Architecture
+# Korea Real Estate Investment-Firm OS Architecture
 
 ## External Data
 
@@ -23,6 +23,8 @@ This data enters through admin intake and document workflows in [`apps/web/app/a
 
 - `SiteProfile`, `BuildingSnapshot`, `PermitSnapshot`, `EnergySnapshot`, and `MarketSnapshot` records after enrichment
 - `ValuationRun` and `ValuationScenario` outputs from the internal underwriting engine
+- `Portfolio`, `PortfolioAsset`, `BusinessPlan`, `MonthlyAssetKpi`, `LeaseRollSnapshot`, `Budget`, `CapexProject`, `CovenantTest`, and `ExitCase` for held-asset operations
+- `Fund`, `Vehicle`, `Mandate`, `Investor`, `Commitment`, `CapitalCall`, `Distribution`, `InvestorReport`, and `DdqResponse` for capital-formation shell workflows
 - Underwriting memo text, key risks, DD checklist, and confidence score
 - Document AI summaries and document hashes
 - Source provenance arrays stored with valuation runs
@@ -33,6 +35,8 @@ Derived values are built by:
 - Enrichment workflow: [`apps/web/lib/services/assets.ts`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/lib/services/assets.ts)
 - Valuation engine: [`apps/web/lib/services/valuation-engine.ts`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/lib/services/valuation-engine.ts)
 - Document service: [`apps/web/lib/services/documents.ts`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/lib/services/documents.ts)
+- Portfolio service: [`apps/web/lib/services/portfolio.ts`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/lib/services/portfolio.ts)
+- Capital service: [`apps/web/lib/services/capital.ts`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/lib/services/capital.ts)
 
 ## Future Onchain Data
 
