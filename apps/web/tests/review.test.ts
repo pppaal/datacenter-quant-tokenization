@@ -96,7 +96,7 @@ test('reviewUnderwritingRecord persists reviewer metadata, notes, and re-promote
   assert.equal(promotedAssetId, 'asset_1');
 });
 
-test('listPendingAssetReviewSummaries returns pending data-center evidence grouped by discipline', async () => {
+test('listPendingAssetReviewSummaries returns pending evidence across asset classes grouped by discipline', async () => {
   const summaries = await listPendingAssetReviewSummaries(
     {
       asset: {
@@ -104,12 +104,13 @@ test('listPendingAssetReviewSummaries returns pending data-center evidence group
           return [
             {
               id: 'asset_1',
-              assetCode: 'KR-DC-001',
-              name: 'Seoul Edge Campus',
+              assetCode: 'SEOUL-YEOUIDO-01',
+              name: 'Yeouido Core Office Tower',
+              assetClass: 'OFFICE',
               energySnapshot: {
                 id: 'energy_1',
-                utilityName: 'KEPCO',
-                tariffKrwPerKwh: 158,
+                utilityName: 'KEPCO Seoul',
+                tariffKrwPerKwh: 132,
                 reviewStatus: ReviewStatus.PENDING,
                 reviewNotes: null,
                 reviewedAt: null,
@@ -125,11 +126,12 @@ test('listPendingAssetReviewSummaries returns pending data-center evidence group
               leases: [
                 {
                   id: 'lease_1',
-                  tenantName: 'Anchor Cloud',
-                  leasedKw: 12000,
-                  baseRatePerKwKrw: 215000,
-                  termYears: 10,
-                  status: 'SIGNED',
+                  tenantName: 'Domestic Securities House',
+                  leasedKw: 0,
+                  baseRatePerKwKrw: 0,
+                  termYears: 5,
+                  status: 'ACTIVE',
+                  notes: 'Anchor office tenant',
                   reviewStatus: ReviewStatus.PENDING,
                   reviewNotes: null,
                   reviewedAt: null,
@@ -145,8 +147,10 @@ test('listPendingAssetReviewSummaries returns pending data-center evidence group
   );
 
   assert.equal(summaries.length, 1);
+  assert.equal(summaries[0]?.assetClassLabel, 'Office');
   assert.equal(summaries[0]?.pendingEvidenceCount, 2);
   assert.equal(summaries[0]?.disciplines.find((item) => item.key === 'power_permit')?.pendingCount, 1);
+  assert.ok(summaries[0]?.disciplines.find((item) => item.key === 'power_permit')?.label.includes('Building'));
   assert.equal(summaries[0]?.disciplines.find((item) => item.key === 'lease_revenue')?.pendingCount, 1);
 });
 

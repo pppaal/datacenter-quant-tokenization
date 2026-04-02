@@ -1,6 +1,6 @@
 # Blockchain Integration
 
-This repository is already structured for a registry-only blockchain layer.
+This repository is already structured for a registry-only blockchain layer across Korean real-estate asset classes.
 
 ## What Goes Onchain
 
@@ -13,7 +13,7 @@ Valuation runs, documents, extracted text, and underwriting logic remain offchai
 
 ## Files Added For The Integration
 
-- `packages/contracts/src/DataCenterAssetRegistry.sol`
+- `packages/contracts/src/DataCenterAssetRegistry.sol` (current registry contract name; application flow is asset-class-agnostic and remains registry-only)
 - `apps/web/lib/blockchain/*`
 - `apps/web/app/api/registry/assets/[id]/*`
 - `apps/web/lib/services/registry.ts`

@@ -6,6 +6,7 @@ import { convertFromKrw, formatCurrencyFromKrwAtRate, resolveDisplayCurrency } f
 import { AssetIntakeForm } from '@/components/admin/asset-intake-form';
 import { CapexBookForm } from '@/components/admin/capex-book-form';
 import { ComparableBookForm } from '@/components/admin/comparable-book-form';
+import { ResearchDossierPanel } from '@/components/admin/research-dossier-panel';
 import { DebtBookForm } from '@/components/admin/debt-book-form';
 import { DocumentUploadForm } from '@/components/admin/document-upload-form';
 import { FeatureSnapshotPanel } from '@/components/admin/feature-snapshot-panel';
@@ -33,9 +34,11 @@ import { ValuationQualityPanel } from '@/components/valuation/valuation-quality-
 import { ValuationRunBadges } from '@/components/valuation/valuation-run-badges';
 import { ValuationSignals } from '@/components/valuation/valuation-signals';
 import { shortenHash } from '@/lib/blockchain/registry';
+import { getAssetClassPlaybook } from '@/lib/asset-class/playbook';
 import { getAssetById } from '@/lib/services/assets';
 import { getFxRateMap } from '@/lib/services/fx';
 import { buildRealizedOutcomeComparison } from '@/lib/services/realized-outcomes';
+import { buildAssetResearchDossier } from '@/lib/services/research/dossier';
 import { buildAssetEvidenceReviewSummary, extractReviewPacketSummary, getLatestReviewPacketRecord } from '@/lib/services/review';
 import { formatDate, formatNumber, formatPercent } from '@/lib/utils';
 import { buildFeatureAssumptionMappings } from '@/lib/valuation/feature-assumption-mapping';
@@ -94,11 +97,13 @@ export default async function AssetDetailPage({
     ? buildFeatureAssumptionMappings(usedFeatureSnapshots, latestRun.assumptions, provenance)
     : [];
   const isDataCenter = asset.assetClass === AssetClass.DATA_CENTER;
+  const playbook = getAssetClassPlaybook(asset.assetClass);
   const latestDocument = asset.documents[0];
   const latestReviewPacketRecord = getLatestReviewPacketRecord(asset.readinessProject?.onchainRecords);
   const latestReviewPacket = extractReviewPacketSummary(latestReviewPacketRecord);
   const latestOnchainRecord = asset.readinessProject?.onchainRecords.find((record) => Boolean(record.txHash)) ?? null;
   const reviewSummary = buildAssetEvidenceReviewSummary(asset as Parameters<typeof buildAssetEvidenceReviewSummary>[0]);
+  const researchDossier = buildAssetResearchDossier(asset);
   const displayCurrency = resolveDisplayCurrency(asset.address?.country ?? asset.market);
   const fxRateToKrw = (await getFxRateMap([displayCurrency]))[displayCurrency];
   const realizedOutcomeComparison = latestRun
@@ -149,7 +154,7 @@ export default async function AssetDetailPage({
             {[
               ['Location', asset.address?.city ?? 'N/A'],
               [
-                isDataCenter ? 'Power' : 'Rentable Area',
+                playbook.sizeLabel,
                 isDataCenter
                   ? `${formatNumber(asset.powerCapacityMw)} MW`
                   : `${formatNumber(asset.rentableAreaSqm ?? asset.grossFloorAreaSqm)} sqm`
@@ -188,7 +193,7 @@ export default async function AssetDetailPage({
 
           {latestRun ? (
             <Link href={`/admin/valuations/${latestRun.id}`}>
-              <Button className="w-full">Open Valuation &amp; IC View</Button>
+              <Button className="w-full">Open Valuation And Committee View</Button>
             </Link>
           ) : null}
 
@@ -249,7 +254,7 @@ export default async function AssetDetailPage({
 
         <div className="grid gap-6">
           <Card>
-            <div className="eyebrow">Committee Snapshot</div>
+            <div className="eyebrow">Research Snapshot</div>
             <div className="mt-4 grid gap-4 text-sm text-slate-300">
               <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
                 <div className="text-slate-500">{isDataCenter ? 'Grid / Fiber' : 'Site / Access'}</div>
@@ -266,7 +271,9 @@ export default async function AssetDetailPage({
                 <div className="mt-2">
                   {isDataCenter
                     ? `Cap rate ${formatPercent(asset.marketSnapshot?.capRatePct)} / Colocation ${formatCurrencyFromKrwAtRate(asset.marketSnapshot?.colocationRatePerKwKrw, displayCurrency, fxRateToKrw)}`
-                    : `Cap rate ${formatPercent(asset.marketSnapshot?.capRatePct)} / Vacancy ${formatPercent(asset.marketSnapshot?.vacancyPct)}`}
+                    : asset.assetClass === AssetClass.OFFICE
+                      ? `Cap rate ${formatPercent(asset.marketSnapshot?.capRatePct)} / Vacancy ${formatPercent(asset.marketSnapshot?.vacancyPct)} / Market rent ${formatNumber(asset.rentComps[0]?.monthlyRentPerSqmKrw)} KRW/sqm/mo`
+                      : `Cap rate ${formatPercent(asset.marketSnapshot?.capRatePct)} / Vacancy ${formatPercent(asset.marketSnapshot?.vacancyPct)}`}
                 </div>
                 <div className="mt-1 text-slate-400">{asset.marketSnapshot?.marketNotes}</div>
               </div>
@@ -296,6 +303,8 @@ export default async function AssetDetailPage({
         emptyMessage="No approved feature snapshots yet. Approve normalized evidence or run enrichment before relying on this asset in committee materials."
       />
 
+      <ResearchDossierPanel dossier={researchDossier} />
+
       <ReviewQueuePanel
         summaries={[reviewSummary]}
         title="Asset Evidence Review"
@@ -313,11 +322,11 @@ export default async function AssetDetailPage({
 
       <Card>
         <div>
-          <div className="eyebrow">Micro Data Capture</div>
-          <h3 className="mt-2 text-2xl font-semibold text-white">Power, permit, and legal certainty</h3>
+          <div className="eyebrow">Micro Research Capture</div>
+          <h3 className="mt-2 text-2xl font-semibold text-white">{playbook.intakeHeading}</h3>
           <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400">
-            Use this panel to capture utility, permit, and title blockers that change downside risk and execution
-            certainty.
+            Use this panel to capture normalized evidence that changes downside, execution certainty, and approved
+            feature coverage for this asset class.
           </p>
         </div>
         <div className="mt-5">
@@ -327,13 +336,13 @@ export default async function AssetDetailPage({
             reviewStatuses={[
               asset.energySnapshot
                 ? {
-                    label: 'Energy',
+                    label: 'Energy / Building Services',
                     status: asset.energySnapshot.reviewStatus
                   }
                 : null,
               asset.permitSnapshot
                 ? {
-                    label: 'Permit',
+                    label: 'Permit / Entitlement',
                     status: asset.permitSnapshot.reviewStatus
                   }
                 : null,
@@ -388,10 +397,16 @@ export default async function AssetDetailPage({
       <Card>
         <div>
           <div className="eyebrow">Lease Book</div>
-          <h3 className="mt-2 text-2xl font-semibold text-white">Contracted demand and lease stack</h3>
+          <h3 className="mt-2 text-2xl font-semibold text-white">
+            {asset.assetClass === AssetClass.OFFICE
+              ? 'Occupancy, rollover, and rent schedule'
+              : asset.assetClass === AssetClass.INDUSTRIAL
+                ? 'Tenant durability and lease stack'
+                : 'Contracted demand and lease stack'}
+          </h3>
           <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400">
-            Capture each signed, active, or pipeline tranche separately. The valuation engine uses these rows directly
-            before falling back to synthetic residual lease-up assumptions.
+            Capture signed, active, or pipeline lease evidence here. The valuation engine uses approved lease and
+            revenue context first, then falls back to residual assumptions where coverage is still thin.
           </p>
         </div>
         <div className="mt-5">

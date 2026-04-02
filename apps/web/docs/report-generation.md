@@ -1,6 +1,6 @@
 # Report Generation
 
-This repo includes a document/report layer for small private distressed real estate processes. It reuses existing asset, valuation, document, and traceability data and does not add a new deal pipeline workflow.
+This repo includes an operator-facing report layer for institutional Korean real-estate underwriting. It reuses existing asset, valuation, document, and traceability data and does not add a parallel reporting system.
 
 ## Outputs
 
@@ -16,6 +16,12 @@ This repo includes a document/report layer for small private distressed real est
 - `Risk Memo`
   - Audience: operator
   - Uses key risks, approved evidence coverage, pending blockers, mitigants, and document support
+
+The report layer is now asset-class-aware through the asset playbook abstraction:
+
+- `DATA_CENTER` remains a full vertical pack
+- `OFFICE` is the first full non-data-center pack
+- `INDUSTRIAL / LOGISTICS` is scaffolded on the same report and diligence framework
 
 ## How To Generate
 

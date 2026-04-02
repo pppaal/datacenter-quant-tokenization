@@ -34,20 +34,25 @@ export default function ProductOverviewPage() {
         <div className="surface hero-mesh">
           <div className="flex flex-wrap items-center gap-3">
             <Badge tone="good">Product Overview</Badge>
-            <Badge>Multi-Asset Underwriting + IM</Badge>
+            <Badge>Korea Real Estate Underwriting & Research OS</Badge>
           </div>
           <h1 className="mt-5 max-w-5xl text-5xl font-semibold leading-[0.95] tracking-[-0.05em] text-white md:text-6xl">
-            Underwrite real estate assets
+            Underwrite Korean real estate
             <br />
-            and generate the IM automatically.
+            through one research, valuation, and IC workflow.
           </h1>
           <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-300">
-            Nexus Seoul is an AI underwriting platform for real estate teams. Input an asset, enrich the record,
-            run scenario analysis, and produce an investment memo from the same application.
+            Nexus Seoul is an underwriting and research operating system for Korean real estate teams. Input an
+            asset, enrich the record, review evidence, run scenario analysis, and produce committee outputs from the
+            same application.
           </p>
           <p className="mt-4 max-w-3xl text-base leading-7 text-slate-400">
-            The platform now supports multiple asset classes in one workflow, instead of a single sector-specific
-            product surface.
+            DATA_CENTER remains a vertical pack, OFFICE is now the first full non-data-center pack, and
+            INDUSTRIAL / LOGISTICS is scaffolded on the same review-gated workflow.
+          </p>
+          <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-500">
+            The blockchain layer remains registry-only: document hashes, registry ids, and packet metadata can be
+            anchored, while underwriting logic and evidence stay offchain.
           </p>
         </div>
       </section>

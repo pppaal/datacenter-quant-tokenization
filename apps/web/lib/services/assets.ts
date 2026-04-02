@@ -107,6 +107,18 @@ export const assetBundleInclude = {
     },
     take: 3
   },
+  pipelineProjects: {
+    orderBy: {
+      expectedDeliveryDate: 'asc' as const
+    },
+    take: 6
+  },
+  geoFeatures: {
+    orderBy: {
+      updatedAt: 'desc' as const
+    },
+    take: 12
+  },
   comparableSet: {
     include: {
       entries: {

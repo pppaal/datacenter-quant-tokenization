@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
-import { AssetClass, ReviewStatus, type PrismaClient } from '@prisma/client';
+import { ReviewStatus, type PrismaClient } from '@prisma/client';
+import { getAssetClassPlaybook } from '@/lib/asset-class/playbook';
 import { prisma } from '@/lib/db/prisma';
 import { promoteAssetSnapshotsToFeatures } from '@/lib/services/feature-promotion';
 
@@ -34,6 +35,7 @@ export type AssetEvidenceReviewSummary = {
   assetId: string;
   assetCode: string;
   assetName: string;
+  assetClassLabel: string;
   totals: {
     approved: number;
     pending: number;
@@ -67,6 +69,7 @@ type ReviewableAsset = {
   id: string;
   assetCode: string;
   name: string;
+  assetClass?: any;
   energySnapshot?: any | null;
   permitSnapshot?: any | null;
   ownershipRecords?: any[];
@@ -99,12 +102,6 @@ type ReviewableAsset = {
   } | null;
 };
 
-const disciplineLabels: Record<ReviewDiscipline, string> = {
-  power_permit: 'Power / Permit',
-  legal_title: 'Legal / Title',
-  lease_revenue: 'Lease / Revenue'
-};
-
 function createReviewItem(asset: ReviewableAsset, item: Omit<ReviewQueueItem, 'assetId' | 'assetCode' | 'assetName'>) {
   return {
     assetId: asset.id,
@@ -130,6 +127,12 @@ function sortReviewItems(items: ReviewQueueItem[]) {
 }
 
 export function buildAssetEvidenceReviewSummary(asset: ReviewableAsset): AssetEvidenceReviewSummary {
+  const playbook = getAssetClassPlaybook(asset.assetClass);
+  const disciplineLabels: Record<ReviewDiscipline, string> = {
+    power_permit: playbook.checklistLabels.technical,
+    legal_title: playbook.checklistLabels.legal,
+    lease_revenue: playbook.checklistLabels.commercial
+  };
   const items: ReviewQueueItem[] = [];
 
   if (asset.energySnapshot) {
@@ -252,20 +255,30 @@ export function buildAssetEvidenceReviewSummary(asset: ReviewableAsset): AssetEv
   }
 
   for (const record of asset.leases ?? []) {
+    const leaseDetail =
+      asset.assetClass === 'DATA_CENTER'
+        ? [
+            record.status,
+            record.leasedKw != null ? `${record.leasedKw} kW` : null,
+            record.baseRatePerKwKrw != null ? `${record.baseRatePerKwKrw} KRW/kW` : null,
+            record.termYears != null ? `${record.termYears} year term` : null
+          ]
+            .filter(Boolean)
+            .join(' / ')
+        : [
+            record.status,
+            record.termYears != null ? `${record.termYears} year term` : null,
+            record.notes ?? null
+          ]
+            .filter(Boolean)
+            .join(' / ');
     items.push(
       createReviewItem(asset, {
         recordType: 'lease',
         recordId: record.id,
         discipline: 'lease_revenue',
         title: record.tenantName || 'Lease',
-        detail: [
-          record.status,
-          record.leasedKw != null ? `${record.leasedKw} kW` : null,
-          record.baseRatePerKwKrw != null ? `${record.baseRatePerKwKrw} KRW/kW` : null,
-          record.termYears != null ? `${record.termYears} year term` : null
-        ]
-          .filter(Boolean)
-          .join(' / ') || 'Revenue and tenant evidence',
+        detail: leaseDetail || 'Lease and revenue evidence',
         reviewStatus: record.reviewStatus,
         reviewNotes: record.reviewNotes ?? null,
         reviewedAt: record.reviewedAt ?? null,
@@ -298,6 +311,7 @@ export function buildAssetEvidenceReviewSummary(asset: ReviewableAsset): AssetEv
     assetId: asset.id,
     assetCode: asset.assetCode,
     assetName: asset.name,
+    assetClassLabel: playbook.label,
     totals: {
       approved: items.filter((item) => item.reviewStatus === ReviewStatus.APPROVED).length,
       pending: items.filter((item) => item.reviewStatus === ReviewStatus.PENDING).length,
@@ -314,7 +328,6 @@ export function buildAssetEvidenceReviewSummary(asset: ReviewableAsset): AssetEv
 export async function listPendingAssetReviewSummaries(db: PrismaClient = prisma) {
   const assets = await db.asset.findMany({
     where: {
-      assetClass: AssetClass.DATA_CENTER,
       OR: [
         { energySnapshot: { is: { reviewStatus: ReviewStatus.PENDING } } },
         { permitSnapshot: { is: { reviewStatus: ReviewStatus.PENDING } } },

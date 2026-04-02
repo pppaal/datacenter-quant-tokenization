@@ -1,10 +1,10 @@
-# Korea Data Center RWA Underwriting Platform
+# Korea Real Estate Underwriting & Research OS
 
 `apps/web` is the only active product root.
 
 The legacy root Next.js app and the `/web` demo were archived under [`legacy/`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/legacy). New product code should only be built inside [`apps/web`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web).
 
-This platform is an institutional asset-review product for Korean data center opportunities. It supports intake, source enrichment, valuation, diligence workflows, document management, and a future registry-only RWA layer. It is not a retail token-sale app and it does not provide personalized investment advice.
+This platform is an institutional underwriting and research operating system for Korean real estate opportunities. It supports intake, source enrichment, evidence review, valuation, diligence workflows, document management, and a registry-only blockchain layer. It is not a retail token-sale app and it does not provide personalized investment advice.
 
 ## Product Surface
 
@@ -41,7 +41,7 @@ npm run dev
 - `npm run test` runs the required unit tests in `apps/web`
 - `npm run prisma:generate` generates the Prisma client for `apps/web`
 - `npm run prisma:migrate` runs Prisma migrations inside `apps/web`
-- `npm run prisma:seed` loads the three sample Korean opportunities
+- `npm run prisma:seed` loads seeded Korean data-center and office demo opportunities
 
 ## Environment
 
@@ -68,7 +68,7 @@ Valuation variable reference:
 
 ## Review-Gated Underwriting Flow
 
-The underwriting workflow now follows the repo roadmap literally for `DATA_CENTER` assets:
+The underwriting workflow now follows the repo roadmap literally across asset classes:
 
 1. source and raw record layer
 2. normalized asset record layer
@@ -82,6 +82,13 @@ In practice:
 - only `APPROVED` energy, permit, ownership, encumbrance, planning, and lease rows are promoted into curated feature snapshots
 - valuation, DD checklist, risk memo, and readiness packaging prefer approved promoted features first and only fall back to raw normalized rows when approved curated features are missing
 - readiness staging now creates a deterministic offchain review packet manifest / fingerprint while anchoring only registry metadata and document hashes onchain
+
+The current product stance is:
+
+- `DATA_CENTER` remains a full vertical pack
+- `OFFICE` is now the first full non-data-center underwriting pack
+- `INDUSTRIAL / LOGISTICS` is scaffolded for the next pass
+- other real-estate asset classes continue to share the same review-gated research, valuation, report, and readiness workflow
 
 ## Deliverables In Repo
 

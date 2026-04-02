@@ -1,6 +1,12 @@
 # apps/web
 
-Active product root for the Korea-focused data center RWA underwriting platform.
+Active product root for the Korea real estate underwriting and research OS.
+
+Current positioning:
+
+- `DATA_CENTER` remains a full vertical pack
+- `OFFICE` is the first full non-data-center underwriting pack
+- `INDUSTRIAL / LOGISTICS` is scaffolded on the same review-gated workflow
 
 Use the repository root [`README.md`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/README.md) for setup and command entrypoints. This app contains the App Router UI, Prisma schema, source adapters, valuation engine, and tests.
 

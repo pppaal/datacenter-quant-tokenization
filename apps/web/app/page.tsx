@@ -94,23 +94,28 @@ export default async function LandingPage() {
             <div className="floating-orb absolute right-10 top-10 hidden h-28 w-28 rounded-full bg-accent/10 blur-2xl lg:block" />
             <div className="relative space-y-8">
               <div className="flex flex-wrap items-center gap-3">
-                <Badge tone="good">AI Real Estate Underwriting</Badge>
-                <Badge>Scenario Analysis + IM Generator</Badge>
+                <Badge tone="good">Korea Real Estate Underwriting & Research OS</Badge>
+                <Badge>Review-Gated Research + Valuation + IC Output</Badge>
               </div>
 
               <div className="space-y-5">
                 <h1 className="max-w-5xl text-5xl font-semibold leading-[0.95] tracking-[-0.05em] text-white md:text-7xl">
-                  Underwrite real estate assets
+                  Underwrite Korean real estate
                   <br />
-                  and generate the IM automatically.
+                  with one research and committee workflow.
                 </h1>
                 <p className="max-w-3xl text-lg leading-8 text-slate-300">
-                  Analyze profitability, downside, and scenario sensitivity across multiple real estate asset classes,
-                  then produce an investment memo from the same operating workflow.
+                  Analyze market thesis, approved evidence, downside, and scenario sensitivity across Korean real
+                  estate asset classes, then produce committee-ready outputs from the same operating workflow.
                 </p>
                 <p className="max-w-3xl text-base leading-7 text-slate-400">
-                  Nexus Seoul is now positioned as a multi-asset underwriting platform rather than a single-sector
-                  tool. The same Next.js stack handles intake, enrichment, valuation, documents, and memo generation.
+                  DATA_CENTER remains one vertical pack, OFFICE is now the first full non-data-center pack, and the
+                  same platform also scaffolds industrial and other real-estate workflows without changing the
+                  registry-only design.
+                </p>
+                <p className="max-w-3xl text-sm leading-7 text-slate-500">
+                  Files, diligence logic, valuation outputs, and workflows remain offchain. Only registry identifiers,
+                  document hashes, and packet metadata are anchorable onchain.
                 </p>
               </div>
 
@@ -198,7 +203,7 @@ export default async function LandingPage() {
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div>
             <div className="eyebrow">Asset Pipeline</div>
-            <h2 className="section-title mt-3">Current underwriting cases</h2>
+            <h2 className="section-title mt-3">Current underwriting and research cases</h2>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-400">
               Each asset below runs through the same workflow: intake, enrichment, scenario analysis, risk review,
               and memo generation.

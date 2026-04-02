@@ -1,10 +1,10 @@
 import Link from 'next/link';
 import { ReviewStatus } from '@prisma/client';
+import { ReviewActionForm } from '@/components/admin/review-action-form';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { formatDate } from '@/lib/utils';
 import type { AssetEvidenceReviewSummary } from '@/lib/services/review';
-import { ReviewActionForm } from '@/components/admin/review-action-form';
+import { formatDate } from '@/lib/utils';
 
 function toneForStatus(status: ReviewStatus) {
   switch (status) {
@@ -37,8 +37,8 @@ export function ReviewQueuePanel({
             Approve normalized evidence before it enters the approved feature layer
           </h3>
           <p className="mt-2 max-w-3xl text-sm leading-7 text-slate-400">
-            Review power, permit, legal, and lease rows before valuation, IC material, and readiness packaging rely on
-            them.
+            Review normalized site, legal, lease, and asset-level evidence before valuation, IC material, and
+            readiness packaging rely on it.
           </p>
         </div>
         <Badge>{pendingCount} pending</Badge>
@@ -56,6 +56,9 @@ export function ReviewQueuePanel({
                 <div>
                   <div className="eyebrow">{summary.assetCode}</div>
                   <h4 className="mt-2 text-xl font-semibold text-white">{summary.assetName}</h4>
+                  <div className="mt-2">
+                    <Badge>{summary.assetClassLabel}</Badge>
+                  </div>
                   <p className="mt-2 text-sm text-slate-400">
                     {summary.totals.approved} approved · {summary.totals.pending} pending · {summary.totals.rejected}{' '}
                     rejected

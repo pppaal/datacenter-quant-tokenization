@@ -216,9 +216,9 @@ export function MicroDataForm({
 
       <div className="flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-4">
         <p className="max-w-2xl text-sm text-slate-400">
-          This panel captures the non-lease micro layer for power, permit, and title/legal cleanliness without
-          changing the broader intake form. Monetary inputs are entered in {inputCurrency} and normalized to KRW
-          internally. Editing any row sends it back to the review queue.
+          This panel captures the non-lease micro layer for site, entitlement, building-services, and legal
+          cleanliness without changing the broader intake form. Monetary inputs are entered in {inputCurrency} and
+          normalized to KRW internally. Editing any row sends it back to the review queue.
         </p>
         <div className="flex items-center gap-3">
           {errorMessage ? <span className="text-sm text-rose-300">{errorMessage}</span> : null}

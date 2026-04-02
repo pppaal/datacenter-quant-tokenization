@@ -218,6 +218,118 @@ function makeAssetStub() {
   };
 }
 
+function makeOfficeAssetStub() {
+  const now = new Date('2026-03-26T00:00:00.000Z');
+  return {
+    id: 'office-1',
+    assetCode: 'SEOUL-YEOUIDO-01',
+    slug: 'seoul-yeouido-01-core-office-tower',
+    name: 'Yeouido Core Office Tower',
+    assetClass: AssetClass.OFFICE,
+    market: 'KR',
+    status: 'UNDER_REVIEW',
+    stage: 'STABILIZED',
+    description: 'Prime Seoul office underwriting case.',
+    ownerName: 'Han River Office Holdings',
+    sponsorName: 'Nexus Seoul Capital',
+    developmentSummary: 'Stabilized office tower with moderate rollover and refinance focus.',
+    powerCapacityMw: null,
+    grossFloorAreaSqm: 34100,
+    rentableAreaSqm: 28500,
+    updatedAt: now,
+    address: { city: 'Seoul', province: 'Seoul', country: 'KR' },
+    siteProfile: {},
+    permitSnapshot: {
+      powerApprovalStatus: 'N/A',
+      reviewStatus: 'APPROVED',
+      id: 'permit-office',
+      reviewNotes: null,
+      reviewedAt: now,
+      reviewedById: 'user-1',
+      sourceStatus: 'MANUAL',
+      sourceUpdatedAt: now,
+      updatedAt: now
+    },
+    energySnapshot: {
+      tariffKrwPerKwh: 132,
+      pueTarget: null,
+      reviewStatus: 'APPROVED',
+      id: 'energy-office',
+      reviewNotes: null,
+      reviewedAt: now,
+      reviewedById: 'user-1',
+      sourceStatus: 'MANUAL',
+      sourceUpdatedAt: now,
+      updatedAt: now
+    },
+    capexLineItems: [{ id: 'cap-1' }],
+    leases: [{ id: 'lease-1', reviewStatus: 'APPROVED', reviewNotes: null, reviewedAt: now, reviewedById: 'user-1', updatedAt: now, tenantName: 'Anchor Tenant', status: 'ACTIVE', termYears: 5, notes: 'WALE support' }],
+    debtFacilities: [{ id: 'debt-1' }],
+    ownershipRecords: [{ id: 'own-1', reviewStatus: 'APPROVED', updatedAt: now, ownerName: 'Han River Office Holdings', entityType: 'SPV', ownershipPct: 100, reviewNotes: null, reviewedAt: now, reviewedById: 'user-1', sourceStatus: 'MANUAL', sourceUpdatedAt: now }],
+    encumbranceRecords: [],
+    planningConstraints: [],
+    featureSnapshots: [],
+    comparableSet: { entries: [{ id: 'comp-1' }, { id: 'comp-2' }, { id: 'comp-3' }] },
+    officeDetail: {
+      stabilizedRentPerSqmMonthKrw: 38500,
+      weightedAverageLeaseTermYears: 4.4,
+      tenantImprovementReserveKrw: 1200000000,
+      leasingCommissionReserveKrw: 420000000
+    },
+    documents: [
+      {
+        id: 'doc-1',
+        title: 'Office Rent Roll',
+        documentType: 'LEASE',
+        currentVersion: 1,
+        sourceLink: null,
+        aiSummary: 'WALE and rollover support.',
+        documentHash: 'officehash123456',
+        latestStoragePath: '/docs/office-rent-roll.pdf',
+        updatedAt: now,
+        versions: [
+          {
+            versionNumber: 1,
+            sourceLink: null,
+            aiSummary: 'WALE and rollover support.',
+            documentHash: 'officehash123456',
+            storagePath: '/docs/office-rent-roll.pdf'
+          }
+        ]
+      }
+    ],
+    valuations: [
+      {
+        id: 'run-office-1',
+        runLabel: 'Seeded office underwriting case',
+        createdAt: now,
+        updatedAt: now,
+        engineVersion: 'kr-office-v1',
+        confidenceScore: 72,
+        baseCaseValueKrw: 318000000000,
+        underwritingMemo: 'Office underwriting case built from approved leasing and legal evidence.',
+        keyRisks: ['Near-term rollover requires leasing execution.'],
+        ddChecklist: ['Refresh office rent comp set.'],
+        assumptions: {},
+        provenance: [],
+        scenarios: [
+          { name: 'Bull', valuationKrw: 340000000000, impliedYieldPct: 5, exitCapRatePct: 4.6, debtServiceCoverage: 1.32 },
+          { name: 'Base', valuationKrw: 318000000000, impliedYieldPct: 4.8, exitCapRatePct: 4.9, debtServiceCoverage: 1.23 },
+          { name: 'Bear', valuationKrw: 286000000000, impliedYieldPct: 4.4, exitCapRatePct: 5.3, debtServiceCoverage: 1.1 }
+        ]
+      }
+    ],
+    marketSnapshot: {
+      capRatePct: 4.8,
+      debtCostPct: 4.7,
+      discountRatePct: 7.4,
+      vacancyPct: 6.2,
+      marketNotes: 'Prime Seoul office market remains disciplined.'
+    },
+    readinessProject: { onchainRecords: [] }
+  };
+}
+
 test('report bundle and markdown export reuse valuation and document traceability data', async () => {
   const bundle = await buildReportBundleFromAsset(makeAssetStub() as never, {
     fxRateToKrw: 1,
@@ -280,4 +392,16 @@ test('report packet bundle groups outputs by audience and serializes markdown', 
   );
   assert.match(markdown, /# IC Packet/);
   assert.match(markdown, /## Coverage And Gating Items/);
+});
+
+test('office report bundle uses office-native sizing and checklist copy', async () => {
+  const bundle = await buildReportBundleFromAsset(makeOfficeAssetStub() as never, {
+    fxRateToKrw: 1,
+    generatedAt: new Date('2026-03-26T00:00:00.000Z')
+  });
+  const ddReport = buildDealReport(bundle, 'dd-checklist');
+
+  assert.equal(bundle.assetClassLabel, 'Office');
+  assert.equal(bundle.sizeLabel, 'Rentable Area');
+  assert.ok(ddReport.sections.some((section) => section.title === 'Leasing, Rollover, And Market'));
 });

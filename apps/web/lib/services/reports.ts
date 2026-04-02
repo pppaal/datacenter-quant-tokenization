@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import { AssetClass, type ReadinessStatus } from '@prisma/client';
+import { getAssetClassPlaybook } from '@/lib/asset-class/playbook';
 import { formatCurrencyFromKrwAtRate, resolveDisplayCurrency, type SupportedCurrency } from '@/lib/finance/currency';
 import { getAssetById } from '@/lib/services/assets';
 import { getFxRateMap } from '@/lib/services/fx';
@@ -201,7 +202,7 @@ const reportTemplateMeta: Record<ReportKind, ReportTemplateMeta> = {
     title: 'One-Page Teaser',
     shortLabel: 'Teaser',
     audience: 'investor',
-    description: 'A one-page external summary for a small private distressed real estate process.',
+    description: 'A one-page external summary for an institutional real estate underwriting process.',
     status: 'production-ready',
     notes: 'Ready for operator-led outreach and PDF export; narrative stays deterministic and data-backed.'
   },
@@ -210,7 +211,7 @@ const reportTemplateMeta: Record<ReportKind, ReportTemplateMeta> = {
     title: 'IC Memo',
     shortLabel: 'IC Memo',
     audience: 'operator',
-    description: 'Internal investment committee package using the current valuation and diligence set.',
+    description: 'Internal investment committee package using the current valuation, research, and diligence set.',
     status: 'production-ready',
     notes: 'Ready as an internal draft memo; final committee sign-off should still include human edits.'
   },
@@ -774,12 +775,13 @@ function buildIcMemoSections(bundle: DealReportBundle): ReportSection[] {
 }
 
 function buildDdChecklistSections(bundle: DealReportBundle): ReportSection[] {
+  const playbook = getAssetClassPlaybook(bundle.assetClass);
   const docsByDiscipline = {
     legal: bundle.documents.filter((document) => inferDocumentTopic(document) === 'legal').length,
     technical: bundle.documents.filter((document) => inferDocumentTopic(document) === 'technical').length
   };
   const yearOne = bundle.proForma?.years[0];
-  const powerPermitReview = bundle.reviewSummary.disciplines.find((discipline) => discipline.key === 'power_permit');
+  const technicalReview = bundle.reviewSummary.disciplines.find((discipline) => discipline.key === 'power_permit');
   const legalReview = bundle.reviewSummary.disciplines.find((discipline) => discipline.key === 'legal_title');
   const leaseReview = bundle.reviewSummary.disciplines.find((discipline) => discipline.key === 'lease_revenue');
 
@@ -787,7 +789,7 @@ function buildDdChecklistSections(bundle: DealReportBundle): ReportSection[] {
     {
       id: 'commercial',
       kicker: 'Commercial',
-      title: 'Revenue And Market',
+      title: playbook.checklistLabels.commercial,
       checklist: [
         {
           label: 'Approved lease evidence',
@@ -795,8 +797,10 @@ function buildDdChecklistSections(bundle: DealReportBundle): ReportSection[] {
             (leaseReview?.approvedCount ?? 0) > 0
               ? `${leaseReview?.approvedCount ?? 0} approved lease row(s) are valuation-ready${(leaseReview?.pendingCount ?? 0) > 0 ? `, with ${leaseReview?.pendingCount} pending review` : ''}.`
               : (leaseReview?.pendingCount ?? 0) > 0
-                ? `${leaseReview?.pendingCount ?? 0} lease row(s) are pending review; revenue still falls back to raw snapshots.`
-                : 'No approved lease rows are loaded; the current DCF still leans on residual lease-up.',
+                ? `${leaseReview?.pendingCount ?? 0} lease row(s) are pending review; the revenue view still falls back to unapproved evidence or model assumptions.`
+                : bundle.assetClass === AssetClass.OFFICE
+                  ? 'No approved office lease evidence is loaded; the current underwriting still leans on stabilized occupancy, market rent, and rollover assumptions.'
+                  : 'No approved lease rows are loaded; the current underwriting still leans on residual lease-up assumptions.',
           status: buildChecklistStatus({
             ready: (leaseReview?.approvedCount ?? 0) > 0,
             partial: (leaseReview?.pendingCount ?? 0) > 0
@@ -828,7 +832,7 @@ function buildDdChecklistSections(bundle: DealReportBundle): ReportSection[] {
           detail:
             (leaseReview?.pendingCount ?? 0) > 0
               ? bundle.reviewSummary.pendingBlockers
-                  .filter((blocker) => blocker.startsWith('Lease / Revenue'))
+                  .filter((blocker) => blocker.startsWith(playbook.checklistLabels.commercial))
                   .slice(0, 2)
                   .join(' / ')
               : 'No commercial evidence is currently waiting on approval.',
@@ -843,14 +847,14 @@ function buildDdChecklistSections(bundle: DealReportBundle): ReportSection[] {
     {
       id: 'technical',
       kicker: 'Technical',
-      title: 'Power, Permit, And Site',
+      title: playbook.checklistLabels.technical,
       checklist: [
         {
           label: 'Technical documents in room',
           detail:
             docsByDiscipline.technical > 0
               ? `${docsByDiscipline.technical} technical / permit document(s) are in the current schedule.`
-              : 'No permit, engineering, or power document is visible in the current schedule.',
+              : 'No site, permit, building, or engineering document is visible in the current schedule.',
           status: buildChecklistStatus({
             ready: docsByDiscipline.technical >= 2,
             partial: docsByDiscipline.technical > 0
@@ -858,10 +862,10 @@ function buildDdChecklistSections(bundle: DealReportBundle): ReportSection[] {
           sources: pickSupportingDocuments(bundle.documents, 'permit power utility engineering')
         },
         {
-          label: 'Power micro coverage',
+          label: 'Approved technical evidence',
           detail:
             bundle.valuationQuality?.coverage.find((item) => item.key === 'power')?.detail ??
-            'Power micro coverage has not been evaluated.',
+            'Approved technical evidence has not been evaluated.',
           status: buildChecklistStatus({
             ready: bundle.valuationQuality?.coverage.find((item) => item.key === 'power')?.status === 'good'
           }),
@@ -880,15 +884,15 @@ function buildDdChecklistSections(bundle: DealReportBundle): ReportSection[] {
         {
           label: 'Pending technical blockers',
           detail:
-            (powerPermitReview?.pendingCount ?? 0) > 0
+            (technicalReview?.pendingCount ?? 0) > 0
               ? bundle.reviewSummary.pendingBlockers
-                  .filter((blocker) => blocker.startsWith('Power / Permit'))
+                  .filter((blocker) => blocker.startsWith(playbook.checklistLabels.technical))
                   .slice(0, 2)
                   .join(' / ')
-              : 'No pending power or permit records are blocking the review packet.',
+              : 'No pending technical records are blocking the review packet.',
           status: buildChecklistStatus({
-            ready: (powerPermitReview?.pendingCount ?? 0) === 0,
-            partial: (powerPermitReview?.approvedCount ?? 0) > 0
+            ready: (technicalReview?.pendingCount ?? 0) === 0,
+            partial: (technicalReview?.approvedCount ?? 0) > 0
           }),
           sources: pickSupportingDocuments(bundle.documents, 'permit power pending diligence')
         }
@@ -897,7 +901,7 @@ function buildDdChecklistSections(bundle: DealReportBundle): ReportSection[] {
     {
       id: 'legal',
       kicker: 'Legal',
-      title: 'Title, Encumbrance, And Planning',
+      title: playbook.checklistLabels.legal,
       checklist: [
         {
           label: 'Legal document support',
@@ -936,7 +940,7 @@ function buildDdChecklistSections(bundle: DealReportBundle): ReportSection[] {
           detail:
             (legalReview?.pendingCount ?? 0) > 0
               ? bundle.reviewSummary.pendingBlockers
-                  .filter((blocker) => blocker.startsWith('Legal / Title'))
+                  .filter((blocker) => blocker.startsWith(playbook.checklistLabels.legal))
                   .slice(0, 2)
                   .join(' / ')
               : 'No pending title or legal evidence blockers.',
@@ -952,6 +956,7 @@ function buildDdChecklistSections(bundle: DealReportBundle): ReportSection[] {
 }
 
 function buildRiskMemoSections(bundle: DealReportBundle): ReportSection[] {
+  const playbook = getAssetClassPlaybook(bundle.assetClass);
   const latestRun = bundle.latestValuation;
   const quality = bundle.valuationQuality;
   const reviewSummary = bundle.reviewSummary;
@@ -1006,7 +1011,7 @@ function buildRiskMemoSections(bundle: DealReportBundle): ReportSection[] {
           tone: (latestRun?.baseScenario?.debtServiceCoverage ?? 0) < 1.15 ? 'danger' : 'neutral'
         },
         {
-          label: 'Legal / Title Coverage',
+          label: `${playbook.checklistLabels.legal} Coverage`,
           value:
             bundle.valuationQuality?.coverage.find((item) => item.key === 'legal')?.status === 'good' ? 'Covered' : 'Thin',
           tone:
@@ -1023,7 +1028,7 @@ function buildRiskMemoSections(bundle: DealReportBundle): ReportSection[] {
         }
       ],
       body: [
-        'This note is intended to isolate the current downside drivers before a small private distressed process moves further toward committee or external outreach.',
+        `This note isolates the current downside drivers for the ${playbook.label.toLowerCase()} case before committee or lender circulation.`,
         takeSentences(bundle.latestValuation?.underwritingMemo, 2) || 'No current underwriting memo is available.',
         reviewSummary.pendingBlockers.length > 0
           ? `Open approval blockers: ${reviewSummary.pendingBlockers.slice(0, 3).join('; ')}.`
@@ -1101,6 +1106,7 @@ export async function buildReportBundleFromAsset(
     generatedAt?: Date;
   }
 ): Promise<DealReportBundle> {
+  const playbook = getAssetClassPlaybook(asset.assetClass);
   const latestValuation = asset.valuations[0];
   const displayCurrency = resolveDisplayCurrency(asset.address?.country ?? asset.market);
   const fxRateToKrw =
@@ -1126,7 +1132,7 @@ export async function buildReportBundleFromAsset(
     : null;
   const latestReviewPacket = extractReviewPacketSummary(latestReviewPacketRecord);
   const locationLabel = [asset.address?.city, asset.address?.province, asset.address?.country].filter(Boolean).join(', ') || asset.market;
-  const sizeLabel = asset.assetClass === AssetClass.DATA_CENTER ? 'Power Capacity' : 'Rentable Area';
+  const sizeLabel = playbook.sizeLabel;
   const sizeValue =
     asset.assetClass === AssetClass.DATA_CENTER
       ? `${formatNumber(asset.powerCapacityMw)} MW`
@@ -1139,7 +1145,7 @@ export async function buildReportBundleFromAsset(
     assetName: asset.name,
     assetDescription: asset.description,
     assetClass: asset.assetClass,
-    assetClassLabel: toSentenceCase(asset.assetClass),
+    assetClassLabel: playbook.label,
     market: asset.market,
     stage: toSentenceCase(asset.stage),
     status: toSentenceCase(asset.status),

@@ -1,6 +1,6 @@
 # Micro Data Roadmap
 
-This document defines the next layer of asset-level data collection for the underwriting platform.
+This document defines the next layer of asset-level data collection for the underwriting and research OS.
 
 The goal is to move from market-aware underwriting to asset-aware underwriting.
 
@@ -28,7 +28,7 @@ Use four layers:
 3. approved feature layer
 4. valuation and quant layer
 
-This repository already supports that shape:
+This repository now supports that shape across asset classes:
 
 - raw and normalized tables in Prisma
 - approved feature snapshots via `AssetFeatureSnapshot`
@@ -43,9 +43,9 @@ Implemented now:
 
 ## Priority Order
 
-### Priority 1: Power And Permit Certainty
+### Priority 1: Site, Permit, And Entitlement Certainty
 
-This is the highest-signal micro layer for data center deals.
+This remains the highest-signal micro layer for data-center deals, but the same review-gated pattern now applies to office, industrial, and other real-estate assets.
 
 Capture first:
 
@@ -195,6 +195,12 @@ First-round quant features:
 - `site.fiber_quality_score`
 - `site.cooling_redundancy_score`
 - `site.energy_resilience_score`
+
+## Current Product Position
+
+- `DATA_CENTER` remains a full vertical pack
+- `OFFICE` is the first full non-data-center pack
+- `INDUSTRIAL / LOGISTICS` is scaffolded on the same universal micro research workflow
 
 ## The 30 Micro Fields To Collect First
 

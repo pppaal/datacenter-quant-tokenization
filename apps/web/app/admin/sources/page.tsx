@@ -3,6 +3,7 @@ import { Card } from '@/components/ui/card';
 import {
   listFreeMacroSourceCatalog,
   listGlobalMarketLaunchPlan,
+  listKoreaResearchSourceCatalog,
   listMacroConnectorReadiness,
   listSourceStatus
 } from '@/lib/services/sources';
@@ -34,6 +35,7 @@ export default async function SourcesPage() {
   const macroConnectors = listMacroConnectorReadiness();
   const launchPlan = listGlobalMarketLaunchPlan();
   const freeMacroCatalog = listFreeMacroSourceCatalog();
+  const koreaResearchCatalog = listKoreaResearchSourceCatalog();
   const configuredCount = macroConnectors.filter((connector) => connector.status === 'CONFIGURED').length;
   const partialCount = macroConnectors.filter((connector) => connector.status === 'PARTIAL').length;
 
@@ -170,6 +172,40 @@ export default async function SourcesPage() {
                     ))}
                   </div>
                 </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      <Card className="space-y-4">
+        <div>
+          <div className="eyebrow">Korea Official Research Stack</div>
+          <h3 className="mt-2 text-xl font-semibold text-white">Normalized registry for public Korean property and planning data</h3>
+          <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400">
+            These adapters stay env-configured and fallback-safe. They are intended to feed macro, market, parcel,
+            permit, land, and building evidence into the same review-gated underwriting workflow rather than a
+            separate research product.
+          </p>
+        </div>
+        <div className="grid gap-4">
+          {koreaResearchCatalog.map((source) => (
+            <div key={source.id} className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <div className="fine-print">{source.sourceSystem}</div>
+                  <div className="mt-2 text-lg font-semibold text-white">{source.label}</div>
+                </div>
+                <Badge tone={toneForReadiness(source.status)}>{source.status.toLowerCase()}</Badge>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {source.coverage.map((coverage) => (
+                  <Badge key={coverage}>{coverage}</Badge>
+                ))}
+              </div>
+              <p className="mt-3 text-sm leading-7 text-slate-300">{source.fallbackNote}</p>
+              <div className="mt-3 text-xs uppercase tracking-[0.18em] text-slate-500">
+                Env keys: {source.envKeys.join(', ') || 'none'}
               </div>
             </div>
           ))}

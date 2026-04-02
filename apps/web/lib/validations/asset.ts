@@ -23,7 +23,7 @@ const optionalNumberField = z.preprocess((value) => {
 }, z.number().optional());
 
 const assetIntakeBaseSchema = z.object({
-  assetClass: z.nativeEnum(AssetClass).default(AssetClass.DATA_CENTER),
+  assetClass: z.nativeEnum(AssetClass).default(AssetClass.OFFICE),
   assetCode: z.preprocess(emptyStringToUndefined, z.string().trim().min(1, 'Asset code is required')),
   name: z.preprocess(emptyStringToUndefined, z.string().trim().min(1, 'Asset name is required')),
   assetType: optionalStringField,

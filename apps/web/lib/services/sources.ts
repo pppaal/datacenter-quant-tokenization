@@ -1,5 +1,6 @@
 import type { PrismaClient } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
+import { listKoreaPublicDatasetDefinitions } from '@/lib/sources/adapters/korea-public';
 
 function getKnownSystems() {
   return [
@@ -56,6 +57,16 @@ export type FreeMacroSourceCatalogItem = {
   auth: 'none' | 'api_key' | 'registration';
   docsUrl: string;
   note: string;
+};
+
+export type KoreaResearchSourceCatalogItem = {
+  id: string;
+  label: string;
+  sourceSystem: string;
+  coverage: string[];
+  envKeys: string[];
+  fallbackNote: string;
+  status: 'CONFIGURED' | 'PARTIAL' | 'MISSING';
 };
 
 type MacroConnectorDefinition = {
@@ -558,6 +569,29 @@ export async function listSourceStatus(db: PrismaClient = prisma) {
       fetchedAt: latest?.fetchedAt ?? null,
       expiresAt: latest?.expiresAt ?? null,
       cacheKey: latest?.cacheKey ?? null
+    };
+  });
+}
+
+export function listKoreaResearchSourceCatalog(): KoreaResearchSourceCatalogItem[] {
+  return listKoreaPublicDatasetDefinitions().map((definition) => {
+    const envKeys = [definition.envBaseUrlKey, definition.envApiKeyKey].filter(Boolean) as string[];
+    const configuredKeys = envKeys.filter((key) => Boolean(process.env[key]));
+    const status =
+      configuredKeys.length === envKeys.length
+        ? ('CONFIGURED' as const)
+        : configuredKeys.length > 0
+          ? ('PARTIAL' as const)
+          : ('MISSING' as const);
+
+    return {
+      id: definition.key,
+      label: definition.label,
+      sourceSystem: definition.sourceSystem,
+      coverage: definition.coverage,
+      envKeys,
+      fallbackNote: definition.fallbackNote,
+      status
     };
   });
 }

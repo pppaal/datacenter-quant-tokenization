@@ -1,6 +1,8 @@
 # Valuation Variables
 
 Institutional underwriting variables are grouped into external, manual, derived, and policy-adjusted fields.
+The product is now a Korea real estate underwriting and research OS, with `DATA_CENTER` as one vertical pack and
+`OFFICE` as the first full non-data-center pack.
 
 ## Asset Identity
 
@@ -8,7 +10,7 @@ Institutional underwriting variables are grouped into external, manual, derived,
 | --- | --- | --- | --- |
 | `assetCode` | string | Manual | Internal case identifier |
 | `name` | string | Manual | Asset name |
-| `assetType` | string | Manual | Data center, colocation, edge campus |
+| `assetType` | string | Manual | Office, industrial, retail, multifamily, land, or data center subtype |
 | `market` | string | Manual | Default `KR` |
 | `stage` | enum | Manual | Screening through stabilized |
 | `status` | enum | Manual | Intake through approved/declined |
@@ -25,11 +27,11 @@ Institutional underwriting variables are grouped into external, manual, derived,
 | `address.parcelId` | string | Juso / parcel service | Parcel or synthesized site identifier |
 | `landAreaSqm` | number | Manual | Land size |
 | `grossFloorAreaSqm` | number | Manual / building record | GFA |
-| `powerCapacityMw` | number | Manual / energy review | Installed or planned power |
-| `targetItLoadMw` | number | Manual | IT load target |
-| `energySnapshot.pueTarget` | number | Manual / energy review | PUE assumption |
-| `buildingSnapshot.coolingType` | string | Manual / building review | Cooling design |
-| `buildingSnapshot.redundancyTier` | string | Manual / building review | Tier target |
+| `powerCapacityMw` | number | Manual / energy review | Installed or planned power for data-center assets |
+| `targetItLoadMw` | number | Manual | IT load target for data-center assets |
+| `energySnapshot.pueTarget` | number | Manual / energy review | PUE assumption for data-center assets |
+| `buildingSnapshot.coolingType` | string | Manual / building review | Cooling / HVAC design |
+| `buildingSnapshot.redundancyTier` | string | Manual / building review | Tier target where relevant |
 
 ## Development and Permit Inputs
 
@@ -47,7 +49,7 @@ Institutional underwriting variables are grouped into external, manual, derived,
 
 | Variable | Type | Source | Notes |
 | --- | --- | --- | --- |
-| `marketSnapshot.colocationRatePerKwKrw` | number | Manual / market data | Monthly recurring revenue benchmark |
+| `marketSnapshot.colocationRatePerKwKrw` | number | Manual / market data | Monthly recurring revenue benchmark for data-center assets |
 | `marketSnapshot.capRatePct` | number | Manual / market data | Exit cap rate benchmark |
 | `marketSnapshot.discountRatePct` | number | Manual / market data | DCF discount rate |
 | `marketSnapshot.debtCostPct` | number | External / manual | Financing cost benchmark |
@@ -108,10 +110,10 @@ Institutional underwriting variables are grouped into external, manual, derived,
 | --- | --- | --- | --- |
 | `lease.tenantName` | string | Manual | Tenant or pipeline label |
 | `lease.status` | enum | Manual | Pipeline, signed, active, expired |
-| `lease.leasedKw` | number | Manual | Contracted power load |
+| `lease.leasedKw` | number | Manual | Contracted power load for data-center lease rows |
 | `lease.startYear` | integer | Manual | Lease start relative to underwriting year 1 |
 | `lease.termYears` | integer | Manual | Primary term |
-| `lease.baseRatePerKwKrw` | number | Manual | Starting rent |
+| `lease.baseRatePerKwKrw` | number | Manual | Starting rent for data-center lease rows |
 | `lease.annualEscalationPct` | number | Manual | Contract or modeled escalator |
 | `lease.probabilityPct` | number | Manual | Pipeline to paper confidence |
 | `lease.renewProbabilityPct` | number | Manual | Renewal assumption |
@@ -170,5 +172,11 @@ The engine returns:
 - `ddChecklist`
 - `assumptions`
 - `scenarios`
+
+### Asset-Class Playbook Selection
+
+- `DATA_CENTER`: power and utility assumptions, colocation pricing, permit timing, contracted capacity
+- `OFFICE`: passing rent vs market rent, occupancy, WALE, TI / LC, rollover and downtime
+- `INDUSTRIAL`: market rent, physical fit, access, tenant durability, land / permit context
 
 Memo generation remains in TypeScript so OpenAI usage stays inside the web application runtime.

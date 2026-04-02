@@ -163,8 +163,8 @@ export function AssetIntakeForm({ defaultValues, assetId }: Props) {
   const form = useForm<AssetIntakeInput>({
     resolver: zodResolver(assetIntakeSchema),
     defaultValues: {
-      assetClass: AssetClass.DATA_CENTER,
-      assetType: 'Data Center',
+      assetClass: AssetClass.OFFICE,
+      assetType: 'Office',
       status: AssetStatus.INTAKE,
       stage: AssetStage.SCREENING,
       country: 'KR',
@@ -252,7 +252,8 @@ export function AssetIntakeForm({ defaultValues, assetId }: Props) {
             {assetId ? 'Refine assumptions and rerun diligence' : 'Open a new underwriting case'}
           </h3>
           <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-400">
-            This form writes directly into the Next.js backend and seeds the asset, address, site profile, and downstream review workflow in one path.
+            This form writes directly into the underwriting OS and seeds the asset, address, research, and review
+            workflow in one path.
           </p>
         </div>
         <div className="grid gap-3 text-sm text-slate-300 sm:grid-cols-2">
