@@ -45,7 +45,17 @@ npm run prisma:seed
 npm run e2e
 ```
 
-This smoke suite expects a reachable local Postgres database and the seeded demo records to be loaded first.
+This smoke suite now performs a preflight check first:
+
+- database reachable
+- seeded office / deal / portfolio / fund records present
+- then Playwright runs
+
+If you only want to confirm the registered browser suite without starting the app, use:
+
+```bash
+npm run e2e:list
+```
 
 ## Prisma Migration
 

@@ -51,6 +51,7 @@ Output:
 
 - Playwright config
 - smoke suite
+- DB and seed preflight runner
 - documented run command
 
 ### Phase 2. Security / Governance Hardening
@@ -115,4 +116,10 @@ For deterministic browser smoke coverage, reseed before E2E if the local databas
 ```bash
 npm run prisma:seed
 npm run e2e
+```
+
+If you want to inspect the registered suite without launching the app:
+
+```bash
+npm run e2e:list
 ```

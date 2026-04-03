@@ -39,12 +39,13 @@ npm run dev
 - `npm run dev` starts the active product in `apps/web`
 - `npm run build` builds `apps/web`
 - `npm run test` runs the required unit tests in `apps/web`
-- `npm run e2e` runs Playwright smoke coverage for the seeded operator journeys in `apps/web`
+- `npm run e2e` runs Playwright smoke coverage with DB/seed preflight for the seeded operator journeys in `apps/web`
+- `npm run e2e:list` lists the browser smoke suite without launching the app
 - `npm run prisma:generate` generates the Prisma client for `apps/web`
 - `npm run prisma:migrate` runs Prisma migrations inside `apps/web`
 - `npm run prisma:seed` loads seeded Korean data-center and office demo opportunities
 
-`npm run e2e` expects a reachable local Postgres database plus the seeded demo records.
+`npm run e2e` now fails fast with a clear message if the local Postgres database is down or the seeded demo records are missing.
 
 ## Environment
 

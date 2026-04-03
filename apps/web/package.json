@@ -16,7 +16,8 @@
     "prisma:push": "prisma db push",
     "prisma:seed": "tsx prisma/seed.ts",
     "test": "tsx --test tests/**/*.test.ts",
-    "e2e": "playwright test",
+    "e2e": "tsx scripts/run-e2e-smoke.ts",
+    "e2e:list": "playwright test --list",
     "e2e:headed": "playwright test --headed"
   },
   "prisma": {

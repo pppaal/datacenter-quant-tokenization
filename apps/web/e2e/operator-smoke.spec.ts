@@ -1,6 +1,22 @@
 import { expect, test } from '@playwright/test';
 
 test.describe('seeded operator smoke flows', () => {
+  test('admin overview and navigation stay connected', async ({ page }) => {
+    await page.goto('/admin');
+
+    await expect(page.getByRole('heading', { name: /Admin surface for a multi-asset underwriting platform/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Deals' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Assets' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Portfolio' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Funds' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Research' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Review' })).toBeVisible();
+
+    await page.getByRole('link', { name: 'Research' }).click();
+    await expect(page).toHaveURL(/\/admin\/research/);
+    await expect(page.getByText('Workspace Status')).toBeVisible();
+  });
+
   test('asset dossier and report library stay navigable', async ({ page }) => {
     await page.goto('/admin/assets');
 
@@ -50,6 +66,7 @@ test.describe('seeded operator smoke flows', () => {
     await page.goto('/admin/deals');
     await expect(page.getByRole('heading', { name: /Run one real process from first teaser to handoff/i })).toBeVisible();
     await expect(page.getByText('Pipeline state machine')).toBeVisible();
+    await expect(page.getByRole('link', { name: /Open/i }).first()).toBeVisible();
     await expect(page.getByText(/checklist/i).first()).toBeVisible();
 
     await page.goto('/admin/portfolio');
