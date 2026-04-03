@@ -256,6 +256,12 @@ npm test
 npm run build
 ```
 
+## Current Readiness Audit
+
+For the latest branch-level assessment covering structure, testing, security, operator UX, and the current gap to a top-tier institutional operating stack, use:
+
+- `apps/web/docs/platform-readiness-audit.md`
+
 ## Next Expansion Areas
 
 Highest-value follow-ons from current state:

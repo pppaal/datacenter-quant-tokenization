@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { ReviewStatus } from '@prisma/client';
 import { getAdminActorFromHeaders } from '@/lib/security/admin-request';
+import { recordAuditEvent } from '@/lib/services/audit';
 import { reviewUnderwritingRecord, type ReviewableRecordType } from '@/lib/services/review';
 
 type ReviewPayload = {
@@ -27,8 +28,34 @@ export async function POST(request: Request) {
       actorIdentifier: actor?.identifier ?? null
     });
 
+    await recordAuditEvent({
+      actorIdentifier: actor?.identifier ?? null,
+      actorRole: actor?.role ?? null,
+      action: payload.decision === 'APPROVE' ? 'review.approve' : 'review.reject',
+      entityType: payload.recordType,
+      entityId: payload.recordId,
+      assetId: (result as { assetId?: string | null })?.assetId ?? null,
+      requestPath: '/api/review',
+      requestMethod: 'POST',
+      statusLabel: 'SUCCESS',
+      metadata: {
+        decision: payload.decision,
+        reviewNotes: payload.reviewNotes?.trim() || null
+      }
+    });
+
     return NextResponse.json(result);
   } catch (error) {
+    await recordAuditEvent({
+      action: 'review.error',
+      entityType: 'review',
+      requestPath: '/api/review',
+      requestMethod: 'POST',
+      statusLabel: 'FAILED',
+      metadata: {
+        error: error instanceof Error ? error.message : 'Failed to review record.'
+      }
+    });
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to review record.' },
       { status: 400 }

@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { buildPortfolioDashboard, buildPortfolioOperatorBriefs, getPortfolioById } from '@/lib/services/portfolio';
+import { buildResearchPrioritySignal } from '@/lib/services/research/workspace';
 import { formatCurrency, formatDate, formatNumber, formatPercent } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
@@ -87,9 +88,11 @@ export default async function PortfolioDetailPage({ params }: Props) {
       <Card>
         <div className="eyebrow">Asset Hold Performance</div>
         <div className="mt-4 grid gap-4">
-          {dashboard.assetRows.map((row) => (
-            <div key={row.portfolioAsset.id} className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
-              <div className="flex flex-wrap items-start justify-between gap-4">
+          {dashboard.assetRows.map((row) => {
+            const researchPriority = buildResearchPrioritySignal(row.portfolioAsset.asset as any);
+            return (
+              <div key={row.portfolioAsset.id} className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+                <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <div className="text-lg font-semibold text-white">{row.portfolioAsset.asset.name}</div>
@@ -104,7 +107,20 @@ export default async function PortfolioDetailPage({ params }: Props) {
                     {row.latestAnchorReference ? <Badge tone="good">anchored</Badge> : <Badge tone="warn">offchain only</Badge>}
                     {row.covenant.breachCount > 0 ? <Badge tone="danger">covenant breach</Badge> : null}
                     {(row.leaseRoll?.next12MonthsExpiringPct ?? 0) >= 20 ? <Badge tone="warn">rollover watch</Badge> : null}
+                    <Badge
+                      tone={
+                        researchPriority.freshnessStatus === 'FRESH'
+                          ? 'good'
+                          : researchPriority.freshnessStatus === 'STALE'
+                            ? 'warn'
+                            : 'danger'
+                      }
+                    >
+                      research {researchPriority.scorePct.toFixed(0)}%
+                    </Badge>
+                    {researchPriority.taskCount > 0 ? <Badge tone="warn">{researchPriority.taskCount} research tasks</Badge> : null}
                   </div>
+                  <div className="mt-2 text-xs text-slate-500">{researchPriority.summary}</div>
                 </div>
                 <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
                   <div>
@@ -135,8 +151,9 @@ export default async function PortfolioDetailPage({ params }: Props) {
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+              </div>
+            );
+          })}
         </div>
       </Card>
 

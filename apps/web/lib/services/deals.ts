@@ -47,6 +47,9 @@ export const dealListInclude = Prisma.validator<Prisma.DealInclude>()({
     select: {
       id: true,
       assetCode: true,
+      assetClass: true,
+      name: true,
+      market: true,
       address: {
         select: {
           city: true,
@@ -64,6 +67,39 @@ export const dealListInclude = Prisma.validator<Prisma.DealInclude>()({
         orderBy: {
           createdAt: 'desc'
         }
+      },
+      researchSnapshots: {
+        select: {
+          id: true,
+          title: true,
+          summary: true,
+          freshnessStatus: true,
+          freshnessLabel: true,
+          snapshotDate: true,
+          sourceSystem: true
+        },
+        take: 4,
+        orderBy: {
+          snapshotDate: 'desc'
+        }
+      },
+      coverageTasks: {
+        select: {
+          id: true,
+          title: true,
+          status: true,
+          priority: true,
+          freshnessLabel: true,
+          notes: true,
+          updatedAt: true
+        },
+        where: {
+          status: {
+            not: TaskStatus.DONE
+          }
+        },
+        take: 5,
+        orderBy: [{ priority: 'desc' }, { updatedAt: 'desc' }]
       }
     }
   },

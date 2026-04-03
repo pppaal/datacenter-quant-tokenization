@@ -1,8 +1,100 @@
 import type { Prisma, PrismaClient } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
+import { buildAssetResearchDossier } from '@/lib/services/research/dossier';
 
 export const fundInclude = {
-  portfolio: true,
+  portfolio: {
+    include: {
+      assets: {
+        include: {
+          asset: {
+            include: {
+              address: true,
+              marketSnapshot: true,
+              macroFactors: {
+                orderBy: {
+                  observationDate: 'desc' as const
+                },
+                take: 4
+              },
+              marketIndicatorSeries: {
+                orderBy: {
+                  observationDate: 'desc' as const
+                },
+                take: 8
+              },
+              transactionComps: {
+                orderBy: {
+                  transactionDate: 'desc' as const
+                },
+                take: 4
+              },
+              rentComps: {
+                orderBy: {
+                  observationDate: 'desc' as const
+                },
+                take: 4
+              },
+              pipelineProjects: {
+                orderBy: {
+                  expectedDeliveryDate: 'asc' as const
+                },
+                take: 4
+              },
+              siteProfile: true,
+              buildingSnapshot: true,
+              energySnapshot: true,
+              permitSnapshot: true,
+              ownershipRecords: true,
+              encumbranceRecords: true,
+              planningConstraints: true,
+              leases: true,
+              documents: {
+                orderBy: {
+                  updatedAt: 'desc' as const
+                },
+                take: 1
+              },
+              valuations: {
+                orderBy: {
+                  createdAt: 'desc' as const
+                },
+                take: 1
+              },
+              readinessProject: {
+                include: {
+                  onchainRecords: {
+                    orderBy: {
+                      createdAt: 'desc' as const
+                    },
+                    take: 4
+                  }
+                }
+              },
+              researchSnapshots: {
+                orderBy: {
+                  snapshotDate: 'desc' as const
+                },
+                take: 4
+              },
+              coverageTasks: {
+                orderBy: {
+                  updatedAt: 'desc' as const
+                },
+                take: 8
+              },
+              featureSnapshots: {
+                orderBy: {
+                  snapshotDate: 'desc' as const
+                },
+                take: 4
+              }
+            }
+          }
+        }
+      }
+    }
+  },
   vehicles: true,
   mandates: true,
   commitments: {
@@ -83,6 +175,18 @@ export function buildFundDashboard(fund: FundBundle) {
   const latestDistribution = fund.distributions[0] ?? null;
   const latestReport = fund.investorReports[0] ?? null;
 
+  const researchHighlights =
+    fund.portfolio?.assets
+      .slice(0, 2)
+      .map((portfolioAsset) => {
+        const dossier = buildAssetResearchDossier(portfolioAsset.asset as any);
+        const officialSignal = dossier.market.officialHighlights[0]
+          ? `${dossier.market.officialHighlights[0].label} ${dossier.market.officialHighlights[0].value}.`
+          : '';
+        return `${portfolioAsset.asset.name}: ${dossier.marketThesis} ${officialSignal} ${dossier.freshness.headline}`.trim();
+      })
+      .join(' ') ?? '';
+
   const investorUpdateDraft = [
     `${fund.name} has KRW ${Math.round(math.totalCommitmentKrw).toLocaleString()} of commitments and KRW ${Math.round(math.totalCalledKrw).toLocaleString()} called to date.`,
     latestCall
@@ -93,7 +197,8 @@ export function buildFundDashboard(fund: FundBundle) {
       : 'No distribution has been issued yet.',
     latestReport
       ? `The current reporting cadence is anchored by ${latestReport.title}.`
-      : 'An investor reporting shell is ready but no report has been published yet.'
+      : 'An investor reporting shell is ready but no report has been published yet.',
+    researchHighlights || 'Portfolio-linked research coverage is still being populated.'
   ].join(' ');
 
   return {

@@ -99,3 +99,74 @@ test('buildFundOperatorBriefs produces capital and investor coverage summaries',
   assert.ok(briefs.investorCoverageBrief.includes('Han River Pension'));
   assert.ok(briefs.investorUpdateDraft.includes('capital call'));
 });
+
+test('buildFundDashboard carries linked portfolio research into investor update draft', () => {
+  const dashboard = buildFundDashboard({
+    id: 'fund-2',
+    name: 'Seoul Office Income Fund',
+    commitments: [],
+    capitalCalls: [],
+    distributions: [],
+    investorReports: [],
+    ddqResponses: [],
+    mandates: [],
+    vehicles: [],
+    portfolio: {
+      assets: [
+        {
+          asset: {
+            id: 'asset-1',
+            name: 'Yeouido Core Office Tower',
+            assetCode: 'SEOUL-YEOUIDO-01',
+            assetClass: 'OFFICE',
+            market: 'KR',
+            address: { city: 'Seoul', province: 'Seoul', country: 'KR' },
+            siteProfile: { siteNotes: 'Prime office corridor' },
+            buildingSnapshot: { structureDescription: 'High-rise office tower' },
+            marketSnapshot: { metroRegion: 'Seoul CBD', vacancyPct: 7.2, marketNotes: 'Office leasing remains disciplined.' },
+            macroFactors: [],
+            macroSeries: [],
+            marketIndicatorSeries: [
+              {
+                id: 'indicator-1',
+                indicatorKey: 'office.vacancy_pct',
+                label: 'Office Vacancy',
+                value: 7.2,
+                observationDate: new Date('2026-03-01')
+              }
+            ],
+            transactionComps: [],
+            rentComps: [],
+            pipelineProjects: [],
+            ownershipRecords: [],
+            encumbranceRecords: [],
+            planningConstraints: [],
+            leases: [],
+            debtFacilities: [],
+            taxAssumption: null,
+            documents: [
+              {
+                id: 'doc-1',
+                currentVersion: 1,
+                title: 'Office rent roll',
+                documentType: 'LEASE',
+                updatedAt: new Date(),
+                documentHash: 'abc'
+              }
+            ],
+            valuations: [],
+            readinessProject: { onchainRecords: [] },
+            energySnapshot: null,
+            permitSnapshot: null,
+            featureSnapshots: [],
+            researchSnapshots: [],
+            coverageTasks: []
+          }
+        }
+      ]
+    }
+  } as any);
+
+  assert.ok(dashboard.investorUpdateDraft.includes('Yeouido Core Office Tower'));
+  assert.ok(dashboard.investorUpdateDraft.includes('Office Vacancy 7.2%'));
+});

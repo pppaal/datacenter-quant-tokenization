@@ -10,6 +10,8 @@ Current operating layers inside this app:
 - portfolio operations
 - capital formation shell
 
+Research is now a first-class workspace at `/admin/research`, not only a service layer. It uses shared `ResearchSnapshot`, `MarketUniverse`, `Submarket`, `CoverageTask`, `SourceCache`, `ResearchSyncRun`, and approved evidence data so underwriting, deals, portfolio, and fund workflows read the same provenance, freshness, and sync-history surfaces.
+
 Registry-only remains explicit:
 
 - files, extracted text, valuations, underwriting logic, portfolio KPI history, and investor records stay offchain
@@ -29,6 +31,21 @@ For the current product operating map, use:
 
 - [`apps/web/docs/investment-firm-os-overview.md`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/docs/investment-firm-os-overview.md)
 - [`apps/web/docs/demo-script.md`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/docs/demo-script.md)
+- [`apps/web/docs/platform-readiness-audit.md`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/docs/platform-readiness-audit.md)
+- [`apps/web/docs/hardening-plan.md`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/docs/hardening-plan.md)
+
+## Browser Smoke Coverage
+
+Playwright smoke coverage now locks the seeded operator journeys across assets, review, research, deals, portfolio, and funds.
+
+Run from `apps/web`:
+
+```bash
+npm run prisma:seed
+npm run e2e
+```
+
+This smoke suite expects a reachable local Postgres database and the seeded demo records to be loaded first.
 
 ## Prisma Migration
 

@@ -9,7 +9,7 @@ This platform is an AI-native operating system for a Korean real-estate investme
 ## Product Surface
 
 - Public pages: `/`, `/product`, `/sample-report`
-- Admin pages: `/admin`, `/admin/deals`, `/admin/assets`, `/admin/assets/new`, `/admin/assets/[id]`, `/admin/review`, `/admin/valuations`, `/admin/documents`, `/admin/sources`, `/admin/portfolio`, `/admin/portfolio/[id]`, `/admin/funds`, `/admin/funds/[id]`, `/admin/investors`, `/admin/registry`
+- Admin pages: `/admin`, `/admin/research`, `/admin/deals`, `/admin/assets`, `/admin/assets/new`, `/admin/assets/[id]`, `/admin/review`, `/admin/valuations`, `/admin/documents`, `/admin/sources`, `/admin/portfolio`, `/admin/portfolio/[id]`, `/admin/funds`, `/admin/funds/[id]`, `/admin/investors`, `/admin/registry`
 - Core models: `Asset`, `SiteProfile`, `Address`, `BuildingSnapshot`, `PermitSnapshot`, `EnergySnapshot`, `MarketSnapshot`, `ValuationRun`, `ValuationScenario`, `Document`, `Inquiry`, `User`, `RwaProject`, `OnchainRecord`
 
 ## Quick Start
@@ -39,9 +39,12 @@ npm run dev
 - `npm run dev` starts the active product in `apps/web`
 - `npm run build` builds `apps/web`
 - `npm run test` runs the required unit tests in `apps/web`
+- `npm run e2e` runs Playwright smoke coverage for the seeded operator journeys in `apps/web`
 - `npm run prisma:generate` generates the Prisma client for `apps/web`
 - `npm run prisma:migrate` runs Prisma migrations inside `apps/web`
 - `npm run prisma:seed` loads seeded Korean data-center and office demo opportunities
+
+`npm run e2e` expects a reachable local Postgres database plus the seeded demo records.
 
 ## Environment
 
@@ -66,6 +69,8 @@ Valuation variable reference:
 - Report generation notes: [`apps/web/docs/report-generation.md`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/docs/report-generation.md)
 - Investment-firm operating overview: [`apps/web/docs/investment-firm-os-overview.md`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/docs/investment-firm-os-overview.md)
 - Demo script: [`apps/web/docs/demo-script.md`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/docs/demo-script.md)
+- Platform readiness audit: [`apps/web/docs/platform-readiness-audit.md`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/docs/platform-readiness-audit.md)
+- Hardening plan: [`apps/web/docs/hardening-plan.md`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/docs/hardening-plan.md)
 - Blockchain registry wiring guide: [`docs/blockchain-integration.md`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/docs/blockchain-integration.md)
 
 ## Review-Gated Underwriting Flow
@@ -96,7 +101,7 @@ The current product stance is:
 ## Investment-Firm Operating Layers
 
 - `Research`
-  - macro, market, comp, document, and approved micro evidence aggregation
+  - `/admin/research` for macro, market, submarket, asset dossier, and coverage-queue research fabric with provenance, freshness, and research sync history
 - `Underwriting`
   - review-gated evidence, promoted features, valuation, committee memo, DD checklist, and risk memo
 - `Deal Execution`

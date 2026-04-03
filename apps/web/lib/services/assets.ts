@@ -172,6 +172,18 @@ export const assetBundleInclude = {
     },
     take: 8
   },
+  researchSnapshots: {
+    orderBy: {
+      snapshotDate: 'desc' as const
+    },
+    take: 6
+  },
+  coverageTasks: {
+    orderBy: {
+      updatedAt: 'desc' as const
+    },
+    take: 12
+  },
   transactionComps: {
     orderBy: {
       transactionDate: 'desc' as const

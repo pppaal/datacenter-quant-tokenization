@@ -15,6 +15,7 @@ import {
   getDealMaterialUpdatedAt,
   listDeals
 } from '@/lib/services/deals';
+import { buildResearchCoverageSurface } from '@/lib/services/research/workspace';
 import { formatCurrency, formatDate, formatNumber } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
@@ -187,6 +188,13 @@ export default async function DealsPage({ searchParams }: Props) {
           const latestNegotiationEvent = deal.negotiationEvents[0] ?? null;
           const materialUpdatedAt = getDealMaterialUpdatedAt(deal as any);
           const isStale = materialUpdatedAt.getTime() <= Date.now() - 1000 * 60 * 60 * 24 * 7;
+          const researchCoverage = deal.asset
+            ? buildResearchCoverageSurface({
+                assetCode: deal.asset.assetCode,
+                researchSnapshots: deal.asset.researchSnapshots,
+                coverageTasks: deal.asset.coverageTasks
+              })
+            : null;
 
           return (
             <div
@@ -227,12 +235,26 @@ export default async function DealsPage({ searchParams }: Props) {
                     {snapshot?.overdueTaskCount ? <Badge tone="danger">{snapshot.overdueTaskCount} overdue</Badge> : null}
                     {snapshot?.dueSoonTaskCount ? <Badge tone="warn">{snapshot.dueSoonTaskCount} due soon</Badge> : null}
                     {isStale ? <Badge tone="warn">stale</Badge> : null}
+                    {researchCoverage ? (
+                      <Badge
+                        tone={
+                          researchCoverage.freshnessStatus === 'FRESH'
+                            ? 'good'
+                            : researchCoverage.freshnessStatus === 'STALE'
+                              ? 'warn'
+                              : 'danger'
+                        }
+                      >
+                        research {researchCoverage.freshnessLabel}
+                      </Badge>
+                    ) : null}
                     {deal.statusLabel === 'ARCHIVED' ? <Badge>archived</Badge> : null}
                   </div>
                   <p className="mt-4 text-sm leading-7 text-slate-300">
                     {deal.nextAction ?? deal.headline ?? 'No next action yet. Open the deal and set the immediate move.'}
                   </p>
                   {snapshot ? <p className="mt-3 text-sm text-slate-500">{snapshot.reminderSummary}</p> : null}
+                  {researchCoverage ? <p className="mt-2 text-sm text-slate-500">{researchCoverage.headline}</p> : null}
                 </div>
                 <div className="grid gap-3 text-right md:grid-cols-2 md:text-left xl:grid-cols-4">
                   <div>

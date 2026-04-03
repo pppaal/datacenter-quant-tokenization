@@ -11,6 +11,7 @@ import {
   getLatestReviewPacketRecord,
   type AssetEvidenceReviewSummary
 } from '@/lib/services/review';
+import { buildAssetResearchDossier } from '@/lib/services/research/dossier';
 import type { ProFormaBaseCase } from '@/lib/services/valuation/types';
 import { formatDate, formatNumber, formatPercent, slugify, toSentenceCase } from '@/lib/utils';
 import { buildValuationQualitySummary, type ValuationQualitySummary } from '@/lib/valuation-quality';
@@ -154,6 +155,12 @@ export type DealReportBundle = {
     approvedEvidenceCount: number | null;
     pendingEvidenceCount: number | null;
     anchorReference: string | null;
+  };
+  researchDossier: {
+    marketThesis: string;
+    freshnessHeadline: string;
+    freshnessLabel: string;
+    openCoverageTaskCount: number;
   };
   reportFingerprint: string;
   generatedAt: Date;
@@ -389,6 +396,14 @@ function buildTraceabilityFacts(bundle: DealReportBundle, kind: ReportKind): Rep
           : 'No pending evidence blockers in the normalized review queue.'
     },
     {
+      label: 'Research Freshness',
+      value: bundle.researchDossier.freshnessLabel,
+      detail:
+        bundle.researchDossier.openCoverageTaskCount > 0
+          ? `${bundle.researchDossier.openCoverageTaskCount} open research coverage task(s)`
+          : bundle.researchDossier.freshnessHeadline
+    },
+    {
       label: 'Review Packet',
       value: bundle.latestReviewPacket?.fingerprint ? shortHash(bundle.latestReviewPacket.fingerprint, 16) : 'Not staged',
       detail: bundle.latestReviewPacket?.stagedAt
@@ -463,6 +478,11 @@ function buildControlSheet(bundle: DealReportBundle, reportVersion: string): Rep
       label: 'Approved / Pending Evidence',
       value: `${bundle.reviewSummary.totals.approved} / ${bundle.reviewSummary.totals.pending}`,
       detail: `${bundle.reviewSummary.totals.rejected} rejected evidence row(s)`
+    },
+    {
+      label: 'Research Coverage Queue',
+      value: String(bundle.researchDossier.openCoverageTaskCount),
+      detail: bundle.researchDossier.freshnessHeadline
     },
     {
       label: 'Document Count',
@@ -1115,6 +1135,7 @@ export async function buildReportBundleFromAsset(
   const provenance = Array.isArray(latestValuation?.provenance) ? (latestValuation.provenance as ProvenanceEntry[]) : [];
   const quality = latestValuation ? buildValuationQualitySummary(asset, latestValuation.assumptions, provenance) : null;
   const reviewSummary = buildAssetEvidenceReviewSummary(asset as unknown as Parameters<typeof buildAssetEvidenceReviewSummary>[0]);
+  const researchDossier = buildAssetResearchDossier(asset as never);
   const baseScenario = resolveBaseScenario(latestValuation);
   const proForma = latestValuation ? readStoredBaseCaseProForma(latestValuation.assumptions) : null;
   const documents = buildDocumentTrace(asset);
@@ -1199,6 +1220,12 @@ export async function buildReportBundleFromAsset(
     documents,
     latestOnchainRecord,
     latestReviewPacket,
+    researchDossier: {
+      marketThesis: researchDossier.marketThesis,
+      freshnessHeadline: researchDossier.freshness.headline,
+      freshnessLabel: researchDossier.freshness.label,
+      openCoverageTaskCount: researchDossier.coverage.openTaskCount
+    },
     reportFingerprint: buildReportFingerprint(asset),
     generatedAt: options?.generatedAt ?? new Date()
   };

@@ -252,7 +252,15 @@ test('buildPortfolioOperatorBriefs produces operator-facing research and watchli
           transactionComps: [],
           rentComps: [],
           pipelineProjects: [],
-          marketIndicatorSeries: [],
+          marketIndicatorSeries: [
+            {
+              id: 'indicator-1',
+              indicatorKey: 'office.vacancy_pct',
+              label: 'Office Vacancy',
+              value: 7.1,
+              observationDate: new Date('2026-03-01')
+            }
+          ],
           featureSnapshots: []
         },
         businessPlans: [],
@@ -292,4 +300,5 @@ test('buildPortfolioOperatorBriefs produces operator-facing research and watchli
   assert.ok(briefs.covenantBrief.includes('Yeouido Core Office Tower'));
   assert.ok(briefs.watchlistBrief.includes('24.0%'));
   assert.ok(briefs.capexBrief.includes('Yeouido Core Office Tower'));
+  assert.ok(briefs.researchBrief.includes('Office Vacancy 7.1%'));
 });

@@ -14,3 +14,5 @@ storage/
 Thumbs.db
 apps/web/.runtime/
 apps/web/.tmp-valuations.json
+apps/web/playwright-report/
+apps/web/test-results/

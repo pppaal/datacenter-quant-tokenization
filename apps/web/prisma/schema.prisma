@@ -205,6 +205,12 @@ enum CovenantStatus {
   BREACH
 }
 
+enum ResearchSyncTriggerType {
+  WORKSPACE_REFRESH
+  SCHEDULED
+  MANUAL
+}
+
 enum CapitalCallStatus {
   PLANNED
   ISSUED
@@ -326,6 +332,8 @@ model Asset {
   documentFacts         DocumentFact[]
   featureSnapshots      AssetFeatureSnapshot[]
   aiInsights            AiInsight[]
+  researchSnapshots     ResearchSnapshot[]
+  coverageTasks         CoverageTask[]
   counterparties        Counterparty[]
   financialStatements   FinancialStatement[]
   creditAssessments     CreditAssessment[]
@@ -1642,6 +1650,116 @@ model SourceOverride {
   createdBy    User?    @relation(fields: [createdById], references: [id])
 
   @@unique([sourceSystem, cacheKey])
+}
+
+model MarketUniverse {
+  id                String             @id @default(cuid())
+  marketKey         String             @unique
+  label             String
+  country           String             @default("KR")
+  assetClass        AssetClass?
+  thesis            String?
+  statusLabel       String             @default("ACTIVE")
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  submarkets        Submarket[]
+  researchSnapshots ResearchSnapshot[]
+  coverageTasks     CoverageTask[]
+
+  @@index([country, assetClass, updatedAt])
+}
+
+model Submarket {
+  id                String             @id @default(cuid())
+  marketUniverseId  String
+  submarketKey      String
+  label             String
+  city              String?
+  district          String?
+  assetClass        AssetClass?
+  thesis            String?
+  statusLabel       String             @default("ACTIVE")
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  marketUniverse    MarketUniverse     @relation(fields: [marketUniverseId], references: [id], onDelete: Cascade)
+  researchSnapshots ResearchSnapshot[]
+  coverageTasks     CoverageTask[]
+
+  @@unique([marketUniverseId, submarketKey])
+  @@index([assetClass, city, updatedAt])
+}
+
+model ResearchSnapshot {
+  id                String         @id @default(cuid())
+  snapshotKey       String         @unique
+  assetId           String?
+  marketUniverseId  String?
+  submarketId       String?
+  snapshotType      String
+  title             String
+  summary           String?
+  snapshotDate      DateTime
+  sourceSystem      String?
+  freshnessStatus   SourceStatus?
+  freshnessLabel    String?
+  metrics           Json?
+  provenance        Json?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  asset             Asset?         @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  marketUniverse    MarketUniverse? @relation(fields: [marketUniverseId], references: [id], onDelete: Cascade)
+  submarket         Submarket?     @relation(fields: [submarketId], references: [id], onDelete: Cascade)
+
+  @@index([assetId, snapshotType, snapshotDate])
+  @@index([marketUniverseId, snapshotType, snapshotDate])
+  @@index([submarketId, snapshotType, snapshotDate])
+}
+
+model CoverageTask {
+  id                String         @id @default(cuid())
+  assetId           String?
+  marketUniverseId  String?
+  submarketId       String?
+  taskType          String
+  title             String
+  status            TaskStatus     @default(OPEN)
+  priority          TaskPriority   @default(MEDIUM)
+  sourceSystem      String?
+  freshnessLabel    String?
+  dueDate           DateTime?
+  notes             String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  asset             Asset?         @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  marketUniverse    MarketUniverse? @relation(fields: [marketUniverseId], references: [id], onDelete: Cascade)
+  submarket         Submarket?     @relation(fields: [submarketId], references: [id], onDelete: Cascade)
+
+  @@index([status, priority, dueDate])
+  @@index([assetId, status, updatedAt])
+  @@index([marketUniverseId, status, updatedAt])
+  @@index([submarketId, status, updatedAt])
+}
+
+model ResearchSyncRun {
+  id                      String                  @id @default(cuid())
+  triggerType             ResearchSyncTriggerType
+  statusLabel             String                  @default("RUNNING")
+  startedAt               DateTime                @default(now())
+  finishedAt              DateTime?
+  latestOfficialSyncAt    DateTime?
+  latestAssetSyncAt       DateTime?
+  officialSourceCount     Int                     @default(0)
+  assetDossierCount       Int                     @default(0)
+  staleOfficialSourceCount Int                    @default(0)
+  staleAssetDossierCount  Int                     @default(0)
+  coverageTaskCount       Int                     @default(0)
+  refreshedByActor        String?
+  errorSummary            String?
+  metadata                Json?
+
+  @@index([startedAt])
+  @@index([statusLabel, startedAt])
+  @@index([triggerType, startedAt])
 }
 
 model ReadinessProject {

@@ -11,6 +11,7 @@ const items = [
   { href: '/admin/portfolio', label: 'Portfolio' },
   { href: '/admin/funds', label: 'Funds' },
   { href: '/admin/investors', label: 'Investors' },
+  { href: '/admin/research', label: 'Research' },
   { href: '/admin/review', label: 'Review' },
   { href: '/admin/valuations', label: 'Valuations' },
   { href: '/admin/documents', label: 'Documents' },

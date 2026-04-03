@@ -347,7 +347,10 @@ export function buildPortfolioDashboard(portfolio: PortfolioBundle) {
     .slice(0, 2)
     .map((row) => {
       const dossier = buildAssetResearchDossier(row.portfolioAsset.asset as any);
-      return `${row.portfolioAsset.asset.name}: ${dossier.marketThesis}`;
+      const officialSignal = dossier.market.officialHighlights[0]
+        ? `${dossier.market.officialHighlights[0].label} ${dossier.market.officialHighlights[0].value}.`
+        : '';
+      return `${row.portfolioAsset.asset.name}: ${dossier.marketThesis} ${officialSignal} ${dossier.freshness.headline}`.trim();
     })
     .join(' ');
 

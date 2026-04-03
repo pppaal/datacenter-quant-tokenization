@@ -13,6 +13,7 @@ npm run prisma:generate
 npm run typecheck
 npm test
 npm run build
+npm run e2e
 ```
 
 ## Guardrails
@@ -28,3 +29,4 @@ npm run build
 - New normalized evidence is review-gated before promotion into curated feature snapshots.
 - Valuation/report/readiness outputs stay offchain and use approved evidence first.
 - Tests, typecheck, and build pass before closing work.
+- Browser smoke coverage should pass when a seeded local database is available.

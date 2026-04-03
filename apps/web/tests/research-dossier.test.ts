@@ -65,8 +65,54 @@ test('research dossier aggregates macro, market, micro, and document context for
     ],
     debtFacilities: [{ id: 'debt-1' }],
     taxAssumption: { id: 'tax-1' },
-    documents: [{ id: 'doc-1', title: 'Office Rent Roll', documentType: 'LEASE', updatedAt: now, documentHash: 'abc123' }],
-    valuations: [{ id: 'run-1' }],
+    documents: [
+      {
+        id: 'doc-1',
+        currentVersion: 1,
+        title: 'Office Rent Roll',
+        documentType: 'LEASE',
+        updatedAt: now,
+        documentHash: 'abc123'
+      }
+    ],
+    valuations: [{ id: 'run-1', runLabel: 'Seeded run', createdAt: now }],
+    researchSnapshots: [
+      {
+        id: 'research-1',
+        title: 'Office asset dossier',
+        sourceSystem: 'research-dossier',
+        freshnessStatus: SourceStatus.FRESH,
+        freshnessLabel: '2d old',
+        snapshotDate: now
+      },
+      {
+        id: 'research-2',
+        snapshotType: 'market-official-source',
+        title: 'REB Office indicators',
+        sourceSystem: 'korea-reb-property-statistics',
+        freshnessStatus: SourceStatus.FRESH,
+        freshnessLabel: 'fresh api',
+        snapshotDate: now,
+        metrics: {
+          highlights: [
+            {
+              label: 'Office Vacancy',
+              value: '7.1%'
+            }
+          ]
+        }
+      }
+    ],
+    coverageTasks: [
+      {
+        id: 'task-1',
+        title: 'Refresh rent comp set',
+        status: 'OPEN',
+        priority: 'MEDIUM',
+        notes: 'Need one more Yeouido rent comp',
+        freshnessLabel: '2d old'
+      }
+    ],
     readinessProject: { onchainRecords: [{ recordType: 'REVIEW_PACKET', payload: { packetFingerprint: 'packet-1' } }, { recordType: 'DOCUMENT_HASH', txHash: '0xabc' }] }
   });
 
@@ -75,4 +121,9 @@ test('research dossier aggregates macro, market, micro, and document context for
   assert.ok(dossier.micro.scorecards.some((item) => item.label.includes('Lease / Revenue')));
   assert.equal(dossier.documents.anchoredDocumentCount, 1);
   assert.equal(dossier.latestValuationId, 'run-1');
+  assert.equal(dossier.freshness.status, SourceStatus.FRESH);
+  assert.equal(dossier.coverage.openTaskCount, 1);
+  assert.equal(dossier.provenance.sourceCount, 2);
+  assert.equal(dossier.market.officialHighlights[0]?.label, 'office vacancy pct');
+  assert.equal(dossier.officialSources.highlights[0]?.label, 'Office Vacancy');
 });

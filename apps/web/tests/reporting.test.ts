@@ -67,6 +67,26 @@ function makeAssetStub() {
     encumbranceRecords: [{ id: 'enc-1', reviewStatus: 'APPROVED', updatedAt: new Date(), encumbranceType: 'Mortgage', holderName: 'Infra Bank', securedAmountKrw: 42000000000, priorityRank: 1, reviewNotes: null, reviewedAt: new Date(), reviewedById: 'user-1', sourceStatus: 'MANUAL', sourceUpdatedAt: new Date() }],
     planningConstraints: [{ id: 'plan-1', reviewStatus: 'PENDING', updatedAt: new Date(), constraintType: 'Easement', title: 'Shared ingress', severity: 'Medium', description: 'Pending legal confirmation', reviewNotes: null, reviewedAt: null, reviewedById: null, sourceStatus: 'MANUAL', sourceUpdatedAt: new Date() }],
     featureSnapshots: [],
+    researchSnapshots: [
+      {
+        id: 'research-1',
+        title: 'National macro fabric',
+        freshnessStatus: 'STALE',
+        freshnessLabel: '38d old',
+        snapshotDate: new Date('2026-03-20T00:00:00.000Z'),
+        sourceSystem: 'research-dossier'
+      }
+    ],
+    coverageTasks: [
+      {
+        id: 'coverage-1',
+        title: 'Refresh transaction comps',
+        status: 'OPEN',
+        priority: 'HIGH',
+        notes: 'Need one more Seoul office comp',
+        freshnessLabel: '38d old'
+      }
+    ],
     comparableSet: {
       entries: [{ id: 'comp-1' }, { id: 'comp-2' }, { id: 'comp-3' }]
     },
@@ -348,6 +368,8 @@ test('report bundle and markdown export reuse valuation and document traceabilit
   assert.match(markdown, /## Control Sheet/);
   assert.match(markdown, /Confirm mortgage release path\./);
   assert.ok(report.traceability.some((fact) => fact.label === 'Approved Evidence' && fact.value === '5'));
+  assert.ok(report.traceability.some((fact) => fact.label === 'Research Freshness'));
+  assert.ok(report.controlSheet.some((fact) => fact.label === 'Research Coverage Queue'));
   assert.ok(report.controlSheet.some((fact) => fact.label === 'Review Packet Fingerprint'));
 });
 
