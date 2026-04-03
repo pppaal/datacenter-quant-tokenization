@@ -1,6 +1,8 @@
 import { notFound } from 'next/navigation';
+import { PortfolioOptimizationPanel } from '@/components/admin/portfolio-optimization-panel';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { buildPortfolioOptimizationLab } from '@/lib/services/portfolio-optimization';
 import { buildPortfolioDashboard, buildPortfolioOperatorBriefs, getPortfolioById } from '@/lib/services/portfolio';
 import { buildResearchPrioritySignal } from '@/lib/services/research/workspace';
 import { formatCurrency, formatDate, formatNumber, formatPercent } from '@/lib/utils';
@@ -20,6 +22,7 @@ export default async function PortfolioDetailPage({ params }: Props) {
 
   const dashboard = buildPortfolioDashboard(portfolio);
   const briefs = buildPortfolioOperatorBriefs(portfolio, dashboard);
+  const optimizationLab = buildPortfolioOptimizationLab(portfolio);
 
   return (
     <div className="space-y-8">
@@ -84,6 +87,8 @@ export default async function PortfolioDetailPage({ params }: Props) {
           </div>
         </Card>
       </div>
+
+      <PortfolioOptimizationPanel lab={optimizationLab} />
 
       <Card>
         <div className="eyebrow">Asset Hold Performance</div>

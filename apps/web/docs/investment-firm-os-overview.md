@@ -37,7 +37,9 @@ The blockchain boundary remains unchanged:
 - `/admin/portfolio`
   Portfolio summary across held assets
 - `/admin/portfolio/[id]`
-  Portfolio command center for KPI history, rollover, debt wall, covenant, capex, and exit tracking
+  Portfolio command center for KPI history, rollover, debt wall, covenant, capex, exit tracking, and optimization research
+- `/admin/research`
+  Research workspace for macro, markets, submarkets, asset dossiers, portfolio optimization, and coverage queue
 - `/admin/funds`
   Fund shell list
 - `/admin/funds/[id]`
@@ -144,10 +146,12 @@ Primary operator outputs:
 - capex vs budget tracking
 - exit case tracker
 - AI-native operator briefs
+- quantum-inspired portfolio optimization and scenario exploration research
 
 Key service:
 
 - `apps/web/lib/services/portfolio.ts`
+- `apps/web/lib/services/portfolio-optimization.ts`
 
 ### 5. Capital Formation Shell
 
@@ -234,6 +238,7 @@ Included:
 - deal execution
 - held-asset operating shell
 - capital formation shell
+- portfolio optimization research using classical quantum-inspired search heuristics
 
 Not included:
 

@@ -167,11 +167,13 @@ Show:
 - LTV / DSCR / covenant summary
 - capex vs budget
 - exit case tracker
+- portfolio optimization lab
 - AI operator brief
 
 Talking point:
 
 - this is the start of an AI-native operating layer, not just a static dashboard
+- the optimization lab uses a classical quantum-inspired discrete search heuristic to explore reweighting and stress outcomes without moving any operating data offchain
 
 ### 8. Open `/admin/funds/[id]`
 

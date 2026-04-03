@@ -102,13 +102,13 @@ The current product stance is:
 ## Investment-Firm Operating Layers
 
 - `Research`
-  - `/admin/research` for macro, market, submarket, asset dossier, and coverage-queue research fabric with provenance, freshness, and research sync history
+  - `/admin/research` for macro, market, submarket, asset dossier, portfolio optimization, and coverage-queue research fabric with provenance, freshness, and research sync history
 - `Underwriting`
   - review-gated evidence, promoted features, valuation, committee memo, DD checklist, and risk memo
 - `Deal Execution`
   - `/admin/deals` for next actions, lender quotes, bids, diligence requests, and close-probability snapshots
 - `Portfolio Operations`
-  - `/admin/portfolio` for held-asset KPI history, lease rollover watchlists, covenant tracking, capex vs budget, and exit cases
+  - `/admin/portfolio` for held-asset KPI history, lease rollover watchlists, covenant tracking, capex vs budget, exit cases, and quantum-inspired scenario exploration
 - `Capital Formation Shell`
   - `/admin/funds`, `/admin/funds/[id]`, and `/admin/investors` for fund, vehicle, investor, commitment, call, distribution, reporting, and DDQ shells
 

@@ -10,7 +10,7 @@ type Props = {
   }>;
 };
 
-const validTabs: ResearchWorkspaceTab[] = ['macro', 'markets', 'submarkets', 'assets', 'coverage'];
+const validTabs: ResearchWorkspaceTab[] = ['macro', 'markets', 'submarkets', 'assets', 'optimization', 'coverage'];
 
 export default async function AdminResearchPage({ searchParams }: Props) {
   const resolvedSearchParams = (await searchParams) ?? {};
@@ -28,6 +28,7 @@ export default async function AdminResearchPage({ searchParams }: Props) {
           <Badge>Markets</Badge>
           <Badge>Submarkets</Badge>
           <Badge>Asset Dossiers</Badge>
+          <Badge>Optimization Lab</Badge>
           <Badge>Coverage Queue</Badge>
         </div>
         <h1 className="mt-3 text-5xl font-semibold leading-[0.96] tracking-[-0.05em] text-white md:text-6xl">

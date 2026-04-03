@@ -92,6 +92,18 @@ export const portfolioInclude = {
               snapshotDate: 'desc' as const
             },
             take: 4
+          },
+          researchSnapshots: {
+            orderBy: {
+              snapshotDate: 'desc' as const
+            },
+            take: 4
+          },
+          coverageTasks: {
+            orderBy: {
+              updatedAt: 'desc' as const
+            },
+            take: 12
           }
         }
       },

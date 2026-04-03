@@ -9,6 +9,8 @@ import {
 } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { getAssetClassPlaybook } from '@/lib/asset-class/playbook';
+import { buildPortfolioOptimizationWorkspaceItem } from '@/lib/services/portfolio-optimization';
+import { listPortfolios } from '@/lib/services/portfolio';
 import { assetBundleInclude } from '@/lib/services/assets';
 import { buildAssetEvidenceReviewSummary } from '@/lib/services/review';
 import { buildAssetResearchDossier } from '@/lib/services/research/dossier';
@@ -26,7 +28,7 @@ import {
 } from '@/lib/sources/adapters/korea-public';
 import { slugify } from '@/lib/utils';
 
-export type ResearchWorkspaceTab = 'macro' | 'markets' | 'submarkets' | 'assets' | 'coverage';
+export type ResearchWorkspaceTab = 'macro' | 'markets' | 'submarkets' | 'assets' | 'optimization' | 'coverage';
 
 export type ResearchWorkspaceData = {
   tabs: ResearchWorkspaceTab[];
@@ -115,6 +117,28 @@ export type ResearchWorkspaceData = {
     freshnessBadge: string;
     sourceFreshnessTone: 'good' | 'warn' | 'danger';
     openCoverageTasks: number;
+  }>;
+  optimization: Array<{
+    portfolioId: string;
+    portfolioCode: string;
+    portfolioName: string;
+    assetCount: number;
+    methodologyLabel: string;
+    objectiveScorePct: number;
+    topMove: string;
+    defensiveMove: string;
+    addCount: number;
+    trimCount: number;
+    blockerCount: number;
+    watchCount: number;
+    fragileScenario: {
+      label: string;
+      weightedStressScore: number;
+      weightedValueImpactPct: number;
+      weightedDscrImpactPct: number;
+      leadAssetName: string | null;
+      commentary: string;
+    } | null;
   }>;
   coverageQueue: Array<{
     id: string;
@@ -1349,7 +1373,7 @@ export async function getResearchWorkspaceData(db: PrismaClient = prisma): Promi
   }
   const finalStatus = didRefresh ? await getResearchWorkspaceSyncSnapshot(db) : initialStatus;
 
-  const [macroSnapshots, marketUniverses, submarkets, assets, coverageTasks, recentRuns] = await Promise.all([
+  const [macroSnapshots, marketUniverses, submarkets, assets, portfolios, coverageTasks, recentRuns] = await Promise.all([
     db.researchSnapshot.findMany({
       where: {
         snapshotType: 'official-source'
@@ -1424,6 +1448,7 @@ export async function getResearchWorkspaceData(db: PrismaClient = prisma): Promi
         updatedAt: 'desc'
       }
     }),
+    listPortfolios(db),
     db.coverageTask.findMany({
       where: {
         status: {
@@ -1454,7 +1479,7 @@ export async function getResearchWorkspaceData(db: PrismaClient = prisma): Promi
   ]);
 
   return {
-    tabs: ['macro', 'markets', 'submarkets', 'assets', 'coverage'],
+    tabs: ['macro', 'markets', 'submarkets', 'assets', 'optimization', 'coverage'],
     status: buildResearchWorkspaceStatus(finalStatus, didRefresh, recentRuns),
     macro: {
       snapshots: macroSnapshots.map((snapshot) => {
@@ -1534,6 +1559,22 @@ export async function getResearchWorkspaceData(db: PrismaClient = prisma): Promi
         freshnessBadge: dossier.freshness.headline,
         sourceFreshnessTone: getFreshnessTone(dossier.freshness.status),
         openCoverageTasks: dossier.coverage.openTaskCount
+      };
+    }),
+    optimization: portfolios.map((portfolio) => {
+      const item = buildPortfolioOptimizationWorkspaceItem(portfolio);
+      return {
+        ...item,
+        fragileScenario: item.fragileScenario
+          ? {
+              label: item.fragileScenario.label,
+              weightedStressScore: item.fragileScenario.weightedStressScore,
+              weightedValueImpactPct: item.fragileScenario.weightedValueImpactPct,
+              weightedDscrImpactPct: item.fragileScenario.weightedDscrImpactPct,
+              leadAssetName: item.fragileScenario.leadAssetName,
+              commentary: item.fragileScenario.commentary
+            }
+          : null
       };
     }),
     coverageQueue: coverageTasks.map((task) => ({

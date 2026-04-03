@@ -74,7 +74,11 @@ export function ResearchWorkspacePanel({ data, activeTab }: Props) {
                 : 'border-white/10 bg-white/[0.03] text-slate-300 hover:border-white/20 hover:bg-white/[0.06] hover:text-white'
             }`}
           >
-            {tab === 'assets' ? 'Asset Dossiers' : tab.replace(/^\w/, (char) => char.toUpperCase())}
+            {tab === 'assets'
+              ? 'Asset Dossiers'
+              : tab === 'optimization'
+                ? 'Optimization Lab'
+                : tab.replace(/^\w/, (char) => char.toUpperCase())}
           </Link>
         ))}
       </div>
@@ -242,6 +246,89 @@ export function ResearchWorkspacePanel({ data, activeTab }: Props) {
             {data.assetDossiers.length === 0 ? (
               <div className="rounded-[22px] border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-slate-300">
                 No asset dossiers are available yet.
+              </div>
+            ) : null}
+          </div>
+        </Card>
+      ) : null}
+
+      {activeTab === 'optimization' ? (
+        <Card>
+          <div className="eyebrow">Optimization Lab</div>
+          <h2 className="mt-2 text-2xl font-semibold text-white">
+            Quantum-inspired portfolio search and scenario exploration
+          </h2>
+          <p className="mt-3 text-sm leading-7 text-slate-400">
+            This tab runs deterministic quantum-inspired search on current held portfolios using operating KPIs,
+            covenant pressure, research blockers, and official market signal freshness. It is a classical research
+            module for operator decision support, not quantum hardware execution.
+          </p>
+          <div className="mt-5 grid gap-4">
+            {data.optimization.map((portfolio) => (
+              <Link
+                key={portfolio.portfolioId}
+                href={`/admin/portfolio/${portfolio.portfolioId}`}
+                className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4 transition hover:border-white/20 hover:bg-white/[0.05]"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-semibold text-white">{portfolio.portfolioName}</div>
+                    <div className="mt-1 text-xs text-slate-500">
+                      {portfolio.portfolioCode} / {portfolio.assetCount} held assets
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge tone="warn">{portfolio.methodologyLabel}</Badge>
+                    <Badge
+                      tone={
+                        portfolio.objectiveScorePct >= 68
+                          ? 'good'
+                          : portfolio.objectiveScorePct >= 52
+                            ? 'warn'
+                            : 'danger'
+                      }
+                    >
+                      objective {portfolio.objectiveScorePct.toFixed(0)}%
+                    </Badge>
+                    <Badge tone={portfolio.blockerCount > 0 ? 'warn' : 'good'}>
+                      {portfolio.blockerCount} blockers
+                    </Badge>
+                    <Badge tone={portfolio.watchCount > 0 ? 'warn' : 'good'}>
+                      {portfolio.watchCount} watch assets
+                    </Badge>
+                  </div>
+                </div>
+                <div className="mt-4 grid gap-3 xl:grid-cols-2">
+                  <div>
+                    <div className="fine-print">Primary Move</div>
+                    <p className="mt-2 text-sm leading-7 text-slate-300">{portfolio.topMove}</p>
+                  </div>
+                  <div>
+                    <div className="fine-print">Defensive Move</div>
+                    <p className="mt-2 text-sm leading-7 text-slate-300">{portfolio.defensiveMove}</p>
+                  </div>
+                </div>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Badge tone={portfolio.addCount > 0 ? 'good' : 'neutral'}>{portfolio.addCount} adds</Badge>
+                  <Badge tone={portfolio.trimCount > 0 ? 'warn' : 'neutral'}>{portfolio.trimCount} trims</Badge>
+                  {portfolio.fragileScenario ? (
+                    <Badge tone={portfolio.fragileScenario.weightedStressScore >= 18 ? 'danger' : 'warn'}>
+                      {portfolio.fragileScenario.label} {portfolio.fragileScenario.weightedStressScore.toFixed(1)}
+                    </Badge>
+                  ) : null}
+                </div>
+                {portfolio.fragileScenario ? (
+                  <p className="mt-3 text-xs leading-6 text-slate-500">
+                    {portfolio.fragileScenario.commentary} Value impact{' '}
+                    {portfolio.fragileScenario.weightedValueImpactPct.toFixed(1)}% / DSCR impact{' '}
+                    {portfolio.fragileScenario.weightedDscrImpactPct.toFixed(1)}%.
+                  </p>
+                ) : null}
+              </Link>
+            ))}
+            {data.optimization.length === 0 ? (
+              <div className="rounded-[22px] border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-slate-300">
+                No held portfolios are available for optimization research yet.
               </div>
             ) : null}
           </div>

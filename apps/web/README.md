@@ -10,7 +10,7 @@ Current operating layers inside this app:
 - portfolio operations
 - capital formation shell
 
-Research is now a first-class workspace at `/admin/research`, not only a service layer. It uses shared `ResearchSnapshot`, `MarketUniverse`, `Submarket`, `CoverageTask`, `SourceCache`, `ResearchSyncRun`, and approved evidence data so underwriting, deals, portfolio, and fund workflows read the same provenance, freshness, and sync-history surfaces.
+Research is now a first-class workspace at `/admin/research`, not only a service layer. It uses shared `ResearchSnapshot`, `MarketUniverse`, `Submarket`, `CoverageTask`, `SourceCache`, `ResearchSyncRun`, and approved evidence data so underwriting, deals, portfolio, and fund workflows read the same provenance, freshness, sync-history, and optimization surfaces.
 
 Registry-only remains explicit:
 

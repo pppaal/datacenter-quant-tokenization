@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { AssetClass, CovenantStatus, PortfolioAssetStatus } from '@prisma/client';
+import { AssetClass, CovenantStatus, PortfolioAssetStatus, SourceStatus, TaskPriority, TaskStatus } from '@prisma/client';
 import {
   buildCovenantStatusSummary,
   buildPortfolioDashboard,
   buildPortfolioOperatorBriefs
 } from '@/lib/services/portfolio';
+import { buildPortfolioOptimizationLab } from '@/lib/services/portfolio-optimization';
 
 test('buildCovenantStatusSummary groups latest covenant outcomes', () => {
   const summary = buildCovenantStatusSummary([
@@ -301,4 +302,170 @@ test('buildPortfolioOperatorBriefs produces operator-facing research and watchli
   assert.ok(briefs.watchlistBrief.includes('24.0%'));
   assert.ok(briefs.capexBrief.includes('Yeouido Core Office Tower'));
   assert.ok(briefs.researchBrief.includes('Office Vacancy 7.1%'));
+});
+
+test('buildPortfolioOptimizationLab creates deterministic allocation and scenario exploration output', () => {
+  const portfolio = {
+    id: 'portfolio-opt',
+    code: 'KR-CORE-I',
+    name: 'Korea Core Portfolio',
+    market: 'KR',
+    assets: [
+      {
+        id: 'pa-office',
+        status: PortfolioAssetStatus.ACTIVE,
+        currentHoldValueKrw: 330_000_000_000,
+        acquisitionCostKrw: 300_000_000_000,
+        asset: {
+          id: 'asset-office',
+          name: 'Yeouido Core Office Tower',
+          assetCode: 'SEOUL-YEOUIDO-01',
+          assetClass: AssetClass.OFFICE,
+          market: 'KR',
+          address: { city: 'Seoul' },
+          researchSnapshots: [
+            {
+              title: 'Office market thesis',
+              sourceSystem: 'research-market-aggregate',
+              freshnessStatus: SourceStatus.FRESH,
+              freshnessLabel: 'fresh through March 2026',
+              snapshotDate: new Date('2026-03-31'),
+              metrics: null
+            }
+          ],
+          coverageTasks: [],
+          siteProfile: { districtName: 'Yeouido' },
+          buildingSnapshot: null,
+          marketSnapshot: { metroRegion: 'Seoul CBD', vacancyPct: 7.1 },
+          marketIndicatorSeries: [
+            {
+              id: 'indicator-office',
+              indicatorKey: 'office.vacancy_pct',
+              label: 'Office Vacancy',
+              value: 7.1,
+              observationDate: new Date('2026-03-01')
+            }
+          ],
+          transactionComps: [],
+          rentComps: [],
+          macroFactors: [],
+          documents: [],
+          valuations: [{ id: 'val-office', baseCaseValueKrw: 335_000_000_000 }],
+          leases: [],
+          ownershipRecords: [],
+          encumbranceRecords: [],
+          planningConstraints: [],
+          debtFacilities: [],
+          taxAssumption: null,
+          readinessProject: { onchainRecords: [] }
+        },
+        monthlyKpis: [
+          {
+            periodStart: new Date('2026-01-01'),
+            occupancyPct: 94,
+            passingRentKrwPerSqmMonth: 41000,
+            marketRentKrwPerSqmMonth: 44000,
+            debtServiceCoverage: 1.42,
+            ltvPct: 51
+          }
+        ],
+        leaseRollSnapshots: [
+          {
+            asOfDate: new Date('2026-01-01'),
+            next12MonthsExpiringPct: 11,
+            next24MonthsExpiringPct: 26
+          }
+        ],
+        covenantTests: [{ testName: 'DSCR', status: CovenantStatus.PASS, asOfDate: new Date('2026-01-31') }],
+        exitCases: []
+      },
+      {
+        id: 'pa-dc',
+        status: PortfolioAssetStatus.WATCHLIST,
+        currentHoldValueKrw: 280_000_000_000,
+        acquisitionCostKrw: 290_000_000_000,
+        asset: {
+          id: 'asset-dc',
+          name: 'Seoul Hyperscale Campus I',
+          assetCode: 'SEOUL-GANGSEO-01',
+          assetClass: AssetClass.DATA_CENTER,
+          market: 'KR',
+          address: { city: 'Seoul' },
+          researchSnapshots: [
+            {
+              title: 'Data center market thesis',
+              sourceSystem: 'research-market-aggregate',
+              freshnessStatus: SourceStatus.STALE,
+              freshnessLabel: 'stale after February 2026',
+              snapshotDate: new Date('2026-02-10'),
+              metrics: null
+            }
+          ],
+          coverageTasks: [
+            {
+              id: 'task-dc',
+              status: TaskStatus.OPEN,
+              priority: TaskPriority.HIGH,
+              title: 'Refresh leasing evidence',
+              notes: 'AI pod remains unsigned',
+              freshnessLabel: 'stale after February 2026'
+            }
+          ],
+          siteProfile: { districtName: 'Gangseo' },
+          buildingSnapshot: null,
+          marketSnapshot: { metroRegion: 'Seoul West', vacancyPct: 10.2 },
+          marketIndicatorSeries: [
+            {
+              id: 'indicator-dc',
+              indicatorKey: 'data_center.vacancy_pct',
+              label: 'Data Center Vacancy',
+              value: 10.2,
+              observationDate: new Date('2026-02-10')
+            }
+          ],
+          transactionComps: [],
+          rentComps: [],
+          macroFactors: [],
+          documents: [],
+          valuations: [{ id: 'val-dc', baseCaseValueKrw: 292_000_000_000 }],
+          leases: [],
+          ownershipRecords: [],
+          encumbranceRecords: [],
+          planningConstraints: [],
+          debtFacilities: [],
+          taxAssumption: null,
+          readinessProject: { onchainRecords: [] }
+        },
+        monthlyKpis: [
+          {
+            periodStart: new Date('2026-01-01'),
+            occupancyPct: 72,
+            passingRentKrwPerSqmMonth: 225000,
+            marketRentKrwPerSqmMonth: 229000,
+            debtServiceCoverage: 1.16,
+            ltvPct: 61
+          }
+        ],
+        leaseRollSnapshots: [
+          {
+            asOfDate: new Date('2026-01-01'),
+            next12MonthsExpiringPct: 27,
+            next24MonthsExpiringPct: 41
+          }
+        ],
+        covenantTests: [{ testName: 'DSCR', status: CovenantStatus.WATCH, asOfDate: new Date('2026-01-31') }],
+        exitCases: []
+      }
+    ]
+  } as any;
+
+  const lab = buildPortfolioOptimizationLab(portfolio);
+
+  assert.equal(lab.assetRows.length, 2);
+  assert.equal(lab.assetRows.reduce((total, row) => total + row.targetWeightPct, 0), 100);
+  assert.ok(lab.assetRows.some((row) => row.recommendation === 'ADD'));
+  assert.ok(lab.assetRows.some((row) => row.recommendation === 'TRIM'));
+  assert.ok(lab.scenarioRows.some((row) => row.label === 'Worst Feasible Search'));
+  assert.ok(lab.topMove.includes('target weight'));
+  assert.ok(lab.defensiveMove.includes('stress load'));
 });
