@@ -1,6 +1,24 @@
 import { spawn } from 'node:child_process';
 import { prisma } from '@/lib/db/prisma';
 
+function runCommand(command: string, args: string[]) {
+  return new Promise<void>((resolve, reject) => {
+    const child = spawn(command, args, {
+      stdio: 'inherit',
+      shell: process.platform === 'win32',
+      env: process.env
+    });
+
+    child.on('exit', (code) => {
+      if (code === 0) {
+        resolve();
+        return;
+      }
+      reject(new Error(`${command} ${args.join(' ')} exited with code ${code ?? 1}`));
+    });
+  });
+}
+
 async function assertDatabaseReachable() {
   try {
     await prisma.$queryRaw`SELECT 1`;
@@ -38,31 +56,24 @@ async function assertSeededOperatorData() {
   ]);
 
   if (assetCount === 0 || !seededOffice || !seededPortfolio || !seededFund || !seededDeal) {
-    throw new Error(
-      `E2E preflight failed: seeded demo records are missing.\n` +
-        `Expected seeded assets, deals, portfolio, and fund shells.\n` +
-        `Run:\n` +
-        `  npm run prisma:seed\n` +
-        `  npm run e2e`
-    );
+    throw new Error('E2E preflight detected missing seeded demo data.');
   }
 }
 
 async function main() {
   await assertDatabaseReachable();
-  await assertSeededOperatorData();
+
+  try {
+    await assertSeededOperatorData();
+  } catch {
+    console.log('Seeded demo records are missing. Running `npm run prisma:seed` before browser smoke...');
+    await prisma.$disconnect();
+    await runCommand('npm', ['run', 'prisma:seed']);
+  }
 
   await prisma.$disconnect();
 
-  const child = spawn('npx', ['playwright', 'test'], {
-    stdio: 'inherit',
-    shell: process.platform === 'win32',
-    env: process.env
-  });
-
-  child.on('exit', (code) => {
-    process.exit(code ?? 1);
-  });
+  await runCommand('npx', ['playwright', 'test']);
 }
 
 main().catch(async (error) => {

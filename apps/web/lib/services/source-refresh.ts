@@ -1,9 +1,10 @@
-import type { PrismaClient } from '@prisma/client';
+import { SourceRefreshTriggerType, type PrismaClient } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { enrichAssetFromSources } from '@/lib/services/assets';
 import { listSourceStatus } from '@/lib/services/sources';
 
 type SourceRefreshDb = Pick<PrismaClient, 'asset' | 'sourceCache'>;
+type SourceRefreshRunDb = Pick<PrismaClient, 'sourceRefreshRun'>;
 
 export type SourceRefreshAssetResult = {
   assetId: string;
@@ -40,6 +41,24 @@ export type SourceRefreshSummary = {
   results: SourceRefreshAssetResult[];
 };
 
+export type SourceRefreshRunSummary = {
+  id: string;
+  triggerType: SourceRefreshTriggerType;
+  statusLabel: string;
+  startedAt: Date;
+  finishedAt: Date | null;
+  staleThresholdHours: number;
+  batchSize: number;
+  sourceSystemCount: number;
+  staleSourceSystemCount: number;
+  assetCandidateCount: number;
+  refreshedAssetCount: number;
+  failedAssetCount: number;
+  refreshedByActor: string | null;
+  errorSummary: string | null;
+  metadata: unknown;
+};
+
 type RefreshDeps = {
   enrich?: typeof enrichAssetFromSources;
   now?: Date;
@@ -53,6 +72,15 @@ function getStaleThresholdHours() {
 function getBatchSize() {
   const raw = Number(process.env.SOURCE_REFRESH_BATCH_SIZE ?? 4);
   return Number.isFinite(raw) && raw > 0 ? raw : 4;
+}
+
+export function listRecentSourceRefreshRuns(db: SourceRefreshRunDb = prisma, limit = 6) {
+  return db.sourceRefreshRun.findMany({
+    take: limit,
+    orderBy: {
+      startedAt: 'desc'
+    }
+  });
 }
 
 export async function getSourceRefreshHealth(db: SourceRefreshDb = prisma, now = new Date()) {
@@ -180,4 +208,59 @@ export async function runScheduledSourceRefresh(
     },
     results
   };
+}
+
+export async function runSourceRefreshJob(
+  input: {
+    triggerType?: SourceRefreshTriggerType;
+    actorIdentifier?: string | null;
+  } = {},
+  db: PrismaClient = prisma,
+  deps: RefreshDeps = {}
+): Promise<SourceRefreshRunSummary> {
+  const triggerType = input.triggerType ?? SourceRefreshTriggerType.MANUAL;
+  const staleThresholdHours = getStaleThresholdHours();
+  const batchSize = getBatchSize();
+  const run = await db.sourceRefreshRun.create({
+    data: {
+      triggerType,
+      statusLabel: 'RUNNING',
+      staleThresholdHours,
+      batchSize,
+      refreshedByActor: input.actorIdentifier?.trim() || null
+    }
+  });
+
+  try {
+    const summary = await runScheduledSourceRefresh(db, deps);
+    return await db.sourceRefreshRun.update({
+      where: { id: run.id },
+      data: {
+        statusLabel: 'SUCCESS',
+        finishedAt: new Date(summary.triggeredAt),
+        sourceSystemCount: summary.sourceFreshness.total,
+        staleSourceSystemCount: summary.sourceFreshness.stale + summary.sourceFreshness.failed,
+        assetCandidateCount: summary.assetFreshness.staleCandidates,
+        refreshedAssetCount: summary.assetFreshness.refreshed,
+        failedAssetCount: summary.assetFreshness.failed,
+        metadata: {
+          latestFetchAt: summary.sourceFreshness.latestFetchAt,
+          staleSystems: summary.sourceFreshness.staleSystems,
+          staleAssets: summary.assetFreshness.staleAssets,
+          results: summary.results
+        }
+      }
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'source refresh failed';
+    await db.sourceRefreshRun.update({
+      where: { id: run.id },
+      data: {
+        statusLabel: 'FAILED',
+        finishedAt: new Date(),
+        errorSummary: message
+      }
+    });
+    throw error;
+  }
 }

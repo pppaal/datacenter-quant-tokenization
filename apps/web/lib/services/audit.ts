@@ -50,6 +50,30 @@ export async function listAuditEvents(
   });
 }
 
+export async function listRecentOpsRuns(
+  db: Pick<PrismaClient, 'researchSyncRun' | 'sourceRefreshRun'> = prisma
+) {
+  const [researchSyncRuns, sourceRefreshRuns] = await Promise.all([
+    db.researchSyncRun.findMany({
+      take: 6,
+      orderBy: {
+        startedAt: 'desc'
+      }
+    }),
+    db.sourceRefreshRun.findMany({
+      take: 6,
+      orderBy: {
+        startedAt: 'desc'
+      }
+    })
+  ]);
+
+  return {
+    researchSyncRuns,
+    sourceRefreshRuns
+  };
+}
+
 export function getDocumentStorageReadiness(env: NodeJS.ProcessEnv = process.env) {
   const bucket = env.DOCUMENT_STORAGE_BUCKET?.trim() ?? '';
   const endpoint = env.DOCUMENT_STORAGE_ENDPOINT?.trim() ?? '';
@@ -86,8 +110,14 @@ export function getAiReadiness(env: NodeJS.ProcessEnv = process.env) {
   };
 }
 
-export async function getSecurityOverview(db: Pick<PrismaClient, 'auditEvent'> = prisma, env: NodeJS.ProcessEnv = process.env) {
-  const auditEvents = await listAuditEvents({ limit: 60 }, db);
+export async function getSecurityOverview(
+  db: Pick<PrismaClient, 'auditEvent' | 'researchSyncRun' | 'sourceRefreshRun'> = prisma,
+  env: NodeJS.ProcessEnv = process.env
+) {
+  const [auditEvents, opsRuns] = await Promise.all([
+    listAuditEvents({ limit: 60 }, db),
+    listRecentOpsRuns(db)
+  ]);
   const actorSummaryMap = new Map<string, { actorIdentifier: string; actorRole: string; eventCount: number; lastSeenAt: Date }>();
 
   for (const event of auditEvents) {
@@ -112,6 +142,7 @@ export async function getSecurityOverview(db: Pick<PrismaClient, 'auditEvent'> =
 
   return {
     auditEvents,
+    opsRuns,
     actorSummary: [...actorSummaryMap.values()].sort((left, right) => right.lastSeenAt.getTime() - left.lastSeenAt.getTime()),
     storageReadiness: getDocumentStorageReadiness(env),
     aiReadiness: getAiReadiness(env)

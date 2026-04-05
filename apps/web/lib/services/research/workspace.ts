@@ -1367,11 +1367,7 @@ export function buildResearchCoverageSurface(input: {
 
 export async function getResearchWorkspaceData(db: PrismaClient = prisma): Promise<ResearchWorkspaceData> {
   const initialStatus = await getResearchWorkspaceSyncSnapshot(db);
-  const didRefresh = shouldRefreshResearchWorkspace(initialStatus);
-  if (didRefresh) {
-    await runResearchWorkspaceSync({ triggerType: ResearchSyncTriggerType.WORKSPACE_REFRESH }, db);
-  }
-  const finalStatus = didRefresh ? await getResearchWorkspaceSyncSnapshot(db) : initialStatus;
+  const finalStatus = initialStatus;
 
   const [macroSnapshots, marketUniverses, submarkets, assets, portfolios, coverageTasks, recentRuns] = await Promise.all([
     db.researchSnapshot.findMany({
@@ -1480,7 +1476,7 @@ export async function getResearchWorkspaceData(db: PrismaClient = prisma): Promi
 
   return {
     tabs: ['macro', 'markets', 'submarkets', 'assets', 'optimization', 'coverage'],
-    status: buildResearchWorkspaceStatus(finalStatus, didRefresh, recentRuns),
+    status: buildResearchWorkspaceStatus(finalStatus, false, recentRuns),
     macro: {
       snapshots: macroSnapshots.map((snapshot) => {
         const datasetDefinition = listKoreaPublicDatasetDefinitions().find(

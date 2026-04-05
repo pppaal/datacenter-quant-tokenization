@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { getSourceRefreshHealth, runScheduledSourceRefresh } from '@/lib/services/source-refresh';
+import { SourceRefreshTriggerType } from '@prisma/client';
+import {
+  getSourceRefreshHealth,
+  runScheduledSourceRefresh,
+  runSourceRefreshJob
+} from '@/lib/services/source-refresh';
 
 test('scheduled source refresh selects stale assets and reports stale source systems', async () => {
   process.env.SOURCE_REFRESH_STALE_HOURS = '24';
@@ -105,4 +110,90 @@ test('scheduled source refresh selects stale assets and reports stale source sys
   assert.equal(summary.assetFreshness.refreshed, 1);
   assert.equal(summary.assetFreshness.failed, 1);
   assert.equal(summary.results[1]?.message, 'refresh_failed');
+});
+
+test('runSourceRefreshJob persists refresh run summary and actor metadata', async () => {
+  process.env.SOURCE_REFRESH_STALE_HOURS = '24';
+  process.env.SOURCE_REFRESH_BATCH_SIZE = '3';
+
+  const persistedRuns: Array<Record<string, unknown>> = [];
+
+  const fakeDb = {
+    sourceCache: {
+      async findMany() {
+        return [
+          {
+            sourceSystem: 'nasa-power',
+            cacheKey: 'asset-1',
+            status: 'FRESH',
+            freshnessLabel: 'current',
+            fetchedAt: new Date('2026-03-21T05:30:00.000Z'),
+            expiresAt: new Date('2026-03-22T05:30:00.000Z')
+          }
+        ];
+      }
+    },
+    asset: {
+      async findMany(args: any) {
+        const assets = [
+          {
+            id: 'asset_stale_1',
+            assetCode: 'SEOUL-OLD-01',
+            name: 'Old Seoul Case',
+            lastEnrichedAt: new Date('2026-03-19T00:00:00.000Z'),
+            updatedAt: new Date('2026-03-21T01:00:00.000Z'),
+            address: { city: 'Seoul' }
+          }
+        ];
+
+        if (args?.take) {
+          return assets.map(({ address, ...asset }) => asset);
+        }
+
+        return assets;
+      }
+    },
+    sourceRefreshRun: {
+      async create({ data }: any) {
+        const row = {
+          id: 'run_1',
+          startedAt: new Date('2026-03-21T06:00:00.000Z'),
+          finishedAt: null,
+          errorSummary: null,
+          metadata: null,
+          ...data
+        };
+        persistedRuns.push(row);
+        return row;
+      },
+      async update({ where, data }: any) {
+        const row = persistedRuns.find((item) => item.id === where.id);
+        if (!row) {
+          throw new Error('run missing');
+        }
+        Object.assign(row, data);
+        return row;
+      }
+    }
+  };
+
+  const summary = await runSourceRefreshJob(
+    {
+      triggerType: SourceRefreshTriggerType.MANUAL,
+      actorIdentifier: 'analyst@example.com'
+    },
+    fakeDb as any,
+    {
+      now: new Date('2026-03-21T06:00:00.000Z'),
+      enrich: async () => null as any
+    }
+  );
+
+  assert.equal(summary.id, 'run_1');
+  assert.equal(summary.triggerType, SourceRefreshTriggerType.MANUAL);
+  assert.equal(summary.statusLabel, 'SUCCESS');
+  assert.equal(summary.refreshedByActor, 'analyst@example.com');
+  assert.equal(summary.assetCandidateCount, 1);
+  assert.equal(summary.refreshedAssetCount, 1);
+  assert.equal(summary.failedAssetCount, 0);
 });

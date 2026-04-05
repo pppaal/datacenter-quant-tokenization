@@ -37,6 +37,12 @@ export function ResearchWorkspacePanel({ data, activeTab }: Props) {
           ) : null}
         </div>
         <p className="mt-3 text-sm leading-7 text-slate-400">{data.status.headline}</p>
+        {data.status.staleOfficialSourceCount > 0 || data.status.staleAssetDossierCount > 0 ? (
+          <p className="mt-2 text-xs leading-6 text-slate-500">
+            Research sync now runs explicitly. Use <span className="text-slate-300">Run Research Sync</span> to refresh
+            official sources and dossier staging when coverage is stale.
+          </p>
+        ) : null}
         {data.status.recentRuns.length > 0 ? (
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             {data.status.recentRuns.slice(0, 4).map((run) => (

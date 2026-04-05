@@ -6,6 +6,25 @@ import {
   hasRequiredAdminRole
 } from '@/lib/security/admin-auth';
 
+function isPublicApiPath(pathname: string) {
+  return pathname === '/api/inquiries';
+}
+
+function isAuthorizedOpsRequest(request: NextRequest) {
+  if (!request.nextUrl.pathname.startsWith('/api/ops/')) {
+    return false;
+  }
+
+  const expectedToken = process.env.OPS_CRON_TOKEN?.trim();
+  if (!expectedToken) {
+    return false;
+  }
+
+  const bearer = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '').trim();
+  const headerToken = request.headers.get('x-ops-cron-token')?.trim();
+  return bearer === expectedToken || headerToken === expectedToken;
+}
+
 function unauthorizedResponse(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith('/api/')) {
     return NextResponse.json(
@@ -42,6 +61,14 @@ function forbiddenResponse(request: NextRequest, requiredRole: string) {
 }
 
 export function middleware(request: NextRequest) {
+  if (isPublicApiPath(request.nextUrl.pathname)) {
+    return NextResponse.next();
+  }
+
+  if (isAuthorizedOpsRequest(request)) {
+    return NextResponse.next();
+  }
+
   const config = getAdminAuthConfig();
 
   if (config.mode === 'disabled') {
@@ -91,11 +118,6 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     '/admin/:path*',
-    '/api/assets/:path*',
-    '/api/review/:path*',
-    '/api/valuations/:path*',
-    '/api/documents/:path*',
-    '/api/readiness/:path*',
-    '/api/registry/:path*'
+    '/api/:path*'
   ]
 };

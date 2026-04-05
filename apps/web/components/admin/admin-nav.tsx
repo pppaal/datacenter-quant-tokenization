@@ -4,24 +4,12 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
-const items = [
-  { href: '/admin', label: 'Overview' },
-  { href: '/admin/deals', label: 'Deals' },
-  { href: '/admin/assets', label: 'Assets' },
-  { href: '/admin/portfolio', label: 'Portfolio' },
-  { href: '/admin/funds', label: 'Funds' },
-  { href: '/admin/investors', label: 'Investors' },
-  { href: '/admin/research', label: 'Research' },
-  { href: '/admin/review', label: 'Review' },
-  { href: '/admin/valuations', label: 'Valuations' },
-  { href: '/admin/documents', label: 'Documents' },
-  { href: '/admin/sources', label: 'Sources' },
-  { href: '/admin/security', label: 'Security' },
-  { href: '/admin/macro-profiles', label: 'Macro Profiles' },
-  { href: '/admin/readiness', label: 'Readiness' }
-];
+export type AdminNavItem = {
+  href: string;
+  label: string;
+};
 
-export function AdminNav() {
+export function AdminNav({ items }: { items: AdminNavItem[] }) {
   const pathname = usePathname() ?? '';
 
   return (

@@ -1,5 +1,10 @@
+import { headers } from 'next/headers';
 import { Badge } from '@/components/ui/badge';
+import { SourcesRefreshButton } from '@/components/admin/sources-refresh-button';
 import { Card } from '@/components/ui/card';
+import { hasRequiredAdminRole } from '@/lib/security/admin-auth';
+import { getAdminActorFromHeaders } from '@/lib/security/admin-request';
+import { getSourceRefreshHealth, listRecentSourceRefreshRuns } from '@/lib/services/source-refresh';
 import {
   listFreeMacroSourceCatalog,
   listGlobalMarketLaunchPlan,
@@ -31,7 +36,13 @@ function toneForRealtimeClass(status: 'REALTIME' | 'NEAR_REALTIME' | 'RELEASE_BA
 }
 
 export default async function SourcesPage() {
-  const rows = await listSourceStatus();
+  const actor = getAdminActorFromHeaders(await headers());
+  const canRefreshSources = actor ? hasRequiredAdminRole(actor.role, 'ANALYST') : false;
+  const [rows, refreshHealth, recentRuns] = await Promise.all([
+    listSourceStatus(),
+    getSourceRefreshHealth(),
+    listRecentSourceRefreshRuns()
+  ]);
   const macroConnectors = listMacroConnectorReadiness();
   const launchPlan = listGlobalMarketLaunchPlan();
   const freeMacroCatalog = listFreeMacroSourceCatalog();
@@ -48,6 +59,11 @@ export default async function SourcesPage() {
           NASA climate ingestion now tracks POWER climatology and daily near-real-time refresh separately from GPM
           precipitation and FIRMS hotspot overlays.
         </p>
+        {canRefreshSources ? (
+          <div className="mt-4">
+            <SourcesRefreshButton />
+          </div>
+        ) : null}
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -67,6 +83,111 @@ export default async function SourcesPage() {
           <p className="mt-2 text-sm text-slate-400">Best path to replace fallback-heavy market assumptions and static FX conversion with live feeds.</p>
         </div>
       </div>
+
+      <Card className="space-y-4">
+        <div>
+          <div className="eyebrow">Refresh Operations</div>
+          <h3 className="mt-2 text-xl font-semibold text-white">Batch status, stale assets, and recent source refresh runs</h3>
+          <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400">
+            Source refresh is now an explicit operator or cron-triggered job. Use this panel to see stale adapter coverage,
+            stale assets waiting for enrichment, and the most recent run results before research or underwriting relies on them.
+          </p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+            <div className="fine-print">Stale Threshold</div>
+            <div className="mt-3 text-2xl font-semibold text-white">{refreshHealth.staleThresholdHours}h</div>
+            <p className="mt-2 text-sm text-slate-400">Assets older than this enrichment window enter the refresh queue.</p>
+          </div>
+          <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+            <div className="fine-print">Stale Source Systems</div>
+            <div className="mt-3 text-2xl font-semibold text-white">
+              {refreshHealth.sourceFreshness.stale + refreshHealth.sourceFreshness.failed}
+            </div>
+            <p className="mt-2 text-sm text-slate-400">
+              {refreshHealth.sourceFreshness.latestFetchAt
+                ? `Latest fetch ${formatDate(refreshHealth.sourceFreshness.latestFetchAt)}`
+                : 'No source fetch history yet.'}
+            </p>
+          </div>
+          <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+            <div className="fine-print">Stale Assets</div>
+            <div className="mt-3 text-2xl font-semibold text-white">{refreshHealth.assetFreshness.staleCandidates}</div>
+            <p className="mt-2 text-sm text-slate-400">Assets waiting for re-enrichment before the research fabric is fully current.</p>
+          </div>
+        </div>
+        <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+          <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+            <div className="fine-print">Recent Source Refresh Runs</div>
+            <div className="mt-4 space-y-3">
+              {recentRuns.length > 0 ? (
+                recentRuns.map((run) => (
+                  <div key={run.id} className="rounded-[18px] border border-white/10 bg-slate-950/40 p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <div className="text-sm font-semibold text-white">{run.triggerType.toLowerCase()} refresh</div>
+                        <div className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">
+                          Started {formatDate(run.startedAt)}
+                        </div>
+                      </div>
+                      <Badge tone={run.statusLabel === 'SUCCESS' ? 'good' : run.statusLabel === 'RUNNING' ? 'warn' : 'danger'}>
+                        {run.statusLabel.toLowerCase()}
+                      </Badge>
+                    </div>
+                    <div className="mt-4 grid gap-3 md:grid-cols-4">
+                      <div>
+                        <div className="fine-print">Sources</div>
+                        <div className="mt-1 text-sm text-white">{run.sourceSystemCount}</div>
+                      </div>
+                      <div>
+                        <div className="fine-print">Stale</div>
+                        <div className="mt-1 text-sm text-white">{run.staleSourceSystemCount}</div>
+                      </div>
+                      <div>
+                        <div className="fine-print">Refreshed</div>
+                        <div className="mt-1 text-sm text-white">{run.refreshedAssetCount}</div>
+                      </div>
+                      <div>
+                        <div className="fine-print">Failed</div>
+                        <div className="mt-1 text-sm text-white">{run.failedAssetCount}</div>
+                      </div>
+                    </div>
+                    <div className="mt-3 text-sm text-slate-400">
+                      {run.errorSummary
+                        ? run.errorSummary
+                        : `Triggered by ${run.refreshedByActor ?? 'system'} with batch size ${run.batchSize}.`}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="rounded-[18px] border border-dashed border-white/10 bg-slate-950/20 p-4 text-sm text-slate-400">
+                  No source refresh runs have been recorded yet.
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+            <div className="fine-print">Stale Asset Queue</div>
+            <div className="mt-4 space-y-3">
+              {refreshHealth.assetFreshness.staleAssets.length > 0 ? (
+                refreshHealth.assetFreshness.staleAssets.map((asset) => (
+                  <div key={asset.assetId} className="rounded-[18px] border border-white/10 bg-slate-950/40 p-4">
+                    <div className="text-sm font-semibold text-white">{asset.assetCode}</div>
+                    <div className="mt-1 text-sm text-slate-300">{asset.assetName}</div>
+                    <div className="mt-2 text-xs uppercase tracking-[0.18em] text-slate-500">
+                      {asset.city ?? 'Unknown city'} · Last enriched {formatDate(asset.lastEnrichedAt)}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="rounded-[18px] border border-dashed border-white/10 bg-slate-950/20 p-4 text-sm text-slate-400">
+                  No stale assets are waiting for a source refresh run.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </Card>
 
       <Card className="space-y-4">
         <div>

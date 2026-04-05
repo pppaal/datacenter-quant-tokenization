@@ -67,11 +67,11 @@ export default async function AdminOverviewPage() {
             <Badge>{formatNumber(inquiries.length, 0)} inquiries</Badge>
           </div>
           <h2 className="mt-5 text-4xl font-semibold tracking-[-0.04em] text-white">
-            Admin surface for a multi-asset underwriting platform.
+            Operator surface for a Korean AI-native real-estate investment firm.
           </h2>
           <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-400">
-            The console is connected to asset services, valuation runs, document storage, and memo generation across
-            multiple real estate sectors.
+            The console connects research, review-gated underwriting, deal execution, portfolio operations, and capital
+            reporting in one offchain operating environment.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Link href="/admin/assets/new">
@@ -669,19 +669,42 @@ export default async function AdminOverviewPage() {
         </Card>
 
         <Card>
-          <div className="eyebrow">Immediate Actions</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">What the team can do next</h2>
+          <div className="eyebrow">Action Center</div>
+          <h2 className="mt-2 text-2xl font-semibold text-white">Move the operating queue forward</h2>
           <div className="mt-5 grid gap-3">
             {[
-              'Create or update a seeded underwriting case.',
-              'Run source enrichment to refresh permits, climate, market, and utility overlays.',
-              'Trigger valuation scenarios and review confidence plus provenance.',
-              'Upload diligence documents and move the record toward committee-ready memo output.'
+              {
+                href: '/admin/review',
+                title: 'Clear pending evidence',
+                detail: 'Approve or reject normalized micro, legal, and lease evidence before it flows into reports and valuation.'
+              },
+              {
+                href: '/admin/research',
+                title: 'Refresh research coverage',
+                detail: 'Run official-source sync and work the coverage queue before sourcing, underwriting, or investor reporting relies on stale research.'
+              },
+              {
+                href: '/admin/deals?view=actionable',
+                title: 'Advance live deals',
+                detail: 'Work next actions, diligence requests, lender quotes, and bid revisions from the actionable execution queue.'
+              },
+              {
+                href: '/admin/portfolio',
+                title: 'Monitor held assets',
+                detail: 'Review covenant, rollover, capex, and optimization signals across current portfolio holdings.'
+              }
             ].map((item, index) => (
-              <div key={item} className="flex gap-4 rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+              <Link
+                key={item.title}
+                href={item.href}
+                className="flex gap-4 rounded-[24px] border border-white/10 bg-white/[0.03] p-5 transition hover:border-white/20 hover:bg-white/[0.05]"
+              >
                 <div className="font-mono text-sm text-accent">{String(index + 1).padStart(2, '0')}</div>
-                <div className="text-sm leading-7 text-slate-300">{item}</div>
-              </div>
+                <div>
+                  <div className="text-sm font-semibold text-white">{item.title}</div>
+                  <div className="mt-1 text-sm leading-7 text-slate-300">{item.detail}</div>
+                </div>
+              </Link>
             ))}
           </div>
         </Card>

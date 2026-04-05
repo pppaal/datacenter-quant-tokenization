@@ -39,13 +39,15 @@ npm run dev
 - `npm run dev` starts the active product in `apps/web`
 - `npm run build` builds `apps/web`
 - `npm run test` runs the required unit tests in `apps/web`
-- `npm run e2e` runs Playwright smoke coverage with DB/seed preflight for the seeded operator journeys in `apps/web`
+- `npm run e2e` runs Playwright smoke coverage and auto-seeds the demo dataset when the local database is reachable but seed records are missing
 - `npm run e2e:list` lists the browser smoke suite without launching the app
+- `npm run ops:cycle` runs source refresh then research sync using the same persisted run history used by the admin ops surfaces
+- `npm run ops:preflight` runs prisma generate, typecheck, unit tests, build, and browser suite registration in one command
 - `npm run prisma:generate` generates the Prisma client for `apps/web`
 - `npm run prisma:migrate` runs Prisma migrations inside `apps/web`
 - `npm run prisma:seed` loads seeded Korean data-center and office demo opportunities
 
-`npm run e2e` now fails fast with a clear message if the local Postgres database is down or the seeded demo records are missing.
+`npm run e2e` now fails fast with a clear message if the local Postgres database is down, and it will auto-run `npm run prisma:seed` if the database is reachable but the seeded demo records are missing.
 
 ## Environment
 
@@ -102,7 +104,8 @@ The current product stance is:
 ## Investment-Firm Operating Layers
 
 - `Research`
-  - `/admin/research` for macro, market, submarket, asset dossier, portfolio optimization, and coverage-queue research fabric with provenance, freshness, and research sync history
+  - `/admin/research` for macro, market, submarket, asset dossier, portfolio optimization, and coverage-queue research fabric with provenance, freshness, and explicit sync controls
+  - `/admin/sources` for source freshness, stale asset queue, and recent source refresh run history
 - `Underwriting`
   - review-gated evidence, promoted features, valuation, committee memo, DD checklist, and risk memo
 - `Deal Execution`

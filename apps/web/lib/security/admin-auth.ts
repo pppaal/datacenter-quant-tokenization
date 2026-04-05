@@ -154,8 +154,25 @@ export function hasRequiredAdminRole(actorRole: AdminAccessRole, requiredRole: A
   return roleRank[actorRole] >= roleRank[requiredRole];
 }
 
+const analystAdminPaths = [
+  '/admin/assets/new',
+  '/admin/deals',
+  '/admin/documents',
+  '/admin/funds',
+  '/admin/investors',
+  '/admin/macro-profiles',
+  '/admin/portfolio',
+  '/admin/readiness',
+  '/admin/research',
+  '/admin/review',
+  '/admin/sources'
+] as const;
+
 export function getRequiredAdminRoleForPath(pathname: string): AdminAccessRole {
   if (pathname.startsWith('/admin/security')) return 'ADMIN';
+  if (analystAdminPaths.some((path) => pathname === path || pathname.startsWith(`${path}/`))) {
+    return 'ANALYST';
+  }
   if (pathname.startsWith('/api/readiness')) return 'ADMIN';
   if (pathname.startsWith('/api/registry')) return 'ADMIN';
   if (pathname.startsWith('/api/valuations/') && pathname.endsWith('/approval')) return 'ADMIN';

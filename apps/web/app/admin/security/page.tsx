@@ -182,6 +182,116 @@ export default async function AdminSecurityPage() {
           )}
         </div>
       </Card>
+
+      <div className="grid gap-6 xl:grid-cols-2">
+        <Card>
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <div className="eyebrow">Research Sync Runs</div>
+              <h2 className="mt-2 text-2xl font-semibold text-white">Recent research fabric refresh history</h2>
+            </div>
+            <Badge tone="neutral">{formatNumber(security.opsRuns.researchSyncRuns.length, 0)} runs</Badge>
+          </div>
+          <div className="mt-5 space-y-3">
+            {security.opsRuns.researchSyncRuns.length > 0 ? (
+              security.opsRuns.researchSyncRuns.map((run) => (
+                <div key={run.id} className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge>{run.triggerType.toLowerCase()}</Badge>
+                      <Badge tone={run.statusLabel === 'SUCCESS' ? 'good' : run.statusLabel === 'RUNNING' ? 'warn' : 'danger'}>
+                        {run.statusLabel.toLowerCase()}
+                      </Badge>
+                    </div>
+                    <div className="text-xs uppercase tracking-[0.18em] text-slate-500">{formatDate(run.startedAt)}</div>
+                  </div>
+                  <div className="mt-3 grid gap-3 text-sm text-slate-300 md:grid-cols-4">
+                    <div>
+                      <div className="fine-print">Official Sources</div>
+                      <div className="mt-1">{formatNumber(run.officialSourceCount, 0)}</div>
+                    </div>
+                    <div>
+                      <div className="fine-print">Asset Dossiers</div>
+                      <div className="mt-1">{formatNumber(run.assetDossierCount, 0)}</div>
+                    </div>
+                    <div>
+                      <div className="fine-print">Stale Sources</div>
+                      <div className="mt-1">{formatNumber(run.staleOfficialSourceCount, 0)}</div>
+                    </div>
+                    <div>
+                      <div className="fine-print">Stale Assets</div>
+                      <div className="mt-1">{formatNumber(run.staleAssetDossierCount, 0)}</div>
+                    </div>
+                  </div>
+                  <div className="mt-3 text-sm text-slate-400">
+                    {run.errorSummary
+                      ? run.errorSummary
+                      : `Triggered by ${run.refreshedByActor ?? 'system'} and finished ${formatDate(run.finishedAt)}.`}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
+                No research sync runs have been recorded yet.
+              </div>
+            )}
+          </div>
+        </Card>
+
+        <Card>
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <div className="eyebrow">Source Refresh Runs</div>
+              <h2 className="mt-2 text-2xl font-semibold text-white">Recent source and enrichment refresh history</h2>
+            </div>
+            <Badge tone="neutral">{formatNumber(security.opsRuns.sourceRefreshRuns.length, 0)} runs</Badge>
+          </div>
+          <div className="mt-5 space-y-3">
+            {security.opsRuns.sourceRefreshRuns.length > 0 ? (
+              security.opsRuns.sourceRefreshRuns.map((run) => (
+                <div key={run.id} className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge>{run.triggerType.toLowerCase()}</Badge>
+                      <Badge tone={run.statusLabel === 'SUCCESS' ? 'good' : run.statusLabel === 'RUNNING' ? 'warn' : 'danger'}>
+                        {run.statusLabel.toLowerCase()}
+                      </Badge>
+                    </div>
+                    <div className="text-xs uppercase tracking-[0.18em] text-slate-500">{formatDate(run.startedAt)}</div>
+                  </div>
+                  <div className="mt-3 grid gap-3 text-sm text-slate-300 md:grid-cols-4">
+                    <div>
+                      <div className="fine-print">Source Systems</div>
+                      <div className="mt-1">{formatNumber(run.sourceSystemCount, 0)}</div>
+                    </div>
+                    <div>
+                      <div className="fine-print">Stale Systems</div>
+                      <div className="mt-1">{formatNumber(run.staleSourceSystemCount, 0)}</div>
+                    </div>
+                    <div>
+                      <div className="fine-print">Refreshed Assets</div>
+                      <div className="mt-1">{formatNumber(run.refreshedAssetCount, 0)}</div>
+                    </div>
+                    <div>
+                      <div className="fine-print">Failed Assets</div>
+                      <div className="mt-1">{formatNumber(run.failedAssetCount, 0)}</div>
+                    </div>
+                  </div>
+                  <div className="mt-3 text-sm text-slate-400">
+                    {run.errorSummary
+                      ? run.errorSummary
+                      : `Triggered by ${run.refreshedByActor ?? 'system'} with threshold ${run.staleThresholdHours}h and batch ${run.batchSize}.`}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
+                No source refresh runs have been recorded yet.
+              </div>
+            )}
+          </div>
+        </Card>
+      </div>
     </div>
   );
 }

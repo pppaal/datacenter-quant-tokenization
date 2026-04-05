@@ -1,5 +1,9 @@
+import { headers } from 'next/headers';
 import { Badge } from '@/components/ui/badge';
+import { ResearchRefreshButton } from '@/components/admin/research-refresh-button';
 import { ResearchWorkspacePanel } from '@/components/admin/research-workspace-panel';
+import { hasRequiredAdminRole } from '@/lib/security/admin-auth';
+import { getAdminActorFromHeaders } from '@/lib/security/admin-request';
 import { getResearchWorkspaceData, type ResearchWorkspaceTab } from '@/lib/services/research/workspace';
 
 export const dynamic = 'force-dynamic';
@@ -14,6 +18,8 @@ const validTabs: ResearchWorkspaceTab[] = ['macro', 'markets', 'submarkets', 'as
 
 export default async function AdminResearchPage({ searchParams }: Props) {
   const resolvedSearchParams = (await searchParams) ?? {};
+  const actor = getAdminActorFromHeaders(await headers());
+  const canRefreshResearch = actor ? hasRequiredAdminRole(actor.role, 'ANALYST') : false;
   const activeTab = validTabs.includes(resolvedSearchParams.tab as ResearchWorkspaceTab)
     ? (resolvedSearchParams.tab as ResearchWorkspaceTab)
     : 'macro';
@@ -39,6 +45,11 @@ export default async function AdminResearchPage({ searchParams }: Props) {
           into a shared operating layer. Every thesis and metric is surfaced with freshness, provenance, and a coverage
           queue that can be worked before underwriting, sourcing, hold monitoring, or investor reporting relies on it.
         </p>
+        {canRefreshResearch ? (
+          <div className="mt-6">
+            <ResearchRefreshButton />
+          </div>
+        ) : null}
       </section>
 
       <ResearchWorkspacePanel data={data} activeTab={activeTab} />

@@ -11,6 +11,7 @@ Current operating layers inside this app:
 - capital formation shell
 
 Research is now a first-class workspace at `/admin/research`, not only a service layer. It uses shared `ResearchSnapshot`, `MarketUniverse`, `Submarket`, `CoverageTask`, `SourceCache`, `ResearchSyncRun`, and approved evidence data so underwriting, deals, portfolio, and fund workflows read the same provenance, freshness, sync-history, and optimization surfaces.
+`/admin/sources` now complements that workspace with explicit source refresh controls, stale asset queue visibility, and persisted `SourceRefreshRun` audit history for operator and cron-triggered refresh jobs.
 
 Registry-only remains explicit:
 
@@ -48,7 +49,7 @@ npm run e2e
 This smoke suite now performs a preflight check first:
 
 - database reachable
-- seeded office / deal / portfolio / fund records present
+- if seeded office / deal / portfolio / fund records are missing, it runs `npm run prisma:seed`
 - then Playwright runs
 
 If you only want to confirm the registered browser suite without starting the app, use:
@@ -56,6 +57,16 @@ If you only want to confirm the registered browser suite without starting the ap
 ```bash
 npm run e2e:list
 ```
+
+For operator-grade maintenance loops:
+
+```bash
+npm run ops:cycle
+npm run ops:preflight
+```
+
+- `ops:cycle` runs source refresh first, then research sync, and records both runs in the persisted audit/run history
+- `ops:preflight` runs prisma generate, typecheck, unit tests, build, and browser suite registration in one command
 
 ## Prisma Migration
 
@@ -146,6 +157,8 @@ curl -X POST http://localhost:3000/api/ops/source-refresh \
   -H "Authorization: Bearer $OPS_CRON_TOKEN"
 ```
 
+Analysts can also run the same refresh path from `/admin/sources`, where recent `SourceRefreshRun` history is shown alongside stale source systems and stale asset candidates.
+
 Relevant environment variables:
 
 - `OPS_CRON_TOKEN`: required bearer token for the cron trigger route
@@ -154,6 +167,10 @@ Relevant environment variables:
 - `ADMIN_BASIC_AUTH_VIEWER_CREDENTIALS`: comma-separated `user:password` viewer credentials
 - `ADMIN_BASIC_AUTH_ANALYST_CREDENTIALS`: comma-separated `user:password` analyst credentials
 - `ADMIN_BASIC_AUTH_ADMIN_CREDENTIALS`: comma-separated `user:password` admin credentials
+- `/api/*` is now protected by admin auth middleware except the public inquiry endpoint and cron-token ops routes
+- `VIEWER` is read-only for overview, assets, and valuation screens
+- `ANALYST` is required for research, review, deals, portfolio, funds, investors, sources, readiness, and other operator workspaces
+- `ADMIN` is required for security settings, registry release controls, and approval-only release actions
 - `DOCUMENT_UPLOAD_MAX_BYTES`: max upload size in bytes, default `26214400` (25 MB)
 - `DOCUMENT_UPLOAD_ALLOWED_TYPES`: comma-separated MIME allowlist for uploads
 - `DOCUMENT_STORAGE_BUCKET`: external object storage bucket name when moving off local disk

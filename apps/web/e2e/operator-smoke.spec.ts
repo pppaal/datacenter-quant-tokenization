@@ -4,7 +4,7 @@ test.describe('seeded operator smoke flows', () => {
   test('admin overview and navigation stay connected', async ({ page }) => {
     await page.goto('/admin');
 
-    await expect(page.getByRole('heading', { name: /Admin surface for a multi-asset underwriting platform/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Operator surface for a Korean AI-native real-estate investment firm/i })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Deals' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Assets' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Portfolio' })).toBeVisible();
@@ -15,6 +15,7 @@ test.describe('seeded operator smoke flows', () => {
     await page.getByRole('link', { name: 'Research' }).click();
     await expect(page).toHaveURL(/\/admin\/research/);
     await expect(page.getByText('Workspace Status')).toBeVisible();
+    await expect(page.getByRole('button', { name: /Run Research Sync/i })).toBeVisible();
   });
 
   test('asset dossier and report library stay navigable', async ({ page }) => {
@@ -52,6 +53,7 @@ test.describe('seeded operator smoke flows', () => {
     await expect(page.getByRole('link', { name: 'Markets' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Submarkets' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Asset Dossiers' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Optimization Lab' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Coverage' })).toBeVisible();
 
     await page.getByRole('link', { name: 'Asset Dossiers' }).click();
@@ -60,6 +62,9 @@ test.describe('seeded operator smoke flows', () => {
 
     await page.getByRole('link', { name: 'Coverage' }).click();
     await expect(page.getByText('Open research tasks and freshness exceptions')).toBeVisible();
+
+    await page.getByRole('link', { name: 'Optimization Lab' }).click();
+    await expect(page.getByText('Quantum-inspired portfolio search and scenario exploration')).toBeVisible();
   });
 
   test('deals, portfolio, and funds shells load seeded operator state', async ({ page }) => {
@@ -75,6 +80,7 @@ test.describe('seeded operator smoke flows', () => {
     await page.getByRole('link', { name: /Korea Income & Infrastructure Portfolio I/i }).click();
     await expect(page.getByText('Portfolio Command Center')).toBeVisible();
     await expect(page.getByText('AI Operator Brief')).toBeVisible();
+    await expect(page.getByText('Portfolio Optimization Lab')).toBeVisible();
     await expect(page.getByText('Lease Rollover Watchlist')).toBeVisible();
 
     await page.goto('/admin/funds');

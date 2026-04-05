@@ -211,6 +211,11 @@ enum ResearchSyncTriggerType {
   MANUAL
 }
 
+enum SourceRefreshTriggerType {
+  MANUAL
+  SCHEDULED
+}
+
 enum CapitalCallStatus {
   PLANNED
   ISSUED
@@ -1756,6 +1761,28 @@ model ResearchSyncRun {
   refreshedByActor        String?
   errorSummary            String?
   metadata                Json?
+
+  @@index([startedAt])
+  @@index([statusLabel, startedAt])
+  @@index([triggerType, startedAt])
+}
+
+model SourceRefreshRun {
+  id                     String                   @id @default(cuid())
+  triggerType            SourceRefreshTriggerType
+  statusLabel            String                   @default("RUNNING")
+  startedAt              DateTime                 @default(now())
+  finishedAt             DateTime?
+  staleThresholdHours    Int                      @default(24)
+  batchSize              Int                      @default(0)
+  sourceSystemCount      Int                      @default(0)
+  staleSourceSystemCount Int                      @default(0)
+  assetCandidateCount    Int                      @default(0)
+  refreshedAssetCount    Int                      @default(0)
+  failedAssetCount       Int                      @default(0)
+  refreshedByActor       String?
+  errorSummary           String?
+  metadata               Json?
 
   @@index([startedAt])
   @@index([statusLabel, startedAt])

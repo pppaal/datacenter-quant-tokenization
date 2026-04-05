@@ -6,7 +6,11 @@ import {
   getRequiredAdminRoleForPath,
   hasRequiredAdminRole
 } from '@/lib/security/admin-auth';
-import { recordAuditEvent, getDocumentStorageReadiness } from '@/lib/services/audit';
+import {
+  getDocumentStorageReadiness,
+  listRecentOpsRuns,
+  recordAuditEvent
+} from '@/lib/services/audit';
 
 test('admin auth supports multiple credentials and returns actor role', () => {
   const config = getAdminAuthConfig({
@@ -86,4 +90,37 @@ test('document storage readiness surfaces local, partial, and external states', 
     } as NodeJS.ProcessEnv).mode,
     'object_storage_ready'
   );
+});
+
+test('listRecentOpsRuns returns recent research and source run history', async () => {
+  const fakeDb = {
+    researchSyncRun: {
+      async findMany() {
+        return [
+          {
+            id: 'research_run_1',
+            triggerType: 'MANUAL',
+            statusLabel: 'SUCCESS',
+            startedAt: new Date('2026-04-05T00:00:00.000Z')
+          }
+        ];
+      }
+    },
+    sourceRefreshRun: {
+      async findMany() {
+        return [
+          {
+            id: 'source_run_1',
+            triggerType: 'SCHEDULED',
+            statusLabel: 'SUCCESS',
+            startedAt: new Date('2026-04-05T01:00:00.000Z')
+          }
+        ];
+      }
+    }
+  };
+
+  const result = await listRecentOpsRuns(fakeDb as any);
+  assert.equal(result.researchSyncRuns[0]?.id, 'research_run_1');
+  assert.equal(result.sourceRefreshRuns[0]?.id, 'source_run_1');
 });

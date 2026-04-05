@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { getAdminAuthConfig, isAdminAuthorized } from '@/lib/security/admin-auth';
+import {
+  getAdminAuthConfig,
+  getRequiredAdminRoleForPath,
+  isAdminAuthorized
+} from '@/lib/security/admin-auth';
 
 test('admin auth config is disabled when both credentials are missing', () => {
   const config = getAdminAuthConfig({ NODE_ENV: 'test' });
@@ -22,4 +26,15 @@ test('admin auth accepts a valid basic auth header', () => {
 
   assert.equal(isAdminAuthorized(header, config), true);
   assert.equal(isAdminAuthorized(`Basic ${Buffer.from('admin:wrong').toString('base64')}`, config), false);
+});
+
+test('admin role matrix protects analyst and admin routes', () => {
+  assert.equal(getRequiredAdminRoleForPath('/admin'), 'VIEWER');
+  assert.equal(getRequiredAdminRoleForPath('/admin/assets'), 'VIEWER');
+  assert.equal(getRequiredAdminRoleForPath('/admin/research'), 'ANALYST');
+  assert.equal(getRequiredAdminRoleForPath('/admin/deals/abc'), 'ANALYST');
+  assert.equal(getRequiredAdminRoleForPath('/admin/portfolio/abc'), 'ANALYST');
+  assert.equal(getRequiredAdminRoleForPath('/admin/security'), 'ADMIN');
+  assert.equal(getRequiredAdminRoleForPath('/api/deals'), 'ANALYST');
+  assert.equal(getRequiredAdminRoleForPath('/api/readiness'), 'ADMIN');
 });
