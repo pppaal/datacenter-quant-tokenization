@@ -1,27 +1,19 @@
 import { prisma } from '@/lib/db/prisma';
-import { runSourceRefreshJob } from '@/lib/services/source-refresh';
-import { runResearchWorkspaceSync } from '@/lib/services/research/workspace';
+import { runOpsCycle } from '@/lib/services/ops-worker';
 
 async function main() {
   const actorIdentifier = process.env.OPS_ACTOR?.trim() || 'ops-script';
-
-  console.log('[ops] starting source refresh job...');
-  const sourceRun = await runSourceRefreshJob(
+  console.log('[ops] starting combined ops cycle...');
+  const { sourceRun, researchRun } = await runOpsCycle(
     {
-      triggerType: 'MANUAL',
-      actorIdentifier
+      actorIdentifier,
+      scheduled: false
     },
     prisma
   );
   console.log(
     `[ops] source refresh ${sourceRun.statusLabel.toLowerCase()} - refreshed ${sourceRun.refreshedAssetCount}, failed ${sourceRun.failedAssetCount}.`
   );
-
-  console.log('[ops] starting research workspace sync...');
-  const researchRun = await runResearchWorkspaceSync({
-    actorIdentifier,
-    triggerType: 'MANUAL'
-  });
   console.log(
     `[ops] research sync ${researchRun.statusLabel.toLowerCase()} - official ${researchRun.officialSourceCount}, dossiers ${researchRun.assetDossierCount}.`
   );

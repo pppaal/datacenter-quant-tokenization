@@ -5,9 +5,14 @@ import {
   getRequiredAdminRoleForPath,
   hasRequiredAdminRole
 } from '@/lib/security/admin-auth';
+import { ADMIN_SESSION_COOKIE, parseAdminSessionToken } from '@/lib/security/admin-session';
 
 function isPublicApiPath(pathname: string) {
-  return pathname === '/api/inquiries';
+  return pathname === '/api/inquiries' || pathname === '/api/admin/session';
+}
+
+function isPublicAdminPath(pathname: string) {
+  return pathname === '/admin/login';
 }
 
 function isAuthorizedOpsRequest(request: NextRequest) {
@@ -38,13 +43,9 @@ function unauthorizedResponse(request: NextRequest) {
     );
   }
 
-  return new NextResponse('Admin authentication required', {
-    status: 401,
-    headers: {
-      'Content-Type': 'text/plain; charset=utf-8',
-      'WWW-Authenticate': 'Basic realm="admin"'
-    }
-  });
+  const loginUrl = new URL('/admin/login', request.url);
+  loginUrl.searchParams.set('next', `${request.nextUrl.pathname}${request.nextUrl.search}`);
+  return NextResponse.redirect(loginUrl);
 }
 
 function forbiddenResponse(request: NextRequest, requiredRole: string) {
@@ -60,8 +61,21 @@ function forbiddenResponse(request: NextRequest, requiredRole: string) {
   });
 }
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   if (isPublicApiPath(request.nextUrl.pathname)) {
+    return NextResponse.next();
+  }
+
+  if (isPublicAdminPath(request.nextUrl.pathname)) {
+    const config = getAdminAuthConfig();
+    const actor =
+      (await parseAdminSessionToken(request.cookies.get(ADMIN_SESSION_COOKIE)?.value)) ??
+      authorizeAdminHeader(request.headers.get('authorization'), config);
+
+    if (actor) {
+      return NextResponse.redirect(new URL('/admin', request.url));
+    }
+
     return NextResponse.next();
   }
 
@@ -93,7 +107,9 @@ export function middleware(request: NextRequest) {
     });
   }
 
-  const actor = authorizeAdminHeader(request.headers.get('authorization'), config);
+  const actor =
+    (await parseAdminSessionToken(request.cookies.get(ADMIN_SESSION_COOKIE)?.value)) ??
+    authorizeAdminHeader(request.headers.get('authorization'), config);
   if (!actor) {
     return unauthorizedResponse(request);
   }

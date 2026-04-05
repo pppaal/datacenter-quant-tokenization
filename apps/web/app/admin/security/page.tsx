@@ -1,4 +1,5 @@
 import { Badge } from '@/components/ui/badge';
+import { OpsCycleButton } from '@/components/admin/ops-cycle-button';
 import { Card } from '@/components/ui/card';
 import { getAdminAuthConfig } from '@/lib/security/admin-auth';
 import { getSecurityOverview } from '@/lib/services/audit';
@@ -26,6 +27,9 @@ export default async function AdminSecurityPage() {
           Review admin-access posture, document-storage readiness, and mutation audit trails before promoting this
           environment into live institutional use.
         </p>
+        <div className="mt-5">
+          <OpsCycleButton />
+        </div>
       </Card>
 
       <div className="grid gap-6 xl:grid-cols-3">

@@ -144,6 +144,29 @@ export function authorizeAdminHeader(
   } satisfies AuthorizedAdminActor;
 }
 
+export function authorizeAdminCredentials(
+  user: string,
+  password: string,
+  config: AdminAuthConfig
+) {
+  if (config.mode !== 'configured') {
+    return null;
+  }
+
+  const credential = config.credentials.find(
+    (candidate) => safeEqual(user, candidate.user) && safeEqual(password, candidate.password)
+  );
+
+  if (!credential) {
+    return null;
+  }
+
+  return {
+    identifier: credential.user,
+    role: credential.role
+  } satisfies AuthorizedAdminActor;
+}
+
 const roleRank: Record<AdminAccessRole, number> = {
   VIEWER: 1,
   ANALYST: 2,

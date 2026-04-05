@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  authorizeAdminCredentials,
   getAdminAuthConfig,
   getRequiredAdminRoleForPath,
   isAdminAuthorized
@@ -26,6 +27,20 @@ test('admin auth accepts a valid basic auth header', () => {
 
   assert.equal(isAdminAuthorized(header, config), true);
   assert.equal(isAdminAuthorized(`Basic ${Buffer.from('admin:wrong').toString('base64')}`, config), false);
+});
+
+test('admin auth accepts valid credentials without a basic auth header', () => {
+  const config = getAdminAuthConfig({
+    NODE_ENV: 'test',
+    ADMIN_BASIC_AUTH_VIEWER_CREDENTIALS: 'viewer:pw1',
+    ADMIN_BASIC_AUTH_ANALYST_CREDENTIALS: 'analyst:pw2'
+  });
+
+  assert.deepEqual(authorizeAdminCredentials('analyst', 'pw2', config), {
+    identifier: 'analyst',
+    role: 'ANALYST'
+  });
+  assert.equal(authorizeAdminCredentials('analyst', 'bad', config), null);
 });
 
 test('admin role matrix protects analyst and admin routes', () => {

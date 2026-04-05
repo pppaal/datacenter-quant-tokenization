@@ -1,0 +1,42 @@
+import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
+import { AdminLoginForm } from '@/components/admin/admin-login-form';
+
+export const dynamic = 'force-dynamic';
+
+export default function AdminLoginPage() {
+  return (
+    <main className="app-shell pb-16 pt-16">
+      <div className="mx-auto max-w-3xl space-y-8">
+        <Card className="hero-mesh">
+          <div className="flex flex-wrap items-center gap-3">
+            <Badge>Operator Session</Badge>
+            <Badge tone="neutral">Session / SSO-ready</Badge>
+          </div>
+          <h1 className="mt-5 text-4xl font-semibold tracking-[-0.04em] text-white">
+            Sign in to the investment-firm operating console.
+          </h1>
+          <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300">
+            Session-based operator access is now the primary path for admin workflows. Basic auth remains available for
+            automation, browser smoke coverage, and protected cron routes.
+          </p>
+        </Card>
+
+        <Card>
+          <div className="grid gap-8 md:grid-cols-[1.05fr_0.95fr]">
+            <div>
+              <div className="eyebrow">Session Login</div>
+              <h2 className="mt-2 text-2xl font-semibold text-white">Start a role-aware operator session</h2>
+              <p className="mt-3 text-sm leading-7 text-slate-400">
+                Viewer, analyst, and admin credentials map into the same role matrix enforced by middleware and admin
+                API routes. This shell is designed to lift the platform from shared basic auth toward SSO-backed
+                sessions without changing the operator workflows.
+              </p>
+            </div>
+            <AdminLoginForm />
+          </div>
+        </Card>
+      </div>
+    </main>
+  );
+}

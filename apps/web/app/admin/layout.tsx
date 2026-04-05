@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { headers } from 'next/headers';
 import { AdminNav, type AdminNavItem } from '@/components/admin/admin-nav';
+import { AdminSessionButton } from '@/components/admin/admin-session-button';
 import { getAdminActorFromHeaders } from '@/lib/security/admin-request';
 import { hasRequiredAdminRole, type AdminAccessRole } from '@/lib/security/admin-auth';
 
@@ -57,6 +58,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               <div className="mt-2 text-white">Research To Capital</div>
             </div>
           </div>
+        </div>
+
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-5">
+          <div className="text-sm text-slate-400">
+            Active operator: <span className="font-semibold text-white">{actor?.identifier ?? 'basic-auth operator'}</span>
+          </div>
+          <AdminSessionButton />
         </div>
 
         <div className="mt-6">

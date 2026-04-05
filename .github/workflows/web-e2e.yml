@@ -1,0 +1,63 @@
+name: web-e2e
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  web-e2e:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: korea_dc_underwriting
+        ports:
+          - 5434:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d korea_dc_underwriting"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5434/korea_dc_underwriting?schema=public
+      ADMIN_BASIC_AUTH_ADMIN_CREDENTIALS: admin:secret
+      ADMIN_SESSION_SECRET: ci-session-secret
+      OPS_CRON_TOKEN: ci-ops-token
+      OPENAI_MODEL: gpt-4o-mini
+      PORT: 3100
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npm run prisma:generate
+
+      - name: Apply migrations
+        run: npx prisma migrate deploy
+
+      - name: Seed database
+        run: npm run prisma:seed
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run browser smoke E2E
+        run: npm run e2e

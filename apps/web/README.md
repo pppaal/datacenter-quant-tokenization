@@ -52,6 +52,8 @@ This smoke suite now performs a preflight check first:
 - if seeded office / deal / portfolio / fund records are missing, it runs `npm run prisma:seed`
 - then Playwright runs
 
+Seeded Postgres CI coverage is also checked in at `.github/workflows/web-e2e.yml`.
+
 If you only want to confirm the registered browser suite without starting the app, use:
 
 ```bash
@@ -67,6 +69,14 @@ npm run ops:preflight
 
 - `ops:cycle` runs source refresh first, then research sync, and records both runs in the persisted audit/run history
 - `ops:preflight` runs prisma generate, typecheck, unit tests, build, and browser suite registration in one command
+
+## Session Access
+
+Browser operators now enter through `/admin/login`.
+
+- signed session cookies are the primary browser path
+- shared basic auth remains available for automation, cron, and browser smoke coverage
+- both entry paths enforce the same `VIEWER / ANALYST / ADMIN` role matrix
 
 ## Prisma Migration
 
@@ -162,12 +172,15 @@ Analysts can also run the same refresh path from `/admin/sources`, where recent 
 Relevant environment variables:
 
 - `OPS_CRON_TOKEN`: required bearer token for the cron trigger route
+- `ADMIN_SESSION_SECRET`: required in production to sign browser operator sessions
+- `ADMIN_SESSION_TTL_HOURS`: optional session lifetime in hours, default `12`
 - `ADMIN_BASIC_AUTH_USER`: basic auth username for `/admin` and admin API routes
 - `ADMIN_BASIC_AUTH_PASSWORD`: basic auth password for `/admin` and admin API routes
 - `ADMIN_BASIC_AUTH_VIEWER_CREDENTIALS`: comma-separated `user:password` viewer credentials
 - `ADMIN_BASIC_AUTH_ANALYST_CREDENTIALS`: comma-separated `user:password` analyst credentials
 - `ADMIN_BASIC_AUTH_ADMIN_CREDENTIALS`: comma-separated `user:password` admin credentials
 - `/api/*` is now protected by admin auth middleware except the public inquiry endpoint and cron-token ops routes
+- `/admin/login` is the interactive session entry point for browser operators
 - `VIEWER` is read-only for overview, assets, and valuation screens
 - `ANALYST` is required for research, review, deals, portfolio, funds, investors, sources, readiness, and other operator workspaces
 - `ADMIN` is required for security settings, registry release controls, and approval-only release actions
