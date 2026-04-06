@@ -20,6 +20,8 @@ jobs:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       OPENAI_MODEL: gpt-4o-mini
       OPS_ACTOR: github-actions-ops
+      OPS_ALERT_WEBHOOK_URL: ${{ secrets.OPS_ALERT_WEBHOOK_URL }}
+      OPS_ALERT_NOTIFY_ON_RECOVERY: "true"
       KOREA_MACRO_API_URL: ${{ secrets.KOREA_MACRO_API_URL }}
       KOREA_MACRO_API_KEY: ${{ secrets.KOREA_MACRO_API_KEY }}
       KOREA_BUILDING_API_URL: ${{ secrets.KOREA_BUILDING_API_URL }}
@@ -55,6 +57,14 @@ jobs:
 
       - name: Run ops cycle
         run: npm run ops:cycle 2>&1 | tee ops-cycle.log
+
+      - name: Publish ops summary
+        if: always()
+        shell: bash
+        run: |
+          echo "## Ops Cycle Summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          tail -n 20 ops-cycle.log >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload ops cycle log
         if: always()

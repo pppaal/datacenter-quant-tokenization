@@ -22,7 +22,10 @@ test('admin session token round-trips actor identity and role', async () => {
   assert.ok(token);
   assert.deepEqual(await parseAdminSessionToken(token, env, new Date('2026-04-05T11:00:00.000Z')), {
     identifier: 'analyst@example.com',
-    role: 'ANALYST'
+    role: 'ANALYST',
+    provider: 'session',
+    subject: null,
+    email: null
   });
   assert.equal(await parseAdminSessionToken(token, env, new Date('2026-04-05T15:00:01.000Z')), null);
 });

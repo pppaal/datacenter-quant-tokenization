@@ -25,7 +25,13 @@ test('reviewUnderwritingRecord persists reviewer metadata, notes, and re-promote
       recordId: 'energy_1',
       reviewStatus: 'APPROVED',
       reviewNotes: 'Utility tariff confirmed against latest invoice.',
-      actorIdentifier: 'analyst@example.com'
+      actor: {
+        identifier: 'analyst@example.com',
+        role: 'ANALYST',
+        provider: 'oidc',
+        email: 'analyst@example.com',
+        subject: 'oidc-user-1'
+      }
     },
     {
       user: {

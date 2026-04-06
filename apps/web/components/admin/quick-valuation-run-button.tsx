@@ -24,6 +24,7 @@ export function QuickValuationRunButton({
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   return (
     <div className={className}>
@@ -34,6 +35,7 @@ export function QuickValuationRunButton({
         onClick={async () => {
           setSubmitting(true);
           setError(null);
+          setSuccess(null);
 
           try {
             const response = await fetch('/api/valuations', {
@@ -52,6 +54,7 @@ export function QuickValuationRunButton({
               throw new Error(payload?.error ?? 'Failed to run analysis');
             }
 
+            setSuccess(`Valuation run queued for ${assetCode ?? assetId}.`);
             router.refresh();
           } catch (caughtError) {
             setError(caughtError instanceof Error ? caughtError.message : 'Failed to run analysis');
@@ -62,6 +65,7 @@ export function QuickValuationRunButton({
       >
         {submitting ? 'Running...' : label}
       </Button>
+      {success ? <p className="mt-2 text-sm text-emerald-300" data-testid="quick-valuation-feedback">{success}</p> : null}
       {error ? <p className="mt-2 text-sm text-rose-300">{error}</p> : null}
     </div>
   );

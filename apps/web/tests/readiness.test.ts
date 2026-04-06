@@ -1,12 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { stageReviewReadiness } from '@/lib/services/readiness';
+import { anchorLatestDocumentOnchain, registerAssetOnchain, stageReviewReadiness } from '@/lib/services/readiness';
 
-test('stageReviewReadiness stores deterministic review packet metadata offchain', async () => {
-  const createdRecords: any[] = [];
-  const updates: any[] = [];
-
-  const assetContext = {
+function buildReadinessAssetContext() {
+  return {
     id: 'asset_1',
     assetCode: 'KR-DC-001',
     name: 'Seoul Data Campus',
@@ -75,17 +72,22 @@ test('stageReviewReadiness stores deterministic review packet metadata offchain'
         id: 'doc_1',
         title: 'Korea Title Pack',
         currentVersion: 3,
-        documentHash: 'abcdef1234567890',
+        documentHash: '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
         updatedAt: new Date('2026-04-01T00:00:00.000Z')
       }
     ],
     readinessProject: {
       id: 'readiness_1',
-      onchainRecords: []
+      onchainRecords: [] as any[]
     },
     siteProfile: null,
     marketSnapshot: null
   };
+}
+
+function buildReadinessDb(assetContext: ReturnType<typeof buildReadinessAssetContext>) {
+  const createdRecords: any[] = [];
+  const updates: any[] = [];
 
   const db = {
     asset: {
@@ -106,16 +108,23 @@ test('stageReviewReadiness stores deterministic review packet metadata offchain'
       }
     },
     onchainRecord: {
-      async findFirst() {
-        return null;
+      async findFirst(args: any) {
+        return createdRecords
+          .filter((record) => {
+            if (args.where?.recordType && record.recordType !== args.where.recordType) return false;
+            if ('documentId' in (args.where ?? {}) && record.documentId !== args.where.documentId) return false;
+            return true;
+          })
+          .at(-1) ?? null;
       },
       async create(args: any) {
         createdRecords.push(args.data);
-        return {
+        assetContext.readinessProject.onchainRecords.push({
           id: `${args.data.recordType}_${createdRecords.length}`,
           createdAt: new Date('2026-04-01T00:00:00.000Z'),
           ...args.data
-        };
+        });
+        return assetContext.readinessProject.onchainRecords.at(-1);
       },
       async update(args: any) {
         createdRecords.push(args.data);
@@ -129,13 +138,26 @@ test('stageReviewReadiness stores deterministic review packet metadata offchain'
     readinessProject: {
       async update(args: any) {
         updates.push(args);
+        assetContext.readinessProject = {
+          ...assetContext.readinessProject,
+          ...args.data,
+          onchainRecords: assetContext.readinessProject.onchainRecords
+        };
         return {
           id: 'readiness_1',
-          onchainRecords: createdRecords
+          onchainRecords: assetContext.readinessProject.onchainRecords,
+          ...args.data
         };
       }
     }
   } as any;
+
+  return { db, createdRecords, updates };
+}
+
+test('stageReviewReadiness stores deterministic review packet metadata offchain', async () => {
+  const assetContext = buildReadinessAssetContext();
+  const { db, createdRecords, updates } = buildReadinessDb(assetContext);
 
   await stageReviewReadiness('asset_1', db);
 
@@ -145,10 +167,30 @@ test('stageReviewReadiness stores deterministic review packet metadata offchain'
   assert.ok(reviewPacket);
   assert.equal(reviewPacket.payload.assetCode, 'KR-DC-001');
   assert.equal(reviewPacket.payload.latestValuationId, 'run_1');
-  assert.equal(reviewPacket.payload.latestDocumentHash, 'abcdef1234567890');
+  assert.equal(
+    reviewPacket.payload.latestDocumentHash,
+    '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
+  );
   assert.ok(typeof reviewPacket.payload.packetFingerprint === 'string');
   assert.equal(reviewPacket.payload.approvedEvidenceCount, 3);
   assert.equal(reviewPacket.payload.pendingEvidenceCount, 0);
   assert.equal(documentHashRecord.payload.packetFingerprint, reviewPacket.payload.packetFingerprint);
   assert.equal(updates.at(-1)?.data.readinessStatus, 'READY');
+});
+
+test('mock blockchain mode supports register and anchor flows for deterministic E2E', async () => {
+  process.env.BLOCKCHAIN_MOCK_MODE = 'true';
+  const assetContext = buildReadinessAssetContext();
+  const { db } = buildReadinessDb(assetContext);
+
+  const registerResult = await registerAssetOnchain('asset_1', db);
+  assert.equal(registerResult.chainName, 'mock-registry');
+  assert.match(registerResult.txHash ?? '', /^0x[a-f0-9]{64}$/i);
+
+  const anchorResult = await anchorLatestDocumentOnchain('asset_1', db);
+  assert.equal(anchorResult.chainName, 'mock-registry');
+  assert.equal(anchorResult.alreadyAnchored, false);
+  assert.match(anchorResult.txHash ?? '', /^0x[a-f0-9]{64}$/i);
+
+  delete process.env.BLOCKCHAIN_MOCK_MODE;
 });

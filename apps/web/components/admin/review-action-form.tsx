@@ -66,16 +66,19 @@ export function ReviewActionForm({
   }
 
   return (
-    <div className="space-y-3 rounded-[20px] border border-white/10 bg-slate-950/30 p-4">
+    <div className="space-y-3 rounded-[20px] border border-white/10 bg-slate-950/30 p-4" data-testid="review-action-form">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="fine-print">Review Decision</div>
-        <div className={`text-sm font-medium ${toneForStatus(currentStatus)}`}>{currentStatus}</div>
+        <div className={`text-sm font-medium ${toneForStatus(currentStatus)}`} data-testid="review-status">
+          {currentStatus}
+        </div>
       </div>
       <Textarea
         className="min-h-[88px]"
         placeholder="Reviewer note for committee support, follow-up diligence, or rejection rationale."
         value={reviewNotes}
         onChange={(event) => setReviewNotes(event.target.value)}
+        data-testid="review-notes"
       />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="max-w-md text-xs leading-6 text-slate-500">
@@ -88,15 +91,20 @@ export function ReviewActionForm({
             variant="secondary"
             disabled={submitting !== null}
             onClick={() => submit('REJECT')}
+            data-testid="review-reject"
           >
             {submitting === 'REJECT' ? 'Rejecting...' : 'Reject Evidence'}
           </Button>
-          <Button type="button" disabled={submitting !== null} onClick={() => submit('APPROVE')}>
+          <Button type="button" disabled={submitting !== null} onClick={() => submit('APPROVE')} data-testid="review-approve">
             {submitting === 'APPROVE' ? 'Approving...' : 'Approve Evidence'}
           </Button>
         </div>
       </div>
-      {errorMessage ? <div className="text-sm text-rose-300">{errorMessage}</div> : null}
+      {errorMessage ? (
+        <div className="text-sm text-rose-300" data-testid="review-feedback" role="alert">
+          {errorMessage}
+        </div>
+      ) : null}
     </div>
   );
 }

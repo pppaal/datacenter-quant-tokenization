@@ -10,6 +10,9 @@ export type AdminCredential = {
 export type AuthorizedAdminActor = {
   identifier: string;
   role: AdminAccessRole;
+  provider?: 'basic' | 'session' | 'oidc';
+  subject?: string | null;
+  email?: string | null;
 };
 
 export type AdminAuthConfig = {
@@ -140,7 +143,9 @@ export function authorizeAdminHeader(
 
   return {
     identifier: credential.user,
-    role: credential.role
+    role: credential.role,
+    provider: 'basic',
+    email: credential.user.includes('@') ? credential.user : null
   } satisfies AuthorizedAdminActor;
 }
 
@@ -163,7 +168,9 @@ export function authorizeAdminCredentials(
 
   return {
     identifier: credential.user,
-    role: credential.role
+    role: credential.role,
+    provider: 'basic',
+    email: credential.user.includes('@') ? credential.user : null
   } satisfies AuthorizedAdminActor;
 }
 

@@ -2,6 +2,7 @@ import { Badge } from '@/components/ui/badge';
 import { OpsCycleButton } from '@/components/admin/ops-cycle-button';
 import { Card } from '@/components/ui/card';
 import { getAdminAuthConfig } from '@/lib/security/admin-auth';
+import { getAdminReviewerAttributionSummary } from '@/lib/security/admin-identity';
 import { getSecurityOverview } from '@/lib/services/audit';
 import { formatDate, formatNumber } from '@/lib/utils';
 
@@ -9,6 +10,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function AdminSecurityPage() {
   const authConfig = getAdminAuthConfig();
+  const reviewerAttribution = getAdminReviewerAttributionSummary();
   const security = await getSecurityOverview();
 
   return (
@@ -27,12 +29,27 @@ export default async function AdminSecurityPage() {
           Review admin-access posture, document-storage readiness, and mutation audit trails before promoting this
           environment into live institutional use.
         </p>
+        <div className="mt-4 rounded-[22px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-300">
+          <div className="flex flex-wrap items-center gap-3">
+            <Badge tone={security.opsAlerts.requiresIntervention || security.opsAlerts.hasActiveAlert ? 'danger' : 'good'}>
+              {security.opsAlerts.requiresIntervention || security.opsAlerts.hasActiveAlert ? 'ops alert' : 'ops stable'}
+            </Badge>
+            <span>{security.opsAlerts.headline}</span>
+          </div>
+          {security.opsAlerts.interventionItems.length > 0 ? (
+            <div className="mt-3 space-y-2 text-xs text-rose-200">
+              {security.opsAlerts.interventionItems.map((item) => (
+                <div key={item}>- {item}</div>
+              ))}
+            </div>
+          ) : null}
+        </div>
         <div className="mt-5">
           <OpsCycleButton />
         </div>
       </Card>
 
-      <div className="grid gap-6 xl:grid-cols-3">
+      <div className="grid gap-6 xl:grid-cols-4">
         <Card>
           <div className="eyebrow">Admin Auth</div>
           <div className="mt-4 space-y-3 text-sm text-slate-300">
@@ -108,7 +125,123 @@ export default async function AdminSecurityPage() {
             </p>
           </div>
         </Card>
+
+        <Card>
+          <div className="eyebrow">Reviewer Attribution</div>
+          <div className="mt-4 space-y-3 text-sm text-slate-300">
+            <div className="flex items-center justify-between gap-3">
+              <span>Auth mode</span>
+              <Badge tone={reviewerAttribution.canResolveUserBoundReviewer ? 'good' : 'warn'}>
+                {reviewerAttribution.authMode}
+              </Badge>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <span>Binding mode</span>
+              <span className="text-white">{reviewerAttribution.reviewerAttributionMode}</span>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <span>Mapped identities</span>
+              <span className="text-white">
+                {formatNumber(security.identityBindings.mappedBindings, 0)} / {formatNumber(security.identityBindings.totalBindings, 0)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <span>Unmapped identities</span>
+              <Badge tone={security.identityBindings.unmappedBindings > 0 ? 'warn' : 'good'}>
+                {formatNumber(security.identityBindings.unmappedBindings, 0)}
+              </Badge>
+            </div>
+            <p className="leading-7 text-slate-400">{reviewerAttribution.detail}</p>
+            <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4 text-xs leading-6 text-slate-400">
+              Latest identity seen:{' '}
+              <span className="text-white">
+                {security.identityBindings.latestSeenAt ? formatDate(security.identityBindings.latestSeenAt) : 'none'}
+              </span>
+            </div>
+          </div>
+        </Card>
+
+        <Card>
+          <div className="eyebrow">Ops Thresholds</div>
+          <div className="mt-4 space-y-3 text-sm text-slate-300">
+            <div className="flex items-center justify-between gap-3">
+              <span>Failure streak threshold</span>
+              <span className="text-white">{formatNumber(security.opsAlerts.failureStreakThreshold, 0)} runs</span>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <span>Stale run window</span>
+              <span className="text-white">{formatNumber(security.opsAlerts.staleHours, 0)}h</span>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <span>Latest research run</span>
+              <Badge tone={security.opsAlerts.latestResearchRunStale ? 'warn' : 'good'}>
+                {security.opsAlerts.latestResearchRunStartedAt
+                  ? formatDate(security.opsAlerts.latestResearchRunStartedAt)
+                  : 'missing'}
+              </Badge>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <span>Latest source run</span>
+              <Badge tone={security.opsAlerts.latestSourceRunStale ? 'warn' : 'good'}>
+                {security.opsAlerts.latestSourceRunStartedAt
+                  ? formatDate(security.opsAlerts.latestSourceRunStartedAt)
+                  : 'missing'}
+              </Badge>
+            </div>
+            <p className="leading-7 text-slate-400">
+              These thresholds define when the security surface escalates from informational alerts to explicit operator
+              intervention.
+            </p>
+          </div>
+        </Card>
       </div>
+
+      <Card>
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <div className="eyebrow">Unmapped Reviewer Identities</div>
+            <h2 className="mt-2 text-2xl font-semibold text-white">SSO identities that still need a bound user</h2>
+          </div>
+          <Badge tone={security.identityBindings.unmappedBindings > 0 ? 'warn' : 'good'}>
+            {formatNumber(security.identityBindings.unmappedBindings, 0)} open
+          </Badge>
+        </div>
+        <div className="mt-5 space-y-3">
+          {security.identityBindings.recentUnmapped.length > 0 ? (
+            security.identityBindings.recentUnmapped.map((binding) => (
+              <div key={`${binding.provider}:${binding.subject}`} className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge>{binding.provider}</Badge>
+                    <div className="text-sm font-semibold text-white">{binding.emailSnapshot ?? binding.identifierSnapshot}</div>
+                  </div>
+                  <div className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                    Last seen {formatDate(binding.lastSeenAt)}
+                  </div>
+                </div>
+                <div className="mt-3 grid gap-3 text-sm text-slate-300 md:grid-cols-3">
+                  <div>
+                    <div className="fine-print">Identifier snapshot</div>
+                    <div className="mt-1">{binding.identifierSnapshot}</div>
+                  </div>
+                  <div>
+                    <div className="fine-print">Email snapshot</div>
+                    <div className="mt-1">{binding.emailSnapshot ?? 'N/A'}</div>
+                  </div>
+                  <div>
+                    <div className="fine-print">Next action</div>
+                    <div className="mt-1 text-slate-400">Map this subject to a canonical `User` before relying on reviewer analytics.</div>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
+              All persisted reviewer identities are mapped to a canonical user.
+            </div>
+          )}
+        </div>
+      </Card>
 
       <Card>
         <div className="flex items-center justify-between gap-4">

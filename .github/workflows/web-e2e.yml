@@ -31,6 +31,7 @@ jobs:
       ADMIN_BASIC_AUTH_ADMIN_CREDENTIALS: admin:secret
       ADMIN_SESSION_SECRET: ci-session-secret
       OPS_CRON_TOKEN: ci-ops-token
+      BLOCKCHAIN_MOCK_MODE: "true"
       OPENAI_MODEL: gpt-4o-mini
       PORT: 3100
     steps:

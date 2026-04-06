@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -13,7 +13,10 @@ import { documentUploadSchema, type DocumentUploadInput } from '@/lib/validation
 
 export function DocumentUploadForm({ assetId, dealId }: { assetId?: string; dealId?: string }) {
   const router = useRouter();
+  const fileInputId = useId();
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const form = useForm<DocumentUploadInput>({
     resolver: zodResolver(documentUploadSchema),
     defaultValues: {
@@ -23,11 +26,13 @@ export function DocumentUploadForm({ assetId, dealId }: { assetId?: string; deal
   });
 
   const onSubmit = form.handleSubmit(async (values) => {
-    const fileInput = document.getElementById('document-file') as HTMLInputElement | null;
+    const fileInput = document.getElementById(fileInputId) as HTMLInputElement | null;
     const file = fileInput?.files?.[0];
     if (!file) return;
 
     setSubmitting(true);
+    setError(null);
+    setSuccess(null);
     try {
       const body = new FormData();
       Object.entries(values).forEach(([key, value]) => {
@@ -40,17 +45,23 @@ export function DocumentUploadForm({ assetId, dealId }: { assetId?: string; deal
         body
       });
 
-      if (!response.ok) throw new Error('Upload failed');
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(payload?.error ?? 'Upload failed');
+      }
       form.reset({ assetId, dealId });
       fileInput.value = '';
+      setSuccess(`Document uploaded: ${values.title}`);
       router.refresh();
+    } catch (caughtError) {
+      setError(caughtError instanceof Error ? caughtError.message : 'Upload failed');
     } finally {
       setSubmitting(false);
     }
   });
 
   return (
-    <form className="space-y-5" onSubmit={onSubmit}>
+    <form className="space-y-5" onSubmit={onSubmit} data-testid="document-upload-form">
       <div className="grid gap-4 md:grid-cols-2">
         <label className="space-y-2">
           <span className="fine-print">Asset ID</span>
@@ -64,7 +75,7 @@ export function DocumentUploadForm({ assetId, dealId }: { assetId?: string; deal
         ) : null}
         <label className="space-y-2">
           <span className="fine-print">Title</span>
-          <Input placeholder="Power approval memo" {...form.register('title')} />
+          <Input placeholder="Power approval memo" data-testid="document-title" {...form.register('title')} />
         </label>
         <label className="space-y-2">
           <span className="fine-print">Document Type</span>
@@ -82,7 +93,7 @@ export function DocumentUploadForm({ assetId, dealId }: { assetId?: string; deal
         </label>
         <label className="space-y-2 md:col-span-2">
           <span className="fine-print">File</span>
-          <Input id="document-file" type="file" />
+          <Input id={fileInputId} type="file" data-testid="document-file" />
         </label>
       </div>
 
@@ -99,10 +110,20 @@ export function DocumentUploadForm({ assetId, dealId }: { assetId?: string; deal
         <p className="max-w-xl text-sm text-slate-400">
           Uploads are stored through the Next.js backend and immediately linked into document history, summaries, and future memo evidence.
         </p>
-        <Button type="submit" disabled={submitting}>
+        <Button type="submit" disabled={submitting} data-testid="document-upload-submit">
           {submitting ? 'Uploading...' : 'Upload Document'}
         </Button>
       </div>
+      {success ? (
+        <div className="text-sm text-emerald-300" data-testid="document-upload-feedback" role="status">
+          {success}
+        </div>
+      ) : null}
+      {error ? (
+        <div className="text-sm text-rose-300" data-testid="document-upload-feedback" role="alert">
+          {error}
+        </div>
+      ) : null}
     </form>
   );
 }

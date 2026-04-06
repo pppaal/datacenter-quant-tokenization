@@ -15,12 +15,15 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:push": "prisma db push",
     "prisma:seed": "tsx prisma/seed.ts",
+    "db:e2e:up": "docker compose -f compose.e2e.yml up -d",
+    "db:e2e:down": "docker compose -f compose.e2e.yml down -v",
     "test": "tsx --test tests/**/*.test.ts",
     "ops:cycle": "tsx scripts/run-ops-cycle.ts",
     "ops:preflight": "tsx scripts/run-ops-preflight.ts",
     "e2e": "tsx scripts/run-e2e-smoke.ts",
     "e2e:list": "playwright test --list",
-    "e2e:headed": "playwright test --headed"
+    "e2e:headed": "playwright test --headed",
+    "e2e:local": "npm run db:e2e:up && npm run e2e"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

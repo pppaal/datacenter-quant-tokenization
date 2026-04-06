@@ -326,7 +326,7 @@ export default async function DealsPage({ searchParams }: Props) {
                   {deal.counterparties.length > 3 ? <Badge>+{deal.counterparties.length - 3}</Badge> : null}
                   {latestBid ? <Badge>{latestBid.status.toLowerCase()}</Badge> : null}
                   {snapshot?.exclusivityExpiresSoon ? <Badge tone="warn">exclusivity expiring</Badge> : null}
-                  <Link href={`/admin/deals/${deal.id}`}>
+                  <Link href={`/admin/deals/${deal.id}`} data-testid="deal-open-link">
                     <Button variant="ghost">Open</Button>
                   </Link>
                   {deal.statusLabel === 'ARCHIVED' || deal.archivedAt ? (

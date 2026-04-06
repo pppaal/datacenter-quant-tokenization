@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { Prisma, ReadinessStatus, type PrismaClient } from '@prisma/client';
 import { dataCenterAssetRegistryAbi } from '@/lib/blockchain/abi';
 import { getRegistryChainClients } from '@/lib/blockchain/client';
@@ -9,6 +10,30 @@ import {
 import { prisma } from '@/lib/db/prisma';
 import { promoteAssetSnapshotsToFeatures } from '@/lib/services/feature-promotion';
 import { buildReviewPacketManifest } from '@/lib/services/review';
+
+function isBlockchainMockMode(env: NodeJS.ProcessEnv = process.env) {
+  const value = env.BLOCKCHAIN_MOCK_MODE?.trim().toLowerCase();
+  return value === '1' || value === 'true' || value === 'yes';
+}
+
+function buildMockTxHash(...parts: Array<string | null | undefined>) {
+  const digest = createHash('sha256')
+    .update(parts.filter(Boolean).join(':'))
+    .digest('hex');
+  return `0x${digest}`;
+}
+
+function getMockRegistryConfig() {
+  return {
+    chainId: '31337',
+    chainName: 'mock-registry',
+    registryAddress: '0x000000000000000000000000000000000000dEaD',
+    metadataBaseUrl: (process.env.BLOCKCHAIN_METADATA_BASE_URL ?? process.env.APP_BASE_URL ?? 'http://localhost:3000')
+      .trim()
+      .replace(/\/$/, ''),
+    accountAddress: '0x000000000000000000000000000000000000c0de'
+  };
+}
 
 export async function listReadinessProjects(db: PrismaClient = prisma) {
   return db.readinessProject.findMany({
@@ -216,6 +241,54 @@ export async function registerAssetOnchain(assetId: string, db: PrismaClient = p
   const asset = await getReadinessAssetContext(assetId, db);
   if (!asset || !asset.readinessProject) throw new Error('Readiness project not found');
 
+  if (isBlockchainMockMode()) {
+    const config = getMockRegistryConfig();
+    const registryAssetId = buildRegistryAssetId(asset.assetCode);
+    const metadataRef = buildRegistryMetadataRef(asset.id, config.metadataBaseUrl);
+    const existing = asset.readinessProject.onchainRecords.find((record) =>
+      record.recordType === 'ASSET_REGISTERED' || record.recordType === 'ASSET_METADATA_UPDATED'
+    );
+    const txHash = buildMockTxHash('register', registryAssetId, metadataRef);
+
+    await db.readinessProject.update({
+      where: { id: asset.readinessProject.id },
+      data: {
+        chainName: config.chainName,
+        readinessStatus: asset.documents[0] ? ReadinessStatus.READY : ReadinessStatus.NOT_STARTED,
+        nextAction: asset.documents[0]
+          ? 'Asset registered onchain. Anchor the latest document hash when diligence is ready.'
+          : 'Asset registered onchain. Upload a diligence document before anchoring.'
+      }
+    });
+
+    await upsertReadinessRecord({
+      db,
+      readinessProjectId: asset.readinessProject.id,
+      recordType: existing ? 'ASSET_METADATA_UPDATED' : 'ASSET_REGISTERED',
+      status: ReadinessStatus.ANCHORED,
+      txHash,
+      chainId: config.chainId,
+      anchoredAt: new Date(),
+      payload: {
+        assetCode: asset.assetCode,
+        registryAssetId,
+        metadataRef,
+        registryAddress: config.registryAddress,
+        submittedBy: config.accountAddress,
+        mockMode: true
+      }
+    });
+
+    return {
+      assetId: asset.id,
+      registryAssetId,
+      metadataRef,
+      txHash,
+      chainName: config.chainName,
+      registryAddress: config.registryAddress
+    };
+  }
+
   const { config, account, publicClient, walletClient } = getRegistryChainClients();
   const registryAssetId = buildRegistryAssetId(asset.assetCode);
   const metadataRef = buildRegistryMetadataRef(asset.id, config.metadataBaseUrl);
@@ -292,6 +365,69 @@ export async function anchorLatestDocumentOnchain(assetId: string, db: PrismaCli
   }
 
   await stageReviewReadiness(assetId, db);
+
+  if (isBlockchainMockMode()) {
+    const config = getMockRegistryConfig();
+    const registryAssetId = buildRegistryAssetId(asset.assetCode);
+    const normalizedDocumentHash = normalizeDocumentHash(latestDocument.documentHash);
+    const existingRegistration = asset.readinessProject.onchainRecords.find((record) =>
+      record.recordType === 'ASSET_REGISTERED' || record.recordType === 'ASSET_METADATA_UPDATED'
+    );
+
+    if (!existingRegistration) {
+      throw new Error('Asset is not registered onchain yet. Register it before anchoring documents.');
+    }
+
+    const alreadyAnchored = asset.readinessProject.onchainRecords.some(
+      (record) =>
+        record.recordType === 'DOCUMENT_HASH' &&
+        record.documentId === latestDocument.id &&
+        record.status === ReadinessStatus.ANCHORED
+    );
+    const txHash = alreadyAnchored ? null : buildMockTxHash('anchor', registryAssetId, normalizedDocumentHash);
+
+    await upsertReadinessRecord({
+      db,
+      readinessProjectId: asset.readinessProject.id,
+      recordType: 'DOCUMENT_HASH',
+      documentId: latestDocument.id,
+      status: ReadinessStatus.ANCHORED,
+      payload: {
+        assetCode: asset.assetCode,
+        registryAssetId,
+        documentHash: normalizedDocumentHash,
+        documentTitle: latestDocument.title,
+        registryAddress: config.registryAddress,
+        alreadyAnchored,
+        mockMode: true
+      },
+      txHash,
+      chainId: config.chainId,
+      anchoredAt: new Date()
+    });
+
+    await db.readinessProject.update({
+      where: { id: asset.readinessProject.id },
+      data: {
+        chainName: config.chainName,
+        readinessStatus: ReadinessStatus.ANCHORED,
+        nextAction: alreadyAnchored
+          ? 'Latest document hash already anchored onchain.'
+          : 'Latest document hash anchored onchain.'
+      }
+    });
+
+    return {
+      assetId: asset.id,
+      documentId: latestDocument.id,
+      documentHash: normalizedDocumentHash,
+      registryAssetId,
+      txHash,
+      chainName: config.chainName,
+      registryAddress: config.registryAddress,
+      alreadyAnchored
+    };
+  }
 
   const { config, account, publicClient, walletClient } = getRegistryChainClients();
   const registryAssetId = buildRegistryAssetId(asset.assetCode);

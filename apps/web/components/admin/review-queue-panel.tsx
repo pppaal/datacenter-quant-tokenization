@@ -51,7 +51,11 @@ export function ReviewQueuePanel({
       ) : (
         <div className="mt-5 space-y-6">
           {summaries.map((summary) => (
-            <div key={summary.assetId} className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+            <div
+              key={summary.assetId}
+              className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+              data-testid="review-asset-summary"
+            >
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <div className="eyebrow">{summary.assetCode}</div>
@@ -108,7 +112,11 @@ export function ReviewQueuePanel({
 
                       <div className="mt-4 grid gap-4">
                         {discipline.items.map((item) => (
-                          <div key={item.recordId} className="rounded-[18px] border border-white/10 bg-white/[0.03] p-4">
+                          <div
+                            key={item.recordId}
+                            className="rounded-[18px] border border-white/10 bg-white/[0.03] p-4"
+                            data-testid="review-item"
+                          >
                             <div className="flex flex-wrap items-start justify-between gap-3">
                               <div className="space-y-2">
                                 <div className="flex flex-wrap items-center gap-2">

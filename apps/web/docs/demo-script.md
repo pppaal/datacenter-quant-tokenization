@@ -181,6 +181,18 @@ Message:
 
 > Capital OS is intentionally a shell today, but it already models the institutional fund and investor side.
 
+## Mutation Assurance Note
+
+The seeded demo path is now browser-tested for the highest-risk operator mutations:
+
+- review approve / reject
+- valuation rerun
+- document upload into history
+- readiness stage / register / anchor
+- deal archive / restore
+
+For local runs, `npm run e2e` reseeds the demo path before executing the browser suite.
+
 Show:
 
 - commitments

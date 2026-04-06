@@ -12,6 +12,7 @@ import { DocumentUploadForm } from '@/components/admin/document-upload-form';
 import { FeatureSnapshotPanel } from '@/components/admin/feature-snapshot-panel';
 import { LeaseBookForm } from '@/components/admin/lease-book-form';
 import { MicroDataForm } from '@/components/admin/micro-data-form';
+import { ReadinessActionPanel } from '@/components/admin/readiness-action-panel';
 import { ReviewQueuePanel } from '@/components/admin/review-queue-panel';
 import { QuickValuationRunButton } from '@/components/admin/quick-valuation-run-button';
 import { RealizedOutcomeForm } from '@/components/admin/realized-outcome-form';
@@ -211,7 +212,7 @@ export default async function AssetDetailPage({
             <div>
               <div className="eyebrow">Latest Investment Memo</div>
               <h3 className="mt-2 text-2xl font-semibold text-white">
-                {latestRun ? latestRun.runLabel : 'No IM generated yet'}
+                <span data-testid="latest-run-label">{latestRun ? latestRun.runLabel : 'No IM generated yet'}</span>
               </h3>
             </div>
             {latestRun ? <Badge tone="good">{recommendation}</Badge> : null}
@@ -651,7 +652,7 @@ export default async function AssetDetailPage({
             <h3 className="mt-2 text-2xl font-semibold text-white">Registry-ready evidence packaging</h3>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Badge tone={asset.readinessProject?.readinessStatus === 'ANCHORED' ? 'good' : 'warn'}>
+            <Badge tone={asset.readinessProject?.readinessStatus === 'ANCHORED' ? 'good' : 'warn'} data-testid="readiness-status">
               {asset.readinessProject?.readinessStatus ?? 'NOT_STARTED'}
             </Badge>
             <Badge>{asset.readinessProject?.reviewPhase ?? 'Committee review'}</Badge>
@@ -674,13 +675,13 @@ export default async function AssetDetailPage({
             </div>
             <div>
               <div className="text-slate-500">Latest tx</div>
-              <div className="mt-2 font-mono text-white">
+              <div className="mt-2 font-mono text-white" data-testid="readiness-latest-tx">
                 {latestOnchainRecord?.txHash ? shortenHash(latestOnchainRecord.txHash, 12) : 'No onchain transaction yet'}
               </div>
             </div>
             <div>
               <div className="text-slate-500">Review packet</div>
-              <div className="mt-2 font-mono text-white">
+              <div className="mt-2 font-mono text-white" data-testid="readiness-packet">
                 {latestReviewPacket?.fingerprint
                   ? shortenHash(latestReviewPacket.fingerprint, 12)
                   : 'Not staged'}
@@ -692,25 +693,7 @@ export default async function AssetDetailPage({
             </div>
           </div>
 
-          <div className="grid gap-3 md:grid-cols-3">
-            <form action={`/api/readiness/assets/${asset.id}/stage`} method="post">
-              <Button className="w-full" variant="secondary">
-                Stage Latest Evidence
-              </Button>
-            </form>
-            <form action={`/api/readiness/assets/${asset.id}/register`} method="post">
-              <Button className="w-full">Register Review Package</Button>
-            </form>
-            <form action={`/api/readiness/assets/${asset.id}/anchor`} method="post">
-              <Button className="w-full" variant="secondary">
-                Anchor Evidence Hash
-              </Button>
-            </form>
-            <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4 text-sm leading-7 text-slate-400 md:col-span-3">
-              Readiness remains registry-only. Valuations, files, and extracted text stay offchain while the workflow
-              stages a deterministic packet fingerprint and anchors document integrity hashes onchain.
-            </div>
-          </div>
+          <ReadinessActionPanel assetId={asset.id} />
         </div>
       </Card>
 
@@ -792,9 +775,13 @@ export default async function AssetDetailPage({
 
         <Card>
           <div className="eyebrow">Document History</div>
-          <div className="mt-4 space-y-4">
+          <div className="mt-4 space-y-4" data-testid="document-history">
             {asset.documents.map((document) => (
-              <div key={document.id} className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+              <div
+                key={document.id}
+                className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+                data-testid="document-history-item"
+              >
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <div className="font-semibold text-white">{document.title}</div>

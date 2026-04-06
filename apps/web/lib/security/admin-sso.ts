@@ -316,6 +316,14 @@ export function mapAdminSsoClaimsToActor(
 
   return {
     identifier: identifierValue.trim(),
-    role
+    role,
+    provider: 'oidc',
+    subject: typeof claims.sub === 'string' ? claims.sub : null,
+    email:
+      typeof claims.email === 'string'
+        ? claims.email
+        : identifierValue.includes('@')
+          ? identifierValue.trim()
+          : null
   };
 }

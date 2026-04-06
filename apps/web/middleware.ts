@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import {
+  type AuthorizedAdminActor,
   authorizeAdminHeader,
   getAdminAuthConfig,
   getRequiredAdminRoleForPath,
@@ -68,7 +69,7 @@ export async function middleware(request: NextRequest) {
 
   if (isPublicAdminPath(request.nextUrl.pathname)) {
     const config = getAdminAuthConfig();
-    const actor =
+    const actor: AuthorizedAdminActor | null =
       (await parseAdminSessionToken(request.cookies.get(ADMIN_SESSION_COOKIE)?.value)) ??
       authorizeAdminHeader(request.headers.get('authorization'), config);
 
@@ -107,7 +108,7 @@ export async function middleware(request: NextRequest) {
     });
   }
 
-  const actor =
+  const actor: AuthorizedAdminActor | null =
     (await parseAdminSessionToken(request.cookies.get(ADMIN_SESSION_COOKIE)?.value)) ??
     authorizeAdminHeader(request.headers.get('authorization'), config);
   if (!actor) {
@@ -123,6 +124,9 @@ export async function middleware(request: NextRequest) {
   requestHeaders.set('x-admin-actor', actor.identifier);
   requestHeaders.set('x-admin-role', actor.role);
   requestHeaders.set('x-admin-required-role', requiredRole);
+  if (actor.provider) requestHeaders.set('x-admin-auth-provider', actor.provider);
+  if (actor.subject) requestHeaders.set('x-admin-subject', actor.subject);
+  if (actor.email) requestHeaders.set('x-admin-email', actor.email);
 
   return NextResponse.next({
     request: {

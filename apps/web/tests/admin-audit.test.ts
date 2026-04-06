@@ -7,6 +7,7 @@ import {
   hasRequiredAdminRole
 } from '@/lib/security/admin-auth';
 import {
+  buildOpsAlertSummary,
   getDocumentStorageReadiness,
   listRecentOpsRuns,
   recordAuditEvent
@@ -123,4 +124,58 @@ test('listRecentOpsRuns returns recent research and source run history', async (
   const result = await listRecentOpsRuns(fakeDb as any);
   assert.equal(result.researchSyncRuns[0]?.id, 'research_run_1');
   assert.equal(result.sourceRefreshRuns[0]?.id, 'source_run_1');
+});
+
+test('buildOpsAlertSummary surfaces latest failed run clearly', () => {
+  const summary = buildOpsAlertSummary({
+    researchSyncRuns: [
+      {
+        statusLabel: 'FAILED',
+        startedAt: new Date('2026-04-05T00:00:00.000Z'),
+        errorSummary: 'research sync failed'
+      }
+    ],
+    sourceRefreshRuns: [
+      {
+        statusLabel: 'SUCCESS',
+        startedAt: new Date('2026-04-05T01:00:00.000Z'),
+        errorSummary: null
+      }
+    ],
+    env: {
+      OPS_ALERT_FAILURE_STREAK: '2',
+      OPS_ALERT_STALE_HOURS: '6'
+    } as unknown as NodeJS.ProcessEnv
+  });
+
+  assert.equal(summary.hasActiveAlert, true);
+  assert.equal(summary.researchFailureCount, 1);
+  assert.match(summary.headline, /research sync failed/i);
+});
+
+test('buildOpsAlertSummary escalates intervention when runs are stale or repeatedly failing', () => {
+  const summary = buildOpsAlertSummary({
+    researchSyncRuns: [
+      {
+        statusLabel: 'FAILED',
+        startedAt: new Date('2026-04-05T00:00:00.000Z'),
+        errorSummary: 'research sync failed'
+      },
+      {
+        statusLabel: 'FAILED',
+        startedAt: new Date('2026-04-04T23:00:00.000Z'),
+        errorSummary: 'research sync failed'
+      }
+    ],
+    sourceRefreshRuns: [],
+    env: {
+      OPS_ALERT_FAILURE_STREAK: '2',
+      OPS_ALERT_STALE_HOURS: '1'
+    } as unknown as NodeJS.ProcessEnv
+  });
+
+  assert.equal(summary.requiresIntervention, true);
+  assert.equal(summary.researchFailureStreak, 2);
+  assert.equal(summary.failureStreakThreshold, 2);
+  assert.ok(summary.interventionItems.some((item) => /failed 2 runs in a row/i.test(item)));
 });

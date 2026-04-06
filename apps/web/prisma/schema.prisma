@@ -261,6 +261,24 @@ model User {
   reviewedEncumbranceRecords      EncumbranceRecord[]    @relation("EncumbranceRecordReviewedBy")
   reviewedPlanningConstraints     PlanningConstraint[]   @relation("PlanningConstraintReviewedBy")
   reviewedLeases                  Lease[]                @relation("LeaseReviewedBy")
+  adminIdentityBindings           AdminIdentityBinding[]
+}
+
+model AdminIdentityBinding {
+  id                 String   @id @default(cuid())
+  provider           String
+  subject            String
+  userId             String?
+  emailSnapshot      String?
+  identifierSnapshot String
+  lastSeenAt         DateTime @default(now())
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  user               User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@unique([provider, subject])
+  @@index([userId, updatedAt])
+  @@index([emailSnapshot, updatedAt])
 }
 
 model Asset {

@@ -16,7 +16,10 @@ export function getAdminActorFromHeaders(headers: HeaderCarrier): AuthorizedAdmi
 
   return {
     identifier,
-    role
+    role,
+    provider: (headers.get('x-admin-auth-provider')?.trim() as AuthorizedAdminActor['provider'] | undefined) ?? undefined,
+    subject: headers.get('x-admin-subject')?.trim() || null,
+    email: headers.get('x-admin-email')?.trim() || null
   };
 }
 

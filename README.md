@@ -6,7 +6,7 @@ The legacy root Next.js app and the `/web` demo were archived under [`legacy/`](
 
 This platform is an AI-native operating system for a Korean real-estate investment firm. It now spans research, underwriting, deal execution, portfolio operations, and a capital-formation shell, while keeping documents, valuations, extracted text, and underwriting logic offchain. It remains registry-only onchain and it is not a retail token-sale app or investment-advice product.
 
-Browser operators now enter through `/admin/login` using a signed session cookie. Env-configured OIDC / SSO can now be wired through `/api/admin/sso/*`. Shared basic auth remains available for automation, protected cron routes, and browser smoke coverage.
+Browser operators now enter through `/admin/login` using a signed session cookie. Env-configured OIDC / SSO can now be wired through `/api/admin/sso/*`, and provider-subject identities can bind back to a persisted `User` for reviewer attribution. Shared basic auth remains available for automation, protected cron routes, and browser smoke coverage.
 
 ## Product Surface
 
@@ -41,15 +41,17 @@ npm run dev
 - `npm run dev` starts the active product in `apps/web`
 - `npm run build` builds `apps/web`
 - `npm run test` runs the required unit tests in `apps/web`
-- `npm run e2e` runs Playwright smoke coverage and auto-seeds the demo dataset when the local database is reachable but seed records are missing
-- `npm run e2e:list` lists the browser smoke suite without launching the app
+- `npm run e2e` runs deterministic Playwright operator mutation coverage and reseeds the demo dataset before the suite starts
+- `npm run e2e:local` starts the checked-in Docker Postgres service and then runs the full local browser mutation suite
+- `npm run e2e:list` lists the browser operator suite without launching the app
 - `npm run ops:cycle` runs source refresh then research sync using the same persisted run history used by the admin ops surfaces
+- `npm run ops:cycle` can also emit failure alerts, and optional retry-recovery alerts, to a generic webhook for scheduled operator monitoring
 - `npm run ops:preflight` runs prisma generate, typecheck, unit tests, build, and browser suite registration in one command
 - `npm run prisma:generate` generates the Prisma client for `apps/web`
 - `npm run prisma:migrate` runs Prisma migrations inside `apps/web`
 - `npm run prisma:seed` loads seeded Korean data-center and office demo opportunities
 
-`npm run e2e` now fails fast with a clear message if the local Postgres database is down, and it will auto-run `npm run prisma:seed` if the database is reachable but the seeded demo records are missing.
+`npm run e2e` now fails fast with a clear message if the local Postgres database is down, reseeds the demo data before the suite, and defaults browser E2E to `BLOCKCHAIN_MOCK_MODE=true` so stage/register/anchor flows can be exercised deterministically.
 
 Seeded Postgres browser smoke CI is checked in at `.github/workflows/web-e2e.yml`. The first scheduled ops worker path is checked in at `.github/workflows/ops-cycle.yml`.
 

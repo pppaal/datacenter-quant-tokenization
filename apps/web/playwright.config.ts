@@ -45,7 +45,7 @@ export default defineConfig({
           Authorization: authorizationHeader
         }
       : undefined,
-    trace: 'on-first-retry',
+    trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure'
   },

@@ -38,7 +38,9 @@ test('admin auth accepts valid credentials without a basic auth header', () => {
 
   assert.deepEqual(authorizeAdminCredentials('analyst', 'pw2', config), {
     identifier: 'analyst',
-    role: 'ANALYST'
+    role: 'ANALYST',
+    provider: 'basic',
+    email: null
   });
   assert.equal(authorizeAdminCredentials('analyst', 'bad', config), null);
 });

@@ -80,6 +80,7 @@ export function DealOperatorConsole({ deal, snapshot }: Props) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [stage, setStage] = useState<DealStage>(deal.stage);
   const [stageNote, setStageNote] = useState('');
   const [headline, setHeadline] = useState(deal.headline ?? '');
@@ -174,11 +175,15 @@ export function DealOperatorConsole({ deal, snapshot }: Props) {
   });
   const openRisks = deal.riskFlags.filter((risk) => !risk.isResolved);
 
-  async function run(key: string, work: () => Promise<void>) {
+  async function run(key: string, work: () => Promise<void>, successMessage?: string) {
     setBusy(key);
     setError(null);
+    setNotice(null);
     try {
       await work();
+      if (successMessage) {
+        setNotice(successMessage);
+      }
       router.refresh();
     } catch (mutationError) {
       setError(mutationError instanceof Error ? mutationError.message : 'Request failed');
@@ -190,7 +195,7 @@ export function DealOperatorConsole({ deal, snapshot }: Props) {
   return (
     <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
       <div className="space-y-6">
-        <Card className="space-y-5">
+        <Card className="space-y-5" data-testid="deal-archive-section">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <div className="eyebrow">Pipeline</div>
@@ -1085,7 +1090,24 @@ export function DealOperatorConsole({ deal, snapshot }: Props) {
       </div>
 
       <div className="space-y-6">
-        {error ? <div className="rounded-[24px] border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-200">{error}</div> : null}
+        {notice ? (
+          <div
+            className="rounded-[24px] border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-100"
+            data-testid="deal-console-feedback"
+            role="status"
+          >
+            {notice}
+          </div>
+        ) : null}
+        {error ? (
+          <div
+            className="rounded-[24px] border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-200"
+            data-testid="deal-console-feedback"
+            role="alert"
+          >
+            {error}
+          </div>
+        ) : null}
 
         <Card className="space-y-5">
           <div className="flex items-center justify-between gap-4">
@@ -1283,7 +1305,7 @@ export function DealOperatorConsole({ deal, snapshot }: Props) {
           <div className="grid gap-4 md:grid-cols-2">
             <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
               <div className="fine-print">Current Status</div>
-              <div className="mt-3 text-base font-semibold text-white">{deal.statusLabel}</div>
+              <div className="mt-3 text-base font-semibold text-white" data-testid="deal-current-status">{deal.statusLabel}</div>
               <div className="mt-2 text-sm text-slate-400">
                 Archived {formatDate(deal.archivedAt)} / Closed {formatDate(deal.closedAt)}
               </div>
@@ -1313,12 +1335,12 @@ export function DealOperatorConsole({ deal, snapshot }: Props) {
               <Textarea className="min-h-[100px]" value={closeSummary} onChange={(event) => setCloseSummary(event.target.value)} placeholder="Write the final outcome, economics, and what matters for handoff or post-mortem." />
             </div>
             <div className="flex items-center justify-between gap-4">
-              <Button type="button" variant="secondary" disabled={busy === 'archive'} onClick={() => {
+              <Button type="button" variant="secondary" disabled={busy === 'archive'} data-testid="deal-archive-button" onClick={() => {
                 void run('archive', async () => {
                   await request(`/api/deals/${deal.id}/archive`, 'POST', {
                     summary: closeSummary || 'Archived for now.'
                   });
-                });
+                }, 'Deal archived.');
               }}>
                 {busy === 'archive' ? 'Archiving...' : 'Archive Deal'}
               </Button>
@@ -1333,8 +1355,9 @@ export function DealOperatorConsole({ deal, snapshot }: Props) {
                         await request(`/api/deals/${deal.id}/restore`, 'POST', {
                           summary: closeSummary || 'Reopened from archive.'
                         });
-                      });
+                      }, 'Deal restored.');
                     }}
+                    data-testid="deal-restore-button"
                   >
                     {busy === 'restore' ? 'Restoring...' : 'Restore Deal'}
                   </Button>

@@ -3,6 +3,8 @@ import { ReviewStatus, type PrismaClient } from '@prisma/client';
 import { getAssetClassPlaybook } from '@/lib/asset-class/playbook';
 import { prisma } from '@/lib/db/prisma';
 import { promoteAssetSnapshotsToFeatures } from '@/lib/services/feature-promotion';
+import { resolveAdminReviewerUserId } from '@/lib/security/admin-identity';
+import type { AuthorizedAdminActor } from '@/lib/security/admin-auth';
 
 export type ReviewDiscipline = 'power_permit' | 'legal_title' | 'lease_revenue';
 export type ReviewableRecordType =
@@ -378,31 +380,17 @@ export async function listPendingAssetReviewSummaries(db: PrismaClient = prisma)
     });
 }
 
-async function resolveReviewerUserId(actorIdentifier: string | null | undefined, db: PrismaClient) {
-  if (!actorIdentifier) return null;
-  const user = await db.user.findFirst({
-    where: {
-      OR: [{ email: actorIdentifier }, { name: actorIdentifier }]
-    },
-    select: {
-      id: true
-    }
-  });
-
-  return user?.id ?? null;
-}
-
 export async function reviewUnderwritingRecord(
   input: {
     recordType: ReviewableRecordType;
     recordId: string;
     reviewStatus: 'APPROVED' | 'REJECTED';
     reviewNotes?: string | null;
-    actorIdentifier?: string | null;
+    actor?: AuthorizedAdminActor | null;
   },
   db: PrismaClient = prisma
 ) {
-  const reviewedById = await resolveReviewerUserId(input.actorIdentifier, db);
+  const reviewedById = await resolveAdminReviewerUserId(input.actor ?? null, db);
   const reviewData = {
     reviewStatus: input.reviewStatus,
     reviewNotes: input.reviewNotes?.trim() || null,

@@ -5,6 +5,9 @@ export const ADMIN_SESSION_COOKIE = 'nexus_admin_session';
 type AdminSessionPayload = {
   sub: string;
   role: AuthorizedAdminActor['role'];
+  provider?: AuthorizedAdminActor['provider'];
+  subject?: string | null;
+  email?: string | null;
   exp: number;
 };
 
@@ -81,6 +84,9 @@ export async function createAdminSessionToken(
   const payload: AdminSessionPayload = {
     sub: actor.identifier,
     role: actor.role,
+    provider: actor.provider ?? 'session',
+    subject: actor.subject ?? null,
+    email: actor.email ?? null,
     exp: now.getTime() + getSessionTtlMs(env)
   };
   const payloadSegment = encode(JSON.stringify(payload));
@@ -120,7 +126,10 @@ export async function parseAdminSessionToken(
 
     return {
       identifier: payload.sub,
-      role: payload.role
+      role: payload.role,
+      provider: payload.provider ?? 'session',
+      subject: payload.subject ?? null,
+      email: payload.email ?? null
     };
   } catch {
     return null;

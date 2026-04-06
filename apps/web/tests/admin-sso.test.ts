@@ -46,15 +46,24 @@ test('admin sso maps configured claim roles into operator roles', () => {
 
   assert.deepEqual(analyst, {
     identifier: 'analyst@example.com',
-    role: 'ANALYST'
+    role: 'ANALYST',
+    provider: 'oidc',
+    subject: null,
+    email: 'analyst@example.com'
   });
   assert.deepEqual(admin, {
     identifier: 'admin@example.com',
-    role: 'ADMIN'
+    role: 'ADMIN',
+    provider: 'oidc',
+    subject: null,
+    email: 'admin@example.com'
   });
   assert.deepEqual(fallback, {
     identifier: 'viewer@example.com',
-    role: 'VIEWER'
+    role: 'VIEWER',
+    provider: 'oidc',
+    subject: null,
+    email: 'viewer@example.com'
   });
 });
 

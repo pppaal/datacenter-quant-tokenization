@@ -1,6 +1,6 @@
 # Platform Readiness Audit
 
-Last updated: 2026-04-03
+Last updated: 2026-04-06
 
 This audit records the current state of `apps/web` as an AI-native Korean real-estate investment-firm OS.
 
@@ -26,7 +26,7 @@ Why:
 
 - the repo now has a coherent shared data fabric across research, underwriting, deals, portfolio, and capital
 - review-gated evidence and registry-only anchoring are structurally sound
-- tests, browser smoke coverage, typecheck, and build pass
+- tests, mutation-heavy browser coverage, typecheck, and build pass
 - but there are still operating-system gaps around auth depth, background jobs, permissions, and model-risk governance
 
 ## What Is Already Strong
@@ -67,13 +67,13 @@ Why:
 
 These are the biggest reasons the repo is not yet a full-scale institutional OS.
 
-### 1. Browser E2E Exists, But Is Still Smoke-Level
+### 1. Browser E2E Now Covers Critical Operator Mutations
 
 Current state:
 
 - strong unit and service-level tests
 - build and route generation pass
-- Playwright smoke coverage is wired into repo commands
+- Playwright mutation coverage is wired into repo commands
 - seeded demo path is browser-tested across:
   - asset list -> asset dossier -> report library
   - review queue
@@ -81,10 +81,7 @@ Current state:
   - deals shell
   - portfolio shell
   - funds shell
-
-Missing:
-
-- no mutation-heavy browser coverage yet for:
+- critical operator mutations are covered for:
   - evidence approve/reject
   - valuation rerun
   - readiness stage/register/anchor actions
@@ -94,7 +91,7 @@ Missing:
 Impact:
 
 - materially stronger demo and release confidence
-- still not full end-to-end mutation coverage
+- still not full hosted-environment regression coverage
 
 ### 2. Auth / Permission Depth
 
@@ -106,9 +103,9 @@ Current state:
 
 Missing:
 
-- still based on shared credential sets instead of SSO or user-bound sessions
-- no deeper row-level permission model
-- reviewer identity is acceptable for controlled demo use, but not ideal for institutional production governance
+- browser access now supports signed sessions and generic OIDC
+- no deeper row-level permission model yet
+- reviewer attribution now has a persisted provider-subject identity map, and the security surface shows unresolved bindings explicitly, but it still needs fuller seat lifecycle and row-level permissioning
 
 Impact:
 
@@ -219,9 +216,10 @@ Impact:
 
 ## What Would Be Needed To Approach A “Top-Tier AI Investment Firm” Stack
 
-1. Mutation-heavy browser E2E for the main operator journeys
-2. SSO + stronger permissioning
+1. stronger permissioning beyond the new provider-subject identity binding layer
+2. hosted-environment browser E2E for production-like regression
 3. Background sync orchestration with retry and alerting
+   - improved further by intervention thresholds and unresolved-identity visibility on `/admin/security`
 4. Deeper official-source ETL into asset-linked domain tables
 5. Model registry / approval / monitoring
 6. Committee decision capture and approval workflow
@@ -242,7 +240,6 @@ It is not yet:
 
 The biggest difference is no longer product concept. It is operating depth:
 
-- browser E2E
 - auth/permissions
 - background jobs
 - ETL depth

@@ -50,4 +50,58 @@ test('runOpsCycle runs source refresh and research sync with aligned trigger met
   });
   assert.equal(result.sourceRun.id, 'source_run_1');
   assert.equal(result.researchRun.id, 'research_run_1');
+  assert.equal(result.attemptSummary.sourceAttemptCount, 1);
+  assert.equal(result.attemptSummary.researchAttemptCount, 1);
+});
+
+test('runOpsCycle retries failed steps before surfacing an error', async () => {
+  let sourceCalls = 0;
+  let researchCalls = 0;
+  process.env.OPS_CYCLE_RETRY_ATTEMPTS = '2';
+  process.env.OPS_CYCLE_RETRY_BACKOFF_MS = '0';
+
+  const result = await runOpsCycle(
+    {
+      actorIdentifier: 'ops@example.com',
+      scheduled: false
+    },
+    {} as never,
+    {
+      runSourceRefreshJob: async () => {
+        sourceCalls += 1;
+        if (sourceCalls === 1) {
+          throw new Error('temporary source failure');
+        }
+        return {
+          id: 'source_run_retry',
+          statusLabel: 'SUCCESS',
+          triggerType: SourceRefreshTriggerType.MANUAL,
+          refreshedAssetCount: 1,
+          failedAssetCount: 0
+        } as never;
+      },
+      runResearchWorkspaceSync: async () => {
+        researchCalls += 1;
+        if (researchCalls === 1) {
+          throw new Error('temporary research failure');
+        }
+        return {
+          id: 'research_run_retry',
+          statusLabel: 'SUCCESS',
+          triggerType: ResearchSyncTriggerType.MANUAL,
+          officialSourceCount: 2,
+          assetDossierCount: 1
+        } as never;
+      }
+    }
+  );
+
+  assert.equal(sourceCalls, 2);
+  assert.equal(researchCalls, 2);
+  assert.equal(result.attemptSummary.sourceAttemptCount, 2);
+  assert.equal(result.attemptSummary.researchAttemptCount, 2);
+  assert.match(result.alertSummary, /recovered after retry/i);
+
+  delete process.env.OPS_CYCLE_RETRY_ATTEMPTS;
+  delete process.env.OPS_CYCLE_RETRY_BACKOFF_MS;
 });

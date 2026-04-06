@@ -25,7 +25,7 @@ export async function POST(request: Request) {
       recordId: payload.recordId,
       reviewStatus: payload.decision === 'APPROVE' ? ReviewStatus.APPROVED : ReviewStatus.REJECTED,
       reviewNotes: payload.reviewNotes,
-      actorIdentifier: actor?.identifier ?? null
+      actor
     });
 
     await recordAuditEvent({

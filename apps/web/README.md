@@ -35,9 +35,15 @@ For the current product operating map, use:
 - [`apps/web/docs/platform-readiness-audit.md`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/docs/platform-readiness-audit.md)
 - [`apps/web/docs/hardening-plan.md`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/docs/hardening-plan.md)
 
-## Browser Smoke Coverage
+## Browser Mutation Coverage
 
-Playwright smoke coverage now locks the seeded operator journeys across assets, review, research, deals, portfolio, and funds.
+Playwright now locks the seeded operator journeys across assets, review, research, deals, portfolio, and funds, including mutation-heavy paths:
+
+- approve / reject evidence from `/admin/review`
+- rerun valuation from the asset dossier
+- upload a document and confirm history updates
+- stage / register / anchor readiness actions
+- archive / restore a deal
 
 Run from `apps/web`:
 
@@ -46,11 +52,25 @@ npm run prisma:seed
 npm run e2e
 ```
 
-This smoke suite now performs a preflight check first:
+If you want a one-command local browser path with seeded Postgres on port `5434`:
+
+```bash
+npm run e2e:local
+```
+
+This suite now performs a preflight check first:
 
 - database reachable
-- if seeded office / deal / portfolio / fund records are missing, it runs `npm run prisma:seed`
+- reseeds the demo set for deterministic runs
+- defaults browser E2E to `BLOCKCHAIN_MOCK_MODE=true` unless you explicitly provide a real registry configuration
 - then Playwright runs
+
+Development helpers:
+
+```bash
+npm run db:e2e:up
+npm run db:e2e:down
+```
 
 Seeded Postgres CI coverage is also checked in at `.github/workflows/web-e2e.yml`.
 
@@ -68,6 +88,9 @@ npm run ops:preflight
 ```
 
 - `ops:cycle` runs source refresh first, then research sync, and records both runs in the persisted audit/run history
+- `ops:cycle` now retries transient source/research failures and emits a clearer attempt summary for scheduled runs
+- `ops:cycle` can now push failure alerts, and optional retry-recovery alerts, to a generic webhook without changing the registry-only data boundary
+- `/admin/security` now surfaces intervention thresholds, recent failed/stale ops signals, and unresolved reviewer identity bindings so operators can act without digging through raw logs
 - `ops:preflight` runs prisma generate, typecheck, unit tests, build, and browser suite registration in one command
 
 ## Session Access
@@ -78,6 +101,7 @@ Browser operators now enter through `/admin/login`.
 - env-configured OIDC / SSO can be enabled through the `/api/admin/sso/*` routes and the login page button
 - shared basic auth remains available for automation, cron, and browser smoke coverage
 - both entry paths enforce the same `VIEWER / ANALYST / ADMIN` role matrix
+- OIDC subject/email now flows into the signed session and is persisted into `AdminIdentityBinding`, so reviewer attribution can resolve against a bound `User` before falling back to email / identifier matching
 
 The first scheduled worker path is now checked in at `.github/workflows/ops-cycle.yml`.
 
@@ -202,6 +226,13 @@ Relevant environment variables:
 - `DOCUMENT_STORAGE_SECRET_ACCESS_KEY`: object storage secret
 - `SOURCE_REFRESH_STALE_HOURS`: asset re-enrichment threshold, default `24`
 - `SOURCE_REFRESH_BATCH_SIZE`: max stale assets refreshed per run, default `4`
+- `OPS_CYCLE_RETRY_ATTEMPTS`: retry count for the combined ops worker, default `2`
+- `OPS_CYCLE_RETRY_BACKOFF_MS`: linear backoff base for the combined ops worker, default `1000`
+- `OPS_ALERT_FAILURE_STREAK`: consecutive failed runs required before security surfaces mark ops as intervention-required, default `2`
+- `OPS_ALERT_STALE_HOURS`: freshness window for latest research/source run before security surfaces flag stale ops, default `6`
+- `OPS_ALERT_WEBHOOK_URL`: optional generic webhook for scheduled ops failure notifications
+- `OPS_ALERT_NOTIFY_ON_RECOVERY`: when `true`, retry-recovered ops runs also emit a webhook alert
+- `BLOCKCHAIN_MOCK_MODE`: when `true`, browser mutation E2E uses deterministic mock registry transactions for stage/register/anchor flows
 
 ## Market And Macro Data Connectors
 
