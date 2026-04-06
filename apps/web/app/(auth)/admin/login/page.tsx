@@ -1,10 +1,20 @@
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { AdminLoginForm } from '@/components/admin/admin-login-form';
+import { AdminSsoButton } from '@/components/admin/admin-sso-button';
+import { getAdminSsoConfig } from '@/lib/security/admin-sso';
 
 export const dynamic = 'force-dynamic';
 
-export default function AdminLoginPage() {
+export default async function AdminLoginPage({
+  searchParams
+}: {
+  searchParams?: Promise<{ error?: string }>;
+}) {
+  const params = (await searchParams) ?? {};
+  const ssoConfig = getAdminSsoConfig();
+  const showSso = ssoConfig.mode === 'configured';
+
   return (
     <main className="app-shell pb-16 pt-16">
       <div className="mx-auto max-w-3xl space-y-8">
@@ -32,8 +42,22 @@ export default function AdminLoginPage() {
                 API routes. This shell is designed to lift the platform from shared basic auth toward SSO-backed
                 sessions without changing the operator workflows.
               </p>
+              {showSso ? (
+                <div className="mt-5 space-y-3">
+                  <div className="fine-print">SSO Provider</div>
+                  <AdminSsoButton />
+                </div>
+              ) : null}
             </div>
-            <AdminLoginForm />
+            <div className="space-y-4">
+              {params.error ? (
+                <div className="rounded-[18px] border border-rose-400/30 bg-rose-500/10 p-3 text-sm text-rose-200">
+                  Unable to complete operator sign-in. Check SSO/session configuration or retry with operator
+                  credentials.
+                </div>
+              ) : null}
+              <AdminLoginForm />
+            </div>
           </div>
         </Card>
       </div>

@@ -1,0 +1,65 @@
+name: ops-cycle
+
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: ops-cycle
+  cancel-in-progress: false
+
+jobs:
+  ops-cycle:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      OPENAI_MODEL: gpt-4o-mini
+      OPS_ACTOR: github-actions-ops
+      KOREA_MACRO_API_URL: ${{ secrets.KOREA_MACRO_API_URL }}
+      KOREA_MACRO_API_KEY: ${{ secrets.KOREA_MACRO_API_KEY }}
+      KOREA_BUILDING_API_URL: ${{ secrets.KOREA_BUILDING_API_URL }}
+      KOREA_BUILDING_API_KEY: ${{ secrets.KOREA_BUILDING_API_KEY }}
+      KOREA_ENERGY_API_URL: ${{ secrets.KOREA_ENERGY_API_URL }}
+      KOREA_ENERGY_API_KEY: ${{ secrets.KOREA_ENERGY_API_KEY }}
+      KOREA_GEOSPATIAL_API_URL: ${{ secrets.KOREA_GEOSPATIAL_API_URL }}
+      KOREA_GEOSPATIAL_API_KEY: ${{ secrets.KOREA_GEOSPATIAL_API_KEY }}
+      KOREA_KOSIS_API_KEY: ${{ secrets.KOREA_KOSIS_API_KEY }}
+      GLOBAL_MARKET_API_URL: ${{ secrets.GLOBAL_MARKET_API_URL }}
+      GLOBAL_MARKET_API_KEY: ${{ secrets.GLOBAL_MARKET_API_KEY }}
+      GLOBAL_MACRO_API_URL: ${{ secrets.GLOBAL_MACRO_API_URL }}
+      GLOBAL_MACRO_API_KEY: ${{ secrets.GLOBAL_MACRO_API_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npm run prisma:generate
+
+      - name: Apply migrations
+        run: npx prisma migrate deploy
+
+      - name: Run ops cycle
+        run: npm run ops:cycle 2>&1 | tee ops-cycle.log
+
+      - name: Upload ops cycle log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ops-cycle-log
+          path: apps/web/ops-cycle.log
+          if-no-files-found: ignore

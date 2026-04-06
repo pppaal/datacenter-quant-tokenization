@@ -6,7 +6,7 @@ The legacy root Next.js app and the `/web` demo were archived under [`legacy/`](
 
 This platform is an AI-native operating system for a Korean real-estate investment firm. It now spans research, underwriting, deal execution, portfolio operations, and a capital-formation shell, while keeping documents, valuations, extracted text, and underwriting logic offchain. It remains registry-only onchain and it is not a retail token-sale app or investment-advice product.
 
-Browser operators now enter through `/admin/login` using a signed session cookie. Shared basic auth remains available for automation, protected cron routes, and browser smoke coverage.
+Browser operators now enter through `/admin/login` using a signed session cookie. Env-configured OIDC / SSO can now be wired through `/api/admin/sso/*`. Shared basic auth remains available for automation, protected cron routes, and browser smoke coverage.
 
 ## Product Surface
 
@@ -51,7 +51,7 @@ npm run dev
 
 `npm run e2e` now fails fast with a clear message if the local Postgres database is down, and it will auto-run `npm run prisma:seed` if the database is reachable but the seeded demo records are missing.
 
-Seeded Postgres browser smoke CI is checked in at `.github/workflows/web-e2e.yml`.
+Seeded Postgres browser smoke CI is checked in at `.github/workflows/web-e2e.yml`. The first scheduled ops worker path is checked in at `.github/workflows/ops-cycle.yml`.
 
 ## Environment
 

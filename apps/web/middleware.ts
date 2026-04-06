@@ -8,7 +8,7 @@ import {
 import { ADMIN_SESSION_COOKIE, parseAdminSessionToken } from '@/lib/security/admin-session';
 
 function isPublicApiPath(pathname: string) {
-  return pathname === '/api/inquiries' || pathname === '/api/admin/session';
+  return pathname === '/api/inquiries' || pathname === '/api/admin/session' || pathname === '/api/admin/sso/login' || pathname === '/api/admin/sso/callback';
 }
 
 function isPublicAdminPath(pathname: string) {

@@ -75,8 +75,11 @@ npm run ops:preflight
 Browser operators now enter through `/admin/login`.
 
 - signed session cookies are the primary browser path
+- env-configured OIDC / SSO can be enabled through the `/api/admin/sso/*` routes and the login page button
 - shared basic auth remains available for automation, cron, and browser smoke coverage
 - both entry paths enforce the same `VIEWER / ANALYST / ADMIN` role matrix
+
+The first scheduled worker path is now checked in at `.github/workflows/ops-cycle.yml`.
 
 ## Prisma Migration
 
@@ -174,6 +177,12 @@ Relevant environment variables:
 - `OPS_CRON_TOKEN`: required bearer token for the cron trigger route
 - `ADMIN_SESSION_SECRET`: required in production to sign browser operator sessions
 - `ADMIN_SESSION_TTL_HOURS`: optional session lifetime in hours, default `12`
+- `ADMIN_OIDC_ISSUER_URL`: preferred OIDC discovery issuer
+- `ADMIN_OIDC_AUTHORIZATION_ENDPOINT`, `ADMIN_OIDC_TOKEN_ENDPOINT`, `ADMIN_OIDC_USERINFO_ENDPOINT`: explicit endpoint overrides when discovery is not used
+- `ADMIN_OIDC_CLIENT_ID`, `ADMIN_OIDC_CLIENT_SECRET`: browser SSO client credentials
+- `ADMIN_OIDC_REDIRECT_URI`: optional callback override, defaults to `$APP_BASE_URL/api/admin/sso/callback`
+- `ADMIN_OIDC_IDENTIFIER_CLAIM`, `ADMIN_OIDC_ROLE_CLAIM`: claim mapping controls
+- `ADMIN_OIDC_VIEWER_ROLES`, `ADMIN_OIDC_ANALYST_ROLES`, `ADMIN_OIDC_ADMIN_ROLES`: comma-separated group-to-role mapping
 - `ADMIN_BASIC_AUTH_USER`: basic auth username for `/admin` and admin API routes
 - `ADMIN_BASIC_AUTH_PASSWORD`: basic auth password for `/admin` and admin API routes
 - `ADMIN_BASIC_AUTH_VIEWER_CREDENTIALS`: comma-separated `user:password` viewer credentials
@@ -181,6 +190,7 @@ Relevant environment variables:
 - `ADMIN_BASIC_AUTH_ADMIN_CREDENTIALS`: comma-separated `user:password` admin credentials
 - `/api/*` is now protected by admin auth middleware except the public inquiry endpoint and cron-token ops routes
 - `/admin/login` is the interactive session entry point for browser operators
+- `/api/admin/sso/login` and `/api/admin/sso/callback` are the OIDC browser SSO entry points
 - `VIEWER` is read-only for overview, assets, and valuation screens
 - `ANALYST` is required for research, review, deals, portfolio, funds, investors, sources, readiness, and other operator workspaces
 - `ADMIN` is required for security settings, registry release controls, and approval-only release actions
