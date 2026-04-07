@@ -80,6 +80,8 @@ Current branch status:
 - session auth and generic OIDC are live
 - OIDC provider, subject, and email now flow into the signed browser session
 - reviewer attribution now persists provider-subject bindings and resolves to a bound `User` before falling back to email / identifier matching
+- unresolved SSO subjects can now be mapped to canonical users from `/admin/security`
+- canonical operator seats now have active/inactive lifecycle controls
 
 ### Phase 3. Sync / Data Ops Hardening
 
@@ -93,6 +95,7 @@ Scope:
 - sync retry policy
 - sync failure alerting
 - source freshness SLA reporting
+- recent alert delivery attempts are now persisted, replayable from the security surface, and visible alongside intervention thresholds
 
 ### Phase 4. Deeper Official-Source ETL
 
@@ -112,7 +115,7 @@ Scope:
 - dev-mode E2E is correct for smoke assurance, but not a substitute for full production-hosted E2E
 - official-source sync is still partially request-coupled until scheduler work is completed
 - security remains demo-safe and controlled-use safe, but not yet SSO-grade
-- the new identity binding layer still needs fuller seat lifecycle and row-level permissioning before true enterprise IAM
+- the new identity binding layer now supports direct operator mapping from unresolved OIDC subjects into canonical users, but it still needs fuller seat lifecycle and row-level permissioning before true enterprise IAM
 
 ## Verification Commands
 

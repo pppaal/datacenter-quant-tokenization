@@ -54,7 +54,8 @@ async function assertSeededOperatorData() {
     seededOffice,
     seededDeal,
     seededPortfolio,
-    seededFund
+    seededFund,
+    seededUnmappedIdentity
   ] = await Promise.all([
     prisma.asset.count(),
     prisma.energySnapshot.count({ where: { reviewStatus: 'PENDING' } }),
@@ -74,12 +75,24 @@ async function assertSeededOperatorData() {
     prisma.fund.findFirst({
       where: { name: 'Han River Real Estate Fund I' },
       select: { id: true }
+    }),
+    prisma.adminIdentityBinding.findFirst({
+      where: { userId: null },
+      select: { id: true }
     })
   ]);
 
   const pendingReviewCount = pendingEnergyCount + pendingPermitCount + pendingLeaseCount;
 
-  if (assetCount === 0 || pendingReviewCount < 2 || !seededOffice || !seededPortfolio || !seededFund || !seededDeal) {
+  if (
+    assetCount === 0 ||
+    pendingReviewCount < 2 ||
+    !seededOffice ||
+    !seededPortfolio ||
+    !seededFund ||
+    !seededDeal ||
+    !seededUnmappedIdentity
+  ) {
     throw new Error('E2E preflight detected missing seeded demo data.');
   }
 }

@@ -52,6 +52,8 @@ test('admin role matrix protects analyst and admin routes', () => {
   assert.equal(getRequiredAdminRoleForPath('/admin/deals/abc'), 'ANALYST');
   assert.equal(getRequiredAdminRoleForPath('/admin/portfolio/abc'), 'ANALYST');
   assert.equal(getRequiredAdminRoleForPath('/admin/security'), 'ADMIN');
+  assert.equal(getRequiredAdminRoleForPath('/api/admin/operators'), 'ADMIN');
+  assert.equal(getRequiredAdminRoleForPath('/api/admin/ops-alert-deliveries/replay'), 'ADMIN');
   assert.equal(getRequiredAdminRoleForPath('/api/deals'), 'ANALYST');
   assert.equal(getRequiredAdminRoleForPath('/api/readiness'), 'ADMIN');
 });

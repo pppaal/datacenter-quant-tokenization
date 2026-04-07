@@ -44,6 +44,8 @@ Playwright now locks the seeded operator journeys across assets, review, researc
 - upload a document and confirm history updates
 - stage / register / anchor readiness actions
 - archive / restore a deal
+- map a seeded unresolved reviewer identity from `/admin/security`
+- update a canonical operator seat from `/admin/security`
 
 Run from `apps/web`:
 
@@ -91,6 +93,8 @@ npm run ops:preflight
 - `ops:cycle` now retries transient source/research failures and emits a clearer attempt summary for scheduled runs
 - `ops:cycle` can now push failure alerts, and optional retry-recovery alerts, to a generic webhook without changing the registry-only data boundary
 - `/admin/security` now surfaces intervention thresholds, recent failed/stale ops signals, and unresolved reviewer identity bindings so operators can act without digging through raw logs
+- the same security surface now lets admins map unresolved SSO identities onto canonical `User` records, which makes reviewer attribution and operator analytics user-bound instead of identifier-only
+- `/admin/security` also exposes canonical operator seats with active/inactive status and recent ops alert delivery attempts, so seat lifecycle and webhook monitoring are visible in one place
 - `ops:preflight` runs prisma generate, typecheck, unit tests, build, and browser suite registration in one command
 
 ## Session Access
@@ -99,8 +103,9 @@ Browser operators now enter through `/admin/login`.
 
 - signed session cookies are the primary browser path
 - env-configured OIDC / SSO can be enabled through the `/api/admin/sso/*` routes and the login page button
-- shared basic auth remains available for automation, cron, and browser smoke coverage
+- shared basic auth is now reserved for automation and protected ops routes
 - both entry paths enforce the same `VIEWER / ANALYST / ADMIN` role matrix
+- browser sessions now prefer canonical seat-backed credentials, and inactive seats are denied fresh session issuance plus blocked on the next server-validated request
 - OIDC subject/email now flows into the signed session and is persisted into `AdminIdentityBinding`, so reviewer attribution can resolve against a bound `User` before falling back to email / identifier matching
 
 The first scheduled worker path is now checked in at `.github/workflows/ops-cycle.yml`.
@@ -212,8 +217,10 @@ Relevant environment variables:
 - `ADMIN_BASIC_AUTH_VIEWER_CREDENTIALS`: comma-separated `user:password` viewer credentials
 - `ADMIN_BASIC_AUTH_ANALYST_CREDENTIALS`: comma-separated `user:password` analyst credentials
 - `ADMIN_BASIC_AUTH_ADMIN_CREDENTIALS`: comma-separated `user:password` admin credentials
+- `ADMIN_ALLOW_UNBOUND_BROWSER_SESSION`: optional local-only escape hatch to allow browser sessions without a canonical operator seat
 - `/api/*` is now protected by admin auth middleware except the public inquiry endpoint and cron-token ops routes
 - `/admin/login` is the interactive session entry point for browser operators
+- browser session credentials should map to canonical operator seats whenever possible
 - `/api/admin/sso/login` and `/api/admin/sso/callback` are the OIDC browser SSO entry points
 - `VIEWER` is read-only for overview, assets, and valuation screens
 - `ANALYST` is required for research, review, deals, portfolio, funds, investors, sources, readiness, and other operator workspaces

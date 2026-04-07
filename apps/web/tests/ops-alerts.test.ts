@@ -2,6 +2,10 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   buildOpsWebhookMessage,
+  listRecentOpsAlertDeliveries,
+  parseOpsCycleAlertPayload,
+  recordOpsAlertDelivery,
+  replayOpsAlertDelivery,
   sendOpsWebhookAlert,
   shouldNotifyOpsWebhook
 } from '@/lib/services/ops-alerts';
@@ -95,4 +99,122 @@ test('sendOpsWebhookAlert posts JSON payload when notification is enabled', asyn
   assert.equal(calls[0]?.url, 'https://hooks.example.com/ops');
   assert.equal(calls[0]?.init.method, 'POST');
   assert.match(String(calls[0]?.init.body), /ops-cycle failed/i);
+});
+
+test('recordOpsAlertDelivery persists delivery metadata', async () => {
+  let created: any;
+  const result = await recordOpsAlertDelivery(
+    {
+      channel: 'webhook',
+      destination: 'https://hooks.example.com/ops',
+      statusLabel: 'DELIVERED',
+      reason: 'failed',
+      actorIdentifier: 'ops@example.com',
+      environmentLabel: 'preview',
+      deliveredAt: new Date('2026-04-07T00:00:00.000Z')
+    },
+    {
+      opsAlertDelivery: {
+        async create(args: any) {
+          created = args.data;
+          return {
+            id: 'delivery_1',
+            createdAt: new Date('2026-04-07T00:00:00.000Z'),
+            ...args.data
+          };
+        }
+      }
+    } as any
+  );
+
+  assert.equal(created.channel, 'webhook');
+  assert.equal(result.id, 'delivery_1');
+});
+
+test('listRecentOpsAlertDeliveries returns latest delivery attempts', async () => {
+  const results = await listRecentOpsAlertDeliveries(
+    {
+      opsAlertDelivery: {
+        async findMany(args: any) {
+          assert.equal(args.take, 2);
+          return [
+            {
+              id: 'delivery_1',
+              channel: 'webhook',
+              destination: 'https://hooks.example.com/ops',
+              statusLabel: 'SKIPPED',
+              reason: 'missing_webhook',
+              actorIdentifier: 'ops@example.com',
+              environmentLabel: 'preview',
+              errorMessage: null,
+              deliveredAt: null,
+              createdAt: new Date('2026-04-07T00:00:00.000Z')
+            }
+          ];
+        }
+      }
+    } as any,
+    {
+      limit: 2
+    }
+  );
+
+  assert.equal(results.length, 1);
+  assert.equal(results[0]?.statusLabel, 'SKIPPED');
+});
+
+test('parseOpsCycleAlertPayload accepts persisted ops payloads', () => {
+  const parsed = parseOpsCycleAlertPayload({
+    status: 'FAILED',
+    actorIdentifier: 'ops@example.com',
+    alertSummary: 'source refresh failed',
+    attemptSummary: {
+      sourceAttemptCount: 2,
+      researchAttemptCount: 1
+    },
+    sourceRun: {
+      id: 'source_run_1',
+      statusLabel: 'FAILED'
+    }
+  } as any);
+
+  assert.equal(parsed?.status, 'FAILED');
+  assert.equal(parsed?.attemptSummary?.sourceAttemptCount, 2);
+  assert.equal(parsed?.sourceRun?.id, 'source_run_1');
+});
+
+test('replayOpsAlertDelivery replays persisted webhook payloads', async () => {
+  const calls: Array<{ url: string; init?: RequestInit }> = [];
+  const result = await replayOpsAlertDelivery(
+    {
+      id: 'delivery_1',
+      channel: 'webhook',
+      destination: 'https://hooks.example.com/ops',
+      statusLabel: 'FAILED',
+      reason: 'failed',
+      actorIdentifier: 'ops@example.com',
+      environmentLabel: 'test',
+      errorMessage: 'timeout',
+      deliveredAt: null,
+      createdAt: new Date('2026-04-07T00:00:00.000Z'),
+      payload: {
+        status: 'FAILED',
+        actorIdentifier: 'ops@example.com',
+        alertSummary: 'source refresh failed'
+      }
+    },
+    {
+      OPS_ALERT_WEBHOOK_URL: 'https://hooks.example.com/ops'
+    } as unknown as NodeJS.ProcessEnv,
+    async (url, init) => {
+      calls.push({
+        url: String(url),
+        init
+      });
+      return new Response(null, { status: 200 });
+    }
+  );
+
+  assert.equal(result.delivered, true);
+  assert.equal(calls[0]?.url, 'https://hooks.example.com/ops');
 });

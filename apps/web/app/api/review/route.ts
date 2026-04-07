@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { ReviewStatus } from '@prisma/client';
-import { getAdminActorFromHeaders } from '@/lib/security/admin-request';
+import { prisma } from '@/lib/db/prisma';
+import { resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
 import { recordAuditEvent } from '@/lib/services/audit';
 import { reviewUnderwritingRecord, type ReviewableRecordType } from '@/lib/services/review';
 
@@ -14,10 +15,17 @@ type ReviewPayload = {
 export async function POST(request: Request) {
   try {
     const payload = (await request.json()) as ReviewPayload;
-    const actor = getAdminActorFromHeaders(request.headers);
+    const actor = await resolveVerifiedAdminActorFromHeaders(request.headers, prisma, {
+      allowBasic: false,
+      requireActiveSeat: true
+    });
 
     if (!payload.recordType || !payload.recordId || !payload.decision) {
       return NextResponse.json({ error: 'recordType, recordId, and decision are required.' }, { status: 400 });
+    }
+
+    if (!actor) {
+      return NextResponse.json({ error: 'Active operator session required.' }, { status: 401 });
     }
 
     const result = await reviewUnderwritingRecord({

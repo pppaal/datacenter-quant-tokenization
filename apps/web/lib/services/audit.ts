@@ -1,6 +1,12 @@
 import type { Prisma, PrismaClient } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
-import { getAdminIdentityBindingSummary, listRecentAdminIdentityBindings } from '@/lib/security/admin-identity';
+import {
+  getAdminIdentityBindingSummary,
+  listAdminIdentityUserCandidates,
+  listAdminOperatorSeats,
+  listRecentAdminIdentityBindings
+} from '@/lib/security/admin-identity';
+import { listRecentOpsAlertDeliveries } from '@/lib/services/ops-alerts';
 
 export type AuditEventInput = {
   actorIdentifier?: string | null;
@@ -212,6 +218,7 @@ export async function getSecurityOverview(
           lastSeenAt: 'desc';
         };
         select: {
+          id: true;
           provider: true;
           subject: true;
           userId: true;
@@ -221,6 +228,7 @@ export async function getSecurityOverview(
         };
       }): Promise<
         Array<{
+          id: string;
           provider: string;
           subject: string;
           userId: string | null;
@@ -230,17 +238,117 @@ export async function getSecurityOverview(
         }>
       >;
     };
+    user: {
+      findMany(args: {
+        take: number;
+        orderBy:
+          | Array<{ role: 'asc' | 'desc' } | { name: 'asc' | 'desc' }>
+          | Array<{ isActive: 'asc' | 'desc' } | { role: 'asc' | 'desc' } | { name: 'asc' | 'desc' }>;
+        select: {
+          id: true;
+          name: true;
+          email: true;
+          role: true;
+          isActive: true;
+        };
+      }): Promise<Array<{ id: string; name: string; email: string; role: string; isActive: boolean }>>;
+    };
+    opsAlertDelivery: {
+      findMany(args: {
+        take: number;
+        orderBy: {
+          createdAt: 'desc';
+        };
+      }): Promise<
+        Array<{
+          id: string;
+          channel: string;
+          destination: string;
+          statusLabel: string;
+          reason: string | null;
+          actorIdentifier: string | null;
+          environmentLabel: string | null;
+          errorMessage: string | null;
+          deliveredAt: Date | null;
+          createdAt: Date;
+        }>
+      >;
+    };
   } = prisma,
   env: NodeJS.ProcessEnv = process.env
 ) {
-  const [auditEvents, opsRuns, identityBindings, recentUnmappedIdentityBindings] = await Promise.all([
+  const [
+    auditEvents,
+    opsRuns,
+    identityBindings,
+    recentUnmappedIdentityBindings,
+    identityCandidates,
+    operatorSeats,
+    opsAlertDeliveries
+  ] = await Promise.all([
     listAuditEvents({ limit: 60 }, db),
     listRecentOpsRuns(db),
     getAdminIdentityBindingSummary(db),
     listRecentAdminIdentityBindings(db, {
       onlyUnmapped: true,
       limit: 6
-    })
+    }),
+    listAdminIdentityUserCandidates(
+      {
+        user: {
+          findMany: async (args) => {
+            const users = await db.user.findMany({
+              ...args,
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                role: true,
+                isActive: true
+              }
+            });
+
+            return users.map(({ id, name, email, role }) => ({
+              id,
+              name,
+              email,
+              role
+            }));
+          }
+        }
+      },
+      {
+        limit: 24
+      }
+    ),
+    listAdminOperatorSeats(
+      {
+        user: {
+          findMany: (args) =>
+            db.user.findMany({
+              ...args,
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                role: true,
+                isActive: true
+              }
+            })
+        }
+      },
+      {
+        limit: 30
+      }
+    ),
+    listRecentOpsAlertDeliveries(
+      {
+        opsAlertDelivery: db.opsAlertDelivery
+      },
+      {
+        limit: 12
+      }
+    )
   ]);
   const actorSummaryMap = new Map<string, { actorIdentifier: string; actorRole: string; eventCount: number; lastSeenAt: Date }>();
 
@@ -270,8 +378,11 @@ export async function getSecurityOverview(
     opsAlerts: buildOpsAlertSummary({ ...opsRuns, env }),
     identityBindings: {
       ...identityBindings,
-      recentUnmapped: recentUnmappedIdentityBindings
+      recentUnmapped: recentUnmappedIdentityBindings,
+      userCandidates: identityCandidates
     },
+    operatorSeats,
+    opsAlertDeliveries,
     actorSummary: [...actorSummaryMap.values()].sort((left, right) => right.lastSeenAt.getTime() - left.lastSeenAt.getTime()),
     storageReadiness: getDocumentStorageReadiness(env),
     aiReadiness: getAiReadiness(env)

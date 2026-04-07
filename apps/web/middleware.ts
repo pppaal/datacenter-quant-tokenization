@@ -1,7 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import {
   type AuthorizedAdminActor,
-  authorizeAdminHeader,
   getAdminAuthConfig,
   getRequiredAdminRoleForPath,
   hasRequiredAdminRole
@@ -33,15 +32,7 @@ function isAuthorizedOpsRequest(request: NextRequest) {
 
 function unauthorizedResponse(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith('/api/')) {
-    return NextResponse.json(
-      { error: 'Admin authentication required' },
-      {
-        status: 401,
-        headers: {
-          'WWW-Authenticate': 'Basic realm="admin"'
-        }
-      }
-    );
+    return NextResponse.json({ error: 'Admin authentication required' }, { status: 401 });
   }
 
   const loginUrl = new URL('/admin/login', request.url);
@@ -68,15 +59,6 @@ export async function middleware(request: NextRequest) {
   }
 
   if (isPublicAdminPath(request.nextUrl.pathname)) {
-    const config = getAdminAuthConfig();
-    const actor: AuthorizedAdminActor | null =
-      (await parseAdminSessionToken(request.cookies.get(ADMIN_SESSION_COOKIE)?.value)) ??
-      authorizeAdminHeader(request.headers.get('authorization'), config);
-
-    if (actor) {
-      return NextResponse.redirect(new URL('/admin', request.url));
-    }
-
     return NextResponse.next();
   }
 
@@ -108,9 +90,9 @@ export async function middleware(request: NextRequest) {
     });
   }
 
-  const actor: AuthorizedAdminActor | null =
-    (await parseAdminSessionToken(request.cookies.get(ADMIN_SESSION_COOKIE)?.value)) ??
-    authorizeAdminHeader(request.headers.get('authorization'), config);
+  const actor: AuthorizedAdminActor | null = await parseAdminSessionToken(
+    request.cookies.get(ADMIN_SESSION_COOKIE)?.value
+  );
   if (!actor) {
     return unauthorizedResponse(request);
   }
@@ -127,6 +109,7 @@ export async function middleware(request: NextRequest) {
   if (actor.provider) requestHeaders.set('x-admin-auth-provider', actor.provider);
   if (actor.subject) requestHeaders.set('x-admin-subject', actor.subject);
   if (actor.email) requestHeaders.set('x-admin-email', actor.email);
+  if (actor.userId) requestHeaders.set('x-admin-user-id', actor.userId);
 
   return NextResponse.next({
     request: {

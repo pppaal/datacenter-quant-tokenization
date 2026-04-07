@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/db/prisma';
 import { getAssetById, updateAsset } from '@/lib/services/assets';
-import { getAdminActorFromHeaders, getRequestIpAddress } from '@/lib/security/admin-request';
+import { getRequestIpAddress, resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
 import { recordAuditEvent } from '@/lib/services/audit';
 
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -14,7 +15,13 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
 }
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const actor = getAdminActorFromHeaders(request.headers);
+  const actor = await resolveVerifiedAdminActorFromHeaders(request.headers, prisma, {
+    allowBasic: false,
+    requireActiveSeat: true
+  });
+  if (!actor) {
+    return NextResponse.json({ error: 'Active operator session required.' }, { status: 401 });
+  }
   try {
     const { id } = await params;
     const payload = await request.json();

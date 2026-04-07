@@ -1,10 +1,17 @@
 import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/db/prisma';
 import { enrichAssetFromSources } from '@/lib/services/assets';
-import { getAdminActorFromHeaders, getRequestIpAddress } from '@/lib/security/admin-request';
+import { getRequestIpAddress, resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
 import { recordAuditEvent } from '@/lib/services/audit';
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const actor = getAdminActorFromHeaders(request.headers);
+  const actor = await resolveVerifiedAdminActorFromHeaders(request.headers, prisma, {
+    allowBasic: false,
+    requireActiveSeat: true
+  });
+  if (!actor) {
+    return NextResponse.json({ error: 'Active operator session required.' }, { status: 401 });
+  }
   try {
     const { id } = await params;
     const asset = await enrichAssetFromSources(id);

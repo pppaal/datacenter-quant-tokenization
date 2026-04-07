@@ -3,14 +3,50 @@ import { getAdminSsoConfig } from '@/lib/security/admin-sso';
 
 type IdentityLookupDb = {
   user: {
+    findMany(args: {
+      take: number;
+      orderBy: Array<{ role: 'asc' | 'desc' } | { name: 'asc' | 'desc' }>;
+      select: {
+        id: true;
+        name: true;
+        email: true;
+        role: true;
+      };
+    }): Promise<Array<{ id: string; name: string; email: string; role: string }>>;
     findFirst(args: {
       where: {
+        isActive?: true;
         OR: Array<{ email: string } | { name: string }>;
       };
       select: {
         id: true;
       };
     }): Promise<{ id: string } | null>;
+    findUnique(args: {
+      where: {
+        id: string;
+      };
+      select: {
+        id: true;
+        isActive?: true;
+      };
+    }): Promise<{ id: string; isActive?: boolean } | null>;
+    update(args: {
+      where: {
+        id: string;
+      };
+      data: {
+        role?: 'ADMIN' | 'ANALYST' | 'VIEWER';
+        isActive?: boolean;
+      };
+      select: {
+        id: true;
+        name: true;
+        email: true;
+        role: true;
+        isActive: true;
+      };
+    }): Promise<{ id: string; name: string; email: string; role: string; isActive: boolean }>;
   };
   adminIdentityBinding?: {
     findUnique(args: {
@@ -55,6 +91,23 @@ type IdentityLookupDb = {
         lastSeenAt: true;
       };
     }): Promise<{ lastSeenAt: Date } | null>;
+    update(args: {
+      where: {
+        id: string;
+      };
+      data: {
+        userId: string | null;
+      };
+      select: {
+        id: true;
+        provider: true;
+        subject: true;
+        userId: true;
+        emailSnapshot: true;
+        identifierSnapshot: true;
+        lastSeenAt: true;
+      };
+    }): Promise<AdminIdentityBindingPreview>;
   };
 };
 
@@ -73,12 +126,28 @@ export type AdminIdentityBindingSummary = {
 };
 
 export type AdminIdentityBindingPreview = {
+  id: string;
   provider: string;
   subject: string;
   userId: string | null;
   emailSnapshot: string | null;
   identifierSnapshot: string;
   lastSeenAt: Date;
+};
+
+export type AdminIdentityUserCandidate = {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+};
+
+export type AdminOperatorSeat = {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  isActive: boolean;
 };
 
 export function getAdminReviewerAttributionSummary(
@@ -135,7 +204,19 @@ export async function resolveAdminReviewerUserId(
     });
 
     if (binding?.userId) {
-      return binding.userId;
+      const boundUser = await db.user.findUnique({
+        where: {
+          id: binding.userId
+        },
+        select: {
+          id: true,
+          isActive: true
+        }
+      });
+
+      if (boundUser?.isActive !== false) {
+        return binding.userId;
+      }
     }
   }
 
@@ -158,6 +239,7 @@ export async function resolveAdminReviewerUserId(
 
   const user = await db.user.findFirst({
     where: {
+      isActive: true,
       OR: matchClauses
     },
     select: {
@@ -166,6 +248,100 @@ export async function resolveAdminReviewerUserId(
   });
 
   return user?.id ?? null;
+}
+
+export async function resolveAdminActorSeat(
+  actor: AuthorizedAdminActor | null | undefined,
+  db: {
+    user: {
+      findFirst(args: {
+        where: {
+          OR: Array<{ email: string } | { name: string }>;
+        };
+        select: {
+          id: true;
+          isActive: true;
+        };
+      }): Promise<{ id: string; isActive: boolean } | null>;
+      findUnique(args: {
+        where: {
+          id: string;
+        };
+        select: {
+          id: true;
+          isActive: true;
+        };
+      }): Promise<{ id: string; isActive: boolean } | null>;
+    };
+    adminIdentityBinding?: {
+      findUnique(args: {
+        where: {
+          provider_subject: {
+            provider: string;
+            subject: string;
+          };
+        };
+        select: {
+          userId: true;
+        };
+      }): Promise<{ userId: string | null } | null>;
+    };
+  }
+) {
+  if (!actor) {
+    return null;
+  }
+
+  if (actor.provider === 'oidc' && actor.subject && db.adminIdentityBinding) {
+    const binding = await db.adminIdentityBinding.findUnique({
+      where: {
+        provider_subject: {
+          provider: actor.provider,
+          subject: actor.subject
+        }
+      },
+      select: {
+        userId: true
+      }
+    });
+
+    if (binding?.userId) {
+      return db.user.findUnique({
+        where: {
+          id: binding.userId
+        },
+        select: {
+          id: true,
+          isActive: true
+        }
+      });
+    }
+  }
+
+  const matchCandidates = [actor.email, actor.identifier].filter(
+    (value): value is string => typeof value === 'string' && value.trim().length > 0
+  );
+
+  if (matchCandidates.length === 0) {
+    return null;
+  }
+
+  return db.user.findFirst({
+    where: {
+      OR: [
+        ...matchCandidates.map((value) => ({
+          email: value
+        })),
+        ...matchCandidates.map((value) => ({
+          name: value
+        }))
+      ]
+    },
+    select: {
+      id: true,
+      isActive: true
+    }
+  });
 }
 
 export async function upsertAdminIdentityBindingForActor(
@@ -276,6 +452,7 @@ export async function listRecentAdminIdentityBindings(
           lastSeenAt: 'desc';
         };
         select: {
+          id: true;
           provider: true;
           subject: true;
           userId: true;
@@ -306,6 +483,182 @@ export async function listRecentAdminIdentityBindings(
       lastSeenAt: 'desc'
     },
     select: {
+      id: true,
+      provider: true,
+      subject: true,
+      userId: true,
+      emailSnapshot: true,
+      identifierSnapshot: true,
+      lastSeenAt: true
+    }
+  });
+}
+
+export async function listAdminIdentityUserCandidates(
+  db: {
+    user: {
+      findMany(args: {
+        take: number;
+        orderBy: Array<{ role: 'asc' | 'desc' } | { name: 'asc' | 'desc' }>;
+        select: {
+          id: true;
+          name: true;
+          email: true;
+          role: true;
+        };
+      }): Promise<Array<{ id: string; name: string; email: string; role: string }>>;
+    };
+  },
+  options?: {
+    limit?: number;
+  }
+): Promise<AdminIdentityUserCandidate[]> {
+  return db.user.findMany({
+    take: options?.limit ?? 24,
+    orderBy: [
+      {
+        role: 'asc'
+      },
+      {
+        name: 'asc'
+      }
+    ],
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true
+    }
+  });
+}
+
+export async function listAdminOperatorSeats(
+  db: {
+    user: {
+      findMany(args: {
+        take: number;
+        orderBy: Array<{ isActive: 'asc' | 'desc' } | { role: 'asc' | 'desc' } | { name: 'asc' | 'desc' }>;
+        select: {
+          id: true;
+          name: true;
+          email: true;
+          role: true;
+          isActive: true;
+        };
+      }): Promise<AdminOperatorSeat[]>;
+    };
+  },
+  options?: {
+    limit?: number;
+  }
+): Promise<AdminOperatorSeat[]> {
+  return db.user.findMany({
+    take: options?.limit ?? 50,
+    orderBy: [
+      {
+        isActive: 'desc'
+      },
+      {
+        role: 'asc'
+      },
+      {
+        name: 'asc'
+      }
+    ],
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      isActive: true
+    }
+  });
+}
+
+export async function updateAdminOperatorSeat(
+  input: {
+    userId: string;
+    role?: 'ADMIN' | 'ANALYST' | 'VIEWER';
+    isActive?: boolean;
+  },
+  db: {
+    user: {
+      update(args: {
+        where: {
+          id: string;
+        };
+        data: {
+          role?: 'ADMIN' | 'ANALYST' | 'VIEWER';
+          isActive?: boolean;
+        };
+        select: {
+          id: true;
+          name: true;
+          email: true;
+          role: true;
+          isActive: true;
+        };
+      }): Promise<AdminOperatorSeat>;
+    };
+  }
+): Promise<AdminOperatorSeat> {
+  if (!input.role && typeof input.isActive !== 'boolean') {
+    throw new Error('Either role or isActive must be provided.');
+  }
+
+  return db.user.update({
+    where: {
+      id: input.userId
+    },
+    data: {
+      role: input.role,
+      isActive: typeof input.isActive === 'boolean' ? input.isActive : undefined
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      isActive: true
+    }
+  });
+}
+
+export async function updateAdminIdentityBindingUser(
+  input: {
+    bindingId: string;
+    userId: string | null;
+  },
+  db: Pick<IdentityLookupDb, 'adminIdentityBinding' | 'user'>
+): Promise<AdminIdentityBindingPreview | null> {
+  if (!db.adminIdentityBinding) {
+    return null;
+  }
+
+  if (input.userId) {
+    const user = await db.user.findUnique({
+      where: {
+        id: input.userId
+      },
+      select: {
+        id: true
+      }
+    });
+
+    if (!user) {
+      throw new Error('Selected operator could not be found.');
+    }
+  }
+
+  return db.adminIdentityBinding.update({
+    where: {
+      id: input.bindingId
+    },
+    data: {
+      userId: input.userId
+    },
+    select: {
+      id: true,
       provider: true,
       subject: true,
       userId: true,

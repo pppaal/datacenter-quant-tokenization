@@ -13,7 +13,8 @@ test('admin session token round-trips actor identity and role', async () => {
   const token = await createAdminSessionToken(
     {
       identifier: 'analyst@example.com',
-      role: 'ANALYST'
+      role: 'ANALYST',
+      userId: 'user_analyst'
     },
     env,
     now
@@ -25,7 +26,8 @@ test('admin session token round-trips actor identity and role', async () => {
     role: 'ANALYST',
     provider: 'session',
     subject: null,
-    email: null
+    email: null,
+    userId: 'user_analyst'
   });
   assert.equal(await parseAdminSessionToken(token, env, new Date('2026-04-05T15:00:01.000Z')), null);
 });
@@ -38,7 +40,8 @@ test('admin session token rejects invalid signature', async () => {
   const token = await createAdminSessionToken(
     {
       identifier: 'viewer@example.com',
-      role: 'VIEWER'
+      role: 'VIEWER',
+      userId: 'user_viewer'
     },
     env,
     new Date('2026-04-05T10:00:00.000Z')

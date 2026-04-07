@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
-import { upsertAdminIdentityBindingForActor } from '@/lib/security/admin-identity';
+import { resolveAdminActorSeat, upsertAdminIdentityBindingForActor } from '@/lib/security/admin-identity';
 import { ADMIN_SESSION_COOKIE, createAdminSessionToken, getAdminSessionCookieOptions } from '@/lib/security/admin-session';
 import {
   ADMIN_SSO_NEXT_COOKIE,
@@ -34,6 +34,13 @@ export async function GET(request: Request) {
   const storedVerifier = cookieStore.get(ADMIN_SSO_VERIFIER_COOKIE)?.value;
   const nextPath = cookieStore.get(ADMIN_SSO_NEXT_COOKIE)?.value;
 
+  function clearSsoCookies(response: NextResponse) {
+    response.cookies.set(ADMIN_SSO_STATE_COOKIE, '', { ...createAdminSsoCookieOptions(), maxAge: 0 });
+    response.cookies.set(ADMIN_SSO_VERIFIER_COOKIE, '', { ...createAdminSsoCookieOptions(), maxAge: 0 });
+    response.cookies.set(ADMIN_SSO_NEXT_COOKIE, '', { ...createAdminSsoCookieOptions(), maxAge: 0 });
+    return response;
+  }
+
   if (!code || !state || !storedState || state !== storedState || !storedVerifier) {
     return NextResponse.redirect(new URL('/admin/login?error=sso_state', request.url));
   }
@@ -51,23 +58,27 @@ export async function GET(request: Request) {
     }
 
     await upsertAdminIdentityBindingForActor(actor, prisma);
+    const actorSeat = await resolveAdminActorSeat(actor, prisma);
+    if (!actorSeat) {
+      return clearSsoCookies(NextResponse.redirect(new URL('/admin/login?error=sso_unmapped', request.url)));
+    }
+    if (actorSeat && actorSeat.isActive === false) {
+      return clearSsoCookies(NextResponse.redirect(new URL('/admin/login?error=sso_inactive', request.url)));
+    }
 
-    const sessionToken = await createAdminSessionToken(actor);
+    const sessionToken = await createAdminSessionToken({
+      ...actor,
+      userId: actorSeat?.id ?? null
+    });
     if (!sessionToken) {
       return NextResponse.redirect(new URL('/admin/login?error=sso_session', request.url));
     }
 
     const response = NextResponse.redirect(new URL(nextPath || '/admin', request.url));
     response.cookies.set(ADMIN_SESSION_COOKIE, sessionToken, getAdminSessionCookieOptions());
-    response.cookies.set(ADMIN_SSO_STATE_COOKIE, '', { ...createAdminSsoCookieOptions(), maxAge: 0 });
-    response.cookies.set(ADMIN_SSO_VERIFIER_COOKIE, '', { ...createAdminSsoCookieOptions(), maxAge: 0 });
-    response.cookies.set(ADMIN_SSO_NEXT_COOKIE, '', { ...createAdminSsoCookieOptions(), maxAge: 0 });
-    return response;
+    return clearSsoCookies(response);
   } catch (caughtError) {
-    const response = NextResponse.redirect(new URL('/admin/login?error=sso_exchange', request.url));
-    response.cookies.set(ADMIN_SSO_STATE_COOKIE, '', { ...createAdminSsoCookieOptions(), maxAge: 0 });
-    response.cookies.set(ADMIN_SSO_VERIFIER_COOKIE, '', { ...createAdminSsoCookieOptions(), maxAge: 0 });
-    response.cookies.set(ADMIN_SSO_NEXT_COOKIE, '', { ...createAdminSsoCookieOptions(), maxAge: 0 });
+    const response = clearSsoCookies(NextResponse.redirect(new URL('/admin/login?error=sso_exchange', request.url)));
     response.headers.set('x-sso-error', caughtError instanceof Error ? caughtError.message : 'SSO exchange failed');
     return response;
   }

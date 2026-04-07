@@ -6,7 +6,7 @@ The legacy root Next.js app and the `/web` demo were archived under [`legacy/`](
 
 This platform is an AI-native operating system for a Korean real-estate investment firm. It now spans research, underwriting, deal execution, portfolio operations, and a capital-formation shell, while keeping documents, valuations, extracted text, and underwriting logic offchain. It remains registry-only onchain and it is not a retail token-sale app or investment-advice product.
 
-Browser operators now enter through `/admin/login` using a signed session cookie. Env-configured OIDC / SSO can now be wired through `/api/admin/sso/*`, and provider-subject identities can bind back to a persisted `User` for reviewer attribution. Shared basic auth remains available for automation, protected cron routes, and browser smoke coverage.
+Browser operators now enter through `/admin/login` using a signed session cookie. Env-configured OIDC / SSO can now be wired through `/api/admin/sso/*`, and provider-subject identities can bind back to a persisted `User` for reviewer attribution. `/admin/security` now shows unresolved reviewer identities, lets admins map them onto canonical operators, exposes operator seat lifecycle controls, and records recent ops alert deliveries without leaving the control surface. Shared basic auth is now reserved for automation and protected ops paths rather than browser navigation.
 
 ## Product Surface
 

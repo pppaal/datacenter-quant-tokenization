@@ -28,7 +28,7 @@ jobs:
           --health-retries 10
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5434/korea_dc_underwriting?schema=public
-      ADMIN_BASIC_AUTH_ADMIN_CREDENTIALS: admin:secret
+      ADMIN_BASIC_AUTH_ADMIN_CREDENTIALS: admin@nexusseoul.local:secret
       ADMIN_SESSION_SECRET: ci-session-secret
       OPS_CRON_TOKEN: ci-ops-token
       BLOCKCHAIN_MOCK_MODE: "true"

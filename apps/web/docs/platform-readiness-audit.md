@@ -1,6 +1,6 @@
 # Platform Readiness Audit
 
-Last updated: 2026-04-06
+Last updated: 2026-04-07
 
 This audit records the current state of `apps/web` as an AI-native Korean real-estate investment-firm OS.
 
@@ -87,6 +87,7 @@ Current state:
   - readiness stage/register/anchor actions
   - deal archive/restore
   - document upload
+  - security identity mapping and operator seat updates
 
 Impact:
 
@@ -105,7 +106,9 @@ Missing:
 
 - browser access now supports signed sessions and generic OIDC
 - no deeper row-level permission model yet
-- reviewer attribution now has a persisted provider-subject identity map, and the security surface shows unresolved bindings explicitly, but it still needs fuller seat lifecycle and row-level permissioning
+- reviewer attribution now has a persisted provider-subject identity map, and the security surface shows unresolved bindings explicitly, including direct mapping actions from unresolved SSO subjects into canonical `User` records
+- canonical operator seats now have active/inactive lifecycle controls, browser sessions are expected to map onto those seats, and inactive seats are blocked from fresh OIDC session issuance plus denied on the next server-validated request
+- this is materially better than shared-credential-only auth, but it still needs fuller enterprise IAM, seat lifecycle, and row-level permissioning
 
 Impact:
 
@@ -219,7 +222,7 @@ Impact:
 1. stronger permissioning beyond the new provider-subject identity binding layer
 2. hosted-environment browser E2E for production-like regression
 3. Background sync orchestration with retry and alerting
-   - improved further by intervention thresholds and unresolved-identity visibility on `/admin/security`
+   - improved further by intervention thresholds, unresolved-identity visibility, canonical seat controls, and recent ops alert delivery logs on `/admin/security`
 4. Deeper official-source ETL into asset-linked domain tables
 5. Model registry / approval / monitoring
 6. Committee decision capture and approval workflow

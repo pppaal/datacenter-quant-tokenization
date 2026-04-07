@@ -1,4 +1,7 @@
 import { Badge } from '@/components/ui/badge';
+import { AdminIdentityBindingForm } from '@/components/admin/admin-identity-binding-form';
+import { AdminOperatorSeatForm } from '@/components/admin/admin-operator-seat-form';
+import { OpsAlertReplayButton } from '@/components/admin/ops-alert-replay-button';
 import { OpsCycleButton } from '@/components/admin/ops-cycle-button';
 import { Card } from '@/components/ui/card';
 import { getAdminAuthConfig } from '@/lib/security/admin-auth';
@@ -201,6 +204,9 @@ export default async function AdminSecurityPage() {
           <div>
             <div className="eyebrow">Unmapped Reviewer Identities</div>
             <h2 className="mt-2 text-2xl font-semibold text-white">SSO identities that still need a bound user</h2>
+            <p className="mt-2 text-sm text-slate-400">
+              Map each provider subject to a canonical operator before using reviewer analytics or operator scorecards.
+            </p>
           </div>
           <Badge tone={security.identityBindings.unmappedBindings > 0 ? 'warn' : 'good'}>
             {formatNumber(security.identityBindings.unmappedBindings, 0)} open
@@ -209,7 +215,11 @@ export default async function AdminSecurityPage() {
         <div className="mt-5 space-y-3">
           {security.identityBindings.recentUnmapped.length > 0 ? (
             security.identityBindings.recentUnmapped.map((binding) => (
-              <div key={`${binding.provider}:${binding.subject}`} className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+              <div
+                key={`${binding.provider}:${binding.subject}`}
+                className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+                data-testid="identity-binding-card"
+              >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge>{binding.provider}</Badge>
@@ -233,11 +243,59 @@ export default async function AdminSecurityPage() {
                     <div className="mt-1 text-slate-400">Map this subject to a canonical `User` before relying on reviewer analytics.</div>
                   </div>
                 </div>
+                <AdminIdentityBindingForm
+                  bindingId={binding.id}
+                  emailSnapshot={binding.emailSnapshot}
+                  identifierSnapshot={binding.identifierSnapshot}
+                  hasMapping={Boolean(binding.userId)}
+                  candidates={security.identityBindings.userCandidates}
+                />
               </div>
             ))
           ) : (
             <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
               All persisted reviewer identities are mapped to a canonical user.
+            </div>
+          )}
+        </div>
+      </Card>
+
+      <Card>
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <div className="eyebrow">Operator Seats</div>
+            <h2 className="mt-2 text-2xl font-semibold text-white">Canonical operators and seat lifecycle</h2>
+            <p className="mt-2 text-sm text-slate-400">
+              Manage role assignment and active status for the canonical `User` records that reviewer attribution and
+              operator analytics bind to.
+            </p>
+          </div>
+          <Badge tone="neutral">{formatNumber(security.operatorSeats.length, 0)} seats</Badge>
+        </div>
+        <div className="mt-5 space-y-3">
+          {security.operatorSeats.length > 0 ? (
+            security.operatorSeats.map((seat) => (
+              <div key={seat.id} className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4" data-testid="operator-seat-card">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-semibold text-white">{seat.name}</div>
+                    <div className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">{seat.email}</div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge>{seat.role}</Badge>
+                    <Badge tone={seat.isActive ? 'good' : 'warn'}>{seat.isActive ? 'active' : 'inactive'}</Badge>
+                  </div>
+                </div>
+                <AdminOperatorSeatForm
+                  userId={seat.id}
+                  currentRole={seat.role as 'VIEWER' | 'ANALYST' | 'ADMIN'}
+                  isActive={seat.isActive}
+                />
+              </div>
+            ))
+          ) : (
+            <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
+              No canonical operators are available yet.
             </div>
           )}
         </div>
@@ -429,6 +487,59 @@ export default async function AdminSecurityPage() {
           </div>
         </Card>
       </div>
+
+      <Card>
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <div className="eyebrow">Alert Delivery Log</div>
+            <h2 className="mt-2 text-2xl font-semibold text-white">Recent ops alert delivery attempts</h2>
+          </div>
+          <Badge tone="neutral">{formatNumber(security.opsAlertDeliveries.length, 0)} deliveries</Badge>
+        </div>
+        <div className="mt-5 space-y-3">
+          {security.opsAlertDeliveries.length > 0 ? (
+            security.opsAlertDeliveries.map((delivery) => (
+              <div key={delivery.id} className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4" data-testid="ops-alert-delivery-card">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge>{delivery.channel}</Badge>
+                    <Badge tone={delivery.statusLabel === 'DELIVERED' ? 'good' : delivery.statusLabel === 'SKIPPED' ? 'warn' : 'danger'}>
+                      {delivery.statusLabel.toLowerCase()}
+                    </Badge>
+                  </div>
+                  <div className="text-xs uppercase tracking-[0.18em] text-slate-500">{formatDate(delivery.createdAt)}</div>
+                </div>
+                <div className="mt-3 grid gap-3 text-sm text-slate-300 md:grid-cols-4">
+                  <div>
+                    <div className="fine-print">Destination</div>
+                    <div className="mt-1 break-all">{delivery.destination}</div>
+                  </div>
+                  <div>
+                    <div className="fine-print">Reason</div>
+                    <div className="mt-1">{delivery.reason ?? 'N/A'}</div>
+                  </div>
+                  <div>
+                    <div className="fine-print">Actor</div>
+                    <div className="mt-1">{delivery.actorIdentifier ?? 'system'}</div>
+                  </div>
+                  <div>
+                    <div className="fine-print">Delivered</div>
+                    <div className="mt-1">{delivery.deliveredAt ? formatDate(delivery.deliveredAt) : 'not delivered'}</div>
+                  </div>
+                </div>
+                {(delivery.statusLabel === 'FAILED' || delivery.statusLabel === 'SKIPPED') && delivery.channel === 'webhook' ? (
+                  <OpsAlertReplayButton deliveryId={delivery.id} />
+                ) : null}
+                {delivery.errorMessage ? <div className="mt-3 text-sm text-rose-200">{delivery.errorMessage}</div> : null}
+              </div>
+            ))
+          ) : (
+            <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
+              No ops alert deliveries have been recorded yet.
+            </div>
+          )}
+        </div>
+      </Card>
     </div>
   );
 }

@@ -249,6 +249,7 @@ model User {
   name          String
   email         String            @unique
   role          UserRole          @default(ANALYST)
+  isActive      Boolean           @default(true)
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
   valuationRuns ValuationRun[]
@@ -1805,6 +1806,23 @@ model SourceRefreshRun {
   @@index([startedAt])
   @@index([statusLabel, startedAt])
   @@index([triggerType, startedAt])
+}
+
+model OpsAlertDelivery {
+  id              String   @id @default(cuid())
+  channel         String
+  destination     String
+  statusLabel     String   @default("PENDING")
+  reason          String?
+  actorIdentifier String?
+  environmentLabel String?
+  errorMessage    String?
+  payload         Json?
+  deliveredAt     DateTime?
+  createdAt       DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([statusLabel, createdAt])
 }
 
 model ReadinessProject {

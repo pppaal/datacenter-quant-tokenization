@@ -27,8 +27,8 @@ export default async function AdminLoginPage({
             Sign in to the investment-firm operating console.
           </h1>
           <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300">
-            Session-based operator access is now the primary path for admin workflows. Basic auth remains available for
-            automation, browser smoke coverage, and protected cron routes.
+            Session-based operator access is now the primary browser path. Canonical operator seats can be deactivated
+            from the security console, and browser login credentials should map back to those canonical operators.
           </p>
         </Card>
 
@@ -39,8 +39,8 @@ export default async function AdminLoginPage({
               <h2 className="mt-2 text-2xl font-semibold text-white">Start a role-aware operator session</h2>
               <p className="mt-3 text-sm leading-7 text-slate-400">
                 Viewer, analyst, and admin credentials map into the same role matrix enforced by middleware and admin
-                API routes. This shell is designed to lift the platform from shared basic auth toward SSO-backed
-                sessions without changing the operator workflows.
+                API routes. Browser sessions now prefer canonical seat-backed credentials, while shared basic auth is
+                reserved for automation and protected ops paths.
               </p>
               {showSso ? (
                 <div className="mt-5 space-y-3">

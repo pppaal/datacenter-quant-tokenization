@@ -8,6 +8,7 @@ type AdminSessionPayload = {
   provider?: AuthorizedAdminActor['provider'];
   subject?: string | null;
   email?: string | null;
+  userId?: string | null;
   exp: number;
 };
 
@@ -87,6 +88,7 @@ export async function createAdminSessionToken(
     provider: actor.provider ?? 'session',
     subject: actor.subject ?? null,
     email: actor.email ?? null,
+    userId: actor.userId ?? null,
     exp: now.getTime() + getSessionTtlMs(env)
   };
   const payloadSegment = encode(JSON.stringify(payload));
@@ -129,7 +131,8 @@ export async function parseAdminSessionToken(
       role: payload.role,
       provider: payload.provider ?? 'session',
       subject: payload.subject ?? null,
-      email: payload.email ?? null
+      email: payload.email ?? null,
+      userId: payload.userId ?? null
     };
   } catch {
     return null;

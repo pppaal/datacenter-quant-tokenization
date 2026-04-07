@@ -15,6 +15,7 @@ Show this sequence clearly:
 5. portfolio operations
 6. capital shell
 7. registry-only readiness and document-hash anchoring
+8. operator security and ops intervention controls
 
 ## Seed Assets To Use
 
@@ -227,6 +228,26 @@ Talking point:
 - only registry ids, hashes, and packet metadata are anchored
 - the operating system remains offchain and institution-friendly
 
+### 10. Open `/admin/security`
+
+Message:
+
+> The platform is not just producing underwriting outputs. It is also exposing operator controls for identity, audit, and automation health.
+
+Show:
+
+- unresolved reviewer identity bindings
+- direct mapping from SSO subject to canonical operator
+- operator seat role and active/inactive status
+- recent ops-cycle alert deliveries
+- recent research/source run history
+
+Talking point:
+
+- reviewer attribution is no longer only identifier-based
+- inactive seats can be blocked from fresh SSO sessions
+- scheduled ops failures and skipped alerts are visible in one control surface
+
 ## Short Investor Demo Framing
 
 Use this if you need a one-minute summary:
@@ -243,6 +264,7 @@ Use this if the audience is an operator:
 
 - Start with the office asset first. It makes the product feel broader than data-center-only.
 - Use the data-center asset second to show the vertical-pack concept.
+- If time allows, end on `/admin/security` to show the product is operator-controlled, not only memo-generating.
 - Keep the blockchain explanation short and explicit.
 - Do not lead with tokenization.
 - Lead with research, review gating, underwriting, and operating workflows.

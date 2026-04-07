@@ -1,6 +1,21 @@
+import type { Prisma } from '@prisma/client';
+
 type OpsRunSummary = {
   id?: string;
   statusLabel?: string;
+};
+
+export type OpsAlertDeliveryRecord = {
+  id: string;
+  channel: string;
+  destination: string;
+  statusLabel: string;
+  reason: string | null;
+  actorIdentifier: string | null;
+  environmentLabel: string | null;
+  errorMessage: string | null;
+  deliveredAt: Date | null;
+  createdAt: Date;
 };
 
 export type OpsCycleAlertPayload = {
@@ -14,6 +29,20 @@ export type OpsCycleAlertPayload = {
   sourceRun?: OpsRunSummary | null;
   researchRun?: OpsRunSummary | null;
   errorMessage?: string | null;
+};
+
+export type OpsAlertReplayableDelivery = {
+  id: string;
+  channel: string;
+  destination: string;
+  statusLabel: string;
+  reason: string | null;
+  actorIdentifier: string | null;
+  environmentLabel: string | null;
+  errorMessage: string | null;
+  payload: Prisma.JsonValue | null;
+  deliveredAt: Date | null;
+  createdAt: Date;
 };
 
 export function shouldNotifyOpsWebhook(
@@ -125,4 +154,141 @@ export async function sendOpsWebhookAlert(
     delivered: true,
     reason: decision.reason
   } as const;
+}
+
+export async function recordOpsAlertDelivery(
+  input: {
+    channel: string;
+    destination: string;
+    statusLabel: string;
+    reason?: string | null;
+    actorIdentifier?: string | null;
+    environmentLabel?: string | null;
+    errorMessage?: string | null;
+    payload?: Prisma.InputJsonValue;
+    deliveredAt?: Date | null;
+  },
+  db: {
+    opsAlertDelivery: {
+      create(args: {
+        data: {
+          channel: string;
+          destination: string;
+          statusLabel: string;
+          reason?: string | null;
+          actorIdentifier?: string | null;
+          environmentLabel?: string | null;
+          errorMessage?: string | null;
+          payload?: Prisma.InputJsonValue;
+          deliveredAt?: Date | null;
+        };
+      }): Promise<OpsAlertDeliveryRecord>;
+    };
+  }
+) {
+  return db.opsAlertDelivery.create({
+    data: {
+      channel: input.channel,
+      destination: input.destination,
+      statusLabel: input.statusLabel,
+      reason: input.reason ?? null,
+      actorIdentifier: input.actorIdentifier ?? null,
+      environmentLabel: input.environmentLabel ?? null,
+      errorMessage: input.errorMessage ?? null,
+      payload: input.payload ?? undefined,
+      deliveredAt: input.deliveredAt ?? null
+    }
+  });
+}
+
+export async function listRecentOpsAlertDeliveries(
+  db: {
+    opsAlertDelivery: {
+      findMany(args: {
+        take: number;
+        orderBy: {
+          createdAt: 'desc';
+        };
+      }): Promise<OpsAlertDeliveryRecord[]>;
+    };
+  },
+  options?: {
+    limit?: number;
+  }
+) {
+  return db.opsAlertDelivery.findMany({
+    take: options?.limit ?? 12,
+    orderBy: {
+      createdAt: 'desc'
+    }
+  });
+}
+
+export function parseOpsCycleAlertPayload(payload: Prisma.JsonValue | null | undefined): OpsCycleAlertPayload | null {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    return null;
+  }
+
+  const candidate = payload as Record<string, unknown>;
+  const status = candidate.status;
+  const actorIdentifier = candidate.actorIdentifier;
+  const alertSummary = candidate.alertSummary;
+
+  if ((status !== 'SUCCESS' && status !== 'FAILED') || typeof actorIdentifier !== 'string' || typeof alertSummary !== 'string') {
+    return null;
+  }
+
+  const attemptSummaryCandidate =
+    candidate.attemptSummary && typeof candidate.attemptSummary === 'object' && !Array.isArray(candidate.attemptSummary)
+      ? (candidate.attemptSummary as Record<string, unknown>)
+      : null;
+  const sourceRunCandidate =
+    candidate.sourceRun && typeof candidate.sourceRun === 'object' && !Array.isArray(candidate.sourceRun)
+      ? (candidate.sourceRun as Record<string, unknown>)
+      : null;
+  const researchRunCandidate =
+    candidate.researchRun && typeof candidate.researchRun === 'object' && !Array.isArray(candidate.researchRun)
+      ? (candidate.researchRun as Record<string, unknown>)
+      : null;
+
+  return {
+    status,
+    actorIdentifier,
+    alertSummary,
+    attemptSummary: attemptSummaryCandidate
+      ? {
+          sourceAttemptCount: Number(attemptSummaryCandidate.sourceAttemptCount ?? 1),
+          researchAttemptCount: Number(attemptSummaryCandidate.researchAttemptCount ?? 1)
+        }
+      : undefined,
+    sourceRun: sourceRunCandidate
+      ? {
+          id: typeof sourceRunCandidate.id === 'string' ? sourceRunCandidate.id : undefined,
+          statusLabel: typeof sourceRunCandidate.statusLabel === 'string' ? sourceRunCandidate.statusLabel : undefined
+        }
+      : undefined,
+    researchRun: researchRunCandidate
+      ? {
+          id: typeof researchRunCandidate.id === 'string' ? researchRunCandidate.id : undefined,
+          statusLabel: typeof researchRunCandidate.statusLabel === 'string' ? researchRunCandidate.statusLabel : undefined
+        }
+      : undefined,
+    errorMessage: typeof candidate.errorMessage === 'string' ? candidate.errorMessage : null
+  };
+}
+
+export async function replayOpsAlertDelivery(
+  delivery: OpsAlertReplayableDelivery,
+  env: NodeJS.ProcessEnv = process.env,
+  fetchFn: typeof fetch = fetch
+) {
+  const payload = parseOpsCycleAlertPayload(delivery.payload);
+  if (!payload) {
+    return {
+      delivered: false,
+      reason: 'invalid_payload'
+    } as const;
+  }
+
+  return sendOpsWebhookAlert(payload, env, fetchFn);
 }

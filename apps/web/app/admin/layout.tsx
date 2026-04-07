@@ -1,8 +1,10 @@
 import Link from 'next/link';
 import { headers } from 'next/headers';
+import { redirect } from 'next/navigation';
 import { AdminNav, type AdminNavItem } from '@/components/admin/admin-nav';
 import { AdminSessionButton } from '@/components/admin/admin-session-button';
-import { getAdminActorFromHeaders } from '@/lib/security/admin-request';
+import { prisma } from '@/lib/db/prisma';
+import { resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
 import { hasRequiredAdminRole, type AdminAccessRole } from '@/lib/security/admin-auth';
 
 const navItems: Array<AdminNavItem & { minimumRole: AdminAccessRole }> = [
@@ -23,7 +25,15 @@ const navItems: Array<AdminNavItem & { minimumRole: AdminAccessRole }> = [
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const actor = getAdminActorFromHeaders(await headers());
+  const actor = await resolveVerifiedAdminActorFromHeaders(await headers(), prisma, {
+    allowBasic: false,
+    requireActiveSeat: true
+  });
+
+  if (!actor) {
+    redirect('/admin/login?error=session_required');
+  }
+
   const visibleItems = navItems
     .filter((item) => !actor || hasRequiredAdminRole(actor.role, item.minimumRole))
     .map(({ href, label }) => ({ href, label }));

@@ -3,8 +3,13 @@ import test from 'node:test';
 import {
   getAdminIdentityBindingSummary,
   getAdminReviewerAttributionSummary,
+  listAdminIdentityUserCandidates,
+  listAdminOperatorSeats,
   listRecentAdminIdentityBindings,
+  resolveAdminActorSeat,
   resolveAdminReviewerUserId,
+  updateAdminOperatorSeat,
+  updateAdminIdentityBindingUser,
   upsertAdminIdentityBindingForActor
 } from '@/lib/security/admin-identity';
 
@@ -68,6 +73,12 @@ test('reviewer attribution resolves by persisted OIDC subject binding first', as
         }
       },
       user: {
+        async findUnique() {
+          return {
+            id: 'user_bound',
+            isActive: true
+          };
+        },
         async findFirst() {
           throw new Error('fallback lookup should not run when subject binding exists');
         }
@@ -142,6 +153,7 @@ test('recent unmapped identity bindings return latest unresolved SSO identities'
           assert.equal(args.take, 2);
           return [
             {
+              id: 'binding_1',
               provider: 'oidc',
               subject: 'subject-1',
               userId: null,
@@ -160,6 +172,154 @@ test('recent unmapped identity bindings return latest unresolved SSO identities'
   );
 
   assert.equal(bindings.length, 1);
+  assert.equal(bindings[0]?.id, 'binding_1');
   assert.equal(bindings[0]?.provider, 'oidc');
   assert.equal(bindings[0]?.userId, null);
+});
+
+test('identity user candidates return canonical operators for intervention mapping', async () => {
+  const candidates = await listAdminIdentityUserCandidates(
+    {
+      user: {
+        async findMany(args: any) {
+          assert.equal(args.take, 3);
+          return [
+            {
+              id: 'user_1',
+              name: 'Analyst Kim',
+              email: 'kim@example.com',
+              role: 'ANALYST'
+            }
+          ];
+        }
+      }
+    } as any,
+    {
+      limit: 3
+    }
+  );
+
+  assert.equal(candidates.length, 1);
+  assert.equal(candidates[0]?.email, 'kim@example.com');
+});
+
+test('identity binding can be manually mapped to a canonical user', async () => {
+  const updated = await updateAdminIdentityBindingUser(
+    {
+      bindingId: 'binding_1',
+      userId: 'user_1'
+    },
+    {
+      user: {
+        async findUnique() {
+          return {
+            id: 'user_1'
+          };
+        }
+      },
+      adminIdentityBinding: {
+        async update(args: any) {
+          assert.equal(args.where.id, 'binding_1');
+          assert.equal(args.data.userId, 'user_1');
+          return {
+            id: 'binding_1',
+            provider: 'oidc',
+            subject: 'subject-1',
+            userId: 'user_1',
+            emailSnapshot: 'kim@example.com',
+            identifierSnapshot: 'kim',
+            lastSeenAt: new Date('2026-04-07T00:00:00.000Z')
+          };
+        }
+      }
+    } as any
+  );
+
+  assert.equal(updated?.userId, 'user_1');
+});
+
+test('operator seats list canonical users with active flags', async () => {
+  const seats = await listAdminOperatorSeats(
+    {
+      user: {
+        async findMany() {
+          return [
+            {
+              id: 'user_1',
+              name: 'Kim',
+              email: 'kim@example.com',
+              role: 'ANALYST',
+              isActive: true
+            }
+          ];
+        }
+      }
+    } as any
+  );
+
+  assert.equal(seats.length, 1);
+  assert.equal(seats[0]?.isActive, true);
+});
+
+test('operator seat update changes role and active status', async () => {
+  const seat = await updateAdminOperatorSeat(
+    {
+      userId: 'user_1',
+      role: 'ADMIN',
+      isActive: false
+    },
+    {
+      user: {
+        async update(args: any) {
+          assert.equal(args.where.id, 'user_1');
+          assert.equal(args.data.role, 'ADMIN');
+          assert.equal(args.data.isActive, false);
+          return {
+            id: 'user_1',
+            name: 'Kim',
+            email: 'kim@example.com',
+            role: 'ADMIN',
+            isActive: false
+          };
+        }
+      }
+    } as any
+  );
+
+  assert.equal(seat.role, 'ADMIN');
+  assert.equal(seat.isActive, false);
+});
+
+test('resolveAdminActorSeat returns inactive mapped users for SSO enforcement', async () => {
+  const seat = await resolveAdminActorSeat(
+    {
+      identifier: 'kim@example.com',
+      role: 'ANALYST',
+      provider: 'oidc',
+      subject: 'subject-1',
+      email: 'kim@example.com'
+    },
+    {
+      adminIdentityBinding: {
+        async findUnique() {
+          return {
+            userId: 'user_1'
+          };
+        }
+      },
+      user: {
+        async findUnique() {
+          return {
+            id: 'user_1',
+            isActive: false
+          };
+        },
+        async findFirst() {
+          throw new Error('fallback should not run');
+        }
+      }
+    } as any
+  );
+
+  assert.equal(seat?.isActive, false);
 });

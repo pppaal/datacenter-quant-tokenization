@@ -1913,6 +1913,7 @@ async function main() {
   await prisma.sourceOverride.deleteMany();
   await prisma.sourceCache.deleteMany();
   await prisma.asset.deleteMany();
+  await prisma.adminIdentityBinding.deleteMany();
   await prisma.user.deleteMany();
 
   await prisma.user.createMany({
@@ -1928,6 +1929,17 @@ async function main() {
         role: UserRole.ANALYST
       }
     ]
+  });
+
+  await prisma.adminIdentityBinding.create({
+    data: {
+      provider: 'oidc',
+      subject: 'seed-unmapped-analyst',
+      userId: null,
+      emailSnapshot: 'analyst@nexusseoul.local',
+      identifierSnapshot: 'analyst@nexusseoul.local',
+      lastSeenAt: new Date('2026-04-01T09:00:00.000Z')
+    }
   });
 
   await seedAsset({

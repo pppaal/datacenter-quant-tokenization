@@ -10,6 +10,12 @@ The repo is no longer only an underwriting tool. It is now the foundation of an 
 4. `Portfolio Operations`
 5. `Capital Formation Shell`
 
+Operator control surfaces now sit across those layers through:
+
+- `/admin/security` for audit, identity binding, operator seats, and ops alert visibility
+- scheduled and manual `ops:cycle` execution for source refresh and research sync
+- browser mutation E2E for the highest-risk operator actions
+
 The blockchain boundary remains unchanged:
 
 - valuations stay offchain
@@ -48,6 +54,8 @@ The blockchain boundary remains unchanged:
   Investor shell list
 - `/admin/sources`
   Source readiness and official adapter visibility
+- `/admin/security`
+  Security, audit, reviewer attribution, operator seat lifecycle, and ops delivery visibility
 - `/admin/registry`
   Registry-only blockchain status
 
@@ -239,6 +247,8 @@ Included:
 - held-asset operating shell
 - capital formation shell
 - portfolio optimization research using classical quantum-inspired search heuristics
+- operator security surface with reviewer identity binding and operator seat lifecycle controls
+- persisted ops alert delivery history for scheduled research/source automation
 
 Not included:
 
@@ -274,5 +284,6 @@ Highest-value follow-ons from current state:
 1. deepen industrial/logistics underwriting and report logic
 2. add portfolio-side automated covenant/watchlist digests
 3. expand investor-report drafting with portfolio and fund context
-4. finish land/development-native entitlement and budget workflows
-5. add native packs for retail, hotel, and multifamily when needed
+4. add true enterprise IAM layers: SCIM, seat lifecycle automation, session revocation, row-level permissions
+5. move ops automation from GitHub Actions shell into dedicated worker / queue / dead-letter infrastructure
+6. finish land/development-native entitlement and budget workflows

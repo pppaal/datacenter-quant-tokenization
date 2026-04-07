@@ -1,12 +1,16 @@
 import { NextResponse } from 'next/server';
 import { SourceRefreshTriggerType } from '@prisma/client';
 import { hasRequiredAdminRole } from '@/lib/security/admin-auth';
-import { getAdminActorFromHeaders, getRequestIpAddress } from '@/lib/security/admin-request';
+import { prisma } from '@/lib/db/prisma';
+import { getRequestIpAddress, resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
 import { recordAuditEvent } from '@/lib/services/audit';
 import { runSourceRefreshJob } from '@/lib/services/source-refresh';
 
 export async function POST(request: Request) {
-  const actor = getAdminActorFromHeaders(request.headers);
+  const actor = await resolveVerifiedAdminActorFromHeaders(request.headers, prisma, {
+    allowBasic: false,
+    requireActiveSeat: true
+  });
 
   if (!actor || !hasRequiredAdminRole(actor.role, 'ANALYST')) {
     return NextResponse.json({ error: 'Analyst access required.' }, { status: 403 });
