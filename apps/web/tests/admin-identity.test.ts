@@ -8,6 +8,7 @@ import {
   listRecentAdminIdentityBindings,
   resolveAdminActorSeat,
   resolveAdminReviewerUserId,
+  rotateAdminOperatorSessionVersion,
   updateAdminOperatorSeat,
   updateAdminIdentityBindingUser,
   upsertAdminIdentityBindingForActor
@@ -270,6 +271,16 @@ test('operator seat update changes role and active status', async () => {
     },
     {
       user: {
+        async findUnique() {
+          return {
+            id: 'user_1',
+            role: 'ANALYST',
+            isActive: true
+          };
+        },
+        async count() {
+          return 1;
+        },
         async update(args: any) {
           assert.equal(args.where.id, 'user_1');
           assert.equal(args.data.role, 'ADMIN');
@@ -279,7 +290,8 @@ test('operator seat update changes role and active status', async () => {
             name: 'Kim',
             email: 'kim@example.com',
             role: 'ADMIN',
-            isActive: false
+            isActive: false,
+            sessionVersion: 5
           };
         }
       }
@@ -288,6 +300,94 @@ test('operator seat update changes role and active status', async () => {
 
   assert.equal(seat.role, 'ADMIN');
   assert.equal(seat.isActive, false);
+  assert.equal(seat.sessionVersion, 5);
+});
+
+test('operator seat update blocks removing the last active admin seat', async () => {
+  await assert.rejects(
+    () =>
+      updateAdminOperatorSeat(
+        {
+          userId: 'admin_1',
+          role: 'ANALYST'
+        },
+        {
+          user: {
+            async findUnique() {
+              return {
+                id: 'admin_1',
+                role: 'ADMIN',
+                isActive: true
+              };
+            },
+            async count() {
+              return 0;
+            },
+            async update() {
+              throw new Error('update should not run');
+            }
+          }
+        } as any
+      ),
+    /At least one active ADMIN seat must remain assigned/
+  );
+});
+
+test('operator seat update blocks self-role or self-active changes', async () => {
+  await assert.rejects(
+    () =>
+      updateAdminOperatorSeat(
+        {
+          userId: 'admin_1',
+          role: 'VIEWER',
+          actingUserId: 'admin_1'
+        },
+        {
+          user: {
+            async findUnique() {
+              return {
+                id: 'admin_1',
+                role: 'ADMIN',
+                isActive: true
+              };
+            },
+            async count() {
+              return 1;
+            },
+            async update() {
+              throw new Error('update should not run');
+            }
+          }
+        } as any
+      ),
+    /Update another operator to change your own seat/
+  );
+});
+
+test('operator session rotation increments session version without changing role', async () => {
+  const seat = await rotateAdminOperatorSessionVersion(
+    {
+      userId: 'user_1'
+    },
+    {
+      user: {
+        async update(args: any) {
+          assert.equal(args.where.id, 'user_1');
+          assert.equal(args.data.sessionVersion.increment, 1);
+          return {
+            id: 'user_1',
+            name: 'Kim',
+            email: 'kim@example.com',
+            role: 'ADMIN',
+            isActive: true,
+            sessionVersion: 8
+          };
+        }
+      }
+    } as any
+  );
+
+  assert.equal(seat.sessionVersion, 8);
 });
 
 test('resolveAdminActorSeat returns inactive mapped users for SSO enforcement', async () => {

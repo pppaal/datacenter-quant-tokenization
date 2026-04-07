@@ -12,6 +12,7 @@ concurrency:
 jobs:
   ops-cycle:
     runs-on: ubuntu-latest
+    environment: operations
     defaults:
       run:
         working-directory: apps/web
@@ -55,8 +56,11 @@ jobs:
       - name: Apply migrations
         run: npx prisma migrate deploy
 
-      - name: Run ops cycle
-        run: npm run ops:cycle 2>&1 | tee ops-cycle.log
+      - name: Environment preflight
+        run: npm run env:preflight -- ops-worker
+
+      - name: Run queued ops worker cycle
+        run: npm run ops:worker -- --enqueue-cycle 2>&1 | tee ops-cycle.log
 
       - name: Publish ops summary
         if: always()

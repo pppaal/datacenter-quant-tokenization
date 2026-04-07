@@ -1,11 +1,25 @@
 import { NextResponse } from 'next/server';
+import { AdminAccessScopeType } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
+import { assertActorScopeAccess } from '@/lib/security/admin-access';
 import { getAssetById, updateAsset } from '@/lib/services/assets';
 import { getRequestIpAddress, resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
 import { recordAuditEvent } from '@/lib/services/audit';
 
-export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const actor = await resolveVerifiedAdminActorFromHeaders(request.headers, prisma, {
+    allowBasic: false,
+    requireActiveSeat: true
+  });
+  if (!actor) {
+    return NextResponse.json({ error: 'Active operator session required.' }, { status: 401 });
+  }
+  try {
+    await assertActorScopeAccess(actor, AdminAccessScopeType.ASSET, id, prisma);
+  } catch {
+    return NextResponse.json({ error: 'Asset access is not granted for this operator.' }, { status: 403 });
+  }
   const asset = await getAssetById(id);
   if (!asset) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -24,6 +38,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
   try {
     const { id } = await params;
+    await assertActorScopeAccess(actor, AdminAccessScopeType.ASSET, id, prisma);
     const payload = await request.json();
     const asset = await updateAsset(id, payload);
     await recordAuditEvent({

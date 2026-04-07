@@ -45,6 +45,36 @@ export type OpsAlertReplayableDelivery = {
   createdAt: Date;
 };
 
+type OpsWebhookTarget = {
+  channel: 'webhook_primary' | 'webhook_secondary' | 'webhook_pager';
+  url: string;
+};
+
+export type OpsWebhookAttempt = {
+  channel: OpsWebhookTarget['channel'];
+  destination: string;
+  delivered: boolean;
+  reason: string;
+  errorMessage?: string | null;
+};
+
+export function maskOpsAlertDestination(destination: string) {
+  const trimmed = destination.trim();
+  if (!trimmed) {
+    return 'redacted';
+  }
+
+  try {
+    const url = new URL(trimmed);
+    const pathname = url.pathname && url.pathname !== '/' ? url.pathname : '';
+    return `${url.origin}${pathname}`;
+  } catch {
+    const separatorIndex = trimmed.indexOf('?');
+    const sanitized = separatorIndex >= 0 ? trimmed.slice(0, separatorIndex) : trimmed;
+    return sanitized.length > 48 ? `${sanitized.slice(0, 48)}...` : sanitized;
+  }
+}
+
 export function shouldNotifyOpsWebhook(
   payload: OpsCycleAlertPayload,
   env: NodeJS.ProcessEnv = process.env
@@ -85,6 +115,36 @@ export function shouldNotifyOpsWebhook(
     webhookUrl,
     reason: retried ? 'recovery_suppressed' : 'success_suppressed'
   } as const;
+}
+
+export function getOpsWebhookTargets(env: NodeJS.ProcessEnv = process.env): OpsWebhookTarget[] {
+  const primary = env.OPS_ALERT_WEBHOOK_URL?.trim() ?? '';
+  const secondary = env.OPS_ALERT_FALLBACK_WEBHOOK_URL?.trim() ?? '';
+  const pager = env.OPS_ALERT_PAGER_WEBHOOK_URL?.trim() ?? '';
+  const targets: OpsWebhookTarget[] = [];
+
+  if (primary) {
+    targets.push({
+      channel: 'webhook_primary',
+      url: primary
+    });
+  }
+
+  if (secondary && secondary !== primary) {
+    targets.push({
+      channel: 'webhook_secondary',
+      url: secondary
+    });
+  }
+
+  if (pager && pager !== primary && pager !== secondary) {
+    targets.push({
+      channel: 'webhook_pager',
+      url: pager
+    });
+  }
+
+  return targets;
 }
 
 export function buildOpsWebhookMessage(
@@ -156,6 +216,72 @@ export async function sendOpsWebhookAlert(
   } as const;
 }
 
+export async function sendOpsWebhookAlerts(
+  payload: OpsCycleAlertPayload,
+  env: NodeJS.ProcessEnv = process.env,
+  fetchFn: typeof fetch = fetch
+) {
+  const decision = shouldNotifyOpsWebhook(payload, env);
+  const targets = getOpsWebhookTargets(env);
+
+  if (!decision.enabled || targets.length === 0) {
+    return {
+      deliveredAny: false,
+      attempts: [
+        {
+          channel: 'webhook_primary',
+          destination: targets[0]?.url ?? 'not_configured',
+          delivered: false,
+          reason: targets.length === 0 ? 'missing_webhook' : decision.reason
+        }
+      ] satisfies OpsWebhookAttempt[]
+    };
+  }
+
+  const attempts: OpsWebhookAttempt[] = [];
+
+  for (const target of targets) {
+    try {
+      const response = await fetchFn(target.url, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify(buildOpsWebhookMessage(payload, env))
+      });
+
+      if (!response.ok) {
+        throw new Error(`Ops webhook returned ${response.status}`);
+      }
+
+      attempts.push({
+        channel: target.channel,
+        destination: target.url,
+        delivered: true,
+        reason: attempts.length > 0 ? 'fallback_delivered' : decision.reason
+      });
+
+      return {
+        deliveredAny: true,
+        attempts
+      };
+    } catch (error) {
+      attempts.push({
+        channel: target.channel,
+        destination: target.url,
+        delivered: false,
+        reason: attempts.length > 0 ? 'fallback_delivery_error' : 'delivery_error',
+        errorMessage: error instanceof Error ? error.message : 'Failed to deliver ops webhook.'
+      });
+    }
+  }
+
+  return {
+    deliveredAny: false,
+    attempts
+  };
+}
+
 export async function recordOpsAlertDelivery(
   input: {
     channel: string;
@@ -186,10 +312,12 @@ export async function recordOpsAlertDelivery(
     };
   }
 ) {
+  const maskedDestination = maskOpsAlertDestination(input.destination);
+
   return db.opsAlertDelivery.create({
     data: {
       channel: input.channel,
-      destination: input.destination,
+      destination: maskedDestination,
       statusLabel: input.statusLabel,
       reason: input.reason ?? null,
       actorIdentifier: input.actorIdentifier ?? null,
@@ -199,6 +327,55 @@ export async function recordOpsAlertDelivery(
       deliveredAt: input.deliveredAt ?? null
     }
   });
+}
+
+export async function persistOpsAlertAttempts(
+  attempts: Array<{
+    channel: string;
+    destination: string;
+    delivered: boolean;
+    reason: string;
+    errorMessage?: string | null;
+  }>,
+  input: {
+    actorIdentifier: string;
+    environmentLabel: string;
+    payload: Prisma.InputJsonValue;
+  },
+  db: {
+    opsAlertDelivery: {
+      create(args: {
+        data: {
+          channel: string;
+          destination: string;
+          statusLabel: string;
+          reason?: string | null;
+          actorIdentifier?: string | null;
+          environmentLabel?: string | null;
+          errorMessage?: string | null;
+          payload?: Prisma.InputJsonValue;
+          deliveredAt?: Date | null;
+        };
+      }): Promise<OpsAlertDeliveryRecord>;
+    };
+  }
+) {
+  for (const attempt of attempts) {
+    await recordOpsAlertDelivery(
+      {
+        channel: attempt.channel,
+        destination: attempt.destination,
+        statusLabel: attempt.delivered ? 'DELIVERED' : 'FAILED',
+        reason: attempt.reason,
+        actorIdentifier: input.actorIdentifier,
+        environmentLabel: input.environmentLabel,
+        errorMessage: attempt.errorMessage ?? null,
+        payload: input.payload,
+        deliveredAt: attempt.delivered ? new Date() : null
+      },
+      db
+    );
+  }
 }
 
 export async function listRecentOpsAlertDeliveries(
@@ -290,5 +467,33 @@ export async function replayOpsAlertDelivery(
     } as const;
   }
 
-  return sendOpsWebhookAlert(payload, env, fetchFn);
+  const targets = getOpsWebhookTargets(env);
+  const matchingTarget =
+    delivery.channel === 'webhook_secondary'
+      ? targets.find((target) => target.channel === 'webhook_secondary')
+      : targets.find((target) => target.channel === 'webhook_primary') ?? targets[0];
+
+  if (!matchingTarget) {
+    return {
+      delivered: false,
+      reason: 'missing_webhook'
+    } as const;
+  }
+
+  const response = await fetchFn(matchingTarget.url, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json'
+    },
+    body: JSON.stringify(buildOpsWebhookMessage(payload, env))
+  });
+
+  if (!response.ok) {
+    throw new Error(`Ops webhook returned ${response.status}`);
+  }
+
+  return {
+    delivered: true,
+    reason: delivery.channel === 'webhook_secondary' ? 'replayed_secondary' : 'replayed_primary'
+  } as const;
 }

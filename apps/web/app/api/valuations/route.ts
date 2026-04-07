@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
+import { AdminAccessScopeType } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
+import { assertActorScopeAccess } from '@/lib/security/admin-access';
 import { createValuationRun, listValuationRuns } from '@/lib/services/valuations';
 import { getRequestIpAddress, resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
 import { recordAuditEvent } from '@/lib/services/audit';
@@ -19,6 +21,9 @@ export async function POST(request: Request) {
   }
   try {
     const payload = await request.json();
+    if (typeof payload?.assetId === 'string' && payload.assetId.trim()) {
+      await assertActorScopeAccess(actor, AdminAccessScopeType.ASSET, payload.assetId.trim(), prisma);
+    }
     const run = await createValuationRun(payload);
     await recordAuditEvent({
       actorIdentifier: actor?.identifier,

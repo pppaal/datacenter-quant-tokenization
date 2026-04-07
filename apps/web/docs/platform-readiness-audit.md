@@ -92,7 +92,7 @@ Current state:
 Impact:
 
 - materially stronger demo and release confidence
-- still not full hosted-environment regression coverage
+- hosted smoke coverage now exists, and hosted mutation coverage is available as a guarded manual staging workflow
 
 ### 2. Auth / Permission Depth
 
@@ -104,11 +104,13 @@ Current state:
 
 Missing:
 
-- browser access now supports signed sessions and generic OIDC
-- no deeper row-level permission model yet
+- browser access now supports signed sessions, generic OIDC, persisted `AdminSession` records, and session-version revocation
+- SCIM-style provisioning and canonical operator seats are now wired, including deprovisioning and provider-snapshot reconciliation
+- scoped `AdminAccessGrant` rows now provide a first row-level permission layer for asset, deal, portfolio, and fund surfaces
 - reviewer attribution now has a persisted provider-subject identity map, and the security surface shows unresolved bindings explicitly, including direct mapping actions from unresolved SSO subjects into canonical `User` records
-- canonical operator seats now have active/inactive lifecycle controls, browser sessions are expected to map onto those seats, and inactive seats are blocked from fresh OIDC session issuance plus denied on the next server-validated request
-- this is materially better than shared-credential-only auth, but it still needs fuller enterprise IAM, seat lifecycle, and row-level permissioning
+- canonical operator seats now have active/inactive lifecycle controls, targeted session revocation through seat-backed sessionVersion rotation, browser sessions are expected to map onto those seats, and inactive or revoked seats are denied on the next server-validated request
+- ops alert delivery now supports primary plus fallback webhook routing, `/admin/security` surfaces a replayable intervention queue separate from the raw delivery log, and queued ops work can be requeued from the same surface
+- this is materially better than shared-credential-only auth, but it still needs fuller enterprise IAM, SCIM lifecycle automation, and stronger row-level policy coverage
 
 Impact:
 
@@ -124,8 +126,8 @@ Current state:
 
 Missing:
 
-- no dedicated scheduler/orchestrator layer in repo
-- request-time and ops-route-triggered refresh still do some work that should become background jobs
+- no external queue/worker infrastructure beyond the persisted repo-local queue, daemon entrypoint, and GitHub Actions worker path
+- request-time mutation work is now largely separated, but source/research orchestration still relies on lightweight repo-native worker entrypoints rather than a managed queue service
 
 Impact:
 
@@ -196,7 +198,7 @@ Impact:
 
 ### Still Missing
 
-- browser E2E
+- full hosted-environment browser regression beyond the seeded mutation suite
 - visual regression
 - PDF/export snapshot regression
 - load/performance regression
@@ -213,7 +215,7 @@ Impact:
 ### Main Risks
 
 - shared basic-auth credential model is not ideal long-term
-- no SSO / IdP integration
+- OIDC browser SSO is now wired, but full enterprise IAM is still incomplete
 - no formal secrets rotation or environment policy layer in repo
 - no explicit rate limiting or abuse controls visible at app edge
 

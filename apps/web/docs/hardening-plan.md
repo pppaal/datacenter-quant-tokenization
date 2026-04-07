@@ -82,6 +82,8 @@ Current branch status:
 - reviewer attribution now persists provider-subject bindings and resolves to a bound `User` before falling back to email / identifier matching
 - unresolved SSO subjects can now be mapped to canonical users from `/admin/security`
 - canonical operator seats now have active/inactive lifecycle controls
+- browser sessions now validate against a centralized `AdminSession` store with seat-backed session-version revocation
+- SCIM-style provisioning and scoped `AdminAccessGrant` rows are now available as enterprise-control shells
 
 ### Phase 3. Sync / Data Ops Hardening
 
@@ -96,6 +98,7 @@ Scope:
 - sync failure alerting
 - source freshness SLA reporting
 - recent alert delivery attempts are now persisted, replayable from the security surface, and visible alongside intervention thresholds
+- queued ops work now persists outside request handling, can dead-letter after max attempts, and can be requeued from `/admin/security`
 
 ### Phase 4. Deeper Official-Source ETL
 

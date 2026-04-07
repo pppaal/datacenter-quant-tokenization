@@ -34,6 +34,7 @@ For the current product operating map, use:
 - [`apps/web/docs/demo-script.md`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/docs/demo-script.md)
 - [`apps/web/docs/platform-readiness-audit.md`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/docs/platform-readiness-audit.md)
 - [`apps/web/docs/hardening-plan.md`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/docs/hardening-plan.md)
+- [`apps/web/docs/operations-runbook.md`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/docs/operations-runbook.md)
 
 ## Browser Mutation Coverage
 
@@ -75,6 +76,7 @@ npm run db:e2e:down
 ```
 
 Seeded Postgres CI coverage is also checked in at `.github/workflows/web-e2e.yml`.
+Hosted smoke coverage is checked in at `.github/workflows/web-e2e-hosted.yml`, and manual hosted mutation coverage is checked in at `.github/workflows/web-e2e-hosted-mutations.yml`.
 
 If you only want to confirm the registered browser suite without starting the app, use:
 
@@ -87,14 +89,17 @@ For operator-grade maintenance loops:
 ```bash
 npm run ops:cycle
 npm run ops:preflight
+npm run env:preflight -- ops-worker
 ```
 
 - `ops:cycle` runs source refresh first, then research sync, and records both runs in the persisted audit/run history
 - `ops:cycle` now retries transient source/research failures and emits a clearer attempt summary for scheduled runs
 - `ops:cycle` can now push failure alerts, and optional retry-recovery alerts, to a generic webhook without changing the registry-only data boundary
+- `ops:worker -- --enqueue-cycle` now drives the scheduled worker path by enqueueing `OPS_CYCLE` work and draining the persisted queue outside request handling
+- `ops:worker:daemon` now provides an always-on poll loop for deployments that want a dedicated worker outside GitHub Actions
 - `/admin/security` now surfaces intervention thresholds, recent failed/stale ops signals, and unresolved reviewer identity bindings so operators can act without digging through raw logs
 - the same security surface now lets admins map unresolved SSO identities onto canonical `User` records, which makes reviewer attribution and operator analytics user-bound instead of identifier-only
-- `/admin/security` also exposes canonical operator seats with active/inactive status and recent ops alert delivery attempts, so seat lifecycle and webhook monitoring are visible in one place
+- `/admin/security` also exposes canonical operator seats with active/inactive status, targeted session revocation, queued and dead-letter ops work with requeue actions, a replayable alert intervention queue, and recent ops alert delivery attempts, so seat lifecycle and webhook monitoring are visible in one place
 - `ops:preflight` runs prisma generate, typecheck, unit tests, build, and browser suite registration in one command
 
 ## Session Access
@@ -103,12 +108,16 @@ Browser operators now enter through `/admin/login`.
 
 - signed session cookies are the primary browser path
 - env-configured OIDC / SSO can be enabled through the `/api/admin/sso/*` routes and the login page button
+- SCIM-style provisioning can populate canonical operators through `/api/admin/scim/*`
+- the SCIM shell now supports deprovisioning a canonical operator, which disables the seat, clears scoped grants, and revokes persisted browser sessions
+- `/api/admin/scim/sync` can now reconcile a full provider snapshot and automatically deprovision missing operator seats for that provider
 - shared basic auth is now reserved for automation and protected ops routes
 - both entry paths enforce the same `VIEWER / ANALYST / ADMIN` role matrix
-- browser sessions now prefer canonical seat-backed credentials, and inactive seats are denied fresh session issuance plus blocked on the next server-validated request
+- browser sessions now prefer canonical seat-backed credentials, carry a persisted session version, and inactive, revoked, or stale-version seats are denied on the next server-validated request
 - OIDC subject/email now flows into the signed session and is persisted into `AdminIdentityBinding`, so reviewer attribution can resolve against a bound `User` before falling back to email / identifier matching
+- scoped `AdminAccessGrant` records now provide a default-open, grant-when-present row-level restriction layer for asset, deal, portfolio, and fund operator surfaces
 
-The first scheduled worker path is now checked in at `.github/workflows/ops-cycle.yml`.
+The scheduled queue-draining worker path is now checked in at `.github/workflows/ops-cycle.yml`.
 
 ## Prisma Migration
 
@@ -206,14 +215,15 @@ Relevant environment variables:
 - `OPS_CRON_TOKEN`: required bearer token for the cron trigger route
 - `ADMIN_SESSION_SECRET`: required in production to sign browser operator sessions
 - `ADMIN_SESSION_TTL_HOURS`: optional session lifetime in hours, default `12`
+- browser sessions now carry a persisted seat-backed `sessionVersion`, and revoking sessions from `/admin/security` rotates that version immediately
 - `ADMIN_OIDC_ISSUER_URL`: preferred OIDC discovery issuer
 - `ADMIN_OIDC_AUTHORIZATION_ENDPOINT`, `ADMIN_OIDC_TOKEN_ENDPOINT`, `ADMIN_OIDC_USERINFO_ENDPOINT`: explicit endpoint overrides when discovery is not used
 - `ADMIN_OIDC_CLIENT_ID`, `ADMIN_OIDC_CLIENT_SECRET`: browser SSO client credentials
 - `ADMIN_OIDC_REDIRECT_URI`: optional callback override, defaults to `$APP_BASE_URL/api/admin/sso/callback`
 - `ADMIN_OIDC_IDENTIFIER_CLAIM`, `ADMIN_OIDC_ROLE_CLAIM`: claim mapping controls
 - `ADMIN_OIDC_VIEWER_ROLES`, `ADMIN_OIDC_ANALYST_ROLES`, `ADMIN_OIDC_ADMIN_ROLES`: comma-separated group-to-role mapping
-- `ADMIN_BASIC_AUTH_USER`: basic auth username for `/admin` and admin API routes
-- `ADMIN_BASIC_AUTH_PASSWORD`: basic auth password for `/admin` and admin API routes
+- `ADMIN_BASIC_AUTH_USER`: legacy/shared basic auth username reserved for automation-facing ops paths and bootstrap session login
+- `ADMIN_BASIC_AUTH_PASSWORD`: legacy/shared basic auth password reserved for automation-facing ops paths and bootstrap session login
 - `ADMIN_BASIC_AUTH_VIEWER_CREDENTIALS`: comma-separated `user:password` viewer credentials
 - `ADMIN_BASIC_AUTH_ANALYST_CREDENTIALS`: comma-separated `user:password` analyst credentials
 - `ADMIN_BASIC_AUTH_ADMIN_CREDENTIALS`: comma-separated `user:password` admin credentials
@@ -237,8 +247,18 @@ Relevant environment variables:
 - `OPS_CYCLE_RETRY_BACKOFF_MS`: linear backoff base for the combined ops worker, default `1000`
 - `OPS_ALERT_FAILURE_STREAK`: consecutive failed runs required before security surfaces mark ops as intervention-required, default `2`
 - `OPS_ALERT_STALE_HOURS`: freshness window for latest research/source run before security surfaces flag stale ops, default `6`
-- `OPS_ALERT_WEBHOOK_URL`: optional generic webhook for scheduled ops failure notifications
+- `OPS_ALERT_WEBHOOK_URL`: optional primary generic webhook for scheduled ops failure notifications
+- `OPS_ALERT_FALLBACK_WEBHOOK_URL`: optional secondary webhook used when primary delivery fails
 - `OPS_ALERT_NOTIFY_ON_RECOVERY`: when `true`, retry-recovered ops runs also emit a webhook alert
+- `OPS_ALERT_PAGER_WEBHOOK_URL`: optional pager/escalation webhook for failed scheduled ops
+- `OPS_QUEUE_MAX_ATTEMPTS`: max retries before queued ops work moves into dead-letter, default `3`
+- `OPS_QUEUE_BACKOFF_MS`: linear retry backoff for queued ops work, default `60000`
+- `OPS_WORKER_POLL_MS`: poll interval for the always-on queue worker, default `15000`
+- `OPS_WORKER_BATCH_SIZE`: max queued items drained per poll, default `10`
+- `ADMIN_SCIM_TOKEN`: bearer token required for `/api/admin/scim/*`
+- `ADMIN_SCIM_PROVIDER`: persisted provisioning provider label, default `scim`
+- `PLAYWRIGHT_ALLOW_HOSTED_MUTATIONS`: must be `true` before hosted mutation suite will run
+- `PLAYWRIGHT_ALLOWED_HOST_PATTERN`: hosted mutation suite refuses targets whose hostname does not include this value
 - `BLOCKCHAIN_MOCK_MODE`: when `true`, browser mutation E2E uses deterministic mock registry transactions for stage/register/anchor flows
 
 ## Market And Macro Data Connectors

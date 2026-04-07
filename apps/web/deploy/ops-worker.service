@@ -1,0 +1,15 @@
+[Unit]
+Description=Nexus Seoul ops queue worker
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/srv/nexus/apps/web
+Environment=NODE_ENV=production
+EnvironmentFile=/srv/nexus/apps/web/.env
+ExecStart=/usr/bin/npm run ops:worker:daemon
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

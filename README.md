@@ -6,7 +6,7 @@ The legacy root Next.js app and the `/web` demo were archived under [`legacy/`](
 
 This platform is an AI-native operating system for a Korean real-estate investment firm. It now spans research, underwriting, deal execution, portfolio operations, and a capital-formation shell, while keeping documents, valuations, extracted text, and underwriting logic offchain. It remains registry-only onchain and it is not a retail token-sale app or investment-advice product.
 
-Browser operators now enter through `/admin/login` using a signed session cookie. Env-configured OIDC / SSO can now be wired through `/api/admin/sso/*`, and provider-subject identities can bind back to a persisted `User` for reviewer attribution. `/admin/security` now shows unresolved reviewer identities, lets admins map them onto canonical operators, exposes operator seat lifecycle controls, and records recent ops alert deliveries without leaving the control surface. Shared basic auth is now reserved for automation and protected ops paths rather than browser navigation.
+Browser operators now enter through `/admin/login` using a signed session cookie backed by a persisted `AdminSession` record. Env-configured OIDC / SSO can now be wired through `/api/admin/sso/*`, provider-subject identities can bind back to a persisted `User` for reviewer attribution, and SCIM-style provisioning can populate canonical operators through `/api/admin/scim/*`, including deprovisioning, scoped access grants, and provider-snapshot reconciliation. `/admin/security` now shows unresolved reviewer identities, lets admins map them onto canonical operators, exposes operator seat lifecycle controls, supports targeted session revocation, shows queued and dead-letter ops work, and separates replayable ops-alert intervention items from the underlying delivery log. Browser sessions are validated against canonical seat activity, a persisted seat-backed session version, and the centralized session store, while shared basic auth is now reserved for automation and protected ops paths rather than browser navigation.
 
 ## Product Surface
 
@@ -44,7 +44,12 @@ npm run dev
 - `npm run e2e` runs deterministic Playwright operator mutation coverage and reseeds the demo dataset before the suite starts
 - `npm run e2e:local` starts the checked-in Docker Postgres service and then runs the full local browser mutation suite
 - `npm run e2e:list` lists the browser operator suite without launching the app
+- `npm run e2e:hosted` runs the hosted smoke suite against `PLAYWRIGHT_BASE_URL`
+- `npm run e2e:hosted:mutations` runs the hosted mutation suite against `PLAYWRIGHT_BASE_URL`
 - `npm run ops:cycle` runs source refresh then research sync using the same persisted run history used by the admin ops surfaces
+- `npm run ops:worker` drains the persisted ops queue and can enqueue an `OPS_CYCLE` job first with `--enqueue-cycle`
+- `npm run ops:worker:daemon` runs an always-on poll loop against the persisted ops queue
+- `npm run env:preflight -- <target>` validates required environment variables for hosted smoke, hosted mutations, SCIM, or ops worker runs
 - `npm run ops:cycle` can also emit failure alerts, and optional retry-recovery alerts, to a generic webhook for scheduled operator monitoring
 - `npm run ops:preflight` runs prisma generate, typecheck, unit tests, build, and browser suite registration in one command
 - `npm run prisma:generate` generates the Prisma client for `apps/web`
@@ -53,7 +58,7 @@ npm run dev
 
 `npm run e2e` now fails fast with a clear message if the local Postgres database is down, reseeds the demo data before the suite, and defaults browser E2E to `BLOCKCHAIN_MOCK_MODE=true` so stage/register/anchor flows can be exercised deterministically.
 
-Seeded Postgres browser smoke CI is checked in at `.github/workflows/web-e2e.yml`. The first scheduled ops worker path is checked in at `.github/workflows/ops-cycle.yml`.
+Seeded Postgres browser smoke CI is checked in at `.github/workflows/web-e2e.yml`. Hosted browser regression is checked in at `.github/workflows/web-e2e-hosted.yml`, and a manual hosted mutation suite is checked in at `.github/workflows/web-e2e-hosted-mutations.yml` with a staging-host guard. The scheduled ops worker path now enqueues `OPS_CYCLE` work and drains the persisted queue from `.github/workflows/ops-cycle.yml`, while `apps/web/scripts/run-ops-worker.ts` and `apps/web/scripts/run-ops-worker-daemon.ts` give the repo both batch and always-on queue-draining entrypoints outside request handling.
 
 ## Environment
 
@@ -80,6 +85,7 @@ Valuation variable reference:
 - Demo script: [`apps/web/docs/demo-script.md`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/docs/demo-script.md)
 - Platform readiness audit: [`apps/web/docs/platform-readiness-audit.md`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/docs/platform-readiness-audit.md)
 - Hardening plan: [`apps/web/docs/hardening-plan.md`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/docs/hardening-plan.md)
+- Operations runbook: [`apps/web/docs/operations-runbook.md`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/docs/operations-runbook.md)
 - Blockchain registry wiring guide: [`docs/blockchain-integration.md`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/docs/blockchain-integration.md)
 
 ## Review-Gated Underwriting Flow

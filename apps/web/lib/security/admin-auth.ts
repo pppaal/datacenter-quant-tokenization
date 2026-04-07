@@ -14,6 +14,8 @@ export type AuthorizedAdminActor = {
   subject?: string | null;
   email?: string | null;
   userId?: string | null;
+  sessionId?: string | null;
+  sessionVersion?: number | null;
 };
 
 export type AdminAuthConfig = {
@@ -204,6 +206,7 @@ export function getRequiredAdminRoleForPath(pathname: string): AdminAccessRole {
   if (pathname.startsWith('/api/admin/identity-bindings')) return 'ADMIN';
   if (pathname.startsWith('/api/admin/operators')) return 'ADMIN';
   if (pathname.startsWith('/api/admin/ops-alert-deliveries')) return 'ADMIN';
+  if (pathname.startsWith('/api/admin/ops-work-items')) return 'ADMIN';
   if (analystAdminPaths.some((path) => pathname === path || pathname.startsWith(`${path}/`))) {
     return 'ANALYST';
   }

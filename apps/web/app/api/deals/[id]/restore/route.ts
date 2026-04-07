@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
+import { AdminAccessScopeType } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
+import { assertActorScopeAccess } from '@/lib/security/admin-access';
 import { getRequestIpAddress, resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
 import { recordAuditEvent } from '@/lib/services/audit';
 import { restoreDeal } from '@/lib/services/deals';
@@ -23,6 +25,7 @@ export async function POST(request: Request, { params }: Props) {
 
   try {
     const { id } = await params;
+    await assertActorScopeAccess(actor, AdminAccessScopeType.DEAL, id, prisma);
     const body = await request.json().catch(() => ({}));
     const deal = await restoreDeal(id, body);
     if (!deal) {

@@ -137,6 +137,10 @@ test.describe('operator mutation flows', () => {
     await analystSeatCard.getByTestId('operator-seat-save').click();
     await expect(analystSeatCard).toContainText('active');
 
+    page.once('dialog', (dialog) => dialog.accept());
+    await analystSeatCard.getByTestId('operator-seat-revoke').click();
+    await expect(analystSeatCard.getByTestId('operator-seat-feedback')).toContainText('sessions revoked');
+
     const replayCard = page
       .getByTestId('ops-alert-delivery-card')
       .filter({ hasText: /failed|skipped/i })

@@ -1,6 +1,7 @@
 import Link from 'next/link';
+import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
-import { AssetClass } from '@prisma/client';
+import { AdminAccessScopeType, AssetClass } from '@prisma/client';
 import { AssetEnrichmentButton } from '@/components/admin/asset-enrichment-button';
 import { convertFromKrw, formatCurrencyFromKrwAtRate, resolveDisplayCurrency } from '@/lib/finance/currency';
 import { AssetIntakeForm } from '@/components/admin/asset-intake-form';
@@ -36,6 +37,9 @@ import { ValuationRunBadges } from '@/components/valuation/valuation-run-badges'
 import { ValuationSignals } from '@/components/valuation/valuation-signals';
 import { shortenHash } from '@/lib/blockchain/registry';
 import { getAssetClassPlaybook } from '@/lib/asset-class/playbook';
+import { canActorAccessScope } from '@/lib/security/admin-access';
+import { prisma } from '@/lib/db/prisma';
+import { resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
 import { getAssetById } from '@/lib/services/assets';
 import { getFxRateMap } from '@/lib/services/fx';
 import { buildRealizedOutcomeComparison } from '@/lib/services/realized-outcomes';
@@ -80,6 +84,12 @@ export default async function AssetDetailPage({
     : resolvedSearchParams?.rolloverYear;
   const selectedRolloverYear =
     rolloverYearParam && Number.isFinite(Number(rolloverYearParam)) ? Number(rolloverYearParam) : null;
+  const actor = await resolveVerifiedAdminActorFromHeaders(await headers(), prisma, {
+    allowBasic: false,
+    requireActiveSeat: true
+  });
+  const canAccessAsset = await canActorAccessScope(actor, AdminAccessScopeType.ASSET, id, prisma);
+  if (!canAccessAsset) notFound();
   const asset = await getAssetById(id);
   if (!asset) notFound();
 

@@ -1,6 +1,11 @@
 import Link from 'next/link';
+import { headers } from 'next/headers';
+import { AdminAccessScopeType } from '@prisma/client';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { filterRowsByGrantedScopeIds, listGrantedScopeIdsForUser } from '@/lib/security/admin-access';
+import { prisma } from '@/lib/db/prisma';
+import { resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
 import {
   buildPortfolioDashboard,
   listPortfolios,
@@ -12,8 +17,14 @@ import { formatCurrency, formatNumber, formatPercent } from '@/lib/utils';
 export const dynamic = 'force-dynamic';
 
 export default async function PortfolioPage() {
+  const actor = await resolveVerifiedAdminActorFromHeaders(await headers(), prisma, {
+    allowBasic: false,
+    requireActiveSeat: true
+  });
   const portfolios = await listPortfolios();
-  const dashboards: Array<{ portfolio: PortfolioRecord; dashboard: PortfolioDashboard }> = portfolios.map((portfolio) => ({
+  const grantedPortfolioIds = await listGrantedScopeIdsForUser(actor?.userId, AdminAccessScopeType.PORTFOLIO, prisma);
+  const scopedPortfolios = filterRowsByGrantedScopeIds(portfolios, grantedPortfolioIds);
+  const dashboards: Array<{ portfolio: PortfolioRecord; dashboard: PortfolioDashboard }> = scopedPortfolios.map((portfolio) => ({
     portfolio,
     dashboard: buildPortfolioDashboard(portfolio)
   }));

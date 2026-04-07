@@ -3,12 +3,14 @@ import type { AuthorizedAdminActor } from '@/lib/security/admin-auth';
 export const ADMIN_SESSION_COOKIE = 'nexus_admin_session';
 
 type AdminSessionPayload = {
+  sid?: string | null;
   sub: string;
   role: AuthorizedAdminActor['role'];
   provider?: AuthorizedAdminActor['provider'];
   subject?: string | null;
   email?: string | null;
   userId?: string | null;
+  sessionVersion?: number | null;
   exp: number;
 };
 
@@ -83,12 +85,14 @@ export async function createAdminSessionToken(
   }
 
   const payload: AdminSessionPayload = {
+    sid: actor.sessionId ?? null,
     sub: actor.identifier,
     role: actor.role,
     provider: actor.provider ?? 'session',
     subject: actor.subject ?? null,
     email: actor.email ?? null,
     userId: actor.userId ?? null,
+    sessionVersion: actor.sessionVersion ?? null,
     exp: now.getTime() + getSessionTtlMs(env)
   };
   const payloadSegment = encode(JSON.stringify(payload));
@@ -132,7 +136,12 @@ export async function parseAdminSessionToken(
       provider: payload.provider ?? 'session',
       subject: payload.subject ?? null,
       email: payload.email ?? null,
-      userId: payload.userId ?? null
+      userId: payload.userId ?? null,
+      sessionId: payload.sid ?? null,
+      sessionVersion:
+        typeof payload.sessionVersion === 'number' && Number.isFinite(payload.sessionVersion)
+          ? payload.sessionVersion
+          : null
     };
   } catch {
     return null;
@@ -147,4 +156,164 @@ export function getAdminSessionCookieOptions(env: NodeJS.ProcessEnv = process.en
     path: '/',
     maxAge: getSessionTtlMs(env) / 1000
   };
+}
+
+export function clearAdminSessionCookie(response: {
+  cookies: {
+    set(name: string, value: string, options: ReturnType<typeof getAdminSessionCookieOptions> & { maxAge: number }): void;
+  };
+}, env: NodeJS.ProcessEnv = process.env) {
+  response.cookies.set(ADMIN_SESSION_COOKIE, '', {
+    ...getAdminSessionCookieOptions(env),
+    maxAge: 0
+  });
+}
+
+type PersistedAdminSessionDb = {
+  adminSession: {
+    create(args: {
+      data: {
+        userId?: string | null;
+        actorIdentifier: string;
+        role: 'VIEWER' | 'ANALYST' | 'ADMIN';
+        provider?: string;
+        subject?: string | null;
+        email?: string | null;
+        sessionVersion?: number | null;
+        expiresAt: Date;
+      };
+      select: {
+        id: true;
+        expiresAt: true;
+      };
+    }): Promise<{ id: string; expiresAt: Date }>;
+    findUnique(args: {
+      where: {
+        id: string;
+      };
+      select: {
+        id: true;
+        userId: true;
+        expiresAt: true;
+        revokedAt: true;
+        sessionVersion: true;
+      };
+    }): Promise<{
+      id: string;
+      userId: string | null;
+      expiresAt: Date;
+      revokedAt: Date | null;
+      sessionVersion: number | null;
+    } | null>;
+    update(args: {
+      where: {
+        id: string;
+      };
+      data: {
+        revokedAt?: Date | null;
+        lastSeenAt?: Date;
+      };
+    }): Promise<unknown>;
+    updateMany(args: {
+      where: {
+        userId?: string;
+        revokedAt?: null;
+      };
+      data: {
+        revokedAt: Date;
+      };
+    }): Promise<{ count: number }>;
+  };
+};
+
+export function getAdminSessionExpiryDate(
+  env: NodeJS.ProcessEnv = process.env,
+  now = new Date()
+) {
+  return new Date(now.getTime() + getSessionTtlMs(env));
+}
+
+export async function createPersistedAdminSession(
+  actor: AuthorizedAdminActor,
+  db: PersistedAdminSessionDb,
+  env: NodeJS.ProcessEnv = process.env,
+  now = new Date()
+) {
+  const session = await db.adminSession.create({
+    data: {
+      userId: actor.userId ?? null,
+      actorIdentifier: actor.identifier,
+      role: actor.role,
+      provider: actor.provider ?? 'session',
+      subject: actor.subject ?? null,
+      email: actor.email ?? null,
+      sessionVersion: actor.sessionVersion ?? null,
+      expiresAt: getAdminSessionExpiryDate(env, now)
+    },
+    select: {
+      id: true,
+      expiresAt: true
+    }
+  });
+
+  return session;
+}
+
+export async function revokePersistedAdminSession(
+  sessionId: string | null | undefined,
+  db: PersistedAdminSessionDb
+) {
+  if (!sessionId) {
+    return null;
+  }
+
+  return db.adminSession.update({
+    where: {
+      id: sessionId
+    },
+    data: {
+      revokedAt: new Date()
+    }
+  });
+}
+
+export async function revokePersistedAdminSessionsForUser(
+  userId: string | null | undefined,
+  db: PersistedAdminSessionDb
+) {
+  if (!userId) {
+    return { count: 0 };
+  }
+
+  return db.adminSession.updateMany({
+    where: {
+      userId,
+      revokedAt: null
+    },
+    data: {
+      revokedAt: new Date()
+    }
+  });
+}
+
+export async function getPersistedAdminSession(
+  sessionId: string | null | undefined,
+  db: PersistedAdminSessionDb
+) {
+  if (!sessionId) {
+    return null;
+  }
+
+  return db.adminSession.findUnique({
+    where: {
+      id: sessionId
+    },
+    select: {
+      id: true,
+      userId: true,
+      expiresAt: true,
+      revokedAt: true,
+      sessionVersion: true
+    }
+  });
 }

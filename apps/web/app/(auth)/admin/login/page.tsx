@@ -14,6 +14,12 @@ export default async function AdminLoginPage({
   const params = (await searchParams) ?? {};
   const ssoConfig = getAdminSsoConfig();
   const showSso = ssoConfig.mode === 'configured';
+  const errorMessage =
+    params.error === 'session_required'
+      ? 'Your operator session expired or was revoked. Sign in again with an active canonical seat.'
+      : params.error
+        ? 'Unable to complete operator sign-in. Check SSO/session configuration or retry with operator credentials.'
+        : null;
 
   return (
     <main className="app-shell pb-16 pt-16">
@@ -50,10 +56,9 @@ export default async function AdminLoginPage({
               ) : null}
             </div>
             <div className="space-y-4">
-              {params.error ? (
+              {errorMessage ? (
                 <div className="rounded-[18px] border border-rose-400/30 bg-rose-500/10 p-3 text-sm text-rose-200">
-                  Unable to complete operator sign-in. Check SSO/session configuration or retry with operator
-                  credentials.
+                  {errorMessage}
                 </div>
               ) : null}
               <AdminLoginForm />

@@ -2,7 +2,12 @@ import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { resolveAdminActorSeat, upsertAdminIdentityBindingForActor } from '@/lib/security/admin-identity';
-import { ADMIN_SESSION_COOKIE, createAdminSessionToken, getAdminSessionCookieOptions } from '@/lib/security/admin-session';
+import {
+  ADMIN_SESSION_COOKIE,
+  createPersistedAdminSession,
+  createAdminSessionToken,
+  getAdminSessionCookieOptions
+} from '@/lib/security/admin-session';
 import {
   ADMIN_SSO_NEXT_COOKIE,
   ADMIN_SSO_STATE_COOKIE,
@@ -66,9 +71,20 @@ export async function GET(request: Request) {
       return clearSsoCookies(NextResponse.redirect(new URL('/admin/login?error=sso_inactive', request.url)));
     }
 
+    const persistedSession = await createPersistedAdminSession(
+      {
+        ...actor,
+        userId: actorSeat?.id ?? null,
+        sessionVersion: actorSeat?.sessionVersion ?? null
+      },
+      prisma
+    );
+
     const sessionToken = await createAdminSessionToken({
       ...actor,
-      userId: actorSeat?.id ?? null
+      userId: actorSeat?.id ?? null,
+      sessionId: persistedSession.id,
+      sessionVersion: actorSeat?.sessionVersion ?? null
     });
     if (!sessionToken) {
       return NextResponse.redirect(new URL('/admin/login?error=sso_session', request.url));

@@ -1,7 +1,12 @@
+import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
+import { AdminAccessScopeType } from '@prisma/client';
 import { PortfolioOptimizationPanel } from '@/components/admin/portfolio-optimization-panel';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { canActorAccessScope } from '@/lib/security/admin-access';
+import { prisma } from '@/lib/db/prisma';
+import { resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
 import { buildPortfolioOptimizationLab } from '@/lib/services/portfolio-optimization';
 import { buildPortfolioDashboard, buildPortfolioOperatorBriefs, getPortfolioById } from '@/lib/services/portfolio';
 import { buildResearchPrioritySignal } from '@/lib/services/research/workspace';
@@ -17,6 +22,12 @@ type Props = {
 
 export default async function PortfolioDetailPage({ params }: Props) {
   const { id } = await params;
+  const actor = await resolveVerifiedAdminActorFromHeaders(await headers(), prisma, {
+    allowBasic: false,
+    requireActiveSeat: true
+  });
+  const canAccessPortfolio = await canActorAccessScope(actor, AdminAccessScopeType.PORTFOLIO, id, prisma);
+  if (!canAccessPortfolio) notFound();
   const portfolio = await getPortfolioById(id);
   if (!portfolio) notFound();
 

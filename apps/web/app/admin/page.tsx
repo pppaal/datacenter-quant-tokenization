@@ -100,6 +100,47 @@ export default async function AdminOverviewPage() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
+        <Card className="xl:col-span-2">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <div className="eyebrow">Action Center</div>
+              <h2 className="mt-2 text-2xl font-semibold text-white">Today&apos;s operator priorities</h2>
+              <p className="mt-2 text-sm text-slate-400">
+                Start from the controlled queues first, then move into broader quant and market monitoring.
+              </p>
+            </div>
+            <Badge tone={dealReminders.reminders.length > 0 || hasSourceAlert || hasPortfolioRiskAlert ? 'warn' : 'good'}>
+              {dealReminders.reminders.length > 0 || hasSourceAlert || hasPortfolioRiskAlert ? 'attention needed' : 'stable'}
+            </Badge>
+          </div>
+          <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <Link href="/admin/review" className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+              <div className="fine-print">Review Queue</div>
+              <div className="mt-3 text-3xl font-semibold text-white">{formatNumber(summary.underReviewCount, 0)}</div>
+              <p className="mt-2 text-sm text-slate-400">Pending normalized evidence waiting for analyst approval.</p>
+            </Link>
+            <Link href="/admin/deals" className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+              <div className="fine-print">Deal Execution</div>
+              <div className="mt-3 text-3xl font-semibold text-white">{formatNumber(dealReminders.reminders.length, 0)}</div>
+              <p className="mt-2 text-sm text-slate-400">Stale, overdue, or missing-next-action deals to clear first.</p>
+            </Link>
+            <Link href="/admin/sources" className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+              <div className="fine-print">Research Ops</div>
+              <div className="mt-3 text-3xl font-semibold text-white">
+                {formatNumber(sourceHealth.sourceFreshness.stale + sourceHealth.sourceFreshness.failed, 0)}
+              </div>
+              <p className="mt-2 text-sm text-slate-400">Source systems that are stale or failed and may need intervention.</p>
+            </Link>
+            <Link href="/admin/security" className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+              <div className="fine-print">Security Controls</div>
+              <div className="mt-3 text-3xl font-semibold text-white">
+                {formatNumber((hasSourceAlert ? 1 : 0) + (hasPortfolioRiskAlert ? 1 : 0), 0)}
+              </div>
+              <p className="mt-2 text-sm text-slate-400">Seat, identity, and ops-alert controls for controlled production use.</p>
+            </Link>
+          </div>
+        </Card>
+
         <div className="xl:col-span-2">
           <DealReminderPanel summary={dealReminders} />
         </div>

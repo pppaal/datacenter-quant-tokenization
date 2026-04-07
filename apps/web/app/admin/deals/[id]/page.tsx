@@ -1,5 +1,7 @@
 import Link from 'next/link';
+import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
+import { AdminAccessScopeType } from '@prisma/client';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -10,6 +12,9 @@ import { DealOperatorConsole } from '@/components/admin/deal-operator-console';
 import { DealTimelinePanel } from '@/components/admin/deal-timeline-panel';
 import { DocumentUploadForm } from '@/components/admin/document-upload-form';
 import { formatDealStage, getDealStageTone } from '@/lib/deals/config';
+import { canActorAccessScope } from '@/lib/security/admin-access';
+import { prisma } from '@/lib/db/prisma';
+import { resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
 import {
   buildDealCloseProbability,
   buildDealCloseProbabilityHistory,
@@ -31,6 +36,12 @@ type Props = {
 
 export default async function DealDetailPage({ params }: Props) {
   const { id } = await params;
+  const actor = await resolveVerifiedAdminActorFromHeaders(await headers(), prisma, {
+    allowBasic: false,
+    requireActiveSeat: true
+  });
+  const canAccessDeal = await canActorAccessScope(actor, AdminAccessScopeType.DEAL, id, prisma);
+  if (!canAccessDeal) notFound();
   const deal = await getDealById(id);
 
   if (!deal) {

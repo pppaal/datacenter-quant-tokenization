@@ -148,6 +148,7 @@ export type AdminOperatorSeat = {
   email: string;
   role: string;
   isActive: boolean;
+  sessionVersion?: number;
 };
 
 export function getAdminReviewerAttributionSummary(
@@ -261,8 +262,9 @@ export async function resolveAdminActorSeat(
         select: {
           id: true;
           isActive: true;
+          sessionVersion?: true;
         };
-      }): Promise<{ id: string; isActive: boolean } | null>;
+      }): Promise<{ id: string; isActive: boolean; sessionVersion?: number } | null>;
       findUnique(args: {
         where: {
           id: string;
@@ -270,8 +272,9 @@ export async function resolveAdminActorSeat(
         select: {
           id: true;
           isActive: true;
+          sessionVersion?: true;
         };
-      }): Promise<{ id: string; isActive: boolean } | null>;
+      }): Promise<{ id: string; isActive: boolean; sessionVersion?: number } | null>;
     };
     adminIdentityBinding?: {
       findUnique(args: {
@@ -312,7 +315,8 @@ export async function resolveAdminActorSeat(
         },
         select: {
           id: true,
-          isActive: true
+          isActive: true,
+          sessionVersion: true
         }
       });
     }
@@ -339,7 +343,8 @@ export async function resolveAdminActorSeat(
     },
     select: {
       id: true,
-      isActive: true
+      isActive: true,
+      sessionVersion: true
     }
   });
 }
@@ -544,6 +549,7 @@ export async function listAdminOperatorSeats(
           email: true;
           role: true;
           isActive: true;
+          sessionVersion?: true;
         };
       }): Promise<AdminOperatorSeat[]>;
     };
@@ -570,7 +576,8 @@ export async function listAdminOperatorSeats(
       name: true,
       email: true,
       role: true,
-      isActive: true
+      isActive: true,
+      sessionVersion: true
     }
   });
 }
@@ -580,9 +587,30 @@ export async function updateAdminOperatorSeat(
     userId: string;
     role?: 'ADMIN' | 'ANALYST' | 'VIEWER';
     isActive?: boolean;
+    actingUserId?: string | null;
   },
   db: {
     user: {
+      findUnique(args: {
+        where: {
+          id: string;
+        };
+        select: {
+          id: true;
+          role: true;
+          isActive: true;
+          sessionVersion?: true;
+        };
+      }): Promise<{ id: string; role: 'ADMIN' | 'ANALYST' | 'VIEWER'; isActive: boolean; sessionVersion?: number } | null>;
+      count(args: {
+        where: {
+          role: 'ADMIN';
+          isActive: true;
+          id?: {
+            not: string;
+          };
+        };
+      }): Promise<number>;
       update(args: {
         where: {
           id: string;
@@ -590,6 +618,9 @@ export async function updateAdminOperatorSeat(
         data: {
           role?: 'ADMIN' | 'ANALYST' | 'VIEWER';
           isActive?: boolean;
+          sessionVersion?: {
+            increment: number;
+          };
         };
         select: {
           id: true;
@@ -597,6 +628,7 @@ export async function updateAdminOperatorSeat(
           email: true;
           role: true;
           isActive: true;
+          sessionVersion?: true;
         };
       }): Promise<AdminOperatorSeat>;
     };
@@ -606,20 +638,110 @@ export async function updateAdminOperatorSeat(
     throw new Error('Either role or isActive must be provided.');
   }
 
+  const currentSeat = await db.user.findUnique({
+    where: {
+      id: input.userId
+    },
+    select: {
+      id: true,
+      role: true,
+      isActive: true
+    }
+  });
+
+  if (!currentSeat) {
+    throw new Error('Operator seat not found.');
+  }
+
+  const nextRole = input.role ?? currentSeat.role;
+  const nextIsActive = typeof input.isActive === 'boolean' ? input.isActive : currentSeat.isActive;
+  const removingAdminCoverage = currentSeat.role === 'ADMIN' && currentSeat.isActive && (nextRole !== 'ADMIN' || nextIsActive === false);
+
+  if (removingAdminCoverage) {
+    const otherActiveAdminCount = await db.user.count({
+      where: {
+        role: 'ADMIN',
+        isActive: true,
+        id: {
+          not: currentSeat.id
+        }
+      }
+    });
+
+    if (otherActiveAdminCount === 0) {
+      throw new Error('At least one active ADMIN seat must remain assigned.');
+    }
+  }
+
+  if (input.actingUserId && input.actingUserId === currentSeat.id && (nextRole !== currentSeat.role || nextIsActive !== currentSeat.isActive)) {
+    throw new Error('Update another operator to change your own seat, role, or active status.');
+  }
+
   return db.user.update({
     where: {
       id: input.userId
     },
     data: {
       role: input.role,
-      isActive: typeof input.isActive === 'boolean' ? input.isActive : undefined
+      isActive: typeof input.isActive === 'boolean' ? input.isActive : undefined,
+      sessionVersion: {
+        increment: 1
+      }
     },
     select: {
       id: true,
       name: true,
       email: true,
       role: true,
-      isActive: true
+      isActive: true,
+      sessionVersion: true
+    }
+  });
+}
+
+export async function rotateAdminOperatorSessionVersion(
+  input: {
+    userId: string;
+  },
+  db: {
+    user: {
+      update(args: {
+        where: {
+          id: string;
+        };
+        data: {
+          sessionVersion: {
+            increment: number;
+          };
+        };
+        select: {
+          id: true;
+          name: true;
+          email: true;
+          role: true;
+          isActive: true;
+          sessionVersion: true;
+        };
+      }): Promise<AdminOperatorSeat>;
+    };
+  }
+) {
+  return db.user.update({
+    where: {
+      id: input.userId
+    },
+    data: {
+      sessionVersion: {
+        increment: 1
+      }
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      isActive: true,
+      sessionVersion: true
     }
   });
 }

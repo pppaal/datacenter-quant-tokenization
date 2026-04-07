@@ -1,6 +1,11 @@
+import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
+import { AdminAccessScopeType } from '@prisma/client';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { canActorAccessScope } from '@/lib/security/admin-access';
+import { prisma } from '@/lib/db/prisma';
+import { resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
 import { buildFundDashboard, buildFundOperatorBriefs, getFundById } from '@/lib/services/capital';
 import { formatCurrency, formatDate, formatNumber } from '@/lib/utils';
 
@@ -14,6 +19,12 @@ type Props = {
 
 export default async function FundDetailPage({ params }: Props) {
   const { id } = await params;
+  const actor = await resolveVerifiedAdminActorFromHeaders(await headers(), prisma, {
+    allowBasic: false,
+    requireActiveSeat: true
+  });
+  const canAccessFund = await canActorAccessScope(actor, AdminAccessScopeType.FUND, id, prisma);
+  if (!canAccessFund) notFound();
   const fund = await getFundById(id);
   if (!fund) notFound();
 

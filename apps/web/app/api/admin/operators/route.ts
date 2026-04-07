@@ -1,13 +1,15 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { getRequestIpAddress, resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
-import { updateAdminOperatorSeat } from '@/lib/security/admin-identity';
+import { rotateAdminOperatorSessionVersion, updateAdminOperatorSeat } from '@/lib/security/admin-identity';
+import { revokePersistedAdminSessionsForUser } from '@/lib/security/admin-session';
 import { recordAuditEvent } from '@/lib/services/audit';
 
 type OperatorPayload = {
   userId?: string;
   role?: 'VIEWER' | 'ANALYST' | 'ADMIN';
   isActive?: boolean;
+  rotateSessionVersion?: boolean;
 };
 
 export async function PATCH(request: Request) {
@@ -27,14 +29,24 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'userId is required.' }, { status: 400 });
     }
 
-    const updatedUser = await updateAdminOperatorSeat(
-      {
-        userId: payload.userId.trim(),
-        role: payload.role,
-        isActive: typeof payload.isActive === 'boolean' ? payload.isActive : undefined
-      },
-      prisma
-    );
+    const updatedUser = payload.rotateSessionVersion
+      ? await rotateAdminOperatorSessionVersion(
+          {
+            userId: payload.userId.trim()
+          },
+          prisma
+        )
+      : await updateAdminOperatorSeat(
+          {
+            userId: payload.userId.trim(),
+            role: payload.role,
+            isActive: typeof payload.isActive === 'boolean' ? payload.isActive : undefined,
+            actingUserId: actor.userId ?? null
+          },
+          prisma
+        );
+
+    const revokedSessions = await revokePersistedAdminSessionsForUser(updatedUser.id, prisma);
 
     await recordAuditEvent({
       actorIdentifier: actor?.identifier ?? null,
@@ -48,13 +60,17 @@ export async function PATCH(request: Request) {
       statusLabel: 'SUCCESS',
       metadata: {
         nextRole: updatedUser.role,
-        isActive: updatedUser.isActive
+        isActive: updatedUser.isActive,
+        sessionVersion: updatedUser.sessionVersion ?? null,
+        rotatedSessions: Boolean(payload.rotateSessionVersion),
+        revokedSessionCount: revokedSessions.count
       }
     });
 
     return NextResponse.json({
       ok: true,
-      user: updatedUser
+      user: updatedUser,
+      revokedSessionCount: revokedSessions.count
     });
   } catch (error) {
     await recordAuditEvent({

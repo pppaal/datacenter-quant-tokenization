@@ -2,10 +2,13 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   buildOpsWebhookMessage,
+  getOpsWebhookTargets,
   listRecentOpsAlertDeliveries,
+  maskOpsAlertDestination,
   parseOpsCycleAlertPayload,
   recordOpsAlertDelivery,
   replayOpsAlertDelivery,
+  sendOpsWebhookAlerts,
   sendOpsWebhookAlert,
   shouldNotifyOpsWebhook
 } from '@/lib/services/ops-alerts';
@@ -101,6 +104,45 @@ test('sendOpsWebhookAlert posts JSON payload when notification is enabled', asyn
   assert.match(String(calls[0]?.init.body), /ops-cycle failed/i);
 });
 
+test('getOpsWebhookTargets returns primary and distinct fallback destinations', () => {
+  const targets = getOpsWebhookTargets({
+    OPS_ALERT_WEBHOOK_URL: 'https://hooks.example.com/primary',
+    OPS_ALERT_FALLBACK_WEBHOOK_URL: 'https://hooks.example.com/secondary'
+  } as unknown as NodeJS.ProcessEnv);
+
+  assert.deepEqual(targets.map((target) => target.channel), ['webhook_primary', 'webhook_secondary']);
+});
+
+test('sendOpsWebhookAlerts falls back to secondary webhook after primary failure', async () => {
+  const calls: string[] = [];
+  const result = await sendOpsWebhookAlerts(
+    {
+      status: 'FAILED',
+      actorIdentifier: 'ops@example.com',
+      alertSummary: 'failure'
+    },
+    {
+      OPS_ALERT_WEBHOOK_URL: 'https://hooks.example.com/primary',
+      OPS_ALERT_FALLBACK_WEBHOOK_URL: 'https://hooks.example.com/secondary'
+    } as unknown as NodeJS.ProcessEnv,
+    async (url) => {
+      calls.push(String(url));
+      if (String(url).includes('/primary')) {
+        return new Response(null, { status: 500 });
+      }
+      return new Response(null, { status: 200 });
+    }
+  );
+
+  assert.equal(result.deliveredAny, true);
+  assert.equal(result.attempts.length, 2);
+  assert.equal(result.attempts[0]?.channel, 'webhook_primary');
+  assert.equal(result.attempts[0]?.delivered, false);
+  assert.equal(result.attempts[1]?.channel, 'webhook_secondary');
+  assert.equal(result.attempts[1]?.delivered, true);
+  assert.deepEqual(calls, ['https://hooks.example.com/primary', 'https://hooks.example.com/secondary']);
+});
+
 test('recordOpsAlertDelivery persists delivery metadata', async () => {
   let created: any;
   const result = await recordOpsAlertDelivery(
@@ -128,7 +170,15 @@ test('recordOpsAlertDelivery persists delivery metadata', async () => {
   );
 
   assert.equal(created.channel, 'webhook');
+  assert.equal(created.destination, 'https://hooks.example.com/ops');
   assert.equal(result.id, 'delivery_1');
+});
+
+test('maskOpsAlertDestination removes query secrets from webhook urls', () => {
+  assert.equal(
+    maskOpsAlertDestination('https://hooks.example.com/ops?token=secret&sig=abc'),
+    'https://hooks.example.com/ops'
+  );
 });
 
 test('listRecentOpsAlertDeliveries returns latest delivery attempts', async () => {

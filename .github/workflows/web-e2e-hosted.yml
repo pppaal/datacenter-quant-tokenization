@@ -1,0 +1,58 @@
+name: web-e2e-hosted
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '43 2 * * *'
+
+jobs:
+  hosted-e2e:
+    if: ${{ secrets.PLAYWRIGHT_BASE_URL != '' }}
+    runs-on: ubuntu-latest
+    environment: staging
+    defaults:
+      run:
+        working-directory: apps/web
+    env:
+      PLAYWRIGHT_BASE_URL: ${{ secrets.PLAYWRIGHT_BASE_URL }}
+      ADMIN_BASIC_AUTH_ADMIN_CREDENTIALS: ${{ secrets.ADMIN_BASIC_AUTH_ADMIN_CREDENTIALS }}
+      ADMIN_SESSION_SECRET: ${{ secrets.ADMIN_SESSION_SECRET }}
+      BLOCKCHAIN_MOCK_MODE: "true"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Environment preflight
+        run: npm run env:preflight -- hosted-smoke
+
+      - name: Run hosted browser regression
+        run: npm run e2e:hosted
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-hosted
+          path: apps/web/playwright-report
+          if-no-files-found: ignore
+
+      - name: Upload Playwright traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-test-results-hosted
+          path: apps/web/test-results
+          if-no-files-found: ignore

@@ -216,6 +216,27 @@ enum SourceRefreshTriggerType {
   SCHEDULED
 }
 
+enum AdminAccessScopeType {
+  ASSET
+  DEAL
+  PORTFOLIO
+  FUND
+}
+
+enum OpsWorkType {
+  OPS_CYCLE
+  SOURCE_REFRESH
+  RESEARCH_SYNC
+}
+
+enum OpsWorkStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+  DEAD_LETTER
+}
+
 enum CapitalCallStatus {
   PLANNED
   ISSUED
@@ -250,6 +271,7 @@ model User {
   email         String            @unique
   role          UserRole          @default(ANALYST)
   isActive      Boolean           @default(true)
+  sessionVersion Int              @default(1)
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
   valuationRuns ValuationRun[]
@@ -263,6 +285,9 @@ model User {
   reviewedPlanningConstraints     PlanningConstraint[]   @relation("PlanningConstraintReviewedBy")
   reviewedLeases                  Lease[]                @relation("LeaseReviewedBy")
   adminIdentityBindings           AdminIdentityBinding[]
+  adminSessions                   AdminSession[]
+  adminAccessGrants               AdminAccessGrant[]
+  adminProvisioningBindings       AdminProvisioningBinding[]
 }
 
 model AdminIdentityBinding {
@@ -280,6 +305,54 @@ model AdminIdentityBinding {
   @@unique([provider, subject])
   @@index([userId, updatedAt])
   @@index([emailSnapshot, updatedAt])
+}
+
+model AdminSession {
+  id             String   @id @default(cuid())
+  userId         String?
+  actorIdentifier String
+  role           UserRole
+  provider       String   @default("session")
+  subject        String?
+  email          String?
+  sessionVersion Int?
+  expiresAt      DateTime
+  revokedAt      DateTime?
+  lastSeenAt     DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, revokedAt, expiresAt])
+  @@index([expiresAt, revokedAt])
+}
+
+model AdminProvisioningBinding {
+  id           String   @id @default(cuid())
+  provider     String
+  externalId   String
+  userId       String
+  emailSnapshot String?
+  nameSnapshot String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, externalId])
+  @@index([userId, updatedAt])
+}
+
+model AdminAccessGrant {
+  id         String               @id @default(cuid())
+  userId     String
+  scopeType  AdminAccessScopeType
+  scopeId    String
+  createdAt  DateTime             @default(now())
+  updatedAt  DateTime             @updatedAt
+  user       User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, scopeType, scopeId])
+  @@index([scopeType, scopeId, updatedAt])
 }
 
 model Asset {
@@ -1823,6 +1896,43 @@ model OpsAlertDelivery {
 
   @@index([createdAt])
   @@index([statusLabel, createdAt])
+}
+
+model OpsWorkItem {
+  id             String        @id @default(cuid())
+  workType       OpsWorkType
+  status         OpsWorkStatus @default(QUEUED)
+  actorIdentifier String?
+  scheduledFor   DateTime      @default(now())
+  startedAt      DateTime?
+  finishedAt     DateTime?
+  lockedAt       DateTime?
+  attemptCount   Int           @default(0)
+  maxAttempts    Int           @default(3)
+  payload        Json?
+  lastError      String?
+  deadLetteredAt DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  attempts       OpsWorkAttempt[]
+
+  @@index([status, scheduledFor, createdAt])
+  @@index([workType, status, createdAt])
+}
+
+model OpsWorkAttempt {
+  id            String      @id @default(cuid())
+  opsWorkItemId String
+  attemptNumber Int
+  statusLabel   String      @default("RUNNING")
+  startedAt     DateTime    @default(now())
+  finishedAt    DateTime?
+  errorMessage  String?
+  metadata      Json?
+  opsWorkItem   OpsWorkItem @relation(fields: [opsWorkItemId], references: [id], onDelete: Cascade)
+
+  @@unique([opsWorkItemId, attemptNumber])
+  @@index([statusLabel, startedAt])
 }
 
 model ReadinessProject {

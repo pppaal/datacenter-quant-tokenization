@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { getRequestIpAddress, resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
 import { recordAuditEvent } from '@/lib/services/audit';
-import { recordOpsAlertDelivery, replayOpsAlertDelivery } from '@/lib/services/ops-alerts';
+import { maskOpsAlertDestination, recordOpsAlertDelivery, replayOpsAlertDelivery } from '@/lib/services/ops-alerts';
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const actor = await resolveVerifiedAdminActorFromHeaders(request.headers, prisma, {
@@ -54,7 +54,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       statusLabel: 'SUCCESS',
       metadata: {
         replayedFromDeliveryId: delivery.id,
-        destination: delivery.destination,
+        destination: maskOpsAlertDestination(delivery.destination),
         replayStatus: recordedDelivery.statusLabel,
         replayReason: recordedDelivery.reason
       }
@@ -65,11 +65,43 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       delivery: recordedDelivery
     });
   } catch (error) {
+    let failedReplayDeliveryId: string | null = null;
+
+    try {
+      const { id } = await params;
+      const originalDelivery = await prisma.opsAlertDelivery.findUnique({
+        where: {
+          id
+        }
+      });
+
+      if (originalDelivery) {
+        const failedReplayDelivery = await recordOpsAlertDelivery(
+          {
+            channel: originalDelivery.channel,
+            destination: originalDelivery.destination,
+            statusLabel: 'FAILED',
+            reason: 'replay_failed',
+            actorIdentifier: actor.identifier,
+            environmentLabel: process.env.VERCEL_ENV?.trim() || process.env.NODE_ENV?.trim() || 'unknown',
+            errorMessage: error instanceof Error ? error.message : 'Failed to replay ops alert delivery.',
+            payload: originalDelivery.payload ?? undefined,
+            deliveredAt: null
+          },
+          prisma
+        );
+        failedReplayDeliveryId = failedReplayDelivery.id;
+      }
+    } catch {
+      failedReplayDeliveryId = null;
+    }
+
     await recordAuditEvent({
       actorIdentifier: actor.identifier,
       actorRole: actor.role,
       action: 'ops_alert_delivery.replay',
       entityType: 'OpsAlertDelivery',
+      entityId: failedReplayDeliveryId,
       requestPath: new URL(request.url).pathname,
       requestMethod: request.method,
       ipAddress,

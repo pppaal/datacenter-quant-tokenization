@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
+import { AdminAccessScopeType } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
+import { assertActorScopeAccess } from '@/lib/security/admin-access';
 import { enrichAssetFromSources } from '@/lib/services/assets';
 import { getRequestIpAddress, resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
 import { recordAuditEvent } from '@/lib/services/audit';
@@ -14,6 +16,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   }
   try {
     const { id } = await params;
+    await assertActorScopeAccess(actor, AdminAccessScopeType.ASSET, id, prisma);
     const asset = await enrichAssetFromSources(id);
     await recordAuditEvent({
       actorIdentifier: actor?.identifier,

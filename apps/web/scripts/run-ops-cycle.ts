@@ -1,5 +1,6 @@
+import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
-import { recordOpsAlertDelivery, sendOpsWebhookAlert } from '@/lib/services/ops-alerts';
+import { persistOpsAlertAttempts, recordOpsAlertDelivery, sendOpsWebhookAlerts } from '@/lib/services/ops-alerts';
 import { runOpsCycle } from '@/lib/services/ops-worker';
 
 async function main() {
@@ -21,7 +22,7 @@ async function main() {
     `[ops] attempt summary - source ${attemptSummary.sourceAttemptCount}, research ${attemptSummary.researchAttemptCount}.`
   );
 
-  const alert = await sendOpsWebhookAlert({
+  const alert = await sendOpsWebhookAlerts({
     status: 'SUCCESS',
     actorIdentifier,
     alertSummary,
@@ -29,35 +30,32 @@ async function main() {
     sourceRun,
     researchRun
   });
-  await recordOpsAlertDelivery(
-    {
-      channel: 'webhook',
-      destination: process.env.OPS_ALERT_WEBHOOK_URL?.trim() || 'not_configured',
-      statusLabel: alert.delivered ? 'DELIVERED' : 'SKIPPED',
-      reason: alert.reason,
+  await persistOpsAlertAttempts(alert.attempts, {
+    actorIdentifier,
+    environmentLabel,
+    payload: {
+      status: 'SUCCESS',
       actorIdentifier,
-      environmentLabel,
-      payload: {
-        status: 'SUCCESS',
-        actorIdentifier,
-        alertSummary,
-        attemptSummary,
-        sourceRun: {
-          id: sourceRun.id,
-          statusLabel: sourceRun.statusLabel
-        },
-        researchRun: {
-          id: researchRun.id,
-          statusLabel: researchRun.statusLabel
-        }
+      alertSummary,
+      attemptSummary,
+      sourceRun: {
+        id: sourceRun.id,
+        statusLabel: sourceRun.statusLabel
       },
-      deliveredAt: alert.delivered ? new Date() : null
-    },
-    prisma
-  );
+      researchRun: {
+        id: researchRun.id,
+        statusLabel: researchRun.statusLabel
+      }
+    }
+  }, prisma);
 
-  if (alert.delivered) {
-    console.log(`[ops] webhook alert delivered (${alert.reason}).`);
+  if (alert.deliveredAny) {
+    const deliveredAttempt = alert.attempts.find((attempt) => attempt.delivered);
+    console.log(
+      `[ops] webhook alert delivered via ${deliveredAttempt?.channel ?? 'unknown'} (${deliveredAttempt?.reason ?? 'delivered'}).`
+    );
+  } else {
+    console.log('[ops] no webhook delivery succeeded.');
   }
 }
 
@@ -72,39 +70,33 @@ main()
     console.error('[ops] cycle failed:', errorMessage);
 
     try {
-      const alert = await sendOpsWebhookAlert({
+      const alert = await sendOpsWebhookAlerts({
         status: 'FAILED',
         actorIdentifier,
         alertSummary: 'Ops cycle failed before completing source refresh and research sync.',
         errorMessage
       });
-      await recordOpsAlertDelivery(
-        {
-          channel: 'webhook',
-          destination: process.env.OPS_ALERT_WEBHOOK_URL?.trim() || 'not_configured',
-          statusLabel: alert.delivered ? 'DELIVERED' : 'SKIPPED',
-          reason: alert.reason,
+      await persistOpsAlertAttempts(alert.attempts, {
+        actorIdentifier,
+        environmentLabel,
+        payload: {
+          status: 'FAILED',
           actorIdentifier,
-          environmentLabel,
-          errorMessage,
-          payload: {
-            status: 'FAILED',
-            actorIdentifier,
-            alertSummary: 'Ops cycle failed before completing source refresh and research sync.',
-            errorMessage
-          },
-          deliveredAt: alert.delivered ? new Date() : null
-        },
-        prisma
-      );
-      if (alert.delivered) {
-        console.error(`[ops] webhook alert delivered (${alert.reason}).`);
+          alertSummary: 'Ops cycle failed before completing source refresh and research sync.',
+          errorMessage
+        }
+      }, prisma);
+      if (alert.deliveredAny) {
+        const deliveredAttempt = alert.attempts.find((attempt) => attempt.delivered);
+        console.error(
+          `[ops] webhook alert delivered via ${deliveredAttempt?.channel ?? 'unknown'} (${deliveredAttempt?.reason ?? 'delivered'}).`
+        );
       }
     } catch (alertError) {
       try {
         await recordOpsAlertDelivery(
           {
-            channel: 'webhook',
+            channel: 'webhook_primary',
             destination: process.env.OPS_ALERT_WEBHOOK_URL?.trim() || 'not_configured',
             statusLabel: 'FAILED',
             reason: 'delivery_error',

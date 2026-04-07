@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { DealStage } from '@prisma/client';
+import { headers } from 'next/headers';
+import { AdminAccessScopeType, DealStage } from '@prisma/client';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -8,6 +9,8 @@ import { DealRestoreButton } from '@/components/admin/deal-restore-button';
 import { DealViewTabs } from '@/components/admin/deal-view-tabs';
 import { formatDealStage, getDealStageTone } from '@/lib/deals/config';
 import { prisma } from '@/lib/db/prisma';
+import { filterRowsByGrantedScopeIds, listGrantedScopeIdsForUser } from '@/lib/security/admin-access';
+import { resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
 import {
   buildDealCloseProbability,
   buildDealClosingReadiness,
@@ -28,6 +31,10 @@ type Props = {
 
 export default async function DealsPage({ searchParams }: Props) {
   const resolvedSearchParams = (await searchParams) ?? {};
+  const actor = await resolveVerifiedAdminActorFromHeaders(await headers(), prisma, {
+    allowBasic: false,
+    requireActiveSeat: true
+  });
   const [deals, assets] = await Promise.all([
     listDeals(),
     prisma.asset.findMany({
@@ -51,16 +58,18 @@ export default async function DealsPage({ searchParams }: Props) {
     })
   ]);
 
+  const grantedDealIds = await listGrantedScopeIdsForUser(actor?.userId, AdminAccessScopeType.DEAL, prisma);
+  const scopedDeals = filterRowsByGrantedScopeIds(deals, grantedDealIds);
   const stageSummary = Object.values(DealStage).map((stage) => ({
     stage,
-    count: deals.filter((deal) => deal.stage === stage).length
+    count: scopedDeals.filter((deal) => deal.stage === stage).length
   }));
-  const urgentDeals = deals.filter((deal) =>
+  const urgentDeals = scopedDeals.filter((deal) =>
     deal.tasks.some((task) => task.status !== 'DONE' && (task.priority === 'URGENT' || task.priority === 'HIGH'))
   );
-  const blockedDeals = deals.filter((deal) => deal.riskFlags.some((risk) => !risk.isResolved));
+  const blockedDeals = scopedDeals.filter((deal) => deal.riskFlags.some((risk) => !risk.isResolved));
   const view = resolvedSearchParams.view ?? 'active';
-  const visibleDeals = deals
+  const visibleDeals = scopedDeals
     .map((deal) => {
       const snapshot = buildDealExecutionSnapshot(deal as any);
       const readiness = buildDealClosingReadiness(deal as any, snapshot);
@@ -136,7 +145,7 @@ export default async function DealsPage({ searchParams }: Props) {
             <div className="metric-card">
               <div className="fine-print">Closing Queue</div>
               <div className="mt-3 text-4xl font-semibold text-white">
-                {formatNumber(deals.filter((deal) => deal.stage === DealStage.CLOSING).length, 0)}
+                {formatNumber(scopedDeals.filter((deal) => deal.stage === DealStage.CLOSING).length, 0)}
               </div>
               <p className="mt-2 text-sm text-slate-400">Deals already in document, funds flow, or sign-close mode.</p>
             </div>

@@ -1,14 +1,25 @@
 import Link from 'next/link';
+import { headers } from 'next/headers';
+import { AdminAccessScopeType } from '@prisma/client';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { filterRowsByGrantedScopeIds, listGrantedScopeIdsForUser } from '@/lib/security/admin-access';
+import { prisma } from '@/lib/db/prisma';
+import { resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
 import { buildFundDashboard, listFunds, type FundDashboard, type FundRecord } from '@/lib/services/capital';
 import { formatCurrency, formatNumber } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
 export default async function FundsPage() {
+  const actor = await resolveVerifiedAdminActorFromHeaders(await headers(), prisma, {
+    allowBasic: false,
+    requireActiveSeat: true
+  });
   const funds = await listFunds();
-  const rows: Array<{ fund: FundRecord; dashboard: FundDashboard }> = funds.map((fund) => ({
+  const grantedFundIds = await listGrantedScopeIdsForUser(actor?.userId, AdminAccessScopeType.FUND, prisma);
+  const scopedFunds = filterRowsByGrantedScopeIds(funds, grantedFundIds);
+  const rows: Array<{ fund: FundRecord; dashboard: FundDashboard }> = scopedFunds.map((fund) => ({
     fund,
     dashboard: buildFundDashboard(fund)
   }));

@@ -8,7 +8,7 @@ import {
 import { ADMIN_SESSION_COOKIE, parseAdminSessionToken } from '@/lib/security/admin-session';
 
 function isPublicApiPath(pathname: string) {
-  return pathname === '/api/inquiries' || pathname === '/api/admin/session' || pathname === '/api/admin/sso/login' || pathname === '/api/admin/sso/callback';
+  return pathname === '/api/inquiries' || pathname === '/api/admin/session' || pathname === '/api/admin/sso/login' || pathname === '/api/admin/sso/callback' || pathname.startsWith('/api/admin/scim/');
 }
 
 function isPublicAdminPath(pathname: string) {
@@ -110,6 +110,8 @@ export async function middleware(request: NextRequest) {
   if (actor.subject) requestHeaders.set('x-admin-subject', actor.subject);
   if (actor.email) requestHeaders.set('x-admin-email', actor.email);
   if (actor.userId) requestHeaders.set('x-admin-user-id', actor.userId);
+  if (actor.sessionId) requestHeaders.set('x-admin-session-id', actor.sessionId);
+  if (typeof actor.sessionVersion === 'number') requestHeaders.set('x-admin-session-version', String(actor.sessionVersion));
 
   return NextResponse.next({
     request: {

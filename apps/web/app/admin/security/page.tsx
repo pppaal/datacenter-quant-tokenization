@@ -2,11 +2,13 @@ import { Badge } from '@/components/ui/badge';
 import { AdminIdentityBindingForm } from '@/components/admin/admin-identity-binding-form';
 import { AdminOperatorSeatForm } from '@/components/admin/admin-operator-seat-form';
 import { OpsAlertReplayButton } from '@/components/admin/ops-alert-replay-button';
+import { OpsWorkItemReplayButton } from '@/components/admin/ops-work-item-replay-button';
 import { OpsCycleButton } from '@/components/admin/ops-cycle-button';
 import { Card } from '@/components/ui/card';
 import { getAdminAuthConfig } from '@/lib/security/admin-auth';
 import { getAdminReviewerAttributionSummary } from '@/lib/security/admin-identity';
 import { getSecurityOverview } from '@/lib/services/audit';
+import { maskOpsAlertDestination } from '@/lib/services/ops-alerts';
 import { formatDate, formatNumber } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
@@ -15,6 +17,12 @@ export default async function AdminSecurityPage() {
   const authConfig = getAdminAuthConfig();
   const reviewerAttribution = getAdminReviewerAttributionSummary();
   const security = await getSecurityOverview();
+  const replayableDeliveries = security.opsAlertDeliveries.filter(
+    (delivery) => delivery.channel.startsWith('webhook') && delivery.statusLabel !== 'DELIVERED'
+  );
+  const interventionWorkItems = security.opsWorkItems.filter(
+    (item) => item.status === 'FAILED' || item.status === 'DEAD_LETTER'
+  );
 
   return (
     <div className="space-y-8">
@@ -202,6 +210,122 @@ export default async function AdminSecurityPage() {
       <Card>
         <div className="flex items-center justify-between gap-4">
           <div>
+            <div className="eyebrow">Delivery Intervention Queue</div>
+            <h2 className="mt-2 text-2xl font-semibold text-white">Ops alerts that still need operator follow-up</h2>
+          </div>
+          <Badge tone={replayableDeliveries.length > 0 ? 'warn' : 'good'}>
+            {formatNumber(replayableDeliveries.length, 0)} open
+          </Badge>
+        </div>
+        <div className="mt-5 space-y-3">
+          {replayableDeliveries.length > 0 ? (
+            replayableDeliveries.map((delivery) => (
+              <div key={delivery.id} className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge>{delivery.channel}</Badge>
+                    <Badge tone="warn">{delivery.statusLabel.toLowerCase()}</Badge>
+                  </div>
+                  <div className="text-xs uppercase tracking-[0.18em] text-slate-500">{formatDate(delivery.createdAt)}</div>
+                </div>
+                <div className="mt-3 grid gap-3 text-sm text-slate-300 md:grid-cols-3">
+                  <div>
+                    <div className="fine-print">Destination</div>
+                    <div className="mt-1 break-all">{maskOpsAlertDestination(delivery.destination)}</div>
+                  </div>
+                  <div>
+                    <div className="fine-print">Reason</div>
+                    <div className="mt-1">{delivery.reason ?? 'N/A'}</div>
+                  </div>
+                  <div>
+                    <div className="fine-print">Action</div>
+                    <div className="mt-1 text-slate-400">Replay this alert after confirming webhook routing or fallback config.</div>
+                  </div>
+                </div>
+                <OpsAlertReplayButton deliveryId={delivery.id} />
+                {delivery.errorMessage ? <div className="mt-3 text-sm text-rose-200">{delivery.errorMessage}</div> : null}
+              </div>
+            ))
+          ) : (
+            <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
+              No replayable ops alert deliveries are waiting for intervention.
+            </div>
+          )}
+        </div>
+      </Card>
+
+      <Card>
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <div className="eyebrow">Ops Queue</div>
+            <h2 className="mt-2 text-2xl font-semibold text-white">Queued and dead-letter ops work</h2>
+            <p className="mt-2 text-sm text-slate-400">
+              Track queued scheduler work outside request handling and requeue failed items after the underlying source,
+              credential, or environment issue is fixed.
+            </p>
+          </div>
+          <Badge tone={interventionWorkItems.length > 0 ? 'warn' : 'neutral'}>
+            {formatNumber(interventionWorkItems.length, 0)} intervention items
+          </Badge>
+        </div>
+        <div className="mt-5 space-y-3">
+          {security.opsWorkItems.length > 0 ? (
+            security.opsWorkItems.map((item) => (
+              <div key={item.id} className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4" data-testid="ops-work-item-card">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge>{item.workType.toLowerCase()}</Badge>
+                    <Badge
+                      tone={
+                        item.status === 'SUCCEEDED'
+                          ? 'good'
+                          : item.status === 'QUEUED' || item.status === 'RUNNING'
+                            ? 'warn'
+                            : 'danger'
+                      }
+                    >
+                      {item.status.toLowerCase()}
+                    </Badge>
+                  </div>
+                  <div className="text-xs uppercase tracking-[0.18em] text-slate-500">{formatDate(item.createdAt)}</div>
+                </div>
+                <div className="mt-3 grid gap-3 text-sm text-slate-300 md:grid-cols-4">
+                  <div>
+                    <div className="fine-print">Actor</div>
+                    <div className="mt-1">{item.actorIdentifier ?? 'system'}</div>
+                  </div>
+                  <div>
+                    <div className="fine-print">Attempts</div>
+                    <div className="mt-1">
+                      {formatNumber(item.attemptCount, 0)} / {formatNumber(item.maxAttempts, 0)}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="fine-print">Scheduled For</div>
+                    <div className="mt-1">{formatDate(item.scheduledFor)}</div>
+                  </div>
+                  <div>
+                    <div className="fine-print">Dead-lettered</div>
+                    <div className="mt-1">{item.deadLetteredAt ? formatDate(item.deadLetteredAt) : 'N/A'}</div>
+                  </div>
+                </div>
+                {item.lastError ? <div className="mt-3 text-sm text-rose-200">{item.lastError}</div> : null}
+                {(item.status === 'FAILED' || item.status === 'DEAD_LETTER') ? (
+                  <OpsWorkItemReplayButton workItemId={item.id} />
+                ) : null}
+              </div>
+            ))
+          ) : (
+            <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
+              No queued ops work items have been recorded yet.
+            </div>
+          )}
+        </div>
+      </Card>
+
+      <Card>
+        <div className="flex items-center justify-between gap-4">
+          <div>
             <div className="eyebrow">Unmapped Reviewer Identities</div>
             <h2 className="mt-2 text-2xl font-semibold text-white">SSO identities that still need a bound user</h2>
             <p className="mt-2 text-sm text-slate-400">
@@ -290,6 +414,7 @@ export default async function AdminSecurityPage() {
                   userId={seat.id}
                   currentRole={seat.role as 'VIEWER' | 'ANALYST' | 'ADMIN'}
                   isActive={seat.isActive}
+                  sessionVersion={seat.sessionVersion}
                 />
               </div>
             ))
@@ -512,7 +637,7 @@ export default async function AdminSecurityPage() {
                 <div className="mt-3 grid gap-3 text-sm text-slate-300 md:grid-cols-4">
                   <div>
                     <div className="fine-print">Destination</div>
-                    <div className="mt-1 break-all">{delivery.destination}</div>
+                    <div className="mt-1 break-all">{maskOpsAlertDestination(delivery.destination)}</div>
                   </div>
                   <div>
                     <div className="fine-print">Reason</div>

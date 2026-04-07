@@ -6,9 +6,12 @@ import { resolveAdminActorSeat } from '@/lib/security/admin-identity';
 import { resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
 import {
   ADMIN_SESSION_COOKIE,
+  clearAdminSessionCookie,
+  createPersistedAdminSession,
   createAdminSessionToken,
   getAdminSessionCookieOptions,
-  parseAdminSessionToken
+  parseAdminSessionToken,
+  revokePersistedAdminSession
 } from '@/lib/security/admin-session';
 
 export async function POST(request: Request) {
@@ -49,9 +52,20 @@ export async function POST(request: Request) {
     );
   }
 
+  const persistedSession = await createPersistedAdminSession(
+    {
+      ...actor,
+      userId: actorSeat?.id ?? null,
+      sessionVersion: actorSeat?.sessionVersion ?? null
+    },
+    prisma
+  );
+
   const token = await createAdminSessionToken({
     ...actor,
-    userId: actorSeat?.id ?? null
+    userId: actorSeat?.id ?? null,
+    sessionId: persistedSession.id,
+    sessionVersion: actorSeat?.sessionVersion ?? null
   });
   if (!token) {
     return NextResponse.json({ error: 'Session signing is not configured.' }, { status: 503 });
@@ -66,11 +80,13 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE() {
+  const cookieStore = await cookies();
+  const tokenActor = await parseAdminSessionToken(cookieStore.get(ADMIN_SESSION_COOKIE)?.value);
+  if (tokenActor?.sessionId) {
+    await revokePersistedAdminSession(tokenActor.sessionId, prisma).catch(() => null);
+  }
   const response = NextResponse.json({ ok: true });
-  response.cookies.set(ADMIN_SESSION_COOKIE, '', {
-    ...getAdminSessionCookieOptions(),
-    maxAge: 0
-  });
+  clearAdminSessionCookie(response);
   return response;
 }
 
@@ -87,6 +103,9 @@ export async function GET() {
             if (name === 'x-admin-subject') return tokenActor.subject ?? null;
             if (name === 'x-admin-email') return tokenActor.email ?? null;
             if (name === 'x-admin-user-id') return tokenActor.userId ?? null;
+            if (name === 'x-admin-session-id') return tokenActor.sessionId ?? null;
+            if (name === 'x-admin-session-version')
+              return typeof tokenActor.sessionVersion === 'number' ? String(tokenActor.sessionVersion) : null;
             return null;
           }
         },
@@ -97,7 +116,11 @@ export async function GET() {
         }
       )
     : null;
-  return NextResponse.json({
+  const response = NextResponse.json({
     hasSession: Boolean(verifiedActor)
   });
+  if (tokenActor && !verifiedActor) {
+    clearAdminSessionCookie(response);
+  }
+  return response;
 }

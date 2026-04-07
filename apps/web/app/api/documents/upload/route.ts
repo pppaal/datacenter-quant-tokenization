@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
+import { AdminAccessScopeType } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
+import { assertActorScopeAccess } from '@/lib/security/admin-access';
 import { uploadDocumentVersion } from '@/lib/services/documents';
 import { getRequestIpAddress, resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
 import { UploadPolicyError, validateDocumentUpload } from '@/lib/security/upload-policy';
@@ -23,6 +25,10 @@ export async function POST(request: Request) {
     validateDocumentUpload(file);
 
     const payload = Object.fromEntries(formData.entries());
+    const assetId = typeof payload.assetId === 'string' ? payload.assetId.trim() : '';
+    if (assetId) {
+      await assertActorScopeAccess(actor, AdminAccessScopeType.ASSET, assetId, prisma);
+    }
     const buffer = Buffer.from(await file.arrayBuffer());
     const document = await uploadDocumentVersion(payload, {
       name: file.name,

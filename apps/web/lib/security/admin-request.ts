@@ -10,6 +10,9 @@ type HeaderCarrier =
 export function getAdminActorFromHeaders(headers: HeaderCarrier): AuthorizedAdminActor | null {
   const identifier = headers.get('x-admin-actor')?.trim();
   const role = headers.get('x-admin-role')?.trim() as AdminAccessRole | undefined;
+  const sessionVersionValue = headers.get('x-admin-session-version')?.trim();
+  const parsedSessionVersion =
+    sessionVersionValue && Number.isFinite(Number(sessionVersionValue)) ? Number(sessionVersionValue) : null;
 
   if (!identifier || !role) {
     return null;
@@ -21,7 +24,9 @@ export function getAdminActorFromHeaders(headers: HeaderCarrier): AuthorizedAdmi
     provider: (headers.get('x-admin-auth-provider')?.trim() as AuthorizedAdminActor['provider'] | undefined) ?? undefined,
     subject: headers.get('x-admin-subject')?.trim() || null,
     email: headers.get('x-admin-email')?.trim() || null,
-    userId: headers.get('x-admin-user-id')?.trim() || null
+    userId: headers.get('x-admin-user-id')?.trim() || null,
+    sessionId: headers.get('x-admin-session-id')?.trim() || null,
+    sessionVersion: parsedSessionVersion
   };
 }
 
@@ -40,20 +45,22 @@ type AdminSeatLookupDb = {
       where: {
         OR: Array<{ email: string } | { name: string }>;
       };
-      select: {
-        id: true;
-        isActive: true;
-      };
-    }): Promise<{ id: string; isActive: boolean } | null>;
+        select: {
+          id: true;
+          isActive: true;
+          sessionVersion?: true;
+        };
+      }): Promise<{ id: string; isActive: boolean; sessionVersion?: number } | null>;
     findUnique(args: {
       where: {
         id: string;
       };
-      select: {
-        id: true;
-        isActive: true;
-      };
-    }): Promise<{ id: string; isActive: boolean } | null>;
+        select: {
+          id: true;
+          isActive: true;
+          sessionVersion?: true;
+        };
+      }): Promise<{ id: string; isActive: boolean; sessionVersion?: number } | null>;
   };
   adminIdentityBinding?: {
     findUnique(args: {
@@ -67,6 +74,26 @@ type AdminSeatLookupDb = {
         userId: true;
       };
     }): Promise<{ userId: string | null } | null>;
+  };
+  adminSession?: {
+    findUnique(args: {
+      where: {
+        id: string;
+      };
+      select: {
+        id: true;
+        userId: true;
+        expiresAt: true;
+        revokedAt: true;
+        sessionVersion: true;
+      };
+    }): Promise<{
+      id: string;
+      userId: string | null;
+      expiresAt: Date;
+      revokedAt: Date | null;
+      sessionVersion: number | null;
+    } | null>;
   };
 };
 
@@ -87,15 +114,46 @@ export async function resolveVerifiedAdminActorFromHeaders(
     return null;
   }
 
+  const isPersistedSessionActor = Boolean(actor.sessionId);
+  const persistedSessionId = actor.sessionId ?? null;
+  const persistedSession =
+    isPersistedSessionActor && db.adminSession && persistedSessionId
+      ? await db.adminSession.findUnique({
+          where: {
+            id: persistedSessionId
+          },
+          select: {
+            id: true,
+            userId: true,
+            expiresAt: true,
+            revokedAt: true,
+            sessionVersion: true
+          }
+        })
+      : null;
+
+  if (isPersistedSessionActor && !persistedSession) {
+    return null;
+  }
+
+  if (
+    isPersistedSessionActor &&
+    persistedSession &&
+    (persistedSession.revokedAt != null || persistedSession.expiresAt.getTime() <= Date.now())
+  ) {
+    return null;
+  }
+
   const seat =
-    actor.userId && actor.provider === 'session'
+    actor.userId && isPersistedSessionActor
       ? await db.user.findUnique({
           where: {
             id: actor.userId
           },
           select: {
             id: true,
-            isActive: true
+            isActive: true,
+            sessionVersion: true
           }
         })
       : await resolveAdminActorSeat(actor, db);
@@ -108,8 +166,31 @@ export async function resolveVerifiedAdminActorFromHeaders(
     return null;
   }
 
+  if (
+    options?.requireActiveSeat &&
+    isPersistedSessionActor &&
+    seat &&
+    persistedSession &&
+    persistedSession.userId &&
+    seat.id !== persistedSession.userId
+  ) {
+    return null;
+  }
+
+  if (
+    options?.requireActiveSeat &&
+    isPersistedSessionActor &&
+    seat &&
+    typeof seat.sessionVersion === 'number' &&
+    actor.sessionVersion !== seat.sessionVersion
+  ) {
+    return null;
+  }
+
   return {
     ...actor,
-    userId: actor.userId ?? seat?.id ?? null
+    userId: actor.userId ?? seat?.id ?? null,
+    sessionId: actor.sessionId ?? persistedSession?.id ?? null,
+    sessionVersion: actor.sessionVersion ?? seat?.sessionVersion ?? null
   };
 }

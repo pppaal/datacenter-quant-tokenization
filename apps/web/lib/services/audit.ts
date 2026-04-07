@@ -250,8 +250,9 @@ export async function getSecurityOverview(
           email: true;
           role: true;
           isActive: true;
+          sessionVersion: true;
         };
-      }): Promise<Array<{ id: string; name: string; email: string; role: string; isActive: boolean }>>;
+      }): Promise<Array<{ id: string; name: string; email: string; role: string; isActive: boolean; sessionVersion: number }>>;
     };
     opsAlertDelivery: {
       findMany(args: {
@@ -274,6 +275,27 @@ export async function getSecurityOverview(
         }>
       >;
     };
+    opsWorkItem?: {
+      findMany(args: {
+        take: number;
+        orderBy: {
+          createdAt: 'desc';
+        };
+      }): Promise<
+        Array<{
+          id: string;
+          workType: string;
+          status: string;
+          actorIdentifier: string | null;
+          attemptCount: number;
+          maxAttempts: number;
+          lastError: string | null;
+          deadLetteredAt: Date | null;
+          scheduledFor: Date;
+          createdAt: Date;
+        }>
+      >;
+    };
   } = prisma,
   env: NodeJS.ProcessEnv = process.env
 ) {
@@ -284,7 +306,8 @@ export async function getSecurityOverview(
     recentUnmappedIdentityBindings,
     identityCandidates,
     operatorSeats,
-    opsAlertDeliveries
+    opsAlertDeliveries,
+    opsWorkItems
   ] = await Promise.all([
     listAuditEvents({ limit: 60 }, db),
     listRecentOpsRuns(db),
@@ -304,7 +327,8 @@ export async function getSecurityOverview(
                 name: true,
                 email: true,
                 role: true,
-                isActive: true
+                isActive: true,
+                sessionVersion: true
               }
             });
 
@@ -332,7 +356,8 @@ export async function getSecurityOverview(
                 name: true,
                 email: true,
                 role: true,
-                isActive: true
+                isActive: true,
+                sessionVersion: true
               }
             })
         }
@@ -348,7 +373,15 @@ export async function getSecurityOverview(
       {
         limit: 12
       }
-    )
+    ),
+    db.opsWorkItem
+      ? db.opsWorkItem.findMany({
+          take: 12,
+          orderBy: {
+            createdAt: 'desc'
+          }
+        })
+      : Promise.resolve([])
   ]);
   const actorSummaryMap = new Map<string, { actorIdentifier: string; actorRole: string; eventCount: number; lastSeenAt: Date }>();
 
@@ -383,6 +416,7 @@ export async function getSecurityOverview(
     },
     operatorSeats,
     opsAlertDeliveries,
+    opsWorkItems,
     actorSummary: [...actorSummaryMap.values()].sort((left, right) => right.lastSeenAt.getTime() - left.lastSeenAt.getTime()),
     storageReadiness: getDocumentStorageReadiness(env),
     aiReadiness: getAiReadiness(env)
