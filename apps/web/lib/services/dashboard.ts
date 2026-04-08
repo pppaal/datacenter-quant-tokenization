@@ -1,5 +1,6 @@
-import { DealStage, RiskSeverity, TaskPriority, type PrismaClient } from '@prisma/client';
+import { DealStage, InvestorReportReleaseStatus, RiskSeverity, TaskPriority, TaskStatus, type PrismaClient } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
+import { dealStageOrder } from '@/lib/validations/deal';
 import { buildForecastModelStack } from '@/lib/services/forecast/model-stack';
 import { buildForecastEnsemblePolicy } from '@/lib/services/forecast/ensemble';
 import { buildGradientBoostingRealizedBacktest } from '@/lib/services/forecast/realized-backtest';
@@ -8,10 +9,12 @@ import {
   buildDealCloseProbability,
   buildDealClosingReadiness,
   buildDealExecutionSnapshot,
+  buildDealOriginationProfile,
   getDealMaterialUpdatedAt
 } from '@/lib/services/deals';
 import { buildMacroBacktest } from '@/lib/services/macro/backtest';
 import { buildMacroForecastBacktest } from '@/lib/services/macro/forecast-backtest';
+import { getCommitteeWorkspace } from '@/lib/services/ic';
 import { listInquiries } from '@/lib/services/inquiries';
 import {
   buildQuantAllocationView,
@@ -76,6 +79,11 @@ function getRiskLevelWeight(level?: string) {
   if (level === 'HIGH') return 2;
   if (level === 'MODERATE') return 1;
   return 0;
+}
+
+function getDealStageRank(stage: DealStage) {
+  const index = dealStageOrder.indexOf(stage);
+  return index === -1 ? -1 : index;
 }
 
 export function buildPortfolioRiskSummary(runs: PortfolioRiskSourceRun[]) {
@@ -206,6 +214,8 @@ export function buildDealPipelineSummary(
     nextAction: string | null;
     targetCloseDate: Date | null;
     updatedAt: Date;
+    originationSource?: string | null;
+    originSummary?: string | null;
     tasks: Array<{
       status: string;
       priority: string;
@@ -216,6 +226,10 @@ export function buildDealPipelineSummary(
     }>;
     counterparties: Array<{
       role: string;
+      coverageOwner?: string | null;
+      coverageStatus?: string;
+      lastContactAt?: Date | null;
+      name?: string;
     }>;
     documentRequests: Array<{
       status: string;
@@ -232,7 +246,14 @@ export function buildDealPipelineSummary(
       eventType: string;
       expiresAt: Date | null;
     }>;
+    activityLogs?: Array<unknown>;
     asset: {
+      researchSnapshots?: Array<{
+        freshnessStatus: string | null;
+      }>;
+      coverageTasks?: Array<{
+        status: string;
+      }>;
       valuations: Array<{
         id: string;
         baseCaseValueKrw: number;
@@ -247,7 +268,7 @@ export function buildDealPipelineSummary(
     count: deals.filter((deal) => deal.stage === stage).length
   }));
 
-  const watchlist = [...deals]
+  const normalized = deals
     .map((deal) => {
       const snapshot =
         'activityLogs' in deal && Array.isArray((deal as Record<string, unknown>).activityLogs)
@@ -263,6 +284,7 @@ export function buildDealPipelineSummary(
       const criticalRiskCount = deal.riskFlags.filter(
         (risk) => !risk.isResolved && risk.severity === RiskSeverity.CRITICAL
       ).length;
+      const origination = buildDealOriginationProfile(deal as any, snapshot);
 
       return {
         ...deal,
@@ -270,16 +292,31 @@ export function buildDealPipelineSummary(
         openRiskCount,
         criticalRiskCount,
         readiness,
+        origination,
         closeProbability: buildDealCloseProbability(deal as any, snapshot, readiness),
         latestCounterpartyRoles: [...new Set(deal.counterparties.map((counterparty) => counterparty.role))].slice(0, 3),
         latestValuation: deal.asset?.valuations[0] ?? null
       };
     })
+  const watchlist = [...normalized]
     .sort((left, right) => {
-      const leftScore = left.criticalRiskCount * 5 + left.openRiskCount * 2 + left.urgentTaskCount;
-      const rightScore = right.criticalRiskCount * 5 + right.openRiskCount * 2 + right.urgentTaskCount;
+      const leftStageRank = getDealStageRank(left.stage);
+      const rightStageRank = getDealStageRank(right.stage);
+      const leftScore =
+        left.criticalRiskCount * 5 +
+        left.openRiskCount * 2 +
+        left.urgentTaskCount +
+        (100 - left.origination.scorePct) / 15 +
+        (left.origination.exclusivityLabel === 'No live exclusivity' && leftStageRank >= getDealStageRank(DealStage.LOI) ? 2 : 0);
+      const rightScore =
+        right.criticalRiskCount * 5 +
+        right.openRiskCount * 2 +
+        right.urgentTaskCount +
+        (100 - right.origination.scorePct) / 15 +
+        (right.origination.exclusivityLabel === 'No live exclusivity' && rightStageRank >= getDealStageRank(DealStage.LOI) ? 2 : 0);
       return (
         rightScore - leftScore ||
+        left.origination.scorePct - right.origination.scorePct ||
         right.closeProbability.scorePct - left.closeProbability.scorePct ||
         left.readiness.scorePct - right.readiness.scorePct ||
         left.updatedAt.getTime() - right.updatedAt.getTime()
@@ -297,6 +334,20 @@ export function buildDealPipelineSummary(
     ).length,
     blockedDeals: deals.filter((deal) => deal.riskFlags.some((risk) => !risk.isResolved)).length,
     closingDeals: deals.filter((deal) => deal.stage === DealStage.CLOSING).length,
+    directOrProprietaryDeals: deals.filter(
+      (deal) => deal.originationSource === 'DIRECT_OWNER' || deal.originationSource === 'PROPRIETARY'
+    ).length,
+    liveExclusivityDeals: normalized.filter((deal) => deal.origination.exclusivityLabel !== 'No live exclusivity').length,
+    lowOriginationCoverageDeals: normalized.filter((deal) => deal.origination.band === 'LOW').length,
+    processProtectionGapDeals: normalized.filter(
+      (deal) => getDealStageRank(deal.stage) >= getDealStageRank(DealStage.LOI) && deal.origination.exclusivityLabel === 'No live exclusivity'
+    ).length,
+    relationshipCoverageGapDeals: normalized.filter((deal) =>
+      deal.origination.blockers.some(
+        (blocker) =>
+          blocker.includes('No primary relationship owner') || blocker.includes('No recent counterparty touchpoint')
+      )
+    ).length,
     byStage,
     watchlist: watchlist.map((deal) => ({
       id: deal.id,
@@ -311,6 +362,11 @@ export function buildDealPipelineSummary(
       readinessBlockerCount: deal.readiness.blockerCount,
       closeProbabilityPct: deal.closeProbability.scorePct,
       closeProbabilityBand: deal.closeProbability.band,
+      originationScorePct: deal.origination.scorePct,
+      originationBand: deal.origination.band,
+      sourceLabel: deal.origination.sourceLabel,
+      relationshipCoverageLabel: deal.origination.relationshipCoverageLabel,
+      exclusivityLabel: deal.origination.exclusivityLabel,
       latestCounterpartyRoles: deal.latestCounterpartyRoles,
       latestValuation: deal.latestValuation
     }))
@@ -583,6 +639,164 @@ export async function getSampleReport(db: PrismaClient = prisma) {
   return getAssetBySlug('seoul-gangseo-01-seoul-hyperscale-campus', db);
 }
 
+function buildFirmActionCenter({
+  reviewCount,
+  dealReminderCount,
+  lowOriginationCoverageDeals,
+  processProtectionGapDeals,
+  relationshipCoverageGapDeals,
+  staleSourceCount,
+  portfolioWatchCount,
+  initiativeBacklog,
+  fundReportingBacklog,
+  readyReportCount,
+  capitalCallCount,
+  committeeActionItems
+}: {
+  reviewCount: number;
+  dealReminderCount: number;
+  lowOriginationCoverageDeals: number;
+  processProtectionGapDeals: number;
+  relationshipCoverageGapDeals: number;
+  staleSourceCount: number;
+  portfolioWatchCount: number;
+  initiativeBacklog: number;
+  fundReportingBacklog: number;
+  readyReportCount: number;
+  capitalCallCount: number;
+  committeeActionItems: Array<{
+    key: string;
+    area: string;
+    title: string;
+    detail: string;
+    href: string;
+    priority: 'critical' | 'high' | 'medium';
+    dueLabel?: string;
+  }>;
+}) {
+  const items = [
+    ...(reviewCount > 0
+      ? [
+          {
+            key: 'review-queue',
+            area: 'REVIEW',
+            title: `${reviewCount} normalized evidence item(s) are still pending review`,
+            detail: 'Approve or reject pending technical, legal, and lease evidence before downstream valuation and committee use.',
+            href: '/admin/review',
+            priority: 'critical' as const
+          }
+        ]
+      : []),
+    ...(dealReminderCount > 0
+      ? [
+          {
+            key: 'deal-reminders',
+            area: 'DEALS',
+            title: `${dealReminderCount} deal(s) need an immediate execution action`,
+            detail: 'Clear missing next actions, overdue workstreams, and stale DD items before the close path slips.',
+            href: '/admin/deals',
+            priority: 'critical' as const
+          }
+        ]
+      : []),
+    ...(lowOriginationCoverageDeals > 0
+      ? [
+          {
+            key: 'deal-origination-coverage',
+            area: 'ORIGINATION',
+            title: `${lowOriginationCoverageDeals} pursuit(s) still have thin origination coverage`,
+            detail: 'Tighten source tagging, relationship ownership, and market touchpoints before the process enters deeper bid or IC work.',
+            href: '/admin/deals',
+            priority: 'high' as const
+          }
+        ]
+      : []),
+    ...(processProtectionGapDeals > 0
+      ? [
+          {
+            key: 'deal-exclusivity-gap',
+            area: 'ORIGINATION',
+            title: `${processProtectionGapDeals} LOI-or-deeper pursuit(s) have no live exclusivity`,
+            detail: 'Push process protection or re-underwrite competitive risk before diligence and committee time compounds into a weak process position.',
+            href: '/admin/deals',
+            priority: 'high' as const
+          }
+        ]
+      : []),
+    ...(relationshipCoverageGapDeals > 0
+      ? [
+          {
+            key: 'deal-coverage-gap',
+            area: 'ORIGINATION',
+            title: `${relationshipCoverageGapDeals} pursuit(s) need relationship ownership or fresh touchpoints`,
+            detail: 'Assign a primary counterparty owner and log current contact activity so pursuit quality is not dependent on ad hoc notes.',
+            href: '/admin/deals',
+            priority: 'medium' as const
+          }
+        ]
+      : []),
+    ...(staleSourceCount > 0
+      ? [
+          {
+            key: 'research-ops',
+            area: 'RESEARCH',
+            title: `${staleSourceCount} source-system issue(s) need research operations follow-up`,
+            detail: 'Resolve stale or failed source runs before the shared research fabric drifts out of date.',
+            href: '/admin/sources',
+            priority: 'high' as const
+          }
+        ]
+      : []),
+    ...(portfolioWatchCount > 0
+      ? [
+          {
+            key: 'portfolio-watch',
+            area: 'PORTFOLIO',
+            title: `${portfolioWatchCount} held-asset watch item(s) are active`,
+            detail: 'Refinance, covenant, rollover, or capex exceptions are surfacing in the hold set.',
+            href: '/admin/portfolio',
+            priority: 'high' as const
+          }
+        ]
+      : []),
+    ...(initiativeBacklog > 0
+      ? [
+          {
+            key: 'portfolio-initiatives',
+            area: 'PORTFOLIO',
+            title: `${initiativeBacklog} asset-management initiative(s) remain open across the hold set`,
+            detail: 'Advance blocked leasing, refinance, capex, and disposition initiatives before KPI drift leaks into committee and LP reporting.',
+            href: '/admin/portfolio',
+            priority: 'high' as const
+          }
+        ]
+      : []),
+    ...(fundReportingBacklog > 0 || capitalCallCount > 0
+      ? [
+          {
+            key: 'fund-reporting',
+            area: 'FUNDS',
+            title: `${fundReportingBacklog} controlled investor report item(s), ${readyReportCount} release-ready package(s), and ${capitalCallCount} near-term capital call(s) are open`,
+            detail: 'Clear release workflow items and call logistics before LP communication windows tighten.',
+            href: '/admin/funds',
+            priority: 'medium' as const
+          }
+        ]
+      : []),
+    ...committeeActionItems
+  ];
+
+  const priorityRank = {
+    critical: 3,
+    high: 2,
+    medium: 1
+  };
+
+  return items
+    .sort((left, right) => priorityRank[right.priority] - priorityRank[left.priority])
+    .slice(0, 8);
+}
+
 export async function getAdminData(db: PrismaClient = prisma) {
   const [
     summary,
@@ -597,7 +811,10 @@ export async function getAdminData(db: PrismaClient = prisma) {
     realizedOutcomes,
     deals,
     forecastAssetFeatures,
-    financialStatementCount
+    financialStatementCount,
+    fundReportingSummary,
+    assetManagementInitiativeCount,
+    committeeWorkspace
   ] =
     await Promise.all([
     getDashboardSummary(db),
@@ -762,6 +979,8 @@ export async function getAdminData(db: PrismaClient = prisma) {
         nextActionAt: true,
         targetCloseDate: true,
         updatedAt: true,
+        originationSource: true,
+        originSummary: true,
         tasks: {
           select: {
             title: true,
@@ -781,7 +1000,11 @@ export async function getAdminData(db: PrismaClient = prisma) {
         },
         counterparties: {
           select: {
-            role: true
+            name: true,
+            role: true,
+            coverageOwner: true,
+            coverageStatus: true,
+            lastContactAt: true
           }
         },
         documentRequests: {
@@ -812,6 +1035,7 @@ export async function getAdminData(db: PrismaClient = prisma) {
         negotiationEvents: {
           select: {
             eventType: true,
+            effectiveAt: true,
             expiresAt: true
           },
           orderBy: {
@@ -835,6 +1059,29 @@ export async function getAdminData(db: PrismaClient = prisma) {
         },
         asset: {
           select: {
+            researchSnapshots: {
+              select: {
+                freshnessStatus: true
+              },
+              orderBy: {
+                createdAt: 'desc'
+              },
+              take: 8
+            },
+            coverageTasks: {
+              select: {
+                status: true
+              },
+              where: {
+                status: {
+                  not: TaskStatus.DONE
+                }
+              },
+              orderBy: {
+                dueDate: 'asc'
+              },
+              take: 12
+            },
             valuations: {
               select: {
                 id: true,
@@ -869,7 +1116,35 @@ export async function getAdminData(db: PrismaClient = prisma) {
         }
       }
     }),
-    db.financialStatement.count()
+    db.financialStatement.count(),
+    db.fund.findMany({
+      select: {
+        id: true,
+        code: true,
+        investorReports: {
+          select: {
+            id: true,
+            publishedAt: true,
+            releaseStatus: true
+          }
+        },
+        capitalCalls: {
+          select: {
+            id: true,
+            dueDate: true,
+            status: true
+          }
+        }
+      }
+    }),
+    db.assetManagementInitiative.count({
+      where: {
+        status: {
+          in: [TaskStatus.OPEN, TaskStatus.IN_PROGRESS, TaskStatus.BLOCKED]
+        }
+      }
+    }),
+    getCommitteeWorkspace(db)
   ]);
 
   const [documentCount, latestDocument] = documentSummary;
@@ -943,6 +1218,58 @@ export async function getAdminData(db: PrismaClient = prisma) {
     })),
     outcomes: realizedOutcomes
   });
+  const fundReportingBacklog = fundReportingSummary.reduce(
+    (total, fund) => total + fund.investorReports.filter((report) => report.releaseStatus !== InvestorReportReleaseStatus.RELEASED).length,
+    0
+  );
+  const readyReportCount = fundReportingSummary.reduce(
+    (total, fund) => total + fund.investorReports.filter((report) => report.releaseStatus === InvestorReportReleaseStatus.READY).length,
+    0
+  );
+  const capitalCallCount = fundReportingSummary.reduce(
+    (total, fund) =>
+      total +
+      fund.capitalCalls.filter((call) => {
+        if (call.status === 'FUNDED' || call.status === 'CANCELLED') return false;
+        if (!call.dueDate) return true;
+        return call.dueDate.getTime() <= Date.now() + 1000 * 60 * 60 * 24 * 30;
+      }).length,
+    0
+  );
+  const dealPipeline = buildDealPipelineSummary(deals);
+  const dealReminders = buildDealReminderSummary(deals);
+  const portfolioRisk = buildPortfolioRiskSummary(
+    valuationRuns.map((run) => ({
+      id: run.id,
+      assetId: run.assetId,
+      createdAt: run.createdAt,
+      confidenceScore: run.confidenceScore,
+      assumptions: run.assumptions,
+      asset: {
+        id: run.asset.id,
+        name: run.asset.name,
+        assetCode: run.asset.assetCode,
+        assetClass: run.asset.assetClass
+      }
+    }))
+  );
+  const actionCenter = buildFirmActionCenter({
+    reviewCount: summary.underReviewCount,
+    dealReminderCount: dealReminders.reminders.length,
+    lowOriginationCoverageDeals: dealPipeline.lowOriginationCoverageDeals,
+    processProtectionGapDeals: dealPipeline.processProtectionGapDeals,
+    relationshipCoverageGapDeals: dealPipeline.relationshipCoverageGapDeals,
+    staleSourceCount:
+      sourceHealth.sourceFreshness.stale +
+      sourceHealth.sourceFreshness.failed +
+      sourceHealth.assetFreshness.staleCandidates,
+    portfolioWatchCount: portfolioRisk.watchlist.length,
+    initiativeBacklog: assetManagementInitiativeCount,
+    fundReportingBacklog,
+    readyReportCount,
+    capitalCallCount,
+    committeeActionItems: committeeWorkspace.dashboard.actionItems
+  });
 
   return {
     summary,
@@ -955,24 +1282,15 @@ export async function getAdminData(db: PrismaClient = prisma) {
     inquiries,
     readiness,
     sourceHealth,
-    dealPipeline: buildDealPipelineSummary(deals),
+    dealPipeline,
     dealCloseProbability: buildDealCloseProbabilitySummary(deals),
-    dealReminders: buildDealReminderSummary(deals),
-    portfolioRisk: buildPortfolioRiskSummary(
-      valuationRuns.map((run) => ({
-        id: run.id,
-        assetId: run.assetId,
-        createdAt: run.createdAt,
-        confidenceScore: run.confidenceScore,
-        assumptions: run.assumptions,
-        asset: {
-          id: run.asset.id,
-          name: run.asset.name,
-          assetCode: run.asset.assetCode,
-          assetClass: run.asset.assetClass
-        }
-      }))
-    ),
+    dealReminders,
+    portfolioRisk,
+    actionCenter,
+    committee: committeeWorkspace,
+    fundReportingBacklog,
+    readyReportCount,
+    capitalCallCount,
     counterpartyRisk: buildCounterpartyRiskSummary(creditAssessments),
     quantSignals,
     quantAllocation,

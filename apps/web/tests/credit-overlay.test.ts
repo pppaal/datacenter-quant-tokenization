@@ -88,6 +88,9 @@ test('credit overlay reduces confidence and adds diligence when a counterparty s
           company: null,
           email: null,
           phone: null,
+          coverageOwner: null,
+          coverageStatus: 'PASSIVE',
+          lastContactAt: null,
           notes: null,
           createdAt: now,
           updatedAt: now

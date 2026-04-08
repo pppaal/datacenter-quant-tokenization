@@ -39,6 +39,28 @@ const optionalDateField = z.preprocess((value) => {
   return value;
 }, z.date().optional());
 
+const dealOriginationSourceSchema = z.enum([
+  'BROKERED',
+  'DIRECT_OWNER',
+  'LENDER_CHANNEL',
+  'ADVISOR',
+  'PROPRIETARY',
+  'INBOUND'
+]);
+
+const dealLossReasonSchema = z.enum([
+  'PRICE',
+  'EXECUTION',
+  'COMPETITION',
+  'TIMING',
+  'FINANCING',
+  'IC_DECLINE',
+  'STRATEGY',
+  'OTHER'
+]);
+
+const relationshipCoverageStatusSchema = z.enum(['PRIMARY', 'BACKUP', 'PASSIVE']);
+
 export const dealStageOrder = [
   DealStage.SOURCED,
   DealStage.SCREENED,
@@ -66,6 +88,8 @@ export const dealCreateSchema = z.object({
   sellerGuidanceKrw: optionalNumberField,
   bidGuidanceKrw: optionalNumberField,
   purchasePriceKrw: optionalNumberField,
+  originationSource: dealOriginationSourceSchema.optional(),
+  originSummary: optionalStringField,
   statusLabel: optionalStringField,
   dealLead: optionalStringField
 });
@@ -85,7 +109,10 @@ export const dealUpdateSchema = z.object({
   sellerGuidanceKrw: optionalNumberField,
   bidGuidanceKrw: optionalNumberField,
   purchasePriceKrw: optionalNumberField,
+  originationSource: dealOriginationSourceSchema.nullable().optional(),
+  originSummary: optionalStringField,
   statusLabel: optionalStringField,
+  lossReason: dealLossReasonSchema.nullable().optional(),
   closeOutcome: optionalStringField,
   closeSummary: optionalStringField,
   dealLead: optionalStringField
@@ -103,6 +130,22 @@ export const dealCounterpartySchema = z.object({
   company: optionalStringField,
   email: z.preprocess(emptyStringToUndefined, z.string().trim().email().optional()),
   phone: optionalStringField,
+  coverageOwner: optionalStringField,
+  coverageStatus: relationshipCoverageStatusSchema.default('PASSIVE'),
+  lastContactAt: optionalDateField,
+  notes: optionalStringField
+});
+
+export const dealCounterpartyUpdateSchema = z.object({
+  name: optionalStringField,
+  role: optionalStringField,
+  shortName: optionalStringField,
+  company: optionalStringField,
+  email: z.preprocess(emptyStringToUndefined, z.string().trim().email().optional()),
+  phone: optionalStringField,
+  coverageOwner: optionalStringField,
+  coverageStatus: relationshipCoverageStatusSchema.optional(),
+  lastContactAt: optionalDateField,
   notes: optionalStringField
 });
 
@@ -354,13 +397,15 @@ export const dealRestoreSchema = z.object({
 
 export const dealCloseOutSchema = z.object({
   outcome: z.enum(['CLOSED_WON', 'CLOSED_LOST']),
-  summary: z.preprocess(emptyStringToUndefined, z.string().trim().min(1, 'Close-out summary is required'))
+  summary: z.preprocess(emptyStringToUndefined, z.string().trim().min(1, 'Close-out summary is required')),
+  lossReason: dealLossReasonSchema.optional()
 });
 
 export type DealCreateInput = z.infer<typeof dealCreateSchema>;
 export type DealUpdateInput = z.infer<typeof dealUpdateSchema>;
 export type DealStageUpdateInput = z.infer<typeof dealStageUpdateSchema>;
 export type DealCounterpartyInput = z.infer<typeof dealCounterpartySchema>;
+export type DealCounterpartyUpdateInput = z.infer<typeof dealCounterpartyUpdateSchema>;
 export type DealTaskCreateInput = z.infer<typeof dealTaskCreateSchema>;
 export type DealTaskUpdateInput = z.infer<typeof dealTaskUpdateSchema>;
 export type DealDocumentRequestCreateInput = z.infer<typeof dealDocumentRequestCreateSchema>;

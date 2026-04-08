@@ -1,21 +1,33 @@
 import {
+  ActivityType,
   AmortizationProfile,
   AssetStage,
   AssetStatus,
   CapitalCallStatus,
   CapexCategory,
   CovenantStatus,
+  DealBidStatus,
+  DealLenderQuoteStatus,
+  DealLossReason,
+  DealNegotiationEventType,
+  DealOriginationSource,
+  DealStage,
   DebtFacilityType,
   DistributionStatus,
   DocumentType,
   InvestorReportType,
+  InvestorReportReleaseStatus,
   LeaseStatus,
   AssetClass,
   PortfolioAssetStatus,
   PrismaClient,
   ReadinessStatus,
+  RelationshipCoverageStatus,
   ReviewStatus,
+  RiskSeverity,
   SourceStatus,
+  TaskPriority,
+  TaskStatus,
   UserRole,
   VehicleType
 } from '@prisma/client';
@@ -1348,6 +1360,30 @@ async function seedPortfolioAndCapitalShell() {
                 dispositionPlan: 'Target domestic institutional office buyer universe within 24 months.'
               }
             },
+            initiatives: {
+              create: [
+                {
+                  title: 'Anchor tenant rollover capture',
+                  category: 'leasing',
+                  status: TaskStatus.IN_PROGRESS,
+                  priority: TaskPriority.HIGH,
+                  ownerName: 'Office Asset Management Lead',
+                  targetDate: new Date('2026-05-31T00:00:00.000Z'),
+                  summary: 'Negotiate anchor rollover package and defend occupancy before the next committee packet.',
+                  nextStep: 'Issue final TI / LC proposal and confirm board timing.'
+                },
+                {
+                  title: 'Amenity upgrade leasing package',
+                  category: 'capex',
+                  status: TaskStatus.OPEN,
+                  priority: TaskPriority.MEDIUM,
+                  ownerName: 'Capital Projects Team',
+                  targetDate: new Date('2026-06-15T00:00:00.000Z'),
+                  summary: 'Tie lobby and arrival refresh to leasing campaign before summer marketing.',
+                  nextStep: 'Lock final contractor budget and tenant communications plan.'
+                }
+              ]
+            },
             monthlyKpis: {
               create: [
                 {
@@ -1534,6 +1570,31 @@ async function seedPortfolioAndCapitalShell() {
                 financingPlan: 'Bridge from construction debt into term debt once DSCR and anchor contracts season.',
                 dispositionPlan: 'Maintain optionality for infra buyers or hold within core-plus vehicle.'
               }
+            },
+            initiatives: {
+              create: [
+                {
+                  title: 'AI pod conversion and term sheet close',
+                  category: 'leasing',
+                  status: TaskStatus.BLOCKED,
+                  priority: TaskPriority.URGENT,
+                  ownerName: 'Digital Infra Leasing Lead',
+                  targetDate: new Date('2026-04-30T00:00:00.000Z'),
+                  summary: 'Close the AI training pod to clear the covenant watch and support refinance timing.',
+                  blockerSummary: 'Tenant board approval and utility redundancy sign-off are both outstanding.',
+                  nextStep: 'Run sponsor / tenant utility workshop and collect revised board pack.'
+                },
+                {
+                  title: 'Refinance lender pack readiness',
+                  category: 'refinance',
+                  status: TaskStatus.IN_PROGRESS,
+                  priority: TaskPriority.HIGH,
+                  ownerName: 'Portfolio Finance Team',
+                  targetDate: new Date('2026-06-10T00:00:00.000Z'),
+                  summary: 'Prepare updated lender pack once fit-out and lease evidence are fully approved.',
+                  nextStep: 'Roll approved evidence and Q2 KPI trend into the refinance materials.'
+                }
+              ]
             },
             monthlyKpis: {
               create: [
@@ -1836,16 +1897,32 @@ async function seedPortfolioAndCapitalShell() {
     }
   });
 
-  await prisma.investorReport.create({
-    data: {
-      fundId: fund.id,
-      reportType: InvestorReportType.QUARTERLY_UPDATE,
-      title: 'Q1 2026 Investor Update',
-      periodEnd: new Date('2026-03-31T00:00:00.000Z'),
-      publishedAt: new Date('2026-04-01T00:00:00.000Z'),
-      storagePath: 'seed/funds/hirf-i/q1-2026-investor-update.pdf',
-      notes: 'Initial investor update draft anchored to portfolio KPI set.'
-    }
+  await prisma.investorReport.createMany({
+    data: [
+      {
+        fundId: fund.id,
+        reportType: InvestorReportType.QUARTERLY_UPDATE,
+        releaseStatus: InvestorReportReleaseStatus.RELEASED,
+        title: 'Q1 2026 Investor Update',
+        periodEnd: new Date('2026-03-31T00:00:00.000Z'),
+        draftSummary: 'Released quarterly investor letter covering occupancy, refinancing posture, and committee-approved business-plan actions.',
+        reviewNotes: 'Released after capital activity reconciliation and operator sign-off.',
+        publishedAt: new Date('2026-04-01T00:00:00.000Z'),
+        storagePath: 'seed/funds/hirf-i/q1-2026-investor-update.pdf',
+        notes: 'Released investor package anchored to portfolio KPI set.'
+      },
+      {
+        fundId: fund.id,
+        investorId: investors[0].id,
+        reportType: InvestorReportType.QUARTERLY_UPDATE,
+        releaseStatus: InvestorReportReleaseStatus.READY,
+        title: 'Q2 2026 Pension Sleeve Draft',
+        periodEnd: new Date('2026-06-30T00:00:00.000Z'),
+        draftSummary: 'Draft LP update focused on leasing pipeline, covenant watch items, and staged refinance readiness.',
+        reviewNotes: 'Awaiting final IC follow-up on the Seoul campus stabilization package before release.',
+        notes: 'Held in ready state for controlled release after IC follow-up closes.'
+      }
+    ]
   });
 
   await prisma.ddqResponse.create({
@@ -1861,7 +1938,426 @@ async function seedPortfolioAndCapitalShell() {
   });
 }
 
+async function seedCommitteeGovernance() {
+  const meeting = await prisma.investmentCommitteeMeeting.create({
+    data: {
+      code: 'IC-2026-APR-15',
+      title: 'April 2026 Korea Real Estate IC',
+      status: 'SCHEDULED',
+      scheduledFor: new Date('2026-04-15T01:00:00.000Z'),
+      venueLabel: 'Seoul investment committee room',
+      summary:
+        'Agenda focused on office recapitalization approval and data-center packet conditioning before final lender circulation.'
+    }
+  });
+
+  const [officeAsset, dataCenterAsset] = await Promise.all([
+    prisma.asset.findUnique({
+      where: { assetCode: 'SEOUL-YEOUIDO-01' },
+      include: {
+        valuations: {
+          orderBy: {
+            createdAt: 'desc'
+          },
+          take: 1
+        }
+      }
+    }),
+    prisma.asset.findUnique({
+      where: { assetCode: 'SEOUL-GANGSEO-01' },
+      include: {
+        valuations: {
+          orderBy: {
+            createdAt: 'desc'
+          },
+          take: 1
+        }
+      }
+    })
+  ]);
+
+  if (officeAsset?.valuations[0]) {
+    await prisma.investmentCommitteePacket.create({
+      data: {
+        meetingId: meeting.id,
+        assetId: officeAsset.id,
+        valuationRunId: officeAsset.valuations[0].id,
+        title: 'Yeouido Core Office Tower Recapitalization Packet',
+        packetCode: 'ICPKT-SEOUL-YEOUIDO-2026Q2',
+        status: 'LOCKED',
+        preparedByLabel: 'analyst@nexusseoul.local',
+        scheduledFor: new Date('2026-04-15T01:00:00.000Z'),
+        lockedAt: new Date('2026-04-12T09:00:00.000Z'),
+        packetFingerprint: 'icpkt-yeouido-2026q2',
+        reportFingerprint: 'report-yeouido-2026q2',
+        reviewPacketFingerprint: 'review-yeouido-2026q2',
+        decisionSummary:
+          'Recommend approval for recapitalization and hold-business-plan execution subject to final debt documentation.'
+      }
+    });
+  }
+
+  if (dataCenterAsset?.valuations[0]) {
+    const packet = await prisma.investmentCommitteePacket.create({
+      data: {
+        meetingId: meeting.id,
+        assetId: dataCenterAsset.id,
+        valuationRunId: dataCenterAsset.valuations[0].id,
+        title: 'Seoul Hyperscale Campus I Conditional Approval Packet',
+        packetCode: 'ICPKT-SEOUL-GANGSEO-2026Q2',
+        status: 'CONDITIONAL',
+        preparedByLabel: 'analyst@nexusseoul.local',
+        scheduledFor: new Date('2026-04-15T01:00:00.000Z'),
+        lockedAt: new Date('2026-04-10T08:30:00.000Z'),
+        packetFingerprint: 'icpkt-gangseo-2026q2',
+        reportFingerprint: 'report-gangseo-2026q2',
+        reviewPacketFingerprint: 'review-gangseo-2026q2',
+        decisionSummary:
+          'Conditional approval pending final utility allocation confirmation and lender-side diligence closeout.',
+        followUpSummary: 'Track utility allocation letter and close lender diligence package before release.'
+      }
+    });
+
+    await prisma.investmentCommitteeDecision.create({
+      data: {
+        packetId: packet.id,
+        outcome: 'CONDITIONAL',
+        decidedAt: new Date('2026-04-15T03:00:00.000Z'),
+        decidedByLabel: 'IC Chair',
+        notes:
+          'Proceed with conditional approval only after utility confirmation is uploaded and lender diligence is marked complete.',
+        followUpActions:
+          'Upload final utility allocation letter; re-open packet only if debt terms materially widen.'
+      }
+    });
+  }
+}
+
+async function seedDealExecution() {
+  const [officeAsset, dataCenterAsset] = await Promise.all([
+    prisma.asset.findUnique({
+      where: { assetCode: 'SEOUL-YEOUIDO-01' },
+      include: {
+        documents: {
+          orderBy: { createdAt: 'asc' },
+          take: 2
+        }
+      }
+    }),
+    prisma.asset.findUnique({
+      where: { assetCode: 'SEOUL-GANGSEO-01' },
+      include: {
+        documents: {
+          orderBy: { createdAt: 'asc' },
+          take: 2
+        }
+      }
+    })
+  ]);
+
+  if (officeAsset) {
+    await prisma.deal.create({
+      data: {
+        dealCode: 'DEAL-2026-0001',
+        slug: 'deal-2026-0001-yeouido-office-recap',
+        title: 'Yeouido Core Office Tower Recapitalization',
+        stage: DealStage.IC,
+        market: 'KR',
+        city: 'Seoul',
+        country: 'KR',
+        assetClass: AssetClass.OFFICE,
+        strategy: 'Core-plus recapitalization',
+        headline: 'Direct owner recap with lender engagement already in motion and a live exclusivity window.',
+        nextAction: 'Lock the final IC packet and clear lender comments on refinance covenants.',
+        nextActionAt: new Date('2026-04-10T00:00:00.000Z'),
+        targetCloseDate: new Date('2026-05-30T00:00:00.000Z'),
+        sellerGuidanceKrw: 318000000000,
+        bidGuidanceKrw: 312000000000,
+        purchasePriceKrw: 312000000000,
+        originationSource: DealOriginationSource.DIRECT_OWNER,
+        originSummary: 'Owner-led recapitalization brought directly through an existing sponsor relationship.',
+        statusLabel: 'ACTIVE',
+        dealLead: 'analyst@nexusseoul.local',
+        assetId: officeAsset.id,
+        counterparties: {
+          create: [
+            {
+              name: 'Han River Office Holdings',
+              role: 'OWNER',
+              company: 'Han River Office Holdings',
+              email: 'owner@example.com',
+              coverageOwner: 'lead underwriter',
+              coverageStatus: RelationshipCoverageStatus.PRIMARY,
+              lastContactAt: new Date('2026-04-06T00:00:00.000Z'),
+              notes: 'Direct owner relationship; sponsor expects fast committee feedback.'
+            },
+            {
+              name: 'Korean Institutional Bank',
+              role: 'LENDER',
+              company: 'Korean Institutional Bank',
+              email: 'refi@example.com',
+              coverageOwner: 'capital markets',
+              coverageStatus: RelationshipCoverageStatus.PRIMARY,
+              lastContactAt: new Date('2026-04-05T00:00:00.000Z'),
+              notes: 'Refinancing bank is in diligence and covenant negotiation.'
+            },
+            {
+              name: 'Seoul Office Advisor',
+              role: 'ADVISOR',
+              company: 'Seoul Office Advisor',
+              coverageOwner: 'deal lead',
+              coverageStatus: RelationshipCoverageStatus.BACKUP,
+              lastContactAt: new Date('2026-04-02T00:00:00.000Z'),
+              notes: 'Supports process management and lender workstream.'
+            }
+          ]
+        },
+        tasks: {
+          create: [
+            {
+              title: 'Finalize IC packet release memo',
+              description: 'Close remaining comments before the April IC agenda is locked.',
+              status: TaskStatus.IN_PROGRESS,
+              priority: TaskPriority.HIGH,
+              ownerLabel: 'lead underwriter',
+              dueDate: new Date('2026-04-10T00:00:00.000Z')
+            },
+            {
+              title: 'Refinancing covenant markup',
+              description: 'Resolve covenant headroom comments with lead lender.',
+              status: TaskStatus.OPEN,
+              priority: TaskPriority.HIGH,
+              ownerLabel: 'capital markets',
+              dueDate: new Date('2026-04-12T00:00:00.000Z')
+            }
+          ]
+        },
+        documentRequests: {
+          create: [
+            {
+              title: 'Updated rent roll tie-out',
+              category: 'Leasing',
+              status: 'RECEIVED',
+              priority: TaskPriority.HIGH,
+              requestedAt: new Date('2026-04-01T00:00:00.000Z'),
+              receivedAt: new Date('2026-04-03T00:00:00.000Z'),
+              documentId: officeAsset.documents[0]?.id ?? null
+            }
+          ]
+        },
+        bidRevisions: {
+          create: [
+            {
+              label: 'IC-ready recap bid',
+              status: DealBidStatus.ACCEPTED,
+              bidPriceKrw: 312000000000,
+              depositKrw: 10000000000,
+              exclusivityDays: 21,
+              diligenceDays: 30,
+              closeTimelineDays: 45,
+              submittedAt: new Date('2026-04-04T00:00:00.000Z'),
+              notes: 'Commercial paper agreed subject to committee release.'
+            }
+          ]
+        },
+        lenderQuotes: {
+          create: [
+            {
+              facilityLabel: 'Senior refinance facility',
+              status: DealLenderQuoteStatus.TERM_SHEET,
+              amountKrw: 164000000000,
+              ltvPct: 52,
+              allInRatePct: 4.9,
+              quotedAt: new Date('2026-04-05T00:00:00.000Z'),
+              notes: 'Term sheet is live and tied to committee approval.'
+            }
+          ]
+        },
+        negotiationEvents: {
+          create: [
+            {
+              eventType: DealNegotiationEventType.EXCLUSIVITY_GRANTED,
+              title: 'Owner granted live exclusivity',
+              effectiveAt: new Date('2026-04-04T00:00:00.000Z'),
+              expiresAt: new Date('2026-04-25T00:00:00.000Z'),
+              summary: 'Direct owner gave exclusivity while final packet and lender comments are cleared.'
+            }
+          ]
+        },
+        riskFlags: {
+          create: [
+            {
+              title: 'Refinance covenant headroom',
+              detail: 'Final DSCR headroom and capex reserve sizing still need lender confirmation.',
+              severity: RiskSeverity.MEDIUM,
+              statusLabel: 'OPEN'
+            }
+          ]
+        },
+        activityLogs: {
+          create: [
+            {
+              activityType: ActivityType.NOTE,
+              title: 'Owner process note',
+              body: 'Owner wants certainty around committee timing before circulating final SPA mark-up.',
+              createdByLabel: 'lead underwriter'
+            }
+          ]
+        }
+      }
+    });
+  }
+
+  if (dataCenterAsset) {
+    await prisma.deal.create({
+      data: {
+        dealCode: 'DEAL-2026-0002',
+        slug: 'deal-2026-0002-seoul-campus-ai-pod',
+        title: 'Seoul Hyperscale Campus I AI Pod Expansion',
+        stage: DealStage.DD,
+        market: 'KR',
+        city: 'Seoul',
+        country: 'KR',
+        assetClass: AssetClass.DATA_CENTER,
+        strategy: 'Digital infrastructure expansion',
+        headline: 'Lender-channel process with active diligence but weaker process protection than the office recap.',
+        nextAction: 'Rebuild exclusivity coverage and clear remaining power queue diligence.',
+        nextActionAt: new Date('2026-04-11T00:00:00.000Z'),
+        targetCloseDate: new Date('2026-06-20T00:00:00.000Z'),
+        sellerGuidanceKrw: 268000000000,
+        bidGuidanceKrw: 254000000000,
+        purchasePriceKrw: 254000000000,
+        originationSource: DealOriginationSource.LENDER_CHANNEL,
+        originSummary: 'Process was surfaced through a refinancing lender seeking recapitalization certainty.',
+        statusLabel: 'ACTIVE',
+        dealLead: 'analyst@nexusseoul.local',
+        assetId: dataCenterAsset.id,
+        counterparties: {
+          create: [
+            {
+              name: 'Refinancing Coverage Bank',
+              role: 'LENDER',
+              company: 'Refinancing Coverage Bank',
+              coverageOwner: 'capital markets',
+              coverageStatus: RelationshipCoverageStatus.PRIMARY,
+              lastContactAt: new Date('2026-04-01T00:00:00.000Z'),
+              notes: 'Primary lender channel originated the recapitalization path.'
+            },
+            {
+              name: 'Seller Advisor',
+              role: 'BROKER',
+              company: 'Digital Infra Advisor',
+              coverageOwner: 'deal team',
+              coverageStatus: RelationshipCoverageStatus.BACKUP,
+              lastContactAt: new Date('2026-03-20T00:00:00.000Z'),
+              notes: 'Brokered process is active, but no fresh exclusivity is in force.'
+            }
+          ]
+        },
+        tasks: {
+          create: [
+            {
+              title: 'Power queue diligence refresh',
+              description: 'Update utility queue memo and operator commentary before the next DD call.',
+              status: TaskStatus.BLOCKED,
+              priority: TaskPriority.URGENT,
+              ownerLabel: 'infrastructure underwriting',
+              dueDate: new Date('2026-04-09T00:00:00.000Z')
+            },
+            {
+              title: 'Rebuild exclusivity path',
+              description: 'Secure a fresh exclusivity window before final diligence spend accelerates.',
+              status: TaskStatus.OPEN,
+              priority: TaskPriority.HIGH,
+              ownerLabel: 'deal lead',
+              dueDate: new Date('2026-04-15T00:00:00.000Z')
+            }
+          ]
+        },
+        documentRequests: {
+          create: [
+            {
+              title: 'Utility queue confirmation',
+              category: 'Power',
+              status: 'REQUESTED',
+              priority: TaskPriority.URGENT,
+              requestedAt: new Date('2026-04-02T00:00:00.000Z'),
+              dueDate: new Date('2026-04-09T00:00:00.000Z'),
+              documentId: null
+            }
+          ]
+        },
+        bidRevisions: {
+          create: [
+            {
+              label: 'Seller feedback bid',
+              status: DealBidStatus.COUNTERED,
+              bidPriceKrw: 254000000000,
+              submittedAt: new Date('2026-04-01T00:00:00.000Z'),
+              notes: 'Seller countered price and process protection terms.'
+            }
+          ]
+        },
+        lenderQuotes: {
+          create: [
+            {
+              facilityLabel: 'Expansion recap bridge',
+              status: DealLenderQuoteStatus.INDICATED,
+              amountKrw: 138000000000,
+              ltvPct: 54,
+              quotedAt: new Date('2026-04-01T00:00:00.000Z'),
+              notes: 'Indicative bridge quote pending power diligence.'
+            }
+          ]
+        },
+        negotiationEvents: {
+          create: [
+            {
+              eventType: DealNegotiationEventType.SELLER_COUNTER,
+              title: 'Seller countered price and timing',
+              effectiveAt: new Date('2026-04-03T00:00:00.000Z'),
+              summary: 'Seller asked for tighter timing without extending exclusivity.'
+            }
+          ]
+        },
+        riskFlags: {
+          create: [
+            {
+              title: 'No live exclusivity',
+              detail: 'Process remains exposed to competitive drift while power diligence stays open.',
+              severity: RiskSeverity.HIGH,
+              statusLabel: 'OPEN'
+            }
+          ]
+        },
+        activityLogs: {
+          create: [
+            {
+              activityType: ActivityType.NOTE,
+              title: 'Broker process note',
+              body: 'Seller is sensitive to time and may reopen the process if power diligence drags.',
+              createdByLabel: 'deal lead'
+            }
+          ]
+        }
+      }
+    });
+  }
+}
+
 async function main() {
+  await prisma.investmentCommitteeDecision.deleteMany();
+  await prisma.investmentCommitteePacket.deleteMany();
+  await prisma.investmentCommitteeMeeting.deleteMany();
+  await prisma.dealExecutionProbabilitySnapshot.deleteMany();
+  await prisma.activityLog.deleteMany();
+  await prisma.riskFlag.deleteMany();
+  await prisma.dealNegotiationEvent.deleteMany();
+  await prisma.dealLenderQuote.deleteMany();
+  await prisma.dealBidRevision.deleteMany();
+  await prisma.dealDocumentRequest.deleteMany();
+  await prisma.task.deleteMany();
+  await prisma.deal.deleteMany();
   await prisma.ddqResponse.deleteMany();
   await prisma.investorReport.deleteMany();
   await prisma.distribution.deleteMany();
@@ -1878,6 +2374,7 @@ async function main() {
   await prisma.budget.deleteMany();
   await prisma.leaseRollSnapshot.deleteMany();
   await prisma.monthlyAssetKpi.deleteMany();
+  await prisma.assetManagementInitiative.deleteMany();
   await prisma.businessPlan.deleteMany();
   await prisma.portfolioAsset.deleteMany();
   await prisma.portfolio.deleteMany();
@@ -2587,9 +3084,11 @@ async function main() {
   });
 
   await seedOfficeAsset();
+  await seedDealExecution();
   await seedPortfolioAndCapitalShell();
+  await seedCommitteeGovernance();
 
-  console.log('Seed complete: 3 Korean data center opportunities, 1 Seoul office demo asset, and portfolio/fund operating shells loaded.');
+  console.log('Seed complete: Korean real-estate demo assets, deal execution pipeline, portfolio/fund operating shells, and committee governance workspace loaded.');
 }
 
 main()

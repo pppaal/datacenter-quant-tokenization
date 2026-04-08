@@ -1,4 +1,4 @@
-import { CovenantStatus, PortfolioAssetStatus, type Prisma, type PrismaClient } from '@prisma/client';
+import { CovenantStatus, PortfolioAssetStatus, TaskPriority, TaskStatus, type Prisma, type PrismaClient } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { buildAssetResearchDossier } from '@/lib/services/research/dossier';
 
@@ -113,6 +113,10 @@ export const portfolioInclude = {
         },
         take: 1
       },
+      initiatives: {
+        orderBy: [{ priority: 'desc' as const }, { targetDate: 'asc' as const }, { updatedAt: 'desc' as const }],
+        take: 8
+      },
       monthlyKpis: {
         orderBy: {
           periodStart: 'desc' as const
@@ -205,6 +209,30 @@ function latestBudget(portfolioAsset: PortfolioAssetBundle) {
   return portfolioAsset.budgets[0] ?? null;
 }
 
+function buildInitiativeSummary(initiatives: PortfolioAssetBundle['initiatives'] | undefined | null) {
+  const rows = initiatives ?? [];
+  const openItems = rows.filter((item) => item.status !== TaskStatus.DONE);
+  const blockedCount = openItems.filter((item) => item.status === TaskStatus.BLOCKED).length;
+  const urgentCount = openItems.filter((item) => item.priority === TaskPriority.URGENT).length;
+  const nextDueItem =
+    [...openItems]
+      .filter((item) => item.targetDate)
+      .sort((left, right) => (left.targetDate?.getTime() ?? Number.MAX_SAFE_INTEGER) - (right.targetDate?.getTime() ?? Number.MAX_SAFE_INTEGER))[0] ??
+    openItems[0] ??
+    null;
+
+  return {
+    totalCount: rows.length,
+    openCount: openItems.length,
+    blockedCount,
+    urgentCount,
+    nextDueItem,
+    summary: nextDueItem
+      ? `${nextDueItem.title} is the lead initiative ${nextDueItem.targetDate ? `due ${nextDueItem.targetDate.toISOString().slice(0, 10)}` : 'without a due date'}.`
+      : 'No active asset-management initiative is currently staged.'
+  };
+}
+
 function latestDocumentHash(portfolioAsset: PortfolioAssetBundle) {
   return portfolioAsset.asset.documents[0]?.documentHash ?? null;
 }
@@ -252,6 +280,7 @@ export function buildPortfolioDashboard(portfolio: PortfolioBundle) {
     const varianceBudget = sum(budget?.lineItems.map((item) => item.varianceKrw) ?? []);
     const capexBudget = sum(portfolioAsset.capexProjects.map((project) => project.approvedBudgetKrw ?? project.budgetKrw));
     const capexSpent = sum(portfolioAsset.capexProjects.map((project) => project.spentToDateKrw));
+    const initiativeSummary = buildInitiativeSummary(portfolioAsset.initiatives);
 
     return {
       portfolioAsset,
@@ -265,6 +294,7 @@ export function buildPortfolioDashboard(portfolio: PortfolioBundle) {
       varianceBudget,
       capexBudget,
       capexSpent,
+      initiativeSummary,
       holdValueKrw:
         portfolioAsset.currentHoldValueKrw ??
         latest?.navKrw ??
@@ -339,17 +369,30 @@ export function buildPortfolioDashboard(portfolio: PortfolioBundle) {
         (right.exitCase.targetExitDate?.getTime() ?? Number.MAX_SAFE_INTEGER)
     );
 
-  const capexBudgetTracker = assetRows.sort(
+  const capexBudgetTracker = [...assetRows].sort(
     (left, right) =>
       ((right.capexSpent ?? 0) - (right.capexBudget ?? 0)) -
       ((left.capexSpent ?? 0) - (left.capexBudget ?? 0))
   );
+
+  const initiativeTracker = assetRows
+    .filter((row) => row.initiativeSummary.openCount > 0)
+    .sort(
+      (left, right) =>
+        right.initiativeSummary.blockedCount - left.initiativeSummary.blockedCount ||
+        right.initiativeSummary.urgentCount - left.initiativeSummary.urgentCount ||
+        (left.initiativeSummary.nextDueItem?.targetDate?.getTime() ?? Number.MAX_SAFE_INTEGER) -
+          (right.initiativeSummary.nextDueItem?.targetDate?.getTime() ?? Number.MAX_SAFE_INTEGER)
+    );
 
   const operatorSummary = [
     `${portfolio.name} currently holds ${summary.assetCount} asset${summary.assetCount === 1 ? '' : 's'} across ${portfolio.market}.`,
     summary.averageOccupancyPct != null
       ? `Average occupancy is ${summary.averageOccupancyPct.toFixed(1)}% with annualized NOI of KRW ${Math.round(summary.annualizedNoiKrw).toLocaleString()}.`
       : 'Occupancy history is still being populated for the current hold set.',
+    initiativeTracker[0]
+      ? `${initiativeTracker[0].portfolioAsset.asset.name} is carrying the lead asset-management initiative queue with ${initiativeTracker[0].initiativeSummary.blockedCount} blocked and ${initiativeTracker[0].initiativeSummary.urgentCount} urgent item(s).`
+      : 'No blocked asset-management initiatives are currently staged.',
     covenantWatchlist[0]
       ? `${covenantWatchlist[0].portfolioAsset.asset.name} is the primary covenant watch item, while ${leaseRolloverWatchlist[0]?.portfolioAsset.asset.name ?? 'the rollover queue'} drives the lease rollover watchlist.`
       : 'No covenant breaches are flagged across the current hold set.'
@@ -373,6 +416,7 @@ export function buildPortfolioDashboard(portfolio: PortfolioBundle) {
     debtMaturityWall,
     covenantWatchlist,
     capexBudgetTracker,
+    initiativeTracker,
     exitCaseTracker,
     operatorSummary,
     researchSummary
@@ -387,6 +431,7 @@ export function buildPortfolioOperatorBriefs(
   const topRollover = dashboard.leaseRolloverWatchlist[0] ?? null;
   const topExit = dashboard.exitCaseTracker[0] ?? null;
   const topCapex = dashboard.capexBudgetTracker[0] ?? null;
+  const topInitiative = dashboard.initiativeTracker[0] ?? null;
 
   const researchBrief = [
     `${portfolio.name} is operating with ${dashboard.summary.assetCount} held asset${dashboard.summary.assetCount === 1 ? '' : 's'} across ${portfolio.market}.`,
@@ -408,11 +453,16 @@ export function buildPortfolioOperatorBriefs(
     ? `${topCapex.portfolioAsset.asset.name} is the main capex tracking asset with KRW ${Math.round(topCapex.capexSpent ?? 0).toLocaleString()} spent against KRW ${Math.round(topCapex.capexBudget ?? 0).toLocaleString()} of approved capex budget.`
     : 'No material capex program has been staged yet.';
 
+  const initiativeBrief = topInitiative
+    ? `${topInitiative.portfolioAsset.asset.name} carries ${topInitiative.initiativeSummary.openCount} active asset-management initiative${topInitiative.initiativeSummary.openCount === 1 ? '' : 's'}, including ${topInitiative.initiativeSummary.blockedCount} blocked item${topInitiative.initiativeSummary.blockedCount === 1 ? '' : 's'}. ${topInitiative.initiativeSummary.summary}`
+    : 'No active asset-management initiative queue has been staged yet.';
+
   return {
     researchBrief,
     covenantBrief,
     watchlistBrief,
-    capexBrief
+    capexBrief,
+    initiativeBrief
   };
 }
 

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AssetClass, DealStage } from '@prisma/client';
+import { AssetClass, DealOriginationSource, DealStage } from '@prisma/client';
 import { useForm } from 'react-hook-form';
 import { dealStageOptions, formatDealStage } from '@/lib/deals/config';
 import { Button } from '@/components/ui/button';
@@ -140,11 +140,31 @@ export function DealCreateForm({ assets }: Props) {
           </Select>
         </label>
 
+        <label className="space-y-2">
+          <span className="fine-print">Origination Source</span>
+          <Select {...form.register('originationSource')}>
+            <option value="">Tag later</option>
+            {Object.values(DealOriginationSource).map((value) => (
+              <option key={value} value={value}>
+                {value.replaceAll('_', ' ')}
+              </option>
+            ))}
+          </Select>
+        </label>
+
         <label className="space-y-2 md:col-span-2">
           <span className="fine-print">Headline</span>
           <Input
             placeholder="Recapitalization with court-driven process, single-bank seller, and short diligence window."
             {...form.register('headline')}
+          />
+        </label>
+
+        <label className="space-y-2 md:col-span-2">
+          <span className="fine-print">Origination Summary</span>
+          <Input
+            placeholder="Who sourced it, why the process is differentiated, and what relationship edge exists."
+            {...form.register('originSummary')}
           />
         </label>
 

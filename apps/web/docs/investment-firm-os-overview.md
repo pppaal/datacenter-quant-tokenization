@@ -2,13 +2,14 @@
 
 This document describes the current `apps/web` product as it exists today.
 
-The repo is no longer only an underwriting tool. It is now the foundation of an AI-native Korean real-estate investment-firm operating system with five connected layers:
+The repo is no longer only an underwriting tool. It is now the foundation of an AI-native Korean real-estate investment-firm operating system with six connected layers:
 
 1. `Research`
 2. `Underwriting`
-3. `Deal Execution`
-4. `Portfolio Operations`
-5. `Capital Formation Shell`
+3. `Committee Governance`
+4. `Deal Execution`
+5. `Portfolio Operations`
+6. `Capital Formation Shell`
 
 Operator control surfaces now sit across those layers through:
 
@@ -38,8 +39,10 @@ The blockchain boundary remains unchanged:
   Global review queue for normalized underwriting evidence
 - `/admin/valuations`
   Valuation run library and approval flow
+- `/admin/ic`
+  Committee workspace for meeting agendas, packet lock state, released decisions, and packaging candidates
 - `/admin/deals`
-  Deal execution surface for next actions, diligence requests, lender quotes, bids, and close probability
+  Deal execution surface for next actions, sourcing score, origination source, relationship coverage, lender quotes, bids, exclusivity state, and close probability
 - `/admin/portfolio`
   Portfolio summary across held assets
 - `/admin/portfolio/[id]`
@@ -84,6 +87,13 @@ Key services:
 - `apps/web/lib/services/research/micro-research.ts`
 - `apps/web/lib/services/research/document-research.ts`
 
+Current operator outputs now include:
+
+- freshness and provenance
+- confidence score
+- source disagreement / conflict flags
+- thesis aging visibility
+
 ### 2. Underwriting
 
 Underwriting remains review-gated and evidence-first.
@@ -109,7 +119,24 @@ Key services:
 - `apps/web/lib/services/reports.ts`
 - `apps/web/lib/services/readiness.ts`
 
-### 3. Deal Execution
+### 3. Committee Governance
+
+Committee governance now sits between underwriting and live deal execution.
+
+Primary capabilities:
+
+- scheduled meeting agenda
+- packet lock status
+- decision summary and follow-up lineage
+- packaging candidates for IC-ready assets
+- shared action-center visibility from `/admin`
+
+Key services:
+
+- `apps/web/lib/services/ic.ts`
+- `apps/web/lib/services/ic-builders.ts`
+
+### 4. Deal Execution
 
 Deal execution is not a full CRM. It is a focused operator workflow for moving one institutional deal from sourcing to close.
 
@@ -117,17 +144,21 @@ Primary capabilities:
 
 - pipeline stages
 - next actions
+- origination source tagging and sourcing score
+- relationship coverage ownership and last-touch logging
 - diligence requests
 - lender quote tracking
 - bid / revision tracking
 - negotiation events
+- live exclusivity visibility
+- structured win / loss taxonomy
 - close probability and trend
 
 Key services:
 
 - `apps/web/lib/services/deals.ts`
 
-### 4. Portfolio Operations
+### 5. Portfolio Operations
 
 Portfolio OS v1 is now in place.
 
@@ -152,6 +183,7 @@ Primary operator outputs:
 - debt maturity wall
 - covenant status summary
 - capex vs budget tracking
+- asset-management initiative tracker
 - exit case tracker
 - AI-native operator briefs
 - quantum-inspired portfolio optimization and scenario exploration research
@@ -161,7 +193,7 @@ Key service:
 - `apps/web/lib/services/portfolio.ts`
 - `apps/web/lib/services/portfolio-optimization.ts`
 
-### 5. Capital Formation Shell
+### 6. Capital Formation Shell
 
 Capital OS is intentionally a shell in this version. It is institutional data modeling, not a retail interface.
 
@@ -182,7 +214,7 @@ Primary operator outputs:
 - commitments and unfunded capital
 - capital call and distribution history
 - investor coverage summary
-- investor reporting shell
+- controlled investor-report release workflow
 - DDQ shell
 - AI-native investor update draft
 

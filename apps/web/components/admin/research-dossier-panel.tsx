@@ -47,6 +47,17 @@ type Props = {
       latestSnapshotTitle: string;
       latestSnapshotDate: Date | null;
     };
+    confidence: {
+      score: number;
+      level: 'high' | 'moderate' | 'low';
+      thesisAgeDays: number | null;
+      headline: string;
+      conflicts: Array<{
+        label: string;
+        detail: string;
+        severity: 'warn' | 'danger';
+      }>;
+    };
     officialSources: {
       highlights: Array<{
         label: string;
@@ -77,6 +88,12 @@ function toneForStatus(status: 'good' | 'partial' | 'open') {
 function toneForFreshness(status: 'FRESH' | 'STALE' | 'FAILED' | 'MANUAL') {
   if (status === 'FRESH') return 'good' as const;
   if (status === 'STALE' || status === 'MANUAL') return 'warn' as const;
+  return 'danger' as const;
+}
+
+function toneForConfidence(level: 'high' | 'moderate' | 'low') {
+  if (level === 'high') return 'good' as const;
+  if (level === 'moderate') return 'warn' as const;
   return 'danger' as const;
 }
 
@@ -206,6 +223,37 @@ export function ResearchDossierPanel({ dossier }: Props) {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+
+          <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+            <div className="fine-print">Confidence / Conflict</div>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <Badge tone={toneForConfidence(dossier.confidence.level)}>{dossier.confidence.level}</Badge>
+              <Badge>{dossier.confidence.score}% confidence</Badge>
+              {dossier.confidence.thesisAgeDays != null ? <Badge>{dossier.confidence.thesisAgeDays}d thesis age</Badge> : null}
+            </div>
+            <div className="mt-3 text-sm leading-7 text-slate-400">{dossier.confidence.headline}</div>
+            <div className="mt-3 space-y-2 text-sm text-slate-300">
+              {dossier.confidence.conflicts.length > 0 ? (
+                dossier.confidence.conflicts.map((item) => (
+                  <div
+                    key={`${item.label}-${item.detail}`}
+                    className={`rounded-2xl border px-3 py-2 ${
+                      item.severity === 'danger'
+                        ? 'border-rose-400/30 bg-rose-500/10 text-rose-100'
+                        : 'border-amber-400/30 bg-amber-500/10 text-amber-100'
+                    }`}
+                  >
+                    <div className="font-semibold">{item.label}</div>
+                    <div className="mt-1 text-xs">{item.detail}</div>
+                  </div>
+                ))
+              ) : (
+                <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-emerald-100">
+                  No source disagreement signals are currently surfacing in the dossier.
+                </div>
+              )}
             </div>
           </div>
 

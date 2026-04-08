@@ -12,7 +12,7 @@ export const dealStageOptions = [
   DealStage.ASSET_MANAGEMENT
 ] as const;
 
-export const dealCounterpartyRoleOptions = ['BROKER', 'SELLER', 'BUYER', 'LENDER', 'LAW_FIRM', 'ADVISOR'] as const;
+export const dealCounterpartyRoleOptions = ['BROKER', 'SELLER', 'OWNER', 'BUYER', 'LENDER', 'LAW_FIRM', 'ADVISOR'] as const;
 
 export const taskStatusOptions = [
   TaskStatus.OPEN,

@@ -51,7 +51,7 @@ test('buildFundDashboard produces investor-update-ready summary', () => {
     ],
     capitalCalls: [{ callDate: new Date('2026-02-10'), amountKrw: 42_000_000_000, purpose: 'Capex and leasing reserves', status: 'ISSUED' }],
     distributions: [{ distributionDate: new Date('2026-03-20'), amountKrw: 30_000_000_000, status: 'PAID' }],
-    investorReports: [{ title: 'Q1 2026 Investor Update' }],
+    investorReports: [{ title: 'Q1 2026 Investor Update', releaseStatus: 'RELEASED' }],
     ddqResponses: [],
     mandates: [],
     vehicles: [],
@@ -82,7 +82,7 @@ test('buildFundOperatorBriefs produces capital and investor coverage summaries',
     ],
     capitalCalls: [{ callDate: new Date('2026-02-10'), amountKrw: 42_000_000_000, purpose: 'Capex and leasing reserves', status: 'ISSUED' }],
     distributions: [],
-    investorReports: [{ title: 'Q1 2026 Investor Update', publishedAt: null }],
+    investorReports: [{ title: 'Q1 2026 Investor Update', publishedAt: null, releaseStatus: 'READY', periodEnd: new Date('2026-03-31') }],
     ddqResponses: [{ title: 'Operational DDQ', statusLabel: 'DRAFT' }],
     mandates: [],
     vehicles: [],
@@ -97,6 +97,7 @@ test('buildFundOperatorBriefs produces capital and investor coverage summaries',
 
   assert.ok(briefs.capitalActivityBrief.includes('Han River Real Estate Fund I'));
   assert.ok(briefs.investorCoverageBrief.includes('Han River Pension'));
+  assert.ok(briefs.reportReleaseBrief.includes('lead release item'));
   assert.ok(briefs.investorUpdateDraft.includes('capital call'));
 });
 

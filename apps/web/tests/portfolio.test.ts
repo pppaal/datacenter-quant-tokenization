@@ -83,6 +83,17 @@ test('buildPortfolioDashboard aggregates hold KPIs, rollover watchlist, debt wal
           featureSnapshots: []
         },
         businessPlans: [],
+        initiatives: [
+          {
+            id: 'initiative-office',
+            title: 'Anchor tenant rollover capture',
+            status: TaskStatus.IN_PROGRESS,
+            priority: TaskPriority.HIGH,
+            targetDate: new Date('2026-05-31'),
+            blockerSummary: null,
+            nextStep: 'Issue final TI / LC proposal'
+          }
+        ],
         monthlyKpis: [
           {
             periodStart: new Date('2026-01-01'),
@@ -167,6 +178,17 @@ test('buildPortfolioDashboard aggregates hold KPIs, rollover watchlist, debt wal
           featureSnapshots: []
         },
         businessPlans: [],
+        initiatives: [
+          {
+            id: 'initiative-dc',
+            title: 'AI pod conversion and term sheet close',
+            status: TaskStatus.BLOCKED,
+            priority: TaskPriority.URGENT,
+            targetDate: new Date('2026-04-30'),
+            blockerSummary: 'Tenant board approval is still pending.',
+            nextStep: 'Run sponsor and tenant utility workshop'
+          }
+        ],
         monthlyKpis: [
           {
             periodStart: new Date('2026-01-01'),
@@ -209,6 +231,7 @@ test('buildPortfolioDashboard aggregates hold KPIs, rollover watchlist, debt wal
   assert.equal(dashboard.leaseRolloverWatchlist[0].portfolioAsset.asset.name, 'Seoul Hyperscale Campus I');
   assert.equal(dashboard.debtMaturityWall.length, 2);
   assert.equal(dashboard.exitCaseTracker.length, 2);
+  assert.equal(dashboard.initiativeTracker[0].portfolioAsset.asset.name, 'Seoul Hyperscale Campus I');
   assert.ok(dashboard.operatorSummary.includes('Korea Income Portfolio'));
 });
 
@@ -265,6 +288,17 @@ test('buildPortfolioOperatorBriefs produces operator-facing research and watchli
           featureSnapshots: []
         },
         businessPlans: [],
+        initiatives: [
+          {
+            id: 'initiative-office',
+            title: 'Anchor tenant rollover capture',
+            status: TaskStatus.BLOCKED,
+            priority: TaskPriority.HIGH,
+            targetDate: new Date('2026-05-31'),
+            blockerSummary: 'Tenant committee sign-off pending',
+            nextStep: 'Close final TI / LC terms'
+          }
+        ],
         monthlyKpis: [
           {
             periodStart: new Date('2026-01-01'),
@@ -301,6 +335,7 @@ test('buildPortfolioOperatorBriefs produces operator-facing research and watchli
   assert.ok(briefs.covenantBrief.includes('Yeouido Core Office Tower'));
   assert.ok(briefs.watchlistBrief.includes('24.0%'));
   assert.ok(briefs.capexBrief.includes('Yeouido Core Office Tower'));
+  assert.ok(briefs.initiativeBrief.includes('blocked'));
   assert.ok(briefs.researchBrief.includes('Office Vacancy 7.1%'));
 });
 

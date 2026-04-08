@@ -1,6 +1,7 @@
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { AdminAccessScopeType } from '@prisma/client';
+import { AssetManagementInitiativePanel } from '@/components/admin/asset-management-initiative-panel';
 import { PortfolioOptimizationPanel } from '@/components/admin/portfolio-optimization-panel';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
@@ -95,6 +96,10 @@ export default async function PortfolioDetailPage({ params }: Props) {
               <div className="fine-print">Capex / Budget</div>
               <p className="mt-2 text-sm leading-7 text-slate-300">{briefs.capexBrief}</p>
             </div>
+            <div>
+              <div className="fine-print">Asset Management Initiatives</div>
+              <p className="mt-2 text-sm leading-7 text-slate-300">{briefs.initiativeBrief}</p>
+            </div>
           </div>
         </Card>
       </div>
@@ -172,6 +177,17 @@ export default async function PortfolioDetailPage({ params }: Props) {
           })}
         </div>
       </Card>
+
+      <div className="grid gap-6 xl:grid-cols-2">
+        {dashboard.assetRows.map((row) => (
+          <AssetManagementInitiativePanel
+            key={row.portfolioAsset.id}
+            portfolioAssetId={row.portfolioAsset.id}
+            assetName={row.portfolioAsset.asset.name}
+            initiatives={row.portfolioAsset.initiatives}
+          />
+        ))}
+      </div>
 
       <div className="grid gap-6 xl:grid-cols-2">
         <Card>

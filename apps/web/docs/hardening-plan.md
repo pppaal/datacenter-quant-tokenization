@@ -1,6 +1,6 @@
 # Hardening Plan
 
-Last updated: 2026-04-06
+Last updated: 2026-04-08
 
 This plan turns the current branch from a strong institutional prototype into a more repeatable operator platform without changing the existing product posture:
 
@@ -16,6 +16,7 @@ Already strong:
 - review-gated underwriting and approved-only feature promotion
 - first-class research workspace at `/admin/research`
 - deal execution, portfolio operations, and capital shell
+- committee governance, asset-management initiatives, and controlled investor-report release workflow
 - official-source persistence and research dossier reuse
 - typecheck, unit tests, and production build passing
 

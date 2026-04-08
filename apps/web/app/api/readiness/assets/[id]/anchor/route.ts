@@ -32,7 +32,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       requestMethod: request.method,
       ipAddress
     });
-    return NextResponse.redirect(new URL(`/admin/assets/${id}`, request.url));
+    return NextResponse.json({ ok: true });
   } catch (error) {
     const { id } = await params;
     await recordAuditEvent({

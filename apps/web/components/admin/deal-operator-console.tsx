@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ActivityType, DealBidStatus, DealLenderQuoteStatus, DealNegotiationEventType, DealRequestStatus, DealStage, RiskSeverity, TaskPriority, TaskStatus } from '@prisma/client';
+import { ActivityType, DealBidStatus, DealLenderQuoteStatus, DealLossReason, DealNegotiationEventType, DealOriginationSource, DealRequestStatus, DealStage, RelationshipCoverageStatus, RiskSeverity, TaskPriority, TaskStatus } from '@prisma/client';
 import { useRouter } from 'next/navigation';
-import type { DealDetailRecord, DealExecutionSnapshot } from '@/lib/services/deals';
+import type { DealDetailRecord, DealExecutionSnapshot, DealOriginationProfile } from '@/lib/services/deals';
 import {
   dealBidStatusOptions,
   dealCounterpartyRoleOptions,
@@ -32,6 +32,7 @@ import { formatCurrency, formatDate, formatNumber, toSentenceCase } from '@/lib/
 type Props = {
   deal: DealDetailRecord;
   snapshot: DealExecutionSnapshot;
+  origination: DealOriginationProfile;
 };
 
 function getMatchSuggestion(
@@ -76,7 +77,7 @@ async function request(url: string, method: 'POST' | 'PATCH', payload: Record<st
   }
 }
 
-export function DealOperatorConsole({ deal, snapshot }: Props) {
+export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -89,11 +90,16 @@ export function DealOperatorConsole({ deal, snapshot }: Props) {
   const [targetCloseDate, setTargetCloseDate] = useState(toDateValue(deal.targetCloseDate));
   const [sellerGuidanceKrw, setSellerGuidanceKrw] = useState(deal.sellerGuidanceKrw != null ? String(deal.sellerGuidanceKrw) : '');
   const [bidGuidanceKrw, setBidGuidanceKrw] = useState(deal.bidGuidanceKrw != null ? String(deal.bidGuidanceKrw) : '');
+  const [originationSource, setOriginationSource] = useState<string>(deal.originationSource ?? '');
+  const [originSummary, setOriginSummary] = useState(deal.originSummary ?? '');
   const [counterpartyRole, setCounterpartyRole] = useState('BROKER');
   const [counterpartyName, setCounterpartyName] = useState('');
   const [counterpartyCompany, setCounterpartyCompany] = useState('');
   const [counterpartyEmail, setCounterpartyEmail] = useState('');
   const [counterpartyPhone, setCounterpartyPhone] = useState('');
+  const [counterpartyCoverageOwner, setCounterpartyCoverageOwner] = useState('');
+  const [counterpartyCoverageStatus, setCounterpartyCoverageStatus] = useState<RelationshipCoverageStatus>(RelationshipCoverageStatus.PASSIVE);
+  const [counterpartyLastContactAt, setCounterpartyLastContactAt] = useState('');
   const [counterpartyNotes, setCounterpartyNotes] = useState('');
   const [noteRole, setNoteRole] = useState<'BROKER' | 'SELLER' | 'BUYER'>('BROKER');
   const [noteCounterpartyId, setNoteCounterpartyId] = useState('');
@@ -143,6 +149,7 @@ export function DealOperatorConsole({ deal, snapshot }: Props) {
   const [riskDetail, setRiskDetail] = useState('');
   const [riskSeverity, setRiskSeverity] = useState<RiskSeverity>(RiskSeverity.HIGH);
   const [closeOutcome, setCloseOutcome] = useState<'CLOSED_WON' | 'CLOSED_LOST'>('CLOSED_WON');
+  const [closeLossReason, setCloseLossReason] = useState<string>(deal.lossReason ?? DealLossReason.OTHER);
   const [closeSummary, setCloseSummary] = useState(deal.closeSummary ?? '');
 
   useEffect(() => {
@@ -242,6 +249,70 @@ export function DealOperatorConsole({ deal, snapshot }: Props) {
             </div>
           </div>
 
+          <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <div className="fine-print">Origination Discipline</div>
+                <div className="mt-2 text-base font-semibold text-white">{origination.headline}</div>
+              </div>
+              <Badge tone={origination.band === 'HIGH' ? 'good' : origination.band === 'MEDIUM' ? 'warn' : 'danger'}>
+                sourcing {formatNumber(origination.scorePct, 0)}%
+              </Badge>
+            </div>
+            <div className="mt-4 grid gap-3 md:grid-cols-4">
+              <div className="rounded-[20px] border border-white/10 bg-slate-950/35 p-4">
+                <div className="fine-print">Source</div>
+                <div className="mt-2 text-sm font-semibold text-white">{origination.sourceLabel}</div>
+              </div>
+              <div className="rounded-[20px] border border-white/10 bg-slate-950/35 p-4">
+                <div className="fine-print">Coverage</div>
+                <div className="mt-2 text-sm font-semibold text-white">{origination.relationshipCoverageLabel}</div>
+              </div>
+              <div className="rounded-[20px] border border-white/10 bg-slate-950/35 p-4">
+                <div className="fine-print">Exclusivity</div>
+                <div className="mt-2 text-sm font-semibold text-white">{origination.exclusivityLabel}</div>
+              </div>
+              <div className="rounded-[20px] border border-white/10 bg-slate-950/35 p-4">
+                <div className="fine-print">Latest Touch</div>
+                <div className="mt-2 text-sm font-semibold text-white">{origination.lastTouchLabel}</div>
+              </div>
+            </div>
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              <div>
+                <div className="fine-print">Strengths</div>
+                <div className="mt-3 space-y-2">
+                  {origination.strengths.length > 0 ? (
+                    origination.strengths.map((item) => (
+                      <div key={item} className="rounded-[18px] border border-emerald-500/20 bg-emerald-500/10 p-3 text-sm text-emerald-100">
+                        {item}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="rounded-[18px] border border-white/10 bg-slate-950/35 p-3 text-sm text-slate-500">
+                      No strengths are logged yet.
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div>
+                <div className="fine-print">Coverage Gaps</div>
+                <div className="mt-3 space-y-2">
+                  {origination.blockers.length > 0 ? (
+                    origination.blockers.map((item) => (
+                      <div key={item} className="rounded-[18px] border border-amber-500/20 bg-amber-500/10 p-3 text-sm text-amber-100">
+                        {item}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="rounded-[18px] border border-white/10 bg-slate-950/35 p-3 text-sm text-slate-500">
+                      No origination blockers are flagged.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
           <form
             className="grid gap-4 rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
             onSubmit={(event) => {
@@ -286,7 +357,9 @@ export function DealOperatorConsole({ deal, snapshot }: Props) {
                   nextActionAt: nextActionAt || null,
                   targetCloseDate: targetCloseDate || null,
                   sellerGuidanceKrw: sellerGuidanceKrw === '' ? null : Number(sellerGuidanceKrw),
-                  bidGuidanceKrw: bidGuidanceKrw === '' ? null : Number(bidGuidanceKrw)
+                  bidGuidanceKrw: bidGuidanceKrw === '' ? null : Number(bidGuidanceKrw),
+                  originationSource: originationSource || null,
+                  originSummary: originSummary || null
                 });
               });
             }}
@@ -315,6 +388,27 @@ export function DealOperatorConsole({ deal, snapshot }: Props) {
               <label className="space-y-2">
                 <span className="fine-print">Bid Guidance</span>
                 <Input type="number" step="any" value={bidGuidanceKrw} onChange={(event) => setBidGuidanceKrw(event.target.value)} />
+              </label>
+            </div>
+            <div className="grid gap-4 md:grid-cols-[220px_1fr]">
+              <label className="space-y-2">
+                <span className="fine-print">Origination Source</span>
+                <Select value={originationSource} onChange={(event) => setOriginationSource(event.target.value)}>
+                  <option value="">Not tagged</option>
+                  {Object.values(DealOriginationSource).map((value) => (
+                    <option key={value} value={value}>
+                      {toSentenceCase(value)}
+                    </option>
+                  ))}
+                </Select>
+              </label>
+              <label className="space-y-2">
+                <span className="fine-print">Origination Summary</span>
+                <Input
+                  value={originSummary}
+                  onChange={(event) => setOriginSummary(event.target.value)}
+                  placeholder="Why this process exists, who brought it, and what makes it differentiated."
+                />
               </label>
             </div>
             <div className="flex items-center justify-between gap-4">
@@ -1128,12 +1222,18 @@ export function DealOperatorConsole({ deal, snapshot }: Props) {
                   company: counterpartyCompany || null,
                   email: counterpartyEmail || null,
                   phone: counterpartyPhone || null,
+                  coverageOwner: counterpartyCoverageOwner || null,
+                  coverageStatus: counterpartyCoverageStatus,
+                  lastContactAt: counterpartyLastContactAt || null,
                   notes: counterpartyNotes || null
                 });
                 setCounterpartyName('');
                 setCounterpartyCompany('');
                 setCounterpartyEmail('');
                 setCounterpartyPhone('');
+                setCounterpartyCoverageOwner('');
+                setCounterpartyCoverageStatus(RelationshipCoverageStatus.PASSIVE);
+                setCounterpartyLastContactAt('');
                 setCounterpartyNotes('');
               });
             }}
@@ -1150,6 +1250,15 @@ export function DealOperatorConsole({ deal, snapshot }: Props) {
               <Input value={counterpartyCompany} onChange={(event) => setCounterpartyCompany(event.target.value)} placeholder="Company" />
               <Input value={counterpartyEmail} onChange={(event) => setCounterpartyEmail(event.target.value)} placeholder="Email" />
               <Input value={counterpartyPhone} onChange={(event) => setCounterpartyPhone(event.target.value)} placeholder="Phone" />
+              <Input value={counterpartyCoverageOwner} onChange={(event) => setCounterpartyCoverageOwner(event.target.value)} placeholder="Coverage owner" />
+              <Select value={counterpartyCoverageStatus} onChange={(event) => setCounterpartyCoverageStatus(event.target.value as RelationshipCoverageStatus)}>
+                {Object.values(RelationshipCoverageStatus).map((value) => (
+                  <option key={value} value={value}>
+                    {toSentenceCase(value)}
+                  </option>
+                ))}
+              </Select>
+              <Input type="date" value={counterpartyLastContactAt} onChange={(event) => setCounterpartyLastContactAt(event.target.value)} />
               <Input value={counterpartyNotes} onChange={(event) => setCounterpartyNotes(event.target.value)} placeholder="Internal notes" />
             </div>
             <div className="flex justify-end">
@@ -1161,17 +1270,65 @@ export function DealOperatorConsole({ deal, snapshot }: Props) {
           <div className="space-y-3">
             {deal.counterparties.map((counterparty) => (
               <div key={counterparty.id} className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                  <div>
-                    <div className="text-base font-semibold text-white">{counterparty.name}</div>
-                    <div className="mt-1 text-sm text-slate-400">{counterparty.role} {counterparty.company ? `/ ${counterparty.company}` : ''}</div>
+                <form
+                  className="space-y-4"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    const formData = new FormData(event.currentTarget);
+                    void run(`counterparty-${counterparty.id}`, async () => {
+                      await request(`/api/deals/${deal.id}/counterparties/${counterparty.id}`, 'PATCH', {
+                        company: String(formData.get('company') ?? '') || null,
+                        email: String(formData.get('email') ?? '') || null,
+                        phone: String(formData.get('phone') ?? '') || null,
+                        coverageOwner: String(formData.get('coverageOwner') ?? '') || null,
+                        coverageStatus: String(formData.get('coverageStatus') ?? ''),
+                        lastContactAt: String(formData.get('lastContactAt') ?? '') || null,
+                        notes: String(formData.get('notes') ?? '') || null
+                      });
+                    }, 'Counterparty coverage updated.');
+                  }}
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                      <div className="text-base font-semibold text-white">{counterparty.name}</div>
+                      <div className="mt-1 text-sm text-slate-400">
+                        {counterparty.role} {counterparty.company ? `/ ${counterparty.company}` : ''}
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Badge>{toSentenceCase(counterparty.coverageStatus)}</Badge>
+                      {counterparty.coverageOwner ? <Badge tone="neutral">{counterparty.coverageOwner}</Badge> : null}
+                    </div>
                   </div>
-                  <div className="text-right text-sm text-slate-400">
-                    <div>{counterparty.email ?? 'No email'}</div>
-                    <div className="mt-1">{counterparty.phone ?? 'No phone'}</div>
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <Input name="company" defaultValue={counterparty.company ?? ''} placeholder="Company" />
+                    <Input name="email" defaultValue={counterparty.email ?? ''} placeholder="Email" />
+                    <Input name="phone" defaultValue={counterparty.phone ?? ''} placeholder="Phone" />
+                    <Input name="coverageOwner" defaultValue={counterparty.coverageOwner ?? ''} placeholder="Coverage owner" />
+                    <Select name="coverageStatus" defaultValue={counterparty.coverageStatus}>
+                      {Object.values(RelationshipCoverageStatus).map((value) => (
+                        <option key={value} value={value}>
+                          {toSentenceCase(value)}
+                        </option>
+                      ))}
+                    </Select>
+                    <Input name="lastContactAt" type="date" defaultValue={toDateValue(counterparty.lastContactAt)} />
                   </div>
-                </div>
-                {counterparty.notes ? <p className="mt-3 text-sm leading-7 text-slate-400">{counterparty.notes}</p> : null}
+                  <Textarea
+                    name="notes"
+                    className="min-h-[88px]"
+                    defaultValue={counterparty.notes ?? ''}
+                    placeholder="Internal relationship notes"
+                  />
+                  <div className="flex items-center justify-between gap-4 text-sm text-slate-400">
+                    <div>
+                      Latest touch {counterparty.lastContactAt ? formatDate(counterparty.lastContactAt) : 'not logged'}
+                    </div>
+                    <Button type="submit" variant="secondary" disabled={busy === `counterparty-${counterparty.id}`}>
+                      {busy === `counterparty-${counterparty.id}` ? 'Saving...' : 'Update Coverage'}
+                    </Button>
+                  </div>
+                </form>
               </div>
             ))}
           </div>
@@ -1322,15 +1479,23 @@ export function DealOperatorConsole({ deal, snapshot }: Props) {
               void run('close-out', async () => {
                 await request(`/api/deals/${deal.id}/close-out`, 'POST', {
                   outcome: closeOutcome,
-                  summary: closeSummary
+                  summary: closeSummary,
+                  lossReason: closeOutcome === 'CLOSED_LOST' ? closeLossReason : null
                 });
               });
             }}
           >
-            <div className="grid gap-4 md:grid-cols-[220px_1fr]">
+            <div className="grid gap-4 md:grid-cols-[220px_220px_1fr]">
               <Select value={closeOutcome} onChange={(event) => setCloseOutcome(event.target.value as 'CLOSED_WON' | 'CLOSED_LOST')}>
                 <option value="CLOSED_WON">Closed Won</option>
                 <option value="CLOSED_LOST">Closed Lost</option>
+              </Select>
+              <Select value={closeLossReason} onChange={(event) => setCloseLossReason(event.target.value)}>
+                {Object.values(DealLossReason).map((value) => (
+                  <option key={value} value={value}>
+                    {toSentenceCase(value)}
+                  </option>
+                ))}
               </Select>
               <Textarea className="min-h-[100px]" value={closeSummary} onChange={(event) => setCloseSummary(event.target.value)} placeholder="Write the final outcome, economics, and what matters for handoff or post-mortem." />
             </div>

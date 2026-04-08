@@ -115,7 +115,9 @@ export const fundInclude = {
   },
   investorReports: {
     include: {
-      investor: true
+      investor: true,
+      reviewedBy: true,
+      releasedBy: true
     },
     orderBy: {
       periodEnd: 'desc' as const
@@ -174,6 +176,16 @@ export function buildFundDashboard(fund: FundBundle) {
   const latestCall = fund.capitalCalls[0] ?? null;
   const latestDistribution = fund.distributions[0] ?? null;
   const latestReport = fund.investorReports[0] ?? null;
+  const statusWeight = (status?: string | null) =>
+    status === 'READY' ? 2 : status === 'INTERNAL_REVIEW' ? 1 : 0;
+  const releaseQueue = fund.investorReports
+    .filter((report) => (report.releaseStatus ?? 'DRAFT') !== 'RELEASED')
+    .sort(
+      (left, right) =>
+        statusWeight(right.releaseStatus) - statusWeight(left.releaseStatus) ||
+        (right.periodEnd?.getTime() ?? 0) - (left.periodEnd?.getTime() ?? 0)
+    );
+  const releasedReports = fund.investorReports.filter((report) => (report.releaseStatus ?? 'DRAFT') === 'RELEASED');
 
   const researchHighlights =
     fund.portfolio?.assets
@@ -196,7 +208,7 @@ export function buildFundDashboard(fund: FundBundle) {
       ? `The latest distribution was dated ${latestDistribution.distributionDate.toISOString().slice(0, 10)} for KRW ${Math.round(latestDistribution.amountKrw).toLocaleString()}.`
       : 'No distribution has been issued yet.',
     latestReport
-      ? `The current reporting cadence is anchored by ${latestReport.title}.`
+      ? `The current reporting cadence is anchored by ${latestReport.title} in ${(latestReport.releaseStatus ?? 'DRAFT').toLowerCase().replaceAll('_', ' ')} state.`
       : 'An investor reporting shell is ready but no report has been published yet.',
     researchHighlights || 'Portfolio-linked research coverage is still being populated.'
   ].join(' ');
@@ -207,6 +219,8 @@ export function buildFundDashboard(fund: FundBundle) {
     latestCall,
     latestDistribution,
     latestReport,
+    releaseQueue,
+    releasedReports,
     investorUpdateDraft
   };
 }
@@ -214,7 +228,8 @@ export function buildFundDashboard(fund: FundBundle) {
 export function buildFundOperatorBriefs(fund: FundBundle, dashboard = buildFundDashboard(fund)) {
   const topInvestor = dashboard.topInvestors[0] ?? null;
   const ddqBacklog = fund.ddqResponses.filter((item) => item.statusLabel !== 'COMPLETE').length;
-  const reportingBacklog = fund.investorReports.filter((item) => !item.publishedAt).length;
+  const reportingBacklog = dashboard.releaseQueue.length;
+  const readyReports = dashboard.releaseQueue.filter((item) => (item.releaseStatus ?? 'DRAFT') === 'READY').length;
 
   const capitalActivityBrief = [
     `${fund.name} has KRW ${Math.round(dashboard.math.totalCommitmentKrw).toLocaleString()} of commitments and KRW ${Math.round(dashboard.math.dryPowderKrw).toLocaleString()} of modeled dry powder.`,
@@ -227,12 +242,17 @@ export function buildFundOperatorBriefs(fund: FundBundle, dashboard = buildFundD
   ].join(' ');
 
   const investorCoverageBrief = topInvestor
-    ? `${topInvestor.investor.name} is the largest investor at KRW ${Math.round(topInvestor.commitmentKrw).toLocaleString()} committed. ${ddqBacklog} DDQ response${ddqBacklog === 1 ? '' : 's'} and ${reportingBacklog} unpublished investor report${reportingBacklog === 1 ? '' : 's'} remain in the shell.`
-    : `No investor commitment has been loaded yet. ${ddqBacklog} DDQ response${ddqBacklog === 1 ? '' : 's'} and ${reportingBacklog} unpublished report${reportingBacklog === 1 ? '' : 's'} are staged.`;
+    ? `${topInvestor.investor.name} is the largest investor at KRW ${Math.round(topInvestor.commitmentKrw).toLocaleString()} committed. ${ddqBacklog} DDQ response${ddqBacklog === 1 ? '' : 's'}, ${reportingBacklog} controlled investor report release item${reportingBacklog === 1 ? '' : 's'}, and ${readyReports} release-ready package${readyReports === 1 ? '' : 's'} remain in the queue.`
+    : `No investor commitment has been loaded yet. ${ddqBacklog} DDQ response${ddqBacklog === 1 ? '' : 's'} and ${reportingBacklog} controlled report release item${reportingBacklog === 1 ? '' : 's'} are staged.`;
+
+  const reportReleaseBrief = dashboard.releaseQueue[0]
+    ? `${dashboard.releaseQueue[0].title} is the lead release item in ${(dashboard.releaseQueue[0].releaseStatus ?? 'DRAFT').toLowerCase().replaceAll('_', ' ')} state${dashboard.releaseQueue[0].periodEnd ? ` for ${dashboard.releaseQueue[0].periodEnd.toISOString().slice(0, 10)}` : ''}.`
+    : 'No investor report release workflow item is currently open.';
 
   return {
     capitalActivityBrief,
     investorCoverageBrief,
+    reportReleaseBrief,
     investorUpdateDraft: dashboard.investorUpdateDraft
   };
 }

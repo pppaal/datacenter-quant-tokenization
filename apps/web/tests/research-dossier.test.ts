@@ -16,7 +16,7 @@ test('research dossier aggregates macro, market, micro, and document context for
     marketSnapshot: {
       metroRegion: 'Yeouido',
       vacancyPct: 6.2,
-      capRatePct: 4.8,
+      capRatePct: 5.8,
       discountRatePct: 7.4,
       debtCostPct: 4.7,
       inflationPct: 2.1,
@@ -27,7 +27,8 @@ test('research dossier aggregates macro, market, micro, and document context for
       { factorKey: 'property_demand', label: 'Property Demand', value: 11, direction: 'POSITIVE', observationDate: now }
     ],
     marketIndicatorSeries: [
-      { id: 'ind-1', indicatorKey: 'office_vacancy_pct', value: 6.2, observationDate: now }
+      { id: 'ind-1', indicatorKey: 'office_vacancy_pct', value: 9.4, observationDate: now },
+      { id: 'ind-2', indicatorKey: 'office_cap_rate_pct', value: 4.7, observationDate: now }
     ],
     transactionComps: [{ id: 'tx-1', transactionDate: now, capRatePct: 4.7 }],
     rentComps: [{ id: 'rent-1', observationDate: now, monthlyRentPerSqmKrw: 39200, occupancyPct: 95 }],
@@ -124,6 +125,10 @@ test('research dossier aggregates macro, market, micro, and document context for
   assert.equal(dossier.freshness.status, SourceStatus.FRESH);
   assert.equal(dossier.coverage.openTaskCount, 1);
   assert.equal(dossier.provenance.sourceCount, 2);
-  assert.equal(dossier.market.officialHighlights[0]?.label, 'office vacancy pct');
+  assert.equal(dossier.market.officialHighlights[0]?.label, 'office cap rate pct');
   assert.equal(dossier.officialSources.highlights[0]?.label, 'Office Vacancy');
+  assert.ok(dossier.confidence.score < 78);
+  assert.equal(dossier.confidence.level, 'low');
+  assert.ok(dossier.confidence.conflicts.some((item) => item.label.includes('Vacancy')));
+  assert.ok(dossier.confidence.conflicts.some((item) => item.label.includes('Cap-rate')));
 });

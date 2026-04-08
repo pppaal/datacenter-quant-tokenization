@@ -110,12 +110,13 @@ export async function resolveVerifiedAdminActorFromHeaders(
     return null;
   }
 
-  if (actor.provider === 'basic' && options?.allowBasic === false) {
+  const isPersistedSessionActor = Boolean(actor.sessionId);
+  const persistedSessionId = actor.sessionId ?? null;
+
+  if (actor.provider === 'basic' && options?.allowBasic === false && !isPersistedSessionActor) {
     return null;
   }
 
-  const isPersistedSessionActor = Boolean(actor.sessionId);
-  const persistedSessionId = actor.sessionId ?? null;
   const persistedSession =
     isPersistedSessionActor && db.adminSession && persistedSessionId
       ? await db.adminSession.findUnique({

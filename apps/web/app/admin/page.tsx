@@ -34,6 +34,11 @@ export default async function AdminOverviewPage() {
     dealCloseProbability,
     dealReminders,
     portfolioRisk,
+    actionCenter,
+    committee,
+    fundReportingBacklog,
+    readyReportCount,
+    capitalCallCount,
     counterpartyRisk,
     quantSignals,
     quantAllocation,
@@ -57,6 +62,14 @@ export default async function AdminOverviewPage() {
     sourceHealth.sourceFreshness.failed > 0 ||
     sourceHealth.assetFreshness.staleCandidates > 0;
   const hasPortfolioRiskAlert = portfolioRisk.highRiskCount > 0;
+  const hasCommitteeBacklog = committee.dashboard.actionItems.length > 0 || fundReportingBacklog > 0;
+  const dealExecutionAttentionCount =
+    dealReminders.reminders.length +
+    dealPipeline.lowOriginationCoverageDeals +
+    dealPipeline.processProtectionGapDeals +
+    dealPipeline.relationshipCoverageGapDeals;
+  const actionCenterNeedsAttention =
+    actionCenter.length > 0 || hasSourceAlert || hasPortfolioRiskAlert || hasCommitteeBacklog;
 
   return (
     <div className="space-y-8">
@@ -109,8 +122,8 @@ export default async function AdminOverviewPage() {
                 Start from the controlled queues first, then move into broader quant and market monitoring.
               </p>
             </div>
-            <Badge tone={dealReminders.reminders.length > 0 || hasSourceAlert || hasPortfolioRiskAlert ? 'warn' : 'good'}>
-              {dealReminders.reminders.length > 0 || hasSourceAlert || hasPortfolioRiskAlert ? 'attention needed' : 'stable'}
+            <Badge tone={actionCenterNeedsAttention ? 'warn' : 'good'}>
+              {actionCenterNeedsAttention ? 'attention needed' : 'stable'}
             </Badge>
           </div>
           <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -121,8 +134,10 @@ export default async function AdminOverviewPage() {
             </Link>
             <Link href="/admin/deals" className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
               <div className="fine-print">Deal Execution</div>
-              <div className="mt-3 text-3xl font-semibold text-white">{formatNumber(dealReminders.reminders.length, 0)}</div>
-              <p className="mt-2 text-sm text-slate-400">Stale, overdue, or missing-next-action deals to clear first.</p>
+              <div className="mt-3 text-3xl font-semibold text-white">{formatNumber(dealExecutionAttentionCount, 0)}</div>
+              <p className="mt-2 text-sm text-slate-400">
+                Stale execution, thin sourcing coverage, and no-exclusivity pursuits to clear first.
+              </p>
             </Link>
             <Link href="/admin/sources" className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
               <div className="fine-print">Research Ops</div>
@@ -138,6 +153,74 @@ export default async function AdminOverviewPage() {
               </div>
               <p className="mt-2 text-sm text-slate-400">Seat, identity, and ops-alert controls for controlled production use.</p>
             </Link>
+          </div>
+          <div className="mt-5 grid gap-3">
+            {actionCenter.map((item) => (
+              <Link
+                key={item.key}
+                href={item.href}
+                className="rounded-[22px] border border-white/10 bg-slate-950/35 p-4 transition hover:border-white/20 hover:bg-white/[0.05]"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge
+                        tone={
+                          item.priority === 'critical'
+                            ? 'danger'
+                            : item.priority === 'high'
+                              ? 'warn'
+                              : 'neutral'
+                        }
+                      >
+                        {item.area}
+                      </Badge>
+                      <Badge>{item.priority}</Badge>
+                    </div>
+                    <div className="mt-3 text-lg font-semibold text-white">{item.title}</div>
+                    <p className="mt-2 text-sm leading-7 text-slate-300">{item.detail}</p>
+                  </div>
+                  <div className="text-right text-xs uppercase tracking-[0.18em] text-slate-500">
+                    {item.dueLabel ?? 'open'}
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </Card>
+
+        <Card className="xl:col-span-2">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <div className="eyebrow">IC Governance</div>
+              <h2 className="mt-2 text-2xl font-semibold text-white">Committee queue and release control</h2>
+              <p className="mt-2 text-sm text-slate-400">
+                Move from review-ready underwriting into scheduled packets, locked committee materials, and released decision records.
+              </p>
+            </div>
+            <Link href="/admin/ic">
+              <Button variant="secondary">Open IC Workspace</Button>
+            </Link>
+          </div>
+          <div className="mt-5 grid gap-4 md:grid-cols-4">
+            <div className="metric-card">
+              <div className="fine-print">Scheduled Meetings</div>
+              <div className="mt-3 text-4xl font-semibold text-white">{formatNumber(committee.dashboard.summary.scheduledCount, 0)}</div>
+            </div>
+            <div className="metric-card">
+              <div className="fine-print">Active Packets</div>
+              <div className="mt-3 text-4xl font-semibold text-white">{formatNumber(committee.dashboard.summary.activePacketCount, 0)}</div>
+            </div>
+            <div className="metric-card">
+              <div className="fine-print">Locked Packets</div>
+              <div className="mt-3 text-4xl font-semibold text-white">{formatNumber(committee.dashboard.summary.lockedCount, 0)}</div>
+            </div>
+            <div className="metric-card">
+              <div className="fine-print">Fund Reporting Backlog</div>
+              <div className="mt-3 text-4xl font-semibold text-white">
+                {formatNumber(fundReportingBacklog + readyReportCount + capitalCallCount, 0)}
+              </div>
+            </div>
           </div>
         </Card>
 

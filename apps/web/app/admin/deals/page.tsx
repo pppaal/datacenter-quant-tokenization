@@ -15,6 +15,7 @@ import {
   buildDealCloseProbability,
   buildDealClosingReadiness,
   buildDealExecutionSnapshot,
+  buildDealOriginationProfile,
   getDealMaterialUpdatedAt,
   listDeals
 } from '@/lib/services/deals';
@@ -68,15 +69,28 @@ export default async function DealsPage({ searchParams }: Props) {
     deal.tasks.some((task) => task.status !== 'DONE' && (task.priority === 'URGENT' || task.priority === 'HIGH'))
   );
   const blockedDeals = scopedDeals.filter((deal) => deal.riskFlags.some((risk) => !risk.isResolved));
+  const directDeals = scopedDeals.filter(
+    (deal) => deal.originationSource === 'DIRECT_OWNER' || deal.originationSource === 'PROPRIETARY'
+  );
+  const liveExclusivityDeals = scopedDeals.filter((deal) =>
+    deal.negotiationEvents.some(
+      (event) =>
+        (event.eventType === 'EXCLUSIVITY_GRANTED' || event.eventType === 'EXCLUSIVITY_EXTENDED') &&
+        event.expiresAt &&
+        event.expiresAt.getTime() >= Date.now()
+    )
+  );
   const view = resolvedSearchParams.view ?? 'active';
   const visibleDeals = scopedDeals
     .map((deal) => {
       const snapshot = buildDealExecutionSnapshot(deal as any);
       const readiness = buildDealClosingReadiness(deal as any, snapshot);
+      const origination = buildDealOriginationProfile(deal as any, snapshot);
       return {
         deal,
         snapshot,
         readiness,
+        origination,
         closeProbability: buildDealCloseProbability(deal as any, snapshot, readiness)
       };
     })
@@ -111,6 +125,7 @@ export default async function DealsPage({ searchParams }: Props) {
       const rightDue = rightSnapshot?.nextTask?.dueDate?.getTime() ?? right.deal.nextActionAt?.getTime() ?? Number.MAX_SAFE_INTEGER;
       return (
         leftDue - rightDue ||
+        right.origination.scorePct - left.origination.scorePct ||
         right.closeProbability.scorePct - left.closeProbability.scorePct ||
         left.readiness.scorePct - right.readiness.scorePct
       );
@@ -131,7 +146,7 @@ export default async function DealsPage({ searchParams }: Props) {
             The deal pipeline keeps next action, counterparties, diligence tasks, and risk flags in one operator view.
             This surface is meant for actual processes, not report generation.
           </p>
-          <div className="mt-6 grid gap-4 md:grid-cols-3">
+          <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
             <div className="metric-card">
               <div className="fine-print">Urgent Deals</div>
               <div className="mt-3 text-4xl font-semibold text-white">{formatNumber(urgentDeals.length, 0)}</div>
@@ -148,6 +163,16 @@ export default async function DealsPage({ searchParams }: Props) {
                 {formatNumber(scopedDeals.filter((deal) => deal.stage === DealStage.CLOSING).length, 0)}
               </div>
               <p className="mt-2 text-sm text-slate-400">Deals already in document, funds flow, or sign-close mode.</p>
+            </div>
+            <div className="metric-card">
+              <div className="fine-print">Direct / Proprietary</div>
+              <div className="mt-3 text-4xl font-semibold text-white">{formatNumber(directDeals.length, 0)}</div>
+              <p className="mt-2 text-sm text-slate-400">Deals sourced away from a broad brokered process.</p>
+            </div>
+            <div className="metric-card">
+              <div className="fine-print">Live Exclusivity</div>
+              <div className="mt-3 text-4xl font-semibold text-white">{formatNumber(liveExclusivityDeals.length, 0)}</div>
+              <p className="mt-2 text-sm text-slate-400">Processes protected by a live exclusivity clock.</p>
             </div>
           </div>
         </Card>
@@ -187,7 +212,7 @@ export default async function DealsPage({ searchParams }: Props) {
       </Card>
 
       <div className="grid gap-5">
-        {visibleDeals.map(({ deal, snapshot, readiness, closeProbability }) => {
+        {visibleDeals.map(({ deal, snapshot, readiness, origination, closeProbability }) => {
           const openTasks = deal.tasks.filter((task) => task.status !== 'DONE').length;
           const openRisks = deal.riskFlags.filter((risk) => !risk.isResolved).length;
           const lastActivity = deal.activityLogs[0] ?? null;
@@ -257,6 +282,12 @@ export default async function DealsPage({ searchParams }: Props) {
                         research {researchCoverage.freshnessLabel}
                       </Badge>
                     ) : null}
+                    <Badge tone={origination.band === 'HIGH' ? 'good' : origination.band === 'MEDIUM' ? 'warn' : 'danger'}>
+                      sourcing {formatNumber(origination.scorePct, 0)}%
+                    </Badge>
+                    <Badge tone={origination.exclusivityLabel.startsWith('Live') ? 'good' : 'neutral'}>
+                      {origination.exclusivityLabel}
+                    </Badge>
                     {deal.statusLabel === 'ARCHIVED' ? <Badge>archived</Badge> : null}
                   </div>
                   <p className="mt-4 text-sm leading-7 text-slate-300">
@@ -264,6 +295,9 @@ export default async function DealsPage({ searchParams }: Props) {
                   </p>
                   {snapshot ? <p className="mt-3 text-sm text-slate-500">{snapshot.reminderSummary}</p> : null}
                   {researchCoverage ? <p className="mt-2 text-sm text-slate-500">{researchCoverage.headline}</p> : null}
+                  <p className="mt-2 text-sm text-slate-500">
+                    {origination.sourceLabel} / {origination.relationshipCoverageLabel}
+                  </p>
                 </div>
                 <div className="grid gap-3 text-right md:grid-cols-2 md:text-left xl:grid-cols-4">
                   <div>
@@ -316,6 +350,12 @@ export default async function DealsPage({ searchParams }: Props) {
                     <div className="fine-print">P(Close)</div>
                     <div className="mt-2 text-sm text-white">
                       {formatNumber(closeProbability.scorePct, 0)}% / {closeProbability.band.toLowerCase()}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="fine-print">Sourcing</div>
+                    <div className="mt-2 text-sm text-white">
+                      {formatNumber(origination.scorePct, 0)}% / {origination.band.toLowerCase()}
                     </div>
                   </div>
                 </div>

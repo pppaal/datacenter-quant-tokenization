@@ -1,6 +1,6 @@
 # Platform Readiness Audit
 
-Last updated: 2026-04-07
+Last updated: 2026-04-08
 
 This audit records the current state of `apps/web` as an AI-native Korean real-estate investment-firm OS.
 
@@ -48,13 +48,13 @@ Why:
 ### 3. Deal Execution
 
 - one-operator deal execution flow is coherent
-- bid, lender, DD request, negotiation, close probability, and archive/restore states are modeled
+- bid, lender, DD request, negotiation, sourcing score, exclusivity visibility, structured loss taxonomy, and archive/restore states are modeled
 - this is strong enough for a real single-deal execution workflow
 
 ### 4. Portfolio and Capital Shell
 
-- held-asset KPI, rollover, covenant, capex, and exit tracking exist
-- fund, investor, commitment, capital call, distribution, DDQ, and investor report shell exists
+- held-asset KPI, rollover, covenant, capex, asset-management initiative, and exit tracking exist
+- fund, investor, commitment, capital call, distribution, DDQ, and controlled investor-report release workflow exist
 - operator briefs now turn structured data into decision-ready summaries
 
 ### 5. Blockchain Boundary
@@ -228,8 +228,8 @@ Impact:
 4. Deeper official-source ETL into asset-linked domain tables
 5. Model registry / approval / monitoring
 6. Committee decision capture and approval workflow
-7. Portfolio-side periodic digests and investor-report production workflow hardening
-8. Better daily action center across research, deals, portfolio, and funds
+7. Portfolio-side periodic digests and initiative automation
+8. Better daily action center across research, deals, portfolio, funds, and committee follow-up
 
 ## Practical Conclusion
 

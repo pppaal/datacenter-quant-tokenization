@@ -6,12 +6,14 @@ Current operating layers inside this app:
 
 - research
 - underwriting
+- committee governance
 - deal execution
 - portfolio operations
 - capital formation shell
 
 Research is now a first-class workspace at `/admin/research`, not only a service layer. It uses shared `ResearchSnapshot`, `MarketUniverse`, `Submarket`, `CoverageTask`, `SourceCache`, `ResearchSyncRun`, and approved evidence data so underwriting, deals, portfolio, and fund workflows read the same provenance, freshness, sync-history, and optimization surfaces.
 `/admin/sources` now complements that workspace with explicit source refresh controls, stale asset queue visibility, and persisted `SourceRefreshRun` audit history for operator and cron-triggered refresh jobs.
+`/admin/portfolio/[id]` now adds asset-management initiatives on top of KPI, covenant, rollover, and exit tracking, while `/admin/funds/[id]` now carries a controlled investor-report release workflow with draft, internal-review, ready, and released states.
 
 Registry-only remains explicit:
 
@@ -61,9 +63,12 @@ If you want a one-command local browser path with seeded Postgres on port `5434`
 npm run e2e:local
 ```
 
+`e2e:local` expects Docker Desktop (or another local Docker engine) to be running first because it boots `postgres:16` through `compose.e2e.yml`.
+
 This suite now performs a preflight check first:
 
 - database reachable
+- applies migrations where possible and falls back to `prisma db push` for a transient E2E database when the checked-in migration chain is not replayable on a clean scratch database
 - reseeds the demo set for deterministic runs
 - defaults browser E2E to `BLOCKCHAIN_MOCK_MODE=true` unless you explicitly provide a real registry configuration
 - then Playwright runs
@@ -100,6 +105,7 @@ npm run env:preflight -- ops-worker
 - `/admin/security` now surfaces intervention thresholds, recent failed/stale ops signals, and unresolved reviewer identity bindings so operators can act without digging through raw logs
 - the same security surface now lets admins map unresolved SSO identities onto canonical `User` records, which makes reviewer attribution and operator analytics user-bound instead of identifier-only
 - `/admin/security` also exposes canonical operator seats with active/inactive status, targeted session revocation, queued and dead-letter ops work with requeue actions, a replayable alert intervention queue, and recent ops alert delivery attempts, so seat lifecycle and webhook monitoring are visible in one place
+- `/admin/ic` now acts as the committee-governance surface for scheduled meetings, locked packets, released decisions, and packaging candidates
 - `ops:preflight` runs prisma generate, typecheck, unit tests, build, and browser suite registration in one command
 
 ## Session Access
@@ -158,6 +164,7 @@ Core entities added for execution work:
 What the workflow supports:
 
 - deal list with stage, next action, open tasks, and open risks
+- sourcing score, origination source tags, relationship ownership, and live exclusivity visibility on the deal list
 - active / actionable / archived views on the deal list
 - deal detail page for one-operator execution
 - deal detail page includes scoped document upload so DD auto-match stays inside the live execution record
@@ -174,12 +181,12 @@ What the workflow supports:
 - next action and close date tracking
 - overdue / due-soon reminder cues for solo execution
 - broker / seller / buyer notes
-- counterparty tracking
+- counterparty tracking with coverage owner, primary / backup status, and last-touch logging
 - task queue
 - risk flag queue
 - restore from archive when a process needs to be reopened
 - combined deal activity + valuation timeline on the detail page
-- archive and close-out actions with final summary logging
+- archive and close-out actions with final summary logging and structured loss taxonomy
 
 Required migration for the deal execution workflow:
 

@@ -12,6 +12,7 @@ const navItems: Array<AdminNavItem & { minimumRole: AdminAccessRole }> = [
   { href: '/admin/assets', label: 'Assets', minimumRole: 'VIEWER' },
   { href: '/admin/valuations', label: 'Valuations', minimumRole: 'VIEWER' },
   { href: '/admin/deals', label: 'Deals', minimumRole: 'ANALYST' },
+  { href: '/admin/ic', label: 'IC', minimumRole: 'ANALYST' },
   { href: '/admin/portfolio', label: 'Portfolio', minimumRole: 'ANALYST' },
   { href: '/admin/funds', label: 'Funds', minimumRole: 'ANALYST' },
   { href: '/admin/investors', label: 'Investors', minimumRole: 'ANALYST' },

@@ -117,6 +117,9 @@ export type ResearchWorkspaceData = {
     freshnessBadge: string;
     sourceFreshnessTone: 'good' | 'warn' | 'danger';
     openCoverageTasks: number;
+    confidenceScore: number;
+    confidenceLevel: 'high' | 'moderate' | 'low';
+    conflictCount: number;
   }>;
   optimization: Array<{
     portfolioId: string;
@@ -1554,7 +1557,10 @@ export async function getResearchWorkspaceData(db: PrismaClient = prisma): Promi
         latestValuationId: dossier.latestValuationId,
         freshnessBadge: dossier.freshness.headline,
         sourceFreshnessTone: getFreshnessTone(dossier.freshness.status),
-        openCoverageTasks: dossier.coverage.openTaskCount
+        openCoverageTasks: dossier.coverage.openTaskCount,
+        confidenceScore: dossier.confidence.score,
+        confidenceLevel: dossier.confidence.level,
+        conflictCount: dossier.confidence.conflicts.length
       };
     }),
     optimization: portfolios.map((portfolio) => {

@@ -192,6 +192,32 @@ enum DealNegotiationEventType {
   PROCESS_UPDATE
 }
 
+enum DealOriginationSource {
+  BROKERED
+  DIRECT_OWNER
+  LENDER_CHANNEL
+  ADVISOR
+  PROPRIETARY
+  INBOUND
+}
+
+enum DealLossReason {
+  PRICE
+  EXECUTION
+  COMPETITION
+  TIMING
+  FINANCING
+  IC_DECLINE
+  STRATEGY
+  OTHER
+}
+
+enum RelationshipCoverageStatus {
+  PRIMARY
+  BACKUP
+  PASSIVE
+}
+
 enum PortfolioAssetStatus {
   ACTIVE
   WATCHLIST
@@ -265,6 +291,37 @@ enum InvestorReportType {
   OTHER
 }
 
+enum InvestorReportReleaseStatus {
+  DRAFT
+  INTERNAL_REVIEW
+  READY
+  RELEASED
+}
+
+enum CommitteeMeetingStatus {
+  DRAFT
+  SCHEDULED
+  HELD
+  CLOSED
+}
+
+enum CommitteePacketStatus {
+  DRAFT
+  READY
+  LOCKED
+  APPROVED
+  CONDITIONAL
+  DECLINED
+  RELEASED
+}
+
+enum CommitteeDecisionOutcome {
+  APPROVED
+  CONDITIONAL
+  DECLINED
+  DEFERRED
+}
+
 model User {
   id            String            @id @default(cuid())
   name          String
@@ -288,6 +345,8 @@ model User {
   adminSessions                   AdminSession[]
   adminAccessGrants               AdminAccessGrant[]
   adminProvisioningBindings       AdminProvisioningBinding[]
+  reviewedInvestorReports         InvestorReport[]       @relation("InvestorReportReviewedBy")
+  releasedInvestorReports         InvestorReport[]       @relation("InvestorReportReleasedBy")
 }
 
 model AdminIdentityBinding {
@@ -435,6 +494,7 @@ model Asset {
   financialStatements   FinancialStatement[]
   creditAssessments     CreditAssessment[]
   portfolioAssets       PortfolioAsset[]
+  committeePackets      InvestmentCommitteePacket[]
 }
 
 model Address {
@@ -622,6 +682,7 @@ model ValuationRun {
   scenarios        ValuationScenario[]
   sensitivityRuns  SensitivityRun[]
   aiInsights       AiInsight[]
+  committeePackets InvestmentCommitteePacket[]
 }
 
 model ValuationScenario {
@@ -915,6 +976,9 @@ model Counterparty {
   company             String?
   email               String?
   phone               String?
+  coverageOwner       String?
+  coverageStatus      RelationshipCoverageStatus @default(PASSIVE)
+  lastContactAt       DateTime?
   notes               String?
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
@@ -950,10 +1014,13 @@ model Deal {
   sellerGuidanceKrw Float?
   bidGuidanceKrw   Float?
   purchasePriceKrw Float?
+  originationSource DealOriginationSource?
+  originSummary    String?
   statusLabel      String        @default("ACTIVE")
   archivedAt       DateTime?
   closedAt         DateTime?
   closeOutcome     String?
+  lossReason       DealLossReason?
   closeSummary     String?
   dealLead         String?
   assetId          String?
@@ -969,9 +1036,73 @@ model Deal {
   riskFlags        RiskFlag[]
   activityLogs     ActivityLog[]
   probabilitySnapshots DealExecutionProbabilitySnapshot[]
+  committeePackets InvestmentCommitteePacket[]
 
   @@index([stage, targetCloseDate])
   @@index([market, assetClass, stage])
+}
+
+model InvestmentCommitteeMeeting {
+  id           String                 @id @default(cuid())
+  code         String                 @unique
+  title        String
+  status       CommitteeMeetingStatus @default(DRAFT)
+  scheduledFor DateTime?
+  heldAt       DateTime?
+  venueLabel   String?
+  summary      String?
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+  packets      InvestmentCommitteePacket[]
+
+  @@index([status, scheduledFor])
+}
+
+model InvestmentCommitteePacket {
+  id                     String                @id @default(cuid())
+  meetingId              String?
+  assetId                String?
+  dealId                 String?
+  valuationRunId         String?
+  title                  String
+  packetCode             String                @unique
+  status                 CommitteePacketStatus @default(DRAFT)
+  packetFingerprint      String?
+  reportFingerprint      String?
+  reviewPacketFingerprint String?
+  preparedByLabel        String?
+  scheduledFor           DateTime?
+  lockedAt               DateTime?
+  releasedAt             DateTime?
+  decisionSummary        String?
+  followUpSummary        String?
+  createdAt              DateTime              @default(now())
+  updatedAt              DateTime              @updatedAt
+  meeting                InvestmentCommitteeMeeting? @relation(fields: [meetingId], references: [id], onDelete: SetNull)
+  asset                  Asset?                @relation(fields: [assetId], references: [id], onDelete: SetNull)
+  deal                   Deal?                 @relation(fields: [dealId], references: [id], onDelete: SetNull)
+  valuationRun           ValuationRun?         @relation(fields: [valuationRunId], references: [id], onDelete: SetNull)
+  decisions              InvestmentCommitteeDecision[]
+
+  @@index([meetingId, status, scheduledFor])
+  @@index([assetId, createdAt])
+  @@index([dealId, createdAt])
+  @@index([valuationRunId, createdAt])
+}
+
+model InvestmentCommitteeDecision {
+  id              String                   @id @default(cuid())
+  packetId        String
+  outcome         CommitteeDecisionOutcome
+  decidedAt       DateTime                 @default(now())
+  decidedByLabel  String?
+  notes           String?
+  followUpActions String?
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+  packet          InvestmentCommitteePacket @relation(fields: [packetId], references: [id], onDelete: Cascade)
+
+  @@index([packetId, decidedAt])
 }
 
 model DealExecutionProbabilitySnapshot {
@@ -2028,6 +2159,7 @@ model PortfolioAsset {
   portfolio            Portfolio            @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
   asset                Asset                @relation(fields: [assetId], references: [id], onDelete: Cascade)
   businessPlans        BusinessPlan[]
+  initiatives          AssetManagementInitiative[]
   monthlyKpis          MonthlyAssetKpi[]
   leaseRollSnapshots   LeaseRollSnapshot[]
   budgets              Budget[]
@@ -2037,6 +2169,27 @@ model PortfolioAsset {
 
   @@unique([portfolioId, assetId])
   @@index([status, updatedAt])
+}
+
+model AssetManagementInitiative {
+  id               String         @id @default(cuid())
+  portfolioAssetId String
+  title            String
+  category         String?
+  status           TaskStatus     @default(OPEN)
+  priority         TaskPriority   @default(MEDIUM)
+  ownerName        String?
+  targetDate       DateTime?
+  completedAt      DateTime?
+  summary          String?
+  blockerSummary   String?
+  nextStep         String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  portfolioAsset   PortfolioAsset @relation(fields: [portfolioAssetId], references: [id], onDelete: Cascade)
+
+  @@index([portfolioAssetId, status, priority])
+  @@index([targetDate, status])
 }
 
 model BusinessPlan {
@@ -2338,18 +2491,27 @@ model InvestorReport {
   fundId        String
   investorId    String?
   reportType   InvestorReportType @default(QUARTERLY_UPDATE)
+  releaseStatus InvestorReportReleaseStatus @default(DRAFT)
   title        String
   periodEnd    DateTime?
+  draftSummary String?
+  reviewNotes  String?
+  reviewedAt   DateTime?
+  reviewedById String?
   publishedAt  DateTime?
+  releasedById String?
   storagePath  String?
   notes        String?
   createdAt    DateTime           @default(now())
   updatedAt    DateTime           @updatedAt
   fund         Fund               @relation(fields: [fundId], references: [id], onDelete: Cascade)
   investor     Investor?          @relation(fields: [investorId], references: [id], onDelete: SetNull)
+  reviewedBy   User?              @relation("InvestorReportReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
+  releasedBy   User?              @relation("InvestorReportReleasedBy", fields: [releasedById], references: [id], onDelete: SetNull)
 
   @@index([fundId, reportType, periodEnd])
   @@index([investorId, reportType, periodEnd])
+  @@index([fundId, releaseStatus, periodEnd])
 }
 
 model DdqResponse {

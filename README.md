@@ -11,7 +11,7 @@ Browser operators now enter through `/admin/login` using a signed session cookie
 ## Product Surface
 
 - Public pages: `/`, `/product`, `/sample-report`
-- Admin pages: `/admin`, `/admin/research`, `/admin/deals`, `/admin/assets`, `/admin/assets/new`, `/admin/assets/[id]`, `/admin/review`, `/admin/valuations`, `/admin/documents`, `/admin/sources`, `/admin/portfolio`, `/admin/portfolio/[id]`, `/admin/funds`, `/admin/funds/[id]`, `/admin/investors`, `/admin/registry`
+- Admin pages: `/admin`, `/admin/research`, `/admin/deals`, `/admin/ic`, `/admin/assets`, `/admin/assets/new`, `/admin/assets/[id]`, `/admin/review`, `/admin/valuations`, `/admin/documents`, `/admin/sources`, `/admin/portfolio`, `/admin/portfolio/[id]`, `/admin/funds`, `/admin/funds/[id]`, `/admin/investors`, `/admin/registry`
 - Core models: `Asset`, `SiteProfile`, `Address`, `BuildingSnapshot`, `PermitSnapshot`, `EnergySnapshot`, `MarketSnapshot`, `ValuationRun`, `ValuationScenario`, `Document`, `Inquiry`, `User`, `RwaProject`, `OnchainRecord`
 
 ## Quick Start
@@ -116,16 +116,18 @@ The current product stance is:
 ## Investment-Firm Operating Layers
 
 - `Research`
-  - `/admin/research` for macro, market, submarket, asset dossier, portfolio optimization, and coverage-queue research fabric with provenance, freshness, and explicit sync controls
+  - `/admin/research` for macro, market, submarket, asset dossier, portfolio optimization, and coverage-queue research fabric with provenance, freshness, confidence/conflict signals, and explicit sync controls
   - `/admin/sources` for source freshness, stale asset queue, and recent source refresh run history
 - `Underwriting`
   - review-gated evidence, promoted features, valuation, committee memo, DD checklist, and risk memo
 - `Deal Execution`
-  - `/admin/deals` for next actions, lender quotes, bids, diligence requests, and close-probability snapshots
+  - `/admin/deals` for next actions, sourcing score, origination source, relationship coverage, lender quotes, bids, exclusivity state, loss taxonomy, and close-probability snapshots
+- `IC Governance`
+  - `/admin/ic` for scheduled meetings, locked packets, released decision records, and committee packaging candidates
 - `Portfolio Operations`
-  - `/admin/portfolio` for held-asset KPI history, lease rollover watchlists, covenant tracking, capex vs budget, exit cases, and quantum-inspired scenario exploration
+  - `/admin/portfolio` for held-asset KPI history, lease rollover watchlists, covenant tracking, capex vs budget, asset-management initiatives, exit cases, and quantum-inspired scenario exploration
 - `Capital Formation Shell`
-  - `/admin/funds`, `/admin/funds/[id]`, and `/admin/investors` for fund, vehicle, investor, commitment, call, distribution, reporting, and DDQ shells
+  - `/admin/funds`, `/admin/funds/[id]`, and `/admin/investors` for fund, vehicle, investor, commitment, call, distribution, controlled report-release workflow, and DDQ shells
 
 ## Deliverables In Repo
 

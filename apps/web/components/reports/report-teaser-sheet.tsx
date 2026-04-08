@@ -90,7 +90,7 @@ export function ReportTeaserSheet({
         <div className="mt-6 grid gap-5 xl:grid-cols-[1.08fr_0.92fr]">
           <div className="space-y-5">
             <div>
-              <div className="eyebrow">Distressed One-Page Teaser</div>
+              <div className="eyebrow">Institutional One-Page Teaser</div>
               <h1 className="mt-3 text-5xl font-semibold leading-[0.96] tracking-[-0.05em] text-white md:text-6xl">
                 {assetName}
               </h1>
@@ -134,7 +134,7 @@ export function ReportTeaserSheet({
           <div className="mt-5">{renderBody(situation)}</div>
           {situation?.bullets?.length ? (
             <div className="mt-5">
-              <div className="fine-print">Current distress context</div>
+              <div className="fine-print">Current opportunity context</div>
               <div className="mt-3">{renderBulletList(situation)}</div>
             </div>
           ) : null}

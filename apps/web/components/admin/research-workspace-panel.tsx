@@ -241,6 +241,20 @@ export function ResearchWorkspacePanel({ data, activeTab }: Props) {
                     <Badge tone={asset.openCoverageTasks > 0 ? 'warn' : 'good'}>
                       {asset.openCoverageTasks} open tasks
                     </Badge>
+                    <Badge
+                      tone={
+                        asset.confidenceLevel === 'high'
+                          ? 'good'
+                          : asset.confidenceLevel === 'moderate'
+                            ? 'warn'
+                            : 'danger'
+                      }
+                    >
+                      confidence {asset.confidenceScore}%
+                    </Badge>
+                    <Badge tone={asset.conflictCount > 0 ? 'warn' : 'good'}>
+                      {asset.conflictCount} conflict{asset.conflictCount === 1 ? '' : 's'}
+                    </Badge>
                   </div>
                 </div>
                 <p className="mt-3 text-sm leading-7 text-slate-400">{asset.marketThesis}</p>

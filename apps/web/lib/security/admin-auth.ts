@@ -192,6 +192,7 @@ const analystAdminPaths = [
   '/admin/deals',
   '/admin/documents',
   '/admin/funds',
+  '/admin/ic',
   '/admin/investors',
   '/admin/macro-profiles',
   '/admin/portfolio',

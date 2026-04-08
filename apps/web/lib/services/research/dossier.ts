@@ -169,6 +169,132 @@ type ResearchAssetLike = {
   [key: string]: unknown;
 };
 
+type ResearchConfidenceConflict = {
+  label: string;
+  detail: string;
+  severity: 'warn' | 'danger';
+};
+
+function roundMetric(value: number) {
+  return Number(value.toFixed(0));
+}
+
+function parseIndicatorFamily(indicatorKey: string) {
+  const normalized = indicatorKey.toLowerCase();
+  if (normalized.includes('vacancy')) return 'vacancy';
+  if (normalized.includes('cap_rate')) return 'cap_rate';
+  if (normalized.includes('discount_rate')) return 'discount_rate';
+  if (normalized.includes('rent_growth')) return 'rent_growth';
+  if (normalized.includes('land_price')) return 'land_price';
+  return null;
+}
+
+function latestIndicatorValue(asset: ResearchAssetLike, family: string) {
+  return (asset.marketIndicatorSeries ?? []).find((indicator) => parseIndicatorFamily(indicator.indicatorKey) === family)?.value ?? null;
+}
+
+function median(values: Array<number | null | undefined>) {
+  const observed = values.filter((value): value is number => typeof value === 'number').sort((a, b) => a - b);
+  if (observed.length === 0) return null;
+  const middle = Math.floor(observed.length / 2);
+  return observed.length % 2 === 0 ? (observed[middle - 1] + observed[middle]) / 2 : observed[middle];
+}
+
+function deriveResearchConflicts(asset: ResearchAssetLike) {
+  const conflicts: ResearchConfidenceConflict[] = [];
+  const officialVacancy = latestIndicatorValue(asset, 'vacancy');
+  const officialCapRate = latestIndicatorValue(asset, 'cap_rate');
+  const officialDiscountRate = latestIndicatorValue(asset, 'discount_rate');
+  const snapshotVacancy = asset.marketSnapshot?.vacancyPct ?? null;
+  const snapshotCapRate = asset.marketSnapshot?.capRatePct ?? null;
+  const snapshotDiscountRate = asset.marketSnapshot?.discountRatePct ?? null;
+  const transactionCapRateMedian = median((asset.transactionComps ?? []).map((item) => item.capRatePct));
+
+  if (snapshotVacancy != null && officialVacancy != null && Math.abs(snapshotVacancy - officialVacancy) >= 2.5) {
+    conflicts.push({
+      label: 'Vacancy disagreement',
+      detail: `Market snapshot vacancy ${snapshotVacancy.toFixed(1)}% differs from official coverage at ${officialVacancy.toFixed(1)}%.`,
+      severity: Math.abs(snapshotVacancy - officialVacancy) >= 4 ? 'danger' : 'warn'
+    });
+  }
+
+  if (snapshotCapRate != null && officialCapRate != null && Math.abs(snapshotCapRate - officialCapRate) >= 0.5) {
+    conflicts.push({
+      label: 'Cap-rate disagreement',
+      detail: `Market snapshot cap rate ${snapshotCapRate.toFixed(1)}% differs from official coverage at ${officialCapRate.toFixed(1)}%.`,
+      severity: Math.abs(snapshotCapRate - officialCapRate) >= 0.9 ? 'danger' : 'warn'
+    });
+  }
+
+  if (snapshotCapRate != null && transactionCapRateMedian != null && Math.abs(snapshotCapRate - transactionCapRateMedian) >= 0.6) {
+    conflicts.push({
+      label: 'Comp calibration drift',
+      detail: `Market snapshot cap rate ${snapshotCapRate.toFixed(1)}% is off the median transaction-comp cap rate of ${transactionCapRateMedian.toFixed(1)}%.`,
+      severity: Math.abs(snapshotCapRate - transactionCapRateMedian) >= 1 ? 'danger' : 'warn'
+    });
+  }
+
+  if (
+    snapshotDiscountRate != null &&
+    officialDiscountRate != null &&
+    Math.abs(snapshotDiscountRate - officialDiscountRate) >= 0.75
+  ) {
+    conflicts.push({
+      label: 'Discount-rate disagreement',
+      detail: `Market snapshot discount rate ${snapshotDiscountRate.toFixed(1)}% differs from official coverage at ${officialDiscountRate.toFixed(1)}%.`,
+      severity: Math.abs(snapshotDiscountRate - officialDiscountRate) >= 1.25 ? 'danger' : 'warn'
+    });
+  }
+
+  return conflicts.slice(0, 4);
+}
+
+function deriveResearchConfidence(args: {
+  asset: ResearchAssetLike;
+  reviewSummary: ReturnType<typeof buildAssetEvidenceReviewSummary>;
+  freshestSnapshot: ResearchSnapshotLike | null;
+  provenanceSources: string[];
+  openCoverageTaskCount: number;
+  officialHighlightCount: number;
+}) {
+  const { asset, reviewSummary, freshestSnapshot, provenanceSources, openCoverageTaskCount, officialHighlightCount } = args;
+  let score = 72;
+
+  if (freshestSnapshot?.freshnessStatus === SourceStatus.STALE) score -= 12;
+  if (freshestSnapshot?.freshnessStatus === SourceStatus.FAILED) score -= 24;
+  if (!freshestSnapshot) score -= 14;
+  score -= Math.min(reviewSummary.pendingBlockers.length * 8, 24);
+  score -= Math.min(openCoverageTaskCount * 4, 16);
+  score += Math.min(provenanceSources.length * 2, 8);
+  score += Math.min(reviewSummary.approvedCoverageCount * 2, 10);
+  if ((asset.transactionComps?.length ?? 0) === 0) score -= 8;
+  if ((asset.rentComps?.length ?? 0) === 0) score -= 6;
+  if (officialHighlightCount === 0) score -= 6;
+
+  const conflicts = deriveResearchConflicts(asset);
+  score -= conflicts.reduce((total, item) => total + (item.severity === 'danger' ? 8 : 4), 0);
+
+  const boundedScore = Math.max(18, Math.min(95, roundMetric(score)));
+  const level: 'high' | 'moderate' | 'low' =
+    boundedScore >= 78 ? 'high' : boundedScore >= 58 ? 'moderate' : 'low';
+  const thesisAgeDays = freshestSnapshot
+    ? Math.max(0, Math.round((Date.now() - freshestSnapshot.snapshotDate.getTime()) / (1000 * 60 * 60 * 24)))
+    : null;
+
+  return {
+    score: boundedScore,
+    level,
+    thesisAgeDays,
+    headline:
+      level === 'high'
+        ? 'Research confidence is strong enough for committee circulation.'
+        : level === 'moderate'
+          ? 'Research confidence is usable, but gaps should be cleared before heavy reliance.'
+          : 'Research confidence is below committee-ready threshold and needs more coverage.',
+    conflicts
+  };
+}
+
 function deriveFallbackFreshness(asset: ResearchAssetLike) {
   const candidates: Array<Date | null | undefined> = [
     asset.marketIndicatorSeries?.[0]?.observationDate,
@@ -211,8 +337,26 @@ export function buildAssetResearchDossier(asset: ResearchAssetLike) {
       researchSnapshots
         .map((snapshot) => snapshot.sourceSystem)
         .filter((value): value is string => Boolean(value))
-    )
+      )
   ];
+  const officialSourceHighlights = researchSnapshots
+    .filter((snapshot) => snapshot.snapshotType === 'market-official-source' || snapshot.snapshotType === 'official-source')
+    .flatMap((snapshot) =>
+      extractSnapshotHighlights(snapshot.metrics).map((item) => ({
+        ...item,
+        sourceSystem: snapshot.sourceSystem ?? 'research',
+        freshnessLabel: snapshot.freshnessLabel ?? 'unknown'
+      }))
+    )
+    .slice(0, 6);
+  const confidence = deriveResearchConfidence({
+    asset,
+    reviewSummary,
+    freshestSnapshot,
+    provenanceSources,
+    openCoverageTaskCount: openCoverageTasks.length,
+    officialHighlightCount: officialSourceHighlights.length
+  });
 
   return {
     playbook: {
@@ -257,17 +401,9 @@ export function buildAssetResearchDossier(asset: ResearchAssetLike) {
       latestSnapshotTitle: freshestSnapshot?.title ?? 'Asset dossier coverage',
       latestSnapshotDate: freshestSnapshot?.snapshotDate ?? fallbackFreshness.observedAt
     },
+    confidence,
     officialSources: {
-      highlights: researchSnapshots
-        .filter((snapshot) => snapshot.snapshotType === 'market-official-source' || snapshot.snapshotType === 'official-source')
-        .flatMap((snapshot) =>
-          extractSnapshotHighlights(snapshot.metrics).map((item) => ({
-            ...item,
-            sourceSystem: snapshot.sourceSystem ?? 'research',
-            freshnessLabel: snapshot.freshnessLabel ?? 'unknown'
-          }))
-        )
-        .slice(0, 6)
+      highlights: officialSourceHighlights
     },
     coverage: {
       openTaskCount: openCoverageTasks.length,

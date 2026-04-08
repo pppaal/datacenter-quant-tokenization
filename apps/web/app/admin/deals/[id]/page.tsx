@@ -21,6 +21,7 @@ import {
   buildDealClosingReadiness,
   buildDealDataCoverage,
   buildDealExecutionSnapshot,
+  buildDealOriginationProfile,
   buildDealTimeline,
   getDealById
 } from '@/lib/services/deals';
@@ -60,6 +61,7 @@ export default async function DealDetailPage({ params }: Props) {
   const coverage = buildDealDataCoverage(deal, snapshot);
   const closingReadiness = buildDealClosingReadiness(deal, snapshot);
   const closeProbability = buildDealCloseProbability(deal, snapshot, closingReadiness);
+  const origination = buildDealOriginationProfile(deal, snapshot);
   const closeProbabilityHistory = buildDealCloseProbabilityHistory(deal, {
     readiness: closingReadiness,
     probability: closeProbability
@@ -134,6 +136,13 @@ export default async function DealDetailPage({ params }: Props) {
                 </p>
               </div>
               <div className="metric-card">
+                <div className="fine-print">Origination</div>
+                <div className="mt-3 text-base font-semibold text-white">{origination.sourceLabel}</div>
+                <p className="mt-2 text-sm text-slate-400">
+                  sourcing {origination.scorePct.toFixed(0)}% / {origination.exclusivityLabel}
+                </p>
+              </div>
+              <div className="metric-card">
                 <div className="fine-print">Latest Valuation</div>
                 <div className="mt-3 text-base font-semibold text-white">
                   {latestValuation ? formatCurrency(latestValuation.baseCaseValueKrw) : 'No run yet'}
@@ -187,7 +196,7 @@ export default async function DealDetailPage({ params }: Props) {
         </div>
       </div>
 
-      <DealOperatorConsole deal={deal} snapshot={snapshot} />
+      <DealOperatorConsole deal={deal} snapshot={snapshot} origination={origination} />
 
       <DealClosingReadinessPanel readiness={closingReadiness} probability={closeProbability} />
 

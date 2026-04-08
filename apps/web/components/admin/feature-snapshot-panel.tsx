@@ -42,7 +42,7 @@ export function FeatureSnapshotPanel({
   emptyMessage = 'No approved feature snapshots yet. Approve normalized evidence or run enrichment before using this asset in committee material.'
 }: Props) {
   return (
-    <Card>
+    <Card data-testid="feature-snapshot-panel">
       <div className="flex items-center justify-between gap-3">
         <div>
           <div className="eyebrow">{title}</div>

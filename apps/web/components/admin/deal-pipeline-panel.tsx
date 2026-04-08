@@ -11,6 +11,11 @@ type DealPipelineSummary = {
   urgentDeals: number;
   blockedDeals: number;
   closingDeals: number;
+  directOrProprietaryDeals: number;
+  liveExclusivityDeals: number;
+  lowOriginationCoverageDeals: number;
+  processProtectionGapDeals: number;
+  relationshipCoverageGapDeals: number;
   byStage: Array<{
     stage: DealStage;
     count: number;
@@ -28,6 +33,11 @@ type DealPipelineSummary = {
     readinessBlockerCount: number;
     closeProbabilityPct: number;
     closeProbabilityBand: 'LOW' | 'MEDIUM' | 'HIGH';
+    originationScorePct: number;
+    originationBand: 'LOW' | 'MEDIUM' | 'HIGH';
+    sourceLabel: string;
+    relationshipCoverageLabel: string;
+    exclusivityLabel: string;
     latestCounterpartyRoles: string[];
     latestValuation: {
       id: string;
@@ -55,7 +65,7 @@ export function DealPipelinePanel({ summary }: Props) {
         </Link>
       </div>
 
-      <div className="mt-5 grid gap-4 md:grid-cols-4">
+      <div className="mt-5 grid gap-4 md:grid-cols-4 xl:grid-cols-5">
         <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
           <div className="fine-print">Tracked Deals</div>
           <div className="mt-3 text-3xl font-semibold text-white">{formatNumber(summary.totalDeals, 0)}</div>
@@ -71,6 +81,15 @@ export function DealPipelinePanel({ summary }: Props) {
         <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
           <div className="fine-print">Closing</div>
           <div className="mt-3 text-3xl font-semibold text-white">{formatNumber(summary.closingDeals, 0)}</div>
+        </div>
+        <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+          <div className="fine-print">Origination Gaps</div>
+          <div className="mt-3 text-3xl font-semibold text-white">
+            {formatNumber(summary.lowOriginationCoverageDeals + summary.processProtectionGapDeals, 0)}
+          </div>
+          <p className="mt-2 text-sm text-slate-400">
+            {formatNumber(summary.directOrProprietaryDeals, 0)} direct/proprietary and {formatNumber(summary.liveExclusivityDeals, 0)} live exclusivity
+          </p>
         </div>
       </div>
 
@@ -127,10 +146,26 @@ export function DealPipelinePanel({ summary }: Props) {
                   </div>
                 </div>
                 <div>
+                  <div className="fine-print">Sourcing</div>
+                  <div className="mt-1">
+                    {formatNumber(deal.originationScorePct, 0)}% / {deal.originationBand.toLowerCase()}
+                  </div>
+                </div>
+                <div>
                   <div className="fine-print">Valuation</div>
                   <div className="mt-1">
                     {deal.latestValuation ? `${formatNumber(deal.latestValuation.confidenceScore, 0)} / ${formatDate(deal.latestValuation.createdAt)}` : 'No run'}
                   </div>
+                </div>
+                <div className="md:col-span-4">
+                  <div className="fine-print">Origin</div>
+                  <div className="mt-1">
+                    {deal.sourceLabel} / {deal.exclusivityLabel}
+                  </div>
+                </div>
+                <div className="md:col-span-4">
+                  <div className="fine-print">Coverage</div>
+                  <div className="mt-1">{deal.relationshipCoverageLabel}</div>
                 </div>
                 <div className="md:col-span-4">
                   <div className="fine-print">Roles</div>

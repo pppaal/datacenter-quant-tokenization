@@ -1,10 +1,13 @@
 import {
   ActivityType,
   DealBidStatus,
+  DealLossReason,
+  DealOriginationSource,
   DealRequestStatus,
   DealStage,
   DocumentType,
   Prisma,
+  RelationshipCoverageStatus,
   RiskSeverity,
   TaskPriority,
   TaskStatus,
@@ -12,7 +15,7 @@ import {
 } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { dealStageChecklistTemplates } from '@/lib/deals/config';
-import { slugify } from '@/lib/utils';
+import { slugify, toSentenceCase } from '@/lib/utils';
 import {
   dealArchiveSchema,
   dealActivitySchema,
@@ -20,6 +23,7 @@ import {
   dealBidRevisionUpdateSchema,
   dealCloseOutSchema,
   dealCounterpartySchema,
+  dealCounterpartyUpdateSchema,
   dealCreateSchema,
   dealDocumentRequestCreateSchema,
   dealDocumentRequestUpdateSchema,
@@ -106,7 +110,11 @@ export const dealListInclude = Prisma.validator<Prisma.DealInclude>()({
   counterparties: {
     select: {
       id: true,
-      role: true
+      name: true,
+      role: true,
+      coverageOwner: true,
+      coverageStatus: true,
+      lastContactAt: true
     },
     orderBy: {
       createdAt: 'asc'
@@ -231,6 +239,39 @@ export const dealDetailInclude = Prisma.validator<Prisma.DealInclude>()({
         orderBy: {
           createdAt: 'desc'
         }
+      },
+      researchSnapshots: {
+        select: {
+          id: true,
+          title: true,
+          summary: true,
+          freshnessStatus: true,
+          freshnessLabel: true,
+          snapshotDate: true,
+          sourceSystem: true
+        },
+        take: 6,
+        orderBy: {
+          snapshotDate: 'desc'
+        }
+      },
+      coverageTasks: {
+        select: {
+          id: true,
+          title: true,
+          status: true,
+          priority: true,
+          freshnessLabel: true,
+          notes: true,
+          updatedAt: true
+        },
+        where: {
+          status: {
+            not: TaskStatus.DONE
+          }
+        },
+        take: 8,
+        orderBy: [{ priority: 'desc' }, { updatedAt: 'desc' }]
       }
     }
   },
@@ -733,6 +774,8 @@ export async function createDeal(input: unknown, db: PrismaClient = prisma) {
           sellerGuidanceKrw: parsed.sellerGuidanceKrw ?? null,
           bidGuidanceKrw: parsed.bidGuidanceKrw ?? null,
           purchasePriceKrw: parsed.purchasePriceKrw ?? linkedAsset?.purchasePriceKrw ?? null,
+          originationSource: parsed.originationSource ?? null,
+          originSummary: parsed.originSummary ?? null,
           statusLabel: parsed.statusLabel ?? 'ACTIVE',
           dealLead: parsed.dealLead ?? 'solo_operator',
           assetId: parsed.assetId ?? null
@@ -799,7 +842,11 @@ export async function updateDeal(id: string, input: unknown, db: PrismaClient = 
       sellerGuidanceKrw: parsed.sellerGuidanceKrw ?? undefined,
       bidGuidanceKrw: parsed.bidGuidanceKrw ?? undefined,
       purchasePriceKrw: parsed.purchasePriceKrw ?? undefined,
+      originationSource:
+        parsed.originationSource === undefined ? undefined : parsed.originationSource,
+      originSummary: parsed.originSummary ?? undefined,
       statusLabel: parsed.statusLabel ?? undefined,
+      lossReason: parsed.lossReason === undefined ? undefined : parsed.lossReason,
       closeOutcome: parsed.closeOutcome ?? undefined,
       closeSummary: parsed.closeSummary ?? undefined,
       dealLead: parsed.dealLead ?? undefined
@@ -891,6 +938,9 @@ export async function createDealCounterparty(dealId: string, input: unknown, db:
       company: parsed.company ?? null,
       email: parsed.email ?? null,
       phone: parsed.phone ?? null,
+      coverageOwner: parsed.coverageOwner ?? null,
+      coverageStatus: parsed.coverageStatus,
+      lastContactAt: parsed.lastContactAt ?? null,
       notes: parsed.notes ?? null
     }
   });
@@ -905,6 +955,52 @@ export async function createDealCounterparty(dealId: string, input: unknown, db:
 
   await recordDealProbabilitySnapshot(dealId, 'counterparty_added', db);
   return counterparty;
+}
+
+export async function updateDealCounterparty(
+  dealId: string,
+  counterpartyId: string,
+  input: unknown,
+  db: PrismaClient = prisma
+) {
+  const parsed = dealCounterpartyUpdateSchema.parse(input);
+  const counterparty = await db.counterparty.findFirst({
+    where: {
+      id: counterpartyId,
+      dealId
+    }
+  });
+
+  if (!counterparty) throw new Error('Counterparty not found for this deal');
+
+  const updated = await db.counterparty.update({
+    where: {
+      id: counterpartyId
+    },
+    data: {
+      name: parsed.name ?? undefined,
+      role: parsed.role ? parsed.role.toUpperCase() : undefined,
+      shortName: parsed.shortName ?? undefined,
+      company: parsed.company ?? undefined,
+      email: parsed.email ?? undefined,
+      phone: parsed.phone ?? undefined,
+      coverageOwner: parsed.coverageOwner ?? undefined,
+      coverageStatus: parsed.coverageStatus ?? undefined,
+      lastContactAt: parsed.lastContactAt ?? undefined,
+      notes: parsed.notes ?? undefined
+    }
+  });
+
+  await createActivityLog(db, {
+    dealId,
+    activityType: ActivityType.GENERAL,
+    counterpartyId,
+    title: 'Counterparty coverage updated',
+    body: `${updated.name} coverage updated for ${(updated.role ?? counterparty.role).toLowerCase()}.`
+  });
+
+  await recordDealProbabilitySnapshot(dealId, 'counterparty_updated', db);
+  return updated;
 }
 
 async function getNextTaskSortOrder(dealId: string, db: PrismaClient) {
@@ -1840,6 +1936,7 @@ export async function restoreDeal(dealId: string, input: unknown, db: PrismaClie
       archivedAt: null,
       closedAt: deal.statusLabel === 'CLOSED_LOST' ? null : deal.closedAt,
       closeOutcome: deal.statusLabel === 'CLOSED_LOST' ? null : deal.closeOutcome,
+      lossReason: deal.statusLabel === 'CLOSED_LOST' ? null : deal.lossReason,
       nextAction: deal.nextAction ?? getDefaultNextAction(deal.stage)
     }
   });
@@ -1876,6 +1973,7 @@ export async function closeOutDeal(dealId: string, input: unknown, db: PrismaCli
       statusLabel: parsed.outcome,
       closedAt: new Date(),
       closeOutcome: parsed.outcome,
+      lossReason: parsed.outcome === 'CLOSED_LOST' ? parsed.lossReason ?? DealLossReason.OTHER : null,
       closeSummary: parsed.summary,
       nextAction: parsed.outcome === 'CLOSED_WON' ? 'Transition execution items into asset management.' : null,
       archivedAt: parsed.outcome === 'CLOSED_LOST' ? new Date() : null
@@ -2474,6 +2572,136 @@ export function buildDealCloseProbability(
           ? 'Deal can close, but execution gaps still need active management.'
           : 'Close path is fragile until commercial, financing, or process blockers are cleared.',
     drivers
+  };
+}
+
+export type DealOriginationProfile = {
+  scorePct: number;
+  band: 'LOW' | 'MEDIUM' | 'HIGH';
+  headline: string;
+  sourceLabel: string;
+  relationshipCoverageLabel: string;
+  exclusivityLabel: string;
+  lastTouchLabel: string;
+  lossLabel: string | null;
+  strengths: string[];
+  blockers: string[];
+};
+
+function formatEnumLabel(value: string | null | undefined) {
+  if (!value) return 'Not set';
+  return toSentenceCase(value);
+}
+
+export function buildDealOriginationProfile(
+  deal: DealListRecord | DealDetailRecord,
+  snapshot?: DealExecutionSnapshot | null
+): DealOriginationProfile {
+  const snapshotView = snapshot ?? buildDealExecutionSnapshot(deal as DealDetailRecord);
+  const counterparties = deal.counterparties ?? [];
+  const roles = counterparties.map((counterparty) => counterparty.role);
+  const hasSellerCoverage = roles.some((role) => role === 'BROKER' || role === 'SELLER' || role === 'OWNER');
+  const hasLenderCoverage = roles.some((role) => role === 'LENDER');
+  const primaryCoverage = counterparties.filter(
+    (counterparty) => counterparty.coverageStatus === RelationshipCoverageStatus.PRIMARY
+  );
+  const recentContacts = counterparties.filter((counterparty) => {
+    if (!counterparty.lastContactAt) return false;
+    return Date.now() - counterparty.lastContactAt.getTime() <= 1000 * 60 * 60 * 24 * 21;
+  });
+  const latestRecentContact = [...counterparties]
+    .filter((counterparty) => counterparty.lastContactAt)
+    .sort((left, right) => {
+      const leftValue = left.lastContactAt?.getTime() ?? 0;
+      const rightValue = right.lastContactAt?.getTime() ?? 0;
+      return rightValue - leftValue;
+    })[0] ?? null;
+  const activeExclusivityEvent =
+    snapshotView?.activeExclusivityEvent ??
+    deal.negotiationEvents.find(
+      (event) =>
+        (event.eventType === 'EXCLUSIVITY_GRANTED' || event.eventType === 'EXCLUSIVITY_EXTENDED') &&
+        event.expiresAt &&
+        event.expiresAt.getTime() >= Date.now()
+    ) ??
+    null;
+  const hasLiveExclusivity = !!activeExclusivityEvent;
+  const hasAcceptedBid = deal.bidRevisions.some((bid) => bid.status === DealBidStatus.ACCEPTED);
+  const hasLiveBid = deal.bidRevisions.some(
+    (bid) => bid.status === DealBidStatus.SUBMITTED || bid.status === DealBidStatus.COUNTERED || bid.status === DealBidStatus.BAFO
+  );
+  const researchSnapshots = deal.asset?.researchSnapshots ?? [];
+  const coverageTasks = deal.asset?.coverageTasks ?? [];
+  const freshResearchCount = researchSnapshots.filter((item) => item.freshnessStatus === 'FRESH').length;
+  const conflictOrStaleCoverage = coverageTasks.filter((task) => task.status !== TaskStatus.DONE).length;
+  const staleExecution = Date.now() - getDealMaterialUpdatedAt(deal).getTime() > 1000 * 60 * 60 * 24 * 7;
+  const openRiskCount = deal.riskFlags.filter((risk) => !risk.isResolved).length;
+  const sourceSet = deal.originationSource != null;
+
+  let score = 20;
+  score += sourceSet ? 12 : 0;
+  score += deal.originSummary ? 8 : 0;
+  score += hasSellerCoverage ? 14 : -8;
+  score += hasLenderCoverage ? 8 : 0;
+  score += primaryCoverage.length > 0 ? 14 : -6;
+  score += primaryCoverage.length > 1 ? 4 : 0;
+  score += recentContacts.length > 0 ? 10 : -5;
+  score += hasLiveExclusivity ? 15 : getStageIndex(deal.stage) >= getStageIndex(DealStage.LOI) ? -10 : 0;
+  score += hasAcceptedBid ? 8 : hasLiveBid ? 4 : 0;
+  score += freshResearchCount > 0 ? 8 : 0;
+  score -= Math.min(conflictOrStaleCoverage * 2, 10);
+  score -= Math.min(openRiskCount * 3, 12);
+  score -= staleExecution ? 8 : 0;
+  score -= deal.nextAction ? 0 : 5;
+  score = Math.max(5, Math.min(98, score));
+
+  const band: DealOriginationProfile['band'] = score >= 75 ? 'HIGH' : score >= 50 ? 'MEDIUM' : 'LOW';
+  const strengths = [
+    sourceSet ? `Source path is tagged as ${formatEnumLabel(deal.originationSource)}.` : null,
+    primaryCoverage.length > 0
+      ? `${primaryCoverage.length} primary relationship owner${primaryCoverage.length === 1 ? '' : 's'} are assigned.`
+      : null,
+    recentContacts.length > 0
+      ? `${recentContacts.length} counterparty touchpoint${recentContacts.length === 1 ? '' : 's'} were logged in the last 21 days.`
+      : null,
+    hasLiveExclusivity ? 'Live exclusivity is protecting the pursuit.' : null,
+    hasAcceptedBid ? 'Accepted paper is already in the process.' : hasLiveBid ? 'A live bid is already in market.' : null,
+    freshResearchCount > 0 ? `${freshResearchCount} fresh research snapshot${freshResearchCount === 1 ? '' : 's'} support the process.` : null
+  ].filter((item): item is string => !!item);
+  const blockers = [
+    !hasSellerCoverage ? 'No broker, seller, or owner-side relationship is logged.' : null,
+    primaryCoverage.length === 0 ? 'No primary relationship owner is assigned.' : null,
+    recentContacts.length === 0 ? 'No recent counterparty touchpoint is logged.' : null,
+    !hasLiveExclusivity && getStageIndex(deal.stage) >= getStageIndex(DealStage.LOI)
+      ? 'LOI-stage or deeper process has no live exclusivity clock.'
+      : null,
+    conflictOrStaleCoverage > 0 ? `${conflictOrStaleCoverage} research blocker${conflictOrStaleCoverage === 1 ? '' : 's'} still sit open.` : null,
+    staleExecution ? 'Deal execution record is stale.' : null
+  ].filter((item): item is string => !!item);
+
+  return {
+    scorePct: score,
+    band,
+    headline:
+      band === 'HIGH'
+        ? 'Origination coverage is institutional and the process has real commercial shape.'
+        : band === 'MEDIUM'
+          ? 'Origination coverage is usable, but relationship ownership or process protection still needs work.'
+          : 'Origination coverage is thin and the deal is still vulnerable to process drift.',
+    sourceLabel: formatEnumLabel(deal.originationSource),
+    relationshipCoverageLabel:
+      primaryCoverage.length > 0
+        ? `${primaryCoverage.length} primary / ${counterparties.length} total counterparties`
+        : `${counterparties.length} counterparties / no primary owner`,
+    exclusivityLabel: hasLiveExclusivity
+      ? `Live until ${activeExclusivityEvent?.expiresAt?.toLocaleDateString() ?? 'active'}`
+      : 'No live exclusivity',
+    lastTouchLabel: latestRecentContact?.lastContactAt
+      ? `${latestRecentContact.name} / ${latestRecentContact.lastContactAt.toLocaleDateString()}`
+      : 'No recent touchpoint logged',
+    lossLabel: deal.lossReason ? formatEnumLabel(deal.lossReason) : null,
+    strengths,
+    blockers
   };
 }
 

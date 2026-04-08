@@ -11,11 +11,12 @@ Show this sequence clearly:
 1. research intake
 2. evidence review
 3. underwriting
-4. deal execution
-5. portfolio operations
-6. capital shell
-7. registry-only readiness and document-hash anchoring
-8. operator security and ops intervention controls
+4. committee governance
+5. deal execution
+6. portfolio operations
+7. capital shell
+8. registry-only readiness and document-hash anchoring
+9. operator security and ops intervention controls
 
 ## Seed Assets To Use
 
@@ -123,7 +124,25 @@ Talking point:
 
 - DD and risk output distinguish approved coverage, pending items, and open gaps
 
-### 5. Open `/admin/deals`
+### 5. Open `/admin/ic`
+
+Message:
+
+> Committee governance should not live in email threads. Packets, agendas, and decision records stay tied to the same evidence and valuation fabric.
+
+Show:
+
+- scheduled meeting
+- locked packet
+- conditional packet
+- packaging candidates
+
+Talking point:
+
+- committee state now sits between underwriting and execution
+- released decisions remain traceable back to the packet and valuation context
+
+### 6. Open `/admin/deals`
 
 Message:
 
@@ -133,6 +152,8 @@ Show:
 
 - stage pipeline
 - next action
+- sourcing score and origination source
+- relationship coverage and live exclusivity
 - lender quote coverage
 - bid history
 - close probability
@@ -141,7 +162,7 @@ Talking point:
 
 - this is an operator surface, not a generic CRM
 
-### 6. Open `/admin/portfolio`
+### 7. Open `/admin/portfolio`
 
 Message:
 
@@ -154,11 +175,11 @@ Show:
 - occupancy / NOI summary
 - watchlist count
 
-### 7. Open `/admin/portfolio/[id]`
+### 8. Open `/admin/portfolio/[id]`
 
 Message:
 
-> Portfolio OS tracks hold performance, covenant risk, lease rollover, capex, and exit planning in the same operating model.
+> Portfolio OS tracks hold performance, covenant risk, lease rollover, asset-management initiatives, capex, and exit planning in the same operating model.
 
 Show:
 
@@ -166,6 +187,7 @@ Show:
 - lease rollover watchlist
 - debt maturity wall
 - LTV / DSCR / covenant summary
+- asset-management initiative tracker
 - capex vs budget
 - exit case tracker
 - portfolio optimization lab
@@ -176,7 +198,7 @@ Talking point:
 - this is the start of an AI-native operating layer, not just a static dashboard
 - the optimization lab uses a classical quantum-inspired discrete search heuristic to explore reweighting and stress outcomes without moving any operating data offchain
 
-### 8. Open `/admin/funds/[id]`
+### 9. Open `/admin/funds/[id]`
 
 Message:
 
@@ -200,7 +222,7 @@ Show:
 - calls
 - distributions
 - vehicles / mandates
-- investor reporting shell
+- investor reporting release workflow
 - DDQ shell
 - investor update draft
 
@@ -211,7 +233,7 @@ Talking point:
 - no public trading UX
 - this is a private investment-firm model
 
-### 9. Close With Registry-Only Readiness
+### 10. Close With Registry-Only Readiness
 
 Message:
 
@@ -228,7 +250,7 @@ Talking point:
 - only registry ids, hashes, and packet metadata are anchored
 - the operating system remains offchain and institution-friendly
 
-### 10. Open `/admin/security`
+### 11. Open `/admin/security`
 
 Message:
 

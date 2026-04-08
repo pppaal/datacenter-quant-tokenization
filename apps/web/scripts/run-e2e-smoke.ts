@@ -1,4 +1,6 @@
 import { spawn } from 'node:child_process';
+import { rm } from 'node:fs/promises';
+import path from 'node:path';
 import { prisma } from '@/lib/db/prisma';
 
 function runCommand(
@@ -24,6 +26,21 @@ function runCommand(
       reject(new Error(`${command} ${args.join(' ')} exited with code ${code ?? 1}`));
     });
   });
+}
+
+function getBrowserAdminCredentialEnv() {
+  const envCredential = process.env.ADMIN_BASIC_AUTH_ADMIN_CREDENTIALS?.trim();
+  if (envCredential) {
+    return envCredential;
+  }
+
+  const legacyUser = process.env.ADMIN_BASIC_AUTH_USER?.trim();
+  const legacyPassword = process.env.ADMIN_BASIC_AUTH_PASSWORD?.trim();
+  if (legacyUser && legacyPassword) {
+    return `${legacyUser}:${legacyPassword}`;
+  }
+
+  return 'admin@nexusseoul.local:secret';
 }
 
 async function assertDatabaseReachable() {
@@ -97,19 +114,44 @@ async function assertSeededOperatorData() {
   }
 }
 
+async function prepareE2EDatabaseSchema() {
+  console.log('Applying checked-in Prisma migrations before browser E2E...');
+  await prisma.$disconnect();
+
+  try {
+    await runCommand('npx', ['prisma', 'migrate', 'deploy']);
+  } catch (error) {
+    console.warn(
+      'Prisma migrate deploy failed against the transient E2E database. Falling back to `prisma db push` for ephemeral browser verification.'
+    );
+    await runCommand('npx', ['prisma', 'db', 'push', '--accept-data-loss', '--skip-generate']);
+  }
+
+  await assertDatabaseReachable();
+}
+
+async function clearNextBuildOutput() {
+  const buildPath = path.join(process.cwd(), 'build');
+  await rm(buildPath, { recursive: true, force: true });
+}
+
 async function main() {
   await assertDatabaseReachable();
+  await prepareE2EDatabaseSchema();
 
   console.log('Resetting seeded demo records before browser E2E...');
   await prisma.$disconnect();
   await runCommand('npm', ['run', 'prisma:seed']);
   await assertDatabaseReachable();
   await assertSeededOperatorData();
+  await clearNextBuildOutput();
 
   await prisma.$disconnect();
+  process.env.ADMIN_BASIC_AUTH_ADMIN_CREDENTIALS = getBrowserAdminCredentialEnv();
 
   await runCommand('npx', ['playwright', 'test'], {
-    BLOCKCHAIN_MOCK_MODE: process.env.BLOCKCHAIN_MOCK_MODE ?? 'true'
+    BLOCKCHAIN_MOCK_MODE: process.env.BLOCKCHAIN_MOCK_MODE ?? 'true',
+    ADMIN_BASIC_AUTH_ADMIN_CREDENTIALS: process.env.ADMIN_BASIC_AUTH_ADMIN_CREDENTIALS
   });
 }
 

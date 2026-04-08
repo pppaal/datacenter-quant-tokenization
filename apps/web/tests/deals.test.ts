@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { ActivityType, DealRequestStatus, DealStage, RiskSeverity, TaskPriority, TaskStatus } from '@prisma/client';
+import { ActivityType, DealLossReason, DealOriginationSource, DealRequestStatus, DealStage, RelationshipCoverageStatus, RiskSeverity, TaskPriority, TaskStatus } from '@prisma/client';
 import {
   autoMatchDealDocumentRequestsForAsset,
   archiveDeal,
@@ -8,6 +8,7 @@ import {
   buildDealCloseProbabilityHistory,
   buildDealClosingReadiness,
   createDealBidRevision,
+  buildDealOriginationProfile,
   createDealDocumentRequest,
   createDealLenderQuote,
   createDealNegotiationEvent,
@@ -19,6 +20,7 @@ import {
   closeOutDeal,
   restoreDeal,
   seedDealStageChecklist,
+  updateDealCounterparty,
   updateDealBidRevision,
   updateDealDocumentRequest,
   updateDealLenderQuote,
@@ -529,6 +531,86 @@ test('buildDealCloseProbability treats unconfirmed DD suggestions as execution d
   assert.ok(
     suggestedProbability.drivers.some((driver) => driver.includes('DD suggestion'))
   );
+});
+
+test('buildDealOriginationProfile rewards direct sourcing, primary coverage, and live exclusivity', () => {
+  const now = new Date('2026-04-08T00:00:00.000Z');
+  const profile = buildDealOriginationProfile(
+    {
+      id: 'deal_1',
+      dealCode: 'DEAL-0001',
+      slug: 'deal-0001',
+      title: 'Origination strong',
+      stage: DealStage.DD,
+      market: 'KR',
+      city: 'Seoul',
+      country: 'KR',
+      assetClass: null,
+      strategy: null,
+      headline: null,
+      nextAction: 'Advance exclusivity mark-up',
+      nextActionAt: now,
+      targetCloseDate: now,
+      sellerGuidanceKrw: null,
+      bidGuidanceKrw: null,
+      purchasePriceKrw: null,
+      originationSource: DealOriginationSource.DIRECT_OWNER,
+      originSummary: 'Relationship-led recapitalization.',
+      statusLabel: 'ACTIVE',
+      archivedAt: null,
+      closedAt: null,
+      closeOutcome: null,
+      lossReason: null,
+      closeSummary: null,
+      dealLead: 'solo_operator',
+      assetId: 'asset_1',
+      createdAt: now,
+      updatedAt: now,
+      counterparties: [
+        {
+          id: 'cp_1',
+          name: 'Owner CFO',
+          role: 'OWNER',
+          coverageOwner: 'han',
+          coverageStatus: RelationshipCoverageStatus.PRIMARY,
+          lastContactAt: new Date('2026-04-05T00:00:00.000Z')
+        },
+        {
+          id: 'cp_2',
+          name: 'Lead lender',
+          role: 'LENDER',
+          coverageOwner: 'lee',
+          coverageStatus: RelationshipCoverageStatus.PRIMARY,
+          lastContactAt: new Date('2026-04-04T00:00:00.000Z')
+        }
+      ],
+      tasks: [],
+      riskFlags: [],
+      documentRequests: [],
+      bidRevisions: [{ id: 'bid_1', status: 'SUBMITTED' }],
+      lenderQuotes: [],
+      negotiationEvents: [
+        {
+          id: 'neg_1',
+          eventType: 'EXCLUSIVITY_GRANTED',
+          expiresAt: new Date('2026-04-15T00:00:00.000Z'),
+          effectiveAt: new Date('2026-04-01T00:00:00.000Z')
+        }
+      ],
+      activityLogs: [],
+      asset: {
+        valuations: [],
+        researchSnapshots: [{ freshnessStatus: 'FRESH' }],
+        coverageTasks: []
+      }
+    } as any,
+    null
+  );
+
+  assert.equal(profile.band, 'HIGH');
+  assert.ok(profile.scorePct >= 75);
+  assert.equal(profile.sourceLabel, 'Direct Owner');
+  assert.ok(profile.exclusivityLabel.startsWith('Live'));
 });
 
 test('createDealBidRevision logs structured negotiation history', async () => {
@@ -1089,14 +1171,27 @@ test('buildDealPipelineSummary ranks blocked and urgent deals first', () => {
       nextAction: 'Clear legal blocker',
       targetCloseDate: now,
       updatedAt: now,
+      originationSource: DealOriginationSource.DIRECT_OWNER,
+      originSummary: 'Direct owner outreach from prior relationship.',
       tasks: [{ status: 'OPEN', priority: 'URGENT' }],
       riskFlags: [{ isResolved: false, severity: RiskSeverity.CRITICAL }],
-      counterparties: [{ role: 'BROKER' }],
+      counterparties: [
+        {
+          name: 'Owner rep',
+          role: 'OWNER',
+          coverageOwner: 'solo_operator',
+          coverageStatus: RelationshipCoverageStatus.PRIMARY,
+          lastContactAt: now
+        }
+      ],
       documentRequests: [],
       bidRevisions: [],
       lenderQuotes: [],
-      negotiationEvents: [],
+      negotiationEvents: [{ eventType: 'EXCLUSIVITY_GRANTED', expiresAt: new Date('2026-05-02T00:00:00.000Z') }],
+      activityLogs: [],
       asset: {
+        researchSnapshots: [{ freshnessStatus: 'FRESH' }],
+        coverageTasks: [],
         valuations: [
           {
             id: 'val_1',
@@ -1115,6 +1210,55 @@ test('buildDealPipelineSummary ranks blocked and urgent deals first', () => {
       nextAction: 'Request NDA',
       targetCloseDate: null,
       updatedAt: new Date('2026-03-27T12:00:00.000Z'),
+      originationSource: DealOriginationSource.LENDER_CHANNEL,
+      originSummary: null,
+      tasks: [],
+      riskFlags: [],
+      counterparties: [
+        {
+          name: 'Lender',
+          role: 'LENDER',
+          coverageOwner: null,
+          coverageStatus: RelationshipCoverageStatus.PASSIVE,
+          lastContactAt: null
+        }
+      ],
+      documentRequests: [],
+      bidRevisions: [],
+      lenderQuotes: [],
+      negotiationEvents: [],
+      activityLogs: [],
+      asset: {
+        researchSnapshots: [],
+        coverageTasks: [],
+        valuations: []
+      }
+    }
+  ]);
+
+  assert.equal(summary.totalDeals, 2);
+  assert.equal(summary.urgentDeals, 1);
+  assert.equal(summary.blockedDeals, 1);
+  assert.equal(summary.directOrProprietaryDeals, 1);
+  assert.equal(summary.liveExclusivityDeals, 1);
+  assert.equal(summary.watchlist[0]?.title, 'Blocked deal');
+  assert.equal(summary.watchlist[0]?.originationBand, 'HIGH');
+  assert.equal(summary.watchlist[1]?.sourceLabel, 'Lender Channel');
+});
+
+test('buildDealPipelineSummary surfaces origination watch counts', () => {
+  const now = new Date('2026-03-26T12:00:00.000Z');
+  const summary = buildDealPipelineSummary([
+    {
+      id: 'deal_3',
+      dealCode: 'DEAL-0003',
+      title: 'Thin pursuit',
+      stage: DealStage.LOI,
+      nextAction: 'Revise LOI',
+      targetCloseDate: now,
+      updatedAt: new Date('2026-03-10T12:00:00.000Z'),
+      originationSource: DealOriginationSource.INBOUND,
+      originSummary: null,
       tasks: [],
       riskFlags: [],
       counterparties: [],
@@ -1122,14 +1266,92 @@ test('buildDealPipelineSummary ranks blocked and urgent deals first', () => {
       bidRevisions: [],
       lenderQuotes: [],
       negotiationEvents: [],
-      asset: null
+      activityLogs: [],
+      asset: {
+        researchSnapshots: [],
+        coverageTasks: [{ status: 'OPEN' }],
+        valuations: []
+      }
     }
   ]);
 
-  assert.equal(summary.totalDeals, 2);
-  assert.equal(summary.urgentDeals, 1);
-  assert.equal(summary.blockedDeals, 1);
-  assert.equal(summary.watchlist[0]?.title, 'Blocked deal');
+  assert.equal(summary.lowOriginationCoverageDeals, 1);
+  assert.equal(summary.processProtectionGapDeals, 1);
+  assert.equal(summary.relationshipCoverageGapDeals, 1);
+  assert.equal(summary.watchlist[0]?.exclusivityLabel, 'No live exclusivity');
+});
+
+test('buildDealPipelineSummary only flags process protection gaps once a pursuit reaches LOI or deeper', () => {
+  const now = new Date('2026-03-26T12:00:00.000Z');
+  const summary = buildDealPipelineSummary([
+    {
+      id: 'deal_screened',
+      dealCode: 'DEAL-SCREENED',
+      title: 'Screened with no exclusivity yet',
+      stage: DealStage.SCREENED,
+      nextAction: 'Decide whether to push NDA',
+      targetCloseDate: now,
+      updatedAt: now,
+      originationSource: DealOriginationSource.BROKERED,
+      originSummary: 'Broker-led process',
+      tasks: [],
+      riskFlags: [],
+      counterparties: [
+        {
+          role: 'BROKER',
+          coverageOwner: 'kim',
+          coverageStatus: RelationshipCoverageStatus.PRIMARY,
+          lastContactAt: now,
+          name: 'Broker'
+        }
+      ],
+      documentRequests: [],
+      bidRevisions: [],
+      lenderQuotes: [],
+      negotiationEvents: [],
+      activityLogs: [],
+      asset: {
+        researchSnapshots: [],
+        coverageTasks: [],
+        valuations: []
+      }
+    },
+    {
+      id: 'deal_loi',
+      dealCode: 'DEAL-LOI',
+      title: 'LOI without exclusivity',
+      stage: DealStage.LOI,
+      nextAction: 'Push exclusivity',
+      targetCloseDate: now,
+      updatedAt: now,
+      originationSource: DealOriginationSource.BROKERED,
+      originSummary: 'Competitive broker-led process',
+      tasks: [],
+      riskFlags: [],
+      counterparties: [
+        {
+          role: 'BROKER',
+          coverageOwner: 'lee',
+          coverageStatus: RelationshipCoverageStatus.PRIMARY,
+          lastContactAt: now,
+          name: 'Lead broker'
+        }
+      ],
+      documentRequests: [],
+      bidRevisions: [],
+      lenderQuotes: [],
+      negotiationEvents: [],
+      activityLogs: [],
+      asset: {
+        researchSnapshots: [],
+        coverageTasks: [],
+        valuations: []
+      }
+    }
+  ] as any);
+
+  assert.equal(summary.processProtectionGapDeals, 1);
+  assert.equal(summary.watchlist.some((item) => item.id === 'deal_loi'), true);
 });
 
 test('buildDealReminderSummary ranks overdue and missing-next-action deals', () => {
@@ -1412,6 +1634,47 @@ test('restoreDeal reopens an archived record', async () => {
   assert.equal(updatedData.archivedAt, null);
 });
 
+test('updateDealCounterparty stores relationship coverage metadata', async () => {
+  let updatedData: any;
+  const fakeDb = {
+    counterparty: {
+      async findFirst() {
+        return { id: 'cp_1', dealId: 'deal_1', name: 'Broker', role: 'BROKER' };
+      },
+      async update(args: any) {
+        updatedData = args.data;
+        return {
+          id: 'cp_1',
+          name: 'Broker',
+          role: 'BROKER',
+          ...args.data
+        };
+      }
+    },
+    activityLog: {
+      async create() {
+        return null;
+      }
+    }
+  };
+
+  await updateDealCounterparty(
+    'deal_1',
+    'cp_1',
+    {
+      coverageOwner: 'han',
+      coverageStatus: RelationshipCoverageStatus.PRIMARY,
+      lastContactAt: '2026-04-07',
+      notes: 'Owner-side channel is active.'
+    },
+    fakeDb as any
+  );
+
+  assert.equal(updatedData?.coverageOwner, 'han');
+  assert.equal(updatedData?.coverageStatus, RelationshipCoverageStatus.PRIMARY);
+  assert.ok(updatedData?.lastContactAt instanceof Date);
+});
+
 test('closeOutDeal moves a won closing deal into asset management', async () => {
   let updatedData: any;
   const createdTasks: any[] = [];
@@ -1448,6 +1711,50 @@ test('closeOutDeal moves a won closing deal into asset management', async () => 
   assert.equal(updatedData.stage, DealStage.ASSET_MANAGEMENT);
   assert.equal(updatedData.statusLabel, 'CLOSED_WON');
   assert.equal(createdTasks[0]?.title, 'Complete asset management handoff');
+});
+
+test('closeOutDeal stores loss reason taxonomy for closed-lost deals', async () => {
+  let updatedData: any;
+  const fakeDb = {
+    deal: {
+      async findUnique() {
+        return {
+          id: 'deal_1',
+          stage: DealStage.DD
+        };
+      },
+      async update(args: any) {
+        updatedData = args.data;
+        return null;
+      }
+    },
+    task: {
+      async findFirst() {
+        return null;
+      },
+      async create() {
+        return null;
+      }
+    },
+    activityLog: {
+      async create() {
+        return null;
+      }
+    }
+  };
+
+  await closeOutDeal(
+    'deal_1',
+    {
+      outcome: 'CLOSED_LOST',
+      summary: 'Seller chose a higher-certainty bidder.',
+      lossReason: DealLossReason.PRICE
+    },
+    fakeDb as any
+  );
+
+  assert.equal(updatedData.statusLabel, 'CLOSED_LOST');
+  assert.equal(updatedData.lossReason, DealLossReason.PRICE);
 });
 
 test('buildDealTimeline mixes activities and valuations in reverse time order', () => {

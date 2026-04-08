@@ -1,6 +1,7 @@
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { AdminAccessScopeType } from '@prisma/client';
+import { InvestorReportReleasePanel } from '@/components/admin/investor-report-release-panel';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { canActorAccessScope } from '@/lib/security/admin-access';
@@ -75,6 +76,10 @@ export default async function FundDetailPage({ params }: Props) {
             <div>
               <div className="fine-print">Investor Coverage Summary</div>
               <p className="mt-2 text-sm leading-7 text-slate-300">{briefs.investorCoverageBrief}</p>
+            </div>
+            <div>
+              <div className="fine-print">Report Release Summary</div>
+              <p className="mt-2 text-sm leading-7 text-slate-300">{briefs.reportReleaseBrief}</p>
             </div>
           </div>
         </Card>
@@ -167,15 +172,24 @@ export default async function FundDetailPage({ params }: Props) {
           </div>
         </Card>
 
-        <Card>
+        <InvestorReportReleasePanel reports={fund.investorReports} />
+      </div>
+
+      <Card>
           <div className="eyebrow">Investor Reporting And DDQ</div>
           <div className="mt-4 space-y-3">
             {fund.investorReports.map((report) => (
               <div key={report.id} className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
-                <div className="text-sm font-semibold text-white">{report.title}</div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="text-sm font-semibold text-white">{report.title}</div>
+                  <Badge tone={report.releaseStatus === 'RELEASED' ? 'good' : report.releaseStatus === 'READY' ? 'warn' : 'neutral'}>
+                    {report.releaseStatus.toLowerCase().replaceAll('_', ' ')}
+                  </Badge>
+                </div>
                 <div className="mt-1 text-xs text-slate-400">
                   {report.reportType.toLowerCase().replaceAll('_', ' ')} / {report.periodEnd ? formatDate(report.periodEnd) : 'period pending'}
                 </div>
+                {report.draftSummary ? <div className="mt-2 text-xs leading-6 text-slate-400">{report.draftSummary}</div> : null}
               </div>
             ))}
             {fund.ddqResponses.map((ddq) => (
@@ -185,8 +199,7 @@ export default async function FundDetailPage({ params }: Props) {
               </div>
             ))}
           </div>
-        </Card>
-      </div>
+      </Card>
     </div>
   );
 }
