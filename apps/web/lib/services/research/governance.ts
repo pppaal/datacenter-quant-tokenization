@@ -1,4 +1,9 @@
 import type { PrismaClient } from '@prisma/client';
+import {
+  NotificationSeverity,
+  NotificationType,
+  createNotification
+} from '@/lib/services/notifications';
 
 type GovernanceDb = Pick<PrismaClient, 'researchSnapshot' | '$transaction'>;
 
@@ -94,7 +99,7 @@ export async function approveResearchHouseViewSnapshot(
     }
   });
 
-  return db.$transaction(async (tx) => {
+  const approvedSnapshot = await db.$transaction(async (tx) => {
     if (previousApproved) {
       await tx.researchSnapshot.update({
         where: { id: previousApproved.id },
@@ -155,4 +160,19 @@ export async function approveResearchHouseViewSnapshot(
 
     return approvedSnapshot;
   });
+
+  try {
+    await createNotification({
+      type: NotificationType.RESEARCH_APPROVED,
+      severity: NotificationSeverity.INFO,
+      title: `Research house view approved: ${snapshot.title}`,
+      body: `${approver.identifier} approved ${snapshot.snapshotType} snapshot.`,
+      entityType: 'ResearchSnapshot',
+      entityId: approvedSnapshot.id
+    });
+  } catch (error) {
+    console.error('Failed to create RESEARCH_APPROVED notification', error);
+  }
+
+  return approvedSnapshot;
 }

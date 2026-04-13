@@ -1,9 +1,15 @@
 import Link from 'next/link';
+import { Suspense } from 'react';
+import { headers } from 'next/headers';
 import { AssetClass } from '@prisma/client';
 import { formatCurrencyFromKrwAtRate, resolveDisplayCurrency } from '@/lib/finance/currency';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { PanelSkeleton } from '@/components/ui/skeleton';
+import { OperatorDashboardPanel } from '@/components/admin/operator-dashboard-panel';
+import { buildOperatorDashboard } from '@/lib/services/operator-dashboard';
+import { getAdminActorFromHeaders } from '@/lib/security/admin-request';
 import { DealPipelinePanel } from '@/components/admin/deal-pipeline-panel';
 import { DealCloseProbabilityPanel } from '@/components/admin/deal-close-probability-panel';
 import { DealReminderPanel } from '@/components/admin/deal-reminder-panel';
@@ -21,7 +27,71 @@ import { formatDate, formatNumber } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
-export default async function AdminOverviewPage() {
+async function OperatorDashboardSection() {
+  const data = await buildOperatorDashboard();
+  return <OperatorDashboardPanel data={data} />;
+}
+
+const SECONDARY_NAV_LINKS: Array<{ href: string; label: string; description: string }> = [
+  { href: '/admin/deals', label: 'Deal Execution', description: 'Pipeline, diligence, and closing queues' },
+  { href: '/admin/ic', label: 'Investment Committee', description: 'Packets, meetings, and decisions' },
+  { href: '/admin/portfolio', label: 'Portfolio OS', description: 'Hold performance and watchlists' },
+  { href: '/admin/research', label: 'Research', description: 'Snapshots and coverage governance' },
+  { href: '/admin/funds', label: 'Capital', description: 'Commitments, calls, and distributions' },
+  { href: '/admin/review', label: 'Review Queue', description: 'Evidence approvals before committee' }
+];
+
+export default async function AdminHomePage() {
+  const actor = getAdminActorFromHeaders(await headers());
+
+  return (
+    <div className="space-y-10">
+      <section className="surface hero-mesh">
+        <div className="eyebrow">Operator Console</div>
+        <h1 className="mt-3 text-5xl font-semibold leading-[0.96] tracking-[-0.05em] text-white md:text-6xl">
+          Unified operator dashboard for the real-estate investment OS.
+        </h1>
+        <p className="mt-4 max-w-4xl text-base leading-8 text-slate-200">
+          Pipeline, portfolio, capital, and governance queues in one surface. The legacy ops view remains
+          available below for deep monitoring across macro, valuation, and risk panels.
+        </p>
+        {actor ? (
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <Badge tone="good">{actor.role}</Badge>
+            <span className="fine-print">Signed in as {actor.identifier}</span>
+          </div>
+        ) : null}
+      </section>
+
+      <Suspense fallback={<PanelSkeleton rows={6} />}>
+        <OperatorDashboardSection />
+      </Suspense>
+
+      <section className="space-y-4">
+        <div className="section-title">Operator Workspaces</div>
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {SECONDARY_NAV_LINKS.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5 transition hover:border-white/20 hover:bg-white/[0.05]"
+            >
+              <div className="text-sm font-semibold text-white">{link.label}</div>
+              <p className="mt-2 text-sm leading-6 text-slate-400">{link.description}</p>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <div className="section-title">Operations Monitoring</div>
+        <AdminOverviewLegacy />
+      </section>
+    </div>
+  );
+}
+
+async function AdminOverviewLegacy() {
   const {
     summary,
     assets,

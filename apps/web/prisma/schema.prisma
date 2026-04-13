@@ -2611,3 +2611,34 @@ model DdqResponse {
   @@index([fundId, statusLabel])
   @@index([investorId, statusLabel])
 }
+
+enum NotificationType {
+  IC_PACKET_LOCKED
+  IC_PACKET_DECIDED
+  IC_PACKET_RELEASED
+  RESEARCH_APPROVED
+  DILIGENCE_BLOCKED
+  SYSTEM
+}
+
+enum NotificationSeverity {
+  INFO
+  WARN
+  CRITICAL
+}
+
+model Notification {
+  id           String               @id @default(cuid())
+  type         NotificationType
+  severity     NotificationSeverity @default(INFO)
+  title        String
+  body         String?
+  entityType   String?
+  entityId     String?
+  audienceRole String?
+  readAt       DateTime?
+  createdAt    DateTime             @default(now())
+
+  @@index([createdAt])
+  @@index([readAt])
+}

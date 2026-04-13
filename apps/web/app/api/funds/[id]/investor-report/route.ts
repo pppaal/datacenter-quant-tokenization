@@ -3,7 +3,12 @@ import { AdminAccessScopeType } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { assertActorScopeAccess } from '@/lib/security/admin-access';
 import { resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
-import { buildInvestorReport, serializeInvestorReportToMarkdown } from '@/lib/services/investor-reports';
+import {
+  buildInvestorReport,
+  serializeInvestorReportToCsv,
+  serializeInvestorReportToHtml,
+  serializeInvestorReportToMarkdown
+} from '@/lib/services/investor-reports';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,6 +44,23 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     return new Response(JSON.stringify(report, null, 2), {
       status: 200,
       headers: buildHeaders(`${report.exportFileBase}.json`, 'application/json; charset=utf-8')
+    });
+  }
+
+  if (format === 'csv') {
+    return new Response(serializeInvestorReportToCsv(report), {
+      status: 200,
+      headers: buildHeaders(`${report.exportFileBase}.csv`, 'text/csv; charset=utf-8')
+    });
+  }
+
+  if (format === 'html') {
+    return new Response(serializeInvestorReportToHtml(report), {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Content-Disposition': `inline; filename="${report.exportFileBase}.html"`
+      }
     });
   }
 

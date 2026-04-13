@@ -27,7 +27,7 @@ function formatKrwB(value: number) {
 export function InvestorReportPanel({ fundId, fundName, metrics }: Props) {
   const [downloading, setDownloading] = useState<string | null>(null);
 
-  async function download(format: 'md' | 'json') {
+  async function download(format: 'md' | 'json' | 'csv') {
     setDownloading(format);
     try {
       const response = await fetch(`/api/funds/${fundId}/investor-report?format=${format}`);
@@ -44,6 +44,10 @@ export function InvestorReportPanel({ fundId, fundName, metrics }: Props) {
     } finally {
       setDownloading(null);
     }
+  }
+
+  function openHtmlReport() {
+    window.open(`/api/funds/${fundId}/investor-report?format=html`, '_blank', 'noopener');
   }
 
   return (
@@ -85,6 +89,12 @@ export function InvestorReportPanel({ fundId, fundName, metrics }: Props) {
         </Button>
         <Button variant="secondary" onClick={() => download('json')} disabled={downloading === 'json'}>
           {downloading === 'json' ? 'Generating...' : 'Download JSON Report'}
+        </Button>
+        <Button variant="secondary" onClick={() => download('csv')} disabled={downloading === 'csv'}>
+          {downloading === 'csv' ? 'Generating...' : 'Download CSV (Excel)'}
+        </Button>
+        <Button variant="ghost" onClick={openHtmlReport}>
+          Open Printable HTML (PDF)
         </Button>
       </div>
     </Card>

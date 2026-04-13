@@ -9,6 +9,11 @@ import {
 import { prisma } from '@/lib/db/prisma';
 import { buildDealDiligenceSummary } from '@/lib/services/deals';
 import { buildCommitteeActionItems, buildCommitteeDashboard } from '@/lib/services/ic-builders';
+import {
+  NotificationSeverity,
+  NotificationType,
+  createNotification
+} from '@/lib/services/notifications';
 
 export const committeePacketInclude = {
   asset: {
@@ -372,7 +377,7 @@ export async function lockCommitteePacket(
 
   const fingerprint = buildCommitteePacketFingerprint(packet, readiness);
 
-  return db.investmentCommitteePacket.update({
+  const updated = await db.investmentCommitteePacket.update({
     where: { id: packetId },
     data: {
       status: CommitteePacketStatus.LOCKED,
@@ -384,6 +389,21 @@ export async function lockCommitteePacket(
     },
     include: committeePacketInclude
   });
+
+  try {
+    await createNotification({
+      type: NotificationType.IC_PACKET_LOCKED,
+      severity: NotificationSeverity.INFO,
+      title: `IC packet ${updated.packetCode ?? updated.id} locked`,
+      body: `${actorLabel} locked ${updated.title ?? 'a committee packet'} for review.`,
+      entityType: 'CommitteePacket',
+      entityId: updated.id
+    });
+  } catch (error) {
+    console.error('Failed to create IC_PACKET_LOCKED notification', error);
+  }
+
+  return updated;
 }
 
 export async function decideCommitteePacket(
@@ -418,7 +438,7 @@ export async function decideCommitteePacket(
 
   const nextStatus = outcomeStatusMap[input.outcome];
 
-  return db.$transaction(async (tx) => {
+  const decided = await db.$transaction(async (tx) => {
     await tx.investmentCommitteeDecision.create({
       data: {
         packetId: packet.id,
@@ -440,6 +460,21 @@ export async function decideCommitteePacket(
       include: committeePacketInclude
     });
   });
+
+  try {
+    await createNotification({
+      type: NotificationType.IC_PACKET_DECIDED,
+      severity: NotificationSeverity.INFO,
+      title: `IC packet ${decided.packetCode ?? decided.id} decided: ${input.outcome}`,
+      body: input.notes?.trim() || `${actorLabel} recorded a committee decision.`,
+      entityType: 'CommitteePacket',
+      entityId: decided.id
+    });
+  } catch (error) {
+    console.error('Failed to create IC_PACKET_DECIDED notification', error);
+  }
+
+  return decided;
 }
 
 export async function releaseCommitteePacket(
@@ -468,7 +503,7 @@ export async function releaseCommitteePacket(
     throw new Error('Only decided packets can be released.');
   }
 
-  return db.investmentCommitteePacket.update({
+  const released = await db.investmentCommitteePacket.update({
     where: { id: packet.id },
     data: {
       status: CommitteePacketStatus.RELEASED,
@@ -477,4 +512,19 @@ export async function releaseCommitteePacket(
     },
     include: committeePacketInclude
   });
+
+  try {
+    await createNotification({
+      type: NotificationType.IC_PACKET_RELEASED,
+      severity: NotificationSeverity.INFO,
+      title: `IC packet ${released.packetCode ?? released.id} released`,
+      body: `${actorLabel} released ${released.title ?? 'a committee packet'}.`,
+      entityType: 'CommitteePacket',
+      entityId: released.id
+    });
+  } catch (error) {
+    console.error('Failed to create IC_PACKET_RELEASED notification', error);
+  }
+
+  return released;
 }

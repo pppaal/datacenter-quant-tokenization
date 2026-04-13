@@ -3,6 +3,7 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { AdminNav, type AdminNavItem } from '@/components/admin/admin-nav';
 import { AdminSessionButton } from '@/components/admin/admin-session-button';
+import { NotificationBell } from '@/components/admin/notification-bell';
 import { prisma } from '@/lib/db/prisma';
 import { resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
 import { hasRequiredAdminRole, type AdminAccessRole } from '@/lib/security/admin-auth';
@@ -75,7 +76,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <div className="text-sm text-slate-400">
             Active operator: <span className="font-semibold text-white">{actor?.identifier ?? 'basic-auth operator'}</span>
           </div>
-          <AdminSessionButton />
+          <div className="flex items-center gap-3">
+            <NotificationBell />
+            <AdminSessionButton />
+          </div>
         </div>
 
         <div className="mt-6">

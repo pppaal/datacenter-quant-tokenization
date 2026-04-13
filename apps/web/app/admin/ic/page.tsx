@@ -242,6 +242,18 @@ async function CommitteeWorkspaceContent() {
                 {packet.status === 'APPROVED' || packet.status === 'CONDITIONAL' || packet.status === 'DECLINED' ? (
                   <CommitteePacketReleaseButton packetId={packet.id} />
                 ) : null}
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <a
+                    href={`/api/admin/ic-packets/${packet.id}/export?format=html`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Button variant="ghost">Export HTML (PDF)</Button>
+                  </a>
+                  <a href={`/api/admin/ic-packets/${packet.id}/export?format=csv`}>
+                    <Button variant="ghost">Export CSV</Button>
+                  </a>
+                </div>
               </div>
             );
           })}

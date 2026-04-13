@@ -22,6 +22,7 @@
     "ops:worker": "tsx scripts/run-ops-worker.ts",
     "ops:worker:daemon": "tsx scripts/run-ops-worker-daemon.ts",
     "ops:preflight": "tsx scripts/run-ops-preflight.ts",
+    "ingest:korea": "tsx scripts/run-korea-ingest.ts",
     "env:preflight": "tsx scripts/run-environment-preflight.ts",
     "e2e": "tsx scripts/run-e2e-smoke.ts",
     "e2e:list": "playwright test --list",
