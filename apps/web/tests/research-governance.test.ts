@@ -6,6 +6,17 @@ test('approveResearchHouseViewSnapshot creates immutable approved lineage and su
   const updates: Array<{ where: { id: string }; data: Record<string, unknown> }> = [];
   const creates: Array<Record<string, unknown>> = [];
 
+  const txSnapshot = {
+    update: async ({ where, data }: { where: { id: string }; data: Record<string, unknown> }) => {
+      updates.push({ where, data });
+      return { id: where.id, ...data };
+    },
+    create: async ({ data }: { data: Record<string, unknown> }) => {
+      creates.push(data);
+      return { id: 'approved-new', ...data };
+    }
+  };
+
   const db = {
     researchSnapshot: {
       findUnique: async () => ({
@@ -28,16 +39,9 @@ test('approveResearchHouseViewSnapshot creates immutable approved lineage and su
       }),
       findFirst: async () => ({
         id: 'approved-old'
-      }),
-      update: async ({ where, data }: { where: { id: string }; data: Record<string, unknown> }) => {
-        updates.push({ where, data });
-        return { id: where.id, ...data };
-      },
-      create: async ({ data }: { data: Record<string, unknown> }) => {
-        creates.push(data);
-        return { id: 'approved-new', ...data };
-      }
-    }
+      })
+    },
+    $transaction: async (fn: any) => fn({ researchSnapshot: txSnapshot })
   };
 
   const approved = await approveResearchHouseViewSnapshot(
