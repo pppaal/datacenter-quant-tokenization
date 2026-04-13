@@ -115,6 +115,10 @@ test.describe('operator mutation flows', () => {
   test('DD deliverable completeness gates IC packet lock and packets move through decision release flow', async ({ page }) => {
     const deliverableTitle = `E2E technical DD deliverable ${Date.now()}`;
 
+    page.on('dialog', (dialog) => {
+      dialog.accept().catch(() => undefined);
+    });
+
     await loginAsOperator(page);
     await page.goto('/admin/ic');
 
@@ -302,13 +306,11 @@ test.describe('operator mutation flows', () => {
     await page.goto('/admin/ic');
     await page.waitForLoadState('networkidle');
 
-    // Verify committee workspace loaded
-    const heading = page.locator('text=Investment Committee');
-    await expect(heading.first()).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: /Lock committee packets, run agendas, and preserve decision lineage/i })
+    ).toBeVisible();
 
-    // Check for summary metrics
     const metricCards = page.locator('.metric-card');
-    const count = await metricCards.count();
-    expect(count).toBeGreaterThanOrEqual(1);
+    expect(await metricCards.count()).toBeGreaterThanOrEqual(1);
   });
 });
