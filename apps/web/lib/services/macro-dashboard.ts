@@ -33,11 +33,14 @@ function classifySeriesKey(key: string) {
   if (
     normalized.includes('interest') ||
     normalized.includes('base_rate') ||
-    normalized.includes('bok_rate')
+    normalized.includes('bok_rate') ||
+    normalized.includes('debt_cost') ||
+    normalized.includes('discount_rate') ||
+    normalized.includes('policy_rate')
   )
     return 'interest';
-  if (normalized.includes('vacancy')) return 'vacancy';
-  if (normalized.includes('cap_rate')) return 'cap_rate';
+  if (normalized.includes('vacancy') || normalized.includes('occupancy')) return 'vacancy';
+  if (normalized.includes('cap_rate') || normalized.includes('yield')) return 'cap_rate';
   return 'market';
 }
 
