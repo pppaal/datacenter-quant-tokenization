@@ -1,8 +1,11 @@
 import Link from 'next/link';
+import { Suspense } from 'react';
 import { headers } from 'next/headers';
 import { AdminAccessScopeType } from '@prisma/client';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { PortfolioKpiChart } from '@/components/admin/portfolio-kpi-chart';
+import { PortfolioRiskHeatmap } from '@/components/admin/portfolio-risk-heatmap';
 import { filterRowsByGrantedScopeIds, listGrantedScopeIdsForUser } from '@/lib/security/admin-access';
 import { prisma } from '@/lib/db/prisma';
 import { resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
@@ -12,6 +15,7 @@ import {
   type PortfolioDashboard,
   type PortfolioRecord
 } from '@/lib/services/portfolio';
+import { buildPortfolioDashboardData } from '@/lib/services/portfolio-dashboard';
 import { formatCurrency, formatNumber, formatPercent } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
@@ -28,6 +32,8 @@ export default async function PortfolioPage() {
     portfolio,
     dashboard: buildPortfolioDashboard(portfolio)
   }));
+
+  const dashboardData = await buildPortfolioDashboardData();
 
   const totalHoldValue = dashboards.reduce(
     (total, entry) => total + (entry.dashboard.summary.grossHoldValueKrw ?? 0),
@@ -62,6 +68,68 @@ export default async function PortfolioPage() {
           </div>
         </div>
       </section>
+
+      {(dashboardData.occupancyKpis.length > 0 || dashboardData.noiYieldKpis.length > 0 || dashboardData.riskAssets.length > 0) && (
+        <section className="space-y-5">
+          <div className="section-title">Portfolio Analytics</div>
+          <div className="grid gap-5 lg:grid-cols-2">
+            <Suspense fallback={<Card className="animate-pulse h-64" />}>
+              <PortfolioKpiChart
+                title="Occupancy performance"
+                subtitle="Asset KPI"
+                rows={dashboardData.occupancyKpis}
+                maxValue={100}
+              />
+            </Suspense>
+            <Suspense fallback={<Card className="animate-pulse h-64" />}>
+              <PortfolioKpiChart
+                title="NOI yield performance"
+                subtitle="Asset KPI"
+                rows={dashboardData.noiYieldKpis}
+              />
+            </Suspense>
+          </div>
+          <div className="grid gap-5 lg:grid-cols-2">
+            <Suspense fallback={<Card className="animate-pulse h-64" />}>
+              <PortfolioRiskHeatmap assets={dashboardData.riskAssets} />
+            </Suspense>
+            <Card className="space-y-4">
+              <div>
+                <div className="eyebrow">Risk Distribution</div>
+                <h3 className="mt-2 text-2xl font-semibold text-white">Portfolio health summary</h3>
+              </div>
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="metric-card">
+                  <div className="fine-print">Healthy</div>
+                  <div className="mt-3 text-4xl font-semibold text-emerald-400">{dashboardData.summary.riskDistribution.good}</div>
+                </div>
+                <div className="metric-card">
+                  <div className="fine-print">Watch</div>
+                  <div className="mt-3 text-4xl font-semibold text-amber-400">{dashboardData.summary.riskDistribution.warn}</div>
+                </div>
+                <div className="metric-card">
+                  <div className="fine-print">At Risk</div>
+                  <div className="mt-3 text-4xl font-semibold text-rose-400">{dashboardData.summary.riskDistribution.danger}</div>
+                </div>
+              </div>
+              <div className="space-y-2 border-t border-white/10 pt-4">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-slate-400">Avg Occupancy</span>
+                  <span className="text-white">{formatPercent(dashboardData.summary.avgOccupancyPct)}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-slate-400">Avg NOI Yield</span>
+                  <span className="text-white">{dashboardData.summary.avgNoiYieldPct.toFixed(1)}%</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-slate-400">Total AUM</span>
+                  <span className="text-white">{formatCurrency(dashboardData.summary.totalAumKrw)}</span>
+                </div>
+              </div>
+            </Card>
+          </div>
+        </section>
+      )}
 
       <div className="grid gap-5">
         {dashboards.map(({ portfolio, dashboard }) => (

@@ -2,10 +2,12 @@ import { Suspense } from 'react';
 import { headers } from 'next/headers';
 import { Badge } from '@/components/ui/badge';
 import { PanelSkeleton } from '@/components/ui/skeleton';
+import { MacroDashboardPanel } from '@/components/admin/macro-dashboard-panel';
 import { ResearchRefreshButton } from '@/components/admin/research-refresh-button';
 import { ResearchWorkspacePanel } from '@/components/admin/research-workspace-panel';
 import { hasRequiredAdminRole } from '@/lib/security/admin-auth';
 import { getAdminActorFromHeaders } from '@/lib/security/admin-request';
+import { buildMacroDashboard } from '@/lib/services/macro-dashboard';
 import { getResearchWorkspaceData, type ResearchWorkspaceTab } from '@/lib/services/research/workspace';
 
 export const dynamic = 'force-dynamic';
@@ -19,8 +21,18 @@ type Props = {
 const validTabs: ResearchWorkspaceTab[] = ['macro', 'markets', 'submarkets', 'assets', 'optimization', 'coverage'];
 
 async function ResearchContent({ activeTab, canApproveHouseView }: { activeTab: ResearchWorkspaceTab; canApproveHouseView: boolean }) {
-  const data = await getResearchWorkspaceData();
-  return <ResearchWorkspacePanel data={data} activeTab={activeTab} canApproveHouseView={canApproveHouseView} />;
+  const [data, macroDashboard] = await Promise.all([
+    getResearchWorkspaceData(),
+    activeTab === 'macro' ? buildMacroDashboard() : Promise.resolve(null),
+  ]);
+  return (
+    <>
+      <ResearchWorkspacePanel data={data} activeTab={activeTab} canApproveHouseView={canApproveHouseView} />
+      {activeTab === 'macro' && macroDashboard ? (
+        <MacroDashboardPanel data={macroDashboard} />
+      ) : null}
+    </>
+  );
 }
 
 export default async function AdminResearchPage({ searchParams }: Props) {

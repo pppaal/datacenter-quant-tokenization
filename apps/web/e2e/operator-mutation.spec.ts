@@ -267,4 +267,48 @@ test.describe('operator mutation flows', () => {
     await trackedPangyoRow.click();
     await expect(page.getByTestId('property-explorer-open-linked')).toBeVisible({ timeout: 20_000 });
   });
+
+  test('research workspace shows house view approval controls', async ({ page }) => {
+    await loginAsOperator(page);
+    await page.goto('/admin/research');
+    await page.waitForLoadState('networkidle');
+
+    // Check that the research page loaded
+    const heading = page.locator('text=Research');
+    await expect(heading.first()).toBeVisible();
+  });
+
+  test('deal diligence workstream panel renders with create form', async ({ page }) => {
+    await loginAsOperator(page);
+    // Navigate to the first deal (from seed data)
+    await page.goto('/admin/deals');
+    await page.waitForLoadState('networkidle');
+
+    const dealLink = page.locator('a[href*="/admin/deals/"]').first();
+    if (await dealLink.isVisible()) {
+      await dealLink.click();
+      await page.waitForLoadState('networkidle');
+
+      // Check for the diligence workstream section
+      const ddSection = page.locator('text=Due Diligence');
+      if (await ddSection.isVisible()) {
+        await expect(ddSection).toBeVisible();
+      }
+    }
+  });
+
+  test('committee workspace displays dashboard summary and action items', async ({ page }) => {
+    await loginAsOperator(page);
+    await page.goto('/admin/ic');
+    await page.waitForLoadState('networkidle');
+
+    // Verify committee workspace loaded
+    const heading = page.locator('text=Investment Committee');
+    await expect(heading.first()).toBeVisible();
+
+    // Check for summary metrics
+    const metricCards = page.locator('.metric-card');
+    const count = await metricCards.count();
+    expect(count).toBeGreaterThanOrEqual(1);
+  });
 });

@@ -238,9 +238,8 @@ test('committee decision transitions locked packets and release only allows deci
   const decisionCreates: any[] = [];
   const packetUpdates: any[] = [];
 
-  const db = {
+  const txModels = {
     investmentCommitteePacket: {
-      findUnique: async () => packet,
       update: async ({ data }: any) => {
         packetUpdates.push(data);
         return { ...packet, ...data };
@@ -252,6 +251,17 @@ test('committee decision transitions locked packets and release only allows deci
         return data;
       }
     }
+  };
+
+  const db = {
+    investmentCommitteePacket: {
+      findUnique: async () => packet,
+      update: txModels.investmentCommitteePacket.update
+    },
+    investmentCommitteeDecision: {
+      create: txModels.investmentCommitteeDecision.create
+    },
+    $transaction: async (fn: any) => fn(txModels)
   } as any;
 
   const decided = await decideCommitteePacket(

@@ -115,6 +115,25 @@ test.describe('seeded operator smoke flows', () => {
     await expect(page.getByText('Quantum-inspired portfolio search and scenario exploration')).toBeVisible();
   });
 
+  test('property explorer renders candidates and allows map selection', async ({ page }) => {
+    await loginAsOperator(page);
+    await page.goto('/admin/assets/explorer');
+    await page.waitForSelector('[data-testid="property-explorer-marker"]');
+
+    const markers = page.locator('[data-testid="property-explorer-marker"]');
+    await expect(markers).toHaveCount(4);
+
+    const rows = page.locator('[data-testid="property-explorer-row"]');
+    await expect(rows).toHaveCount(4);
+
+    // Click second marker
+    await markers.nth(1).click();
+
+    // Verify selected candidate changes
+    const selectedBadge = page.locator('.metric-card').first();
+    await expect(selectedBadge).toBeVisible();
+  });
+
   test('deals, portfolio, and funds shells load seeded operator state', async ({ page }) => {
     await loginAsOperator(page);
     await page.goto('/admin/deals');
