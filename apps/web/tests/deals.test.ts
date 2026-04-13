@@ -1,15 +1,19 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { ActivityType, DealLossReason, DealOriginationSource, DealRequestStatus, DealStage, RelationshipCoverageStatus, RiskSeverity, TaskPriority, TaskStatus } from '@prisma/client';
+import { ActivityType, AssetClass, DealBidStatus, DealDiligenceWorkstreamStatus, DealDiligenceWorkstreamType, DealLossReason, DealOriginationSource, DealRequestStatus, DealStage, RelationshipCoverageStatus, RiskSeverity, TaskPriority, TaskStatus } from '@prisma/client';
 import {
   autoMatchDealDocumentRequestsForAsset,
   archiveDeal,
   buildDealCloseProbability,
   buildDealCloseProbabilityHistory,
   buildDealClosingReadiness,
+  buildDealDiligenceSummary,
+  buildDealDiligenceWorkpaper,
+  attachDealDiligenceDeliverable,
   createDealBidRevision,
   buildDealOriginationProfile,
   createDealDocumentRequest,
+  upsertDealDiligenceWorkstream,
   createDealLenderQuote,
   createDealNegotiationEvent,
   buildDealDataCoverage,
@@ -20,6 +24,8 @@ import {
   closeOutDeal,
   restoreDeal,
   seedDealStageChecklist,
+  serializeDealDiligenceWorkpaperToMarkdown,
+  updateDealDiligenceWorkstream,
   updateDealCounterparty,
   updateDealBidRevision,
   updateDealDocumentRequest,
@@ -291,6 +297,26 @@ test('buildDealClosingReadiness scores accepted bid, financing, and exclusivity 
       ],
       negotiationEvents: [
         { id: 'neg_1', eventType: 'EXCLUSIVITY_GRANTED', expiresAt: new Date('2026-04-05T00:00:00.000Z') }
+      ],
+      diligenceWorkstreams: [
+        {
+          id: 'dd_legal',
+          workstreamType: DealDiligenceWorkstreamType.LEGAL,
+          status: DealDiligenceWorkstreamStatus.SIGNED_OFF,
+          deliverables: [{ id: 'deliverable_legal' }]
+        },
+        {
+          id: 'dd_commercial',
+          workstreamType: DealDiligenceWorkstreamType.COMMERCIAL,
+          status: DealDiligenceWorkstreamStatus.SIGNED_OFF,
+          deliverables: [{ id: 'deliverable_commercial' }]
+        },
+        {
+          id: 'dd_technical',
+          workstreamType: DealDiligenceWorkstreamType.TECHNICAL,
+          status: DealDiligenceWorkstreamStatus.SIGNED_OFF,
+          deliverables: [{ id: 'deliverable_technical' }]
+        }
       ],
       asset: {
         valuations: [
@@ -905,6 +931,381 @@ test('updateDealDocumentRequest marks a request received', async () => {
   await updateDealDocumentRequest('deal_1', 'req_1', { status: 'RECEIVED' }, fakeDb as any);
   assert.equal(updatedData.status, 'RECEIVED');
   assert.ok(updatedData.receivedAt instanceof Date || typeof updatedData.receivedAt === 'object');
+});
+
+test('upsertDealDiligenceWorkstream creates or updates a specialist workstream', async () => {
+  let upsertArgs: any;
+  const fakeDb = {
+    deal: {
+      async findUnique() {
+        return { id: 'deal_1' };
+      }
+    },
+    dealDiligenceWorkstream: {
+      async upsert(args: any) {
+        upsertArgs = args;
+        return {
+          id: 'dd_1',
+          dealId: 'deal_1',
+          ...args.create
+        };
+      }
+    },
+    activityLog: {
+      async create() {
+        return null;
+      }
+    },
+    dealExecutionProbabilitySnapshot: {
+      async create() {
+        return null;
+      }
+    }
+  };
+
+  const result = await upsertDealDiligenceWorkstream(
+    'deal_1',
+    {
+      workstreamType: DealDiligenceWorkstreamType.LEGAL,
+      status: DealDiligenceWorkstreamStatus.IN_PROGRESS,
+      ownerLabel: 'legal lead',
+      advisorName: 'Kim & Partners',
+      reportTitle: 'Title and SPA review',
+      summary: 'Title, encumbrance, and SPA markup under review.'
+    },
+    fakeDb as any
+  );
+
+  assert.equal(result.workstreamType, DealDiligenceWorkstreamType.LEGAL);
+  assert.equal(upsertArgs.where.dealId_workstreamType.workstreamType, DealDiligenceWorkstreamType.LEGAL);
+});
+
+test('updateDealDiligenceWorkstream signs off a specialist lane cleanly', async () => {
+  let updateArgs: any;
+  const fakeDb = {
+    dealDiligenceWorkstream: {
+      async findFirst() {
+        return {
+          id: 'dd_1',
+          dealId: 'deal_1',
+          workstreamType: DealDiligenceWorkstreamType.TECHNICAL,
+          status: DealDiligenceWorkstreamStatus.READY_FOR_SIGNOFF,
+          signedOffAt: null,
+          signedOffByLabel: null
+        };
+      },
+      async update(args: any) {
+        updateArgs = args;
+        return {
+          id: 'dd_1',
+          dealId: 'deal_1',
+          workstreamType: DealDiligenceWorkstreamType.TECHNICAL,
+          ...args.data
+        };
+      }
+    },
+    activityLog: {
+      async create() {
+        return null;
+      }
+    },
+    dealExecutionProbabilitySnapshot: {
+      async create() {
+        return null;
+      }
+    }
+  };
+
+  const updated = await updateDealDiligenceWorkstream(
+    'deal_1',
+    'dd_1',
+    {
+      status: DealDiligenceWorkstreamStatus.SIGNED_OFF,
+      signedOffByLabel: 'chief engineer'
+    },
+    fakeDb as any
+  );
+
+  assert.equal(updated.status, DealDiligenceWorkstreamStatus.SIGNED_OFF);
+  assert.equal(updateArgs.data.signedOffByLabel, 'chief engineer');
+  assert.ok(updateArgs.data.signedOffAt instanceof Date);
+});
+
+test('attachDealDiligenceDeliverable links an asset document to a specialist lane', async () => {
+  const activityTitles: string[] = [];
+  const fakeDb = {
+    dealDiligenceWorkstream: {
+      async findFirst() {
+        return {
+          id: 'dd_1',
+          dealId: 'deal_1',
+          workstreamType: DealDiligenceWorkstreamType.LEGAL,
+          deal: { assetId: 'asset_1' }
+        };
+      }
+    },
+    document: {
+      async findFirst() {
+        return {
+          id: 'doc_1',
+          title: 'Title Memo',
+          documentType: 'REPORT',
+          currentVersion: 2,
+          documentHash: 'hash-title-memo',
+          updatedAt: new Date('2026-04-10T00:00:00.000Z')
+        };
+      }
+    },
+    dealDiligenceDeliverable: {
+      async upsert(args: any) {
+        return {
+          id: 'deliverable_1',
+          note: args.create.note,
+          document: {
+            id: 'doc_1',
+            title: 'Title Memo',
+            documentType: 'REPORT',
+            currentVersion: 2,
+            documentHash: 'hash-title-memo',
+            updatedAt: new Date('2026-04-10T00:00:00.000Z')
+          }
+        };
+      }
+    },
+    activityLog: {
+      async create(args: any) {
+        activityTitles.push(args.data.title);
+        return args.data;
+      }
+    },
+    dealExecutionProbabilitySnapshot: {
+      async create() {
+        return {};
+      }
+    },
+    deal: {
+      async findUnique() {
+        return {
+          id: 'deal_1',
+          stage: DealStage.DD,
+          bidRevisions: [],
+          lenderQuotes: [],
+          negotiationEvents: [],
+          documentRequests: [],
+          counterparties: [],
+          activityLogs: [],
+          riskFlags: [],
+          asset: null
+        };
+      }
+    }
+  } as any;
+
+  const deliverable = await attachDealDiligenceDeliverable(
+    'deal_1',
+    'dd_1',
+    {
+      documentId: 'doc_1',
+      note: 'Final title counsel memo'
+    },
+    fakeDb
+  );
+
+  assert.equal(deliverable.document.title, 'Title Memo');
+  assert.equal(activityTitles.includes('Diligence deliverable linked'), true);
+});
+
+test('buildDealDiligenceSummary highlights missing and blocked specialist lanes', () => {
+  const summary = buildDealDiligenceSummary(
+    {
+      assetClass: 'DATA_CENTER',
+      asset: null
+    } as any,
+    [
+      {
+        id: 'dd_1',
+        workstreamType: DealDiligenceWorkstreamType.LEGAL,
+        status: DealDiligenceWorkstreamStatus.SIGNED_OFF,
+        requestedAt: new Date('2026-03-10T00:00:00.000Z'),
+        signedOffAt: new Date('2026-03-25T00:00:00.000Z')
+      },
+      {
+        id: 'dd_2',
+        workstreamType: DealDiligenceWorkstreamType.TECHNICAL,
+        status: DealDiligenceWorkstreamStatus.BLOCKED,
+        requestedAt: new Date('2026-03-15T00:00:00.000Z'),
+        blockerSummary: 'M&E report delayed.'
+      }
+    ] as any
+  );
+
+  assert.equal(summary.blockedCount, 1);
+  assert.ok(summary.missingCoreTypes.includes(DealDiligenceWorkstreamType.COMMERCIAL));
+  assert.ok(summary.missingCoreTypes.includes(DealDiligenceWorkstreamType.ENVIRONMENTAL));
+  assert.ok(summary.uncoveredCoreTypes.includes(DealDiligenceWorkstreamType.TECHNICAL));
+});
+
+test('buildDealDiligenceWorkpaper and markdown export summarize specialist sign-off cleanly', () => {
+  const now = new Date('2026-04-10T00:00:00.000Z');
+  const workpaper = buildDealDiligenceWorkpaper({
+    id: 'deal_1',
+    dealCode: 'DEAL-0001',
+    slug: 'deal-0001',
+    title: 'Yeouido Office Acquisition',
+    stage: DealStage.IC,
+    market: 'KR',
+    city: 'Seoul',
+    country: 'KR',
+    assetClass: AssetClass.OFFICE,
+    strategy: null,
+    headline: null,
+    nextAction: 'Prepare committee deck',
+    nextActionAt: now,
+    targetCloseDate: now,
+    sellerGuidanceKrw: null,
+    bidGuidanceKrw: null,
+    purchasePriceKrw: null,
+    statusLabel: 'ACTIVE',
+    archivedAt: null,
+    closedAt: null,
+    closeOutcome: null,
+    lossReason: null,
+    closeSummary: null,
+    dealLead: 'solo_operator',
+    assetId: 'asset_1',
+    createdAt: now,
+    updatedAt: now,
+    counterparties: [
+      {
+        id: 'cp_broker',
+        role: 'BROKER',
+        name: 'Prime Brokerage',
+        coverageStatus: RelationshipCoverageStatus.PRIMARY,
+        coverageOwner: 'coverage.lead',
+        lastContactAt: now
+      },
+      { id: 'cp_lender', role: 'LENDER', name: 'Core Bank', coverageStatus: RelationshipCoverageStatus.BACKUP }
+    ],
+    tasks: [],
+    riskFlags: [],
+    negotiationEvents: [
+      { id: 'neg_1', eventType: 'EXCLUSIVITY_GRANTED', expiresAt: new Date('2026-04-20T00:00:00.000Z') }
+    ],
+    bidRevisions: [{ id: 'bid_1', label: 'Signed LOI', status: DealBidStatus.ACCEPTED }],
+    lenderQuotes: [{ id: 'loan_1', facilityLabel: 'Senior loan', status: 'CREDIT_APPROVED' }],
+    activityLogs: [],
+    probabilitySnapshots: [],
+    documentRequests: [
+      {
+        id: 'req_1',
+        title: 'Final lease abstracts',
+        status: DealRequestStatus.REQUESTED,
+        dueDate: new Date('2026-04-15T00:00:00.000Z'),
+        notes: 'Waiting on seller counsel',
+        counterparty: { name: 'Prime Brokerage' }
+      }
+    ],
+    diligenceWorkstreams: [
+      {
+        id: 'dd_legal',
+        workstreamType: DealDiligenceWorkstreamType.LEGAL,
+        status: DealDiligenceWorkstreamStatus.SIGNED_OFF,
+        ownerLabel: 'legal.lead',
+        advisorName: 'Kim & Partners',
+        reportTitle: 'Title memo',
+        requestedAt: new Date('2026-03-15T00:00:00.000Z'),
+        dueDate: new Date('2026-04-08T00:00:00.000Z'),
+        signedOffAt: new Date('2026-04-08T00:00:00.000Z'),
+        signedOffByLabel: 'gc.kim',
+        summary: 'No title defects identified.',
+        blockerSummary: null,
+        deliverables: [
+          {
+            id: 'deliverable_legal',
+            note: 'Final memo linked',
+            document: {
+              id: 'doc_1',
+              title: 'Title Memo',
+              documentType: 'REPORT',
+              currentVersion: 2,
+              documentHash: 'hash-title-memo',
+              updatedAt: new Date('2026-04-08T00:00:00.000Z')
+            }
+          }
+        ]
+      },
+      {
+        id: 'dd_commercial',
+        workstreamType: DealDiligenceWorkstreamType.COMMERCIAL,
+        status: DealDiligenceWorkstreamStatus.READY_FOR_SIGNOFF,
+        ownerLabel: 'am.lead',
+        advisorName: null,
+        reportTitle: 'Rent roll memo',
+        requestedAt: new Date('2026-03-20T00:00:00.000Z'),
+        dueDate: new Date('2026-04-11T00:00:00.000Z'),
+        signedOffAt: null,
+        signedOffByLabel: null,
+        summary: 'Tenant rollover checked against approved lease file.',
+        blockerSummary: null,
+        deliverables: [
+          {
+            id: 'deliverable_commercial',
+            note: null,
+            document: {
+              id: 'doc_2',
+              title: 'Lease Abstract Book',
+              documentType: 'LEASE',
+              currentVersion: 3,
+              documentHash: 'abcdef1234567890',
+              updatedAt: new Date('2026-04-09T00:00:00.000Z')
+            }
+          }
+        ]
+      },
+      {
+        id: 'dd_technical',
+        workstreamType: DealDiligenceWorkstreamType.TECHNICAL,
+        status: DealDiligenceWorkstreamStatus.BLOCKED,
+        ownerLabel: 'technical.pm',
+        advisorName: 'Han Engineering',
+        reportTitle: 'Building condition report',
+        requestedAt: new Date('2026-03-25T00:00:00.000Z'),
+        dueDate: new Date('2026-04-12T00:00:00.000Z'),
+        signedOffAt: null,
+        signedOffByLabel: null,
+        summary: 'MEP scope is mostly complete.',
+        blockerSummary: 'Awaiting rooftop chiller access.',
+        deliverables: []
+      }
+    ],
+    asset: {
+      assetClass: AssetClass.OFFICE,
+      documents: [
+        {
+          title: 'Lease Abstract Book',
+          documentType: 'LEASE',
+          currentVersion: 3,
+          documentHash: 'abcdef1234567890'
+        }
+      ],
+      valuations: [
+        {
+          id: 'val_1',
+          createdAt: new Date('2026-04-09T00:00:00.000Z')
+        }
+      ]
+    }
+  } as any);
+
+  const markdown = serializeDealDiligenceWorkpaperToMarkdown(workpaper);
+
+  assert.equal(workpaper.summaryFacts.find((fact) => fact.label === 'Specialist Sign-Off')?.value, '1/3 core lanes signed off');
+  assert.equal(workpaper.summaryFacts.find((fact) => fact.label === 'Deliverables')?.value, '2 linked / 1 core lanes without evidence');
+  assert.match(markdown, /# Yeouido Office Acquisition DD Workpaper/);
+  assert.match(markdown, /## Specialist Workstreams/);
+  assert.match(markdown, /Legal: Signed Off/i);
+  assert.match(markdown, /Awaiting rooftop chiller access\./);
+  assert.match(markdown, /## Document Request Tracker/);
 });
 
 test('autoMatchDealDocumentRequestsForAsset links obvious DD matches on upload', async () => {

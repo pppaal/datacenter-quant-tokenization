@@ -34,6 +34,18 @@ type PacketLike = {
 type CandidateLike = {
   id: string;
   name: string;
+  leadDeal?: {
+    id: string;
+    dealCode: string;
+  } | null;
+  diligenceSummary?: {
+    signedOffCount: number;
+    deliverableCount: number;
+    coreRequiredTypes: Array<string>;
+    missingCoreTypes: Array<string>;
+    uncoveredCoreTypes: Array<string>;
+    blockedCount: number;
+  } | null;
 };
 
 export function buildCommitteeActionItems(
@@ -94,6 +106,45 @@ export function buildCommitteeActionItems(
       detail: `${leadCandidate.name} has a current valuation but no active committee packet. Move it into the agenda once the decision request is clear.`,
       href: '/admin/ic',
       priority: 'medium'
+    });
+  }
+
+  const diligenceGapCandidates = candidates.filter((candidate) => {
+    const summary = candidate.diligenceSummary;
+    return summary && (summary.missingCoreTypes.length > 0 || summary.blockedCount > 0);
+  });
+
+  if (diligenceGapCandidates.length > 0) {
+    const leadCandidate = diligenceGapCandidates[0];
+    const summary = leadCandidate.diligenceSummary!;
+    items.push({
+      key: `candidate-dd:${leadCandidate.id}`,
+      area: 'IC',
+      title: `${diligenceGapCandidates.length} packet candidate(s) still have specialist DD gaps`,
+      detail:
+        summary.blockedCount > 0
+          ? `${leadCandidate.name} still has ${summary.blockedCount} blocked specialist lane(s). Clear them before packet lock.`
+          : `${leadCandidate.name} is still missing ${summary.missingCoreTypes.length} core DD lane(s) before committee packaging.`,
+      href: '/admin/ic',
+      priority: 'high'
+    });
+  }
+
+  const deliverableGapCandidates = candidates.filter((candidate) => {
+    const summary = candidate.diligenceSummary;
+    return summary && summary.uncoveredCoreTypes.length > 0;
+  });
+
+  if (deliverableGapCandidates.length > 0) {
+    const leadCandidate = deliverableGapCandidates[0];
+    const summary = leadCandidate.diligenceSummary!;
+    items.push({
+      key: `candidate-deliverables:${leadCandidate.id}`,
+      area: 'IC',
+      title: `${deliverableGapCandidates.length} packet candidate(s) still need specialist deliverables linked`,
+      detail: `${leadCandidate.name} is missing supporting deliverables for ${summary.uncoveredCoreTypes.length} core DD lane(s). Link workpapers before packet lock.`,
+      href: '/admin/ic',
+      priority: 'high'
     });
   }
 

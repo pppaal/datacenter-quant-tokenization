@@ -1,6 +1,9 @@
 import {
   ActivityType,
+  AssetClass,
   DealBidStatus,
+  DealDiligenceWorkstreamStatus,
+  DealDiligenceWorkstreamType,
   DealLossReason,
   DealOriginationSource,
   DealRequestStatus,
@@ -27,6 +30,9 @@ import {
   dealCreateSchema,
   dealDocumentRequestCreateSchema,
   dealDocumentRequestUpdateSchema,
+  dealDiligenceDeliverableCreateSchema,
+  dealDiligenceWorkstreamCreateSchema,
+  dealDiligenceWorkstreamUpdateSchema,
   dealLenderQuoteCreateSchema,
   dealLenderQuoteUpdateSchema,
   dealNegotiationEventCreateSchema,
@@ -151,6 +157,26 @@ export const dealListInclude = Prisma.validator<Prisma.DealInclude>()({
       documentId: true
     },
     orderBy: [{ status: 'asc' }, { dueDate: 'asc' }, { createdAt: 'asc' }]
+  },
+  diligenceWorkstreams: {
+    include: {
+      deliverables: {
+        include: {
+          document: {
+            select: {
+              id: true,
+              title: true,
+              documentType: true,
+              currentVersion: true,
+              documentHash: true,
+              updatedAt: true
+            }
+          }
+        },
+        orderBy: [{ createdAt: 'asc' }]
+      }
+    },
+    orderBy: [{ status: 'asc' }, { dueDate: 'asc' }, { workstreamType: 'asc' }]
   },
   bidRevisions: {
     select: {
@@ -303,6 +329,41 @@ export const dealDetailInclude = Prisma.validator<Prisma.DealInclude>()({
     },
     orderBy: [{ status: 'asc' }, { dueDate: 'asc' }, { createdAt: 'asc' }]
   },
+  diligenceWorkstreams: {
+    select: {
+      id: true,
+      workstreamType: true,
+      status: true,
+      ownerLabel: true,
+      advisorName: true,
+      reportTitle: true,
+      requestedAt: true,
+      dueDate: true,
+      signedOffAt: true,
+      signedOffByLabel: true,
+      summary: true,
+      blockerSummary: true,
+      notes: true,
+      deliverables: {
+        select: {
+          id: true,
+          note: true,
+          document: {
+            select: {
+              id: true,
+              title: true,
+              documentType: true,
+              currentVersion: true,
+              documentHash: true,
+              updatedAt: true
+            }
+          }
+        },
+        orderBy: [{ createdAt: 'asc' }]
+      }
+    },
+    orderBy: [{ status: 'asc' }, { dueDate: 'asc' }, { workstreamType: 'asc' }]
+  },
   bidRevisions: {
     include: {
       counterparty: true
@@ -372,6 +433,9 @@ export type DealDataCoverage = {
     lenderQuoteCount: number;
     negotiationEventCount: number;
     counterpartyCount: number;
+    diligenceWorkstreamCount: number;
+    signedOffWorkstreamCount: number;
+    blockedWorkstreamCount: number;
     requiredChecklistPct: number;
   };
   checks: Array<{
@@ -421,6 +485,276 @@ export type DealCloseProbabilityHistoryPoint = {
   pendingSuggestedRequestCount: number;
   flags: string[];
 };
+
+type DiligenceWorkstreamLike = {
+  id: string;
+  workstreamType: DealDiligenceWorkstreamType;
+  status: DealDiligenceWorkstreamStatus;
+  ownerLabel?: string | null;
+  advisorName?: string | null;
+  reportTitle?: string | null;
+  requestedAt?: Date | null;
+  dueDate?: Date | null;
+  signedOffAt?: Date | null;
+  signedOffByLabel?: string | null;
+  summary?: string | null;
+  blockerSummary?: string | null;
+  notes?: string | null;
+  deliverables?: Array<{
+    id: string;
+    note?: string | null;
+    document: {
+      id: string;
+      title: string;
+      documentType: string;
+      currentVersion: number;
+      documentHash: string;
+      updatedAt: Date;
+    };
+  }>;
+};
+
+export type DealDiligenceSummary = {
+  totalCount: number;
+  signedOffCount: number;
+  blockedCount: number;
+  readyForSignoffCount: number;
+  deliverableCount: number;
+  uncoveredCoreTypes: DealDiligenceWorkstreamType[];
+  coreRequiredTypes: DealDiligenceWorkstreamType[];
+  missingCoreTypes: DealDiligenceWorkstreamType[];
+  staleRequestedCount: number;
+  headline: string;
+};
+
+const baseCoreDiligenceTypes: DealDiligenceWorkstreamType[] = [
+  DealDiligenceWorkstreamType.LEGAL,
+  DealDiligenceWorkstreamType.COMMERCIAL,
+  DealDiligenceWorkstreamType.TECHNICAL
+];
+
+function getCoreDiligenceTypes(assetClass: AssetClass | null | undefined) {
+  const types = [...baseCoreDiligenceTypes];
+  if (assetClass === AssetClass.DATA_CENTER || assetClass === AssetClass.INDUSTRIAL || assetClass === AssetClass.LAND) {
+    types.push(DealDiligenceWorkstreamType.ENVIRONMENTAL);
+  }
+  return types;
+}
+
+function getDealDiligenceWorkstreams(deal: DealListRecord | DealDetailRecord) {
+  return ('diligenceWorkstreams' in deal ? deal.diligenceWorkstreams : []) as DiligenceWorkstreamLike[];
+}
+
+export function buildDealDiligenceSummary(
+  deal: DealListRecord | DealDetailRecord,
+  workstreams: DiligenceWorkstreamLike[] = getDealDiligenceWorkstreams(deal)
+): DealDiligenceSummary {
+  const coreRequiredTypes = getCoreDiligenceTypes(deal.assetClass ?? deal.asset?.assetClass ?? null);
+  const signedOff = workstreams.filter((item) => item.status === DealDiligenceWorkstreamStatus.SIGNED_OFF);
+  const blocked = workstreams.filter((item) => item.status === DealDiligenceWorkstreamStatus.BLOCKED);
+  const readyForSignoff = workstreams.filter((item) => item.status === DealDiligenceWorkstreamStatus.READY_FOR_SIGNOFF);
+  const workstreamTypes = new Set(workstreams.map((item) => item.workstreamType));
+  const missingCoreTypes = coreRequiredTypes.filter((item) => !workstreamTypes.has(item));
+  const deliverableCount = workstreams.reduce((total, item) => total + (item.deliverables?.length ?? 0), 0);
+  const uncoveredCoreTypes = coreRequiredTypes.filter((type) => {
+    const lane = workstreams.find((item) => item.workstreamType === type);
+    return !lane || (lane.deliverables?.length ?? 0) === 0;
+  });
+  const staleRequestedCount = workstreams.filter((item) => {
+    if (!item.requestedAt || item.signedOffAt) return false;
+    return Date.now() - item.requestedAt.getTime() > 1000 * 60 * 60 * 24 * 14;
+  }).length;
+
+  const headline =
+    missingCoreTypes.length === 0 && blocked.length === 0
+      ? signedOff.length >= coreRequiredTypes.length
+        ? uncoveredCoreTypes.length === 0
+          ? 'Core specialist diligence is signed off and committee-ready.'
+          : 'Core specialist diligence is signed off, but supporting deliverables still need to be attached.'
+        : 'Core diligence workstreams are open with no immediate specialist blockers.'
+      : missingCoreTypes.length > 0
+        ? `${missingCoreTypes.length} core diligence workstream${missingCoreTypes.length === 1 ? '' : 's'} still need to be opened.`
+        : `${blocked.length} diligence workstream${blocked.length === 1 ? '' : 's'} are blocked and need intervention.`;
+
+  return {
+    totalCount: workstreams.length,
+    signedOffCount: signedOff.length,
+    blockedCount: blocked.length,
+    readyForSignoffCount: readyForSignoff.length,
+    deliverableCount,
+    uncoveredCoreTypes,
+    coreRequiredTypes,
+    missingCoreTypes,
+    staleRequestedCount,
+    headline
+  };
+}
+
+export type DealDiligenceWorkpaperFact = {
+  label: string;
+  value: string;
+};
+
+export type DealDiligenceWorkpaperSection = {
+  id: string;
+  title: string;
+  lines: string[];
+};
+
+export type DealDiligenceWorkpaper = {
+  dealId: string;
+  dealCode: string;
+  title: string;
+  stageLabel: string;
+  generatedAt: Date;
+  generatedAtLabel: string;
+  exportFileBase: string;
+  summaryFacts: DealDiligenceWorkpaperFact[];
+  sections: DealDiligenceWorkpaperSection[];
+};
+
+function formatWorkpaperDate(value: Date | null | undefined) {
+  if (!value) return 'Not set';
+  return value.toISOString().slice(0, 10);
+}
+
+function buildWorkstreamLine(workstream: DiligenceWorkstreamLike) {
+  const parts = [
+    `${toSentenceCase(workstream.workstreamType)}: ${toSentenceCase(workstream.status)}`,
+    workstream.ownerLabel ? `owner ${workstream.ownerLabel}` : null,
+    workstream.advisorName ? `advisor ${workstream.advisorName}` : null,
+    workstream.dueDate ? `due ${formatWorkpaperDate(workstream.dueDate)}` : null,
+    workstream.signedOffAt
+      ? `signed ${formatWorkpaperDate(workstream.signedOffAt)}${workstream.signedOffByLabel ? ` by ${workstream.signedOffByLabel}` : ''}`
+      : null,
+    workstream.reportTitle ? `report ${workstream.reportTitle}` : null
+  ].filter(Boolean);
+
+  const detail = [workstream.summary, workstream.blockerSummary ? `blocker: ${workstream.blockerSummary}` : null]
+    .filter(Boolean)
+    .join(' / ');
+
+  const deliverableLabel =
+    (workstream.deliverables?.length ?? 0) > 0
+      ? `deliverables ${workstream.deliverables!.map((item) => item.document.title).join(', ')}`
+      : 'no deliverables linked';
+  const body = detail ? `${parts.join(' / ')} / ${detail}` : parts.join(' / ');
+  return `${body} / ${deliverableLabel}`;
+}
+
+export function buildDealDiligenceWorkpaper(deal: DealDetailRecord): DealDiligenceWorkpaper {
+  const generatedAt = new Date();
+  const snapshot = buildDealExecutionSnapshot(deal);
+  const coverage = buildDealDataCoverage(deal, snapshot);
+  const readiness = buildDealClosingReadiness(deal, snapshot);
+  const probability = buildDealCloseProbability(deal, snapshot, readiness);
+  const origination = buildDealOriginationProfile(deal, snapshot);
+  const diligenceSummary = buildDealDiligenceSummary(deal);
+  const workstreams = [...deal.diligenceWorkstreams].sort((left, right) => {
+    const leftDue = left.dueDate?.getTime() ?? Number.MAX_SAFE_INTEGER;
+    const rightDue = right.dueDate?.getTime() ?? Number.MAX_SAFE_INTEGER;
+    if (leftDue !== rightDue) return leftDue - rightDue;
+    return left.workstreamType.localeCompare(right.workstreamType);
+  });
+  const openRequests = deal.documentRequests.filter((request) => request.status === DealRequestStatus.REQUESTED);
+  const keyDocuments = (deal.asset?.documents ?? []).slice(0, 8);
+  const sections: DealDiligenceWorkpaperSection[] = [
+    {
+      id: 'specialist-lanes',
+      title: 'Specialist Workstreams',
+      lines:
+        workstreams.length > 0
+          ? workstreams.map((workstream) => buildWorkstreamLine(workstream))
+          : ['No specialist diligence workstreams are open yet.']
+    },
+    {
+      id: 'blockers-and-gaps',
+      title: 'Blockers And Gaps',
+      lines:
+        [...readiness.blockers, ...origination.blockers].length > 0
+          ? [...new Set([...readiness.blockers, ...origination.blockers])]
+          : ['No live blockers are flagged across readiness or origination.']
+    },
+    {
+      id: 'request-tracker',
+      title: 'Document Request Tracker',
+      lines:
+        openRequests.length > 0
+          ? openRequests.map((request) => {
+              const counterpartyLabel = request.counterparty?.name ? ` / ${request.counterparty.name}` : '';
+              return `${request.title}${counterpartyLabel} / ${toSentenceCase(request.status)} / due ${formatWorkpaperDate(request.dueDate)}${
+                request.notes ? ` / ${request.notes}` : ''
+              }`;
+            })
+          : ['All current diligence requests are cleared or no tracker entries are open.']
+    },
+    {
+      id: 'supporting-documents',
+      title: 'Supporting Documents',
+      lines:
+        keyDocuments.length > 0
+          ? keyDocuments.map((document) => {
+              const hashLabel = document.documentHash ? document.documentHash.slice(0, 12) : 'no-hash';
+              return `${document.title} / ${toSentenceCase(document.documentType)} / v${document.currentVersion} / ${hashLabel}`;
+            })
+          : ['No supporting asset documents are linked yet.']
+    }
+  ];
+
+  return {
+    dealId: deal.id,
+    dealCode: deal.dealCode,
+    title: deal.title,
+    stageLabel: formatEnumLabel(deal.stage),
+    generatedAt,
+    generatedAtLabel: formatWorkpaperDate(generatedAt),
+    exportFileBase: `${slugify(deal.dealCode)}-dd-workpaper-${generatedAt.toISOString().slice(0, 10)}`,
+    summaryFacts: [
+      { label: 'Stage', value: formatEnumLabel(deal.stage) },
+      { label: 'Checklist Completion', value: `${Math.round(snapshot?.checklistCompletionPct ?? 0)}%` },
+      { label: 'Readiness', value: `${readiness.scorePct}% / ${readiness.readyToClose ? 'Ready' : `${readiness.blockerCount} blocker(s)`}` },
+      { label: 'Close Probability', value: `${probability.scorePct}% / ${probability.band}` },
+      { label: 'Origination', value: `${Math.round(origination.scorePct)}% / ${origination.sourceLabel}` },
+      {
+        label: 'Specialist Sign-Off',
+        value: `${diligenceSummary.signedOffCount}/${diligenceSummary.coreRequiredTypes.length} core lanes signed off`
+      },
+      {
+        label: 'Deliverables',
+        value: `${diligenceSummary.deliverableCount} linked / ${diligenceSummary.uncoveredCoreTypes.length} core lanes without evidence`
+      },
+      { label: 'Coverage', value: `${coverage.completedCount}/${coverage.totalCount} checks complete` }
+    ],
+    sections
+  };
+}
+
+export function serializeDealDiligenceWorkpaperToMarkdown(workpaper: DealDiligenceWorkpaper) {
+  const lines: string[] = [];
+  lines.push(`# ${workpaper.title} DD Workpaper`);
+  lines.push('');
+  lines.push(`- Deal: ${workpaper.dealCode}`);
+  lines.push(`- Stage: ${workpaper.stageLabel}`);
+  lines.push(`- Generated: ${workpaper.generatedAtLabel}`);
+  lines.push('');
+  lines.push('## Summary');
+  lines.push('');
+  workpaper.summaryFacts.forEach((fact) => {
+    lines.push(`- ${fact.label}: ${fact.value}`);
+  });
+
+  workpaper.sections.forEach((section) => {
+    lines.push('');
+    lines.push(`## ${section.title}`);
+    lines.push('');
+    section.lines.forEach((line) => {
+      lines.push(`- ${line}`);
+    });
+  });
+
+  lines.push('');
+  return lines.join('\n');
+}
 
 function sameUtcDay(left: Date, right: Date) {
   return (
@@ -1184,6 +1518,207 @@ export async function updateDealDocumentRequest(
 
   await recordDealProbabilitySnapshot(dealId, 'dd_request_updated', db);
   return updated;
+}
+
+export async function upsertDealDiligenceWorkstream(
+  dealId: string,
+  input: unknown,
+  db: PrismaClient = prisma
+) {
+  const parsed = dealDiligenceWorkstreamCreateSchema.parse(input);
+  const deal = await db.deal.findUnique({ where: { id: dealId } });
+  if (!deal) throw new Error('Deal not found');
+
+  const status = parsed.status as DealDiligenceWorkstreamStatus;
+  const signedOffAt =
+    parsed.signedOffAt ?? (status === DealDiligenceWorkstreamStatus.SIGNED_OFF ? new Date() : null);
+
+  const workstream = await db.dealDiligenceWorkstream.upsert({
+    where: {
+      dealId_workstreamType: {
+        dealId,
+        workstreamType: parsed.workstreamType as DealDiligenceWorkstreamType
+      }
+    },
+    create: {
+      dealId,
+      workstreamType: parsed.workstreamType as DealDiligenceWorkstreamType,
+      status,
+      ownerLabel: parsed.ownerLabel ?? null,
+      advisorName: parsed.advisorName ?? null,
+      reportTitle: parsed.reportTitle ?? null,
+      requestedAt: parsed.requestedAt ?? new Date(),
+      dueDate: parsed.dueDate ?? null,
+      signedOffAt,
+      signedOffByLabel: parsed.signedOffByLabel ?? null,
+      summary: parsed.summary ?? null,
+      blockerSummary: parsed.blockerSummary ?? null,
+      notes: parsed.notes ?? null
+    },
+    update: {
+      status,
+      ownerLabel: parsed.ownerLabel ?? undefined,
+      advisorName: parsed.advisorName ?? undefined,
+      reportTitle: parsed.reportTitle ?? undefined,
+      requestedAt: parsed.requestedAt ?? undefined,
+      dueDate: parsed.dueDate ?? undefined,
+      signedOffAt:
+        parsed.signedOffAt !== undefined
+          ? parsed.signedOffAt
+          : status === DealDiligenceWorkstreamStatus.SIGNED_OFF
+            ? new Date()
+            : undefined,
+      signedOffByLabel: parsed.signedOffByLabel ?? undefined,
+      summary: parsed.summary ?? undefined,
+      blockerSummary: parsed.blockerSummary ?? undefined,
+      notes: parsed.notes ?? undefined
+    }
+  });
+
+  await createActivityLog(db, {
+    dealId,
+    activityType: ActivityType.GENERAL,
+    title: 'Diligence workstream updated',
+    body: `${toSentenceCase(workstream.workstreamType)} is ${workstream.status.toLowerCase().replaceAll('_', ' ')}.`
+  });
+
+  await recordDealProbabilitySnapshot(dealId, 'diligence_workstream_upserted', db);
+  return workstream;
+}
+
+export async function updateDealDiligenceWorkstream(
+  dealId: string,
+  workstreamId: string,
+  input: unknown,
+  db: PrismaClient = prisma
+) {
+  const parsed = dealDiligenceWorkstreamUpdateSchema.parse(input);
+  const workstream = await db.dealDiligenceWorkstream.findFirst({
+    where: {
+      id: workstreamId,
+      dealId
+    }
+  });
+  if (!workstream) throw new Error('Diligence workstream not found');
+
+  const nextStatus = (parsed.status ?? workstream.status) as DealDiligenceWorkstreamStatus;
+  const updated = await db.dealDiligenceWorkstream.update({
+    where: { id: workstreamId },
+    data: {
+      status: nextStatus,
+      ownerLabel: parsed.ownerLabel ?? undefined,
+      advisorName: parsed.advisorName ?? undefined,
+      reportTitle: parsed.reportTitle ?? undefined,
+      requestedAt: parsed.requestedAt ?? undefined,
+      dueDate: parsed.dueDate ?? undefined,
+      signedOffAt:
+        parsed.signedOffAt !== undefined
+          ? parsed.signedOffAt
+          : nextStatus === DealDiligenceWorkstreamStatus.SIGNED_OFF
+            ? workstream.signedOffAt ?? new Date()
+            : nextStatus === DealDiligenceWorkstreamStatus.NOT_STARTED || nextStatus === DealDiligenceWorkstreamStatus.IN_PROGRESS || nextStatus === DealDiligenceWorkstreamStatus.BLOCKED
+              ? null
+              : undefined,
+      signedOffByLabel:
+        parsed.signedOffByLabel !== undefined
+          ? parsed.signedOffByLabel
+          : nextStatus === DealDiligenceWorkstreamStatus.SIGNED_OFF
+            ? workstream.signedOffByLabel ?? 'deal operator'
+            : undefined,
+      summary: parsed.summary ?? undefined,
+      blockerSummary: parsed.blockerSummary ?? undefined,
+      notes: parsed.notes ?? undefined
+    }
+  });
+
+  await createActivityLog(db, {
+    dealId,
+    activityType: ActivityType.GENERAL,
+    title: 'Diligence workstream updated',
+    body: `${toSentenceCase(updated.workstreamType)} is ${updated.status.toLowerCase().replaceAll('_', ' ')}.`
+  });
+
+  await recordDealProbabilitySnapshot(dealId, 'diligence_workstream_updated', db);
+  return updated;
+}
+
+export async function attachDealDiligenceDeliverable(
+  dealId: string,
+  workstreamId: string,
+  input: unknown,
+  db: PrismaClient = prisma
+) {
+  const parsed = dealDiligenceDeliverableCreateSchema.parse(input);
+  const workstream = await db.dealDiligenceWorkstream.findFirst({
+    where: {
+      id: workstreamId,
+      dealId
+    },
+    include: {
+      deal: {
+        select: {
+          assetId: true
+        }
+      }
+    }
+  });
+  if (!workstream) throw new Error('Diligence workstream not found');
+  if (!workstream.deal.assetId) throw new Error('Linked asset is required for diligence deliverables');
+
+  const document = await db.document.findFirst({
+    where: {
+      id: parsed.documentId,
+      assetId: workstream.deal.assetId
+    },
+    select: {
+      id: true,
+      title: true,
+      documentType: true,
+      currentVersion: true,
+      documentHash: true,
+      updatedAt: true
+    }
+  });
+  if (!document) throw new Error('Document not found for linked asset');
+
+  const deliverable = await db.dealDiligenceDeliverable.upsert({
+    where: {
+      workstreamId_documentId: {
+        workstreamId,
+        documentId: parsed.documentId
+      }
+    },
+    create: {
+      workstreamId,
+      documentId: parsed.documentId,
+      note: parsed.note ?? null
+    },
+    update: {
+      note: parsed.note ?? undefined
+    },
+    include: {
+      document: {
+        select: {
+          id: true,
+          title: true,
+          documentType: true,
+          currentVersion: true,
+          documentHash: true,
+          updatedAt: true
+        }
+      }
+    }
+  });
+
+  await createActivityLog(db, {
+    dealId,
+    activityType: ActivityType.GENERAL,
+    title: 'Diligence deliverable linked',
+    body: `${toSentenceCase(workstream.workstreamType)} linked ${document.title}.`
+  });
+
+  await recordDealProbabilitySnapshot(dealId, 'diligence_deliverable_attached', db);
+  return deliverable;
 }
 
 export async function autoMatchDealDocumentRequestsForAsset(
@@ -2159,6 +2694,7 @@ export function buildDealDataCoverage(
   const bidRevisionCount = deal.bidRevisions.length;
   const lenderQuoteCount = deal.lenderQuotes.length;
   const negotiationEventCount = deal.negotiationEvents.length;
+  const diligenceSummary = buildDealDiligenceSummary(deal);
   const requiredChecklistPct = snapshot?.checklistCompletionPct ?? 0;
   const hasBrokerOrSeller = deal.counterparties.some(
     (counterparty) => counterparty.role === 'BROKER' || counterparty.role === 'SELLER'
@@ -2219,6 +2755,20 @@ export function buildDealDataCoverage(
         requestCount > 0
           ? `${fulfilledRequestCount} of ${requestCount} requests have been fulfilled.`
           : 'No structured diligence requests logged yet.'
+    },
+    {
+      key: 'specialist-workstreams',
+      title: 'Specialist diligence workstreams',
+      status:
+        diligenceSummary.totalCount > 0 && diligenceSummary.missingCoreTypes.length === 0
+          ? 'done'
+          : getStageIndex(deal.stage) >= getStageIndex(DealStage.DD)
+            ? 'missing'
+            : 'done',
+      detail:
+        diligenceSummary.totalCount > 0
+          ? `${diligenceSummary.signedOffCount} signed off / ${diligenceSummary.totalCount} open workstreams. ${diligenceSummary.headline}`
+          : 'No specialist diligence workstreams are tracked yet.'
     },
     {
       key: 'bid-revisions',
@@ -2286,6 +2836,9 @@ export function buildDealDataCoverage(
       lenderQuoteCount,
       negotiationEventCount,
       counterpartyCount: deal.counterparties.length,
+      diligenceWorkstreamCount: diligenceSummary.totalCount,
+      signedOffWorkstreamCount: diligenceSummary.signedOffCount,
+      blockedWorkstreamCount: diligenceSummary.blockedCount,
       requiredChecklistPct
     },
     checks,
@@ -2323,6 +2876,7 @@ export function buildDealClosingReadiness(
   const hasExecutionContacts = deal.counterparties.some(
     (counterparty) => counterparty.role === 'BUYER' || counterparty.role === 'LENDER'
   );
+  const diligenceSummary = buildDealDiligenceSummary(deal);
   const valuationFreshnessDays = latestValuation
     ? Math.floor((Date.now() - latestValuation.createdAt.getTime()) / (1000 * 60 * 60 * 24))
     : null;
@@ -2392,6 +2946,30 @@ export function buildDealClosingReadiness(
           ? `${clearedRequestCount} of ${totalRequestCount} diligence requests are cleared.${suggestedRequestCount > 0 ? ` ${suggestedRequestCount} item${suggestedRequestCount === 1 ? '' : 's'} still have suggested documents pending operator confirmation.` : ''}`
           : 'No diligence request tracker has been opened yet.',
       isBlocker: stageIndex >= getStageIndex(DealStage.DD)
+    },
+    {
+      key: 'specialist-signoff',
+      title: 'Core specialist diligence signed off',
+      status:
+        diligenceSummary.missingCoreTypes.length === 0 &&
+        diligenceSummary.blockedCount === 0 &&
+        diligenceSummary.signedOffCount >= diligenceSummary.coreRequiredTypes.length &&
+        diligenceSummary.uncoveredCoreTypes.length === 0
+          ? 'done'
+          : stageIndex >= getStageIndex(DealStage.DD)
+            ? diligenceSummary.readyForSignoffCount > 0
+              ? 'open'
+              : 'missing'
+            : 'open',
+      detail:
+        diligenceSummary.missingCoreTypes.length > 0
+          ? `Open ${diligenceSummary.missingCoreTypes.map((item) => toSentenceCase(item)).join(', ')} workstreams before committee progression.`
+          : diligenceSummary.blockedCount > 0
+            ? `${diligenceSummary.blockedCount} workstream blocker${diligenceSummary.blockedCount === 1 ? '' : 's'} still need intervention.`
+            : diligenceSummary.uncoveredCoreTypes.length > 0
+              ? `Attach supporting deliverables for ${diligenceSummary.uncoveredCoreTypes.map((item) => toSentenceCase(item)).join(', ')} before packet lock.`
+            : `${diligenceSummary.signedOffCount} signed-off workstream${diligenceSummary.signedOffCount === 1 ? '' : 's'} are logged across ${diligenceSummary.totalCount} tracked lanes.`,
+      isBlocker: stageIndex >= getStageIndex(DealStage.IC)
     },
     {
       key: 'recent-valuation',

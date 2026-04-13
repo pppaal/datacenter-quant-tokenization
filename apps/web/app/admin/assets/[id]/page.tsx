@@ -314,7 +314,7 @@ export default async function AssetDetailPage({
         emptyMessage="No approved feature snapshots yet. Approve normalized evidence or run enrichment before relying on this asset in committee materials."
       />
 
-      <ResearchDossierPanel dossier={researchDossier} />
+      <ResearchDossierPanel dossier={researchDossier} canApproveHouseView={actor?.role === 'ADMIN'} />
 
       <ReviewQueuePanel
         summaries={[reviewSummary]}

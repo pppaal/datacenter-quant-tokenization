@@ -59,6 +59,24 @@ Talking point:
 - the workflow is shared
 - evidence gating is shared
 
+### 1A. Open `/admin/assets/explorer`
+
+Message:
+
+> Before a live dossier exists, the team can still click a mapped property screen, inspect parcel context, and decide whether it deserves a full underwriting file.
+
+Show:
+
+- the map-like candidate surface
+- an untracked property such as `Pangyo Innovation Office Park`
+- parcel id, official-source screen, and blockers
+- `Bootstrap Asset Dossier`
+
+Talking point:
+
+- this is the universal property intake layer
+- operators can move from a preliminary property screen straight into the controlled underwriting OS
+
 ### 2. Open `SEOUL-YEOUIDO-01`
 
 Route:
@@ -100,7 +118,28 @@ Talking point:
 - this is the institutional middle layer
 - no silent promotion from manual evidence straight into valuation
 
-### 4. Return To The Office Asset And Open Reports
+### 4. Open `/admin/research`
+
+Message:
+
+> Official source data and firm thesis are separated. Source view shows what the market data says, and house view shows what the investment team is willing to stand behind.
+
+Show:
+
+- Macro / Markets / Submarkets tabs
+- source freshness and provenance
+- draft vs approved house view labels
+- thesis age
+- asset dossier coverage queue
+- admin approval action for a draft house-view thesis
+
+Talking point:
+
+- source view is not the same as house view
+- house view stays draft until an operator approves an immutable thesis snapshot
+- approved house view is what downstream committee and report surfaces should trust
+
+### 5. Return To The Office Asset And Open Reports
 
 Route:
 
@@ -124,7 +163,7 @@ Talking point:
 
 - DD and risk output distinguish approved coverage, pending items, and open gaps
 
-### 5. Open `/admin/ic`
+### 6. Open `/admin/ic`
 
 Message:
 
@@ -136,13 +175,15 @@ Show:
 - locked packet
 - conditional packet
 - packaging candidates
+- specialist DD sign-off gaps
+- linked DD workpaper export
 
 Talking point:
 
 - committee state now sits between underwriting and execution
 - released decisions remain traceable back to the packet and valuation context
 
-### 6. Open `/admin/deals`
+### 7. Open `/admin/deals`
 
 Message:
 
@@ -154,6 +195,9 @@ Show:
 - next action
 - sourcing score and origination source
 - relationship coverage and live exclusivity
+- specialist due-diligence workstreams and sign-off
+- lane-level external deliverable upload/linking
+- DD workpaper export
 - lender quote coverage
 - bid history
 - close probability
@@ -161,8 +205,10 @@ Show:
 Talking point:
 
 - this is an operator surface, not a generic CRM
+- specialist diligence sign-off stays tied to the live deal record before IC and closing
+- IC packet lock now expects approved valuation plus supporting DD deliverables, not just a checklist tick
 
-### 7. Open `/admin/portfolio`
+### 8. Open `/admin/portfolio`
 
 Message:
 
@@ -175,7 +221,7 @@ Show:
 - occupancy / NOI summary
 - watchlist count
 
-### 8. Open `/admin/portfolio/[id]`
+### 9. Open `/admin/portfolio/[id]`
 
 Message:
 
@@ -198,7 +244,7 @@ Talking point:
 - this is the start of an AI-native operating layer, not just a static dashboard
 - the optimization lab uses a classical quantum-inspired discrete search heuristic to explore reweighting and stress outcomes without moving any operating data offchain
 
-### 9. Open `/admin/funds/[id]`
+### 10. Open `/admin/funds/[id]`
 
 Message:
 
@@ -233,7 +279,7 @@ Talking point:
 - no public trading UX
 - this is a private investment-firm model
 
-### 10. Close With Registry-Only Readiness
+### 11. Close With Registry-Only Readiness
 
 Message:
 
@@ -250,7 +296,7 @@ Talking point:
 - only registry ids, hashes, and packet metadata are anchored
 - the operating system remains offchain and institution-friendly
 
-### 11. Open `/admin/security`
+### 12. Open `/admin/security`
 
 Message:
 

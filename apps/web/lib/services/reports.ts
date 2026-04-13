@@ -161,6 +161,8 @@ export type DealReportBundle = {
     freshnessHeadline: string;
     freshnessLabel: string;
     openCoverageTaskCount: number;
+    houseViewLabel: string;
+    thesisAgeDays: number | null;
   };
   reportFingerprint: string;
   generatedAt: Date;
@@ -404,6 +406,14 @@ function buildTraceabilityFacts(bundle: DealReportBundle, kind: ReportKind): Rep
           : bundle.researchDossier.freshnessHeadline
     },
     {
+      label: 'House View',
+      value: bundle.researchDossier.houseViewLabel,
+      detail:
+        bundle.researchDossier.thesisAgeDays != null
+          ? `Current thesis age ${bundle.researchDossier.thesisAgeDays} day(s)`
+          : 'No persisted house-view thesis age is available.'
+    },
+    {
       label: 'Review Packet',
       value: bundle.latestReviewPacket?.fingerprint ? shortHash(bundle.latestReviewPacket.fingerprint, 16) : 'Not staged',
       detail: bundle.latestReviewPacket?.stagedAt
@@ -482,7 +492,7 @@ function buildControlSheet(bundle: DealReportBundle, reportVersion: string): Rep
     {
       label: 'Research Coverage Queue',
       value: String(bundle.researchDossier.openCoverageTaskCount),
-      detail: bundle.researchDossier.freshnessHeadline
+      detail: `${bundle.researchDossier.freshnessHeadline} / ${bundle.researchDossier.houseViewLabel}`
     },
     {
       label: 'Document Count',
@@ -1224,7 +1234,9 @@ export async function buildReportBundleFromAsset(
       marketThesis: researchDossier.marketThesis,
       freshnessHeadline: researchDossier.freshness.headline,
       freshnessLabel: researchDossier.freshness.label,
-      openCoverageTaskCount: researchDossier.coverage.openTaskCount
+      openCoverageTaskCount: researchDossier.coverage.openTaskCount,
+      houseViewLabel: researchDossier.houseView.approvalLabel,
+      thesisAgeDays: researchDossier.houseView.thesisAgeDays
     },
     reportFingerprint: buildReportFingerprint(asset),
     generatedAt: options?.generatedAt ?? new Date()

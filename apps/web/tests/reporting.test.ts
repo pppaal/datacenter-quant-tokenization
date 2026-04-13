@@ -70,11 +70,26 @@ function makeAssetStub() {
     researchSnapshots: [
       {
         id: 'research-1',
+        snapshotType: 'asset-dossier',
+        viewType: 'HOUSE',
+        approvalStatus: 'APPROVED',
         title: 'National macro fabric',
+        summary: 'Approved data-center house view remains conditionally investable with refinancing and legal cleanup focus.',
         freshnessStatus: 'STALE',
         freshnessLabel: '38d old',
         snapshotDate: new Date('2026-03-20T00:00:00.000Z'),
         sourceSystem: 'research-dossier'
+      },
+      {
+        id: 'research-2',
+        snapshotType: 'market-official-source',
+        viewType: 'SOURCE',
+        approvalStatus: 'APPROVED',
+        title: 'REB Data Center indicators',
+        freshnessStatus: 'FRESH',
+        freshnessLabel: '7d old',
+        snapshotDate: new Date('2026-03-25T00:00:00.000Z'),
+        sourceSystem: 'korea-reb-property-statistics'
       }
     ],
     coverageTasks: [
@@ -369,6 +384,7 @@ test('report bundle and markdown export reuse valuation and document traceabilit
   assert.match(markdown, /Confirm mortgage release path\./);
   assert.ok(report.traceability.some((fact) => fact.label === 'Approved Evidence' && fact.value === '5'));
   assert.ok(report.traceability.some((fact) => fact.label === 'Research Freshness'));
+  assert.ok(report.traceability.some((fact) => fact.label === 'House View' && fact.value.includes('approved')));
   assert.ok(report.controlSheet.some((fact) => fact.label === 'Research Coverage Queue'));
   assert.ok(report.controlSheet.some((fact) => fact.label === 'Review Packet Fingerprint'));
 });

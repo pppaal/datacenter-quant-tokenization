@@ -1,5 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { ResearchHouseViewApprovalButton } from '@/components/admin/research-house-view-approval-button';
 
 type Props = {
   dossier: {
@@ -47,6 +48,25 @@ type Props = {
       latestSnapshotTitle: string;
       latestSnapshotDate: Date | null;
     };
+    houseView: {
+      draftSnapshotId: string | null;
+      title: string;
+      summary: string;
+      approvalStatus: 'DRAFT' | 'APPROVED' | 'SUPERSEDED' | null;
+      approvalLabel: string;
+      approvedAt: Date | null;
+      approvedById: string | null;
+      snapshotDate: Date | null;
+      thesisAgeDays: number | null;
+      lineage: string;
+    };
+    sourceView: {
+      title: string;
+      sourceSystem: string | null;
+      freshnessLabel: string | null;
+      snapshotDate: Date | null;
+      summary: string | null;
+    };
     confidence: {
       score: number;
       level: 'high' | 'moderate' | 'low';
@@ -77,6 +97,7 @@ type Props = {
       }>;
     };
   };
+  canApproveHouseView?: boolean;
 };
 
 function toneForStatus(status: 'good' | 'partial' | 'open') {
@@ -97,7 +118,13 @@ function toneForConfidence(level: 'high' | 'moderate' | 'low') {
   return 'danger' as const;
 }
 
-export function ResearchDossierPanel({ dossier }: Props) {
+function toneForApproval(status: 'DRAFT' | 'APPROVED' | 'SUPERSEDED' | null) {
+  if (status === 'APPROVED') return 'good' as const;
+  if (status === 'SUPERSEDED') return 'danger' as const;
+  return 'warn' as const;
+}
+
+export function ResearchDossierPanel({ dossier, canApproveHouseView = false }: Props) {
   return (
     <Card>
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -223,6 +250,35 @@ export function ResearchDossierPanel({ dossier }: Props) {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+
+          <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+            <div className="fine-print">House View / Source View</div>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <Badge tone={toneForApproval(dossier.houseView.approvalStatus)}>{dossier.houseView.approvalLabel}</Badge>
+              {dossier.houseView.thesisAgeDays != null ? <Badge>{dossier.houseView.thesisAgeDays}d thesis age</Badge> : null}
+              {dossier.sourceView.freshnessLabel ? <Badge>{dossier.sourceView.freshnessLabel}</Badge> : null}
+            </div>
+            {canApproveHouseView && dossier.houseView.draftSnapshotId ? (
+              <div className="mt-3">
+                <ResearchHouseViewApprovalButton snapshotId={dossier.houseView.draftSnapshotId} compact />
+              </div>
+            ) : null}
+            <div className="mt-3 rounded-2xl border border-white/10 bg-slate-950/35 px-3 py-3">
+              <div className="text-sm font-semibold text-white">{dossier.houseView.title}</div>
+              <div className="mt-2 text-sm leading-7 text-slate-400">{dossier.houseView.summary}</div>
+              <div className="mt-2 text-xs text-slate-500">{dossier.houseView.lineage}</div>
+            </div>
+            <div className="mt-3 rounded-2xl border border-white/10 bg-slate-950/35 px-3 py-3">
+              <div className="text-sm font-semibold text-white">{dossier.sourceView.title}</div>
+              <div className="mt-2 text-sm leading-7 text-slate-400">
+                {dossier.sourceView.summary ?? 'No explicit source-view thesis has been staged for this asset yet.'}
+              </div>
+              <div className="mt-2 text-xs text-slate-500">
+                {dossier.sourceView.sourceSystem ?? 'research source'}
+                {dossier.sourceView.snapshotDate ? ` / ${dossier.sourceView.snapshotDate.toISOString().slice(0, 10)}` : ''}
+              </div>
             </div>
           </div>
 

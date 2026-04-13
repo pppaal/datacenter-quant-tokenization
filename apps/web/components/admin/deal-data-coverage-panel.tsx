@@ -20,7 +20,7 @@ export function DealDataCoveragePanel({ coverage }: Props) {
         </Badge>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-7">
+      <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-5">
         <div className="metric-card">
           <div className="fine-print">Checks Complete</div>
           <div className="mt-3 text-3xl font-semibold text-white">
@@ -50,6 +50,18 @@ export function DealDataCoveragePanel({ coverage }: Props) {
         <div className="metric-card">
           <div className="fine-print">Negotiation Events</div>
           <div className="mt-3 text-3xl font-semibold text-white">{coverage.evidence.negotiationEventCount}</div>
+        </div>
+        <div className="metric-card">
+          <div className="fine-print">DD Workstreams</div>
+          <div className="mt-3 text-3xl font-semibold text-white">{coverage.evidence.diligenceWorkstreamCount}</div>
+        </div>
+        <div className="metric-card">
+          <div className="fine-print">Signed Off</div>
+          <div className="mt-3 text-3xl font-semibold text-white">{coverage.evidence.signedOffWorkstreamCount}</div>
+        </div>
+        <div className="metric-card">
+          <div className="fine-print">Blocked</div>
+          <div className="mt-3 text-3xl font-semibold text-white">{coverage.evidence.blockedWorkstreamCount}</div>
         </div>
       </div>
 

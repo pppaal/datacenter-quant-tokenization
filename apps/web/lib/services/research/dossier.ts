@@ -15,14 +15,23 @@ import { buildMarketResearchSummary } from '@/lib/services/research/market-resea
 import { buildMicroResearchSummary } from '@/lib/services/research/micro-research';
 import { selectValuationVariableFamilies } from '@/lib/services/valuation/variable-selection';
 
+type SnapshotViewType = 'SOURCE' | 'HOUSE';
+type SnapshotApprovalStatus = 'DRAFT' | 'APPROVED' | 'SUPERSEDED';
+
 type ResearchSnapshotLike = {
   id?: string;
   snapshotType?: string;
+  viewType?: SnapshotViewType | null;
+  approvalStatus?: SnapshotApprovalStatus | null;
   title: string;
+  summary?: string | null;
   sourceSystem?: string | null;
   freshnessStatus?: SourceStatus | null;
   freshnessLabel?: string | null;
   snapshotDate: Date;
+  approvedAt?: Date | null;
+  approvedById?: string | null;
+  supersedesSnapshotId?: string | null;
   metrics?: unknown;
 };
 
@@ -57,6 +66,25 @@ function extractSnapshotHighlights(metrics: unknown) {
         : null;
     })
     .filter((item): item is { label: string; value: string } => Boolean(item));
+}
+
+function inferSnapshotViewType(snapshot: ResearchSnapshotLike) {
+  if (snapshot.viewType) return snapshot.viewType;
+  if (snapshot.snapshotType === 'official-source' || snapshot.snapshotType === 'market-official-source') {
+    return 'SOURCE';
+  }
+  return 'HOUSE';
+}
+
+function inferSnapshotApprovalStatus(snapshot: ResearchSnapshotLike) {
+  if (snapshot.approvalStatus) return snapshot.approvalStatus;
+  return inferSnapshotViewType(snapshot) === 'SOURCE' ? 'APPROVED' : 'DRAFT';
+}
+
+function approvalLabel(status: SnapshotApprovalStatus | null | undefined) {
+  if (status === 'APPROVED') return 'approved house view';
+  if (status === 'SUPERSEDED') return 'superseded house view';
+  return 'draft house view';
 }
 
 type ResearchAssetLike = {
@@ -253,11 +281,20 @@ function deriveResearchConfidence(args: {
   asset: ResearchAssetLike;
   reviewSummary: ReturnType<typeof buildAssetEvidenceReviewSummary>;
   freshestSnapshot: ResearchSnapshotLike | null;
+  houseViewSnapshot: ResearchSnapshotLike | null;
   provenanceSources: string[];
   openCoverageTaskCount: number;
   officialHighlightCount: number;
 }) {
-  const { asset, reviewSummary, freshestSnapshot, provenanceSources, openCoverageTaskCount, officialHighlightCount } = args;
+  const {
+    asset,
+    reviewSummary,
+    freshestSnapshot,
+    houseViewSnapshot,
+    provenanceSources,
+    openCoverageTaskCount,
+    officialHighlightCount
+  } = args;
   let score = 72;
 
   if (freshestSnapshot?.freshnessStatus === SourceStatus.STALE) score -= 12;
@@ -267,6 +304,9 @@ function deriveResearchConfidence(args: {
   score -= Math.min(openCoverageTaskCount * 4, 16);
   score += Math.min(provenanceSources.length * 2, 8);
   score += Math.min(reviewSummary.approvedCoverageCount * 2, 10);
+  if (houseViewSnapshot && inferSnapshotApprovalStatus(houseViewSnapshot) === 'APPROVED') {
+    score += 4;
+  }
   if ((asset.transactionComps?.length ?? 0) === 0) score -= 8;
   if ((asset.rentComps?.length ?? 0) === 0) score -= 6;
   if (officialHighlightCount === 0) score -= 6;
@@ -287,9 +327,13 @@ function deriveResearchConfidence(args: {
     thesisAgeDays,
     headline:
       level === 'high'
-        ? 'Research confidence is strong enough for committee circulation.'
+        ? houseViewSnapshot && inferSnapshotApprovalStatus(houseViewSnapshot) === 'APPROVED'
+          ? 'Approved house view is strong enough for committee circulation.'
+          : 'Research confidence is strong enough for committee circulation.'
         : level === 'moderate'
-          ? 'Research confidence is usable, but gaps should be cleared before heavy reliance.'
+          ? houseViewSnapshot
+            ? `${approvalLabel(inferSnapshotApprovalStatus(houseViewSnapshot))} is usable, but gaps should be cleared before heavy reliance.`
+            : 'Research confidence is usable, but gaps should be cleared before heavy reliance.'
           : 'Research confidence is below committee-ready threshold and needs more coverage.',
     conflicts
   };
@@ -327,8 +371,22 @@ export function buildAssetResearchDossier(asset: ResearchAssetLike) {
   const documents = buildDocumentResearchSummary(asset);
   const latestReviewPacket = extractReviewPacketSummary(getLatestReviewPacketRecord(asset.readinessProject?.onchainRecords));
   const researchSnapshots = [...(asset.researchSnapshots ?? [])];
+  const houseViewSnapshot =
+    researchSnapshots.find(
+      (snapshot) =>
+        inferSnapshotViewType(snapshot) === 'HOUSE' &&
+        inferSnapshotApprovalStatus(snapshot) === 'APPROVED'
+    ) ??
+    researchSnapshots.find((snapshot) => inferSnapshotViewType(snapshot) === 'HOUSE') ??
+    null;
+  const draftHouseViewSnapshot =
+    researchSnapshots.find(
+      (snapshot) => inferSnapshotViewType(snapshot) === 'HOUSE' && inferSnapshotApprovalStatus(snapshot) === 'DRAFT'
+    ) ?? null;
+  const sourceViewSnapshot =
+    researchSnapshots.find((snapshot) => inferSnapshotViewType(snapshot) === 'SOURCE') ?? null;
   const fallbackFreshness = deriveFallbackFreshness(asset);
-  const freshestSnapshot = researchSnapshots[0] ?? null;
+  const freshestSnapshot = houseViewSnapshot ?? researchSnapshots[0] ?? null;
   const freshnessStatus = freshestSnapshot?.freshnessStatus ?? fallbackFreshness.status;
   const freshnessLabel = freshestSnapshot?.freshnessLabel ?? fallbackFreshness.label;
   const openCoverageTasks = (asset.coverageTasks ?? []).filter((task) => task.status !== TaskStatus.DONE);
@@ -353,17 +411,21 @@ export function buildAssetResearchDossier(asset: ResearchAssetLike) {
     asset,
     reviewSummary,
     freshestSnapshot,
+    houseViewSnapshot,
     provenanceSources,
     openCoverageTaskCount: openCoverageTasks.length,
     officialHighlightCount: officialSourceHighlights.length
   });
+  const combinedMarketThesis = `${macro.thesis} ${market.thesis}`.trim();
+  const houseViewSummary = houseViewSnapshot?.summary?.trim() || combinedMarketThesis;
+  const houseViewApprovalStatus = houseViewSnapshot ? inferSnapshotApprovalStatus(houseViewSnapshot) : null;
 
   return {
     playbook: {
       ...playbook,
       valuationVariableFamilies: selectValuationVariableFamilies(asset.assetClass)
     },
-    marketThesis: `${macro.thesis} ${market.thesis}`.trim(),
+    marketThesis: houseViewSummary,
     macro,
     market,
     micro,
@@ -400,6 +462,28 @@ export function buildAssetResearchDossier(asset: ResearchAssetLike) {
       sources: provenanceSources,
       latestSnapshotTitle: freshestSnapshot?.title ?? 'Asset dossier coverage',
       latestSnapshotDate: freshestSnapshot?.snapshotDate ?? fallbackFreshness.observedAt
+    },
+    houseView: {
+      draftSnapshotId: draftHouseViewSnapshot?.id ?? null,
+      title: houseViewSnapshot?.title ?? 'No persisted house view',
+      summary: houseViewSummary,
+      approvalStatus: houseViewApprovalStatus,
+      approvalLabel: approvalLabel(houseViewApprovalStatus),
+      approvedAt: houseViewSnapshot?.approvedAt ?? null,
+      approvedById: houseViewSnapshot?.approvedById ?? null,
+      snapshotDate: houseViewSnapshot?.snapshotDate ?? null,
+      thesisAgeDays: confidence.thesisAgeDays,
+      lineage:
+        houseViewSnapshot?.supersedesSnapshotId
+          ? 'Current thesis supersedes an earlier house view.'
+          : 'Current thesis is derived from approved evidence, market comps, and official-source coverage.'
+    },
+    sourceView: {
+      title: sourceViewSnapshot?.title ?? 'No persisted source view',
+      sourceSystem: sourceViewSnapshot?.sourceSystem ?? null,
+      freshnessLabel: sourceViewSnapshot?.freshnessLabel ?? null,
+      snapshotDate: sourceViewSnapshot?.snapshotDate ?? null,
+      summary: sourceViewSnapshot?.summary ?? null
     },
     confidence,
     officialSources: {

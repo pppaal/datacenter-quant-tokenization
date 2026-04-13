@@ -11,7 +11,7 @@ Browser operators now enter through `/admin/login` using a signed session cookie
 ## Product Surface
 
 - Public pages: `/`, `/product`, `/sample-report`
-- Admin pages: `/admin`, `/admin/research`, `/admin/deals`, `/admin/ic`, `/admin/assets`, `/admin/assets/new`, `/admin/assets/[id]`, `/admin/review`, `/admin/valuations`, `/admin/documents`, `/admin/sources`, `/admin/portfolio`, `/admin/portfolio/[id]`, `/admin/funds`, `/admin/funds/[id]`, `/admin/investors`, `/admin/registry`
+- Admin pages: `/admin`, `/admin/research`, `/admin/deals`, `/admin/ic`, `/admin/assets`, `/admin/assets/explorer`, `/admin/assets/new`, `/admin/assets/[id]`, `/admin/review`, `/admin/valuations`, `/admin/documents`, `/admin/sources`, `/admin/portfolio`, `/admin/portfolio/[id]`, `/admin/funds`, `/admin/funds/[id]`, `/admin/investors`, `/admin/registry`
 - Core models: `Asset`, `SiteProfile`, `Address`, `BuildingSnapshot`, `PermitSnapshot`, `EnergySnapshot`, `MarketSnapshot`, `ValuationRun`, `ValuationScenario`, `Document`, `Inquiry`, `User`, `RwaProject`, `OnchainRecord`
 
 ## Quick Start
@@ -41,7 +41,8 @@ npm run dev
 - `npm run dev` starts the active product in `apps/web`
 - `npm run build` builds `apps/web`
 - `npm run test` runs the required unit tests in `apps/web`
-- `npm run e2e` runs deterministic Playwright operator mutation coverage and reseeds the demo dataset before the suite starts
+- `npm run e2e` runs deterministic Playwright operator mutation coverage, reseeds the demo dataset before the suite starts, and now browser-tests `Property Explorer -> Bootstrap Asset Dossier`
+- the local E2E harness now replays the checked-in migration chain against the dedicated scratch database, uses `prisma migrate reset` when the scratch history is stale, and only then runs `prisma db push` to converge remaining legacy schema drift before reseeding
 - `npm run e2e:local` starts the checked-in Docker Postgres service and then runs the full local browser mutation suite
 - `npm run e2e:list` lists the browser operator suite without launching the app
 - `npm run e2e:hosted` runs the hosted smoke suite against `PLAYWRIGHT_BASE_URL`
@@ -116,14 +117,14 @@ The current product stance is:
 ## Investment-Firm Operating Layers
 
 - `Research`
-  - `/admin/research` for macro, market, submarket, asset dossier, portfolio optimization, and coverage-queue research fabric with provenance, freshness, confidence/conflict signals, and explicit sync controls
+  - `/admin/research` for macro, market, submarket, asset dossier, portfolio optimization, and coverage-queue research fabric with provenance, freshness, confidence/conflict signals, explicit sync controls, a `source view` vs `house view` split, and admin approval of immutable house-view thesis snapshots
   - `/admin/sources` for source freshness, stale asset queue, and recent source refresh run history
 - `Underwriting`
   - review-gated evidence, promoted features, valuation, committee memo, DD checklist, and risk memo
 - `Deal Execution`
-  - `/admin/deals` for next actions, sourcing score, origination source, relationship coverage, lender quotes, bids, exclusivity state, loss taxonomy, and close-probability snapshots
+  - `/admin/deals` for next actions, sourcing score, origination source, relationship coverage, lender quotes, bids, exclusivity state, specialist due-diligence workstreams, lane-level deliverable upload/linking, DD workpaper export, loss taxonomy, and close-probability snapshots
 - `IC Governance`
-  - `/admin/ic` for scheduled meetings, locked packets, released decision records, and committee packaging candidates
+  - `/admin/ic` for scheduled meetings, locked packets, released decision records, committee packaging candidates, specialist DD sign-off visibility, and packet-lock guards that require approved valuation plus supporting DD deliverables
 - `Portfolio Operations`
   - `/admin/portfolio` for held-asset KPI history, lease rollover watchlists, covenant tracking, capex vs budget, asset-management initiatives, exit cases, and quantum-inspired scenario exploration
 - `Capital Formation Shell`

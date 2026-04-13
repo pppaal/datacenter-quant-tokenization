@@ -1,5 +1,7 @@
+import { Suspense } from 'react';
 import { headers } from 'next/headers';
 import { Badge } from '@/components/ui/badge';
+import { PanelSkeleton } from '@/components/ui/skeleton';
 import { ResearchRefreshButton } from '@/components/admin/research-refresh-button';
 import { ResearchWorkspacePanel } from '@/components/admin/research-workspace-panel';
 import { hasRequiredAdminRole } from '@/lib/security/admin-auth';
@@ -16,14 +18,19 @@ type Props = {
 
 const validTabs: ResearchWorkspaceTab[] = ['macro', 'markets', 'submarkets', 'assets', 'optimization', 'coverage'];
 
+async function ResearchContent({ activeTab, canApproveHouseView }: { activeTab: ResearchWorkspaceTab; canApproveHouseView: boolean }) {
+  const data = await getResearchWorkspaceData();
+  return <ResearchWorkspacePanel data={data} activeTab={activeTab} canApproveHouseView={canApproveHouseView} />;
+}
+
 export default async function AdminResearchPage({ searchParams }: Props) {
   const resolvedSearchParams = (await searchParams) ?? {};
   const actor = getAdminActorFromHeaders(await headers());
   const canRefreshResearch = actor ? hasRequiredAdminRole(actor.role, 'ANALYST') : false;
+  const canApproveHouseView = actor ? hasRequiredAdminRole(actor.role, 'ADMIN') : false;
   const activeTab = validTabs.includes(resolvedSearchParams.tab as ResearchWorkspaceTab)
     ? (resolvedSearchParams.tab as ResearchWorkspaceTab)
     : 'macro';
-  const data = await getResearchWorkspaceData();
 
   return (
     <div className="space-y-6">
@@ -52,7 +59,9 @@ export default async function AdminResearchPage({ searchParams }: Props) {
         ) : null}
       </section>
 
-      <ResearchWorkspacePanel data={data} activeTab={activeTab} />
+      <Suspense fallback={<PanelSkeleton rows={4} />}>
+        <ResearchContent activeTab={activeTab} canApproveHouseView={canApproveHouseView} />
+      </Suspense>
     </div>
   );
 }

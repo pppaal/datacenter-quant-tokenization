@@ -62,11 +62,18 @@ test.describe('seeded operator smoke flows', () => {
 
     await expect(page.getByText('Asset Pipeline', { exact: true })).toBeVisible();
     await expect(page.getByText(/Korean real-estate dossiers moving through evidence, valuation, and committee review\./i)).toBeVisible();
+    await page.getByRole('link', { name: /Open Property Explorer/i }).click();
+    await expect(page).toHaveURL(/\/admin\/assets\/explorer/);
+    await expect(page.getByRole('heading', { name: /Click a Korean property screen, run a first-pass investment view/i })).toBeVisible();
+    await expect(page.getByTestId('property-explorer-marker').first()).toBeVisible();
+    await expect(page.getByTestId('property-explorer-row').first()).toBeVisible();
+
+    await page.goto('/admin/assets');
     await expect(page.getByRole('link', { name: /Yeouido Core Office Tower/i })).toBeVisible();
     await expect(page.getByRole('link', { name: /Seoul Hyperscale Campus I/i })).toBeVisible();
 
     await page.getByRole('link', { name: /Yeouido Core Office Tower/i }).click();
-    await expect(page.getByText('Asset Dossier')).toBeVisible();
+    await expect(page.locator('.eyebrow').filter({ hasText: 'Asset Dossier' }).first()).toBeVisible();
     await expect(page.locator('h2').filter({ hasText: 'Yeouido Core Office Tower' })).toBeVisible();
     await expect(page.locator('[data-testid="feature-snapshot-panel"]').getByText('Approved Feature Layer', { exact: true })).toBeVisible();
     await expect(page.getByText('Research Snapshot', { exact: true })).toBeVisible();

@@ -33,6 +33,8 @@ The blockchain boundary remains unchanged:
 
 - `/admin/assets`
   Asset list and dossier entry point
+- `/admin/assets/explorer`
+  Universal property intake surface for map-like parcel screens and one-click dossier bootstrap
 - `/admin/assets/[id]`
   Asset dossier with research, evidence, review, valuation, reports, and readiness actions
 - `/admin/review`
@@ -91,6 +93,9 @@ Current operator outputs now include:
 
 - freshness and provenance
 - confidence score
+- source view vs house view
+- thesis age and approval state
+- immutable approved house-view thesis lineage
 - source disagreement / conflict flags
 - thesis aging visibility
 

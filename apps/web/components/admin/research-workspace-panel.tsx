@@ -1,11 +1,13 @@
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { ResearchHouseViewApprovalButton } from '@/components/admin/research-house-view-approval-button';
 import type { ResearchWorkspaceData, ResearchWorkspaceTab } from '@/lib/services/research/workspace';
 
 type Props = {
   data: ResearchWorkspaceData;
   activeTab: ResearchWorkspaceTab;
+  canApproveHouseView?: boolean;
 };
 
 function toneForFreshness(status: string | null | undefined) {
@@ -14,7 +16,13 @@ function toneForFreshness(status: string | null | undefined) {
   return 'danger' as const;
 }
 
-export function ResearchWorkspacePanel({ data, activeTab }: Props) {
+function toneForApproval(status: string | null | undefined) {
+  if (status === 'APPROVED') return 'good' as const;
+  if (status === 'SUPERSEDED') return 'danger' as const;
+  return 'warn' as const;
+}
+
+export function ResearchWorkspacePanel({ data, activeTab, canApproveHouseView = false }: Props) {
   return (
     <div className="space-y-6">
       <Card>
@@ -152,12 +160,28 @@ export function ResearchWorkspacePanel({ data, activeTab }: Props) {
                         {market.snapshot.freshnessLabel ?? 'unknown'}
                       </Badge>
                     ) : null}
+                    {market.houseView ? (
+                      <Badge tone={toneForApproval(market.houseView.approvalStatus)}>
+                        {market.houseView.approvalStatus.toLowerCase()} house view
+                      </Badge>
+                    ) : null}
                     <Badge tone={market.openCoverageTasks > 0 ? 'warn' : 'good'}>
                       {market.openCoverageTasks} open tasks
                     </Badge>
                   </div>
                 </div>
+                {canApproveHouseView && market.houseView?.draftSnapshotId ? (
+                  <div className="mt-3">
+                    <ResearchHouseViewApprovalButton snapshotId={market.houseView.draftSnapshotId} compact />
+                  </div>
+                ) : null}
                 <p className="mt-3 text-sm leading-7 text-slate-400">{market.snapshot?.summary ?? market.thesis ?? 'No market thesis yet.'}</p>
+                {market.houseView?.thesisAgeDays != null ? (
+                  <div className="mt-2 text-xs text-slate-500">
+                    House thesis age {market.houseView.thesisAgeDays}d
+                    {market.sourceView?.freshnessLabel ? ` / source view ${market.sourceView.freshnessLabel}` : ''}
+                  </div>
+                ) : null}
                 {market.officialHighlights.length > 0 ? (
                   <div className="mt-3 flex flex-wrap gap-2">
                     {market.officialHighlights.map((item) => (
@@ -197,12 +221,27 @@ export function ResearchWorkspacePanel({ data, activeTab }: Props) {
                         {submarket.snapshot.freshnessLabel ?? 'unknown'}
                       </Badge>
                     ) : null}
+                    {submarket.houseView ? (
+                      <Badge tone={toneForApproval(submarket.houseView.approvalStatus)}>
+                        {submarket.houseView.approvalStatus.toLowerCase()} house view
+                      </Badge>
+                    ) : null}
                     <Badge tone={submarket.openCoverageTasks > 0 ? 'warn' : 'good'}>
                       {submarket.openCoverageTasks} open tasks
                     </Badge>
                   </div>
                 </div>
+                {canApproveHouseView && submarket.houseView?.draftSnapshotId ? (
+                  <div className="mt-3">
+                    <ResearchHouseViewApprovalButton snapshotId={submarket.houseView.draftSnapshotId} compact />
+                  </div>
+                ) : null}
                 <p className="mt-3 text-sm leading-7 text-slate-400">{submarket.snapshot?.summary ?? submarket.thesis ?? 'No submarket thesis yet.'}</p>
+                {submarket.houseView?.thesisAgeDays != null ? (
+                  <div className="mt-2 text-xs text-slate-500">
+                    House thesis age {submarket.houseView.thesisAgeDays}d
+                  </div>
+                ) : null}
               </div>
             ))}
             {data.submarkets.length === 0 ? (
@@ -252,14 +291,23 @@ export function ResearchWorkspacePanel({ data, activeTab }: Props) {
                     >
                       confidence {asset.confidenceScore}%
                     </Badge>
+                    <Badge tone={asset.houseViewLabel.includes('approved') ? 'good' : 'warn'}>
+                      {asset.houseViewLabel}
+                    </Badge>
                     <Badge tone={asset.conflictCount > 0 ? 'warn' : 'good'}>
                       {asset.conflictCount} conflict{asset.conflictCount === 1 ? '' : 's'}
                     </Badge>
                   </div>
                 </div>
+                {canApproveHouseView && asset.draftHouseViewSnapshotId ? (
+                  <div className="mt-3">
+                    <ResearchHouseViewApprovalButton snapshotId={asset.draftHouseViewSnapshotId} compact />
+                  </div>
+                ) : null}
                 <p className="mt-3 text-sm leading-7 text-slate-400">{asset.marketThesis}</p>
                 <div className="mt-2 text-xs text-slate-500">
                   Latest valuation: {asset.latestValuationId ?? 'not run yet'}
+                  {asset.thesisAgeDays != null ? ` / thesis age ${asset.thesisAgeDays}d` : ''}
                 </div>
               </Link>
             ))}

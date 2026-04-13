@@ -29,6 +29,8 @@ import {
 import { slugify } from '@/lib/utils';
 
 export type ResearchWorkspaceTab = 'macro' | 'markets' | 'submarkets' | 'assets' | 'optimization' | 'coverage';
+type SnapshotViewType = 'SOURCE' | 'HOUSE';
+type SnapshotApprovalStatus = 'DRAFT' | 'APPROVED' | 'SUPERSEDED';
 
 export type ResearchWorkspaceData = {
   tabs: ResearchWorkspaceTab[];
@@ -83,6 +85,18 @@ export type ResearchWorkspaceData = {
       freshnessLabel: string | null;
       updatedAt: Date | null;
     } | null;
+    houseView: {
+      draftSnapshotId: string | null;
+      title: string;
+      summary: string | null;
+      approvalStatus: SnapshotApprovalStatus;
+      thesisAgeDays: number | null;
+    } | null;
+    sourceView: {
+      title: string;
+      summary: string | null;
+      freshnessLabel: string | null;
+    } | null;
     officialHighlights: Array<{
       label: string;
       value: string;
@@ -103,6 +117,13 @@ export type ResearchWorkspaceData = {
       freshnessLabel: string | null;
       updatedAt: Date | null;
     } | null;
+    houseView: {
+      draftSnapshotId: string | null;
+      title: string;
+      summary: string | null;
+      approvalStatus: SnapshotApprovalStatus;
+      thesisAgeDays: number | null;
+    } | null;
     openCoverageTasks: number;
   }>;
   assetDossiers: Array<{
@@ -120,6 +141,9 @@ export type ResearchWorkspaceData = {
     confidenceScore: number;
     confidenceLevel: 'high' | 'moderate' | 'low';
     conflictCount: number;
+    houseViewLabel: string;
+    thesisAgeDays: number | null;
+    draftHouseViewSnapshotId: string | null;
   }>;
   optimization: Array<{
     portfolioId: string;
@@ -169,6 +193,11 @@ type ResearchSnapshotSurface = {
   freshnessStatus?: SourceStatus | null;
   freshnessLabel?: string | null;
   title?: string | null;
+  snapshotType?: string | null;
+  viewType?: SnapshotViewType | null;
+  approvalStatus?: SnapshotApprovalStatus | null;
+  summary?: string | null;
+  snapshotDate?: Date | null;
 };
 
 type CoverageTaskSurface = {
@@ -318,6 +347,31 @@ function inferObservationDateFromPayload(payload: Record<string, unknown>, fallb
     }
   }
   return fallbackDate;
+}
+
+function inferSnapshotViewType(snapshot: {
+  snapshotType?: string | null;
+  viewType?: SnapshotViewType | null;
+}) {
+  if (snapshot.viewType) return snapshot.viewType;
+  if (snapshot.snapshotType === 'official-source' || snapshot.snapshotType === 'market-official-source') {
+    return 'SOURCE';
+  }
+  return 'HOUSE';
+}
+
+function inferApprovalStatus(snapshot: {
+  snapshotType?: string | null;
+  viewType?: SnapshotViewType | null;
+  approvalStatus?: SnapshotApprovalStatus | null;
+}) {
+  if (snapshot.approvalStatus) return snapshot.approvalStatus;
+  return inferSnapshotViewType(snapshot) === 'SOURCE' ? 'APPROVED' : 'DRAFT';
+}
+
+function computeThesisAgeDays(value: Date | null | undefined) {
+  if (!(value instanceof Date)) return null;
+  return Math.max(0, Math.round((Date.now() - value.getTime()) / (1000 * 60 * 60 * 24)));
 }
 
 async function persistOfficialSourceNormalizedSeries(
@@ -649,6 +703,8 @@ async function upsertOfficialMarketSnapshots(
       update: {
         marketUniverseId: marketUniverse.id,
         snapshotType: 'market-official-source',
+        viewType: 'SOURCE',
+        approvalStatus: 'APPROVED',
         title: `${definition.label} ${playbook.label} indicators`,
         summary:
           highlights.length > 0
@@ -658,6 +714,7 @@ async function upsertOfficialMarketSnapshots(
         sourceSystem: definition.sourceSystem,
         freshnessStatus: envelope.status,
         freshnessLabel: envelope.freshnessLabel,
+        approvedAt: envelope.fetchedAt,
         metrics: {
           highlights,
           metricCount: scopedMetrics.length
@@ -673,6 +730,8 @@ async function upsertOfficialMarketSnapshots(
         snapshotKey: `official:${definition.key}:${assetClass.toLowerCase()}`,
         marketUniverseId: marketUniverse.id,
         snapshotType: 'market-official-source',
+        viewType: 'SOURCE',
+        approvalStatus: 'APPROVED',
         title: `${definition.label} ${playbook.label} indicators`,
         summary:
           highlights.length > 0
@@ -682,6 +741,7 @@ async function upsertOfficialMarketSnapshots(
         sourceSystem: definition.sourceSystem,
         freshnessStatus: envelope.status,
         freshnessLabel: envelope.freshnessLabel,
+        approvedAt: envelope.fetchedAt,
         metrics: {
           highlights,
           metricCount: scopedMetrics.length
@@ -858,12 +918,15 @@ async function syncOfficialSourceResearch(db: PrismaClient, topology: ResearchSc
       update: {
         marketUniverseId: topology.nationalMarketId,
         snapshotType: 'official-source',
+        viewType: 'SOURCE',
+        approvalStatus: 'APPROVED',
         title: definition.label,
         summary: summarizeDatasetEnvelope(definition, envelope),
         snapshotDate: envelope.fetchedAt,
         sourceSystem: definition.sourceSystem,
         freshnessStatus: envelope.status,
         freshnessLabel: envelope.freshnessLabel,
+        approvedAt: envelope.fetchedAt,
         metrics: {
           raw: envelope.data as Prisma.InputJsonValue,
           highlights: summarizeOfficialMetricHighlights(persistence.metrics),
@@ -875,12 +938,15 @@ async function syncOfficialSourceResearch(db: PrismaClient, topology: ResearchSc
         snapshotKey: `official:${definition.key}:kr`,
         marketUniverseId: topology.nationalMarketId,
         snapshotType: 'official-source',
+        viewType: 'SOURCE',
+        approvalStatus: 'APPROVED',
         title: definition.label,
         summary: summarizeDatasetEnvelope(definition, envelope),
         snapshotDate: envelope.fetchedAt,
         sourceSystem: definition.sourceSystem,
         freshnessStatus: envelope.status,
         freshnessLabel: envelope.freshnessLabel,
+        approvedAt: envelope.fetchedAt,
         metrics: {
           raw: envelope.data as Prisma.InputJsonValue,
           highlights: summarizeOfficialMetricHighlights(persistence.metrics),
@@ -971,6 +1037,7 @@ async function syncAssetAndMarketResearch(db: PrismaClient, topology: ResearchSc
     const submarket = submarketKey ? topology.submarketByKey.get(submarketKey) : null;
     const observedAt = getAssetResearchObservedAt(asset);
     const freshness = deriveResearchFreshness(observedAt);
+    const assetHouseViewStatus = 'DRAFT';
 
     await db.researchSnapshot.upsert({
       where: {
@@ -981,12 +1048,15 @@ async function syncAssetAndMarketResearch(db: PrismaClient, topology: ResearchSc
         marketUniverseId: marketUniverse?.id ?? null,
         submarketId: submarket?.id ?? null,
         snapshotType: 'asset-dossier',
+        viewType: 'HOUSE',
+        approvalStatus: assetHouseViewStatus,
         title: `${asset.assetCode} research dossier`,
         summary: dossier.marketThesis,
         snapshotDate: observedAt ?? asset.updatedAt,
         sourceSystem: 'research-dossier',
         freshnessStatus: freshness.status,
         freshnessLabel: freshness.label,
+        approvedAt: null,
         metrics: {
           approvedCoverageCount: dossier.micro.approvedCoverageCount,
           pendingBlockerCount: dossier.micro.pendingBlockers.length,
@@ -1016,12 +1086,15 @@ async function syncAssetAndMarketResearch(db: PrismaClient, topology: ResearchSc
         marketUniverseId: marketUniverse?.id ?? null,
         submarketId: submarket?.id ?? null,
         snapshotType: 'asset-dossier',
+        viewType: 'HOUSE',
+        approvalStatus: assetHouseViewStatus,
         title: `${asset.assetCode} research dossier`,
         summary: dossier.marketThesis,
         snapshotDate: observedAt ?? asset.updatedAt,
         sourceSystem: 'research-dossier',
         freshnessStatus: freshness.status,
         freshnessLabel: freshness.label,
+        approvedAt: null,
         metrics: {
           approvedCoverageCount: dossier.micro.approvedCoverageCount,
           pendingBlockerCount: dossier.micro.pendingBlockers.length,
@@ -1128,6 +1201,7 @@ async function syncAssetAndMarketResearch(db: PrismaClient, topology: ResearchSc
   for (const [marketKey, item] of marketAccumulator.entries()) {
     const playbook = getAssetClassPlaybook(item.assetClass);
     const freshness = deriveResearchFreshness(item.lastObservedAt);
+    const marketHouseViewStatus = 'DRAFT';
     await db.researchSnapshot.upsert({
       where: {
         snapshotKey: `market:${marketKey}`
@@ -1135,12 +1209,15 @@ async function syncAssetAndMarketResearch(db: PrismaClient, topology: ResearchSc
       update: {
         marketUniverseId: item.marketUniverseId,
         snapshotType: 'market-thesis',
+        viewType: 'HOUSE',
+        approvalStatus: marketHouseViewStatus,
         title: `Korea ${playbook.label} market thesis`,
         summary: `${pluralize(item.assetCount, 'asset')} mapped with ${pluralize(item.transactionComps, 'transaction comp')} and ${pluralize(item.rentComps, 'rent comp')}. ${item.pendingBlockers > 0 ? `${pluralize(item.pendingBlockers, 'pending blocker')} remain in the approved evidence queue.` : 'Approved micro evidence is broadly in place.'}`,
         snapshotDate: item.lastObservedAt ?? new Date(),
         sourceSystem: 'research-market-aggregate',
         freshnessStatus: freshness.status,
         freshnessLabel: freshness.label,
+        approvedAt: null,
         metrics: {
           assetCount: item.assetCount,
           approvedEvidence: item.approvedEvidence,
@@ -1157,12 +1234,15 @@ async function syncAssetAndMarketResearch(db: PrismaClient, topology: ResearchSc
         snapshotKey: `market:${marketKey}`,
         marketUniverseId: item.marketUniverseId,
         snapshotType: 'market-thesis',
+        viewType: 'HOUSE',
+        approvalStatus: marketHouseViewStatus,
         title: `Korea ${playbook.label} market thesis`,
         summary: `${pluralize(item.assetCount, 'asset')} mapped with ${pluralize(item.transactionComps, 'transaction comp')} and ${pluralize(item.rentComps, 'rent comp')}. ${item.pendingBlockers > 0 ? `${pluralize(item.pendingBlockers, 'pending blocker')} remain in the approved evidence queue.` : 'Approved micro evidence is broadly in place.'}`,
         snapshotDate: item.lastObservedAt ?? new Date(),
         sourceSystem: 'research-market-aggregate',
         freshnessStatus: freshness.status,
         freshnessLabel: freshness.label,
+        approvedAt: null,
         metrics: {
           assetCount: item.assetCount,
           approvedEvidence: item.approvedEvidence,
@@ -1181,6 +1261,7 @@ async function syncAssetAndMarketResearch(db: PrismaClient, topology: ResearchSc
   for (const [submarketKey, item] of submarketAccumulator.entries()) {
     const playbook = getAssetClassPlaybook(item.assetClass);
     const freshness = deriveResearchFreshness(item.lastObservedAt);
+    const submarketHouseViewStatus = 'DRAFT';
     await db.researchSnapshot.upsert({
       where: {
         snapshotKey: `submarket:${submarketKey}`
@@ -1188,12 +1269,15 @@ async function syncAssetAndMarketResearch(db: PrismaClient, topology: ResearchSc
       update: {
         submarketId: item.submarketId,
         snapshotType: 'submarket-thesis',
+        viewType: 'HOUSE',
+        approvalStatus: submarketHouseViewStatus,
         title: `${playbook.label} submarket thesis`,
         summary: `${pluralize(item.assetCount, 'asset')} tracked in this submarket with ${item.pendingBlockers > 0 ? `${pluralize(item.pendingBlockers, 'pending blocker')} still open.` : 'approved evidence coverage broadly in place.'}`,
         snapshotDate: item.lastObservedAt ?? new Date(),
         sourceSystem: 'research-submarket-aggregate',
         freshnessStatus: freshness.status,
         freshnessLabel: freshness.label,
+        approvedAt: null,
         metrics: {
           assetCount: item.assetCount,
           approvedEvidence: item.approvedEvidence,
@@ -1208,12 +1292,15 @@ async function syncAssetAndMarketResearch(db: PrismaClient, topology: ResearchSc
         snapshotKey: `submarket:${submarketKey}`,
         submarketId: item.submarketId,
         snapshotType: 'submarket-thesis',
+        viewType: 'HOUSE',
+        approvalStatus: submarketHouseViewStatus,
         title: `${playbook.label} submarket thesis`,
         summary: `${pluralize(item.assetCount, 'asset')} tracked in this submarket with ${item.pendingBlockers > 0 ? `${pluralize(item.pendingBlockers, 'pending blocker')} still open.` : 'approved evidence coverage broadly in place.'}`,
         snapshotDate: item.lastObservedAt ?? new Date(),
         sourceSystem: 'research-submarket-aggregate',
         freshnessStatus: freshness.status,
         freshnessLabel: freshness.label,
+        approvedAt: null,
         metrics: {
           assetCount: item.assetCount,
           approvedEvidence: item.approvedEvidence,
@@ -1410,12 +1497,14 @@ export async function getResearchWorkspaceData(db: PrismaClient = prisma): Promi
       include: {
         researchSnapshots: {
           where: {
-            snapshotType: 'submarket-thesis'
+            snapshotType: {
+              in: ['submarket-thesis', 'market-official-source']
+            }
           },
           orderBy: {
             snapshotDate: 'desc'
           },
-          take: 1
+          take: 4
         },
         coverageTasks: {
           where: {
@@ -1434,7 +1523,7 @@ export async function getResearchWorkspaceData(db: PrismaClient = prisma): Promi
           orderBy: {
             snapshotDate: 'desc'
           },
-          take: 2
+          take: 6
         },
         coverageTasks: {
           orderBy: {
@@ -1502,7 +1591,25 @@ export async function getResearchWorkspaceData(db: PrismaClient = prisma): Promi
     markets: marketUniverses
       .filter((item) => item.marketKey !== 'kr-national')
       .map((marketUniverse) => {
-        const thesisSnapshot = marketUniverse.researchSnapshots.find((item) => item.snapshotType === 'market-thesis');
+        const thesisSnapshot =
+          marketUniverse.researchSnapshots.find(
+            (item) =>
+              item.snapshotType === 'market-thesis' &&
+              inferSnapshotViewType(item) === 'HOUSE' &&
+              inferApprovalStatus(item) === 'APPROVED'
+          ) ??
+          marketUniverse.researchSnapshots.find(
+            (item) => item.snapshotType === 'market-thesis' && inferSnapshotViewType(item) === 'HOUSE'
+          ) ??
+          null;
+        const draftSnapshot =
+          marketUniverse.researchSnapshots.find(
+            (item) => item.snapshotType === 'market-thesis' && inferApprovalStatus(item) === 'DRAFT'
+          ) ?? null;
+        const sourceSnapshot =
+          marketUniverse.researchSnapshots.find(
+            (item) => item.snapshotType === 'market-official-source' && inferSnapshotViewType(item) === 'SOURCE'
+          ) ?? null;
 
         return {
           id: marketUniverse.id,
@@ -1519,6 +1626,22 @@ export async function getResearchWorkspaceData(db: PrismaClient = prisma): Promi
                 updatedAt: thesisSnapshot.snapshotDate
               }
             : null,
+          houseView: thesisSnapshot
+            ? {
+                draftSnapshotId: draftSnapshot?.id ?? null,
+                title: thesisSnapshot.title,
+                summary: thesisSnapshot.summary,
+                approvalStatus: inferApprovalStatus(thesisSnapshot),
+                thesisAgeDays: computeThesisAgeDays(thesisSnapshot.snapshotDate)
+              }
+            : null,
+          sourceView: sourceSnapshot
+            ? {
+                title: sourceSnapshot.title,
+                summary: sourceSnapshot.summary,
+                freshnessLabel: sourceSnapshot.freshnessLabel
+              }
+            : null,
           officialHighlights: marketUniverse.researchSnapshots
             .filter((item) => item.snapshotType === 'market-official-source')
             .flatMap((item) => extractSnapshotHighlights(item.metrics))
@@ -1526,24 +1649,51 @@ export async function getResearchWorkspaceData(db: PrismaClient = prisma): Promi
           openCoverageTasks: marketUniverse.coverageTasks.length
         };
       }),
-    submarkets: submarkets.map((submarket) => ({
-      id: submarket.id,
-      label: submarket.label,
-      city: submarket.city,
-      district: submarket.district,
-      assetClass: submarket.assetClass,
-      thesis: submarket.thesis,
-      snapshot: submarket.researchSnapshots[0]
-        ? {
-            title: submarket.researchSnapshots[0].title,
-            summary: submarket.researchSnapshots[0].summary,
-            freshnessStatus: submarket.researchSnapshots[0].freshnessStatus,
-            freshnessLabel: submarket.researchSnapshots[0].freshnessLabel,
-            updatedAt: submarket.researchSnapshots[0].snapshotDate
-          }
-        : null,
-      openCoverageTasks: submarket.coverageTasks.length
-    })),
+    submarkets: submarkets.map((submarket) => {
+      const thesisSnapshot =
+        submarket.researchSnapshots.find(
+          (item) =>
+            item.snapshotType === 'submarket-thesis' &&
+            inferSnapshotViewType(item) === 'HOUSE' &&
+            inferApprovalStatus(item) === 'APPROVED'
+        ) ??
+        submarket.researchSnapshots.find(
+          (item) => item.snapshotType === 'submarket-thesis' && inferSnapshotViewType(item) === 'HOUSE'
+        ) ??
+        null;
+      const draftSnapshot =
+        submarket.researchSnapshots.find(
+          (item) => item.snapshotType === 'submarket-thesis' && inferApprovalStatus(item) === 'DRAFT'
+        ) ?? null;
+
+      return {
+        id: submarket.id,
+        label: submarket.label,
+        city: submarket.city,
+        district: submarket.district,
+        assetClass: submarket.assetClass,
+        thesis: submarket.thesis,
+        snapshot: thesisSnapshot
+          ? {
+              title: thesisSnapshot.title,
+              summary: thesisSnapshot.summary,
+              freshnessStatus: thesisSnapshot.freshnessStatus,
+              freshnessLabel: thesisSnapshot.freshnessLabel,
+              updatedAt: thesisSnapshot.snapshotDate
+            }
+          : null,
+        houseView: thesisSnapshot
+          ? {
+              draftSnapshotId: draftSnapshot?.id ?? null,
+              title: thesisSnapshot.title,
+              summary: thesisSnapshot.summary,
+              approvalStatus: inferApprovalStatus(thesisSnapshot),
+              thesisAgeDays: computeThesisAgeDays(thesisSnapshot.snapshotDate)
+            }
+          : null,
+        openCoverageTasks: submarket.coverageTasks.length
+      };
+    }),
     assetDossiers: assets.map((asset) => {
       const dossier = buildAssetResearchDossier(asset);
       return {
@@ -1560,7 +1710,10 @@ export async function getResearchWorkspaceData(db: PrismaClient = prisma): Promi
         openCoverageTasks: dossier.coverage.openTaskCount,
         confidenceScore: dossier.confidence.score,
         confidenceLevel: dossier.confidence.level,
-        conflictCount: dossier.confidence.conflicts.length
+        conflictCount: dossier.confidence.conflicts.length,
+        houseViewLabel: dossier.houseView.approvalLabel,
+        thesisAgeDays: dossier.houseView.thesisAgeDays,
+        draftHouseViewSnapshotId: dossier.houseView.draftSnapshotId
       };
     }),
     optimization: portfolios.map((portfolio) => {

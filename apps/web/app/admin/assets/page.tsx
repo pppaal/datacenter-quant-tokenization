@@ -44,6 +44,9 @@ export default async function AssetsPage() {
             packaging.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
+            <Link href="/admin/assets/explorer">
+              <Button variant="secondary">Open Property Explorer</Button>
+            </Link>
             <Link href="/admin/assets/new">
               <Button>New Asset Intake</Button>
             </Link>

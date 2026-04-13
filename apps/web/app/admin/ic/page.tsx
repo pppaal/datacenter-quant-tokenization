@@ -1,13 +1,18 @@
+import { Suspense } from 'react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { PanelSkeleton } from '@/components/ui/skeleton';
+import { CommitteePacketDecisionForm } from '@/components/admin/committee-packet-decision-form';
+import { CommitteePacketLockButton } from '@/components/admin/committee-packet-lock-button';
+import { CommitteePacketReleaseButton } from '@/components/admin/committee-packet-release-button';
 import { getCommitteeWorkspace } from '@/lib/services/ic';
 import { formatDate, formatNumber } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
-export default async function CommitteeWorkspacePage() {
+async function CommitteeWorkspaceContent() {
   const workspace = await getCommitteeWorkspace();
 
   return (
@@ -141,6 +146,33 @@ export default async function CommitteeWorkspacePage() {
                       ? `${candidate.valuations[0].runLabel} is available for committee packaging.`
                       : 'No valuation run is available yet.'}
                   </p>
+                  {candidate.diligenceSummary ? (
+                    <div className="mt-3 rounded-[18px] border border-white/10 bg-slate-950/35 p-3 text-sm text-slate-300">
+                      <div className="font-semibold text-white">Specialist DD</div>
+                      <div className="mt-2">
+                        {candidate.diligenceSummary.signedOffCount}/{candidate.diligenceSummary.coreRequiredTypes.length} core lanes signed off
+                      </div>
+                      <div className="mt-2">
+                        {candidate.diligenceSummary.deliverableCount} linked deliverable(s)
+                      </div>
+                      {candidate.diligenceSummary.blockedCount > 0 ? (
+                        <div className="mt-2 text-amber-200">
+                          {candidate.diligenceSummary.blockedCount} blocked lane(s) require intervention before packet lock.
+                        </div>
+                      ) : null}
+                      {candidate.diligenceSummary.missingCoreTypes.length > 0 ? (
+                        <div className="mt-2 text-amber-200">
+                          Missing {candidate.diligenceSummary.missingCoreTypes.length} core lane(s):{' '}
+                          {candidate.diligenceSummary.missingCoreTypes.map((item) => item.toLowerCase()).join(', ')}.
+                        </div>
+                      ) : null}
+                      {candidate.diligenceSummary.uncoveredCoreTypes.length > 0 ? (
+                        <div className="mt-2 text-amber-200">
+                          Deliverables missing for {candidate.diligenceSummary.uncoveredCoreTypes.map((item) => item.toLowerCase()).join(', ')}.
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
                   <div className="mt-3 flex flex-wrap gap-3">
                     <Link href={`/admin/assets/${candidate.id}`}>
                       <Button variant="secondary">Open Asset</Button>
@@ -148,6 +180,11 @@ export default async function CommitteeWorkspacePage() {
                     <Link href={`/admin/assets/${candidate.id}/reports`}>
                       <Button variant="secondary">Open Reports</Button>
                     </Link>
+                    {candidate.leadDeal ? (
+                      <Link href={`/api/deals/${candidate.leadDeal.id}/workpaper?format=md`}>
+                        <Button variant="ghost">Export DD Workpaper</Button>
+                      </Link>
+                    ) : null}
                   </div>
                 </div>
               ))
@@ -167,14 +204,14 @@ export default async function CommitteeWorkspacePage() {
           {workspace.packets.slice(0, 8).map((packet) => {
             const latestDecision = packet.decisions[0] ?? null;
             return (
-              <div key={packet.id} className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+              <div key={packet.id} className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4" data-testid="ic-packet-card">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <div className="text-lg font-semibold text-white">{packet.title}</div>
                     <div className="mt-1 text-sm text-slate-400">{packet.packetCode}</div>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge>{packet.status.toLowerCase()}</Badge>
+                    <Badge data-testid="ic-packet-status">{packet.status.toLowerCase()}</Badge>
                     <Badge tone="neutral">{formatDate(packet.updatedAt)}</Badge>
                   </div>
                 </div>
@@ -187,11 +224,37 @@ export default async function CommitteeWorkspacePage() {
                     {latestDecision.decidedByLabel ?? 'committee'}
                   </div>
                 ) : null}
+                {packet.status !== 'LOCKED' && packet.status !== 'RELEASED' ? (
+                  <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
+                    <div className="text-xs text-slate-400">
+                      {packet.lockReadiness.canLock
+                        ? 'DD, valuation, and packet links are complete for lock.'
+                        : packet.lockReadiness.blockers[0] ?? 'Packet is not ready to lock yet.'}
+                    </div>
+                    <CommitteePacketLockButton
+                      packetId={packet.id}
+                      disabled={!packet.lockReadiness.canLock}
+                      disabledReason={!packet.lockReadiness.canLock ? packet.lockReadiness.blockers[0] ?? null : null}
+                    />
+                  </div>
+                ) : null}
+                {packet.status === 'LOCKED' ? <CommitteePacketDecisionForm packetId={packet.id} /> : null}
+                {packet.status === 'APPROVED' || packet.status === 'CONDITIONAL' || packet.status === 'DECLINED' ? (
+                  <CommitteePacketReleaseButton packetId={packet.id} />
+                ) : null}
               </div>
             );
           })}
         </div>
       </Card>
     </div>
+  );
+}
+
+export default function CommitteeWorkspacePage() {
+  return (
+    <Suspense fallback={<PanelSkeleton rows={5} />}>
+      <CommitteeWorkspaceContent />
+    </Suspense>
   );
 }

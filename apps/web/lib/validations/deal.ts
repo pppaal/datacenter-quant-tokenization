@@ -29,6 +29,26 @@ const optionalNumberField = z.preprocess((value) => {
   return value;
 }, z.number().optional());
 
+const optionalIntField = z.preprocess((value) => {
+  if (value === null || value === undefined || value === '') return undefined;
+  if (typeof value === 'number') return Number.isFinite(value) ? Math.trunc(value) : undefined;
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? Math.trunc(parsed) : undefined;
+  }
+  return value;
+}, z.number().int().nonnegative().optional());
+
+const positiveNumberField = z.preprocess((value) => {
+  if (value === null || value === undefined || value === '') return undefined;
+  if (typeof value === 'number') return Number.isFinite(value) ? value : undefined;
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+  return value;
+}, z.number().positive());
+
 const optionalDateField = z.preprocess((value) => {
   if (value === null || value === undefined || value === '') return undefined;
   if (value instanceof Date) return value;
@@ -60,6 +80,23 @@ const dealLossReasonSchema = z.enum([
 ]);
 
 const relationshipCoverageStatusSchema = z.enum(['PRIMARY', 'BACKUP', 'PASSIVE']);
+const dealDiligenceWorkstreamTypeSchema = z.enum([
+  'LEGAL',
+  'TECHNICAL',
+  'ENVIRONMENTAL',
+  'COMMERCIAL',
+  'TAX',
+  'INSURANCE',
+  'LEASING',
+  'FINANCING'
+]);
+const dealDiligenceWorkstreamStatusSchema = z.enum([
+  'NOT_STARTED',
+  'IN_PROGRESS',
+  'BLOCKED',
+  'READY_FOR_SIGNOFF',
+  'SIGNED_OFF'
+]);
 
 export const dealStageOrder = [
   DealStage.SOURCED,
@@ -193,50 +230,60 @@ export const dealDocumentRequestUpdateSchema = z.object({
   notes: optionalStringField
 });
 
+export const dealDiligenceWorkstreamCreateSchema = z.object({
+  workstreamType: dealDiligenceWorkstreamTypeSchema,
+  status: dealDiligenceWorkstreamStatusSchema.default('NOT_STARTED'),
+  ownerLabel: optionalStringField,
+  advisorName: optionalStringField,
+  reportTitle: optionalStringField,
+  requestedAt: optionalDateField,
+  dueDate: optionalDateField,
+  signedOffAt: optionalDateField,
+  signedOffByLabel: optionalStringField,
+  summary: optionalStringField,
+  blockerSummary: optionalStringField,
+  notes: optionalStringField
+});
+
+export const dealDiligenceWorkstreamUpdateSchema = z.object({
+  status: dealDiligenceWorkstreamStatusSchema.optional(),
+  ownerLabel: optionalStringField,
+  advisorName: optionalStringField,
+  reportTitle: optionalStringField,
+  requestedAt: optionalDateField,
+  dueDate: optionalDateField,
+  signedOffAt: optionalDateField,
+  signedOffByLabel: optionalStringField,
+  summary: optionalStringField,
+  blockerSummary: optionalStringField,
+  notes: optionalStringField
+});
+
+export const dealDiligenceDeliverableCreateSchema = z.object({
+  documentId: z.preprocess(emptyStringToUndefined, z.string().trim().min(1, 'Document id is required')),
+  note: optionalStringField
+});
+
 export const dealBidRevisionCreateSchema = z.object({
   label: z.preprocess(emptyStringToUndefined, z.string().trim().min(1, 'Bid label is required')),
   counterpartyId: optionalStringField,
   status: z.nativeEnum(DealBidStatus).default(DealBidStatus.DRAFT),
-  bidPriceKrw: z.preprocess((value) => {
-    if (value === null || value === undefined || value === '') return undefined;
-    if (typeof value === 'number') return Number.isFinite(value) ? value : undefined;
-    if (typeof value === 'string') {
-      const parsed = Number(value);
-      return Number.isFinite(parsed) ? parsed : undefined;
-    }
-    return value;
-  }, z.number().positive('Bid price must be positive')),
+  bidPriceKrw: positiveNumberField,
   depositKrw: optionalNumberField,
-  exclusivityDays: z.preprocess((value) => {
-    if (value === null || value === undefined || value === '') return undefined;
-    if (typeof value === 'number') return Number.isFinite(value) ? Math.trunc(value) : undefined;
-    if (typeof value === 'string') {
-      const parsed = Number(value);
-      return Number.isFinite(parsed) ? Math.trunc(parsed) : undefined;
-    }
-    return value;
-  }, z.number().int().nonnegative().optional()),
-  diligenceDays: z.preprocess((value) => {
-    if (value === null || value === undefined || value === '') return undefined;
-    if (typeof value === 'number') return Number.isFinite(value) ? Math.trunc(value) : undefined;
-    if (typeof value === 'string') {
-      const parsed = Number(value);
-      return Number.isFinite(parsed) ? Math.trunc(parsed) : undefined;
-    }
-    return value;
-  }, z.number().int().nonnegative().optional()),
-  closeTimelineDays: z.preprocess((value) => {
-    if (value === null || value === undefined || value === '') return undefined;
-    if (typeof value === 'number') return Number.isFinite(value) ? Math.trunc(value) : undefined;
-    if (typeof value === 'string') {
-      const parsed = Number(value);
-      return Number.isFinite(parsed) ? Math.trunc(parsed) : undefined;
-    }
-    return value;
-  }, z.number().int().nonnegative().optional()),
+  exclusivityDays: optionalIntField,
+  diligenceDays: optionalIntField,
+  closeTimelineDays: optionalIntField,
   submittedAt: optionalDateField,
   notes: optionalStringField
-});
+}).refine(
+  (data) => {
+    if (data.closeTimelineDays != null && data.exclusivityDays != null && data.diligenceDays != null) {
+      return data.closeTimelineDays >= data.exclusivityDays + data.diligenceDays;
+    }
+    return true;
+  },
+  { message: 'Close timeline must be at least exclusivity + diligence days', path: ['closeTimelineDays'] }
+);
 
 export const dealBidRevisionUpdateSchema = z.object({
   label: optionalStringField,
@@ -244,33 +291,9 @@ export const dealBidRevisionUpdateSchema = z.object({
   status: z.nativeEnum(DealBidStatus).optional(),
   bidPriceKrw: optionalNumberField,
   depositKrw: optionalNumberField,
-  exclusivityDays: z.preprocess((value) => {
-    if (value === null || value === undefined || value === '') return undefined;
-    if (typeof value === 'number') return Number.isFinite(value) ? Math.trunc(value) : undefined;
-    if (typeof value === 'string') {
-      const parsed = Number(value);
-      return Number.isFinite(parsed) ? Math.trunc(parsed) : undefined;
-    }
-    return value;
-  }, z.number().int().nonnegative().optional()),
-  diligenceDays: z.preprocess((value) => {
-    if (value === null || value === undefined || value === '') return undefined;
-    if (typeof value === 'number') return Number.isFinite(value) ? Math.trunc(value) : undefined;
-    if (typeof value === 'string') {
-      const parsed = Number(value);
-      return Number.isFinite(parsed) ? Math.trunc(parsed) : undefined;
-    }
-    return value;
-  }, z.number().int().nonnegative().optional()),
-  closeTimelineDays: z.preprocess((value) => {
-    if (value === null || value === undefined || value === '') return undefined;
-    if (typeof value === 'number') return Number.isFinite(value) ? Math.trunc(value) : undefined;
-    if (typeof value === 'string') {
-      const parsed = Number(value);
-      return Number.isFinite(parsed) ? Math.trunc(parsed) : undefined;
-    }
-    return value;
-  }, z.number().int().nonnegative().optional()),
+  exclusivityDays: optionalIntField,
+  diligenceDays: optionalIntField,
+  closeTimelineDays: optionalIntField,
   submittedAt: optionalDateField,
   notes: optionalStringField
 });
@@ -279,37 +302,13 @@ export const dealLenderQuoteCreateSchema = z.object({
   facilityLabel: z.preprocess(emptyStringToUndefined, z.string().trim().min(1, 'Facility label is required')),
   counterpartyId: optionalStringField,
   status: z.nativeEnum(DealLenderQuoteStatus).default(DealLenderQuoteStatus.INDICATED),
-  amountKrw: z.preprocess((value) => {
-    if (value === null || value === undefined || value === '') return undefined;
-    if (typeof value === 'number') return Number.isFinite(value) ? value : undefined;
-    if (typeof value === 'string') {
-      const parsed = Number(value);
-      return Number.isFinite(parsed) ? parsed : undefined;
-    }
-    return value;
-  }, z.number().positive('Amount must be positive')),
+  amountKrw: positiveNumberField,
   ltvPct: optionalNumberField,
   spreadBps: optionalNumberField,
   allInRatePct: optionalNumberField,
   dscrFloor: optionalNumberField,
-  termMonths: z.preprocess((value) => {
-    if (value === null || value === undefined || value === '') return undefined;
-    if (typeof value === 'number') return Number.isFinite(value) ? Math.trunc(value) : undefined;
-    if (typeof value === 'string') {
-      const parsed = Number(value);
-      return Number.isFinite(parsed) ? Math.trunc(parsed) : undefined;
-    }
-    return value;
-  }, z.number().int().nonnegative().optional()),
-  ioMonths: z.preprocess((value) => {
-    if (value === null || value === undefined || value === '') return undefined;
-    if (typeof value === 'number') return Number.isFinite(value) ? Math.trunc(value) : undefined;
-    if (typeof value === 'string') {
-      const parsed = Number(value);
-      return Number.isFinite(parsed) ? Math.trunc(parsed) : undefined;
-    }
-    return value;
-  }, z.number().int().nonnegative().optional()),
+  termMonths: optionalIntField,
+  ioMonths: optionalIntField,
   quotedAt: optionalDateField,
   notes: optionalStringField
 });
@@ -323,24 +322,8 @@ export const dealLenderQuoteUpdateSchema = z.object({
   spreadBps: optionalNumberField,
   allInRatePct: optionalNumberField,
   dscrFloor: optionalNumberField,
-  termMonths: z.preprocess((value) => {
-    if (value === null || value === undefined || value === '') return undefined;
-    if (typeof value === 'number') return Number.isFinite(value) ? Math.trunc(value) : undefined;
-    if (typeof value === 'string') {
-      const parsed = Number(value);
-      return Number.isFinite(parsed) ? Math.trunc(parsed) : undefined;
-    }
-    return value;
-  }, z.number().int().nonnegative().optional()),
-  ioMonths: z.preprocess((value) => {
-    if (value === null || value === undefined || value === '') return undefined;
-    if (typeof value === 'number') return Number.isFinite(value) ? Math.trunc(value) : undefined;
-    if (typeof value === 'string') {
-      const parsed = Number(value);
-      return Number.isFinite(parsed) ? Math.trunc(parsed) : undefined;
-    }
-    return value;
-  }, z.number().int().nonnegative().optional()),
+  termMonths: optionalIntField,
+  ioMonths: optionalIntField,
   quotedAt: optionalDateField,
   notes: optionalStringField
 });
@@ -410,6 +393,9 @@ export type DealTaskCreateInput = z.infer<typeof dealTaskCreateSchema>;
 export type DealTaskUpdateInput = z.infer<typeof dealTaskUpdateSchema>;
 export type DealDocumentRequestCreateInput = z.infer<typeof dealDocumentRequestCreateSchema>;
 export type DealDocumentRequestUpdateInput = z.infer<typeof dealDocumentRequestUpdateSchema>;
+export type DealDiligenceWorkstreamCreateInput = z.infer<typeof dealDiligenceWorkstreamCreateSchema>;
+export type DealDiligenceWorkstreamUpdateInput = z.infer<typeof dealDiligenceWorkstreamUpdateSchema>;
+export type DealDiligenceDeliverableCreateInput = z.infer<typeof dealDiligenceDeliverableCreateSchema>;
 export type DealBidRevisionCreateInput = z.infer<typeof dealBidRevisionCreateSchema>;
 export type DealBidRevisionUpdateInput = z.infer<typeof dealBidRevisionUpdateSchema>;
 export type DealLenderQuoteCreateInput = z.infer<typeof dealLenderQuoteCreateSchema>;

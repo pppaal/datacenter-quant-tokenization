@@ -80,15 +80,21 @@ test('research dossier aggregates macro, market, micro, and document context for
     researchSnapshots: [
       {
         id: 'research-1',
+        snapshotType: 'asset-dossier',
+        viewType: 'HOUSE',
+        approvalStatus: 'APPROVED',
         title: 'Office asset dossier',
+        summary: 'Approved Seoul office house view with disciplined vacancy and rent support.',
         sourceSystem: 'research-dossier',
         freshnessStatus: SourceStatus.FRESH,
         freshnessLabel: '2d old',
-        snapshotDate: now
+        snapshotDate: now,
+        approvedAt: now
       },
       {
         id: 'research-2',
         snapshotType: 'market-official-source',
+        viewType: 'SOURCE',
         title: 'REB Office indicators',
         sourceSystem: 'korea-reb-property-statistics',
         freshnessStatus: SourceStatus.FRESH,
@@ -118,7 +124,7 @@ test('research dossier aggregates macro, market, micro, and document context for
   });
 
   assert.equal(dossier.playbook.label, 'Office');
-  assert.ok(dossier.marketThesis.includes('office'));
+  assert.equal(dossier.marketThesis, 'Approved Seoul office house view with disciplined vacancy and rent support.');
   assert.ok(dossier.micro.scorecards.some((item) => item.label.includes('Lease / Revenue')));
   assert.equal(dossier.documents.anchoredDocumentCount, 1);
   assert.equal(dossier.latestValuationId, 'run-1');
@@ -127,8 +133,101 @@ test('research dossier aggregates macro, market, micro, and document context for
   assert.equal(dossier.provenance.sourceCount, 2);
   assert.equal(dossier.market.officialHighlights[0]?.label, 'office cap rate pct');
   assert.equal(dossier.officialSources.highlights[0]?.label, 'Office Vacancy');
-  assert.ok(dossier.confidence.score < 78);
-  assert.equal(dossier.confidence.level, 'low');
+  assert.equal(dossier.houseView.approvalStatus, 'APPROVED');
+  assert.equal(dossier.houseView.approvalLabel, 'approved house view');
+  assert.equal(dossier.sourceView.title, 'REB Office indicators');
+  assert.ok(dossier.confidence.score >= 58);
+  assert.equal(dossier.confidence.level, 'moderate');
   assert.ok(dossier.confidence.conflicts.some((item) => item.label.includes('Vacancy')));
   assert.ok(dossier.confidence.conflicts.some((item) => item.label.includes('Cap-rate')));
+});
+
+test('research dossier reports low confidence when no research snapshots exist', () => {
+  const bareAsset = {
+    id: 'bare-asset',
+    name: 'Bare Asset',
+    assetClass: 'OFFICE',
+    assetCode: 'BARE-01',
+    address: null,
+    buildingSnapshot: null,
+    siteProfile: null,
+    marketSnapshot: null,
+    macroSeries: [],
+    macroFactors: [],
+    marketIndicatorSeries: [],
+    transactionComps: [],
+    rentComps: [],
+    pipelineProjects: [],
+    ownershipRecords: [],
+    encumbranceRecords: [],
+    planningConstraints: [],
+    leases: [],
+    debtFacilities: [],
+    taxAssumption: null,
+    valuations: [],
+    readinessProject: null,
+    documents: [],
+    researchSnapshots: [],
+    coverageTasks: []
+  };
+
+  const dossier = buildAssetResearchDossier(bareAsset as any);
+  assert.ok(dossier.confidence.score <= 58, `Expected low/moderate score, got ${dossier.confidence.score}`);
+  assert.equal(dossier.confidence.level, 'low');
+  assert.equal(dossier.provenance.sourceCount, 0);
+  assert.equal(dossier.houseView.approvalStatus, null);
+});
+
+test('research dossier detects vacancy disagreement conflict', () => {
+  const conflictAsset = {
+    id: 'conflict-asset',
+    name: 'Conflict Asset',
+    assetClass: 'OFFICE',
+    assetCode: 'CONFLICT-01',
+    address: null,
+    buildingSnapshot: null,
+    siteProfile: null,
+    marketSnapshot: {
+      vacancyPct: 5.0,
+      capRatePct: 4.5,
+      discountRatePct: 7.0
+    },
+    macroSeries: [],
+    macroFactors: [],
+    marketIndicatorSeries: [
+      { id: 'ind-1', indicatorKey: 'seoul_office_vacancy', label: 'Vacancy', value: 10.0, observationDate: new Date() }
+    ],
+    transactionComps: [],
+    rentComps: [],
+    pipelineProjects: [],
+    ownershipRecords: [],
+    encumbranceRecords: [],
+    planningConstraints: [],
+    leases: [],
+    debtFacilities: [],
+    taxAssumption: null,
+    valuations: [],
+    readinessProject: null,
+    documents: [],
+    researchSnapshots: [
+      {
+        title: 'Source view',
+        snapshotType: 'official-source',
+        viewType: 'SOURCE',
+        approvalStatus: 'APPROVED',
+        snapshotDate: new Date(),
+        sourceSystem: 'kosis',
+        freshnessStatus: 'FRESH',
+        freshnessLabel: '1d old',
+        metrics: { highlights: [{ label: 'Vacancy', value: '10%' }] }
+      }
+    ],
+    coverageTasks: []
+  };
+
+  const dossier = buildAssetResearchDossier(conflictAsset as any);
+  assert.ok(dossier.confidence.conflicts.length > 0, 'Expected at least one conflict');
+  const vacancyConflict = dossier.confidence.conflicts.find((c) => c.label === 'Vacancy disagreement');
+  assert.ok(vacancyConflict, 'Expected vacancy disagreement conflict');
+  assert.equal(vacancyConflict?.severity, 'danger');
 });

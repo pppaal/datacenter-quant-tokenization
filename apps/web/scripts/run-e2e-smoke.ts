@@ -43,6 +43,29 @@ function getBrowserAdminCredentialEnv() {
   return 'admin@nexusseoul.local:secret';
 }
 
+function resolveDatabaseUrl() {
+  const databaseUrl = process.env.DATABASE_URL?.trim();
+  if (!databaseUrl) {
+    return null;
+  }
+
+  try {
+    return new URL(databaseUrl);
+  } catch {
+    return null;
+  }
+}
+
+function canSafelyResetE2EDatabase() {
+  const parsed = resolveDatabaseUrl();
+  if (!parsed) {
+    return false;
+  }
+
+  const databaseName = parsed.pathname.replace(/^\//, '');
+  return ['127.0.0.1', 'localhost'].includes(parsed.hostname) && databaseName === 'korea_dc_underwriting';
+}
+
 async function assertDatabaseReachable() {
   try {
     await prisma.$queryRaw`SELECT 1`;
@@ -121,12 +144,18 @@ async function prepareE2EDatabaseSchema() {
   try {
     await runCommand('npx', ['prisma', 'migrate', 'deploy']);
   } catch (error) {
+    if (!canSafelyResetE2EDatabase()) {
+      throw error;
+    }
+
     console.warn(
-      'Prisma migrate deploy failed against the transient E2E database. Falling back to `prisma db push` for ephemeral browser verification.'
+      'Prisma migrate deploy failed against the local E2E database. Resetting the dedicated scratch database and replaying the checked-in migration chain.'
     );
-    await runCommand('npx', ['prisma', 'db', 'push', '--accept-data-loss', '--skip-generate']);
+    await runCommand('npx', ['prisma', 'migrate', 'reset', '--force', '--skip-seed', '--skip-generate']);
   }
 
+  console.log('Reconciling remaining schema drift on the dedicated E2E database...');
+  await runCommand('npx', ['prisma', 'db', 'push', '--skip-generate']);
   await assertDatabaseReachable();
 }
 

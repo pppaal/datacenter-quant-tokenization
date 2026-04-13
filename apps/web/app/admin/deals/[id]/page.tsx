@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/card';
 import { DealClosingReadinessPanel } from '@/components/admin/deal-closing-readiness-panel';
 import { DealCloseProbabilityHistoryPanel } from '@/components/admin/deal-close-probability-history-panel';
 import { DealDataCoveragePanel } from '@/components/admin/deal-data-coverage-panel';
+import { DealDiligenceWorkstreamPanel } from '@/components/admin/deal-diligence-workstream-panel';
 import { DealOperatorConsole } from '@/components/admin/deal-operator-console';
 import { DealTimelinePanel } from '@/components/admin/deal-timeline-panel';
 import { DocumentUploadForm } from '@/components/admin/document-upload-form';
@@ -158,6 +159,9 @@ export default async function DealDetailPage({ params }: Props) {
             <Link href="/admin/deals">
               <Button variant="secondary">Back To Deals</Button>
             </Link>
+            <Link href={`/api/deals/${deal.id}/workpaper?format=md`}>
+              <Button variant="ghost">Export DD Workpaper</Button>
+            </Link>
             {deal.asset ? (
               <Link href={`/admin/assets/${deal.asset.id}`}>
                 <Button variant="ghost">Open Linked Asset</Button>
@@ -168,6 +172,9 @@ export default async function DealDetailPage({ params }: Props) {
                 <Button variant="ghost">Open Latest Valuation</Button>
               </Link>
             ) : null}
+            <Link href={`/api/deals/${deal.id}/workpaper?format=json`}>
+              <Button variant="ghost">DD Workpaper JSON</Button>
+            </Link>
           </div>
         </div>
       </Card>
@@ -197,6 +204,21 @@ export default async function DealDetailPage({ params }: Props) {
       </div>
 
       <DealOperatorConsole deal={deal} snapshot={snapshot} origination={origination} />
+
+      <DealDiligenceWorkstreamPanel
+        dealId={deal.id}
+        stageLabel={formatDealStage(deal.stage)}
+        workstreams={deal.diligenceWorkstreams}
+        availableDocuments={
+          deal.asset?.documents.map((document) => ({
+            id: document.id,
+            title: document.title,
+            documentType: document.documentType,
+            currentVersion: document.currentVersion,
+            documentHash: document.documentHash
+          })) ?? []
+        }
+      />
 
       <DealClosingReadinessPanel readiness={closingReadiness} probability={closeProbability} />
 

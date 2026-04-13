@@ -42,13 +42,39 @@ CREATE TYPE "ActivityType" AS ENUM (
     'COUNTERPARTY_ADDED'
 );
 
+CREATE TABLE IF NOT EXISTS "Counterparty" (
+    "id" TEXT NOT NULL,
+    "assetId" TEXT,
+    "name" TEXT NOT NULL,
+    "role" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Counterparty_pkey" PRIMARY KEY ("id")
+);
+
+CREATE INDEX IF NOT EXISTS "Counterparty_assetId_role_createdAt_idx"
+ON "Counterparty"("assetId", "role", "createdAt");
+
+DO $$
+BEGIN
+    ALTER TABLE "Counterparty"
+    ADD CONSTRAINT "Counterparty_assetId_fkey"
+    FOREIGN KEY ("assetId") REFERENCES "Asset"("id")
+    ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END $$;
+
 ALTER TABLE "Counterparty"
-ALTER COLUMN "assetId" DROP NOT NULL,
-ADD COLUMN "dealId" TEXT,
-ADD COLUMN "company" TEXT,
-ADD COLUMN "email" TEXT,
-ADD COLUMN "phone" TEXT,
-ADD COLUMN "notes" TEXT;
+ALTER COLUMN "assetId" DROP NOT NULL;
+
+ALTER TABLE "Counterparty"
+ADD COLUMN IF NOT EXISTS "dealId" TEXT,
+ADD COLUMN IF NOT EXISTS "company" TEXT,
+ADD COLUMN IF NOT EXISTS "email" TEXT,
+ADD COLUMN IF NOT EXISTS "phone" TEXT,
+ADD COLUMN IF NOT EXISTS "notes" TEXT;
 
 CREATE TABLE "Deal" (
     "id" TEXT NOT NULL,
@@ -145,7 +171,7 @@ CREATE INDEX "RiskFlag_dealId_isResolved_severity_idx" ON "RiskFlag"("dealId", "
 CREATE INDEX "ActivityLog_dealId_createdAt_idx" ON "ActivityLog"("dealId", "createdAt");
 CREATE INDEX "ActivityLog_counterpartyId_createdAt_idx" ON "ActivityLog"("counterpartyId", "createdAt");
 
-CREATE INDEX "Counterparty_dealId_role_createdAt_idx" ON "Counterparty"("dealId", "role", "createdAt");
+CREATE INDEX IF NOT EXISTS "Counterparty_dealId_role_createdAt_idx" ON "Counterparty"("dealId", "role", "createdAt");
 
 ALTER TABLE "Deal"
 ADD CONSTRAINT "Deal_assetId_fkey"
@@ -172,7 +198,12 @@ ADD CONSTRAINT "ActivityLog_counterpartyId_fkey"
 FOREIGN KEY ("counterpartyId") REFERENCES "Counterparty"("id")
 ON DELETE SET NULL ON UPDATE CASCADE;
 
-ALTER TABLE "Counterparty"
-ADD CONSTRAINT "Counterparty_dealId_fkey"
-FOREIGN KEY ("dealId") REFERENCES "Deal"("id")
-ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$
+BEGIN
+    ALTER TABLE "Counterparty"
+    ADD CONSTRAINT "Counterparty_dealId_fkey"
+    FOREIGN KEY ("dealId") REFERENCES "Deal"("id")
+    ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END $$;

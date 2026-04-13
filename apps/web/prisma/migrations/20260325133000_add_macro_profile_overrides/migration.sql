@@ -1,3 +1,19 @@
+DO $$
+BEGIN
+    CREATE TYPE "AssetClass" AS ENUM (
+        'OFFICE',
+        'INDUSTRIAL',
+        'RETAIL',
+        'MULTIFAMILY',
+        'HOTEL',
+        'DATA_CENTER',
+        'LAND',
+        'MIXED_USE'
+    );
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END $$;
+
 CREATE TABLE "MacroProfileOverride" (
     "id" TEXT NOT NULL,
     "assetClass" "AssetClass",

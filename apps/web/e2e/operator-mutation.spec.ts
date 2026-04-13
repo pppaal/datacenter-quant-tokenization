@@ -112,6 +112,96 @@ test.describe('operator mutation flows', () => {
     await expect(page.getByTestId('deal-current-status')).not.toHaveText('ARCHIVED', { timeout: 20_000 });
   });
 
+  test('DD deliverable completeness gates IC packet lock and packets move through decision release flow', async ({ page }) => {
+    const deliverableTitle = `E2E technical DD deliverable ${Date.now()}`;
+
+    await loginAsOperator(page);
+    await page.goto('/admin/ic');
+
+    const readyPacketCard = page
+      .getByTestId('ic-packet-card')
+      .filter({ hasText: 'ICPKT-SEOUL-YEOUIDO-2026Q2-READY' })
+      .first();
+
+    await expect(readyPacketCard).toBeVisible({ timeout: 20_000 });
+    await expect(readyPacketCard).toContainText(/supporting deliverables are missing/i);
+    await expect(readyPacketCard.getByTestId('ic-packet-lock-button')).toBeDisabled();
+
+    await page.goto('/admin/deals');
+    await page.getByRole('link', { name: /Yeouido Core Office Tower Recapitalization/i }).first().click();
+
+    const technicalLane = page
+      .getByTestId('diligence-workstream-card')
+      .filter({ hasText: /Technical/i })
+      .first();
+
+    await expect(technicalLane).toBeVisible({ timeout: 20_000 });
+    const dealId = page.url().split('/').pop();
+    const workstreamId = await technicalLane.getAttribute('data-workstream-id');
+    expect(dealId).toBeTruthy();
+    expect(workstreamId).toBeTruthy();
+
+    const uploadResponse = await page.request.post(
+      `/api/deals/${dealId}/diligence-workstreams/${workstreamId}/deliverables/upload`,
+      {
+        multipart: {
+          title: deliverableTitle,
+          documentType: 'OTHER',
+          note: 'Mutation E2E technical deliverable.',
+          file: {
+            name: 'technical-dd-note.txt',
+            mimeType: 'text/plain',
+            buffer: Buffer.from('Technical DD deliverable linked through mutation E2E.')
+          }
+        }
+      }
+    );
+    expect(uploadResponse.ok()).toBeTruthy();
+    await page.reload();
+    const technicalLaneAfterUpload = page
+      .getByTestId('diligence-workstream-card')
+      .filter({ hasText: /Technical/i })
+      .first();
+    await expect(
+      technicalLaneAfterUpload.getByTestId('diligence-deliverable-row').filter({ hasText: deliverableTitle }).first()
+    ).toBeVisible({ timeout: 30_000 });
+    const updateResponse = await page.request.patch(
+      `/api/deals/${dealId}/diligence-workstreams/${workstreamId}`,
+      {
+        data: {
+          status: 'SIGNED_OFF',
+          signedOffByLabel: 'E2E operator'
+        }
+      }
+    );
+    expect(updateResponse.ok()).toBeTruthy();
+    await page.reload();
+    const technicalLaneSignedOff = page
+      .getByTestId('diligence-workstream-card')
+      .filter({ hasText: /Technical/i })
+      .first();
+    await expect(technicalLaneSignedOff).toContainText('Signed Off', { timeout: 20_000 });
+
+    await page.goto('/admin/ic');
+    const packetAfterUpload = page
+      .getByTestId('ic-packet-card')
+      .filter({ hasText: 'ICPKT-SEOUL-YEOUIDO-2026Q2-READY' })
+      .first();
+
+    await expect(packetAfterUpload.getByTestId('ic-packet-lock-button')).toBeEnabled({ timeout: 20_000 });
+    await packetAfterUpload.getByTestId('ic-packet-lock-button').click();
+    await expect(packetAfterUpload.getByTestId('ic-packet-status')).toContainText('locked', { timeout: 20_000 });
+
+    await packetAfterUpload.getByTestId('ic-packet-decision-outcome').selectOption('APPROVED');
+    await packetAfterUpload.getByTestId('ic-packet-decision-notes').fill('Approved in E2E after DD deliverable completion.');
+    await packetAfterUpload.getByTestId('ic-packet-decision-followup').fill('Release the packet to the operating record.');
+    await packetAfterUpload.getByTestId('ic-packet-decision-submit').click();
+    await expect(packetAfterUpload.getByTestId('ic-packet-status')).toContainText('approved', { timeout: 20_000 });
+
+    await packetAfterUpload.getByTestId('ic-packet-release-button').click();
+    await expect(packetAfterUpload.getByTestId('ic-packet-status')).toContainText('released', { timeout: 20_000 });
+  });
+
   test('security controls support identity mapping, seat updates, and alert replay', async ({ page }) => {
     await loginAsOperator(page);
     await page.goto('/admin/security');
@@ -153,5 +243,28 @@ test.describe('operator mutation flows', () => {
       await replayCard.getByTestId('ops-alert-replay-button').click();
       await expect(replayCard.getByTestId('ops-alert-replay-feedback')).toContainText('Replay recorded');
     }
+  });
+
+  test('property explorer supports one-click dossier bootstrap for untracked assets', async ({ page }) => {
+    await loginAsOperator(page);
+    await page.goto('/admin/assets/explorer');
+
+    const pangyoRow = page.getByTestId('property-explorer-row').filter({ hasText: 'Pangyo Innovation Office Park' }).first();
+    await expect(pangyoRow).toBeVisible({ timeout: 20_000 });
+    await pangyoRow.click();
+
+    const bootstrapButton = page.getByTestId('property-explorer-bootstrap');
+    await expect(bootstrapButton).toBeVisible();
+    await expect(bootstrapButton).toHaveText(/Bootstrap Asset Dossier/i);
+    await bootstrapButton.click();
+
+    await expect(page).toHaveURL(/\/admin\/assets\/[^/]+$/);
+    await expect(page.locator('h2').filter({ hasText: 'Pangyo Innovation Office Park' })).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByText('Research Snapshot', { exact: true })).toBeVisible();
+
+    await page.goto('/admin/assets/explorer');
+    const trackedPangyoRow = page.getByTestId('property-explorer-row').filter({ hasText: 'Pangyo Innovation Office Park' }).first();
+    await trackedPangyoRow.click();
+    await expect(page.getByTestId('property-explorer-open-linked')).toBeVisible({ timeout: 20_000 });
   });
 });

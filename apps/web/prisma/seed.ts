@@ -1951,7 +1951,7 @@ async function seedCommitteeGovernance() {
     }
   });
 
-  const [officeAsset, dataCenterAsset] = await Promise.all([
+  const [officeAsset, dataCenterAsset, officeDeal] = await Promise.all([
     prisma.asset.findUnique({
       where: { assetCode: 'SEOUL-YEOUIDO-01' },
       include: {
@@ -1973,14 +1973,27 @@ async function seedCommitteeGovernance() {
           take: 1
         }
       }
+    }),
+    prisma.deal.findUnique({
+      where: { dealCode: 'DEAL-2026-0001' }
     })
   ]);
 
   if (officeAsset?.valuations[0]) {
+    await prisma.valuationRun.update({
+      where: { id: officeAsset.valuations[0].id },
+      data: {
+        approvalStatus: 'APPROVED',
+        approvedByLabel: 'IC prep admin',
+        approvedAt: new Date('2026-04-11T00:00:00.000Z')
+      }
+    });
+
     await prisma.investmentCommitteePacket.create({
       data: {
         meetingId: meeting.id,
         assetId: officeAsset.id,
+        dealId: officeDeal?.id ?? null,
         valuationRunId: officeAsset.valuations[0].id,
         title: 'Yeouido Core Office Tower Recapitalization Packet',
         packetCode: 'ICPKT-SEOUL-YEOUIDO-2026Q2',
@@ -1995,6 +2008,23 @@ async function seedCommitteeGovernance() {
           'Recommend approval for recapitalization and hold-business-plan execution subject to final debt documentation.'
       }
     });
+
+    if (officeDeal) {
+      await prisma.investmentCommitteePacket.create({
+        data: {
+          meetingId: meeting.id,
+          assetId: officeAsset.id,
+          dealId: officeDeal.id,
+          valuationRunId: officeAsset.valuations[0].id,
+          title: 'Yeouido Core Office Tower Supplemental Packet',
+          packetCode: 'ICPKT-SEOUL-YEOUIDO-2026Q2-READY',
+          status: 'READY',
+          preparedByLabel: 'analyst@nexusseoul.local',
+          scheduledFor: new Date('2026-04-15T01:00:00.000Z'),
+          decisionSummary: 'Ready for lock once final specialist deliverables are linked.'
+        }
+      });
+    }
   }
 
   if (dataCenterAsset?.valuations[0]) {
@@ -2145,6 +2175,65 @@ async function seedDealExecution() {
             }
           ]
         },
+        diligenceWorkstreams: {
+          create: [
+            {
+              workstreamType: 'LEGAL',
+              status: 'SIGNED_OFF',
+              ownerLabel: 'internal legal',
+              advisorName: 'Kim & Partners',
+              reportTitle: 'SPA and title package',
+              requestedAt: new Date('2026-03-28T00:00:00.000Z'),
+              dueDate: new Date('2026-04-11T00:00:00.000Z'),
+              signedOffAt: new Date('2026-04-09T00:00:00.000Z'),
+              signedOffByLabel: 'general counsel',
+              summary: 'Title, encumbrance, and SPA comments are substantially cleared.',
+              notes: 'Final sign-off depends on covenant reserve wording.',
+              deliverables: officeAsset.documents[1]
+                ? {
+                    create: [
+                      {
+                        documentId: officeAsset.documents[1].id,
+                        note: 'Linked legal diligence support for title and SPA package.'
+                      }
+                    ]
+                  }
+                : undefined
+            },
+            {
+              workstreamType: 'COMMERCIAL',
+              status: 'SIGNED_OFF',
+              ownerLabel: 'asset management',
+              advisorName: 'Leasing strategy team',
+              reportTitle: 'Rent roll and rollover memo',
+              requestedAt: new Date('2026-03-24T00:00:00.000Z'),
+              dueDate: new Date('2026-04-04T00:00:00.000Z'),
+              signedOffAt: new Date('2026-04-04T00:00:00.000Z'),
+              signedOffByLabel: 'head of acquisitions',
+              summary: 'Lease rollover, tenant credit, and market rent assumptions are cleared.',
+              deliverables: officeAsset.documents[0]
+                ? {
+                    create: [
+                      {
+                        documentId: officeAsset.documents[0].id,
+                        note: 'Rent roll and tenant support linked to the commercial lane.'
+                      }
+                    ]
+                  }
+                : undefined
+            },
+            {
+              workstreamType: 'TECHNICAL',
+              status: 'IN_PROGRESS',
+              ownerLabel: 'technical dd lead',
+              advisorName: 'Seoul Building Engineers',
+              reportTitle: 'MEP and facade review',
+              requestedAt: new Date('2026-03-29T00:00:00.000Z'),
+              dueDate: new Date('2026-04-14T00:00:00.000Z'),
+              summary: 'Mechanical reserve sizing and facade repairs are still being finalized.'
+            }
+          ]
+        },
         bidRevisions: {
           create: [
             {
@@ -2287,6 +2376,61 @@ async function seedDealExecution() {
             }
           ]
         },
+        diligenceWorkstreams: {
+          create: [
+            {
+              workstreamType: 'LEGAL',
+              status: 'IN_PROGRESS',
+              ownerLabel: 'deal counsel',
+              advisorName: 'Infra Counsel Korea',
+              reportTitle: 'Land, title, and process documents',
+              requestedAt: new Date('2026-04-01T00:00:00.000Z'),
+              dueDate: new Date('2026-04-16T00:00:00.000Z'),
+              summary: 'Land control and process paper are open while exclusivity is rebuilt.',
+              deliverables: dataCenterAsset.documents[0]
+                ? {
+                    create: [
+                      {
+                        documentId: dataCenterAsset.documents[0].id,
+                        note: 'Land and process documents linked for legal DD.'
+                      }
+                    ]
+                  }
+                : undefined
+            },
+            {
+              workstreamType: 'TECHNICAL',
+              status: 'BLOCKED',
+              ownerLabel: 'infrastructure underwriting',
+              advisorName: 'Grid & Cooling Advisory',
+              reportTitle: 'Utility queue and cooling resilience memo',
+              requestedAt: new Date('2026-04-01T00:00:00.000Z'),
+              dueDate: new Date('2026-04-10T00:00:00.000Z'),
+              blockerSummary: 'Fresh utility queue confirmation has not been received.',
+              summary: 'Power queue diligence remains the main blocker to process certainty.'
+            },
+            {
+              workstreamType: 'ENVIRONMENTAL',
+              status: 'READY_FOR_SIGNOFF',
+              ownerLabel: 'site diligence lead',
+              advisorName: 'Korea Environmental Review',
+              reportTitle: 'Storm-surge and groundwater memo',
+              requestedAt: new Date('2026-03-30T00:00:00.000Z'),
+              dueDate: new Date('2026-04-09T00:00:00.000Z'),
+              summary: 'Environmental diligence is materially complete pending formal sign-off.',
+              deliverables: dataCenterAsset.documents[1]
+                ? {
+                    create: [
+                      {
+                        documentId: dataCenterAsset.documents[1].id,
+                        note: 'Environmental and resilience diligence support linked to the lane.'
+                      }
+                    ]
+                  }
+                : undefined
+            }
+          ]
+        },
         bidRevisions: {
           create: [
             {
@@ -2350,6 +2494,8 @@ async function main() {
   await prisma.investmentCommitteePacket.deleteMany();
   await prisma.investmentCommitteeMeeting.deleteMany();
   await prisma.dealExecutionProbabilitySnapshot.deleteMany();
+  await prisma.dealDiligenceDeliverable.deleteMany();
+  await prisma.dealDiligenceWorkstream.deleteMany();
   await prisma.activityLog.deleteMany();
   await prisma.riskFlag.deleteMany();
   await prisma.dealNegotiationEvent.deleteMany();

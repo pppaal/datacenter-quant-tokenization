@@ -43,6 +43,8 @@ Why:
 - `/admin/research` is now a first-class operator workspace
 - official-source envelopes persist through cache, normalized metrics, research snapshots, and coverage tasks
 - every thesis now has a freshness and provenance surface
+- market, submarket, and asset research now distinguish `source view` from `house view`, with thesis age and approval status surfaced in the operator UI
+- admin operators can now approve immutable house-view snapshots, which gives the research layer a real thesis-lineage control instead of only live draft interpretation
 - the same research fabric is reused by underwriting, deals, portfolio, and fund reporting
 
 ### 3. Deal Execution
@@ -88,11 +90,13 @@ Current state:
   - deal archive/restore
   - document upload
   - security identity mapping and operator seat updates
+  - universal property explorer bootstrap into a live asset dossier
 
 Impact:
 
 - materially stronger demo and release confidence
 - hosted smoke coverage now exists, and hosted mutation coverage is available as a guarded manual staging workflow
+- the local browser harness now restores the dedicated scratch database with the checked-in migration chain first, then converges remaining historical schema drift before reseeding and running Playwright
 
 ### 2. Auth / Permission Depth
 

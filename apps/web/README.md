@@ -11,9 +11,10 @@ Current operating layers inside this app:
 - portfolio operations
 - capital formation shell
 
-Research is now a first-class workspace at `/admin/research`, not only a service layer. It uses shared `ResearchSnapshot`, `MarketUniverse`, `Submarket`, `CoverageTask`, `SourceCache`, `ResearchSyncRun`, and approved evidence data so underwriting, deals, portfolio, and fund workflows read the same provenance, freshness, sync-history, and optimization surfaces.
+Research is now a first-class workspace at `/admin/research`, not only a service layer. It uses shared `ResearchSnapshot`, `MarketUniverse`, `Submarket`, `CoverageTask`, `SourceCache`, `ResearchSyncRun`, and approved evidence data so underwriting, deals, portfolio, and fund workflows read the same provenance, freshness, sync-history, optimization, and `source view` vs `house view` surfaces. Admin operators can now approve immutable house-view thesis snapshots while keeping the current draft snapshot live for further research iteration.
 `/admin/sources` now complements that workspace with explicit source refresh controls, stale asset queue visibility, and persisted `SourceRefreshRun` audit history for operator and cron-triggered refresh jobs.
 `/admin/portfolio/[id]` now adds asset-management initiatives on top of KPI, covenant, rollover, and exit tracking, while `/admin/funds/[id]` now carries a controlled investor-report release workflow with draft, internal-review, ready, and released states.
+`/admin/assets/explorer` now adds a universal property intake surface so operators can click a map-like candidate screen, inspect parcel and official-source context, and bootstrap a full dossier into the existing underwriting workflow without rebuilding the intake manually. The mutation suite now browser-tests this bootstrap path directly.
 
 Registry-only remains explicit:
 
@@ -49,6 +50,7 @@ Playwright now locks the seeded operator journeys across assets, review, researc
 - archive / restore a deal
 - map a seeded unresolved reviewer identity from `/admin/security`
 - update a canonical operator seat from `/admin/security`
+- open `/admin/assets/explorer` and verify universal property screens stay connected to dossier bootstrap
 
 Run from `apps/web`:
 
@@ -63,7 +65,7 @@ If you want a one-command local browser path with seeded Postgres on port `5434`
 npm run e2e:local
 ```
 
-`e2e:local` expects Docker Desktop (or another local Docker engine) to be running first because it boots `postgres:16` through `compose.e2e.yml`.
+`e2e:local` expects Docker Desktop (or another local Docker engine) to be running first because it boots `postgres:16` through `compose.e2e.yml`. When the dedicated scratch database has stale Prisma migration state, the harness now uses `prisma migrate reset` to replay the checked-in migration chain and then runs a final `prisma db push` only to converge legacy schema drift before reseeding.
 
 This suite now performs a preflight check first:
 
@@ -171,6 +173,9 @@ What the workflow supports:
 - stage updates with activity logging
 - stage-specific required checklist with seedable required tasks
 - structured DD request tracker with counterparty, due date, received / waived status, automatic document upload matching for single-deal asset workflows, and suggestion fallback with competing-request hints when the match is ambiguous
+- specialist due-diligence workstreams for legal, commercial, technical, environmental, tax, insurance, leasing, and financing sign-off
+- lane-level external deliverable upload/linking so counsel, engineer, and advisor files can be attached directly to each DD workstream
+- scoped DD workpaper export from the live deal record in markdown or JSON form
 - bid revision history for first bid, revised bid, BAFO, accepted, or lost pricing paths
 - lender quote tracker for term sheets, approved credit, leverage, pricing, and DSCR terms
 - negotiation event tracker for seller counters, buyer feedback, and exclusivity clock changes
@@ -187,6 +192,8 @@ What the workflow supports:
 - restore from archive when a process needs to be reopened
 - combined deal activity + valuation timeline on the detail page
 - archive and close-out actions with final summary logging and structured loss taxonomy
+
+`/admin/ic` now surfaces specialist DD sign-off gaps on committee packaging candidates, lets operators export the linked deal workpaper, and only allows packet lock once approved valuation and supporting DD deliverables are in place.
 
 Required migration for the deal execution workflow:
 

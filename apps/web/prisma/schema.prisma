@@ -218,6 +218,25 @@ enum RelationshipCoverageStatus {
   PASSIVE
 }
 
+enum DealDiligenceWorkstreamType {
+  LEGAL
+  TECHNICAL
+  ENVIRONMENTAL
+  COMMERCIAL
+  TAX
+  INSURANCE
+  LEASING
+  FINANCING
+}
+
+enum DealDiligenceWorkstreamStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  BLOCKED
+  READY_FOR_SIGNOFF
+  SIGNED_OFF
+}
+
 enum PortfolioAssetStatus {
   ACTIVE
   WATCHLIST
@@ -235,6 +254,17 @@ enum ResearchSyncTriggerType {
   WORKSPACE_REFRESH
   SCHEDULED
   MANUAL
+}
+
+enum ResearchViewType {
+  SOURCE
+  HOUSE
+}
+
+enum ResearchApprovalStatus {
+  DRAFT
+  APPROVED
+  SUPERSEDED
 }
 
 enum SourceRefreshTriggerType {
@@ -347,6 +377,7 @@ model User {
   adminProvisioningBindings       AdminProvisioningBinding[]
   reviewedInvestorReports         InvestorReport[]       @relation("InvestorReportReviewedBy")
   releasedInvestorReports         InvestorReport[]       @relation("InvestorReportReleasedBy")
+  approvedResearchSnapshots       ResearchSnapshot[]     @relation("ResearchSnapshotApprovedBy")
 }
 
 model AdminIdentityBinding {
@@ -938,6 +969,7 @@ model Document {
   versions          DocumentVersion[]
   onchainRecords    OnchainRecord[]
   dealRequests      DealDocumentRequest[]
+  diligenceDeliverables DealDiligenceDeliverable[]
 }
 
 model DocumentVersion {
@@ -1036,10 +1068,49 @@ model Deal {
   riskFlags        RiskFlag[]
   activityLogs     ActivityLog[]
   probabilitySnapshots DealExecutionProbabilitySnapshot[]
+  diligenceWorkstreams DealDiligenceWorkstream[]
   committeePackets InvestmentCommitteePacket[]
 
   @@index([stage, targetCloseDate])
   @@index([market, assetClass, stage])
+}
+
+model DealDiligenceWorkstream {
+  id               String                       @id @default(cuid())
+  dealId           String
+  workstreamType   DealDiligenceWorkstreamType
+  status           DealDiligenceWorkstreamStatus @default(NOT_STARTED)
+  ownerLabel       String?
+  advisorName      String?
+  reportTitle      String?
+  requestedAt      DateTime?
+  dueDate          DateTime?
+  signedOffAt      DateTime?
+  signedOffByLabel String?
+  summary          String?
+  blockerSummary   String?
+  notes            String?
+  createdAt        DateTime                     @default(now())
+  updatedAt        DateTime                     @updatedAt
+  deal             Deal                         @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  deliverables     DealDiligenceDeliverable[]
+
+  @@unique([dealId, workstreamType])
+  @@index([dealId, status, dueDate])
+}
+
+model DealDiligenceDeliverable {
+  id           String                 @id @default(cuid())
+  workstreamId String
+  documentId   String
+  note         String?
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+  workstream   DealDiligenceWorkstream @relation(fields: [workstreamId], references: [id], onDelete: Cascade)
+  document     Document               @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([workstreamId, documentId])
+  @@index([documentId, createdAt])
 }
 
 model InvestmentCommitteeMeeting {
@@ -1924,12 +1995,17 @@ model ResearchSnapshot {
   marketUniverseId  String?
   submarketId       String?
   snapshotType      String
+  viewType          ResearchViewType       @default(SOURCE)
+  approvalStatus    ResearchApprovalStatus @default(APPROVED)
   title             String
   summary           String?
   snapshotDate      DateTime
   sourceSystem      String?
   freshnessStatus   SourceStatus?
   freshnessLabel    String?
+  approvedAt        DateTime?
+  approvedById      String?
+  supersedesSnapshotId String?
   metrics           Json?
   provenance        Json?
   createdAt         DateTime       @default(now())
@@ -1937,10 +2013,15 @@ model ResearchSnapshot {
   asset             Asset?         @relation(fields: [assetId], references: [id], onDelete: Cascade)
   marketUniverse    MarketUniverse? @relation(fields: [marketUniverseId], references: [id], onDelete: Cascade)
   submarket         Submarket?     @relation(fields: [submarketId], references: [id], onDelete: Cascade)
+  approvedBy        User?          @relation("ResearchSnapshotApprovedBy", fields: [approvedById], references: [id], onDelete: SetNull)
+  supersedesSnapshot ResearchSnapshot? @relation("ResearchSnapshotSupersedes", fields: [supersedesSnapshotId], references: [id], onDelete: SetNull)
+  supersededBySnapshots ResearchSnapshot[] @relation("ResearchSnapshotSupersedes")
 
   @@index([assetId, snapshotType, snapshotDate])
   @@index([marketUniverseId, snapshotType, snapshotDate])
   @@index([submarketId, snapshotType, snapshotDate])
+  @@index([viewType, approvalStatus, snapshotDate])
+  @@index([approvedById, approvedAt])
 }
 
 model CoverageTask {
