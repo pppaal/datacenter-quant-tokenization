@@ -37,10 +37,20 @@ jobs:
       GLOBAL_MACRO_API_URL: ${{ secrets.GLOBAL_MACRO_API_URL }}
       GLOBAL_MACRO_API_KEY: ${{ secrets.GLOBAL_MACRO_API_KEY }}
     steps:
+      - name: Gate — require DATABASE_URL
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::notice::DATABASE_URL secret is not configured — skipping ops cycle."
+            echo "SKIP_OPS=true" >> "$GITHUB_ENV"
+          fi
+        working-directory: .
+
       - name: Checkout
+        if: env.SKIP_OPS != 'true'
         uses: actions/checkout@v4
 
       - name: Setup Node
+        if: env.SKIP_OPS != 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -48,22 +58,27 @@ jobs:
           cache-dependency-path: apps/web/package-lock.json
 
       - name: Install dependencies
+        if: env.SKIP_OPS != 'true'
         run: npm ci
 
       - name: Generate Prisma client
+        if: env.SKIP_OPS != 'true'
         run: npm run prisma:generate
 
       - name: Apply migrations
+        if: env.SKIP_OPS != 'true'
         run: npx prisma migrate deploy
 
       - name: Environment preflight
+        if: env.SKIP_OPS != 'true'
         run: npm run env:preflight -- ops-worker
 
       - name: Run queued ops worker cycle
+        if: env.SKIP_OPS != 'true'
         run: npm run ops:worker -- --enqueue-cycle 2>&1 | tee ops-cycle.log
 
       - name: Publish ops summary
-        if: always()
+        if: always() && env.SKIP_OPS != 'true'
         shell: bash
         run: |
           echo "## Ops Cycle Summary" >> "$GITHUB_STEP_SUMMARY"
@@ -71,7 +86,7 @@ jobs:
           tail -n 20 ops-cycle.log >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload ops cycle log
-        if: always()
+        if: always() && env.SKIP_OPS != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: ops-cycle-log
