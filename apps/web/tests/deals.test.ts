@@ -599,7 +599,7 @@ test('buildDealOriginationProfile rewards direct sourcing, primary coverage, and
           role: 'OWNER',
           coverageOwner: 'han',
           coverageStatus: RelationshipCoverageStatus.PRIMARY,
-          lastContactAt: new Date('2026-04-05T00:00:00.000Z')
+          lastContactAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
         },
         {
           id: 'cp_2',
@@ -607,7 +607,7 @@ test('buildDealOriginationProfile rewards direct sourcing, primary coverage, and
           role: 'LENDER',
           coverageOwner: 'lee',
           coverageStatus: RelationshipCoverageStatus.PRIMARY,
-          lastContactAt: new Date('2026-04-04T00:00:00.000Z')
+          lastContactAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000)
         }
       ],
       tasks: [],
@@ -619,7 +619,7 @@ test('buildDealOriginationProfile rewards direct sourcing, primary coverage, and
         {
           id: 'neg_1',
           eventType: 'EXCLUSIVITY_GRANTED',
-          expiresAt: new Date('2026-04-15T00:00:00.000Z'),
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
           effectiveAt: new Date('2026-04-01T00:00:00.000Z')
         }
       ],
