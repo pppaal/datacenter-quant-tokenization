@@ -45,6 +45,8 @@ type DealPipelineSummary = {
       confidenceScore: number;
       createdAt: Date;
     } | null;
+    macroRiskScore: number | null;
+    macroRiskBand: 'LOW' | 'MODERATE' | 'HIGH' | 'CRITICAL' | null;
   }>;
 };
 
@@ -151,6 +153,16 @@ export function DealPipelinePanel({ summary }: Props) {
                     {formatNumber(deal.originationScorePct, 0)}% / {deal.originationBand.toLowerCase()}
                   </div>
                 </div>
+                {deal.macroRiskBand ? (
+                  <div>
+                    <div className="fine-print">Macro Risk</div>
+                    <div className="mt-1">
+                      <Badge tone={deal.macroRiskBand === 'LOW' ? 'good' : deal.macroRiskBand === 'CRITICAL' ? 'danger' : 'warn'}>
+                        {deal.macroRiskBand.toLowerCase()} ({deal.macroRiskScore})
+                      </Badge>
+                    </div>
+                  </div>
+                ) : null}
                 <div>
                   <div className="fine-print">Valuation</div>
                   <div className="mt-1">

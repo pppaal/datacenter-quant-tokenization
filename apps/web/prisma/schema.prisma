@@ -1631,12 +1631,19 @@ model MacroFactor {
   unit            String?
   direction       String
   commentary      String?
-  sourceSystem    String       @default("macro-factor-engine")
-  sourceStatus    SourceStatus @default(MANUAL)
-  sourceUpdatedAt DateTime?
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-  asset           Asset?       @relation(fields: [assetId], references: [id], onDelete: SetNull)
+  sourceSystem      String       @default("macro-factor-engine")
+  sourceStatus      SourceStatus @default(MANUAL)
+  sourceUpdatedAt   DateTime?
+  trendDirection    String?
+  trendMomentum     Float?
+  trendAcceleration Float?
+  anomalyZScore     Float?
+  movingAvg3        Float?
+  movingAvg6        Float?
+  movingAvg12       Float?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  asset             Asset?       @relation(fields: [assetId], references: [id], onDelete: SetNull)
 
   @@unique([market, factorKey, observationDate, assetId])
   @@index([market, factorKey, observationDate])

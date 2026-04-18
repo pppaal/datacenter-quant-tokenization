@@ -19,7 +19,14 @@ function factor(input: Partial<MacroFactor> & Pick<MacroFactor, 'market' | 'fact
     sourceStatus: input.sourceStatus ?? 'FRESH',
     sourceUpdatedAt: input.sourceUpdatedAt ?? new Date('2026-03-25T00:00:00.000Z'),
     createdAt: input.createdAt ?? new Date('2026-03-25T00:00:00.000Z'),
-    updatedAt: input.updatedAt ?? new Date('2026-03-25T00:00:00.000Z')
+    updatedAt: input.updatedAt ?? new Date('2026-03-25T00:00:00.000Z'),
+    trendDirection: input.trendDirection ?? null,
+    trendMomentum: input.trendMomentum ?? null,
+    trendAcceleration: input.trendAcceleration ?? null,
+    anomalyZScore: input.anomalyZScore ?? null,
+    movingAvg3: input.movingAvg3 ?? null,
+    movingAvg6: input.movingAvg6 ?? null,
+    movingAvg12: input.movingAvg12 ?? null
   };
 }
 

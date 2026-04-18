@@ -13,6 +13,7 @@ import {
   getDealMaterialUpdatedAt
 } from '@/lib/services/deals';
 import { buildMacroBacktest } from '@/lib/services/macro/backtest';
+import { computeDealMacroExposure } from '@/lib/services/macro/deal-risk';
 import { buildMacroForecastBacktest } from '@/lib/services/macro/forecast-backtest';
 import { getCommitteeWorkspace } from '@/lib/services/ic';
 import { listInquiries } from '@/lib/services/inquiries';
@@ -973,6 +974,8 @@ export async function getAdminData(db: PrismaClient = prisma) {
         dealCode: true,
         title: true,
         stage: true,
+        market: true,
+        assetClass: true,
         statusLabel: true,
         archivedAt: true,
         nextAction: true,
@@ -1059,6 +1062,8 @@ export async function getAdminData(db: PrismaClient = prisma) {
         },
         asset: {
           select: {
+            financingLtvPct: true,
+            financingRatePct: true,
             researchSnapshots: {
               select: {
                 freshnessStatus: true
@@ -1236,7 +1241,31 @@ export async function getAdminData(db: PrismaClient = prisma) {
       }).length,
     0
   );
-  const dealPipeline = buildDealPipelineSummary(deals);
+  const dealPipelineRaw = buildDealPipelineSummary(deals);
+  const dealPipeline = {
+    ...dealPipelineRaw,
+    watchlist: dealPipelineRaw.watchlist.map((item) => {
+      const deal = deals.find((d) => d.id === item.id);
+      const exposure = deal
+        ? computeDealMacroExposure(
+            {
+              id: deal.id,
+              market: deal.market,
+              assetClass: deal.assetClass,
+              financingLtvPct: deal.asset?.financingLtvPct ?? null,
+              financingRatePct: deal.asset?.financingRatePct ?? null,
+              stage: deal.stage
+            },
+            macroFactors
+          )
+        : null;
+      return {
+        ...item,
+        macroRiskScore: exposure?.overallScore ?? null,
+        macroRiskBand: exposure?.band ?? null
+      };
+    })
+  };
   const dealReminders = buildDealReminderSummary(deals);
   const portfolioRisk = buildPortfolioRiskSummary(
     valuationRuns.map((run) => ({

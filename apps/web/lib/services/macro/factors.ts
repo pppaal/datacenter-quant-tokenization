@@ -1,5 +1,6 @@
 import type { MacroSeries, MarketSnapshot, SourceStatus } from '@prisma/client';
 import { buildMacroSnapshot, type MacroRegimeSnapshot } from '@/lib/services/macro/series';
+import { buildFactorTrendMap, type FactorTrendMetadata } from '@/lib/services/macro/trend';
 
 export type MacroFactorKey =
   | 'inflation_trend'
@@ -35,6 +36,7 @@ export type MacroFactorPoint = {
   direction: MacroFactorDirection;
   commentary: string;
   inputs: string[];
+  trend?: FactorTrendMetadata;
 };
 
 export type MacroFactorSnapshot = {
@@ -328,6 +330,14 @@ export function buildMacroFactorSnapshot(input: {
     })
   ];
 
+  const trendMap = buildFactorTrendMap(series);
+  for (const factor of factors) {
+    const trendMeta = trendMap[factor.key];
+    if (trendMeta) {
+      factor.trend = trendMeta;
+    }
+  }
+
   return {
     market: snapshot.market,
     asOf: snapshot.asOf,
@@ -373,6 +383,13 @@ export function buildMacroFactorCreateInputs(input: {
     commentary: factor.commentary,
     sourceSystem: input.sourceSystem,
     sourceStatus: input.sourceStatus,
-    sourceUpdatedAt: input.sourceUpdatedAt
+    sourceUpdatedAt: input.sourceUpdatedAt,
+    trendDirection: factor.trend?.direction ?? null,
+    trendMomentum: factor.trend?.momentum ?? null,
+    trendAcceleration: factor.trend?.acceleration ?? null,
+    anomalyZScore: factor.trend?.anomalyZScore ?? null,
+    movingAvg3: factor.trend?.movingAvg3 ?? null,
+    movingAvg6: factor.trend?.movingAvg6 ?? null,
+    movingAvg12: factor.trend?.movingAvg12 ?? null
   }));
 }

@@ -26,7 +26,14 @@ test('quant macro consumer builds cross-asset signals from persisted factors', (
       sourceStatus: SourceStatus.FRESH,
       sourceUpdatedAt: asOf,
       createdAt: asOf,
-      updatedAt: asOf
+      updatedAt: asOf,
+      trendDirection: null,
+      trendMomentum: null,
+      trendAcceleration: null,
+      anomalyZScore: null,
+      movingAvg3: null,
+      movingAvg6: null,
+      movingAvg12: null
     },
     {
       id: '2',
@@ -43,7 +50,14 @@ test('quant macro consumer builds cross-asset signals from persisted factors', (
       sourceStatus: SourceStatus.FRESH,
       sourceUpdatedAt: asOf,
       createdAt: asOf,
-      updatedAt: asOf
+      updatedAt: asOf,
+      trendDirection: null,
+      trendMomentum: null,
+      trendAcceleration: null,
+      anomalyZScore: null,
+      movingAvg3: null,
+      movingAvg6: null,
+      movingAvg12: null
     },
     {
       id: '3',
@@ -60,7 +74,14 @@ test('quant macro consumer builds cross-asset signals from persisted factors', (
       sourceStatus: SourceStatus.FRESH,
       sourceUpdatedAt: asOf,
       createdAt: asOf,
-      updatedAt: asOf
+      updatedAt: asOf,
+      trendDirection: null,
+      trendMomentum: null,
+      trendAcceleration: null,
+      anomalyZScore: null,
+      movingAvg3: null,
+      movingAvg6: null,
+      movingAvg12: null
     },
     {
       id: '4',
@@ -77,7 +98,14 @@ test('quant macro consumer builds cross-asset signals from persisted factors', (
       sourceStatus: SourceStatus.FRESH,
       sourceUpdatedAt: asOf,
       createdAt: asOf,
-      updatedAt: asOf
+      updatedAt: asOf,
+      trendDirection: null,
+      trendMomentum: null,
+      trendAcceleration: null,
+      anomalyZScore: null,
+      movingAvg3: null,
+      movingAvg6: null,
+      movingAvg12: null
     },
     {
       id: '5',
@@ -94,7 +122,14 @@ test('quant macro consumer builds cross-asset signals from persisted factors', (
       sourceStatus: SourceStatus.FRESH,
       sourceUpdatedAt: asOf,
       createdAt: asOf,
-      updatedAt: asOf
+      updatedAt: asOf,
+      trendDirection: null,
+      trendMomentum: null,
+      trendAcceleration: null,
+      anomalyZScore: null,
+      movingAvg3: null,
+      movingAvg6: null,
+      movingAvg12: null
     },
     {
       id: '6',
@@ -111,7 +146,14 @@ test('quant macro consumer builds cross-asset signals from persisted factors', (
       sourceStatus: SourceStatus.FRESH,
       sourceUpdatedAt: asOf,
       createdAt: asOf,
-      updatedAt: asOf
+      updatedAt: asOf,
+      trendDirection: null,
+      trendMomentum: null,
+      trendAcceleration: null,
+      anomalyZScore: null,
+      movingAvg3: null,
+      movingAvg6: null,
+      movingAvg12: null
     },
     {
       id: '7',
@@ -128,7 +170,14 @@ test('quant macro consumer builds cross-asset signals from persisted factors', (
       sourceStatus: SourceStatus.FRESH,
       sourceUpdatedAt: asOf,
       createdAt: asOf,
-      updatedAt: asOf
+      updatedAt: asOf,
+      trendDirection: null,
+      trendMomentum: null,
+      trendAcceleration: null,
+      anomalyZScore: null,
+      movingAvg3: null,
+      movingAvg6: null,
+      movingAvg12: null
     },
     {
       id: '8',
@@ -145,7 +194,14 @@ test('quant macro consumer builds cross-asset signals from persisted factors', (
       sourceStatus: SourceStatus.FRESH,
       sourceUpdatedAt: asOf,
       createdAt: asOf,
-      updatedAt: asOf
+      updatedAt: asOf,
+      trendDirection: null,
+      trendMomentum: null,
+      trendAcceleration: null,
+      anomalyZScore: null,
+      movingAvg3: null,
+      movingAvg6: null,
+      movingAvg12: null
     }
   ]);
 

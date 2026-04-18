@@ -1,5 +1,9 @@
 import type { PrismaClient } from '@prisma/client';
+import { AssetClass } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
+import { buildMacroRegimeAnalysis } from '@/lib/services/macro/regime';
+import { buildFullTrendAnalysis } from '@/lib/services/macro/trend';
+import { buildTemplateNarrative, type MacroNarrative } from '@/lib/services/macro/narrative';
 
 type TrendPoint = {
   date: string;
@@ -26,6 +30,7 @@ export type MacroDashboardData = {
     latestObservationDate: string | null;
     staleSeriesCount: number;
   };
+  narrative: MacroNarrative | null;
 };
 
 function classifySeriesKey(key: string) {
@@ -171,6 +176,21 @@ export async function buildMacroDashboard(
     return !lastDate || lastDate < thirtyDaysAgo;
   }).length;
 
+  // Build macro narrative from factor snapshot + regime + trend analysis
+  let narrative: MacroNarrative | null = null;
+  try {
+    const regime = buildMacroRegimeAnalysis({ assetClass: AssetClass.DATA_CENTER, market: 'KR', series: macroSeries });
+    const trends = buildFullTrendAnalysis(macroSeries);
+    narrative = buildTemplateNarrative({
+      market: 'KR',
+      asOf: latestDate,
+      regime,
+      trends
+    });
+  } catch {
+    // Narrative generation is non-critical — proceed without it
+  }
+
   return {
     interestRateSeries,
     vacancySeries,
@@ -181,5 +201,6 @@ export async function buildMacroDashboard(
       latestObservationDate: latestDate,
       staleSeriesCount: staleCount,
     },
+    narrative,
   };
 }
