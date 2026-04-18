@@ -2,8 +2,10 @@ import type { PrismaClient } from '@prisma/client';
 import { AssetClass } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { buildMacroRegimeAnalysis } from '@/lib/services/macro/regime';
+import { detectRegimeTransitions, type RegimeTransitionSummary } from '@/lib/services/macro/regime-transition';
 import { buildFullTrendAnalysis } from '@/lib/services/macro/trend';
 import { buildTemplateNarrative, type MacroNarrative } from '@/lib/services/macro/narrative';
+import { getConfiguredProviders } from '@/lib/services/macro/data-providers';
 
 type TrendPoint = {
   date: string;
@@ -31,6 +33,8 @@ export type MacroDashboardData = {
     staleSeriesCount: number;
   };
   narrative: MacroNarrative | null;
+  regimeTransition: RegimeTransitionSummary | null;
+  dataProviders: string[];
 };
 
 function classifySeriesKey(key: string) {
@@ -176,8 +180,9 @@ export async function buildMacroDashboard(
     return !lastDate || lastDate < thirtyDaysAgo;
   }).length;
 
-  // Build macro narrative from factor snapshot + regime + trend analysis
+  // Build macro narrative + regime transition from factor snapshot + regime + trend analysis
   let narrative: MacroNarrative | null = null;
+  let regimeTransition: RegimeTransitionSummary | null = null;
   try {
     const regime = buildMacroRegimeAnalysis({ assetClass: AssetClass.DATA_CENTER, market: 'KR', series: macroSeries });
     const trends = buildFullTrendAnalysis(macroSeries);
@@ -187,8 +192,16 @@ export async function buildMacroDashboard(
       regime,
       trends
     });
+
+    // Build a "previous" regime from older data (drop most recent 3 months) for transition detection
+    const olderSeries = macroSeries
+      .filter((s) => s.observationDate.getTime() < Date.now() - 90 * 24 * 60 * 60 * 1000);
+    if (olderSeries.length > 0) {
+      const previousRegime = buildMacroRegimeAnalysis({ assetClass: AssetClass.DATA_CENTER, market: 'KR', series: olderSeries });
+      regimeTransition = detectRegimeTransitions(regime, previousRegime);
+    }
   } catch {
-    // Narrative generation is non-critical — proceed without it
+    // Narrative/transition generation is non-critical — proceed without it
   }
 
   return {
@@ -202,5 +215,7 @@ export async function buildMacroDashboard(
       staleSeriesCount: staleCount,
     },
     narrative,
+    regimeTransition,
+    dataProviders: getConfiguredProviders(),
   };
 }

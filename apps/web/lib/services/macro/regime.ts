@@ -17,7 +17,7 @@ import {
   submarketProfileRegistry
 } from '@/lib/services/macro/profile-registry';
 
-type RegimeState = 'SUPPORTIVE' | 'NEUTRAL' | 'TIGHT' | 'STRONG' | 'BALANCED' | 'SOFT' | 'CONTAINED' | 'ELEVATED' | 'LOW' | 'MODERATE' | 'HIGH';
+export type RegimeState = 'SUPPORTIVE' | 'NEUTRAL' | 'TIGHT' | 'STRONG' | 'BALANCED' | 'SOFT' | 'CONTAINED' | 'ELEVATED' | 'LOW' | 'MODERATE' | 'HIGH';
 
 export type MacroRegimeBlock = {
   key: 'capitalMarkets' | 'leasing' | 'construction' | 'refinance';

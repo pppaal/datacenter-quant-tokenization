@@ -1,6 +1,7 @@
 import type { AssetClass, MacroFactor } from '@prisma/client';
 import type { MacroFactorDirection } from '@/lib/services/macro/factors';
 import { macroSensitivityTemplateRegistry } from '@/lib/services/macro/profile-registry';
+import { computeCorrelationPenalty, applyCorrelationPenalty, type CorrelationPenalty } from '@/lib/services/macro/correlation-stress';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -18,8 +19,10 @@ export type DealMacroExposure = {
   market: string;
   assetClass: string | null;
   overallScore: number;
+  rawScore: number;
   band: 'LOW' | 'MODERATE' | 'HIGH' | 'CRITICAL';
   dimensions: DealMacroExposureDimension[];
+  correlationPenalty: CorrelationPenalty;
   summary: string;
   riskFactors: string[];
   mitigants: string[];
@@ -192,7 +195,7 @@ export function computeDealMacroExposure(
     ? { rate: 0.20, credit: 0.15, demand: 0.15, construction: 0.25, leverage: 0.15, liquidity: 0.10 }
     : { rate: 0.25, credit: 0.20, demand: 0.20, construction: 0.05, leverage: 0.20, liquidity: 0.10 };
 
-  const overallScore = clamp(
+  const rawScore = clamp(
     Math.round(
       dimensions.reduce((sum, d) => sum + d.score * (weights[d.key] ?? 0.15), 0)
     ),
@@ -200,14 +203,25 @@ export function computeDealMacroExposure(
     100
   );
 
+  // Correlation stress amplification — penalize when multiple headwinds are active simultaneously
+  const factorDirections: Record<string, MacroFactorDirection> = {};
+  for (const [key, entry] of lookup) {
+    factorDirections[key] = entry.direction;
+  }
+  const correlationPenalty = computeCorrelationPenalty(dimensions, factorDirections);
+  const overallScore = applyCorrelationPenalty(rawScore, correlationPenalty);
+
   const band = bandFromScore(overallScore);
 
   const riskFactors = dimensions.filter((d) => d.score >= 50).map((d) => d.commentary);
+  if (correlationPenalty.appliedPenaltyPct > 0) {
+    riskFactors.push(correlationPenalty.commentary);
+  }
   const mitigants = dimensions.filter((d) => d.score < 30).map((d) => d.commentary);
 
   const summary =
     band === 'CRITICAL'
-      ? `${deal.market} macro conditions present critical risk for this deal. Multiple stress vectors are active.`
+      ? `${deal.market} macro conditions present critical risk for this deal. Multiple stress vectors are active.${correlationPenalty.appliedPenaltyPct > 0 ? ' Correlated stress amplification detected.' : ''}`
       : band === 'HIGH'
         ? `Macro headwinds are material. Active monitoring and stress testing recommended.`
         : band === 'MODERATE'
@@ -219,8 +233,10 @@ export function computeDealMacroExposure(
     market: deal.market,
     assetClass: deal.assetClass,
     overallScore,
+    rawScore,
     band,
     dimensions,
+    correlationPenalty,
     summary,
     riskFactors,
     mitigants

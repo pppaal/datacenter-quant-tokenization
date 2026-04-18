@@ -1,6 +1,7 @@
 import type { MacroSeries, MarketSnapshot, SourceStatus } from '@prisma/client';
 import { buildMacroSnapshot, type MacroRegimeSnapshot } from '@/lib/services/macro/series';
 import { buildFactorTrendMap, type FactorTrendMetadata } from '@/lib/services/macro/trend';
+import { getMarketFactorThresholds, getMarketInvertedThresholds } from '@/lib/services/macro/market-thresholds';
 
 export type MacroFactorKey =
   | 'inflation_trend'
@@ -92,6 +93,8 @@ export function buildMacroFactorSnapshot(input: {
 }): MacroFactorSnapshot {
   const snapshot = buildSnapshot(input);
   const series = input.series ?? [];
+  const th = getMarketFactorThresholds(input.market);
+  const inv = getMarketInvertedThresholds(input.market);
 
   const inflation = getSeriesValue(snapshot, 'inflation_pct') ?? input.marketSnapshot?.inflationPct ?? null;
   const policyRate = getSeriesValue(snapshot, 'policy_rate_pct');
@@ -135,7 +138,7 @@ export function buildMacroFactorSnapshot(input: {
       label: 'Inflation Trend',
       value: inflation,
       unit: '%',
-      direction: inflation == null ? 'NEUTRAL' : inflation >= 3.5 ? 'NEGATIVE' : inflation <= 2.3 ? 'POSITIVE' : 'NEUTRAL',
+      direction: inflation == null ? 'NEUTRAL' : inflation >= th.inflation.negativeAbove ? 'NEGATIVE' : inflation <= th.inflation.positiveBelow ? 'POSITIVE' : 'NEUTRAL',
       commentary:
         inflation == null
           ? 'No current inflation observation is available.'
@@ -154,9 +157,9 @@ export function buildMacroFactorSnapshot(input: {
       direction:
         averageRateLevel == null
           ? 'NEUTRAL'
-          : averageRateLevel >= 6
+          : averageRateLevel >= th.rateLevel.negativeAbove
           ? 'NEGATIVE'
-          : averageRateLevel <= 4.5
+          : averageRateLevel <= th.rateLevel.positiveBelow
             ? 'POSITIVE'
             : 'NEUTRAL',
       commentary:
@@ -181,9 +184,9 @@ export function buildMacroFactorSnapshot(input: {
       direction:
         rateMomentumCandidates.length === 0
           ? 'NEUTRAL'
-          : rateMomentumBps >= 25
+          : rateMomentumBps >= th.rateMomentumBps.negativeAbove
             ? 'NEGATIVE'
-            : rateMomentumBps <= -25
+            : rateMomentumBps <= th.rateMomentumBps.positiveBelow
               ? 'POSITIVE'
               : 'NEUTRAL',
       commentary:
@@ -215,9 +218,9 @@ export function buildMacroFactorSnapshot(input: {
       direction:
         creditSpread == null
           ? 'NEUTRAL'
-          : creditSpread >= 220
+          : creditSpread >= th.creditSpreadBps.negativeAbove
           ? 'NEGATIVE'
-          : creditSpread <= 150
+          : creditSpread <= th.creditSpreadBps.positiveBelow
             ? 'POSITIVE'
             : 'NEUTRAL',
       commentary:
@@ -238,9 +241,9 @@ export function buildMacroFactorSnapshot(input: {
       direction:
         transactionVolume == null
           ? 'NEUTRAL'
-          : transactionVolume < 85
+          : transactionVolume < inv.liquidity.negativeBelow
           ? 'NEGATIVE'
-          : transactionVolume >= 105
+          : transactionVolume >= inv.liquidity.positiveAbove
             ? 'POSITIVE'
             : 'NEUTRAL',
       commentary:
@@ -259,7 +262,7 @@ export function buildMacroFactorSnapshot(input: {
       value: rentGrowth,
       unit: '%',
       direction:
-        rentGrowth == null ? 'NEUTRAL' : rentGrowth < 1 ? 'NEGATIVE' : rentGrowth >= 2.5 ? 'POSITIVE' : 'NEUTRAL',
+        rentGrowth == null ? 'NEUTRAL' : rentGrowth < inv.rentGrowth.negativeBelow ? 'NEGATIVE' : rentGrowth >= inv.rentGrowth.positiveAbove ? 'POSITIVE' : 'NEUTRAL',
       commentary:
         rentGrowth == null
           ? 'No current growth observation is available.'
@@ -278,9 +281,9 @@ export function buildMacroFactorSnapshot(input: {
       direction:
         inflation == null && constructionCostIndex == null
           ? 'NEUTRAL'
-          : constructionPressure >= 25
+          : constructionPressure >= th.constructionPressure.negativeAbove
           ? 'NEGATIVE'
-          : constructionPressure <= 10
+          : constructionPressure <= th.constructionPressure.positiveBelow
             ? 'POSITIVE'
             : 'NEUTRAL',
       commentary:
@@ -308,9 +311,9 @@ export function buildMacroFactorSnapshot(input: {
       direction:
         rentGrowth == null && transactionVolume == null && vacancy == null
           ? 'NEUTRAL'
-          : propertyDemand <= -10
+          : propertyDemand <= inv.propertyDemand.negativeBelow
             ? 'NEGATIVE'
-            : propertyDemand >= 8
+            : propertyDemand >= inv.propertyDemand.positiveAbove
               ? 'POSITIVE'
               : 'NEUTRAL',
       commentary:
