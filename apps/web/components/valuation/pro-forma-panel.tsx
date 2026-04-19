@@ -587,15 +587,50 @@ export function ProFormaPanel({
     );
   }
 
-  const summaryCards = [
-    ['Year 1 Revenue', proForma.summary.annualRevenueKrw],
-    ['Stabilized NOI', proForma.summary.stabilizedNoiKrw],
-    ['Terminal Exit Year', proForma.summary.terminalYear],
-    ['Reserve Requirement', proForma.summary.reserveRequirementKrw],
-    ['Ending Debt Balance', proForma.summary.endingDebtBalanceKrw],
-    ['Net Exit Proceeds', proForma.summary.netExitProceedsKrw],
-    ['Levered Equity Value', proForma.summary.leveredEquityValueKrw]
+  const summaryCards: [string, number, 'currency' | 'year' | 'percent' | 'multiple'][] = [
+    ['Year 1 Revenue', proForma.summary.annualRevenueKrw, 'currency'],
+    ['Stabilized NOI', proForma.summary.stabilizedNoiKrw, 'currency'],
+    ['Terminal Exit Year', proForma.summary.terminalYear, 'year'],
+    ['Net Exit Proceeds', proForma.summary.netExitProceedsKrw, 'currency'],
+    ['Levered Equity Value', proForma.summary.leveredEquityValueKrw, 'currency'],
+    ['Ending Debt Balance', proForma.summary.endingDebtBalanceKrw, 'currency']
   ];
+
+  const hasReturnMetrics = proForma.summary.equityIrr !== undefined;
+  const returnCards: [string, string, 'good' | 'warn' | 'neutral'][] = hasReturnMetrics
+    ? [
+        [
+          'Equity IRR',
+          proForma.summary.equityIrr !== null ? `${formatNumber(proForma.summary.equityIrr, 2)}%` : 'N/A',
+          proForma.summary.equityIrr !== null && proForma.summary.equityIrr >= 15 ? 'good' : proForma.summary.equityIrr !== null && proForma.summary.equityIrr >= 8 ? 'neutral' : 'warn'
+        ],
+        [
+          'Unlevered IRR',
+          proForma.summary.unleveragedIrr !== null ? `${formatNumber(proForma.summary.unleveragedIrr, 2)}%` : 'N/A',
+          proForma.summary.unleveragedIrr !== null && proForma.summary.unleveragedIrr >= 10 ? 'good' : 'neutral'
+        ],
+        [
+          'Equity Multiple',
+          `${formatNumber(proForma.summary.equityMultiple, 2)}x`,
+          proForma.summary.equityMultiple >= 2.0 ? 'good' : proForma.summary.equityMultiple >= 1.5 ? 'neutral' : 'warn'
+        ],
+        [
+          'Avg Cash-on-Cash',
+          `${formatNumber(proForma.summary.averageCashOnCash, 2)}%`,
+          proForma.summary.averageCashOnCash >= 8 ? 'good' : proForma.summary.averageCashOnCash >= 5 ? 'neutral' : 'warn'
+        ],
+        [
+          'Payback',
+          proForma.summary.paybackYear !== null ? `Year ${proForma.summary.paybackYear}` : 'Beyond horizon',
+          proForma.summary.paybackYear !== null && proForma.summary.paybackYear <= 7 ? 'good' : 'warn'
+        ],
+        [
+          'Initial Equity',
+          formatCurrencyFromKrwAtRate(proForma.summary.initialEquityKrw, displayCurrency, fxRateToKrw),
+          'neutral'
+        ]
+      ]
+    : [];
 
   const firstYear = proForma.years[0];
   const rolloverHighlights = buildRolloverHighlights(proForma.years, displayCurrency, fxRateToKrw);
@@ -617,14 +652,36 @@ export function ProFormaPanel({
         <div className="text-sm text-slate-400">{formatNumber(proForma.years.length, 0)} forecast years</div>
       </div>
 
+      {returnCards.length > 0 ? (
+        <div className="mt-4 rounded-[26px] border border-emerald-500/20 bg-emerald-500/[0.04] p-4">
+          <div className="text-xs uppercase tracking-[0.18em] text-emerald-200/80">Return Metrics</div>
+          <div className="mt-3 grid gap-3 md:grid-cols-3 xl:grid-cols-6">
+            {returnCards.map(([label, value, tone]) => (
+              <div key={label} className={`rounded-2xl border p-4 ${
+                tone === 'good' ? 'border-emerald-400/20 bg-emerald-500/[0.06]'
+                  : tone === 'warn' ? 'border-orange-400/20 bg-orange-500/[0.06]'
+                    : 'border-white/10 bg-slate-950/40'
+              }`}>
+                <div className="text-[11px] uppercase tracking-[0.16em] text-slate-500">{label}</div>
+                <div className="mt-2 text-lg font-semibold text-white">{value}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
       <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-        {summaryCards.map(([label, value]) => (
+        {summaryCards.map(([label, value, fmt]) => (
           <div key={label} className="rounded-2xl border border-border bg-slate-950/40 p-4">
             <div className="text-xs uppercase tracking-[0.18em] text-slate-500">{label}</div>
             <div className="mt-2 text-lg font-semibold text-white">
-              {label === 'Terminal Exit Year'
-                ? `Year ${formatNumber(Number(value), 0)}`
-                : formatCurrencyFromKrwAtRate(Number(value), displayCurrency, fxRateToKrw)}
+              {fmt === 'year'
+                ? `Year ${formatNumber(value, 0)}`
+                : fmt === 'percent'
+                  ? `${formatNumber(value, 2)}%`
+                  : fmt === 'multiple'
+                    ? `${formatNumber(value, 2)}x`
+                    : formatCurrencyFromKrwAtRate(value, displayCurrency, fxRateToKrw)}
             </div>
           </div>
         ))}

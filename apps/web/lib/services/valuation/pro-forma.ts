@@ -4,6 +4,7 @@ import type {
   LeaseDcfResult,
   ProFormaBaseCase
 } from '@/lib/services/valuation/types';
+import { computeReturnMetrics } from '@/lib/services/valuation/return-metrics';
 import { buildYearMap } from '@/lib/services/valuation/year-map';
 import { roundKrw } from '@/lib/services/valuation/utils';
 
@@ -15,14 +16,18 @@ function asRecord(value: unknown): Record<string, unknown> | null {
 export function buildStoredBaseCaseProForma({
   leaseDcf,
   debtSchedule,
-  equityWaterfall
+  equityWaterfall,
+  totalCapexKrw
 }: {
   leaseDcf: LeaseDcfResult;
   debtSchedule: DebtScheduleResult;
   equityWaterfall: EquityWaterfallResult;
+  totalCapexKrw: number;
 }): ProFormaBaseCase {
   const debtYearsByYear = buildYearMap(debtSchedule.years);
   const equityYearsByYear = buildYearMap(equityWaterfall.years);
+
+  const returnMetrics = computeReturnMetrics({ leaseDcf, debtSchedule, equityWaterfall, totalCapexKrw });
 
   return {
     summary: {
@@ -35,7 +40,15 @@ export function buildStoredBaseCaseProForma({
       endingDebtBalanceKrw: roundKrw(debtSchedule.endingDebtBalanceKrw),
       grossExitValueKrw: roundKrw(equityWaterfall.grossExitValueKrw),
       netExitProceedsKrw: roundKrw(equityWaterfall.netExitProceedsKrw),
-      leveredEquityValueKrw: roundKrw(equityWaterfall.leveredEquityValueKrw)
+      leveredEquityValueKrw: roundKrw(equityWaterfall.leveredEquityValueKrw),
+      equityIrr: returnMetrics.equityIrr,
+      unleveragedIrr: returnMetrics.unleveragedIrr,
+      equityMultiple: returnMetrics.equityMultiple,
+      averageCashOnCash: returnMetrics.averageCashOnCash,
+      paybackYear: returnMetrics.paybackYear,
+      peakEquityExposureKrw: roundKrw(returnMetrics.peakEquityExposureKrw),
+      initialEquityKrw: roundKrw(totalCapexKrw - debtSchedule.initialDebtFundingKrw),
+      initialDebtFundingKrw: roundKrw(debtSchedule.initialDebtFundingKrw)
     },
     years: leaseDcf.years.map((year) => {
       const debtYear = debtYearsByYear.get(year.year);

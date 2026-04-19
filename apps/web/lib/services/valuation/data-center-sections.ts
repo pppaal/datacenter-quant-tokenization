@@ -239,7 +239,8 @@ export function buildDataCenterAssumptions(
       baseCase: buildStoredBaseCaseProForma({
         leaseDcf: base.leaseDcf,
         debtSchedule: base.debtSchedule,
-        equityWaterfall: base.equityWaterfall
+        equityWaterfall: base.equityWaterfall,
+        totalCapexKrw: prepared.capexBreakdown.totalCapexKrw
       })
     }
   };

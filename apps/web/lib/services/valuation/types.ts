@@ -396,6 +396,14 @@ export type ProFormaSummary = {
   grossExitValueKrw: number;
   netExitProceedsKrw: number;
   leveredEquityValueKrw: number;
+  equityIrr: number | null;
+  unleveragedIrr: number | null;
+  equityMultiple: number;
+  averageCashOnCash: number;
+  paybackYear: number | null;
+  peakEquityExposureKrw: number;
+  initialEquityKrw: number;
+  initialDebtFundingKrw: number;
 };
 
 export type ProFormaYear = {

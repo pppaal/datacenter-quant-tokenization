@@ -4,6 +4,7 @@ import { buildStoredBaseCaseProForma, readStoredBaseCaseProForma } from '@/lib/s
 
 test('pro forma serializer aligns lease, debt, and equity years into one stored shape', () => {
   const proForma = buildStoredBaseCaseProForma({
+    totalCapexKrw: 5000,
     leaseDcf: {
       years: [
         {
