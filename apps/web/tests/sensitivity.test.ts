@@ -3,8 +3,10 @@ import test from 'node:test';
 import {
   buildCapRateExitSensitivity,
   buildOccupancyRentSensitivity,
-  buildInterestRateSensitivity
+  buildInterestRateSensitivity,
+  buildMacroDrivenSensitivity
 } from '@/lib/services/valuation/sensitivity';
+import type { MacroStressScenario } from '@/lib/services/macro/deal-risk';
 import type { ProFormaBaseCase } from '@/lib/services/valuation/types';
 
 function makeProForma(): ProFormaBaseCase {
@@ -74,6 +76,46 @@ test('buildOccupancyRentSensitivity produces 5x5 matrix', () => {
   const lowOcc = matrix.cells[0]![2]!;
   const highOcc = matrix.cells[4]![2]!;
   assert.ok(highOcc.equityMultiple > lowOcc.equityMultiple);
+});
+
+test('buildMacroDrivenSensitivity uses worst-case shocks from dynamic scenarios as axis bounds', () => {
+  const scenarios: MacroStressScenario[] = [
+    {
+      name: 'Trend Continuation',
+      description: '6-month projected trend',
+      shocks: { rateShiftBps: 80, spreadShiftBps: 20, vacancyShiftPct: 1.0, growthShiftPct: -0.5, constructionCostShiftPct: 2.0 }
+    },
+    {
+      name: 'Tail Risk',
+      description: '2-sigma adverse',
+      shocks: { rateShiftBps: 250, spreadShiftBps: 150, vacancyShiftPct: 4.0, growthShiftPct: -2.5, constructionCostShiftPct: 18.0 }
+    }
+  ];
+
+  const matrix = buildMacroDrivenSensitivity({
+    proForma: makeProForma(),
+    totalCapexKrw: 10000,
+    initialDebtFundingKrw: 5000,
+    baseInterestRatePct: 5.5,
+    baseOccupancyPct: 85,
+    terminalValueKrw: 50000,
+    scenarios
+  });
+
+  assert.equal(matrix.axisSource, 'macro');
+  assert.equal(matrix.rateAxisSourceScenario, 'Tail Risk');
+  assert.equal(matrix.occupancyAxisSourceScenario, 'Tail Risk');
+  assert.equal(matrix.rowAxis.values[0], 0);
+  assert.equal(matrix.rowAxis.values[4], 250);
+  assert.equal(matrix.colAxis.values[0], 0);
+  assert.equal(matrix.colAxis.values[4], 4.0);
+
+  // Worse macro combo should produce lower IRR
+  const bestCell = matrix.cells[0]![0]!;
+  const worstCell = matrix.cells[4]![4]!;
+  if (bestCell.equityIrr !== null && worstCell.equityIrr !== null) {
+    assert.ok(bestCell.equityIrr > worstCell.equityIrr);
+  }
 });
 
 test('buildInterestRateSensitivity returns 7 rows with base at 0bps', () => {
