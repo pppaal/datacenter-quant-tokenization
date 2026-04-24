@@ -8,4 +8,4 @@ This repository does not ship a public token-sale UX. Any future onchain impleme
 - document-hash anchoring
 - optional share-token modules only after separate legal and product review
 
-See [`DataCenterAssetRegistry.sol`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/packages/contracts/src/DataCenterAssetRegistry.sol) for the initial placeholder contract surface.
+See [src/registry/DataCenterAssetRegistry.sol](src/registry/DataCenterAssetRegistry.sol) for the production registry (AccessControlDefaultAdminRules + Pausable) and [src/registry/NamespacedRegistrar.sol](src/registry/NamespacedRegistrar.sol) for the namespaced adapter. Tokenization modules (ERC-3643-style) live under [src/tokenization/](src/tokenization/).

@@ -1,0 +1,4 @@
+root = "."
+src = ["src"]
+exclude = ["node_modules", "artifacts", "cache", "typechain-types", "test"]
+remappings = ["@openzeppelin/=node_modules/@openzeppelin/"]

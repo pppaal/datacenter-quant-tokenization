@@ -16,3 +16,8 @@ apps/web/.runtime/
 apps/web/.tmp-valuations.json
 apps/web/playwright-report/
 apps/web/test-results/
+
+# Local tool state (Claude Code session, auto-memory, editor config)
+.claude/
+memory/
+.vscode/

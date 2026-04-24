@@ -526,6 +526,7 @@ model Asset {
   creditAssessments     CreditAssessment[]
   portfolioAssets       PortfolioAsset[]
   committeePackets      InvestmentCommitteePacket[]
+  tokenization          TokenizedAsset?
 }
 
 model Address {
@@ -2184,6 +2185,128 @@ model OnchainRecord {
   createdAt          DateTime        @default(now())
   readinessProject   ReadinessProject @relation(fields: [readinessProjectId], references: [id], onDelete: Cascade)
   document           Document?       @relation(fields: [documentId], references: [id], onDelete: SetNull)
+}
+
+// Tokenization deployment manifest mirror. One row per asset for which an
+// ERC-3643 style AssetToken stack has been deployed. Columns marked `Address`
+// are 0x-prefixed hex strings (checksummed or lower-case both OK).
+model TokenizedAsset {
+  id                             String   @id @default(cuid())
+  assetId                        String   @unique
+  chainId                        Int
+  registryAssetId                String
+  tokenAddress                   String
+  identityRegistryAddress        String
+  complianceAddress              String
+  maxHoldersModuleAddress        String?
+  countryRestrictModuleAddress   String?
+  lockupModuleAddress            String?
+  deploymentBlock                Int
+  deploymentTxHash               String?
+  paused                         Boolean  @default(false)
+  createdAt                      DateTime @default(now())
+  updatedAt                      DateTime @updatedAt
+  asset                          Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([chainId, tokenAddress])
+  @@index([registryAssetId])
+}
+
+// KYC record per (provider, wallet). Off-chain identity state bridged from a
+// KYC provider (Sumsub/Jumio) into the on-chain IdentityRegistry. `status`
+// drives whether the wallet is registered / updated / removed on-chain; the
+// `bridgedAt` column records the on-chain write so re-runs are idempotent.
+model KycRecord {
+  id                  String   @id @default(cuid())
+  provider            String   // "mock", "sumsub", "jumio"
+  providerApplicantId String   // provider's applicant/case id
+  wallet              String   // 0x-prefixed, lower-cased
+  countryCode         Int      // ISO 3166-1 numeric
+  status              String   // "PENDING" | "APPROVED" | "REJECTED" | "REVOKED"
+  rawPayload          Json     // last full provider payload for audit
+  bridgedTokenizedAssetId String?
+  bridgedAt           DateTime?
+  bridgedTxHash       String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@unique([provider, providerApplicantId])
+  @@unique([provider, wallet])
+  @@index([wallet])
+  @@index([status, createdAt])
+}
+
+// One row per dividend / coupon distribution. The Merkle root + total amount
+// are anchored on-chain via DividendDistributor; this row keeps the
+// per-holder allocations off-chain so we can serve proofs to claimants and
+// reconcile against the on-chain `Claimed` events.
+model TokenDistribution {
+  id                  String   @id @default(cuid())
+  tokenizedAssetId    String
+  distId              Int      // on-chain distId from DividendDistributor.nextDistId-1
+  chainId             Int
+  distributorAddress  String   // DividendDistributor contract address
+  quoteAssetAddress   String   // ERC-20 used to fund the distribution
+  merkleRoot          String   // 32-byte hex
+  totalAmount         String   // base-units string (uint256-safe)
+  recordDate          DateTime
+  reclaimAfter        DateTime
+  txHash              String?  // createDistribution tx
+  status              String   @default("DRAFT") // DRAFT | FUNDED | RECLAIMED
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  allocations         TokenDistributionAllocation[]
+
+  @@unique([tokenizedAssetId, distId])
+  @@index([status, createdAt])
+}
+
+model TokenDistributionAllocation {
+  id                  String   @id @default(cuid())
+  distributionId      String
+  holderAddress       String   // 0x-prefixed lower-cased
+  amount              String   // base-units string
+  proof               Json     // bytes32[] for the on-chain claim
+  claimedAt           DateTime?
+  claimTxHash         String?
+  createdAt           DateTime @default(now())
+  distribution        TokenDistribution @relation(fields: [distributionId], references: [id], onDelete: Cascade)
+
+  @@unique([distributionId, holderAddress])
+  @@index([holderAddress])
+}
+
+// Off-chain mirror of TransferAgent tickets. The contract is the source of
+// truth; this row is what the operator UI and RFQ workflow read against
+// (status, counterparties, reason codes, off-chain RFQ metadata).
+model TransferTicket {
+  id                  String   @id @default(cuid())
+  tokenizedAssetId    String
+  chainId             Int
+  transferAgentAddress String
+  ticketId            Int      // on-chain ticketId (uint256, but fits in int for realistic ranges)
+  tokenAddress        String
+  sellerAddress       String
+  buyerAddress        String
+  shareAmount         String   // base-units
+  quotePrice          String   // quote-asset base-units (informational)
+  quoteAssetSymbol    String   // e.g. "KRW"
+  rfqRef              String   // bytes32 hex
+  status              String   @default("PENDING") // PENDING | APPROVED | REJECTED | SETTLED | EXPIRED | CANCELLED
+  expiresAt           DateTime?
+  openedBy            String
+  decidedBy           String?
+  openedTxHash        String?
+  decidedTxHash       String?
+  settledTxHash       String?
+  notes               String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@unique([tokenizedAssetId, ticketId])
+  @@index([status, createdAt])
+  @@index([sellerAddress])
+  @@index([buyerAddress])
 }
 
 model AuditEvent {

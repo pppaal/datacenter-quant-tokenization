@@ -1,0 +1,34 @@
+{
+  "chainId": 11155111,
+  "registry": {
+    "address": "0xREPLACE_WITH_REGISTRY_ADDRESS",
+    "expectedAdmin": "0xREPLACE_WITH_ADMIN_SAFE",
+    "fromBlock": 0,
+    "expectedRegistrars": ["0xREPLACE_WITH_REGISTRAR"],
+    "expectedAuditors": ["0xREPLACE_WITH_AUDITOR"],
+    "expectedPausers": ["0xREPLACE_WITH_COUNCIL_ADDRESS"]
+  },
+  "council": {
+    "address": "0xREPLACE_WITH_COUNCIL_ADDRESS",
+    "expectedAdmin": "0xREPLACE_WITH_ADMIN_SAFE",
+    "fromBlock": 0,
+    "expectedMembers": [
+      "0xMEMBER_1",
+      "0xMEMBER_2",
+      "0xMEMBER_3"
+    ],
+    "expectedThreshold": 2,
+    "bootstrapPauser": "0xREPLACE_WITH_BOOTSTRAP_EOA"
+  },
+  "namespacedRegistrar": {
+    "address": "0xREPLACE_WITH_NAMESPACED_REGISTRAR_ADDRESS",
+    "expectedAdmin": "0xREPLACE_WITH_ADMIN_SAFE",
+    "fromBlock": 0,
+    "expectedNamespaceAdmins": ["0xREPLACE_WITH_OPS_LEAD"],
+    "bootstrapRegistrar": "0xREPLACE_WITH_BOOTSTRAP_REGISTRAR_EOA",
+    "expectedOperators": [
+      { "namespace": "0x73656f756c000000", "operator": "0xOP_SEOUL", "allowed": true },
+      { "namespace": "0x746f6b796f000000", "operator": "0xOP_TOKYO", "allowed": true }
+    ]
+  }
+}
