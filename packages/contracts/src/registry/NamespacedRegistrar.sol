@@ -6,16 +6,7 @@ import {AccessControlDefaultAdminRules} from
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 import {IAssetRegistry} from "../interfaces/IAssetRegistry.sol";
-
-/// @notice Mutating surface of DataCenterAssetRegistry that this adapter calls
-///         as a privileged REGISTRAR_ROLE holder. Kept separate from the
-///         read-only IAssetRegistry so downstream indexers/oracles are not
-///         forced to learn about write methods they must never call.
-interface IWritableAssetRegistry {
-    function registerAsset(bytes32 assetId, string calldata metadataRef) external;
-    function updateAssetMetadata(bytes32 assetId, string calldata metadataRef) external;
-    function setAssetStatus(bytes32 assetId, IAssetRegistry.AssetStatus newStatus) external;
-}
+import {IWritableAssetRegistry} from "./IWritableAssetRegistry.sol";
 
 /// @title NamespacedRegistrar
 /// @notice Forwarding adapter that holds REGISTRAR_ROLE on the main registry

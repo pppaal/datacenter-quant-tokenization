@@ -7,13 +7,10 @@ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 import {IAssetToken} from "../interfaces/IAssetToken.sol";
+import {IAssetTokenForceTransfer} from "../interfaces/IAssetTokenForceTransfer.sol";
 import {IIdentityRegistry} from "../interfaces/IIdentityRegistry.sol";
 import {ICompliance} from "../interfaces/ICompliance.sol";
 import {IPausableTarget} from "../../interfaces/IPausableTarget.sol";
-
-interface IAssetTokenForceTransfer {
-    function forceTransfer(address from, address to, uint256 amount, bytes32 reason) external;
-}
 
 /// @title TransferAgent
 /// @notice Off-order-book pre-clearance layer for OTC transfers of an

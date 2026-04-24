@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import {IAssetRegistry} from "../interfaces/IAssetRegistry.sol";
+import {IWritableAssetRegistry} from "../registry/IWritableAssetRegistry.sol";
 
 /// @notice Test-only malicious registry. Implements the subset of the
 ///         writable-registry surface that NamespacedRegistrar calls, and
@@ -16,7 +17,7 @@ interface IReentrantTarget {
     function setAssetStatus(bytes32 assetId, IAssetRegistry.AssetStatus newStatus) external;
 }
 
-contract ReentrantRegistry {
+contract ReentrantRegistry is IWritableAssetRegistry {
     IReentrantTarget public target;
     bytes8 public reentryNamespace;
     bytes32 public reentryAssetId;
@@ -37,7 +38,7 @@ contract ReentrantRegistry {
         reentryMode = mode;
     }
 
-    function registerAsset(bytes32, string calldata) external {
+    function registerAsset(bytes32, string calldata) external override {
         if (reentryMode == 1) {
             target.registerAsset(reentryNamespace, reentryAssetId, reentryMetadata);
         } else if (reentryMode == 2) {
@@ -47,7 +48,7 @@ contract ReentrantRegistry {
         }
     }
 
-    function updateAssetMetadata(bytes32, string calldata) external {
+    function updateAssetMetadata(bytes32, string calldata) external override {
         if (reentryMode == 1) {
             target.registerAsset(reentryNamespace, reentryAssetId, reentryMetadata);
         } else if (reentryMode == 2) {
@@ -55,7 +56,7 @@ contract ReentrantRegistry {
         }
     }
 
-    function setAssetStatus(bytes32, IAssetRegistry.AssetStatus) external {
+    function setAssetStatus(bytes32, IAssetRegistry.AssetStatus) external override {
         if (reentryMode == 3) {
             target.setAssetStatus(reentryAssetId, IAssetRegistry.AssetStatus.Retired);
         }

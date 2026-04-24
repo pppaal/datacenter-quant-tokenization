@@ -10,6 +10,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {IAssetRegistry} from "../../interfaces/IAssetRegistry.sol";
 import {IPausableTarget} from "../../interfaces/IPausableTarget.sol";
 import {IAssetToken} from "../interfaces/IAssetToken.sol";
+import {IAssetTokenForceTransfer} from "../interfaces/IAssetTokenForceTransfer.sol";
 import {IIdentityRegistry} from "../interfaces/IIdentityRegistry.sol";
 import {ICompliance} from "../interfaces/ICompliance.sol";
 
@@ -33,6 +34,7 @@ import {ICompliance} from "../interfaces/ICompliance.sol";
 ///        the token freezes automatically without an explicit pause call.
 contract AssetToken is
     IAssetToken,
+    IAssetTokenForceTransfer,
     IPausableTarget,
     ERC20,
     AccessControlDefaultAdminRules,
@@ -198,6 +200,7 @@ contract AssetToken is
     ///         re-create the original problem.
     function forceTransfer(address from, address to, uint256 amount, bytes32 reason)
         external
+        override
         whenNotPaused
         nonReentrant
         onlyRole(AGENT_ROLE)

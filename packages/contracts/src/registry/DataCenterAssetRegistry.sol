@@ -8,6 +8,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 
 import {IAssetRegistry} from "../interfaces/IAssetRegistry.sol";
 import {IPausableTarget} from "../interfaces/IPausableTarget.sol";
+import {IWritableAssetRegistry} from "./IWritableAssetRegistry.sol";
 
 /// @title DataCenterAssetRegistry
 /// @notice Institutional-grade on-chain anchor for off-chain datacenter asset records and
@@ -25,6 +26,7 @@ import {IPausableTarget} from "../interfaces/IPausableTarget.sol";
 ///        unbounded calldata.
 contract DataCenterAssetRegistry is
     IAssetRegistry,
+    IWritableAssetRegistry,
     IPausableTarget,
     AccessControlDefaultAdminRules,
     Pausable,
@@ -121,6 +123,7 @@ contract DataCenterAssetRegistry is
 
     function registerAsset(bytes32 assetId, string calldata metadataRef)
         external
+        override
         whenNotPaused
         nonReentrant
         onlyRole(REGISTRAR_ROLE)
@@ -145,6 +148,7 @@ contract DataCenterAssetRegistry is
 
     function updateAssetMetadata(bytes32 assetId, string calldata metadataRef)
         external
+        override
         whenNotPaused
         nonReentrant
         onlyRole(REGISTRAR_ROLE)
@@ -162,6 +166,7 @@ contract DataCenterAssetRegistry is
 
     function setAssetStatus(bytes32 assetId, AssetStatus newStatus)
         external
+        override
         whenNotPaused
         nonReentrant
         onlyRole(REGISTRAR_ROLE)

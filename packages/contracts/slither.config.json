@@ -6,6 +6,6 @@
     "exclude_high": false,
     "exclude_optimization": true,
     "exclude_dependencies": true,
-    "filter_paths": "node_modules|artifacts|cache|typechain-types|test",
+    "filter_paths": "node_modules|artifacts|cache|typechain-types|test|src/mocks",
     "fail_on": "medium"
 }

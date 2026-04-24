@@ -279,7 +279,9 @@ async function main() {
   sub('17. GP/LP Waterfall');
   const wf = report.gpLpWaterfall;
   console.log(`  LP IRR ${pct(wf.lpIrrPct)}  ·  GP IRR ${pct(wf.gpIrrPct)}  ·  LP MOIC ${wf.lpMoic.toFixed(2)}x  ·  GP MOIC ${wf.gpMoic.toFixed(2)}x`);
-  console.log(`  Promote tiers triggered: ${wf.tierBreakdown.filter((tt) => tt.gpDistributionKrw > 0).map((tt) => tt.tier).join(', ') || 'none'}`);
+  console.log(`  GP promote earned: ${krw(wf.gpPromoteEarnedKrw)} (vs pro-rata GP ${krw(wf.proRataGpKrw)})`);
+  const activeTiers = wf.tiers.filter((tt) => tt.gpKrw > 0 || tt.lpKrw > 0).map((tt) => tt.name);
+  console.log(`  Tiers paid: ${activeTiers.length > 0 ? activeTiers.join(' · ') : 'none'}`);
 
   console.log('\n' + hr('═'));
   console.log('  FULL REPORT COMPLETE');
