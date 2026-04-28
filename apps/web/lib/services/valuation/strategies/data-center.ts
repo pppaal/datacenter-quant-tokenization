@@ -23,7 +23,6 @@ import type {
   PreparedUnderwritingInputs,
   UnderwritingAnalysis,
   UnderwritingBundle,
-  UnderwritingScenario,
   ValuationStrategyContext
 } from '@/lib/services/valuation/types';
 import { roundKrw, safeDivide } from '@/lib/services/valuation/utils';

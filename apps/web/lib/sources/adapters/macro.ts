@@ -64,13 +64,6 @@ type TreasuryResponse = {
   data?: Array<Record<string, string | number | null>>;
 };
 
-type SeriesObservation = {
-  value: number;
-  period: string | null;
-  title: string;
-  unit: string;
-};
-
 const DEFAULT_US_FALLBACK_MACRO: MacroData = {
   metroRegion: 'United States benchmark',
   vacancyPct: 7.2,
@@ -132,10 +125,6 @@ function isEuroAreaMarket(market: string) {
 
 function hasConfiguredSeries(prefix: string, suffix = '_SERIES_ID') {
   return Boolean(process.env[`${prefix}${suffix}`]?.trim());
-}
-
-function hasConfiguredFlowKey(prefix: string) {
-  return Boolean(process.env[`${prefix}_FLOW_REF`]?.trim() && process.env[`${prefix}_KEY`]?.trim());
 }
 
 function formatBlsPeriod(entry: BlsSeriesEntry) {

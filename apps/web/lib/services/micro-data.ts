@@ -9,7 +9,7 @@ import { convertToKrw, resolveInputCurrency } from '@/lib/finance/currency';
 import { assetBundleInclude } from '@/lib/services/assets';
 import { promoteAssetSnapshotsToFeatures } from '@/lib/services/feature-promotion';
 import { prisma } from '@/lib/db/prisma';
-import { microDataSchema, type MicroDataInput } from '@/lib/validations/micro-data';
+import { microDataSchema } from '@/lib/validations/micro-data';
 
 type MicroDataDeps = {
   db?: PrismaClient;

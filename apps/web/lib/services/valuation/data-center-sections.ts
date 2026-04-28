@@ -5,8 +5,6 @@ import { buildStoredBaseCaseProForma } from '@/lib/services/valuation/pro-forma'
 import { buildDebtSchedule } from '@/lib/services/valuation/project-finance';
 import type {
   PreparedUnderwritingInputs,
-  ScenarioInput,
-  UnderwritingAnalysis,
   UnderwritingScenario
 } from '@/lib/services/valuation/types';
 import { clamp, roundKrw } from '@/lib/services/valuation/utils';

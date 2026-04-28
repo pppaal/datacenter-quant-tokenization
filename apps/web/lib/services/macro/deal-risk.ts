@@ -333,7 +333,6 @@ export function runMacroStressTest(
 ): DealStressTestResult {
   const lookup = buildFactorLookup(factors, deal.market);
   const ltv = deal.financingLtvPct ?? 55;
-  const baseRate = deal.financingRatePct ?? 5.0;
 
   // Estimate baseline cap rate from macro data
   const rateLevel = lookup.get('rate_level')?.value ?? 4.5;
@@ -341,8 +340,6 @@ export function runMacroStressTest(
   const baseCapRate = rateLevel + creditSpread * 0.3;
 
   // Apply scenario shocks
-  const stressedRate = baseRate + scenario.shocks.rateShiftBps / 100;
-  const stressedSpread = creditSpread + scenario.shocks.spreadShiftBps / 100;
   const stressedCapRate =
     baseCapRate + scenario.shocks.rateShiftBps / 200 + scenario.shocks.spreadShiftBps / 300;
 

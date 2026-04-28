@@ -917,7 +917,6 @@ test('createDealDocumentRequest logs a diligence request', async () => {
 });
 
 test('updateDealDocumentRequest marks a request received', async () => {
-  const now = new Date();
   let updatedData: any;
   const fakeDb = {
     dealDocumentRequest: {

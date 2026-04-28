@@ -12,8 +12,7 @@ import {
   DealStage,
   RelationshipCoverageStatus,
   RiskSeverity,
-  TaskPriority,
-  TaskStatus
+  TaskPriority
 } from '@prisma/client';
 import { useRouter } from 'next/navigation';
 import type {
@@ -197,7 +196,6 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
   const lenderCounterparties = deal.counterparties.filter(
     (counterparty) => counterparty.role === 'LENDER'
   );
-  const openTasks = deal.tasks.filter((task) => task.status !== TaskStatus.DONE);
   const openRequests = deal.documentRequests.filter(
     (request) => request.status === DealRequestStatus.REQUESTED
   );

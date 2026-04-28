@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { ReviewStatus } from '@prisma/client';
 import {
-  buildAssetEvidenceReviewSummary,
   extractReviewPacketSummary,
   getLatestReviewPacketRecord,
   listPendingAssetReviewSummaries,

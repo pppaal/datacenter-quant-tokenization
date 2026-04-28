@@ -1,4 +1,4 @@
-import type { MacroRegimeBlock, MacroInterpretation } from '@/lib/services/macro/regime';
+import type { MacroInterpretation } from '@/lib/services/macro/regime';
 
 // ---------------------------------------------------------------------------
 // Types

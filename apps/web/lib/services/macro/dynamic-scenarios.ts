@@ -40,10 +40,6 @@ function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
 }
 
-function getTrendDirection(trends: TrendAnalysis[], seriesKey: string): string {
-  return trends.find((t) => t.seriesKey === seriesKey)?.direction ?? 'FLAT';
-}
-
 function getTrendMomentum(trends: TrendAnalysis[], seriesKey: string): number {
   return trends.find((t) => t.seriesKey === seriesKey)?.momentum ?? 0;
 }
@@ -60,17 +56,10 @@ function getTrendMomentum(trends: TrendAnalysis[], seriesKey: string): number {
 export function generateTrendContinuationScenario(
   ctx: DynamicScenarioContext
 ): MacroStressScenario {
-  const lookup = buildFactorLookup(ctx.factors, ctx.market);
-
-  const rateTrend = getTrendDirection(ctx.trends, 'policy_rate_pct');
   const rateMomentum = getTrendMomentum(ctx.trends, 'policy_rate_pct');
-  const creditTrend = getTrendDirection(ctx.trends, 'credit_spread_bps');
   const creditMomentum = getTrendMomentum(ctx.trends, 'credit_spread_bps');
-  const vacancyTrend = getTrendDirection(ctx.trends, 'vacancy_pct');
   const vacancyMomentum = getTrendMomentum(ctx.trends, 'vacancy_pct');
-  const growthTrend = getTrendDirection(ctx.trends, 'rent_growth_pct');
   const growthMomentum = getTrendMomentum(ctx.trends, 'rent_growth_pct');
-  const constructionTrend = getTrendDirection(ctx.trends, 'construction_cost_index');
   const constructionMomentum = getTrendMomentum(ctx.trends, 'construction_cost_index');
 
   // Project 6-month forward shocks based on current momentum × amplification factor

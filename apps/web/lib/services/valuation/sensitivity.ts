@@ -134,7 +134,6 @@ export function buildOccupancyRentSensitivity(
 
   const initialEquityKrw = totalCapexKrw - initialDebtFundingKrw;
   const years = proForma.years;
-  const baseRevenue = years.length > 0 ? years[0]!.totalOperatingRevenueKrw : 0;
 
   const cells: SensitivityCell[][] = rowValues.map((occPct, ri) =>
     colValues.map((rentDelta, ci) => {

@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/db/prisma';
 import { recordAuditEvent } from '@/lib/services/audit';
 import { getRequestIpAddress } from '@/lib/security/admin-request';
 import { persistKycEvent } from '@/lib/services/kyc/bridge';

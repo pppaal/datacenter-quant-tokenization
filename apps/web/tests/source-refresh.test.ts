@@ -81,7 +81,7 @@ test('scheduled source refresh selects stale assets and reports stale source sys
                 !asset.lastEnrichedAt || asset.lastEnrichedAt < new Date('2026-03-20T06:00:00.000Z')
             )
             .slice(0, args.take)
-            .map(({ address, ...asset }) => asset);
+            .map(({ address: _address, ...asset }) => asset);
         }
 
         return baseAssets;
@@ -150,7 +150,7 @@ test('runSourceRefreshJob persists refresh run summary and actor metadata', asyn
         ];
 
         if (args?.take) {
-          return assets.map(({ address, ...asset }) => asset);
+          return assets.map(({ address: _address, ...asset }) => asset);
         }
 
         return assets;

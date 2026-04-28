@@ -1,4 +1,3 @@
-import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import {
   persistOpsAlertAttempts,

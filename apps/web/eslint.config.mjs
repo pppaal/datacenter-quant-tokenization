@@ -51,11 +51,9 @@ export default [
       '@typescript-eslint/no-empty-object-type': 'off',
       // Empty error blocks are intentional for fire-and-forget paths.
       'no-empty': ['error', { allowEmptyCatch: true }],
-      // Allow `_var` and intentionally-discarded args. Demoted to `warn`
-      // because the existing tree carries ~36 dead identifiers; tighten to
-      // `error` once those are cleaned up in a follow-up PR.
+      // Allow `_var` and intentionally-discarded args.
       '@typescript-eslint/no-unused-vars': [
-        'warn',
+        'error',
         {
           argsIgnorePattern: '^_',
           varsIgnorePattern: '^_',

@@ -8,7 +8,7 @@ import {
 } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { buildDealDiligenceSummary } from '@/lib/services/deals';
-import { buildCommitteeActionItems, buildCommitteeDashboard } from '@/lib/services/ic-builders';
+import { buildCommitteeDashboard } from '@/lib/services/ic-builders';
 import {
   NotificationSeverity,
   NotificationType,
@@ -90,40 +90,6 @@ export type CommitteePacketLockReadiness = {
   blockerCount: number;
   blockers: string[];
   diligenceSummary: ReturnType<typeof buildDealDiligenceSummary> | null;
-};
-
-type CandidateAsset = {
-  id: string;
-  name: string;
-  assetCode: string;
-  assetClass: string;
-  status: AssetStatus;
-  updatedAt: Date;
-  valuations: Array<{
-    id: string;
-    runLabel: string;
-    createdAt: Date;
-    confidenceScore: number;
-  }>;
-  deals: Array<{
-    id: string;
-    dealCode: string;
-    title: string;
-    stage: string;
-    nextAction: string | null;
-    assetClass: string | null;
-    diligenceWorkstreams: Array<{
-      id: string;
-      workstreamType: string;
-      status: string;
-      requestedAt: Date | null;
-      signedOffAt: Date | null;
-      blockerSummary: string | null;
-      deliverables: Array<{
-        id: string;
-      }>;
-    }>;
-  }>;
 };
 
 export async function listCommitteeMeetings(db: PrismaClient = prisma) {

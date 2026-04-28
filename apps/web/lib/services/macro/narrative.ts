@@ -1,10 +1,5 @@
-import {
-  OPENAI_MODEL,
-  OpenAIConfigurationError,
-  getOpenAIClient,
-  isOpenAIConfigured
-} from '@/lib/ai/openai-client';
-import type { MacroFactorPoint, MacroFactorSnapshot } from '@/lib/services/macro/factors';
+import { OPENAI_MODEL, getOpenAIClient, isOpenAIConfigured } from '@/lib/ai/openai-client';
+import type { MacroFactorPoint } from '@/lib/services/macro/factors';
 import type { MacroInterpretation } from '@/lib/services/macro/regime';
 import type { TrendAnalysis } from '@/lib/services/macro/trend';
 
@@ -42,10 +37,6 @@ const narrativeCache = new Map<string, CacheEntry>();
 // ---------------------------------------------------------------------------
 // Template-based fallback (no LLM required)
 // ---------------------------------------------------------------------------
-
-function dirLabel(d: string) {
-  return d === 'POSITIVE' ? 'tailwind' : d === 'NEGATIVE' ? 'headwind' : 'neutral';
-}
 
 function trendLabel(d: string) {
   return d === 'ACCELERATING_UP'

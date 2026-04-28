@@ -1,11 +1,9 @@
 import {
   ActivityType,
-  AssetClass,
   DealBidStatus,
   DealDiligenceWorkstreamStatus,
   DealDiligenceWorkstreamType,
   DealLossReason,
-  DealOriginationSource,
   DealRequestStatus,
   DealStage,
   DocumentType,
@@ -17,7 +15,6 @@ import {
   type PrismaClient
 } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
-import { dealStageChecklistTemplates } from '@/lib/deals/config';
 import { slugify, toSentenceCase } from '@/lib/utils';
 import {
   dealArchiveSchema,
@@ -40,7 +37,6 @@ import {
   dealRiskFlagSchema,
   dealRiskFlagUpdateSchema,
   dealRestoreSchema,
-  dealStageOrder,
   dealStageUpdateSchema,
   dealTaskCreateSchema,
   dealTaskUpdateSchema,
@@ -55,7 +51,7 @@ import {
   getChecklistTemplates,
   getStageIndex
 } from './deals/stage';
-import { buildDealDiligenceSummary, getDealDiligenceWorkstreams } from './deals/diligence-summary';
+import { buildDealDiligenceSummary } from './deals/diligence-summary';
 import type { DiligenceWorkstreamLike } from './deals/diligence-summary';
 
 export {

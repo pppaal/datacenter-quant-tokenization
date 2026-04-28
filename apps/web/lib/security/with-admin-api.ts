@@ -79,7 +79,6 @@ function readRequestId(request: Request): string {
 // second parameter (even when optional) trips that validator. The runtime
 // check below covers the actual shape — TParams is enforced on the option
 // callbacks that consume `params`.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AdminApiHandler = (request: Request, routeContext?: any) => Promise<Response>;
 
 export function withAdminApi<

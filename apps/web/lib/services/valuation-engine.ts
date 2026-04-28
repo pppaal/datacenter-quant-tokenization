@@ -8,7 +8,6 @@ import { buildRetailValuationAnalysis } from '@/lib/services/valuation/strategie
 import type {
   UnderwritingAnalysis,
   UnderwritingBundle,
-  UnderwritingScenario,
   ValuationStrategyContext
 } from '@/lib/services/valuation/types';
 

@@ -700,7 +700,7 @@ async function seedAsset(input: SeedAssetInput) {
     }))
   ];
 
-  const run = await prisma.valuationRun.create({
+  await prisma.valuationRun.create({
     data: {
       assetId: asset.id,
       runLabel: 'Seeded underwriting case',

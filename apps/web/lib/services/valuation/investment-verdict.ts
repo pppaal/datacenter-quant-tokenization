@@ -342,7 +342,6 @@ export function evaluateInvestment(inputs: VerdictInputs): InvestmentVerdict {
     inputs;
 
   const p10 = monteCarlo.leveredIrr.p10;
-  const p50 = monteCarlo.leveredIrr.p50;
   const probBelow8 =
     monteCarlo.probLeveredIrrBelow.find((p) => p.targetPct === 8)?.probability ?? 0;
   const moicP50 = monteCarlo.moic.p50;

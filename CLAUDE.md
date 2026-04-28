@@ -95,16 +95,11 @@ system consistent.
 
 ## Lint & format
 
-- ESLint runs via `npm run lint` (warnings allowed, errors block CI). The
-  flat config lives at `apps/web/eslint.config.mjs`. CI gates on errors
-  only — the existing tree carries ~37 unused-import warnings to be
-  cleaned up incrementally.
-- `npm run lint:strict` requires zero warnings (use before declaring
-  cleanup work done).
-- Prettier config lives at `apps/web/.prettierrc.json`. CI does NOT
-  enforce `npm run format` yet because the pre-Prettier tree would need
-  a single-shot reformat first. Run `npm run format:fix` on touched
-  files before committing.
+- ESLint runs via `npm run lint` (zero-tolerance: errors and unused
+  identifiers both block CI). The flat config lives at
+  `apps/web/eslint.config.mjs`.
+- Prettier is enforced by CI via `npm run format`. Run
+  `npm run format:fix` locally before committing if you touch files.
 
 ## Env
 
@@ -169,12 +164,6 @@ because the regression risk in a single PR outweighed the benefit:
   cluster — extract them together as `deals/views.ts` rather than
   individually. CRUD mutations stay in `deals.ts` because they own
   the validation schema imports + audit boilerplate.
-- **Existing dead-import warnings (~38)** — `lint:strict` will flag
-  them. Clean up incrementally and tighten `no-unused-vars` to `error`
-  in `eslint.config.mjs`.
-- **Single-shot Prettier formatting** — run `npm run format:fix` once
-  across the tree, then turn on `format` as a CI gate in
-  `.github/workflows/web-ci.yml`.
 
 ## What to do BEFORE editing
 

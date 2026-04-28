@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { DealStage, RiskSeverity, TaskPriority } from '@prisma/client';
+import { DealStage } from '@prisma/client';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
