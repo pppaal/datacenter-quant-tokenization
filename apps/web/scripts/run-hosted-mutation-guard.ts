@@ -9,6 +9,10 @@ const baseUrl = process.env.PLAYWRIGHT_BASE_URL?.trim() ?? '';
 const allowMutations = (process.env.PLAYWRIGHT_ALLOW_HOSTED_MUTATIONS?.trim().toLowerCase() ?? 'false') === 'true';
 const allowedHostPattern = process.env.PLAYWRIGHT_ALLOWED_HOST_PATTERN?.trim() ?? 'staging';
 
+if (process.env.NODE_ENV === 'production') {
+  fail('Hosted mutation runs are blocked when NODE_ENV=production.');
+}
+
 if (!baseUrl) {
   fail('PLAYWRIGHT_BASE_URL is required.');
 }

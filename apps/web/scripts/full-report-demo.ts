@@ -272,9 +272,9 @@ async function main() {
 
   sub('16. Implied Bid');
   const ib = report.impliedBid;
-  console.log(`  Target IRR ${pct(ib.targetIrrPct)} → max bid ${krw(ib.targetIrrBidKrw)}  (${pct(ib.targetIrrAchievedIrrPct)} achieved)`);
-  console.log(`  Floor  IRR ${pct(ib.floorIrrPct)}  → max bid ${krw(ib.floorIrrBidKrw)}   (${pct(ib.floorIrrAchievedIrrPct)} achieved)`);
-  console.log(`  Δ vs underwriting price (${krw(ib.underwritingPriceKrw)}): target ${pct(ib.targetIrrBidVsUnderwritingPct)}, floor ${pct(ib.floorIrrBidVsUnderwritingPct)}`);
+  console.log(`  Target IRR ${pct(ib.targetIrrPct)} → max bid ${krw(ib.atTargetIrr.bidPriceKrw)}  (${pct(ib.atTargetIrr.achievedIrrPct)} achieved)`);
+  console.log(`  Floor  IRR ${pct(ib.floorIrrPct)}  → max bid ${krw(ib.atP10FloorIrr.bidPriceKrw)}   (${pct(ib.atP10FloorIrr.achievedIrrPct)} achieved)`);
+  console.log(`  Δ vs base price (${krw(ib.basePriceKrw)}): target ${pct(ib.atTargetIrr.discountPct)}, floor ${pct(ib.atP10FloorIrr.discountPct)}`);
 
   sub('17. GP/LP Waterfall');
   const wf = report.gpLpWaterfall;

@@ -103,7 +103,7 @@ export async function POST(request: Request) {
     const deployment = toDeploymentRow(row);
 
     let txHash: string;
-    const metadata: Record<string, unknown> = {};
+    const metadata: Record<string, string | number> = {};
     switch (parsed.action) {
       case 'addModule':
         txHash = await addModule(deployment, parsed.moduleAddress);

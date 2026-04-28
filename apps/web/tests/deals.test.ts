@@ -231,7 +231,7 @@ test('buildDealDataCoverage surfaces missing execution evidence', () => {
 });
 
 test('buildDealClosingReadiness scores accepted bid, financing, and exclusivity gates', () => {
-  const now = new Date('2026-03-28T12:00:00.000Z');
+  const now = new Date();
   const snapshot = {
     stageTrack: [],
     stageChecklist: [],
@@ -245,7 +245,7 @@ test('buildDealClosingReadiness scores accepted bid, financing, and exclusivity 
     openRiskCount: 0,
     activeExclusivityEvent: {
       id: 'neg_1',
-      expiresAt: new Date('2026-04-05T00:00:00.000Z')
+      expiresAt: new Date(now.getTime() + 8 * 24 * 60 * 60 * 1000)
     },
     exclusivityExpiresSoon: false,
     nextTask: null,
@@ -296,7 +296,7 @@ test('buildDealClosingReadiness scores accepted bid, financing, and exclusivity 
         { id: 'lender_1', facilityLabel: 'Senior facility', status: 'CREDIT_APPROVED' }
       ],
       negotiationEvents: [
-        { id: 'neg_1', eventType: 'EXCLUSIVITY_GRANTED', expiresAt: new Date('2026-04-05T00:00:00.000Z') }
+        { id: 'neg_1', eventType: 'EXCLUSIVITY_GRANTED', expiresAt: new Date(now.getTime() + 8 * 24 * 60 * 60 * 1000) }
       ],
       diligenceWorkstreams: [
         {
@@ -322,7 +322,7 @@ test('buildDealClosingReadiness scores accepted bid, financing, and exclusivity 
         valuations: [
           {
             id: 'val_1',
-            createdAt: new Date('2026-03-20T00:00:00.000Z')
+            createdAt: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000)
           }
         ]
       }

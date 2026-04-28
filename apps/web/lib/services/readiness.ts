@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { Prisma, ReadinessStatus, type PrismaClient } from '@prisma/client';
-import { dataCenterAssetRegistryAbi } from '@/lib/blockchain/abi';
+import { ASSET_STATUS, dataCenterAssetRegistryAbi } from '@/lib/blockchain/abi';
 import { getRegistryChainClients } from '@/lib/blockchain/client';
 import {
   buildRegistryAssetId,
@@ -13,7 +13,13 @@ import { buildReviewPacketManifest } from '@/lib/services/review';
 
 function isBlockchainMockMode(env: NodeJS.ProcessEnv = process.env) {
   const value = env.BLOCKCHAIN_MOCK_MODE?.trim().toLowerCase();
-  return value === '1' || value === 'true' || value === 'yes';
+  const enabled = value === '1' || value === 'true' || value === 'yes';
+  if (enabled && env.NODE_ENV === 'production') {
+    throw new Error(
+      'BLOCKCHAIN_MOCK_MODE must not be enabled in production. Configure a real RPC + signer + registry address.'
+    );
+  }
+  return enabled;
 }
 
 function buildMockTxHash(...parts: Array<string | null | undefined>) {
@@ -295,13 +301,13 @@ export async function registerAssetOnchain(assetId: string, db: PrismaClient = p
   const onchainAsset = await publicClient.readContract({
     address: config.registryAddress,
     abi: dataCenterAssetRegistryAbi,
-    functionName: 'assets',
+    functionName: 'getAsset',
     args: [registryAssetId]
   });
-  const isActive = onchainAsset[2];
+  const isActive = onchainAsset.status === ASSET_STATUS.Active;
   let txHash: string | null = null;
 
-  if (!isActive || onchainAsset[1] !== metadataRef) {
+  if (!isActive || onchainAsset.metadataRef !== metadataRef) {
     const simulation = await publicClient.simulateContract({
       account,
       address: config.registryAddress,
@@ -435,18 +441,18 @@ export async function anchorLatestDocumentOnchain(assetId: string, db: PrismaCli
   const onchainAsset = await publicClient.readContract({
     address: config.registryAddress,
     abi: dataCenterAssetRegistryAbi,
-    functionName: 'assets',
+    functionName: 'getAsset',
     args: [registryAssetId]
   });
 
-  if (!onchainAsset[2]) {
+  if (onchainAsset.status !== ASSET_STATUS.Active) {
     throw new Error('Asset is not registered onchain yet. Register it before anchoring documents.');
   }
 
   const alreadyAnchored = await publicClient.readContract({
     address: config.registryAddress,
     abi: dataCenterAssetRegistryAbi,
-    functionName: 'anchoredDocumentHashes',
+    functionName: 'isDocumentAnchored',
     args: [registryAssetId, normalizedDocumentHash]
   });
 

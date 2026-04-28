@@ -158,7 +158,51 @@ env var and configure Vercel Cron (or external scheduler) to send
 
 ---
 
-## 5. What this scaffold deliberately does NOT do
+## 5. Production preflight (`npm run prod:preflight`)
+
+Before promoting a deployment to production traffic, run the production
+preflight script with the production env loaded. It hard-fails when any of
+the following is missing:
+
+- core secrets (`DATABASE_URL`, `ADMIN_SESSION_SECRET`, `OPS_CRON_TOKEN`,
+  `APP_BASE_URL`)
+- `DOCUMENT_STORAGE_BUCKET` (S3-compatible storage is required in prod)
+- a real RPC + signer (`BLOCKCHAIN_RPC_URL`, `BLOCKCHAIN_PRIVATE_KEY`,
+  `BLOCKCHAIN_REGISTRY_ADDRESS`); `BLOCKCHAIN_MOCK_MODE=true` is rejected
+- `PLAYWRIGHT_ALLOW_HOSTED_MUTATIONS=false`,
+  `ADMIN_ALLOW_UNBOUND_BROWSER_SESSION` unset
+
+It also surfaces warnings for missing OIDC, missing IP allowlists, missing
+alert webhooks, and basic-auth fallback usage.
+
+The richer end-to-end production guide lives at
+[`docs/production-runbook.md`](./docs/production-runbook.md), which covers
+secret-rotation cadence, backup / DR, incident response, edge protection,
+observability, and on-chain readiness gates.
+
+## 6. Hardening built into this scaffold
+
+The scaffold now ships with the following hardening enabled by default:
+
+- **Edge IP allowlist + per-IP rate limiting** in `middleware.ts`
+  (`ADMIN_IP_ALLOWLIST`, `OPS_IP_ALLOWLIST`, `*_RATE_WINDOW_MS`, `*_RATE_MAX`).
+- **Security response headers** (`Strict-Transport-Security`,
+  `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`,
+  `Permissions-Policy`) wired through `vercel.json`.
+- **S3-compatible document storage adapter** (`DOCUMENT_STORAGE_BUCKET` →
+  `createS3DocumentStorage`); local FS auto-selects only when the bucket is
+  unset and the runtime is not production.
+- **Structured JSON logger + Sentry-compatible error reporting** in
+  `lib/observability/logger.ts` (`LOG_LEVEL`, `ERROR_REPORT_WEBHOOK_URL`).
+- **Audit-log retention pruner** (`npm run audit:prune` /
+  `audit:prune:dry`); configurable retention via `AUDIT_RETENTION_DAYS`,
+  `OPS_ALERT_DELIVERY_RETENTION_DAYS`, `NOTIFICATION_RETENTION_DAYS`.
+- **Production preflight** (`npm run prod:preflight`).
+- **Mock-blockchain hard-block in production** (`isBlockchainMockMode`
+  throws when `NODE_ENV=production`).
+- **Hosted-mutation Playwright guard** is blocked when `NODE_ENV=production`.
+
+## 7. What this scaffold still does NOT do
 
 This is a **minimum-viable** deploy setup. Before serving real users you must:
 
@@ -168,14 +212,9 @@ This is a **minimum-viable** deploy setup. Before serving real users you must:
 - Enforce IP allowlists / VPN on admin routes and the Postgres instance.
 - Replace the basic-auth fallback with real OIDC SSO (`ADMIN_OIDC_*`) and
   SCIM provisioning from your IdP.
-- Move document storage off the local filesystem onto S3-compatible object
-  storage (`DOCUMENT_STORAGE_*`). Vercel's serverless filesystem is read-only
-  outside `/tmp` and is not durable.
 - Configure Vercel Cron (or external scheduler) for `/api/ops/*` jobs and wire
   `OPS_ALERT_*` webhooks into your on-call tooling.
 - Set up Postgres PITR/backups, read replicas where appropriate, and a tested
   restore runbook.
-- Enable log drains, error tracking, and audit log retention per your
-  compliance requirements.
-- Review and lock down `PLAYWRIGHT_ALLOW_HOSTED_MUTATIONS=false` and any other
-  non-prod escape hatches.
+- Commission an external smart-contract audit before going live with any
+  capital-bearing tokenization flows.

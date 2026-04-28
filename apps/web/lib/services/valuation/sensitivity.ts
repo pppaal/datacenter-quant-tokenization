@@ -160,7 +160,8 @@ export function buildInterestRateSensitivity(
   totalCapexKrw: number,
   initialDebtFundingKrw: number,
   baseInterestRatePct: number,
-  terminalValueKrw: number
+  terminalValueKrw: number,
+  _amortTermMonths?: number
 ): OneWaySensitivityRow[] {
   const shiftsBps = [-200, -100, -50, 0, 50, 100, 200];
   const initialEquityKrw = totalCapexKrw - initialDebtFundingKrw;

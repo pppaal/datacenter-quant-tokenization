@@ -51,6 +51,8 @@ npm run dev
 - `npm run ops:worker` drains the persisted ops queue and can enqueue an `OPS_CYCLE` job first with `--enqueue-cycle`
 - `npm run ops:worker:daemon` runs an always-on poll loop against the persisted ops queue
 - `npm run env:preflight -- <target>` validates required environment variables for hosted smoke, hosted mutations, SCIM, or ops worker runs
+- `npm run prod:preflight` (run with the production env loaded) hard-fails when secrets, S3 storage, real RPC + signer, or escape-hatch lockdowns are missing — see [`apps/web/docs/production-runbook.md`](./apps/web/docs/production-runbook.md)
+- `npm run audit:prune` (or `audit:prune:dry`) prunes `AuditEvent`, `OpsAlertDelivery`, and resolved `Notification` rows past the configured retention window
 - `npm run ops:cycle` can also emit failure alerts, and optional retry-recovery alerts, to a generic webhook for scheduled operator monitoring
 - `npm run ops:preflight` runs prisma generate, typecheck, unit tests, build, and browser suite registration in one command
 - `npm run prisma:generate` generates the Prisma client for `apps/web`

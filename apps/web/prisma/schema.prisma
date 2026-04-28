@@ -2772,3 +2772,69 @@ model Notification {
   @@index([createdAt])
   @@index([readAt])
 }
+
+enum QuarterlyNarrativeStatus {
+  DRAFT
+  HUMAN_REVIEWED
+  PUBLISHED
+  SUPERSEDED
+}
+
+model QuarterlyMarketSnapshot {
+  id                            String      @id @default(cuid())
+  market                        String
+  submarket                     String
+  assetClass                    AssetClass?
+  quarter                       String
+  quarterEndDate                DateTime
+  transactionCount              Int?
+  transactionVolumeKrw          BigInt?
+  medianPriceKrwPerSqm          Decimal?    @db.Decimal(18, 2)
+  priceChangeQoQPct             Decimal?    @db.Decimal(10, 4)
+  priceChangeYoYPct             Decimal?    @db.Decimal(10, 4)
+  vacancyPct                    Decimal?    @db.Decimal(6, 3)
+  rentKrwPerSqm                 Decimal?    @db.Decimal(12, 2)
+  capRatePct                    Decimal?    @db.Decimal(6, 3)
+  newConstructionApprovalsCount Int?
+  newConstructionApprovalsGfaSqm Decimal?   @db.Decimal(18, 2)
+  baseRatePct                   Decimal?    @db.Decimal(6, 3)
+  krwUsd                        Decimal?    @db.Decimal(12, 4)
+  cpiYoYPct                     Decimal?    @db.Decimal(6, 3)
+  gdpYoYPct                     Decimal?    @db.Decimal(6, 3)
+  rawMetrics                    Json
+  sourceManifest                Json
+  generatedAt                   DateTime    @default(now())
+  updatedAt                     DateTime    @updatedAt
+  narratives                    QuarterlyMarketNarrative[] @relation("SnapshotNarratives")
+
+  @@unique([market, submarket, assetClass, quarter], name: "market_submarket_assetClass_quarter")
+  @@index([quarter])
+  @@index([market, submarket])
+}
+
+model QuarterlyMarketNarrative {
+  id                String                   @id @default(cuid())
+  snapshotId        String
+  snapshot          QuarterlyMarketSnapshot  @relation("SnapshotNarratives", fields: [snapshotId], references: [id], onDelete: Cascade)
+  priorQuarterId    String?
+  status            QuarterlyNarrativeStatus @default(DRAFT)
+  model             String
+  promptTokens      Int?
+  completionTokens  Int?
+  headline          String
+  marketPulse       String
+  supplyPipeline    String
+  capitalMarkets    String
+  outlook           String
+  overweightList    Json
+  underweightList   Json
+  risks             Json
+  reviewedBy        String?
+  reviewedAt        DateTime?
+  publishedAt       DateTime?
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
+
+  @@index([snapshotId])
+  @@index([status])
+}

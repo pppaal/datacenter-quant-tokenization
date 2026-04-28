@@ -106,7 +106,7 @@ export async function POST(request: Request) {
     const deployment = toDeploymentRow(row);
 
     let txHash: string;
-    const metadata: Record<string, unknown> = {};
+    const metadata: Record<string, string> = {};
     switch (parsed.action) {
       case 'mint':
         txHash = await mintTokens(deployment, { to: parsed.to, amount: parsed.amount });

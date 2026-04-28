@@ -6,6 +6,11 @@ import {
   hasRequiredAdminRole
 } from '@/lib/security/admin-auth';
 import { ADMIN_SESSION_COOKIE, parseAdminSessionToken } from '@/lib/security/admin-session';
+import {
+  applyEdgeRateLimit,
+  isAllowedIp,
+  resolveClientIp
+} from '@/lib/security/edge-protection';
 
 function isPublicApiPath(pathname: string) {
   return pathname === '/api/inquiries' || pathname === '/api/admin/session' || pathname === '/api/admin/sso/login' || pathname === '/api/admin/sso/callback' || pathname.startsWith('/api/admin/scim/');
@@ -54,11 +59,34 @@ function forbiddenResponse(request: NextRequest, requiredRole: string) {
 }
 
 export async function middleware(request: NextRequest) {
-  if (isPublicApiPath(request.nextUrl.pathname)) {
+  const pathname = request.nextUrl.pathname;
+  const clientIp = resolveClientIp(request);
+
+  if (!isAllowedIp(pathname, clientIp)) {
+    return new NextResponse('IP not on allowlist for this surface', {
+      status: 403,
+      headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+    });
+  }
+
+  const rateDecision = applyEdgeRateLimit(pathname, clientIp);
+  if (rateDecision.retryAfterMs !== null) {
+    const retryAfterSec = Math.max(1, Math.ceil(rateDecision.retryAfterMs / 1000));
+    return new NextResponse('Too Many Requests', {
+      status: 429,
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Retry-After': String(retryAfterSec),
+        'X-RateLimit-Category': rateDecision.category ?? 'unknown'
+      }
+    });
+  }
+
+  if (isPublicApiPath(pathname)) {
     return NextResponse.next();
   }
 
-  if (isPublicAdminPath(request.nextUrl.pathname)) {
+  if (isPublicAdminPath(pathname)) {
     return NextResponse.next();
   }
 
