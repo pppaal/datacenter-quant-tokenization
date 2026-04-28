@@ -1,10 +1,13 @@
 import { Badge } from '@/components/ui/badge';
+import { AccessGrantsPanel } from '@/components/admin/access-grants-panel';
 import { AdminIdentityBindingForm } from '@/components/admin/admin-identity-binding-form';
 import { AdminOperatorSeatForm } from '@/components/admin/admin-operator-seat-form';
 import { OpsAlertReplayButton } from '@/components/admin/ops-alert-replay-button';
 import { OpsWorkItemReplayButton } from '@/components/admin/ops-work-item-replay-button';
 import { OpsCycleButton } from '@/components/admin/ops-cycle-button';
 import { Card } from '@/components/ui/card';
+import { prisma } from '@/lib/db/prisma';
+import { listAdminAccessGrants } from '@/lib/security/admin-access';
 import { getAdminAuthConfig } from '@/lib/security/admin-auth';
 import { getAdminReviewerAttributionSummary } from '@/lib/security/admin-identity';
 import { getSecurityOverview } from '@/lib/services/audit';
@@ -17,6 +20,7 @@ export default async function AdminSecurityPage() {
   const authConfig = getAdminAuthConfig();
   const reviewerAttribution = getAdminReviewerAttributionSummary();
   const security = await getSecurityOverview();
+  const accessGrants = await listAdminAccessGrants(prisma);
   const replayableDeliveries = security.opsAlertDeliveries.filter(
     (delivery) => delivery.channel.startsWith('webhook') && delivery.statusLabel !== 'DELIVERED'
   );
@@ -557,6 +561,16 @@ export default async function AdminSecurityPage() {
           )}
         </div>
       </Card>
+
+      <AccessGrantsPanel
+        grants={accessGrants}
+        seats={security.operatorSeats.map((seat) => ({
+          id: seat.id,
+          name: seat.name,
+          email: seat.email,
+          role: seat.role
+        }))}
+      />
 
       <Card>
         <div className="flex items-center justify-between gap-4">
