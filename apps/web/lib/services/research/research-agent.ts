@@ -25,6 +25,7 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk';
+import { anthropicModel } from '@/lib/ai/models';
 import type {
   MessageParam,
   Tool,
@@ -93,7 +94,6 @@ export type ResearchToolset = {
 // Constants
 // ---------------------------------------------------------------------------
 
-const DEFAULT_MODEL = 'claude-opus-4-7';
 const LLM_TIMEOUT_MS = 30_000;
 const MAX_TOOL_CALLS_DEFAULT = 6;
 const MAX_LOOP_ITERATIONS = 10;
@@ -142,7 +142,7 @@ function resolveClient(): Anthropic | null {
 }
 
 function resolveModel(): string {
-  return process.env.ANTHROPIC_RESEARCH_MODEL?.trim() || DEFAULT_MODEL;
+  return anthropicModel('ANTHROPIC_RESEARCH_MODEL');
 }
 
 function sanitizeFreeText(value: string, maxLen: number): string {

@@ -5,7 +5,11 @@
  *   - AuditEvent                                     (AUDIT_RETENTION_DAYS, default 365)
  *   - OpsAlertDelivery                               (OPS_ALERT_DELIVERY_RETENTION_DAYS, default 180)
  *   - Notification (only `readAt != null`)           (NOTIFICATION_RETENTION_DAYS, default 90)
- *   - OpsWorkItem (terminal: COMPLETED / DEAD_LETTERED) (OPS_WORK_ITEM_RETENTION_DAYS, default 30)
+ *   - OpsWorkItem (terminal: SUCCEEDED / DEAD_LETTER) (OPS_WORK_ITEM_RETENTION_DAYS, default 30)
+ *
+ * `OpsWorkAttempt` rows are removed automatically via the cascading
+ * foreign key on their parent `OpsWorkItem`, so they share the
+ * `OPS_WORK_ITEM_RETENTION_DAYS` window without an explicit pass.
  *
  * Pass `--dry-run` to count rows that would be deleted without writing.
  *

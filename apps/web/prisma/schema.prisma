@@ -2116,6 +2116,7 @@ model OpsAlertDelivery {
 
   @@index([createdAt])
   @@index([statusLabel, createdAt])
+  @@index([reason, deliveredAt])
 }
 
 model OpsWorkItem {

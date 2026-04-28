@@ -7,6 +7,7 @@
  *   Model: claude-opus-4-7 (override: ANTHROPIC_MEMO_MODEL)
  */
 import Anthropic from '@anthropic-ai/sdk';
+import { anthropicModel } from '@/lib/ai/models';
 import type { ReturnMetrics } from '@/lib/services/valuation/return-metrics';
 import type { MonteCarloResult } from '@/lib/services/valuation/monte-carlo';
 import type { InvestmentVerdict } from '@/lib/services/valuation/investment-verdict';
@@ -44,7 +45,6 @@ export type InvestmentMemoInputs = {
   prosCons?: ProsConsReport;
 };
 
-const DEFAULT_MODEL = 'claude-opus-4-7';
 const LLM_TIMEOUT_MS = 25_000;
 const LLM_MAX_ATTEMPTS = 3;
 const LLM_BACKOFF_BASE_MS = 500;
@@ -88,7 +88,7 @@ function resolveClient(): Anthropic | null {
 }
 
 function resolveModel(): string {
-  return process.env.ANTHROPIC_MEMO_MODEL?.trim() || DEFAULT_MODEL;
+  return anthropicModel('ANTHROPIC_MEMO_MODEL');
 }
 
 // ---------------------------------------------------------------------------

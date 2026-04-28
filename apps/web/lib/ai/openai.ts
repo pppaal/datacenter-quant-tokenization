@@ -1,10 +1,11 @@
 import OpenAI from 'openai';
+import { openaiModel } from '@/lib/ai/models';
 import type { ExtractedDocumentFactInput } from '@/lib/services/document-extraction';
 import type { ForecastDecisionNarrative } from '@/lib/services/forecast/decision';
 import type { ParsedFinancialStatement } from '@/lib/services/financial-statements';
 import type { UnderwritingAnalysis } from '@/lib/services/valuation-engine';
 
-const model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+const model = openaiModel();
 
 function getClient() {
   if (!process.env.OPENAI_API_KEY) return null;

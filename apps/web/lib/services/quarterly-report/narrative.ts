@@ -8,6 +8,7 @@
 
 import Anthropic from '@anthropic-ai/sdk';
 import type { AssetClass, QuarterlyMarketNarrative, QuarterlyMarketSnapshot } from '@prisma/client';
+import { anthropicModel } from '@/lib/ai/models';
 import { prisma } from '@/lib/db/prisma';
 
 export type NarrativeDraft = {
@@ -21,10 +22,8 @@ export type NarrativeDraft = {
   risks: Array<{ severity: 'LOW' | 'MEDIUM' | 'HIGH'; title: string; rationale: string }>;
 };
 
-const DEFAULT_MODEL = 'claude-opus-4-7';
-
 function resolveModel(): string {
-  return process.env.ANTHROPIC_NARRATIVE_MODEL?.trim() || DEFAULT_MODEL;
+  return anthropicModel('ANTHROPIC_NARRATIVE_MODEL');
 }
 
 function resolveClient(): Anthropic | null {
