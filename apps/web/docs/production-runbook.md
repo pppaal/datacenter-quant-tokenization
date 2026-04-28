@@ -165,7 +165,30 @@ and operator logic stay off chain. Before going live:
 
 ---
 
-## 8. Pre-deploy checklist
+## 8. Bundle size baseline
+
+Measured 2026-04-28 against `npm run build`. First Load JS includes the
+shared framework + React baseline (~99 KB) which every page inherits.
+
+| Route                            | Page-specific | First Load |
+| -------------------------------- | ------------- | ---------- |
+| /admin                           | 164 B         | 106 KB     |
+| /admin/assets/[id]               | **18 KB**     | **183 KB** |
+| /admin/deals                     | 5.6 KB        | 166 KB     |
+| /admin/deals/[id]                | **14.8 KB**   | **175 KB** |
+| /admin/assets/explorer           | 3.4 KB        | 142 KB     |
+| /admin/macro-profiles            | 3.7 KB        | 139 KB     |
+| All other admin pages            | < 3 KB        | 100–115 KB |
+
+`/admin/assets/[id]` and `/admin/deals/[id]` are the heaviest because
+they eagerly mount 8+ client-side forms (`AssetIntakeForm`,
+`DocumentUploadForm`, `CapexBookForm`, etc.). 175–183 KB First Load is
+within the acceptable envelope for an admin console; tighten with
+`next/dynamic` lazy imports if real user metrics show LCP regression.
+
+---
+
+## 9. Pre-deploy checklist
 
 Before promoting a new deployment to production traffic:
 

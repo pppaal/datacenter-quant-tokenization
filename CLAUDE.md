@@ -12,7 +12,9 @@ system consistent.
 - `packages/contracts` — Hardhat workspace for the on-chain registry and
   ERC-3643-style tokenization stack. Web reads ABIs auto-exported from
   this package (see "ABI" section below).
-- `legacy/` — archived previous demos. Do not import from here.
+- Previous demo apps were removed from the default branch on
+  2026-04-28 and snapshotted on git tag `legacy-archive-2026-04-28`.
+  Do not restore them into `apps/`.
 - `docs/`, `apps/web/docs/` — operating runbooks and architecture notes.
   `apps/web/docs/production-runbook.md` is the source of truth for prod
   hardening; `apps/web/DEPLOYMENT.md` for the Vercel scaffold.
@@ -147,6 +149,29 @@ system consistent.
   promoting a deployment to production traffic.
 - The complete operational checklist lives in
   `apps/web/docs/production-runbook.md`.
+
+## Deferred refactors
+
+These are known to need attention but were left intentionally untouched
+because the regression risk in a single PR outweighed the benefit:
+
+- **`prisma/seed.ts` (~3,900 LOC)** — split into `prisma/seeds/*.ts`
+  per domain (asset factory, office, deals, portfolio, committee,
+  research, datacenters, quarterly). Each domain function should accept
+  `prisma` as a parameter rather than reading the module-level instance.
+- **`lib/services/deals.ts` (~3,500 LOC)** — natural seams: schema /
+  includes / types, diligence (summary + workpaper), CRUD mutations
+  (counterparty / task / bid / lender / negotiation / risk / activity),
+  lifecycle (archive / restore / closeOut), execution snapshot +
+  coverage + closing-readiness + close-probability, origination
+  profile + history, timeline. Many functions cross-reference; split
+  with a clean dependency graph.
+- **Existing dead-import warnings (~38)** — `lint:strict` will flag
+  them. Clean up incrementally and tighten `no-unused-vars` to `error`
+  in `eslint.config.mjs`.
+- **Single-shot Prettier formatting** — run `npm run format:fix` once
+  across the tree, then turn on `format` as a CI gate in
+  `.github/workflows/web-ci.yml`.
 
 ## What to do BEFORE editing
 

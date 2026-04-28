@@ -2,7 +2,11 @@
 
 `apps/web` is the only active product root.
 
-The legacy root Next.js app and the `/web` demo were archived under [`legacy/`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/legacy). New product code should only be built inside [`apps/web`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web).
+The legacy root Next.js app and the `/web` demo have been removed from
+the default branch. Their final state is preserved on the
+`legacy-archive-2026-04-28` git tag (commit `bb6e9cd`); fetch with
+`git fetch origin tag legacy-archive-2026-04-28` if you need to inspect
+it. New product code only lives in [`apps/web`](./apps/web).
 
 This platform is an AI-native operating system for a Korean real-estate investment firm. It now spans research, underwriting, deal execution, portfolio operations, and a capital-formation shell, while keeping documents, valuations, extracted text, and underwriting logic offchain. It remains registry-only onchain and it is not a retail token-sale app or investment-advice product.
 
@@ -136,4 +140,4 @@ The current product stance is:
 
 - Active product: [`apps/web`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web)
 - Architecture notes: [`architecture.md`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/architecture.md)
-- Legacy archive: [`legacy`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/legacy)
+- Legacy archive: see git tag `legacy-archive-2026-04-28`
