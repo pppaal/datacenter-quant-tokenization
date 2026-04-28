@@ -91,6 +91,48 @@ system consistent.
   + `isDuplicateOpsAlert(fingerprint)` to suppress duplicates within
   `OPS_ALERT_DEDUP_WINDOW_MINUTES` (default 30).
 
+## Lint & format
+
+- ESLint runs via `npm run lint` (warnings allowed, errors block CI). The
+  flat config lives at `apps/web/eslint.config.mjs`. CI gates on errors
+  only — the existing tree carries ~37 unused-import warnings to be
+  cleaned up incrementally.
+- `npm run lint:strict` requires zero warnings (use before declaring
+  cleanup work done).
+- Prettier config lives at `apps/web/.prettierrc.json`. CI does NOT
+  enforce `npm run format` yet because the pre-Prettier tree would need
+  a single-shot reformat first. Run `npm run format:fix` on touched
+  files before committing.
+
+## Env
+
+- New code reads env via `env()` from `lib/env.ts`, not raw `process.env`.
+  The loader is zod-validated, memoized, and surfaces typos as TS errors
+  at the call site.
+- Add new keys to the schema in `lib/env.ts` (and document in
+  `.env.example`). Production-required keys are still hard-checked by
+  `npm run prod:preflight`, not by the loader.
+
+## Admin API routes
+
+- Use `withAdminApi({...})` from `lib/security/with-admin-api.ts` for
+  every new admin Node-runtime route. It owns:
+  - operator-session resolution (401 on missing)
+  - optional `requiredRole` gate (403 on insufficient)
+  - zod body validation (400 on invalid)
+  - request-id propagation through `withRequestContext`
+  - audit-log success/failure pair
+- Path-param routes pass `<undefined, { id: string }>` generics and
+  consume `params` from the handler context.
+
+## Blockchain mock mode
+
+- `BLOCKCHAIN_MOCK_MODE` short-circuits every onchain write to a
+  deterministic txHash via `buildMockTxHash(...)`. Hard-blocked in
+  production by `isTokenizationMockMode`.
+- Unit tests in `tests/blockchain-mock-mode.test.ts` exercise every
+  service. Add coverage when introducing new onchain write paths.
+
 ## Testing
 
 - Unit tests are `tsx --test`. Run via `npm test`. They must remain

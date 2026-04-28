@@ -47,6 +47,10 @@ jobs:
       - name: Install
         run: npm ci
 
+      - name: Dependency vulnerability scan (high+ severity)
+        run: npm audit --audit-level=high --omit=dev
+        continue-on-error: false
+
       - name: Generate Prisma client
         run: npx prisma generate
 
@@ -68,6 +72,14 @@ jobs:
 
       - name: Registry ABI drift guard
         run: npx tsx scripts/check-registry-abi.ts
+
+      - name: Lint (ESLint)
+        run: npm run lint
+
+      # `npm run format` (Prettier --check) is intentionally not enforced
+      # in CI yet — the existing tree predates the Prettier config and
+      # would require a single-shot `npm run format:fix` reformat first.
+      # Run it locally before contributing new files.
 
       - name: Typecheck
         run: npm run typecheck

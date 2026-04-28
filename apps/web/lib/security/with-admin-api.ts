@@ -31,28 +31,41 @@ import {
   getRequestIpAddress,
   resolveVerifiedAdminActorFromHeaders
 } from './admin-request';
-import type { AuthorizedAdminActor as AdminActor } from './admin-auth';
+import {
+  hasRequiredAdminRole,
+  type AdminAccessRole,
+  type AuthorizedAdminActor as AdminActor
+} from './admin-auth';
 import { recordAuditEvent } from '@/lib/services/audit';
 
-export type WithAdminApiContext<TBody> = {
+export type WithAdminApiContext<TBody, TParams> = {
   actor: AdminActor;
   body: TBody;
+  params: TParams;
   request: Request;
   ipAddress: string | null;
   requestId: string;
 };
 
-export type WithAdminApiOptions<TSchema extends ZodTypeAny | undefined> = {
+export type WithAdminApiOptions<
+  TSchema extends ZodTypeAny | undefined,
+  TParams = Record<string, never>
+> = {
   bodySchema?: TSchema;
   allowBasic?: boolean;
   requireActiveSeat?: boolean;
+  /** Minimum role the actor must satisfy. Defaults to VIEWER. */
+  requiredRole?: AdminAccessRole;
   auditAction?: string;
   auditEntityType?: string;
   auditEntityIdFromBody?: (body: TSchema extends ZodTypeAny ? z.infer<TSchema> : undefined) => string | null;
+  auditEntityIdFromParams?: (params: TParams) => string | null;
   handler: (
-    context: WithAdminApiContext<TSchema extends ZodTypeAny ? z.infer<TSchema> : undefined>
+    context: WithAdminApiContext<TSchema extends ZodTypeAny ? z.infer<TSchema> : undefined, TParams>
   ) => Promise<Response>;
 };
+
+type WithAdminApiRouteContext<TParams> = { params: Promise<TParams> };
 
 function readRequestId(request: Request): string {
   const inbound = request.headers.get('x-request-id')?.trim();
@@ -62,10 +75,21 @@ function readRequestId(request: Request): string {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-export function withAdminApi<TSchema extends ZodTypeAny | undefined>(
-  options: WithAdminApiOptions<TSchema>
-): (request: Request) => Promise<Response> {
-  return async (request: Request) => {
+// `any` is intentional: Next.js validates the exported handler's parameter
+// types against its own auto-generated `RouteContext`. A precisely-typed
+// second parameter (even when optional) trips that validator. The runtime
+// check below covers the actual shape — TParams is enforced on the option
+// callbacks that consume `params`.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AdminApiHandler = (request: Request, routeContext?: any) => Promise<Response>;
+
+export function withAdminApi<
+  TSchema extends ZodTypeAny | undefined = undefined,
+  TParams extends Record<string, string> = Record<string, never>
+>(
+  options: WithAdminApiOptions<TSchema, TParams>
+): AdminApiHandler {
+  return async (request: Request, routeContext?: WithAdminApiRouteContext<TParams>) => {
     const requestId = readRequestId(request);
     return withRequestContext({ requestId }, async () => {
       const actor = await resolveVerifiedAdminActorFromHeaders(request.headers, prisma, {
@@ -78,6 +102,15 @@ export function withAdminApi<TSchema extends ZodTypeAny | undefined>(
           { status: 401, headers: { 'X-Request-Id': requestId } }
         );
       }
+
+      if (options.requiredRole && !hasRequiredAdminRole(actor.role, options.requiredRole)) {
+        return NextResponse.json(
+          { error: `Insufficient role. ${options.requiredRole} access required.` },
+          { status: 403, headers: { 'X-Request-Id': requestId } }
+        );
+      }
+
+      const params = (routeContext ? await routeContext.params : ({} as TParams)) as TParams;
 
       let body: unknown = undefined;
       if (options.bodySchema) {
@@ -93,26 +126,30 @@ export function withAdminApi<TSchema extends ZodTypeAny | undefined>(
       }
 
       const ipAddress = getRequestIpAddress(request.headers);
-      const context: WithAdminApiContext<TSchema extends ZodTypeAny ? z.infer<TSchema> : undefined> = {
+      const context: WithAdminApiContext<TSchema extends ZodTypeAny ? z.infer<TSchema> : undefined, TParams> = {
         actor,
         body: body as TSchema extends ZodTypeAny ? z.infer<TSchema> : undefined,
+        params,
         request,
         ipAddress,
         requestId
       };
 
+      const resolveAuditEntityId = () => {
+        if (options.auditEntityIdFromBody) return options.auditEntityIdFromBody(context.body);
+        if (options.auditEntityIdFromParams) return options.auditEntityIdFromParams(params);
+        return null;
+      };
+
       try {
         const response = await options.handler(context);
         if (options.auditAction && options.auditEntityType) {
-          const entityId = options.auditEntityIdFromBody
-            ? options.auditEntityIdFromBody(context.body)
-            : null;
           await recordAuditEvent({
             actorIdentifier: actor.identifier,
             actorRole: actor.role,
             action: options.auditAction,
             entityType: options.auditEntityType,
-            entityId,
+            entityId: resolveAuditEntityId(),
             requestPath: new URL(request.url).pathname,
             requestMethod: request.method,
             ipAddress,
@@ -123,15 +160,12 @@ export function withAdminApi<TSchema extends ZodTypeAny | undefined>(
         return response;
       } catch (error) {
         if (options.auditAction && options.auditEntityType) {
-          const entityId = options.auditEntityIdFromBody
-            ? options.auditEntityIdFromBody(context.body)
-            : null;
           await recordAuditEvent({
             actorIdentifier: actor.identifier,
             actorRole: actor.role,
             action: options.auditAction,
             entityType: options.auditEntityType,
-            entityId,
+            entityId: resolveAuditEntityId(),
             requestPath: new URL(request.url).pathname,
             requestMethod: request.method,
             ipAddress,

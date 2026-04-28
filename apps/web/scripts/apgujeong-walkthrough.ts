@@ -460,7 +460,6 @@ function main() {
   console.log(hr('═') + '\n');
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function printMatrix(matrix: any) {
   const { rowAxis, colAxis, cells, baseRowIndex, baseColIndex } = matrix;
   const rowLabel = rowAxis.label ?? 'row';
