@@ -13,7 +13,31 @@
  * used both in the Node.js runtime and (with limited fields) at the edge.
  */
 
+import { AsyncLocalStorage } from 'node:async_hooks';
+
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+
+type RequestContext = {
+  requestId: string;
+  actor?: string;
+  role?: string;
+};
+
+const requestContextStorage = new AsyncLocalStorage<RequestContext>();
+
+/**
+ * Run `fn` inside a request-scoped logging context. Every `logger.*` call
+ * made underneath will automatically include the bound `requestId` (and
+ * optional actor / role) so the entire request can be reconstructed from
+ * a log drain by filtering on a single trace id.
+ */
+export function withRequestContext<T>(context: RequestContext, fn: () => Promise<T> | T): Promise<T> | T {
+  return requestContextStorage.run(context, fn);
+}
+
+export function getRequestContext(): RequestContext | undefined {
+  return requestContextStorage.getStore();
+}
 
 const LEVEL_PRIORITY: Record<LogLevel, number> = {
   debug: 10,
@@ -46,10 +70,14 @@ function safeStringify(value: unknown): string {
 
 function emit(level: LogLevel, msg: string, fields?: Record<string, unknown>): void {
   if (LEVEL_PRIORITY[level] < resolveMinLevel()) return;
+  const ctx = getRequestContext();
   const payload: Record<string, unknown> = {
     level,
     timestamp: new Date().toISOString(),
     msg,
+    ...(ctx?.requestId ? { requestId: ctx.requestId } : null),
+    ...(ctx?.actor ? { actor: ctx.actor } : null),
+    ...(ctx?.role ? { role: ctx.role } : null),
     ...fields
   };
   const line = safeStringify(payload);

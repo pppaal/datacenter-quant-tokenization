@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import type { Prisma } from '@prisma/client';
 
 type OpsRunSummary = {
@@ -280,6 +281,59 @@ export async function sendOpsWebhookAlerts(
     deliveredAny: false,
     attempts
   };
+}
+
+/**
+ * Stable fingerprint for an alert payload. Two payloads with identical
+ * status + summary + error produce the same fingerprint and are considered
+ * duplicates within `OPS_ALERT_DEDUP_WINDOW_MINUTES` (default 30).
+ */
+export function computeOpsAlertFingerprint(payload: OpsCycleAlertPayload): string {
+  const canonical = [
+    payload.status,
+    payload.alertSummary?.trim() ?? '',
+    payload.errorMessage?.trim() ?? '',
+    payload.sourceRun?.statusLabel ?? '',
+    payload.researchRun?.statusLabel ?? ''
+  ].join('|');
+  return createHash('sha256').update(canonical).digest('hex').slice(0, 16);
+}
+
+function dedupWindowMs(env: NodeJS.ProcessEnv): number {
+  const raw = Number(env.OPS_ALERT_DEDUP_WINDOW_MINUTES ?? 30);
+  if (!Number.isFinite(raw) || raw <= 0) return 30 * 60 * 1000;
+  return Math.floor(raw) * 60 * 1000;
+}
+
+/**
+ * Returns true when an alert with the same fingerprint was delivered in
+ * the dedup window, so the caller should skip re-sending. Soft-fails on
+ * DB errors (returns false) so an outage of the audit table never silences
+ * a real incident.
+ */
+export async function isDuplicateOpsAlert(
+  fingerprint: string,
+  db: {
+    opsAlertDelivery: {
+      findFirst(args: {
+        where: { reason: string; deliveredAt: { gte: Date } };
+        orderBy: { deliveredAt: 'desc' };
+      }): Promise<{ id: string } | null>;
+    };
+  },
+  env: NodeJS.ProcessEnv = process.env
+): Promise<boolean> {
+  try {
+    const cutoff = new Date(Date.now() - dedupWindowMs(env));
+    const reason = `fingerprint:${fingerprint}`;
+    const recent = await db.opsAlertDelivery.findFirst({
+      where: { reason, deliveredAt: { gte: cutoff } },
+      orderBy: { deliveredAt: 'desc' }
+    });
+    return Boolean(recent);
+  } catch {
+    return false;
+  }
 }
 
 export async function recordOpsAlertDelivery(

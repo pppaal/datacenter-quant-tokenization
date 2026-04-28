@@ -13,7 +13,7 @@ import {
 } from '@/lib/security/edge-protection';
 
 function isPublicApiPath(pathname: string) {
-  return pathname === '/api/inquiries' || pathname === '/api/admin/session' || pathname === '/api/admin/sso/login' || pathname === '/api/admin/sso/callback' || pathname.startsWith('/api/admin/scim/');
+  return pathname === '/api/health' || pathname === '/api/inquiries' || pathname === '/api/admin/session' || pathname === '/api/admin/sso/login' || pathname === '/api/admin/sso/callback' || pathname.startsWith('/api/admin/scim/');
 }
 
 function isPublicAdminPath(pathname: string) {
@@ -58,14 +58,26 @@ function forbiddenResponse(request: NextRequest, requiredRole: string) {
   });
 }
 
+function generateRequestId(): string {
+  // 16 random bytes encoded as hex; matches the shape of common
+  // observability platforms' trace ids (xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx).
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const clientIp = resolveClientIp(request);
+  const inboundRequestId = request.headers.get('x-request-id')?.trim();
+  const requestId = inboundRequestId && /^[a-zA-Z0-9._-]{8,128}$/.test(inboundRequestId)
+    ? inboundRequestId
+    : generateRequestId();
 
   if (!isAllowedIp(pathname, clientIp)) {
     return new NextResponse('IP not on allowlist for this surface', {
       status: 403,
-      headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+      headers: { 'Content-Type': 'text/plain; charset=utf-8', 'X-Request-Id': requestId }
     });
   }
 
@@ -77,21 +89,28 @@ export async function middleware(request: NextRequest) {
       headers: {
         'Content-Type': 'text/plain; charset=utf-8',
         'Retry-After': String(retryAfterSec),
-        'X-RateLimit-Category': rateDecision.category ?? 'unknown'
+        'X-RateLimit-Category': rateDecision.category ?? 'unknown',
+        'X-Request-Id': requestId
       }
     });
   }
 
   if (isPublicApiPath(pathname)) {
-    return NextResponse.next();
+    const passthrough = NextResponse.next();
+    passthrough.headers.set('X-Request-Id', requestId);
+    return passthrough;
   }
 
   if (isPublicAdminPath(pathname)) {
-    return NextResponse.next();
+    const passthrough = NextResponse.next();
+    passthrough.headers.set('X-Request-Id', requestId);
+    return passthrough;
   }
 
   if (isAuthorizedOpsRequest(request)) {
-    return NextResponse.next();
+    const passthrough = NextResponse.next();
+    passthrough.headers.set('X-Request-Id', requestId);
+    return passthrough;
   }
 
   const config = getAdminAuthConfig();
@@ -131,6 +150,7 @@ export async function middleware(request: NextRequest) {
   }
 
   const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-request-id', requestId);
   requestHeaders.set('x-admin-actor', actor.identifier);
   requestHeaders.set('x-admin-role', actor.role);
   requestHeaders.set('x-admin-required-role', requiredRole);
@@ -141,11 +161,13 @@ export async function middleware(request: NextRequest) {
   if (actor.sessionId) requestHeaders.set('x-admin-session-id', actor.sessionId);
   if (typeof actor.sessionVersion === 'number') requestHeaders.set('x-admin-session-version', String(actor.sessionVersion));
 
-  return NextResponse.next({
+  const response = NextResponse.next({
     request: {
       headers: requestHeaders
     }
   });
+  response.headers.set('X-Request-Id', requestId);
+  return response;
 }
 
 export const config = {

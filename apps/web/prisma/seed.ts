@@ -33,8 +33,13 @@ import {
   UserRole,
   VehicleType
 } from '@prisma/client';
+import { createHash } from 'node:crypto';
 import type { Prisma } from '@prisma/client';
 import { ingestFinancialStatement } from '../lib/services/financial-statements';
+
+function deterministicDocumentHash(...parts: string[]): string {
+  return createHash('sha256').update(parts.filter(Boolean).join(':')).digest('hex');
+}
 import { buildMacroRegimeProvenance, buildMacroRegimeSnapshot } from '../lib/services/macro/series';
 import { stageReviewReadiness } from '../lib/services/readiness';
 import { buildSensitivityRuns } from '../lib/services/sensitivity/engine';
@@ -1132,7 +1137,7 @@ async function seedOfficeAsset() {
             documentType: DocumentType.LEASE,
             sourceLink: 'https://example.com/office-rent-roll',
             aiSummary: 'Current rent roll, WALE, rollover profile, and TI / LC reserve support.',
-            documentHash: 'hash-office-rent-roll',
+            documentHash: deterministicDocumentHash('seed-doc', 'office-rent-roll'),
             latestStoragePath: 'seed/SEOUL-YEOUIDO-01/1.pdf',
             versions: {
               create: {
@@ -1144,7 +1149,7 @@ async function seedOfficeAsset() {
                 sourceLink: 'https://example.com/office-rent-roll',
                 extractedText: 'Rent roll and WALE support package.',
                 aiSummary: 'Current rent roll, WALE, rollover profile, and TI / LC reserve support.',
-                documentHash: 'hash-office-rent-roll'
+                documentHash: deterministicDocumentHash('seed-doc', 'office-rent-roll')
               }
             }
           },
@@ -1153,7 +1158,7 @@ async function seedOfficeAsset() {
             documentType: DocumentType.OTHER,
             sourceLink: 'https://example.com/office-title',
             aiSummary: 'Title chain, mortgage position, and ownership confirmation for the office SPV.',
-            documentHash: 'hash-office-title',
+            documentHash: deterministicDocumentHash('seed-doc', 'office-title'),
             latestStoragePath: 'seed/SEOUL-YEOUIDO-01/2.pdf',
             versions: {
               create: {
@@ -1165,7 +1170,7 @@ async function seedOfficeAsset() {
                 sourceLink: 'https://example.com/office-title',
                 extractedText: 'Title extract and mortgage schedule.',
                 aiSummary: 'Title chain, mortgage position, and ownership confirmation for the office SPV.',
-                documentHash: 'hash-office-title'
+                documentHash: deterministicDocumentHash('seed-doc', 'office-title')
               }
             }
           },
@@ -1174,7 +1179,7 @@ async function seedOfficeAsset() {
             documentType: DocumentType.IM,
             sourceLink: 'https://example.com/office-market-update',
             aiSummary: 'Prime Seoul office market update with rent, vacancy, and transaction context.',
-            documentHash: 'hash-office-market',
+            documentHash: deterministicDocumentHash('seed-doc', 'office-market'),
             latestStoragePath: 'seed/SEOUL-YEOUIDO-01/3.pdf',
             versions: {
               create: {
@@ -1186,7 +1191,7 @@ async function seedOfficeAsset() {
                 sourceLink: 'https://example.com/office-market-update',
                 extractedText: 'Prime Seoul office market update and benchmark pack.',
                 aiSummary: 'Prime Seoul office market update with rent, vacancy, and transaction context.',
-                documentHash: 'hash-office-market'
+                documentHash: deterministicDocumentHash('seed-doc', 'office-market')
               }
             }
           }
@@ -3396,14 +3401,14 @@ async function main() {
         documentType: DocumentType.POWER_STUDY,
         sourceLink: 'https://example.com/power-review',
         aiSummary: 'Utility diligence memo covering allocation timing, redundancy assumptions, and queue positioning.',
-        documentHash: 'hash-seoul-power'
+        documentHash: deterministicDocumentHash('seed-doc', 'seoul-power')
       },
       {
         title: 'Investment Committee Draft Model',
         documentType: DocumentType.MODEL,
         sourceLink: 'https://example.com/ic-model',
         aiSummary: 'Scenario workbook for bull, base, and bear underwriting review.',
-        documentHash: 'hash-seoul-model'
+        documentHash: deterministicDocumentHash('seed-doc', 'seoul-model')
       }
     ],
     readinessStatus: ReadinessStatus.READY
@@ -3606,14 +3611,14 @@ async function main() {
         documentType: DocumentType.PERMIT,
         sourceLink: 'https://example.com/cheongna-permit',
         aiSummary: 'Planning pack covering zoning conditions, district approval sequence, and environmental consultation notes.',
-        documentHash: 'hash-incheon-permit'
+        documentHash: deterministicDocumentHash('seed-doc', 'incheon-permit')
       },
       {
         title: 'Renewables Access Analysis',
         documentType: DocumentType.REPORT,
         sourceLink: 'https://example.com/cheongna-renewables',
         aiSummary: 'Review note summarizing renewable procurement options and expected tariff benefits.',
-        documentHash: 'hash-incheon-renewables'
+        documentHash: deterministicDocumentHash('seed-doc', 'incheon-renewables')
       }
     ],
     readinessStatus: ReadinessStatus.NOT_STARTED
@@ -3816,7 +3821,7 @@ async function main() {
         documentType: DocumentType.IM,
         sourceLink: 'https://example.com/busan-site',
         aiSummary: 'Site assembly memo summarizing land control, expansion pads, and early diligence status.',
-        documentHash: 'hash-busan-site'
+        documentHash: deterministicDocumentHash('seed-doc', 'busan-site')
       }
     ],
     readinessStatus: ReadinessStatus.NOT_STARTED
@@ -3827,8 +3832,51 @@ async function main() {
   await seedPortfolioAndCapitalShell();
   await seedCommitteeGovernance();
   await seedResearchAndMacro();
+  await seedQuarterlyMarketBootstrap();
 
   console.log('Seed complete: Korean real-estate demo assets, deal execution pipeline, portfolio/fund operating shells, committee governance, and research workspace loaded.');
+}
+
+async function seedQuarterlyMarketBootstrap() {
+  // One bootstrap snapshot so /api/quarterly-report and /quarterly-report
+  // render with seed data instead of returning 404 in fresh environments.
+  // Production data should come from the scheduled cron path
+  // (`/api/ops/quarterly-snapshot`) which writes a real ECOS + MOLIT bundle.
+  const market = 'KR';
+  const submarket = '전국';
+  const quarter = '2026Q1';
+  const quarterEndDate = new Date('2026-03-31T00:00:00.000Z');
+  const existing = await prisma.quarterlyMarketSnapshot.findFirst({
+    where: { market, submarket, assetClass: null, quarter }
+  });
+  if (existing) return;
+  await prisma.quarterlyMarketSnapshot.create({
+    data: {
+      market,
+      submarket,
+      assetClass: null,
+      quarter,
+      quarterEndDate,
+      transactionCount: 412,
+      transactionVolumeKrw: BigInt(1_840_000_000_000),
+      medianPriceKrwPerSqm: 13_400_000,
+      vacancyPct: 7.6,
+      rentKrwPerSqm: 38_500,
+      capRatePct: 5.2,
+      baseRatePct: 3.5,
+      krwUsd: 1380,
+      cpiYoYPct: 2.4,
+      gdpYoYPct: 1.8,
+      rawMetrics: {
+        provenance: 'seed-bootstrap',
+        notes: 'Replace via scheduled /api/ops/quarterly-snapshot cron.'
+      },
+      sourceManifest: {
+        seed: { writtenAt: new Date().toISOString() }
+      }
+    }
+  });
+  console.log(`Quarterly snapshot seed: ${market}/${submarket}/${quarter} bootstrapped.`);
 }
 
 main()

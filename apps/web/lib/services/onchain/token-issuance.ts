@@ -1,4 +1,5 @@
 import type { Hex } from 'viem';
+import { buildMockTxHash, isTokenizationMockMode } from '@/lib/blockchain/mock-mode';
 import {
   ensureAddress,
   getTokenizationClients,
@@ -23,9 +24,12 @@ export async function mintTokens(
   deployment: TokenizationDeploymentRow,
   input: { to: string; amount: string | bigint }
 ): Promise<Hex> {
-  const clients = getTokenizationClients(deployment);
   const to = ensureAddress(input.to, 'to');
   const amount = toBase(input.amount, 'amount');
+  if (isTokenizationMockMode()) {
+    return buildMockTxHash('mint', deployment.tokenAddress, to, amount.toString());
+  }
+  const clients = getTokenizationClients(deployment);
   return clients.walletClient.writeContract({
     ...clients.token,
     functionName: 'mint',
@@ -37,9 +41,12 @@ export async function burnTokens(
   deployment: TokenizationDeploymentRow,
   input: { from: string; amount: string | bigint }
 ): Promise<Hex> {
-  const clients = getTokenizationClients(deployment);
   const from = ensureAddress(input.from, 'from');
   const amount = toBase(input.amount, 'amount');
+  if (isTokenizationMockMode()) {
+    return buildMockTxHash('burn', deployment.tokenAddress, from, amount.toString());
+  }
+  const clients = getTokenizationClients(deployment);
   return clients.walletClient.writeContract({
     ...clients.token,
     functionName: 'burn',
@@ -51,10 +58,13 @@ export async function forceTransfer(
   deployment: TokenizationDeploymentRow,
   input: { from: string; to: string; amount: string | bigint }
 ): Promise<Hex> {
-  const clients = getTokenizationClients(deployment);
   const from = ensureAddress(input.from, 'from');
   const to = ensureAddress(input.to, 'to');
   const amount = toBase(input.amount, 'amount');
+  if (isTokenizationMockMode()) {
+    return buildMockTxHash('forceTransfer', deployment.tokenAddress, from, to, amount.toString());
+  }
+  const clients = getTokenizationClients(deployment);
   return clients.walletClient.writeContract({
     ...clients.token,
     functionName: 'forceTransfer',
@@ -63,6 +73,9 @@ export async function forceTransfer(
 }
 
 export async function pauseToken(deployment: TokenizationDeploymentRow): Promise<Hex> {
+  if (isTokenizationMockMode()) {
+    return buildMockTxHash('pause', deployment.tokenAddress);
+  }
   const clients = getTokenizationClients(deployment);
   return clients.walletClient.writeContract({
     ...clients.token,
@@ -72,6 +85,9 @@ export async function pauseToken(deployment: TokenizationDeploymentRow): Promise
 }
 
 export async function unpauseToken(deployment: TokenizationDeploymentRow): Promise<Hex> {
+  if (isTokenizationMockMode()) {
+    return buildMockTxHash('unpause', deployment.tokenAddress);
+  }
   const clients = getTokenizationClients(deployment);
   return clients.walletClient.writeContract({
     ...clients.token,

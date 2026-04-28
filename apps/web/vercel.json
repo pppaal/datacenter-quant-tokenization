@@ -10,6 +10,20 @@
       "maxDuration": 60
     }
   },
+  "crons": [
+    {
+      "path": "/api/ops/cycle/trigger",
+      "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/ops/quarterly-snapshot",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/ops/audit-prune",
+      "schedule": "30 3 * * *"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",

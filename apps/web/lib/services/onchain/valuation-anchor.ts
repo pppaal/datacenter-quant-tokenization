@@ -5,6 +5,7 @@ import {
   type OnchainAssetRecord
 } from '@/lib/blockchain/abi';
 import { getRegistryChainClients } from '@/lib/blockchain/client';
+import { buildMockTxHash, isTokenizationMockMode } from '@/lib/blockchain/mock-mode';
 import { buildRegistryAssetId } from '@/lib/blockchain/registry';
 import { canonicalizeToJson } from './canonicalize';
 import { pinCanonicalJson } from './ipfs';
@@ -45,6 +46,20 @@ export async function anchorValuationOnchain(
   const canonicalBytes = Buffer.byteLength(canonical, 'utf8');
   const documentHash = keccak256(stringToHex(canonical));
   const registryAssetId = buildRegistryAssetId(request.assetCode);
+
+  if (isTokenizationMockMode()) {
+    const fileName = buildValuationFileName(request, documentHash);
+    const ipfs = await pinCanonicalJson(fileName, canonical).catch(() => null);
+    return {
+      assetCode: request.assetCode,
+      registryAssetId,
+      documentHash,
+      canonicalBytes,
+      ipfs,
+      txHash: buildMockTxHash('anchorValuation', request.assetCode, documentHash),
+      alreadyAnchored: false
+    };
+  }
 
   const { config, account, publicClient, walletClient } = getRegistryChainClients();
 

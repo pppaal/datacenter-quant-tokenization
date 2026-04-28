@@ -1,4 +1,5 @@
 import type { Address, Hex } from 'viem';
+import { isTokenizationMockMode } from './mock-mode';
 
 export type BlockchainConfig = {
   chainId: number;
@@ -8,6 +9,10 @@ export type BlockchainConfig = {
   privateKey: Hex;
   metadataBaseUrl: string;
 };
+
+const MOCK_PRIVATE_KEY: Hex =
+  '0x0000000000000000000000000000000000000000000000000000000000000001';
+const MOCK_REGISTRY_ADDRESS: Address = '0x000000000000000000000000000000000000dEaD';
 
 function readRequiredEnv(name: string) {
   const value = process.env[name]?.trim();
@@ -30,14 +35,26 @@ function normalizeHex(value: string, expectedBytes: number, label: string): Hex 
 }
 
 export function getBlockchainConfig(): BlockchainConfig {
+  const metadataBaseUrl = (process.env.BLOCKCHAIN_METADATA_BASE_URL ?? process.env.APP_BASE_URL ?? 'http://localhost:3000')
+    .trim()
+    .replace(/\/$/, '');
+
+  if (isTokenizationMockMode()) {
+    return {
+      chainId: Number(process.env.BLOCKCHAIN_CHAIN_ID?.trim() ?? '31337'),
+      chainName: process.env.BLOCKCHAIN_CHAIN_NAME?.trim() ?? 'mock-registry',
+      rpcUrl: process.env.BLOCKCHAIN_RPC_URL?.trim() ?? 'http://localhost:0',
+      registryAddress:
+        (process.env.BLOCKCHAIN_REGISTRY_ADDRESS?.trim() as Address | undefined) ?? MOCK_REGISTRY_ADDRESS,
+      privateKey: MOCK_PRIVATE_KEY,
+      metadataBaseUrl
+    };
+  }
+
   const chainId = Number(readRequiredEnv('BLOCKCHAIN_CHAIN_ID'));
   if (!Number.isInteger(chainId) || chainId <= 0) {
     throw new Error('BLOCKCHAIN_CHAIN_ID must be a positive integer.');
   }
-
-  const metadataBaseUrl = (process.env.BLOCKCHAIN_METADATA_BASE_URL ?? process.env.APP_BASE_URL ?? 'http://localhost:3000')
-    .trim()
-    .replace(/\/$/, '');
 
   return {
     chainId,
