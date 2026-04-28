@@ -1,7 +1,11 @@
 import type { AssetClass, MacroFactor } from '@prisma/client';
 import type { MacroFactorDirection } from '@/lib/services/macro/factors';
 import { macroSensitivityTemplateRegistry } from '@/lib/services/macro/profile-registry';
-import { computeCorrelationPenalty, applyCorrelationPenalty, type CorrelationPenalty } from '@/lib/services/macro/correlation-stress';
+import {
+  computeCorrelationPenalty,
+  applyCorrelationPenalty,
+  type CorrelationPenalty
+} from '@/lib/services/macro/correlation-stress';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -58,17 +62,35 @@ export const STRESS_SCENARIOS: MacroStressScenario[] = [
   {
     name: 'Rate Shock',
     description: 'Policy rate +200bps with credit spread widening',
-    shocks: { rateShiftBps: 200, spreadShiftBps: 75, vacancyShiftPct: 1.0, growthShiftPct: -0.5, constructionCostShiftPct: 0 }
+    shocks: {
+      rateShiftBps: 200,
+      spreadShiftBps: 75,
+      vacancyShiftPct: 1.0,
+      growthShiftPct: -0.5,
+      constructionCostShiftPct: 0
+    }
   },
   {
     name: 'Credit Crunch',
     description: 'Spread widening, liquidity withdrawal, vacancy spike',
-    shocks: { rateShiftBps: 50, spreadShiftBps: 150, vacancyShiftPct: 3.0, growthShiftPct: -1.5, constructionCostShiftPct: 2.0 }
+    shocks: {
+      rateShiftBps: 50,
+      spreadShiftBps: 150,
+      vacancyShiftPct: 3.0,
+      growthShiftPct: -1.5,
+      constructionCostShiftPct: 2.0
+    }
   },
   {
     name: 'Stagflation',
     description: 'Rising rates with weak growth and elevated construction costs',
-    shocks: { rateShiftBps: 100, spreadShiftBps: 50, vacancyShiftPct: 2.0, growthShiftPct: -2.0, constructionCostShiftPct: 15.0 }
+    shocks: {
+      rateShiftBps: 100,
+      spreadShiftBps: 50,
+      vacancyShiftPct: 2.0,
+      growthShiftPct: -2.0,
+      constructionCostShiftPct: 15.0
+    }
   }
 ];
 
@@ -76,7 +98,10 @@ export const STRESS_SCENARIOS: MacroStressScenario[] = [
 // Internal helpers
 // ---------------------------------------------------------------------------
 
-type FactorLookup = Map<string, { value: number; direction: MacroFactorDirection; trendMomentum: number | null }>;
+type FactorLookup = Map<
+  string,
+  { value: number; direction: MacroFactorDirection; trendMomentum: number | null }
+>;
 
 function buildFactorLookup(factors: MacroFactor[], market: string): FactorLookup {
   const map: FactorLookup = new Map();
@@ -100,7 +125,14 @@ function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
 }
 
-function getSensitivityMultiplier(assetClass: string | null, dimension: 'capitalRateSensitivity' | 'liquiditySensitivity' | 'leasingSensitivity' | 'constructionSensitivity'): number {
+function getSensitivityMultiplier(
+  assetClass: string | null,
+  dimension:
+    | 'capitalRateSensitivity'
+    | 'liquiditySensitivity'
+    | 'leasingSensitivity'
+    | 'constructionSensitivity'
+): number {
   if (!assetClass) return 1.0;
   const template = macroSensitivityTemplateRegistry[assetClass as AssetClass];
   return template?.[dimension] ?? 1.0;
@@ -164,7 +196,8 @@ export function computeDealMacroExposure(
   // --- Construction exposure (development deals get higher weight) ---
   const construction = lookup.get('construction_pressure');
   let constructionScore = isDevelopment ? 30 : 15;
-  if (construction && construction.direction === 'NEGATIVE') constructionScore += isDevelopment ? 35 : 15;
+  if (construction && construction.direction === 'NEGATIVE')
+    constructionScore += isDevelopment ? 35 : 15;
   if (construction?.trendMomentum && construction.trendMomentum > 0) constructionScore += 10;
   constructionScore *= getSensitivityMultiplier(deal.assetClass, 'constructionSensitivity');
 
@@ -182,23 +215,69 @@ export function computeDealMacroExposure(
   liquidityScore *= getSensitivityMultiplier(deal.assetClass, 'liquiditySensitivity');
 
   const dimensions: DealMacroExposureDimension[] = [
-    { key: 'rate', label: 'Rate Exposure', score: clamp(Math.round(rateScore), 0, 100), commentary: rateScore > 50 ? 'Elevated rate environment pressures financing costs and discount rates.' : 'Rate environment is manageable for current deal structure.' },
-    { key: 'credit', label: 'Credit Exposure', score: clamp(Math.round(creditScore), 0, 100), commentary: creditScore > 50 ? 'Credit conditions are tight; refinancing risk is elevated.' : 'Credit conditions are within normal range.' },
-    { key: 'demand', label: 'Demand Exposure', score: clamp(Math.round(demandScore), 0, 100), commentary: demandScore > 50 ? 'Tenant demand indicators are weakening.' : 'Demand fundamentals remain supportive.' },
-    { key: 'construction', label: 'Construction Exposure', score: clamp(Math.round(constructionScore), 0, 100), commentary: constructionScore > 50 ? 'Construction cost inflation raises development risk.' : 'Construction cost pressure is contained.' },
-    { key: 'leverage', label: 'Leverage Exposure', score: clamp(Math.round(leverageScore), 0, 100), commentary: leverageScore > 50 ? 'High leverage amplifies macro sensitivity.' : 'Leverage levels provide adequate buffer.' },
-    { key: 'liquidity', label: 'Liquidity Exposure', score: clamp(Math.round(liquidityScore), 0, 100), commentary: liquidityScore > 50 ? 'Transaction liquidity is thin; exit timing risk.' : 'Market liquidity supports orderly exit.' }
+    {
+      key: 'rate',
+      label: 'Rate Exposure',
+      score: clamp(Math.round(rateScore), 0, 100),
+      commentary:
+        rateScore > 50
+          ? 'Elevated rate environment pressures financing costs and discount rates.'
+          : 'Rate environment is manageable for current deal structure.'
+    },
+    {
+      key: 'credit',
+      label: 'Credit Exposure',
+      score: clamp(Math.round(creditScore), 0, 100),
+      commentary:
+        creditScore > 50
+          ? 'Credit conditions are tight; refinancing risk is elevated.'
+          : 'Credit conditions are within normal range.'
+    },
+    {
+      key: 'demand',
+      label: 'Demand Exposure',
+      score: clamp(Math.round(demandScore), 0, 100),
+      commentary:
+        demandScore > 50
+          ? 'Tenant demand indicators are weakening.'
+          : 'Demand fundamentals remain supportive.'
+    },
+    {
+      key: 'construction',
+      label: 'Construction Exposure',
+      score: clamp(Math.round(constructionScore), 0, 100),
+      commentary:
+        constructionScore > 50
+          ? 'Construction cost inflation raises development risk.'
+          : 'Construction cost pressure is contained.'
+    },
+    {
+      key: 'leverage',
+      label: 'Leverage Exposure',
+      score: clamp(Math.round(leverageScore), 0, 100),
+      commentary:
+        leverageScore > 50
+          ? 'High leverage amplifies macro sensitivity.'
+          : 'Leverage levels provide adequate buffer.'
+    },
+    {
+      key: 'liquidity',
+      label: 'Liquidity Exposure',
+      score: clamp(Math.round(liquidityScore), 0, 100),
+      commentary:
+        liquidityScore > 50
+          ? 'Transaction liquidity is thin; exit timing risk.'
+          : 'Market liquidity supports orderly exit.'
+    }
   ];
 
   // Weighted overall score
   const weights = isDevelopment
-    ? { rate: 0.20, credit: 0.15, demand: 0.15, construction: 0.25, leverage: 0.15, liquidity: 0.10 }
-    : { rate: 0.25, credit: 0.20, demand: 0.20, construction: 0.05, leverage: 0.20, liquidity: 0.10 };
+    ? { rate: 0.2, credit: 0.15, demand: 0.15, construction: 0.25, leverage: 0.15, liquidity: 0.1 }
+    : { rate: 0.25, credit: 0.2, demand: 0.2, construction: 0.05, leverage: 0.2, liquidity: 0.1 };
 
   const rawScore = clamp(
-    Math.round(
-      dimensions.reduce((sum, d) => sum + d.score * (weights[d.key] ?? 0.15), 0)
-    ),
+    Math.round(dimensions.reduce((sum, d) => sum + d.score * (weights[d.key] ?? 0.15), 0)),
     0,
     100
   );
@@ -264,10 +343,12 @@ export function runMacroStressTest(
   // Apply scenario shocks
   const stressedRate = baseRate + scenario.shocks.rateShiftBps / 100;
   const stressedSpread = creditSpread + scenario.shocks.spreadShiftBps / 100;
-  const stressedCapRate = baseCapRate + scenario.shocks.rateShiftBps / 200 + scenario.shocks.spreadShiftBps / 300;
+  const stressedCapRate =
+    baseCapRate + scenario.shocks.rateShiftBps / 200 + scenario.shocks.spreadShiftBps / 300;
 
   // Valuation impact: cap rate expansion effect + vacancy drag
-  const capRateImpact = baseCapRate > 0 ? -(stressedCapRate - baseCapRate) / baseCapRate * 100 : 0;
+  const capRateImpact =
+    baseCapRate > 0 ? (-(stressedCapRate - baseCapRate) / baseCapRate) * 100 : 0;
   const vacancyDrag = -scenario.shocks.vacancyShiftPct * 1.5;
   const growthDrag = scenario.shocks.growthShiftPct * 2;
   const totalImpactPct = capRateImpact + vacancyDrag + growthDrag;

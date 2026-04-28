@@ -38,8 +38,11 @@ type MacroProfileOverrideDelegate = {
   update(args: unknown): Promise<MacroProfileOverrideRecord>;
 };
 
-function macroProfileOverrideDelegate(db: PrismaClient | typeof prisma): MacroProfileOverrideDelegate {
-  return (db as unknown as { macroProfileOverride: MacroProfileOverrideDelegate }).macroProfileOverride;
+function macroProfileOverrideDelegate(
+  db: PrismaClient | typeof prisma
+): MacroProfileOverrideDelegate {
+  return (db as unknown as { macroProfileOverride: MacroProfileOverrideDelegate })
+    .macroProfileOverride;
 }
 
 function isDatabaseConnectionError(error: unknown) {
@@ -130,10 +133,7 @@ export async function listActiveMacroProfileRuntimeRules(db: PrismaClient = pris
   return buildMacroProfileRuntimeRules(overrides);
 }
 
-export async function createMacroProfileOverride(
-  input: unknown,
-  db: PrismaClient = prisma
-) {
+export async function createMacroProfileOverride(input: unknown, db: PrismaClient = prisma) {
   const parsed = macroProfileOverrideSchema.parse(input);
   return macroProfileOverrideDelegate(db).create({
     data: {

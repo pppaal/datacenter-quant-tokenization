@@ -16,8 +16,8 @@ export default async function TokenizationPage() {
         <h2 className="mt-2 text-3xl font-semibold text-white">AssetToken deployments</h2>
         <p className="mt-2 text-sm text-slate-400">
           Institutional RWA layer: per-asset ERC-3643 style deployments with identity registry,
-          modular compliance, and attached policy modules. Ops actions (mint, forced transfer,
-          block country) are audited via the API routes under
+          modular compliance, and attached policy modules. Ops actions (mint, forced transfer, block
+          country) are audited via the API routes under
           <code className="ml-1 rounded bg-white/5 px-1.5 py-0.5">/api/tokenization</code>.
         </p>
       </div>
@@ -30,7 +30,10 @@ export default async function TokenizationPage() {
               npm --workspace @dcqt/contracts run deploy:tokenization:local
             </code>
             and POST the resulting manifest to
-            <code className="ml-1 rounded bg-white/5 px-1.5 py-0.5">/api/tokenization/deployments</code>.
+            <code className="ml-1 rounded bg-white/5 px-1.5 py-0.5">
+              /api/tokenization/deployments
+            </code>
+            .
           </div>
         </Card>
       ) : (

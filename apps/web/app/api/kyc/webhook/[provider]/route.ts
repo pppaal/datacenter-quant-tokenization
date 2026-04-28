@@ -15,10 +15,7 @@ import { getKycProvider } from '@/lib/services/kyc/registry';
  * signing scheme. Each event is recorded in the audit trail whether or not
  * bridging succeeds.
  */
-export async function POST(
-  request: Request,
-  context: { params: Promise<{ provider: string }> }
-) {
+export async function POST(request: Request, context: { params: Promise<{ provider: string }> }) {
   const { provider: providerName } = await context.params;
   const ipAddress = getRequestIpAddress(request.headers);
   const rawBody = await request.text();

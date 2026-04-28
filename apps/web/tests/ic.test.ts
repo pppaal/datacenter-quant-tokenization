@@ -1,8 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CommitteeDecisionOutcome, CommitteeMeetingStatus, CommitteePacketStatus } from '@prisma/client';
+import {
+  CommitteeDecisionOutcome,
+  CommitteeMeetingStatus,
+  CommitteePacketStatus
+} from '@prisma/client';
 import { buildCommitteeActionItems, buildCommitteeDashboard } from '@/lib/services/ic-builders';
-import { buildCommitteePacketLockReadiness, decideCommitteePacket, releaseCommitteePacket } from '@/lib/services/ic';
+import {
+  buildCommitteePacketLockReadiness,
+  decideCommitteePacket,
+  releaseCommitteePacket
+} from '@/lib/services/ic';
 
 test('committee dashboard surfaces locked, conditional, and candidate packet actions', () => {
   const meetings = [
@@ -70,7 +78,14 @@ test('committee dashboard surfaces locked, conditional, and candidate packet act
       assetClass: 'OFFICE',
       status: 'IC_READY',
       updatedAt: new Date('2026-04-10T00:00:00.000Z'),
-      valuations: [{ id: 'val-1', runLabel: 'Latest scenario', createdAt: new Date('2026-04-09T00:00:00.000Z'), confidenceScore: 77 }],
+      valuations: [
+        {
+          id: 'val-1',
+          runLabel: 'Latest scenario',
+          createdAt: new Date('2026-04-09T00:00:00.000Z'),
+          confidenceScore: 77
+        }
+      ],
       deals: [],
       leadDeal: { id: 'deal-1', dealCode: 'DEAL-0001' },
       diligenceSummary: {
@@ -134,9 +149,33 @@ test('committee packet lock readiness blocks lock until DD evidence and valuatio
       targetCloseDate: null,
       assetClass: 'OFFICE',
       diligenceWorkstreams: [
-        { id: 'legal', workstreamType: 'LEGAL', status: 'SIGNED_OFF', requestedAt: null, signedOffAt: new Date(), blockerSummary: null, deliverables: [{ id: 'doc-1' }] },
-        { id: 'commercial', workstreamType: 'COMMERCIAL', status: 'SIGNED_OFF', requestedAt: null, signedOffAt: new Date(), blockerSummary: null, deliverables: [] },
-        { id: 'technical', workstreamType: 'TECHNICAL', status: 'SIGNED_OFF', requestedAt: null, signedOffAt: new Date(), blockerSummary: null, deliverables: [{ id: 'doc-2' }] }
+        {
+          id: 'legal',
+          workstreamType: 'LEGAL',
+          status: 'SIGNED_OFF',
+          requestedAt: null,
+          signedOffAt: new Date(),
+          blockerSummary: null,
+          deliverables: [{ id: 'doc-1' }]
+        },
+        {
+          id: 'commercial',
+          workstreamType: 'COMMERCIAL',
+          status: 'SIGNED_OFF',
+          requestedAt: null,
+          signedOffAt: new Date(),
+          blockerSummary: null,
+          deliverables: []
+        },
+        {
+          id: 'technical',
+          workstreamType: 'TECHNICAL',
+          status: 'SIGNED_OFF',
+          requestedAt: null,
+          signedOffAt: new Date(),
+          blockerSummary: null,
+          deliverables: [{ id: 'doc-2' }]
+        }
       ]
     },
     valuationRun: {
@@ -189,9 +228,33 @@ test('committee packet lock readiness blocks lock until DD evidence and valuatio
       targetCloseDate: null,
       assetClass: 'OFFICE',
       diligenceWorkstreams: [
-        { id: 'legal', workstreamType: 'LEGAL', status: 'SIGNED_OFF', requestedAt: null, signedOffAt: new Date(), blockerSummary: null, deliverables: [{ id: 'doc-1' }] },
-        { id: 'commercial', workstreamType: 'COMMERCIAL', status: 'SIGNED_OFF', requestedAt: null, signedOffAt: new Date(), blockerSummary: null, deliverables: [{ id: 'doc-2' }] },
-        { id: 'technical', workstreamType: 'TECHNICAL', status: 'SIGNED_OFF', requestedAt: null, signedOffAt: new Date(), blockerSummary: null, deliverables: [{ id: 'doc-3' }] }
+        {
+          id: 'legal',
+          workstreamType: 'LEGAL',
+          status: 'SIGNED_OFF',
+          requestedAt: null,
+          signedOffAt: new Date(),
+          blockerSummary: null,
+          deliverables: [{ id: 'doc-1' }]
+        },
+        {
+          id: 'commercial',
+          workstreamType: 'COMMERCIAL',
+          status: 'SIGNED_OFF',
+          requestedAt: null,
+          signedOffAt: new Date(),
+          blockerSummary: null,
+          deliverables: [{ id: 'doc-2' }]
+        },
+        {
+          id: 'technical',
+          workstreamType: 'TECHNICAL',
+          status: 'SIGNED_OFF',
+          requestedAt: null,
+          signedOffAt: new Date(),
+          blockerSummary: null,
+          deliverables: [{ id: 'doc-3' }]
+        }
       ]
     },
     valuationRun: {
@@ -279,16 +342,12 @@ test('committee decision transitions locked packets and release only allows deci
   assert.equal(decisionCreates[0].outcome, CommitteeDecisionOutcome.APPROVED);
   assert.equal(decided.status, CommitteePacketStatus.APPROVED);
 
-  const released = await releaseCommitteePacket(
-    packet.id,
-    'IC Chair',
-    {
-      investmentCommitteePacket: {
-        findUnique: async () => ({ ...packet, status: CommitteePacketStatus.APPROVED }),
-        update: async ({ data }: any) => ({ ...packet, ...data })
-      }
-    } as any
-  );
+  const released = await releaseCommitteePacket(packet.id, 'IC Chair', {
+    investmentCommitteePacket: {
+      findUnique: async () => ({ ...packet, status: CommitteePacketStatus.APPROVED }),
+      update: async ({ data }: any) => ({ ...packet, ...data })
+    }
+  } as any);
 
   assert.equal(released.status, CommitteePacketStatus.RELEASED);
   assert.ok(released.releasedAt instanceof Date);

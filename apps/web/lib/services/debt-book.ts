@@ -21,19 +21,31 @@ async function getAssetContext(assetId: string, db: PrismaClient) {
 
 function normalizeDebtInput(asset: Awaited<ReturnType<typeof getAssetContext>>, input: unknown) {
   const parsed = debtBookInputSchema.parse(input);
-  const inputCurrency = resolveInputCurrency(asset.address?.country ?? asset.market, parsed.inputCurrency);
+  const inputCurrency = resolveInputCurrency(
+    asset.address?.country ?? asset.market,
+    parsed.inputCurrency
+  );
 
   return {
     ...parsed,
     facilityType: parsed.facilityType ?? DebtFacilityType.TERM,
-    commitmentKrw: typeof parsed.commitmentKrw === 'number' ? convertToKrw(parsed.commitmentKrw, inputCurrency) : undefined,
-    drawnAmountKrw: typeof parsed.drawnAmountKrw === 'number' ? convertToKrw(parsed.drawnAmountKrw, inputCurrency) : undefined,
+    commitmentKrw:
+      typeof parsed.commitmentKrw === 'number'
+        ? convertToKrw(parsed.commitmentKrw, inputCurrency)
+        : undefined,
+    drawnAmountKrw:
+      typeof parsed.drawnAmountKrw === 'number'
+        ? convertToKrw(parsed.drawnAmountKrw, inputCurrency)
+        : undefined,
     amortizationProfile: parsed.amortizationProfile ?? AmortizationProfile.INTEREST_ONLY,
     draws:
       parsed.draws?.map((draw) => ({
         drawYear: draw.drawYear ?? 1,
         drawMonth: draw.drawMonth,
-        amountKrw: typeof draw.amountKrw === 'number' ? convertToKrw(draw.amountKrw, inputCurrency) ?? 0 : 0,
+        amountKrw:
+          typeof draw.amountKrw === 'number'
+            ? (convertToKrw(draw.amountKrw, inputCurrency) ?? 0)
+            : 0,
         notes: draw.notes
       })) ?? undefined
   };
@@ -80,7 +92,12 @@ export async function createDebtFacility(assetId: string, input: unknown, deps?:
   });
 }
 
-export async function updateDebtFacility(assetId: string, facilityId: string, input: unknown, deps?: DebtBookDeps) {
+export async function updateDebtFacility(
+  assetId: string,
+  facilityId: string,
+  input: unknown,
+  deps?: DebtBookDeps
+) {
   const db = deps?.db ?? prisma;
   const asset = await getAssetContext(assetId, db);
   const normalized = normalizeDebtInput(asset, input);

@@ -18,16 +18,34 @@ export function MacroMonitorPanel({ monitor }: { monitor: MacroMonitor }) {
           <h2 className="mt-2 text-2xl font-semibold text-white">What changed across markets</h2>
         </div>
         <Badge tone={monitor.summary.missingDataMarkets > 0 ? 'warn' : 'good'}>
-          {monitor.summary.latestAsOf ? `As of ${formatDate(monitor.summary.latestAsOf)}` : 'No macro factors yet'}
+          {monitor.summary.latestAsOf
+            ? `As of ${formatDate(monitor.summary.latestAsOf)}`
+            : 'No macro factors yet'}
         </Badge>
       </div>
 
       <div className="mt-5 grid gap-4 md:grid-cols-4">
         {[
-          ['Markets tracked', formatNumber(monitor.summary.marketCoverage, 0), 'Latest factor snapshot coverage'],
-          ['Stressed', formatNumber(monitor.summary.stressedMarkets, 0), 'Risk-off or underweight markets'],
-          ['Supportive', formatNumber(monitor.summary.supportiveMarkets, 0), 'Risk-on or overweight markets'],
-          ['Missing data', formatNumber(monitor.summary.missingDataMarkets, 0), 'Markets with incomplete factor sets']
+          [
+            'Markets tracked',
+            formatNumber(monitor.summary.marketCoverage, 0),
+            'Latest factor snapshot coverage'
+          ],
+          [
+            'Stressed',
+            formatNumber(monitor.summary.stressedMarkets, 0),
+            'Risk-off or underweight markets'
+          ],
+          [
+            'Supportive',
+            formatNumber(monitor.summary.supportiveMarkets, 0),
+            'Risk-on or overweight markets'
+          ],
+          [
+            'Missing data',
+            formatNumber(monitor.summary.missingDataMarkets, 0),
+            'Markets with incomplete factor sets'
+          ]
         ].map(([label, value, subline]) => (
           <div key={label} className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
             <div className="fine-print">{label}</div>
@@ -41,7 +59,10 @@ export function MacroMonitorPanel({ monitor }: { monitor: MacroMonitor }) {
         <div className="grid gap-3">
           {monitor.markets.length > 0 ? (
             monitor.markets.slice(0, 6).map((market) => (
-              <div key={market.market} className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+              <div
+                key={market.market}
+                className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+              >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <div className="text-lg font-semibold text-white">{market.market}</div>
@@ -117,7 +138,10 @@ export function MacroMonitorPanel({ monitor }: { monitor: MacroMonitor }) {
           <div className="mt-4 grid gap-3">
             {monitor.driverBoard.length > 0 ? (
               monitor.driverBoard.map((driver) => (
-                <div key={driver.key} className="rounded-[20px] border border-white/10 bg-slate-950/35 p-4">
+                <div
+                  key={driver.key}
+                  className="rounded-[20px] border border-white/10 bg-slate-950/35 p-4"
+                >
                   <div className="flex items-center justify-between gap-3">
                     <div className="text-sm font-semibold text-white">{driver.label}</div>
                     <Badge tone={driver.type === 'HEADWIND' ? 'warn' : 'good'}>
@@ -125,12 +149,15 @@ export function MacroMonitorPanel({ monitor }: { monitor: MacroMonitor }) {
                     </Badge>
                   </div>
                   <p className="mt-3 text-sm text-slate-400">
-                    {formatNumber(driver.marketCount, 0)} markets are currently transmitting this driver.
+                    {formatNumber(driver.marketCount, 0)} markets are currently transmitting this
+                    driver.
                   </p>
                 </div>
               ))
             ) : (
-              <div className="text-sm text-slate-400">Driver frequency will appear after macro factors are persisted.</div>
+              <div className="text-sm text-slate-400">
+                Driver frequency will appear after macro factors are persisted.
+              </div>
             )}
           </div>
         </div>

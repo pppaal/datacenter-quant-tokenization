@@ -2,7 +2,10 @@ import { NextResponse } from 'next/server';
 import { SourceRefreshTriggerType } from '@prisma/client';
 import { hasRequiredAdminRole } from '@/lib/security/admin-auth';
 import { prisma } from '@/lib/db/prisma';
-import { getRequestIpAddress, resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
+import {
+  getRequestIpAddress,
+  resolveVerifiedAdminActorFromHeaders
+} from '@/lib/security/admin-request';
 import { recordAuditEvent } from '@/lib/services/audit';
 import { runSourceRefreshJob } from '@/lib/services/source-refresh';
 

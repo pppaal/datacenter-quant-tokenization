@@ -21,29 +21,142 @@ function daysAhead(n: number): Date {
 }
 
 const transactions: CompTransaction[] = [
-  { id: 'T1', dealDate: daysAgo(30), priceKrw: 120_000_000_000, gfaSqm: 10_000, capRatePct: 5.2, pricePerSqmKrw: 12_000_000, buyerName: 'Fund A', sellerName: 'Sponsor X', assetLabel: 'Teheran Tower' },
-  { id: 'T2', dealDate: daysAgo(75), priceKrw: 95_000_000_000, gfaSqm: 8_500, capRatePct: 5.5, pricePerSqmKrw: 11_200_000, buyerName: 'REIT Y', sellerName: 'Owner Z', assetLabel: 'GBD One' },
-  { id: 'T3', dealDate: daysAgo(140), priceKrw: 150_000_000_000, gfaSqm: 12_000, capRatePct: 5.4, pricePerSqmKrw: 12_500_000, buyerName: 'Fund B', sellerName: 'Family Office', assetLabel: 'Samsung Plaza II' },
-  { id: 'T4', dealDate: daysAgo(210), priceKrw: 80_000_000_000, gfaSqm: 7_000, capRatePct: 5.7, pricePerSqmKrw: 11_400_000, buyerName: 'Institutional Buyer', sellerName: 'Developer', assetLabel: 'Gangnam Spire' },
-  { id: 'T5', dealDate: daysAgo(300), priceKrw: 60_000_000_000, gfaSqm: 5_500, capRatePct: 5.9, pricePerSqmKrw: 10_900_000, buyerName: 'Private Buyer', sellerName: 'Corporate Owner', assetLabel: 'Seocho Mid' }
+  {
+    id: 'T1',
+    dealDate: daysAgo(30),
+    priceKrw: 120_000_000_000,
+    gfaSqm: 10_000,
+    capRatePct: 5.2,
+    pricePerSqmKrw: 12_000_000,
+    buyerName: 'Fund A',
+    sellerName: 'Sponsor X',
+    assetLabel: 'Teheran Tower'
+  },
+  {
+    id: 'T2',
+    dealDate: daysAgo(75),
+    priceKrw: 95_000_000_000,
+    gfaSqm: 8_500,
+    capRatePct: 5.5,
+    pricePerSqmKrw: 11_200_000,
+    buyerName: 'REIT Y',
+    sellerName: 'Owner Z',
+    assetLabel: 'GBD One'
+  },
+  {
+    id: 'T3',
+    dealDate: daysAgo(140),
+    priceKrw: 150_000_000_000,
+    gfaSqm: 12_000,
+    capRatePct: 5.4,
+    pricePerSqmKrw: 12_500_000,
+    buyerName: 'Fund B',
+    sellerName: 'Family Office',
+    assetLabel: 'Samsung Plaza II'
+  },
+  {
+    id: 'T4',
+    dealDate: daysAgo(210),
+    priceKrw: 80_000_000_000,
+    gfaSqm: 7_000,
+    capRatePct: 5.7,
+    pricePerSqmKrw: 11_400_000,
+    buyerName: 'Institutional Buyer',
+    sellerName: 'Developer',
+    assetLabel: 'Gangnam Spire'
+  },
+  {
+    id: 'T5',
+    dealDate: daysAgo(300),
+    priceKrw: 60_000_000_000,
+    gfaSqm: 5_500,
+    capRatePct: 5.9,
+    pricePerSqmKrw: 10_900_000,
+    buyerName: 'Private Buyer',
+    sellerName: 'Corporate Owner',
+    assetLabel: 'Seocho Mid'
+  }
 ];
 
 const rents = [
-  { id: 'R1', observationDate: daysAgo(60), monthlyRentKrwPerSqm: 68_000, occupancyPct: 94, assetLabel: 'Teheran Tower' },
-  { id: 'R2', observationDate: daysAgo(40), monthlyRentKrwPerSqm: 72_000, occupancyPct: 97, assetLabel: 'GBD One' },
-  { id: 'R3', observationDate: daysAgo(120), monthlyRentKrwPerSqm: 65_000, occupancyPct: 91, assetLabel: 'Samsung Plaza II' }
+  {
+    id: 'R1',
+    observationDate: daysAgo(60),
+    monthlyRentKrwPerSqm: 68_000,
+    occupancyPct: 94,
+    assetLabel: 'Teheran Tower'
+  },
+  {
+    id: 'R2',
+    observationDate: daysAgo(40),
+    monthlyRentKrwPerSqm: 72_000,
+    occupancyPct: 97,
+    assetLabel: 'GBD One'
+  },
+  {
+    id: 'R3',
+    observationDate: daysAgo(120),
+    monthlyRentKrwPerSqm: 65_000,
+    occupancyPct: 91,
+    assetLabel: 'Samsung Plaza II'
+  }
 ];
 
 const pipeline: PipelineDelivery[] = [
-  { id: 'P1', projectName: 'Gangnam Cube', expectedDeliveryDate: daysAhead(200), expectedGfaSqm: 25_000, developer: 'Big Developer', stage: 'UNDER_CONSTRUCTION' },
-  { id: 'P2', projectName: 'Teheran Skyline', expectedDeliveryDate: daysAhead(400), expectedGfaSqm: 40_000, developer: 'Major SPC', stage: 'PLANNED' },
-  { id: 'P3', projectName: 'Delivered Asset', expectedDeliveryDate: daysAgo(30), expectedGfaSqm: 15_000, developer: 'Done', stage: 'DELIVERED' }
+  {
+    id: 'P1',
+    projectName: 'Gangnam Cube',
+    expectedDeliveryDate: daysAhead(200),
+    expectedGfaSqm: 25_000,
+    developer: 'Big Developer',
+    stage: 'UNDER_CONSTRUCTION'
+  },
+  {
+    id: 'P2',
+    projectName: 'Teheran Skyline',
+    expectedDeliveryDate: daysAhead(400),
+    expectedGfaSqm: 40_000,
+    developer: 'Major SPC',
+    stage: 'PLANNED'
+  },
+  {
+    id: 'P3',
+    projectName: 'Delivered Asset',
+    expectedDeliveryDate: daysAgo(30),
+    expectedGfaSqm: 15_000,
+    developer: 'Done',
+    stage: 'DELIVERED'
+  }
 ];
 
 const tenantMoves: TenantMove[] = [
-  { id: 'M1', observationDate: daysAgo(30), tenantName: 'Samsung SDS', moveType: 'MOVED_IN', areaSqm: 5_000, fromAssetLabel: 'Teheran Tower', toAssetLabel: 'GBD One' },
-  { id: 'M2', observationDate: daysAgo(60), tenantName: 'Naver', moveType: 'EXPANSION', areaSqm: 2_000, fromAssetLabel: null, toAssetLabel: 'Samsung Plaza II' },
-  { id: 'M3', observationDate: daysAgo(90), tenantName: 'Kakao', moveType: 'MOVED_OUT', areaSqm: 3_000, fromAssetLabel: 'Gangnam Spire', toAssetLabel: null }
+  {
+    id: 'M1',
+    observationDate: daysAgo(30),
+    tenantName: 'Samsung SDS',
+    moveType: 'MOVED_IN',
+    areaSqm: 5_000,
+    fromAssetLabel: 'Teheran Tower',
+    toAssetLabel: 'GBD One'
+  },
+  {
+    id: 'M2',
+    observationDate: daysAgo(60),
+    tenantName: 'Naver',
+    moveType: 'EXPANSION',
+    areaSqm: 2_000,
+    fromAssetLabel: null,
+    toAssetLabel: 'Samsung Plaza II'
+  },
+  {
+    id: 'M3',
+    observationDate: daysAgo(90),
+    tenantName: 'Kakao',
+    moveType: 'MOVED_OUT',
+    areaSqm: 3_000,
+    fromAssetLabel: 'Gangnam Spire',
+    toAssetLabel: null
+  }
 ];
 
 const baseInput: CompetitiveIntelInput = {

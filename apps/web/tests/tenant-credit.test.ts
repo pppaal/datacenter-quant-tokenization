@@ -159,10 +159,12 @@ test('projectRentDefault: mixed roll yields rent-weighted PD and reserve', () =>
   assert.ok(result.adjustedAnnualRentKrw < result.totalAnnualRentKrw);
   assert.equal(result.breakdown.length, 3);
   // Distressed tenant contributes the most expected loss despite smallest rent.
-  const distressedLoss = result.breakdown.find((b) => b.companyName === '부실 F&B')!
-    .expectedAnnualLossKrw;
-  const blueChipLoss = result.breakdown.find((b) => b.companyName === '삼성전자-like')!
-    .expectedAnnualLossKrw;
+  const distressedLoss = result.breakdown.find(
+    (b) => b.companyName === '부실 F&B'
+  )!.expectedAnnualLossKrw;
+  const blueChipLoss = result.breakdown.find(
+    (b) => b.companyName === '삼성전자-like'
+  )!.expectedAnnualLossKrw;
   assert.ok(distressedLoss > blueChipLoss);
 });
 
@@ -172,7 +174,5 @@ test('projectRentDefault: custom LGD scales the reserve linearly', () => {
   ];
   const base = projectRentDefault(exposures, 25);
   const doubled = projectRentDefault(exposures, 50);
-  assert.ok(
-    Math.abs(doubled.expectedAnnualRentLossKrw - 2 * base.expectedAnnualRentLossKrw) < 1
-  );
+  assert.ok(Math.abs(doubled.expectedAnnualRentLossKrw - 2 * base.expectedAnnualRentLossKrw) < 1);
 });

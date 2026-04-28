@@ -115,18 +115,21 @@ The system should be able to answer:
 ### Implementation slices
 
 1. `Macro adapters`
+
 - Korea and global benchmark series
 - interest rates
 - inflation
 - cap rate and vacancy reference series
 
 2. `Normalization layer`
+
 - currency normalization
 - area normalization
 - annual / monthly alignment
 - percent / basis point alignment
 
 3. `Document fact mapping`
+
 - lease terms
 - rent roll fields
 - capex budget fields

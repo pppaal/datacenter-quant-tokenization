@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { hasRequiredAdminRole } from '@/lib/security/admin-auth';
-import { getRequestIpAddress, resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
+import {
+  getRequestIpAddress,
+  resolveVerifiedAdminActorFromHeaders
+} from '@/lib/security/admin-request';
 import { mutationRateLimiter, RateLimitError } from '@/lib/security/rate-limit';
 import { recordAuditEvent } from '@/lib/services/audit';
 import { runKoreaIngest } from '@/lib/services/data-ingest';
@@ -23,7 +26,9 @@ export async function POST(request: Request) {
 
     const totalRows = result.sourceResults.reduce((sum, entry) => sum + entry.rowCount, 0);
     const failedSources = result.sourceResults.filter((entry) => entry.status === 'FAILED').length;
-    const partialSources = result.sourceResults.filter((entry) => entry.status === 'PARTIAL').length;
+    const partialSources = result.sourceResults.filter(
+      (entry) => entry.status === 'PARTIAL'
+    ).length;
     const runStatusLabel = failedSources > 0 ? 'PARTIAL' : 'SUCCESS';
 
     await recordAuditEvent({

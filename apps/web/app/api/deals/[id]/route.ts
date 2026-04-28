@@ -17,7 +17,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   try {
     await assertActorScopeAccess(actor, AdminAccessScopeType.DEAL, id, prisma);
   } catch {
-    return NextResponse.json({ error: 'Deal access is not granted for this operator.' }, { status: 403 });
+    return NextResponse.json(
+      { error: 'Deal access is not granted for this operator.' },
+      { status: 403 }
+    );
   }
   const deal = await getDealById(id);
   if (!deal) {

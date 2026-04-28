@@ -24,10 +24,14 @@ export type DocumentResearchSummary = {
   documentRoomSummary: string;
 };
 
-export function buildDocumentResearchSummary(asset: DocumentResearchAsset): DocumentResearchSummary {
+export function buildDocumentResearchSummary(
+  asset: DocumentResearchAsset
+): DocumentResearchSummary {
   const latestDocument = asset.documents?.[0] ?? null;
   const anchoredDocumentCount =
-    asset.readinessProject?.onchainRecords?.filter((record) => record.recordType === 'DOCUMENT_HASH' && record.txHash).length ?? 0;
+    asset.readinessProject?.onchainRecords?.filter(
+      (record) => record.recordType === 'DOCUMENT_HASH' && record.txHash
+    ).length ?? 0;
 
   return {
     latestDocumentHash: latestDocument?.documentHash ?? null,

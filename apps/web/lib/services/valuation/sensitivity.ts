@@ -47,8 +47,18 @@ export function buildCapRateExitSensitivity(
   const rowValues = capRateSteps.map((s) => Number((baseCapRatePct + s).toFixed(2)));
   const colValues = exitCapSteps.map((s) => Number((baseExitCapRatePct + s).toFixed(2)));
 
-  const rowAxis: SensitivityAxis = { label: 'Going-In Cap Rate', key: 'capRate', values: rowValues, unit: '%' };
-  const colAxis: SensitivityAxis = { label: 'Exit Cap Rate', key: 'exitCapRate', values: colValues, unit: '%' };
+  const rowAxis: SensitivityAxis = {
+    label: 'Going-In Cap Rate',
+    key: 'capRate',
+    values: rowValues,
+    unit: '%'
+  };
+  const colAxis: SensitivityAxis = {
+    label: 'Exit Cap Rate',
+    key: 'exitCapRate',
+    values: colValues,
+    unit: '%'
+  };
 
   const initialEquityKrw = totalCapexKrw - initialDebtFundingKrw;
   const years = proForma.years;
@@ -58,21 +68,24 @@ export function buildCapRateExitSensitivity(
     colValues.map((exitCap, ci) => {
       const adjustedTerminalValue = exitCap > 0 ? baseNoi / (exitCap / 100) : 0;
       const noiMultiplier = baseCapRatePct > 0 ? capRate / baseCapRatePct : 1;
-      const noiDelta = Number((((noiMultiplier - 1) * 100)).toFixed(2));
+      const noiDelta = Number(((noiMultiplier - 1) * 100).toFixed(2));
 
       const cashFlows: number[] = [-initialEquityKrw];
       for (let i = 0; i < years.length; i++) {
         const year = years[i]!;
         const isTerminal = i === years.length - 1;
-        const cf = year.afterTaxDistributionKrw +
+        const cf =
+          year.afterTaxDistributionKrw +
           (isTerminal ? adjustedTerminalValue - proForma.summary.endingDebtBalanceKrw : 0);
         cashFlows.push(cf);
       }
 
       const equityIrr = computeIrr(cashFlows);
       const totalDistributions = years.reduce((sum, y) => sum + y.afterTaxDistributionKrw, 0);
-      const totalReturn = totalDistributions + adjustedTerminalValue - proForma.summary.endingDebtBalanceKrw;
-      const equityMultiple = initialEquityKrw > 0 ? Number((totalReturn / initialEquityKrw).toFixed(2)) : 0;
+      const totalReturn =
+        totalDistributions + adjustedTerminalValue - proForma.summary.endingDebtBalanceKrw;
+      const equityMultiple =
+        initialEquityKrw > 0 ? Number((totalReturn / initialEquityKrw).toFixed(2)) : 0;
 
       return { row: ri, col: ci, equityIrr, equityMultiple, noiDelta };
     })
@@ -101,11 +114,23 @@ export function buildOccupancyRentSensitivity(
   const occupancySteps = [-15, -10, -5, 0, 5];
   const rentSteps = [-20, -10, 0, 10, 20];
 
-  const rowValues = occupancySteps.map((s) => Math.min(Number((baseOccupancyPct + s).toFixed(1)), 100));
+  const rowValues = occupancySteps.map((s) =>
+    Math.min(Number((baseOccupancyPct + s).toFixed(1)), 100)
+  );
   const colValues = rentSteps.map((s) => s);
 
-  const rowAxis: SensitivityAxis = { label: 'Occupancy', key: 'occupancy', values: rowValues, unit: '%' };
-  const colAxis: SensitivityAxis = { label: 'Revenue Growth', key: 'revenueGrowth', values: colValues, unit: '%' };
+  const rowAxis: SensitivityAxis = {
+    label: 'Occupancy',
+    key: 'occupancy',
+    values: rowValues,
+    unit: '%'
+  };
+  const colAxis: SensitivityAxis = {
+    label: 'Revenue Growth',
+    key: 'revenueGrowth',
+    values: colValues,
+    unit: '%'
+  };
 
   const initialEquityKrw = totalCapexKrw - initialDebtFundingKrw;
   const years = proForma.years;
@@ -121,15 +146,18 @@ export function buildOccupancyRentSensitivity(
         const year = years[i]!;
         const isTerminal = i === years.length - 1;
         const adjustedDistribution = year.afterTaxDistributionKrw * occMultiplier * rentMultiplier;
-        const adjustedTerminal = isTerminal ? terminalValueKrw * occMultiplier * rentMultiplier
-          - proForma.summary.endingDebtBalanceKrw : 0;
+        const adjustedTerminal = isTerminal
+          ? terminalValueKrw * occMultiplier * rentMultiplier -
+            proForma.summary.endingDebtBalanceKrw
+          : 0;
         cashFlows.push(adjustedDistribution + adjustedTerminal);
       }
 
       const equityIrr = computeIrr(cashFlows);
       const totalReturn = cashFlows.slice(1).reduce((sum, cf) => sum + cf, 0);
-      const equityMultiple = initialEquityKrw > 0 ? Number((totalReturn / initialEquityKrw).toFixed(2)) : 0;
-      const noiDelta = Number((((occMultiplier * rentMultiplier) - 1) * 100).toFixed(2));
+      const equityMultiple =
+        initialEquityKrw > 0 ? Number((totalReturn / initialEquityKrw).toFixed(2)) : 0;
+      const noiDelta = Number(((occMultiplier * rentMultiplier - 1) * 100).toFixed(2));
 
       return { row: ri, col: ci, equityIrr, equityMultiple, noiDelta };
     })
@@ -168,7 +196,7 @@ export function buildInterestRateSensitivity(
   const years = proForma.years;
 
   return shiftsBps.map((shiftBps) => {
-    const rateMultiplier = 1 + (shiftBps / 100) / Math.max(baseInterestRatePct, 1);
+    const rateMultiplier = 1 + shiftBps / 100 / Math.max(baseInterestRatePct, 1);
     const debtCostFactor = rateMultiplier;
 
     const cashFlows: number[] = [-initialEquityKrw];
@@ -179,22 +207,26 @@ export function buildInterestRateSensitivity(
       const isTerminal = i === years.length - 1;
       const adjustedInterest = year.interestKrw * debtCostFactor;
       const adjustedDebtService = adjustedInterest + year.principalKrw;
-      const adjustedDistribution = year.afterTaxDistributionKrw + (year.debtServiceKrw - adjustedDebtService);
+      const adjustedDistribution =
+        year.afterTaxDistributionKrw + (year.debtServiceKrw - adjustedDebtService);
       const adjustedTerminal = isTerminal
-        ? terminalValueKrw - proForma.summary.endingDebtBalanceKrw : 0;
+        ? terminalValueKrw - proForma.summary.endingDebtBalanceKrw
+        : 0;
 
       cashFlows.push(adjustedDistribution + adjustedTerminal);
 
       if (i === 0) {
-        firstYearDscr = adjustedDebtService > 0
-          ? Number((year.cfadsBeforeDebtKrw / adjustedDebtService).toFixed(2))
-          : null;
+        firstYearDscr =
+          adjustedDebtService > 0
+            ? Number((year.cfadsBeforeDebtKrw / adjustedDebtService).toFixed(2))
+            : null;
       }
     }
 
     const equityIrr = computeIrr(cashFlows);
     const totalReturn = cashFlows.slice(1).reduce((sum, cf) => sum + cf, 0);
-    const equityMultiple = initialEquityKrw > 0 ? Number((totalReturn / initialEquityKrw).toFixed(2)) : 0;
+    const equityMultiple =
+      initialEquityKrw > 0 ? Number((totalReturn / initialEquityKrw).toFixed(2)) : 0;
 
     return { shiftBps, equityIrr, equityMultiple, dscrYear1: firstYearDscr };
   });
@@ -225,7 +257,10 @@ export type MacroDrivenSensitivityMatrix = SensitivityMatrix & {
   occupancyAxisSourceScenario: string;
 };
 
-function pickWorstShock(scenarios: MacroStressScenario[], key: keyof MacroStressScenario['shocks']): {
+function pickWorstShock(
+  scenarios: MacroStressScenario[],
+  key: keyof MacroStressScenario['shocks']
+): {
   value: number;
   scenarioName: string;
 } {
@@ -237,12 +272,26 @@ function pickWorstShock(scenarios: MacroStressScenario[], key: keyof MacroStress
   return { value: worst.shocks[key], scenarioName: worst.name };
 }
 
-export function buildMacroDrivenSensitivity(input: MacroDrivenSensitivityInput): MacroDrivenSensitivityMatrix {
+export function buildMacroDrivenSensitivity(
+  input: MacroDrivenSensitivityInput
+): MacroDrivenSensitivityMatrix {
   const rateWorst = pickWorstShock(input.scenarios, 'rateShiftBps');
   const vacancyWorst = pickWorstShock(input.scenarios, 'vacancyShiftPct');
 
-  const rateSteps = [0, rateWorst.value * 0.25, rateWorst.value * 0.5, rateWorst.value * 0.75, rateWorst.value];
-  const vacancySteps = [0, vacancyWorst.value * 0.25, vacancyWorst.value * 0.5, vacancyWorst.value * 0.75, vacancyWorst.value];
+  const rateSteps = [
+    0,
+    rateWorst.value * 0.25,
+    rateWorst.value * 0.5,
+    rateWorst.value * 0.75,
+    rateWorst.value
+  ];
+  const vacancySteps = [
+    0,
+    vacancyWorst.value * 0.25,
+    vacancyWorst.value * 0.5,
+    vacancyWorst.value * 0.75,
+    vacancyWorst.value
+  ];
 
   const rowValues = rateSteps.map((s) => Number(s.toFixed(0)));
   const colValues = vacancySteps.map((s) => Number(s.toFixed(1)));
@@ -265,10 +314,11 @@ export function buildMacroDrivenSensitivity(input: MacroDrivenSensitivityInput):
 
   const cells: SensitivityCell[][] = rowValues.map((rateShiftBps, ri) =>
     colValues.map((vacancyShiftPct, ci) => {
-      const debtCostFactor = 1 + (rateShiftBps / 100) / Math.max(input.baseInterestRatePct, 1);
-      const occMultiplier = input.baseOccupancyPct > 0
-        ? Math.max(0.3, (input.baseOccupancyPct - vacancyShiftPct) / input.baseOccupancyPct)
-        : 1;
+      const debtCostFactor = 1 + rateShiftBps / 100 / Math.max(input.baseInterestRatePct, 1);
+      const occMultiplier =
+        input.baseOccupancyPct > 0
+          ? Math.max(0.3, (input.baseOccupancyPct - vacancyShiftPct) / input.baseOccupancyPct)
+          : 1;
 
       const cashFlows: number[] = [-initialEquityKrw];
       for (let i = 0; i < years.length; i++) {
@@ -277,7 +327,8 @@ export function buildMacroDrivenSensitivity(input: MacroDrivenSensitivityInput):
         const adjustedInterest = year.interestKrw * debtCostFactor;
         const adjustedDebtService = adjustedInterest + year.principalKrw;
         const debtServiceDelta = year.debtServiceKrw - adjustedDebtService;
-        const adjustedDistribution = (year.afterTaxDistributionKrw + debtServiceDelta) * occMultiplier;
+        const adjustedDistribution =
+          (year.afterTaxDistributionKrw + debtServiceDelta) * occMultiplier;
         const adjustedTerminal = isTerminal
           ? input.terminalValueKrw * occMultiplier - input.proForma.summary.endingDebtBalanceKrw
           : 0;
@@ -286,7 +337,8 @@ export function buildMacroDrivenSensitivity(input: MacroDrivenSensitivityInput):
 
       const equityIrr = computeIrr(cashFlows);
       const totalReturn = cashFlows.slice(1).reduce((sum, cf) => sum + cf, 0);
-      const equityMultiple = initialEquityKrw > 0 ? Number((totalReturn / initialEquityKrw).toFixed(2)) : 0;
+      const equityMultiple =
+        initialEquityKrw > 0 ? Number((totalReturn / initialEquityKrw).toFixed(2)) : 0;
       const noiDelta = Number(((occMultiplier - 1) * 100).toFixed(2));
 
       return { row: ri, col: ci, equityIrr, equityMultiple, noiDelta };

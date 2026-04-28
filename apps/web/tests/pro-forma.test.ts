@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { buildStoredBaseCaseProForma, readStoredBaseCaseProForma } from '@/lib/services/valuation/pro-forma';
+import {
+  buildStoredBaseCaseProForma,
+  readStoredBaseCaseProForma
+} from '@/lib/services/valuation/pro-forma';
 
 test('pro forma serializer aligns lease, debt, and equity years into one stored shape', () => {
   const proForma = buildStoredBaseCaseProForma({

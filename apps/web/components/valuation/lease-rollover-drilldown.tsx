@@ -37,7 +37,8 @@ export function LeaseRolloverDrilldown({
       <Card id="lease-rollover-drilldown">
         <div className="eyebrow">Monthly Rollover Drill-Down</div>
         <div className="mt-4 rounded-[22px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
-          No modeled renewal window yet. Add renewal probability and rollover assumptions to see monthly disruption.
+          No modeled renewal window yet. Add renewal probability and rollover assumptions to see
+          monthly disruption.
         </div>
       </Card>
     );
@@ -49,7 +50,8 @@ export function LeaseRolloverDrilldown({
         <div>
           <div className="eyebrow">Monthly Rollover Drill-Down</div>
           <div className="mt-2 text-sm text-slate-400">
-            Synthetic month-by-month schedule derived from renewal downtime, rent-free, and renewal TI/LC assumptions.
+            Synthetic month-by-month schedule derived from renewal downtime, rent-free, and renewal
+            TI/LC assumptions.
           </div>
           {focusYear && filteredRows.length > 0 ? (
             <div className="mt-3 inline-flex rounded-full border border-amber-400/20 bg-amber-500/[0.08] px-3 py-1 text-xs uppercase tracking-[0.16em] text-amber-100/80">
@@ -57,26 +59,42 @@ export function LeaseRolloverDrilldown({
             </div>
           ) : null}
         </div>
-        <div className="text-sm text-slate-400">{formatNumber(filteredRows.length, 0)} modeled months</div>
+        <div className="text-sm text-slate-400">
+          {formatNumber(filteredRows.length, 0)} modeled months
+        </div>
       </div>
 
       <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-2xl border border-border bg-slate-950/40 p-4">
-          <div className="text-xs uppercase tracking-[0.18em] text-slate-500">First Modeled Month</div>
-          <div className="mt-2 text-lg font-semibold text-white">{summary.firstPeriodLabel ?? 'N/A'}</div>
+          <div className="text-xs uppercase tracking-[0.18em] text-slate-500">
+            First Modeled Month
+          </div>
+          <div className="mt-2 text-lg font-semibold text-white">
+            {summary.firstPeriodLabel ?? 'N/A'}
+          </div>
         </div>
         <div className="rounded-2xl border border-border bg-slate-950/40 p-4">
           <div className="text-xs uppercase tracking-[0.18em] text-slate-500">Peak Downtime kW</div>
-          <div className="mt-2 text-lg font-semibold text-white">{formatNumber(summary.peakDowntimeKw, 0)} kW</div>
+          <div className="mt-2 text-lg font-semibold text-white">
+            {formatNumber(summary.peakDowntimeKw, 0)} kW
+          </div>
         </div>
         <div className="rounded-2xl border border-border bg-slate-950/40 p-4">
-          <div className="text-xs uppercase tracking-[0.18em] text-slate-500">Peak Rent-Free kW</div>
-          <div className="mt-2 text-lg font-semibold text-white">{formatNumber(summary.peakRentFreeKw, 0)} kW</div>
+          <div className="text-xs uppercase tracking-[0.18em] text-slate-500">
+            Peak Rent-Free kW
+          </div>
+          <div className="mt-2 text-lg font-semibold text-white">
+            {formatNumber(summary.peakRentFreeKw, 0)} kW
+          </div>
         </div>
         <div className="rounded-2xl border border-border bg-slate-950/40 p-4">
           <div className="text-xs uppercase tracking-[0.18em] text-slate-500">Renewal TI / LC</div>
           <div className="mt-2 text-lg font-semibold text-white">
-            {formatCurrencyFromKrwAtRate(summary.totalRenewalCapitalKrw, displayCurrency, fxRateToKrw)}
+            {formatCurrencyFromKrwAtRate(
+              summary.totalRenewalCapitalKrw,
+              displayCurrency,
+              fxRateToKrw
+            )}
           </div>
         </div>
       </div>
@@ -96,13 +114,20 @@ export function LeaseRolloverDrilldown({
           </thead>
           <tbody>
             {filteredRows.map((row) => (
-              <tr key={row.monthIndex} className="rounded-2xl border border-white/10 bg-white/[0.03] text-slate-200">
+              <tr
+                key={row.monthIndex}
+                className="rounded-2xl border border-white/10 bg-white/[0.03] text-slate-200"
+              >
                 <td className="px-3 py-3 font-medium text-white">{row.periodLabel}</td>
                 <td className="px-3 py-3 text-right">{formatNumber(row.downtimeKw, 0)} kW</td>
                 <td className="px-3 py-3 text-right">{formatNumber(row.rentFreeKw, 0)} kW</td>
                 <td className="px-3 py-3 text-right">{formatNumber(row.returningKw, 0)} kW</td>
                 <td className="px-3 py-3 text-right">
-                  {formatCurrencyFromKrwAtRate(row.tenantCapitalCostKrw, displayCurrency, fxRateToKrw)}
+                  {formatCurrencyFromKrwAtRate(
+                    row.tenantCapitalCostKrw,
+                    displayCurrency,
+                    fxRateToKrw
+                  )}
                 </td>
                 <td className="px-3 py-3 text-right">
                   {row.weightedMarkToMarketRatePerKwKrw !== null

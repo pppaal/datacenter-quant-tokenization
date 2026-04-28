@@ -20,7 +20,11 @@ test('createAssetManagementInitiative validates the title and stamps done initia
     },
     {
       portfolioAsset: {
-        findUnique: async () => ({ id: 'portfolio-asset-1', portfolioId: 'portfolio-1', assetId: 'asset-1' })
+        findUnique: async () => ({
+          id: 'portfolio-asset-1',
+          portfolioId: 'portfolio-1',
+          assetId: 'asset-1'
+        })
       },
       assetManagementInitiative: {
         create: async (args: any) => {

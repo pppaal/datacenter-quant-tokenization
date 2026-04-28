@@ -49,8 +49,12 @@ test('document extraction chunks text and stores heuristic plus AI facts', async
   assert.equal(result?.runId, 'run_1');
   assert.ok((result?.chunkCount ?? 0) >= 1);
   assert.ok(createdChunks.length >= 1);
-  assert.ok(createdFacts.some((fact) => fact.factKey === 'contracted_kw' && fact.factValueNumber === 12000));
-  assert.ok(createdFacts.some((fact) => fact.factKey === 'occupancy_pct' && fact.factValueNumber === 78));
+  assert.ok(
+    createdFacts.some((fact) => fact.factKey === 'contracted_kw' && fact.factValueNumber === 12000)
+  );
+  assert.ok(
+    createdFacts.some((fact) => fact.factKey === 'occupancy_pct' && fact.factValueNumber === 78)
+  );
   assert.ok(createdFacts.some((fact) => fact.factKey === 'tenant_status'));
 });
 
@@ -61,6 +65,10 @@ test('heuristic fact inference extracts core underwriting metrics', () => {
 
   assert.ok(facts.some((fact) => fact.factKey === 'cap_rate_pct' && fact.factValueNumber === 6.4));
   assert.ok(facts.some((fact) => fact.factKey === 'occupancy_pct' && fact.factValueNumber === 74));
-  assert.ok(facts.some((fact) => fact.factKey === 'budget_krw' && fact.factValueNumber === 182000000000));
-  assert.ok(facts.some((fact) => fact.factKey === 'contracted_kw' && fact.factValueNumber === 24000));
+  assert.ok(
+    facts.some((fact) => fact.factKey === 'budget_krw' && fact.factValueNumber === 182000000000)
+  );
+  assert.ok(
+    facts.some((fact) => fact.factKey === 'contracted_kw' && fact.factValueNumber === 24000)
+  );
 });

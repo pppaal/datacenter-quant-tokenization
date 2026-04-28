@@ -121,7 +121,9 @@ function parseSeriesValue(value?: string) {
 }
 
 function normalizeMarket(input?: string | null) {
-  return String(input ?? 'KR').trim().toUpperCase();
+  return String(input ?? 'KR')
+    .trim()
+    .toUpperCase();
 }
 
 function isEuroAreaMarket(market: string) {
@@ -194,14 +196,14 @@ function resolveMacroRequest(input: MacroFetchInput) {
 }
 
 function getFallbackMacro(assetCode: string, market: string): MacroData {
-  const seeded =
-    FALLBACK_SOURCE_DATA.macro[assetCode as keyof typeof FALLBACK_SOURCE_DATA.macro];
+  const seeded = FALLBACK_SOURCE_DATA.macro[assetCode as keyof typeof FALLBACK_SOURCE_DATA.macro];
   if (seeded) return seeded;
   if (market === 'US') return DEFAULT_US_FALLBACK_MACRO;
 
   return {
     ...DEFAULT_FALLBACK_SOURCE_DATA.macro,
-    metroRegion: market === 'KR' ? DEFAULT_FALLBACK_SOURCE_DATA.macro.metroRegion : `${market} benchmark`,
+    metroRegion:
+      market === 'KR' ? DEFAULT_FALLBACK_SOURCE_DATA.macro.metroRegion : `${market} benchmark`,
     marketNotes:
       market === 'KR'
         ? DEFAULT_FALLBACK_SOURCE_DATA.macro.marketNotes
@@ -220,7 +222,9 @@ async function fetchKosisLatestValue(
   const apiKey = process.env.KOREA_KOSIS_API_KEY;
   if (!apiKey) return null;
 
-  const url = new URL(process.env.KOREA_KOSIS_BASE_URL || 'https://kosis.kr/openapi/statisticsData.do');
+  const url = new URL(
+    process.env.KOREA_KOSIS_BASE_URL || 'https://kosis.kr/openapi/statisticsData.do'
+  );
   url.searchParams.set('method', 'getList');
   url.searchParams.set('apiKey', apiKey);
   url.searchParams.set('format', 'json');
@@ -265,7 +269,9 @@ async function fetchKosisLatestValueByTable(
   const apiKey = process.env.KOREA_KOSIS_API_KEY;
   if (!apiKey || !input.orgId || !input.tblId || !input.itmId) return null;
 
-  const url = new URL(process.env.KOREA_KOSIS_BASE_URL || 'https://kosis.kr/openapi/statisticsData.do');
+  const url = new URL(
+    process.env.KOREA_KOSIS_BASE_URL || 'https://kosis.kr/openapi/statisticsData.do'
+  );
   url.searchParams.set('method', 'getList');
   url.searchParams.set('apiKey', apiKey);
   url.searchParams.set('format', 'json');
@@ -345,7 +351,9 @@ async function fetchFredLatestObservation(
     { fetcher }
   )) as FredResponse;
 
-  const observation = payload.observations?.find((candidate) => parseSeriesValue(candidate.value) !== null);
+  const observation = payload.observations?.find(
+    (candidate) => parseSeriesValue(candidate.value) !== null
+  );
   const value = parseSeriesValue(observation?.value);
   if (value === null) return null;
 
@@ -442,7 +450,9 @@ async function fetchConfiguredTreasurySeries(
   if (!endpoint || !valueField) return null;
 
   const dateField = process.env[`${prefix}_DATE_FIELD`] || 'record_date';
-  const baseUrl = process.env.US_TREASURY_API_BASE_URL || 'https://api.fiscaldata.treasury.gov/services/api/fiscal_service';
+  const baseUrl =
+    process.env.US_TREASURY_API_BASE_URL ||
+    'https://api.fiscaldata.treasury.gov/services/api/fiscal_service';
   const url = endpoint.startsWith('http')
     ? new URL(endpoint)
     : new URL(endpoint.replace(/^\//, ''), `${baseUrl.replace(/\/$/, '')}/`);
@@ -463,7 +473,9 @@ async function fetchConfiguredTreasurySeries(
   const row = payload.data?.[0];
   if (!row) return null;
   const rawValue = row[valueField];
-  const value = parseSeriesValue(typeof rawValue === 'number' ? String(rawValue) : String(rawValue ?? ''));
+  const value = parseSeriesValue(
+    typeof rawValue === 'number' ? String(rawValue) : String(rawValue ?? '')
+  );
   if (value === null) return null;
 
   return {
@@ -483,7 +495,8 @@ async function fetchEcbLatestObservation(
     unit?: string;
   }
 ) {
-  const baseUrl = process.env.ECB_DATA_API_BASE_URL || 'https://data-api.ecb.europa.eu/service/data';
+  const baseUrl =
+    process.env.ECB_DATA_API_BASE_URL || 'https://data-api.ecb.europa.eu/service/data';
   const url = new URL(`${baseUrl.replace(/\/$/, '')}/${flowRef}/${key}`);
   url.searchParams.set('format', 'csvdata');
   url.searchParams.set('detail', 'dataonly');
@@ -514,7 +527,7 @@ async function fetchEcbLatestObservation(
 
   return {
     value,
-    period: dateIndex >= 0 ? row[dateIndex] ?? null : null,
+    period: dateIndex >= 0 ? (row[dateIndex] ?? null) : null,
     title: options?.title ?? `${flowRef}:${key}`,
     unit: options?.unit ?? ''
   };
@@ -538,16 +551,22 @@ function buildCustomApiMacroData(payload: Partial<MacroData>, fallback: MacroDat
   return {
     metroRegion: String(payload.metroRegion ?? fallback.metroRegion),
     vacancyPct: Number(payload.vacancyPct ?? fallback.vacancyPct),
-    colocationRatePerKwKrw: Number(payload.colocationRatePerKwKrw ?? fallback.colocationRatePerKwKrw),
+    colocationRatePerKwKrw: Number(
+      payload.colocationRatePerKwKrw ?? fallback.colocationRatePerKwKrw
+    ),
     capRatePct: Number(payload.capRatePct ?? fallback.capRatePct),
     debtCostPct: Number(payload.debtCostPct ?? fallback.debtCostPct),
     inflationPct: Number(payload.inflationPct ?? fallback.inflationPct),
-    constructionCostPerMwKrw: Number(payload.constructionCostPerMwKrw ?? fallback.constructionCostPerMwKrw),
+    constructionCostPerMwKrw: Number(
+      payload.constructionCostPerMwKrw ?? fallback.constructionCostPerMwKrw
+    ),
     discountRatePct: Number(payload.discountRatePct ?? fallback.discountRatePct),
     policyRatePct: Number(payload.policyRatePct ?? fallback.policyRatePct),
     creditSpreadBps: Number(payload.creditSpreadBps ?? fallback.creditSpreadBps),
     rentGrowthPct: Number(payload.rentGrowthPct ?? fallback.rentGrowthPct),
-    transactionVolumeIndex: Number(payload.transactionVolumeIndex ?? fallback.transactionVolumeIndex),
+    transactionVolumeIndex: Number(
+      payload.transactionVolumeIndex ?? fallback.transactionVolumeIndex
+    ),
     constructionCostIndex: Number(payload.constructionCostIndex ?? fallback.constructionCostIndex),
     marketNotes: String(payload.marketNotes ?? fallback.marketNotes)
   };
@@ -572,10 +591,14 @@ async function fetchKoreaMacroData(fallback: MacroData, fetcher?: Fetcher) {
       );
 
   const constructionCost = process.env.KOREA_KOSIS_CONSTRUCTION_COST_USER_STATS_ID
-    ? await fetchKosisLatestValue(process.env.KOREA_KOSIS_CONSTRUCTION_COST_USER_STATS_ID, fetcher, {
-        prdSe: process.env.KOREA_KOSIS_CONSTRUCTION_COST_PRD_SE || 'Q',
-        itemId: process.env.KOREA_KOSIS_CONSTRUCTION_COST_ITEM_ID
-      })
+    ? await fetchKosisLatestValue(
+        process.env.KOREA_KOSIS_CONSTRUCTION_COST_USER_STATS_ID,
+        fetcher,
+        {
+          prdSe: process.env.KOREA_KOSIS_CONSTRUCTION_COST_PRD_SE || 'Q',
+          itemId: process.env.KOREA_KOSIS_CONSTRUCTION_COST_ITEM_ID
+        }
+      )
     : await fetchKosisLatestValueByTable(
         {
           orgId: process.env.KOREA_KOSIS_CONSTRUCTION_COST_ORG_ID,
@@ -590,7 +613,10 @@ async function fetchKoreaMacroData(fallback: MacroData, fetcher?: Fetcher) {
   const policyRate = await fetchConfiguredKosisSeries('KOREA_KOSIS_POLICY_RATE', fetcher);
   const creditSpread = await fetchConfiguredKosisSeries('KOREA_KOSIS_CREDIT_SPREAD', fetcher);
   const rentGrowth = await fetchConfiguredKosisSeries('KOREA_KOSIS_RENT_GROWTH', fetcher);
-  const transactionVolume = await fetchConfiguredKosisSeries('KOREA_KOSIS_TRANSACTION_VOLUME', fetcher);
+  const transactionVolume = await fetchConfiguredKosisSeries(
+    'KOREA_KOSIS_TRANSACTION_VOLUME',
+    fetcher
+  );
   const constructionCostIndex = await fetchConfiguredKosisSeries(
     'KOREA_KOSIS_CONSTRUCTION_COST_INDEX',
     fetcher
@@ -626,15 +652,21 @@ async function fetchKoreaMacroData(fallback: MacroData, fetcher?: Fetcher) {
       constructionCostIndex: constructionCostIndex?.value ?? fallback.constructionCostIndex,
       marketNotes: [
         fallback.marketNotes,
-        inflation ? `KOSIS inflation series: ${inflation.title} (${inflation.period || 'latest'})` : null,
+        inflation
+          ? `KOSIS inflation series: ${inflation.title} (${inflation.period || 'latest'})`
+          : null,
         constructionCost
           ? `KOSIS construction-cost series: ${constructionCost.title} (${constructionCost.period || 'latest'})`
           : null,
-        policyRate ? `KOSIS policy-rate series: ${policyRate.title} (${policyRate.period || 'latest'})` : null,
+        policyRate
+          ? `KOSIS policy-rate series: ${policyRate.title} (${policyRate.period || 'latest'})`
+          : null,
         creditSpread
           ? `KOSIS credit-spread series: ${creditSpread.title} (${creditSpread.period || 'latest'})`
           : null,
-        rentGrowth ? `KOSIS rent-growth series: ${rentGrowth.title} (${rentGrowth.period || 'latest'})` : null,
+        rentGrowth
+          ? `KOSIS rent-growth series: ${rentGrowth.title} (${rentGrowth.period || 'latest'})`
+          : null,
         transactionVolume
           ? `KOSIS transaction-volume series: ${transactionVolume.title} (${transactionVolume.period || 'latest'})`
           : null,
@@ -669,10 +701,14 @@ async function fetchUsMacroData(fallback: MacroData, fetcher?: Fetcher) {
     title: 'US Transaction Volume',
     unit: 'idx'
   });
-  const constructionCostIndex = await fetchConfiguredFredSeries('US_FRED_CONSTRUCTION_COST_INDEX', fetcher, {
-    title: 'US Construction Cost Index',
-    unit: 'idx'
-  });
+  const constructionCostIndex = await fetchConfiguredFredSeries(
+    'US_FRED_CONSTRUCTION_COST_INDEX',
+    fetcher,
+    {
+      title: 'US Construction Cost Index',
+      unit: 'idx'
+    }
+  );
   const debtCost = await fetchConfiguredFredSeries('US_FRED_DEBT_COST', fetcher, {
     title: 'US Debt Cost',
     unit: '%'
@@ -689,10 +725,14 @@ async function fetchUsMacroData(fallback: MacroData, fetcher?: Fetcher) {
     title: 'US Vacancy',
     unit: '%'
   });
-  const constructionCostPerMw = await fetchConfiguredFredSeries('US_FRED_CONSTRUCTION_COST_PER_MW', fetcher, {
-    title: 'US Replacement Cost per MW',
-    unit: 'krw'
-  });
+  const constructionCostPerMw = await fetchConfiguredFredSeries(
+    'US_FRED_CONSTRUCTION_COST_PER_MW',
+    fetcher,
+    {
+      title: 'US Replacement Cost per MW',
+      unit: 'krw'
+    }
+  );
   const colocationRate = await fetchConfiguredFredSeries('US_FRED_COLOCATION_RATE', fetcher, {
     title: 'US Colocation Rate',
     unit: 'krw'
@@ -713,18 +753,26 @@ async function fetchUsMacroData(fallback: MacroData, fetcher?: Fetcher) {
     title: 'US BLS Rent Growth',
     unit: '%'
   });
-  const treasuryPolicyRate = await fetchConfiguredTreasurySeries('US_TREASURY_POLICY_PROXY', fetcher, {
-    title: 'US Treasury Policy Proxy',
-    unit: '%'
-  });
+  const treasuryPolicyRate = await fetchConfiguredTreasurySeries(
+    'US_TREASURY_POLICY_PROXY',
+    fetcher,
+    {
+      title: 'US Treasury Policy Proxy',
+      unit: '%'
+    }
+  );
   const treasuryDebtCost = await fetchConfiguredTreasurySeries('US_TREASURY_DEBT_COST', fetcher, {
     title: 'US Treasury Debt Cost Proxy',
     unit: '%'
   });
-  const treasuryDiscountRate = await fetchConfiguredTreasurySeries('US_TREASURY_DISCOUNT_RATE', fetcher, {
-    title: 'US Treasury Discount Rate Proxy',
-    unit: '%'
-  });
+  const treasuryDiscountRate = await fetchConfiguredTreasurySeries(
+    'US_TREASURY_DISCOUNT_RATE',
+    fetcher,
+    {
+      title: 'US Treasury Discount Rate Proxy',
+      unit: '%'
+    }
+  );
 
   if (
     !inflation &&
@@ -751,11 +799,11 @@ async function fetchUsMacroData(fallback: MacroData, fetcher?: Fetcher) {
 
   const usedSupplementalPublicSources = Boolean(
     blsInflation ||
-      blsConstructionCostIndex ||
-      blsRentGrowth ||
-      treasuryPolicyRate ||
-      treasuryDebtCost ||
-      treasuryDiscountRate
+    blsConstructionCostIndex ||
+    blsRentGrowth ||
+    treasuryPolicyRate ||
+    treasuryDebtCost ||
+    treasuryDiscountRate
   );
 
   return {
@@ -768,26 +816,39 @@ async function fetchUsMacroData(fallback: MacroData, fetcher?: Fetcher) {
       debtCostPct: debtCost?.value ?? treasuryDebtCost?.value ?? fallback.debtCostPct,
       inflationPct: inflation?.value ?? blsInflation?.value ?? fallback.inflationPct,
       constructionCostPerMwKrw: constructionCostPerMw?.value ?? fallback.constructionCostPerMwKrw,
-      discountRatePct: discountRate?.value ?? treasuryDiscountRate?.value ?? fallback.discountRatePct,
+      discountRatePct:
+        discountRate?.value ?? treasuryDiscountRate?.value ?? fallback.discountRatePct,
       policyRatePct: policyRate?.value ?? treasuryPolicyRate?.value ?? fallback.policyRatePct,
       creditSpreadBps: creditSpread?.value ?? fallback.creditSpreadBps,
       rentGrowthPct: rentGrowth?.value ?? blsRentGrowth?.value ?? fallback.rentGrowthPct,
       transactionVolumeIndex: transactionVolume?.value ?? fallback.transactionVolumeIndex,
       constructionCostIndex:
-        constructionCostIndex?.value ?? blsConstructionCostIndex?.value ?? fallback.constructionCostIndex,
+        constructionCostIndex?.value ??
+        blsConstructionCostIndex?.value ??
+        fallback.constructionCostIndex,
       marketNotes: [
         fallback.marketNotes,
-        inflation ? `FRED inflation series: ${inflation.title} (${inflation.period || 'latest'})` : null,
-        policyRate ? `FRED policy-rate series: ${policyRate.title} (${policyRate.period || 'latest'})` : null,
-        creditSpread ? `FRED credit-spread series: ${creditSpread.title} (${creditSpread.period || 'latest'})` : null,
-        rentGrowth ? `FRED rent-growth series: ${rentGrowth.title} (${rentGrowth.period || 'latest'})` : null,
+        inflation
+          ? `FRED inflation series: ${inflation.title} (${inflation.period || 'latest'})`
+          : null,
+        policyRate
+          ? `FRED policy-rate series: ${policyRate.title} (${policyRate.period || 'latest'})`
+          : null,
+        creditSpread
+          ? `FRED credit-spread series: ${creditSpread.title} (${creditSpread.period || 'latest'})`
+          : null,
+        rentGrowth
+          ? `FRED rent-growth series: ${rentGrowth.title} (${rentGrowth.period || 'latest'})`
+          : null,
         transactionVolume
           ? `FRED transaction-volume series: ${transactionVolume.title} (${transactionVolume.period || 'latest'})`
           : null,
         constructionCostIndex
           ? `FRED construction-cost-index series: ${constructionCostIndex.title} (${constructionCostIndex.period || 'latest'})`
           : null,
-        debtCost ? `FRED debt-cost series: ${debtCost.title} (${debtCost.period || 'latest'})` : null,
+        debtCost
+          ? `FRED debt-cost series: ${debtCost.title} (${debtCost.period || 'latest'})`
+          : null,
         discountRate
           ? `FRED discount-rate series: ${discountRate.title} (${discountRate.period || 'latest'})`
           : null,
@@ -839,10 +900,14 @@ async function fetchEuroMacroData(fallback: MacroData, fetcher?: Fetcher) {
     title: 'Euro Area Transaction Volume',
     unit: 'idx'
   });
-  const constructionCostIndex = await fetchConfiguredEcbSeries('ECB_CONSTRUCTION_COST_INDEX', fetcher, {
-    title: 'Euro Area Construction Cost Index',
-    unit: 'idx'
-  });
+  const constructionCostIndex = await fetchConfiguredEcbSeries(
+    'ECB_CONSTRUCTION_COST_INDEX',
+    fetcher,
+    {
+      title: 'Euro Area Construction Cost Index',
+      unit: 'idx'
+    }
+  );
 
   if (
     !inflation &&
@@ -873,12 +938,18 @@ async function fetchEuroMacroData(fallback: MacroData, fetcher?: Fetcher) {
       constructionCostIndex: constructionCostIndex?.value ?? fallback.constructionCostIndex,
       marketNotes: [
         fallback.marketNotes,
-        inflation ? `ECB inflation series: ${inflation.title} (${inflation.period || 'latest'})` : null,
-        policyRate ? `ECB policy-rate series: ${policyRate.title} (${policyRate.period || 'latest'})` : null,
+        inflation
+          ? `ECB inflation series: ${inflation.title} (${inflation.period || 'latest'})`
+          : null,
+        policyRate
+          ? `ECB policy-rate series: ${policyRate.title} (${policyRate.period || 'latest'})`
+          : null,
         creditSpread
           ? `ECB credit-spread series: ${creditSpread.title} (${creditSpread.period || 'latest'})`
           : null,
-        rentGrowth ? `ECB rent-growth series: ${rentGrowth.title} (${rentGrowth.period || 'latest'})` : null,
+        rentGrowth
+          ? `ECB rent-growth series: ${rentGrowth.title} (${rentGrowth.period || 'latest'})`
+          : null,
         transactionVolume
           ? `ECB transaction-volume series: ${transactionVolume.title} (${transactionVolume.period || 'latest'})`
           : null,
@@ -897,7 +968,8 @@ export function createMacroAdapter(store: SourceCacheStore, fetcher?: Fetcher) {
     async fetch(input: MacroFetchInput): Promise<SourceEnvelope<MacroData>> {
       const request = resolveMacroRequest(input);
       const customMacroApiUrl = process.env.GLOBAL_MACRO_API_URL || process.env.KOREA_MACRO_API_URL;
-      const customMacroApiKey = process.env.GLOBAL_MACRO_API_KEY || process.env.KOREA_MACRO_API_KEY || '';
+      const customMacroApiKey =
+        process.env.GLOBAL_MACRO_API_KEY || process.env.KOREA_MACRO_API_KEY || '';
       const fallback = getFallbackMacro(request.assetCode, request.market);
       const usHasSupplementalPublicStack =
         hasConfiguredSeries('US_BLS_INFLATION') ||
@@ -914,11 +986,15 @@ export function createMacroAdapter(store: SourceCacheStore, fetcher?: Fetcher) {
             : 'us-fred'
           : isEuroAreaMarket(request.market)
             ? 'ecb-data-api'
-          : process.env.KOREA_KOSIS_API_KEY
-            ? 'kosis-statistics'
-            : 'korea-macro-rates';
+            : process.env.KOREA_KOSIS_API_KEY
+              ? 'kosis-statistics'
+              : 'korea-macro-rates';
       const now = new Date();
-      const cached = await store.getFreshCache<MacroData>(defaultSourceSystem, request.assetCode, now);
+      const cached = await store.getFreshCache<MacroData>(
+        defaultSourceSystem,
+        request.assetCode,
+        now
+      );
       if (cached) {
         return {
           sourceSystem: defaultSourceSystem,

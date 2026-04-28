@@ -15,15 +15,22 @@ export default async function InvestorsPage() {
           Investor relationships, commitments, and reporting history.
         </h1>
         <p className="mt-4 max-w-4xl text-base leading-8 text-slate-200">
-          This page is the minimal institutional investor surface: commitments, recent reporting, and DDQ readiness.
+          This page is the minimal institutional investor surface: commitments, recent reporting,
+          and DDQ readiness.
         </p>
       </section>
 
       <div className="grid gap-5">
         {investors.map((investor) => {
-          const commitmentKrw = investor.commitments.reduce((total, item) => total + item.commitmentKrw, 0);
+          const commitmentKrw = investor.commitments.reduce(
+            (total, item) => total + item.commitmentKrw,
+            0
+          );
           const calledKrw = investor.commitments.reduce((total, item) => total + item.calledKrw, 0);
-          const distributedKrw = investor.commitments.reduce((total, item) => total + item.distributedKrw, 0);
+          const distributedKrw = investor.commitments.reduce(
+            (total, item) => total + item.distributedKrw,
+            0
+          );
 
           return (
             <Card key={investor.id}>
@@ -31,7 +38,8 @@ export default async function InvestorsPage() {
                 <div>
                   <div className="text-xl font-semibold text-white">{investor.name}</div>
                   <div className="mt-2 text-sm text-slate-400">
-                    {investor.investorType ?? 'Institutional investor'} / {investor.domicile ?? 'KR'}
+                    {investor.investorType ?? 'Institutional investor'} /{' '}
+                    {investor.domicile ?? 'KR'}
                   </div>
                 </div>
                 <div className="grid gap-3 md:grid-cols-3">
@@ -50,7 +58,8 @@ export default async function InvestorsPage() {
                 </div>
               </div>
               <div className="mt-4 text-sm text-slate-400">
-                {formatNumber(investor.investorReports.length, 0)} recent reports / {formatNumber(investor.ddqResponses.length, 0)} DDQ responses
+                {formatNumber(investor.investorReports.length, 0)} recent reports /{' '}
+                {formatNumber(investor.ddqResponses.length, 0)} DDQ responses
               </div>
             </Card>
           );

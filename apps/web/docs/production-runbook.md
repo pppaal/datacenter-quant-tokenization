@@ -18,15 +18,15 @@ Run this locally or in CI **with the production env loaded** before promoting
 a deployment to production traffic. The script hard-fails when any of the
 following is missing:
 
-| Class            | Required                                                   |
-| ---------------- | ---------------------------------------------------------- |
-| Database         | `DATABASE_URL`                                             |
-| App URL          | `APP_BASE_URL`                                             |
-| Sessions         | `ADMIN_SESSION_SECRET` (>= 32 chars, not the dev placeholder) |
-| Cron auth        | `OPS_CRON_TOKEN` (>= 24 chars)                             |
-| Document storage | `DOCUMENT_STORAGE_BUCKET` (S3-compatible)                  |
+| Class            | Required                                                                                              |
+| ---------------- | ----------------------------------------------------------------------------------------------------- |
+| Database         | `DATABASE_URL`                                                                                        |
+| App URL          | `APP_BASE_URL`                                                                                        |
+| Sessions         | `ADMIN_SESSION_SECRET` (>= 32 chars, not the dev placeholder)                                         |
+| Cron auth        | `OPS_CRON_TOKEN` (>= 24 chars)                                                                        |
+| Document storage | `DOCUMENT_STORAGE_BUCKET` (S3-compatible)                                                             |
 | Blockchain       | `BLOCKCHAIN_RPC_URL` + `BLOCKCHAIN_PRIVATE_KEY` + `BLOCKCHAIN_REGISTRY_ADDRESS` (mock mode forbidden) |
-| Escape hatches   | `PLAYWRIGHT_ALLOW_HOSTED_MUTATIONS=false`, `ADMIN_ALLOW_UNBOUND_BROWSER_SESSION` unset |
+| Escape hatches   | `PLAYWRIGHT_ALLOW_HOSTED_MUTATIONS=false`, `ADMIN_ALLOW_UNBOUND_BROWSER_SESSION` unset                |
 
 Warnings (not failures) are emitted for missing OIDC, missing IP allowlists,
 missing alert / error webhooks, and basic-auth fallback usage.
@@ -38,15 +38,15 @@ missing alert / error webhooks, and basic-auth fallback usage.
 Secrets that must be rotated on a fixed schedule (90 days unless otherwise
 noted) and on any suspected compromise:
 
-| Secret                                | Rotate every | Effect of rotation                               |
-| ------------------------------------- | ------------ | ------------------------------------------------ |
-| `ADMIN_SESSION_SECRET`                | 90d          | Invalidates every active browser admin session.   |
-| `OPS_CRON_TOKEN`                      | 90d          | Cron callers must update their bearer immediately. |
-| `ADMIN_SCIM_TOKEN`                    | 90d          | IdP must re-issue the SCIM bearer.                |
-| `BLOCKCHAIN_PRIVATE_KEY`              | 180d / on incident | Requires updating the registrar role onchain. |
-| `DOCUMENT_STORAGE_SECRET_ACCESS_KEY`  | 90d          | Switch to fresh IAM access key, then disable old. |
-| `*_API_KEY` (KOSIS, FRED, BLS, etc.)  | per provider | Refresh in vendor portal, rotate in Vercel.       |
-| `OPENAI_API_KEY` / `ANTHROPIC_API_KEY`| 90d          | Use scoped project keys; revoke immediately on incident. |
+| Secret                                 | Rotate every       | Effect of rotation                                       |
+| -------------------------------------- | ------------------ | -------------------------------------------------------- |
+| `ADMIN_SESSION_SECRET`                 | 90d                | Invalidates every active browser admin session.          |
+| `OPS_CRON_TOKEN`                       | 90d                | Cron callers must update their bearer immediately.       |
+| `ADMIN_SCIM_TOKEN`                     | 90d                | IdP must re-issue the SCIM bearer.                       |
+| `BLOCKCHAIN_PRIVATE_KEY`               | 180d / on incident | Requires updating the registrar role onchain.            |
+| `DOCUMENT_STORAGE_SECRET_ACCESS_KEY`   | 90d                | Switch to fresh IAM access key, then disable old.        |
+| `*_API_KEY` (KOSIS, FRED, BLS, etc.)   | per provider       | Refresh in vendor portal, rotate in Vercel.              |
+| `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` | 90d                | Use scoped project keys; revoke immediately on incident. |
 
 Rotation procedure:
 
@@ -91,11 +91,11 @@ Document storage (`DOCUMENT_STORAGE_BUCKET`) must have:
 
 ## 4. Incident response
 
-| Severity | Trigger                                               | First response                                          |
-| -------- | ----------------------------------------------------- | ------------------------------------------------------- |
-| SEV-1    | Production outage, data exfiltration, key compromise   | Page on-call. Rotate suspected secrets immediately. Open an incident channel. |
-| SEV-2    | Scheduled cron failing > 4 hours, partial DB outage    | Investigate via `/admin/security` ops alert log; replay or escalate. |
-| SEV-3    | Single-asset workflow regression, non-blocking bug     | File ticket; fix in next deploy.                        |
+| Severity | Trigger                                              | First response                                                                |
+| -------- | ---------------------------------------------------- | ----------------------------------------------------------------------------- |
+| SEV-1    | Production outage, data exfiltration, key compromise | Page on-call. Rotate suspected secrets immediately. Open an incident channel. |
+| SEV-2    | Scheduled cron failing > 4 hours, partial DB outage  | Investigate via `/admin/security` ops alert log; replay or escalate.          |
+| SEV-3    | Single-asset workflow regression, non-blocking bug   | File ticket; fix in next deploy.                                              |
 
 For SEV-1 secret compromise:
 
@@ -170,15 +170,15 @@ and operator logic stay off chain. Before going live:
 Measured 2026-04-28 against `npm run build`. First Load JS includes the
 shared framework + React baseline (~99 KB) which every page inherits.
 
-| Route                            | Page-specific | First Load |
-| -------------------------------- | ------------- | ---------- |
-| /admin                           | 164 B         | 106 KB     |
-| /admin/assets/[id]               | **18 KB**     | **183 KB** |
-| /admin/deals                     | 5.6 KB        | 166 KB     |
-| /admin/deals/[id]                | **14.8 KB**   | **175 KB** |
-| /admin/assets/explorer           | 3.4 KB        | 142 KB     |
-| /admin/macro-profiles            | 3.7 KB        | 139 KB     |
-| All other admin pages            | < 3 KB        | 100–115 KB |
+| Route                  | Page-specific | First Load |
+| ---------------------- | ------------- | ---------- |
+| /admin                 | 164 B         | 106 KB     |
+| /admin/assets/[id]     | **18 KB**     | **183 KB** |
+| /admin/deals           | 5.6 KB        | 166 KB     |
+| /admin/deals/[id]      | **14.8 KB**   | **175 KB** |
+| /admin/assets/explorer | 3.4 KB        | 142 KB     |
+| /admin/macro-profiles  | 3.7 KB        | 139 KB     |
+| All other admin pages  | < 3 KB        | 100–115 KB |
 
 `/admin/assets/[id]` and `/admin/deals/[id]` are the heaviest because
 they eagerly mount 8+ client-side forms (`AssetIntakeForm`,

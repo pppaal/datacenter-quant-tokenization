@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createAdminSessionToken, getAdminSessionCookieOptions, parseAdminSessionToken } from '@/lib/security/admin-session';
+import {
+  createAdminSessionToken,
+  getAdminSessionCookieOptions,
+  parseAdminSessionToken
+} from '@/lib/security/admin-session';
 
 test('admin session token round-trips actor identity and role', async () => {
   const env = {
@@ -33,7 +37,10 @@ test('admin session token round-trips actor identity and role', async () => {
     sessionId: 'session_analyst',
     sessionVersion: 3
   });
-  assert.equal(await parseAdminSessionToken(token, env, new Date('2026-04-05T15:00:01.000Z')), null);
+  assert.equal(
+    await parseAdminSessionToken(token, env, new Date('2026-04-05T15:00:01.000Z')),
+    null
+  );
 });
 
 test('admin session token rejects invalid signature', async () => {
@@ -58,7 +65,9 @@ test('admin session token rejects invalid signature', async () => {
 });
 
 test('admin session cookie options stay secure by environment', () => {
-  const localOptions = getAdminSessionCookieOptions({ NODE_ENV: 'development' } as NodeJS.ProcessEnv);
+  const localOptions = getAdminSessionCookieOptions({
+    NODE_ENV: 'development'
+  } as NodeJS.ProcessEnv);
   const prodOptions = getAdminSessionCookieOptions({ NODE_ENV: 'production' } as NodeJS.ProcessEnv);
 
   assert.equal(localOptions.httpOnly, true);

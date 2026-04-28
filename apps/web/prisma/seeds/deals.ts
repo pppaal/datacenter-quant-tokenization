@@ -53,7 +53,8 @@ export async function seedDealExecution(prisma: PrismaClient): Promise<void> {
         country: 'KR',
         assetClass: AssetClass.OFFICE,
         strategy: 'Core-plus recapitalization',
-        headline: 'Direct owner recap with lender engagement already in motion and a live exclusivity window.',
+        headline:
+          'Direct owner recap with lender engagement already in motion and a live exclusivity window.',
         nextAction: 'Lock the final IC packet and clear lender comments on refinance covenants.',
         nextActionAt: new Date('2026-04-10T00:00:00.000Z'),
         targetCloseDate: new Date('2026-05-30T00:00:00.000Z'),
@@ -61,7 +62,8 @@ export async function seedDealExecution(prisma: PrismaClient): Promise<void> {
         bidGuidanceKrw: 312000000000,
         purchasePriceKrw: 312000000000,
         originationSource: DealOriginationSource.DIRECT_OWNER,
-        originSummary: 'Owner-led recapitalization brought directly through an existing sponsor relationship.',
+        originSummary:
+          'Owner-led recapitalization brought directly through an existing sponsor relationship.',
         statusLabel: 'ACTIVE',
         dealLead: 'analyst@nexusseoul.local',
         assetId: officeAsset.id,
@@ -225,7 +227,8 @@ export async function seedDealExecution(prisma: PrismaClient): Promise<void> {
               title: 'Owner granted live exclusivity',
               effectiveAt: new Date('2026-04-04T00:00:00.000Z'),
               expiresAt: new Date('2026-04-25T00:00:00.000Z'),
-              summary: 'Direct owner gave exclusivity while final packet and lender comments are cleared.'
+              summary:
+                'Direct owner gave exclusivity while final packet and lender comments are cleared.'
             }
           ]
         },
@@ -233,7 +236,8 @@ export async function seedDealExecution(prisma: PrismaClient): Promise<void> {
           create: [
             {
               title: 'Refinance covenant headroom',
-              detail: 'Final DSCR headroom and capex reserve sizing still need lender confirmation.',
+              detail:
+                'Final DSCR headroom and capex reserve sizing still need lender confirmation.',
               severity: RiskSeverity.MEDIUM,
               statusLabel: 'OPEN'
             }
@@ -265,7 +269,8 @@ export async function seedDealExecution(prisma: PrismaClient): Promise<void> {
         country: 'KR',
         assetClass: AssetClass.DATA_CENTER,
         strategy: 'Digital infrastructure expansion',
-        headline: 'Lender-channel process with active diligence but weaker process protection than the office recap.',
+        headline:
+          'Lender-channel process with active diligence but weaker process protection than the office recap.',
         nextAction: 'Rebuild exclusivity coverage and clear remaining power queue diligence.',
         nextActionAt: new Date('2026-04-11T00:00:00.000Z'),
         targetCloseDate: new Date('2026-06-20T00:00:00.000Z'),
@@ -273,7 +278,8 @@ export async function seedDealExecution(prisma: PrismaClient): Promise<void> {
         bidGuidanceKrw: 254000000000,
         purchasePriceKrw: 254000000000,
         originationSource: DealOriginationSource.LENDER_CHANNEL,
-        originSummary: 'Process was surfaced through a refinancing lender seeking recapitalization certainty.',
+        originSummary:
+          'Process was surfaced through a refinancing lender seeking recapitalization certainty.',
         statusLabel: 'ACTIVE',
         dealLead: 'analyst@nexusseoul.local',
         assetId: dataCenterAsset.id,
@@ -303,7 +309,8 @@ export async function seedDealExecution(prisma: PrismaClient): Promise<void> {
           create: [
             {
               title: 'Power queue diligence refresh',
-              description: 'Update utility queue memo and operator commentary before the next DD call.',
+              description:
+                'Update utility queue memo and operator commentary before the next DD call.',
               status: TaskStatus.BLOCKED,
               priority: TaskPriority.URGENT,
               ownerLabel: 'infrastructure underwriting',
@@ -311,7 +318,8 @@ export async function seedDealExecution(prisma: PrismaClient): Promise<void> {
             },
             {
               title: 'Rebuild exclusivity path',
-              description: 'Secure a fresh exclusivity window before final diligence spend accelerates.',
+              description:
+                'Secure a fresh exclusivity window before final diligence spend accelerates.',
               status: TaskStatus.OPEN,
               priority: TaskPriority.HIGH,
               ownerLabel: 'deal lead',
@@ -424,7 +432,8 @@ export async function seedDealExecution(prisma: PrismaClient): Promise<void> {
           create: [
             {
               title: 'No live exclusivity',
-              detail: 'Process remains exposed to competitive drift while power diligence stays open.',
+              detail:
+                'Process remains exposed to competitive drift while power diligence stays open.',
               severity: RiskSeverity.HIGH,
               statusLabel: 'OPEN'
             }

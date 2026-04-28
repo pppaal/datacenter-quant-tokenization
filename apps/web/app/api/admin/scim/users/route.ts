@@ -41,7 +41,10 @@ export async function POST(request: Request) {
 
   const payload = (await request.json().catch(() => null)) as ProvisionedUserPayload | null;
   if (!payload?.externalId?.trim() || !payload.email?.trim() || !payload.name?.trim()) {
-    return NextResponse.json({ error: 'externalId, email, and name are required.' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'externalId, email, and name are required.' },
+      { status: 400 }
+    );
   }
 
   const user = await upsertProvisionedAdminUser(

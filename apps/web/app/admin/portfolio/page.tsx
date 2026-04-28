@@ -6,7 +6,10 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { PortfolioKpiChart } from '@/components/admin/portfolio-kpi-chart';
 import { PortfolioRiskHeatmap } from '@/components/admin/portfolio-risk-heatmap';
-import { filterRowsByGrantedScopeIds, listGrantedScopeIdsForUser } from '@/lib/security/admin-access';
+import {
+  filterRowsByGrantedScopeIds,
+  listGrantedScopeIdsForUser
+} from '@/lib/security/admin-access';
 import { prisma } from '@/lib/db/prisma';
 import { resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
 import {
@@ -26,12 +29,17 @@ export default async function PortfolioPage() {
     requireActiveSeat: true
   });
   const portfolios = await listPortfolios();
-  const grantedPortfolioIds = await listGrantedScopeIdsForUser(actor?.userId, AdminAccessScopeType.PORTFOLIO, prisma);
+  const grantedPortfolioIds = await listGrantedScopeIdsForUser(
+    actor?.userId,
+    AdminAccessScopeType.PORTFOLIO,
+    prisma
+  );
   const scopedPortfolios = filterRowsByGrantedScopeIds(portfolios, grantedPortfolioIds);
-  const dashboards: Array<{ portfolio: PortfolioRecord; dashboard: PortfolioDashboard }> = scopedPortfolios.map((portfolio) => ({
-    portfolio,
-    dashboard: buildPortfolioDashboard(portfolio)
-  }));
+  const dashboards: Array<{ portfolio: PortfolioRecord; dashboard: PortfolioDashboard }> =
+    scopedPortfolios.map((portfolio) => ({
+      portfolio,
+      dashboard: buildPortfolioDashboard(portfolio)
+    }));
 
   const dashboardData = await buildPortfolioDashboardData();
 
@@ -39,8 +47,14 @@ export default async function PortfolioPage() {
     (total, entry) => total + (entry.dashboard.summary.grossHoldValueKrw ?? 0),
     0
   );
-  const totalAssets = dashboards.reduce((total, entry) => total + entry.dashboard.summary.assetCount, 0);
-  const totalWatchlist = dashboards.reduce((total, entry) => total + entry.dashboard.summary.watchlistCount, 0);
+  const totalAssets = dashboards.reduce(
+    (total, entry) => total + entry.dashboard.summary.assetCount,
+    0
+  );
+  const totalWatchlist = dashboards.reduce(
+    (total, entry) => total + entry.dashboard.summary.watchlistCount,
+    0
+  );
 
   return (
     <div className="space-y-8">
@@ -50,26 +64,34 @@ export default async function PortfolioPage() {
           Hold performance, covenant watchlists, and exit cases in one operating layer.
         </h1>
         <p className="mt-4 max-w-4xl text-base leading-8 text-slate-200">
-          Portfolio OS extends the current research, underwriting, and deal execution stack into held-asset operations
-          for a Korean real-estate investment firm.
+          Portfolio OS extends the current research, underwriting, and deal execution stack into
+          held-asset operations for a Korean real-estate investment firm.
         </p>
         <div className="mt-6 grid gap-4 md:grid-cols-3">
           <div className="metric-card">
             <div className="fine-print">Hold Value</div>
-            <div className="mt-3 text-4xl font-semibold text-white">{formatCurrency(totalHoldValue)}</div>
+            <div className="mt-3 text-4xl font-semibold text-white">
+              {formatCurrency(totalHoldValue)}
+            </div>
           </div>
           <div className="metric-card">
             <div className="fine-print">Held Assets</div>
-            <div className="mt-3 text-4xl font-semibold text-white">{formatNumber(totalAssets, 0)}</div>
+            <div className="mt-3 text-4xl font-semibold text-white">
+              {formatNumber(totalAssets, 0)}
+            </div>
           </div>
           <div className="metric-card">
             <div className="fine-print">Watchlist</div>
-            <div className="mt-3 text-4xl font-semibold text-white">{formatNumber(totalWatchlist, 0)}</div>
+            <div className="mt-3 text-4xl font-semibold text-white">
+              {formatNumber(totalWatchlist, 0)}
+            </div>
           </div>
         </div>
       </section>
 
-      {(dashboardData.occupancyKpis.length > 0 || dashboardData.noiYieldKpis.length > 0 || dashboardData.riskAssets.length > 0) && (
+      {(dashboardData.occupancyKpis.length > 0 ||
+        dashboardData.noiYieldKpis.length > 0 ||
+        dashboardData.riskAssets.length > 0) && (
         <section className="space-y-5">
           <div className="section-title">Portfolio Analytics</div>
           <div className="grid gap-5 lg:grid-cols-2">
@@ -101,29 +123,41 @@ export default async function PortfolioPage() {
               <div className="grid gap-4 md:grid-cols-3">
                 <div className="metric-card">
                   <div className="fine-print">Healthy</div>
-                  <div className="mt-3 text-4xl font-semibold text-emerald-400">{dashboardData.summary.riskDistribution.good}</div>
+                  <div className="mt-3 text-4xl font-semibold text-emerald-400">
+                    {dashboardData.summary.riskDistribution.good}
+                  </div>
                 </div>
                 <div className="metric-card">
                   <div className="fine-print">Watch</div>
-                  <div className="mt-3 text-4xl font-semibold text-amber-400">{dashboardData.summary.riskDistribution.warn}</div>
+                  <div className="mt-3 text-4xl font-semibold text-amber-400">
+                    {dashboardData.summary.riskDistribution.warn}
+                  </div>
                 </div>
                 <div className="metric-card">
                   <div className="fine-print">At Risk</div>
-                  <div className="mt-3 text-4xl font-semibold text-rose-400">{dashboardData.summary.riskDistribution.danger}</div>
+                  <div className="mt-3 text-4xl font-semibold text-rose-400">
+                    {dashboardData.summary.riskDistribution.danger}
+                  </div>
                 </div>
               </div>
               <div className="space-y-2 border-t border-white/10 pt-4">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-slate-400">Avg Occupancy</span>
-                  <span className="text-white">{formatPercent(dashboardData.summary.avgOccupancyPct)}</span>
+                  <span className="text-white">
+                    {formatPercent(dashboardData.summary.avgOccupancyPct)}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-slate-400">Avg NOI Yield</span>
-                  <span className="text-white">{dashboardData.summary.avgNoiYieldPct.toFixed(1)}%</span>
+                  <span className="text-white">
+                    {dashboardData.summary.avgNoiYieldPct.toFixed(1)}%
+                  </span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-slate-400">Total AUM</span>
-                  <span className="text-white">{formatCurrency(dashboardData.summary.totalAumKrw)}</span>
+                  <span className="text-white">
+                    {formatCurrency(dashboardData.summary.totalAumKrw)}
+                  </span>
                 </div>
               </div>
             </Card>
@@ -145,24 +179,34 @@ export default async function PortfolioPage() {
                   <p className="mt-3 text-sm leading-7 text-slate-300">
                     {dashboard.operatorSummary}
                   </p>
-                  <p className="mt-3 text-sm leading-7 text-slate-500">{dashboard.researchSummary}</p>
+                  <p className="mt-3 text-sm leading-7 text-slate-500">
+                    {dashboard.researchSummary}
+                  </p>
                 </div>
                 <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                   <div>
                     <div className="fine-print">Asset Count</div>
-                    <div className="mt-2 text-sm text-white">{formatNumber(dashboard.summary.assetCount, 0)}</div>
+                    <div className="mt-2 text-sm text-white">
+                      {formatNumber(dashboard.summary.assetCount, 0)}
+                    </div>
                   </div>
                   <div>
                     <div className="fine-print">Average Occupancy</div>
-                    <div className="mt-2 text-sm text-white">{formatPercent(dashboard.summary.averageOccupancyPct)}</div>
+                    <div className="mt-2 text-sm text-white">
+                      {formatPercent(dashboard.summary.averageOccupancyPct)}
+                    </div>
                   </div>
                   <div>
                     <div className="fine-print">Annualized NOI</div>
-                    <div className="mt-2 text-sm text-white">{formatCurrency(dashboard.summary.annualizedNoiKrw)}</div>
+                    <div className="mt-2 text-sm text-white">
+                      {formatCurrency(dashboard.summary.annualizedNoiKrw)}
+                    </div>
                   </div>
                   <div>
                     <div className="fine-print">Watchlist</div>
-                    <div className="mt-2 text-sm text-white">{formatNumber(dashboard.summary.watchlistCount, 0)}</div>
+                    <div className="mt-2 text-sm text-white">
+                      {formatNumber(dashboard.summary.watchlistCount, 0)}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -173,10 +217,12 @@ export default async function PortfolioPage() {
         {dashboards.length === 0 ? (
           <Card>
             <div className="eyebrow">No Portfolio Yet</div>
-            <h2 className="mt-3 text-2xl font-semibold text-white">Seed or load a held portfolio</h2>
+            <h2 className="mt-3 text-2xl font-semibold text-white">
+              Seed or load a held portfolio
+            </h2>
             <p className="mt-3 text-sm leading-7 text-slate-400">
-              Portfolio OS becomes useful when held assets carry monthly KPI history, budget lines, covenant tests, and
-              exit cases.
+              Portfolio OS becomes useful when held assets carry monthly KPI history, budget lines,
+              covenant tests, and exit cases.
             </p>
           </Card>
         ) : null}

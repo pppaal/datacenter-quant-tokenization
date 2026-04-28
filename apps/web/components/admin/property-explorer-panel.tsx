@@ -26,7 +26,10 @@ export function PropertyExplorerPanel({ data }: Props) {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const selected = useMemo(
-    () => data.candidates.find((candidate) => candidate.id === selectedId) ?? data.candidates[0] ?? null,
+    () =>
+      data.candidates.find((candidate) => candidate.id === selectedId) ??
+      data.candidates[0] ??
+      null,
     [data.candidates, selectedId]
   );
 
@@ -37,7 +40,10 @@ export function PropertyExplorerPanel({ data }: Props) {
       const response = await fetch(`/api/property-candidates/${candidateId}/bootstrap`, {
         method: 'POST'
       });
-      const payload = (await response.json().catch(() => null)) as { id?: string; error?: string } | null;
+      const payload = (await response.json().catch(() => null)) as {
+        id?: string;
+        error?: string;
+      } | null;
 
       if (!response.ok || !payload?.id) {
         throw new Error(payload?.error ?? 'Failed to bootstrap property candidate');
@@ -46,7 +52,11 @@ export function PropertyExplorerPanel({ data }: Props) {
       router.push(`/admin/assets/${payload.id}`);
       router.refresh();
     } catch (caughtError) {
-      setError(caughtError instanceof Error ? caughtError.message : 'Failed to bootstrap property candidate');
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : 'Failed to bootstrap property candidate'
+      );
     } finally {
       setBusyId(null);
     }
@@ -64,11 +74,27 @@ export function PropertyExplorerPanel({ data }: Props) {
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-5">
         {[
-          ['Tracked candidates', formatNumber(data.stats.candidateCount, 0), 'seeded universe rows'],
+          [
+            'Tracked candidates',
+            formatNumber(data.stats.candidateCount, 0),
+            'seeded universe rows'
+          ],
           ['Live dossiers', formatNumber(data.stats.linkedAssetCount, 0), 'already inside the OS'],
-          ['Ready to bootstrap', formatNumber(data.stats.untrackedCount, 0), 'one click into intake'],
-          ['Office screens', formatNumber(data.stats.officeCount, 0), 'CBD and innovation corridors'],
-          ['Data-center screens', formatNumber(data.stats.dataCenterCount, 0), 'power-first infra screens']
+          [
+            'Ready to bootstrap',
+            formatNumber(data.stats.untrackedCount, 0),
+            'one click into intake'
+          ],
+          [
+            'Office screens',
+            formatNumber(data.stats.officeCount, 0),
+            'CBD and innovation corridors'
+          ],
+          [
+            'Data-center screens',
+            formatNumber(data.stats.dataCenterCount, 0),
+            'power-first infra screens'
+          ]
         ].map(([label, value, detail]) => (
           <div key={label} className="metric-card">
             <div className="fine-print">{label}</div>
@@ -79,7 +105,9 @@ export function PropertyExplorerPanel({ data }: Props) {
       </div>
 
       {error ? (
-        <div className="rounded-[20px] border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-200">{error}</div>
+        <div className="rounded-[20px] border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-200">
+          {error}
+        </div>
       ) : null}
 
       <div className="grid gap-6 xl:grid-cols-[1.06fr_0.94fr]">
@@ -87,7 +115,9 @@ export function PropertyExplorerPanel({ data }: Props) {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <div className="eyebrow">Property Explorer</div>
-              <h2 className="mt-2 text-2xl font-semibold text-white">Map-like intake surface for universal property screens</h2>
+              <h2 className="mt-2 text-2xl font-semibold text-white">
+                Map-like intake surface for universal property screens
+              </h2>
             </div>
             <Badge tone="neutral">Preliminary screen</Badge>
           </div>
@@ -103,10 +133,14 @@ export function PropertyExplorerPanel({ data }: Props) {
                   key={candidate.id}
                   type="button"
                   onClick={() => setSelectedId(candidate.id)}
-                  className={`absolute h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 shadow-[0_0_0_8px_rgba(15,23,42,0.28)] transition ${
-                    getMarkerTone(candidate.assetClass, candidate.hasLiveDossier)
-                  } ${candidate.id === selected.id ? 'scale-125' : 'hover:scale-110'}`}
-                  style={{ left: `${candidate.mapPosition.leftPct}%`, top: `${candidate.mapPosition.topPct}%` }}
+                  className={`absolute h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 shadow-[0_0_0_8px_rgba(15,23,42,0.28)] transition ${getMarkerTone(
+                    candidate.assetClass,
+                    candidate.hasLiveDossier
+                  )} ${candidate.id === selected.id ? 'scale-125' : 'hover:scale-110'}`}
+                  style={{
+                    left: `${candidate.mapPosition.leftPct}%`,
+                    top: `${candidate.mapPosition.topPct}%`
+                  }}
                   aria-label={candidate.name}
                   data-testid="property-explorer-marker"
                 />
@@ -146,7 +180,9 @@ export function PropertyExplorerPanel({ data }: Props) {
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
                   <div className="eyebrow">Investment screen</div>
-                  <p className="mt-3 text-sm leading-7 text-slate-300">{selected.investmentAngle}</p>
+                  <p className="mt-3 text-sm leading-7 text-slate-300">
+                    {selected.investmentAngle}
+                  </p>
                 </div>
                 <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
                   <div className="eyebrow">DD posture</div>
@@ -158,7 +194,10 @@ export function PropertyExplorerPanel({ data }: Props) {
                 <div className="eyebrow">Official-source screen</div>
                 <div className="mt-4 grid gap-3 sm:grid-cols-3">
                   {selected.officialSignals.map((signal) => (
-                    <div key={signal.label} className="rounded-[18px] border border-white/10 bg-slate-950/55 p-3">
+                    <div
+                      key={signal.label}
+                      className="rounded-[18px] border border-white/10 bg-slate-950/55 p-3"
+                    >
                       <div className="fine-print">{signal.label}</div>
                       <div className="mt-2 text-sm font-semibold text-white">{signal.value}</div>
                     </div>
@@ -170,7 +209,10 @@ export function PropertyExplorerPanel({ data }: Props) {
                 <div className="eyebrow">Current blockers</div>
                 <div className="mt-4 space-y-2">
                   {selected.blockers.map((blocker) => (
-                    <div key={blocker} className="rounded-[18px] border border-amber-400/20 bg-amber-400/10 p-3 text-sm text-amber-100">
+                    <div
+                      key={blocker}
+                      className="rounded-[18px] border border-amber-400/20 bg-amber-400/10 p-3 text-sm text-amber-100"
+                    >
                       {blocker}
                     </div>
                   ))}
@@ -201,7 +243,9 @@ export function PropertyExplorerPanel({ data }: Props) {
 
         <Card>
           <div className="eyebrow">Coverage Queue</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">Universal screens ready to convert into full underwriting files</h2>
+          <h2 className="mt-2 text-2xl font-semibold text-white">
+            Universal screens ready to convert into full underwriting files
+          </h2>
           <div className="mt-5 grid gap-3">
             {data.candidates.map((candidate) => (
               <button
@@ -220,7 +264,8 @@ export function PropertyExplorerPanel({ data }: Props) {
                   <div>
                     <div className="text-base font-semibold text-white">{candidate.name}</div>
                     <div className="mt-1 text-xs text-slate-400">
-                      {candidate.district}, {candidate.city} / {toSentenceCase(candidate.assetClass)}
+                      {candidate.district}, {candidate.city} /{' '}
+                      {toSentenceCase(candidate.assetClass)}
                     </div>
                   </div>
                   <Badge tone={candidate.hasLiveDossier ? 'good' : 'warn'}>

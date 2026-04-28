@@ -2,7 +2,10 @@ import { NextResponse } from 'next/server';
 import { AdminAccessScopeType } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { assertActorScopeAccess } from '@/lib/security/admin-access';
-import { getRequestIpAddress, resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
+import {
+  getRequestIpAddress,
+  resolveVerifiedAdminActorFromHeaders
+} from '@/lib/security/admin-request';
 import { recordAuditEvent } from '@/lib/services/audit';
 import { updateDealDiligenceWorkstream } from '@/lib/services/deals';
 
@@ -49,7 +52,10 @@ export async function PATCH(
         requestMethod: request.method,
         ipAddress: getRequestIpAddress(request.headers),
         statusLabel: 'FAILED',
-        metadata: { workstreamId, error: error instanceof Error ? error.message : 'Failed to update diligence workstream' }
+        metadata: {
+          workstreamId,
+          error: error instanceof Error ? error.message : 'Failed to update diligence workstream'
+        }
       });
     }
     return NextResponse.json(

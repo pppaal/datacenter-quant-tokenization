@@ -1,6 +1,20 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { ActivityType, AssetClass, DealBidStatus, DealDiligenceWorkstreamStatus, DealDiligenceWorkstreamType, DealLossReason, DealOriginationSource, DealRequestStatus, DealStage, RelationshipCoverageStatus, RiskSeverity, TaskPriority, TaskStatus } from '@prisma/client';
+import {
+  ActivityType,
+  AssetClass,
+  DealBidStatus,
+  DealDiligenceWorkstreamStatus,
+  DealDiligenceWorkstreamType,
+  DealLossReason,
+  DealOriginationSource,
+  DealRequestStatus,
+  DealStage,
+  RelationshipCoverageStatus,
+  RiskSeverity,
+  TaskPriority,
+  TaskStatus
+} from '@prisma/client';
 import {
   autoMatchDealDocumentRequestsForAsset,
   archiveDeal,
@@ -289,14 +303,16 @@ test('buildDealClosingReadiness scores accepted bid, financing, and exclusivity 
         { id: 'req_1', status: 'RECEIVED' },
         { id: 'req_2', status: 'WAIVED' }
       ],
-      bidRevisions: [
-        { id: 'bid_1', label: 'Signed LOI', status: 'ACCEPTED' }
-      ],
+      bidRevisions: [{ id: 'bid_1', label: 'Signed LOI', status: 'ACCEPTED' }],
       lenderQuotes: [
         { id: 'lender_1', facilityLabel: 'Senior facility', status: 'CREDIT_APPROVED' }
       ],
       negotiationEvents: [
-        { id: 'neg_1', eventType: 'EXCLUSIVITY_GRANTED', expiresAt: new Date(now.getTime() + 8 * 24 * 60 * 60 * 1000) }
+        {
+          id: 'neg_1',
+          eventType: 'EXCLUSIVITY_GRANTED',
+          expiresAt: new Date(now.getTime() + 8 * 24 * 60 * 60 * 1000)
+        }
       ],
       diligenceWorkstreams: [
         {
@@ -499,7 +515,14 @@ test('buildDealCloseProbability treats unconfirmed DD suggestions as execution d
   const cleanProbability = buildDealCloseProbability(
     {
       ...baseDeal,
-      documentRequests: [{ id: 'req_1', status: DealRequestStatus.REQUESTED, documentId: null, matchSuggestion: null }]
+      documentRequests: [
+        {
+          id: 'req_1',
+          status: DealRequestStatus.REQUESTED,
+          documentId: null,
+          matchSuggestion: null
+        }
+      ]
     },
     {
       stageTrack: [],
@@ -554,9 +577,7 @@ test('buildDealCloseProbability treats unconfirmed DD suggestions as execution d
   );
 
   assert.ok(suggestedProbability.scorePct < cleanProbability.scorePct);
-  assert.ok(
-    suggestedProbability.drivers.some((driver) => driver.includes('DD suggestion'))
-  );
+  assert.ok(suggestedProbability.drivers.some((driver) => driver.includes('DD suggestion')));
 });
 
 test('buildDealOriginationProfile rewards direct sourcing, primary coverage, and live exclusivity', () => {
@@ -977,7 +998,10 @@ test('upsertDealDiligenceWorkstream creates or updates a specialist workstream',
   );
 
   assert.equal(result.workstreamType, DealDiligenceWorkstreamType.LEGAL);
-  assert.equal(upsertArgs.where.dealId_workstreamType.workstreamType, DealDiligenceWorkstreamType.LEGAL);
+  assert.equal(
+    upsertArgs.where.dealId_workstreamType.workstreamType,
+    DealDiligenceWorkstreamType.LEGAL
+  );
 });
 
 test('updateDealDiligenceWorkstream signs off a specialist lane cleanly', async () => {
@@ -1184,12 +1208,21 @@ test('buildDealDiligenceWorkpaper and markdown export summarize specialist sign-
         coverageOwner: 'coverage.lead',
         lastContactAt: now
       },
-      { id: 'cp_lender', role: 'LENDER', name: 'Core Bank', coverageStatus: RelationshipCoverageStatus.BACKUP }
+      {
+        id: 'cp_lender',
+        role: 'LENDER',
+        name: 'Core Bank',
+        coverageStatus: RelationshipCoverageStatus.BACKUP
+      }
     ],
     tasks: [],
     riskFlags: [],
     negotiationEvents: [
-      { id: 'neg_1', eventType: 'EXCLUSIVITY_GRANTED', expiresAt: new Date('2026-04-20T00:00:00.000Z') }
+      {
+        id: 'neg_1',
+        eventType: 'EXCLUSIVITY_GRANTED',
+        expiresAt: new Date('2026-04-20T00:00:00.000Z')
+      }
     ],
     bidRevisions: [{ id: 'bid_1', label: 'Signed LOI', status: DealBidStatus.ACCEPTED }],
     lenderQuotes: [{ id: 'loan_1', facilityLabel: 'Senior loan', status: 'CREDIT_APPROVED' }],
@@ -1299,8 +1332,14 @@ test('buildDealDiligenceWorkpaper and markdown export summarize specialist sign-
 
   const markdown = serializeDealDiligenceWorkpaperToMarkdown(workpaper);
 
-  assert.equal(workpaper.summaryFacts.find((fact) => fact.label === 'Specialist Sign-Off')?.value, '1/3 core lanes signed off');
-  assert.equal(workpaper.summaryFacts.find((fact) => fact.label === 'Deliverables')?.value, '2 linked / 1 core lanes without evidence');
+  assert.equal(
+    workpaper.summaryFacts.find((fact) => fact.label === 'Specialist Sign-Off')?.value,
+    '1/3 core lanes signed off'
+  );
+  assert.equal(
+    workpaper.summaryFacts.find((fact) => fact.label === 'Deliverables')?.value,
+    '2 linked / 1 core lanes without evidence'
+  );
   assert.match(markdown, /# Yeouido Office Acquisition DD Workpaper/);
   assert.match(markdown, /## Specialist Workstreams/);
   assert.match(markdown, /Legal: Signed Off/i);
@@ -1479,8 +1518,12 @@ test('autoMatchDealDocumentRequestsForAsset queues suggestions when the match is
   assert.equal(updatedRequests.length, 2);
   assert.ok(updatedRequests.every((entry) => entry.data.matchSuggestion));
   assert.ok(updatedRequests.every((entry) => entry.data.status === undefined));
-  assert.deepEqual(updatedRequests[0]?.data.matchSuggestion.competingRequestTitles, ['Environmental memo']);
-  assert.deepEqual(updatedRequests[1]?.data.matchSuggestion.competingRequestTitles, ['Environmental report']);
+  assert.deepEqual(updatedRequests[0]?.data.matchSuggestion.competingRequestTitles, [
+    'Environmental memo'
+  ]);
+  assert.deepEqual(updatedRequests[1]?.data.matchSuggestion.competingRequestTitles, [
+    'Environmental report'
+  ]);
 });
 
 test('updateDealStage enforces closing before asset management', async () => {
@@ -1588,7 +1631,9 @@ test('buildDealPipelineSummary ranks blocked and urgent deals first', () => {
       documentRequests: [],
       bidRevisions: [],
       lenderQuotes: [],
-      negotiationEvents: [{ eventType: 'EXCLUSIVITY_GRANTED', expiresAt: new Date('2026-05-02T00:00:00.000Z') }],
+      negotiationEvents: [
+        { eventType: 'EXCLUSIVITY_GRANTED', expiresAt: new Date('2026-05-02T00:00:00.000Z') }
+      ],
       activityLogs: [],
       asset: {
         researchSnapshots: [{ freshnessStatus: 'FRESH' }],
@@ -1752,7 +1797,10 @@ test('buildDealPipelineSummary only flags process protection gaps once a pursuit
   ] as any);
 
   assert.equal(summary.processProtectionGapDeals, 1);
-  assert.equal(summary.watchlist.some((item) => item.id === 'deal_loi'), true);
+  assert.equal(
+    summary.watchlist.some((item) => item.id === 'deal_loi'),
+    true
+  );
 });
 
 test('buildDealReminderSummary ranks overdue and missing-next-action deals', () => {
@@ -2108,7 +2156,11 @@ test('closeOutDeal moves a won closing deal into asset management', async () => 
     }
   };
 
-  await closeOutDeal('deal_1', { outcome: 'CLOSED_WON', summary: 'Signed and funded.' }, fakeDb as any);
+  await closeOutDeal(
+    'deal_1',
+    { outcome: 'CLOSED_WON', summary: 'Signed and funded.' },
+    fakeDb as any
+  );
   assert.equal(updatedData.stage, DealStage.ASSET_MANAGEMENT);
   assert.equal(updatedData.statusLabel, 'CLOSED_WON');
   assert.equal(createdTasks[0]?.title, 'Complete asset management handoff');
@@ -2395,7 +2447,13 @@ test('buildDealCloseProbabilitySummary prioritizes fragile live execution deals'
       targetCloseDate: new Date('2026-04-03T00:00:00.000Z'),
       updatedAt: new Date('2026-03-20T00:00:00.000Z'),
       tasks: [
-        { status: TaskStatus.OPEN, priority: TaskPriority.URGENT, dueDate: now, checklistKey: null, isRequired: true }
+        {
+          status: TaskStatus.OPEN,
+          priority: TaskPriority.URGENT,
+          dueDate: now,
+          checklistKey: null,
+          isRequired: true
+        }
       ],
       riskFlags: [{ isResolved: false, severity: RiskSeverity.CRITICAL }],
       counterparties: [{ role: 'BUYER' }],
@@ -2429,7 +2487,13 @@ test('buildDealCloseProbabilitySummary prioritizes fragile live execution deals'
       documentRequests: [{ status: 'RECEIVED' }],
       bidRevisions: [{ status: 'ACCEPTED', label: 'Accepted LOI' }],
       lenderQuotes: [{ status: 'CREDIT_APPROVED', facilityLabel: 'Senior' }],
-      negotiationEvents: [{ eventType: 'EXCLUSIVITY_GRANTED', expiresAt: new Date('2026-04-10T00:00:00.000Z'), effectiveAt: now }],
+      negotiationEvents: [
+        {
+          eventType: 'EXCLUSIVITY_GRANTED',
+          expiresAt: new Date('2026-04-10T00:00:00.000Z'),
+          effectiveAt: now
+        }
+      ],
       activityLogs: [],
       asset: {
         valuations: [
@@ -2465,7 +2529,10 @@ test('buildDealCloseProbabilitySummary prioritizes fragile live execution deals'
   assert.equal(summary.lowProbabilityCount, 1);
   assert.equal(summary.highProbabilityCount, 1);
   assert.equal(summary.watchlist[0]?.id, 'deal_low');
-  assert.equal(summary.watchlist.some((item) => item.id === 'deal_screened'), false);
+  assert.equal(
+    summary.watchlist.some((item) => item.id === 'deal_screened'),
+    false
+  );
 });
 
 test('buildDealCloseProbabilityHistory returns persisted snapshots in reverse time order', () => {

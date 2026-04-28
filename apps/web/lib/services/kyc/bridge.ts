@@ -6,10 +6,7 @@ import {
   removeIdentity,
   updateCountry
 } from '@/lib/services/onchain/identity-registry';
-import {
-  getDeploymentByAssetId,
-  toDeploymentRow
-} from '@/lib/services/onchain/tokenization-repo';
+import { getDeploymentByAssetId, toDeploymentRow } from '@/lib/services/onchain/tokenization-repo';
 import type { KycEvent } from './types';
 
 export async function persistKycEvent(

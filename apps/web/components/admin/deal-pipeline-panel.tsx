@@ -70,36 +70,53 @@ export function DealPipelinePanel({ summary }: Props) {
       <div className="mt-5 grid gap-4 md:grid-cols-4 xl:grid-cols-5">
         <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
           <div className="fine-print">Tracked Deals</div>
-          <div className="mt-3 text-3xl font-semibold text-white">{formatNumber(summary.totalDeals, 0)}</div>
+          <div className="mt-3 text-3xl font-semibold text-white">
+            {formatNumber(summary.totalDeals, 0)}
+          </div>
         </div>
         <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
           <div className="fine-print">Urgent</div>
-          <div className="mt-3 text-3xl font-semibold text-white">{formatNumber(summary.urgentDeals, 0)}</div>
+          <div className="mt-3 text-3xl font-semibold text-white">
+            {formatNumber(summary.urgentDeals, 0)}
+          </div>
         </div>
         <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
           <div className="fine-print">Blocked</div>
-          <div className="mt-3 text-3xl font-semibold text-white">{formatNumber(summary.blockedDeals, 0)}</div>
+          <div className="mt-3 text-3xl font-semibold text-white">
+            {formatNumber(summary.blockedDeals, 0)}
+          </div>
         </div>
         <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
           <div className="fine-print">Closing</div>
-          <div className="mt-3 text-3xl font-semibold text-white">{formatNumber(summary.closingDeals, 0)}</div>
+          <div className="mt-3 text-3xl font-semibold text-white">
+            {formatNumber(summary.closingDeals, 0)}
+          </div>
         </div>
         <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
           <div className="fine-print">Origination Gaps</div>
           <div className="mt-3 text-3xl font-semibold text-white">
-            {formatNumber(summary.lowOriginationCoverageDeals + summary.processProtectionGapDeals, 0)}
+            {formatNumber(
+              summary.lowOriginationCoverageDeals + summary.processProtectionGapDeals,
+              0
+            )}
           </div>
           <p className="mt-2 text-sm text-slate-400">
-            {formatNumber(summary.directOrProprietaryDeals, 0)} direct/proprietary and {formatNumber(summary.liveExclusivityDeals, 0)} live exclusivity
+            {formatNumber(summary.directOrProprietaryDeals, 0)} direct/proprietary and{' '}
+            {formatNumber(summary.liveExclusivityDeals, 0)} live exclusivity
           </p>
         </div>
       </div>
 
       <div className="mt-5 grid gap-3 md:grid-cols-4 xl:grid-cols-8">
         {summary.byStage.map((item) => (
-          <div key={item.stage} className="rounded-[20px] border border-white/10 bg-slate-950/35 p-4">
+          <div
+            key={item.stage}
+            className="rounded-[20px] border border-white/10 bg-slate-950/35 p-4"
+          >
             <div className="fine-print">{formatDealStage(item.stage)}</div>
-            <div className="mt-3 text-2xl font-semibold text-white">{formatNumber(item.count, 0)}</div>
+            <div className="mt-3 text-2xl font-semibold text-white">
+              {formatNumber(item.count, 0)}
+            </div>
           </div>
         ))}
       </div>
@@ -138,26 +155,37 @@ export function DealPipelinePanel({ summary }: Props) {
                 <div>
                   <div className="fine-print">Readiness</div>
                   <div className="mt-1">
-                    {formatNumber(deal.readinessScorePct, 0)}% / {formatNumber(deal.readinessBlockerCount, 0)} blockers
+                    {formatNumber(deal.readinessScorePct, 0)}% /{' '}
+                    {formatNumber(deal.readinessBlockerCount, 0)} blockers
                   </div>
                 </div>
                 <div>
                   <div className="fine-print">P(Close)</div>
                   <div className="mt-1">
-                    {formatNumber(deal.closeProbabilityPct, 0)}% / {deal.closeProbabilityBand.toLowerCase()}
+                    {formatNumber(deal.closeProbabilityPct, 0)}% /{' '}
+                    {deal.closeProbabilityBand.toLowerCase()}
                   </div>
                 </div>
                 <div>
                   <div className="fine-print">Sourcing</div>
                   <div className="mt-1">
-                    {formatNumber(deal.originationScorePct, 0)}% / {deal.originationBand.toLowerCase()}
+                    {formatNumber(deal.originationScorePct, 0)}% /{' '}
+                    {deal.originationBand.toLowerCase()}
                   </div>
                 </div>
                 {deal.macroRiskBand ? (
                   <div>
                     <div className="fine-print">Macro Risk</div>
                     <div className="mt-1">
-                      <Badge tone={deal.macroRiskBand === 'LOW' ? 'good' : deal.macroRiskBand === 'CRITICAL' ? 'danger' : 'warn'}>
+                      <Badge
+                        tone={
+                          deal.macroRiskBand === 'LOW'
+                            ? 'good'
+                            : deal.macroRiskBand === 'CRITICAL'
+                              ? 'danger'
+                              : 'warn'
+                        }
+                      >
                         {deal.macroRiskBand.toLowerCase()} ({deal.macroRiskScore})
                       </Badge>
                     </div>
@@ -166,7 +194,9 @@ export function DealPipelinePanel({ summary }: Props) {
                 <div>
                   <div className="fine-print">Valuation</div>
                   <div className="mt-1">
-                    {deal.latestValuation ? `${formatNumber(deal.latestValuation.confidenceScore, 0)} / ${formatDate(deal.latestValuation.createdAt)}` : 'No run'}
+                    {deal.latestValuation
+                      ? `${formatNumber(deal.latestValuation.confidenceScore, 0)} / ${formatDate(deal.latestValuation.createdAt)}`
+                      : 'No run'}
                   </div>
                 </div>
                 <div className="md:col-span-4">
@@ -182,13 +212,17 @@ export function DealPipelinePanel({ summary }: Props) {
                 <div className="md:col-span-4">
                   <div className="fine-print">Roles</div>
                   <div className="mt-1">
-                    {deal.latestCounterpartyRoles.length > 0 ? deal.latestCounterpartyRoles.join(', ') : 'No contacts'}
+                    {deal.latestCounterpartyRoles.length > 0
+                      ? deal.latestCounterpartyRoles.join(', ')
+                      : 'No contacts'}
                   </div>
                 </div>
                 <div className="md:col-span-4">
                   <div className="fine-print">Latest Value</div>
                   <div className="mt-1">
-                    {deal.latestValuation ? formatCurrency(deal.latestValuation.baseCaseValueKrw) : 'No linked value yet'}
+                    {deal.latestValuation
+                      ? formatCurrency(deal.latestValuation.baseCaseValueKrw)
+                      : 'No linked value yet'}
                   </div>
                 </div>
               </div>

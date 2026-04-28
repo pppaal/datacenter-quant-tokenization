@@ -27,10 +27,7 @@ import { NextResponse } from 'next/server';
 import { z, type ZodTypeAny } from 'zod';
 import { prisma } from '@/lib/db/prisma';
 import { withRequestContext } from '@/lib/observability/logger';
-import {
-  getRequestIpAddress,
-  resolveVerifiedAdminActorFromHeaders
-} from './admin-request';
+import { getRequestIpAddress, resolveVerifiedAdminActorFromHeaders } from './admin-request';
 import {
   hasRequiredAdminRole,
   type AdminAccessRole,
@@ -58,7 +55,9 @@ export type WithAdminApiOptions<
   requiredRole?: AdminAccessRole;
   auditAction?: string;
   auditEntityType?: string;
-  auditEntityIdFromBody?: (body: TSchema extends ZodTypeAny ? z.infer<TSchema> : undefined) => string | null;
+  auditEntityIdFromBody?: (
+    body: TSchema extends ZodTypeAny ? z.infer<TSchema> : undefined
+  ) => string | null;
   auditEntityIdFromParams?: (params: TParams) => string | null;
   handler: (
     context: WithAdminApiContext<TSchema extends ZodTypeAny ? z.infer<TSchema> : undefined, TParams>
@@ -86,9 +85,7 @@ type AdminApiHandler = (request: Request, routeContext?: any) => Promise<Respons
 export function withAdminApi<
   TSchema extends ZodTypeAny | undefined = undefined,
   TParams extends Record<string, string> = Record<string, never>
->(
-  options: WithAdminApiOptions<TSchema, TParams>
-): AdminApiHandler {
+>(options: WithAdminApiOptions<TSchema, TParams>): AdminApiHandler {
   return async (request: Request, routeContext?: WithAdminApiRouteContext<TParams>) => {
     const requestId = readRequestId(request);
     return withRequestContext({ requestId }, async () => {
@@ -126,7 +123,10 @@ export function withAdminApi<
       }
 
       const ipAddress = getRequestIpAddress(request.headers);
-      const context: WithAdminApiContext<TSchema extends ZodTypeAny ? z.infer<TSchema> : undefined, TParams> = {
+      const context: WithAdminApiContext<
+        TSchema extends ZodTypeAny ? z.infer<TSchema> : undefined,
+        TParams
+      > = {
         actor,
         body: body as TSchema extends ZodTypeAny ? z.infer<TSchema> : undefined,
         params,

@@ -78,25 +78,38 @@ export default async function DealDetailPage({ params }: Props) {
               <Badge>{deal.dealCode}</Badge>
               {deal.asset ? <Badge>{deal.asset.assetCode}</Badge> : null}
             </div>
-            <h2 className="mt-5 text-4xl font-semibold tracking-[-0.04em] text-white">{deal.title}</h2>
+            <h2 className="mt-5 text-4xl font-semibold tracking-[-0.04em] text-white">
+              {deal.title}
+            </h2>
             <p className="mt-4 text-sm leading-7 text-slate-300">
-              {deal.headline ?? 'No headline yet. Use the operator console below to set the live process readout.'}
+              {deal.headline ??
+                'No headline yet. Use the operator console below to set the live process readout.'}
             </p>
             <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
               <div className="metric-card">
                 <div className="fine-print">Next Action</div>
-                <div className="mt-3 text-base font-semibold text-white">{deal.nextActionAt ? formatDate(deal.nextActionAt) : 'No date'}</div>
-                <p className="mt-2 text-sm text-slate-400">{deal.nextAction ?? 'No next action set yet.'}</p>
+                <div className="mt-3 text-base font-semibold text-white">
+                  {deal.nextActionAt ? formatDate(deal.nextActionAt) : 'No date'}
+                </div>
+                <p className="mt-2 text-sm text-slate-400">
+                  {deal.nextAction ?? 'No next action set yet.'}
+                </p>
               </div>
               <div className="metric-card">
                 <div className="fine-print">Target Close</div>
-                <div className="mt-3 text-base font-semibold text-white">{formatDate(deal.targetCloseDate)}</div>
+                <div className="mt-3 text-base font-semibold text-white">
+                  {formatDate(deal.targetCloseDate)}
+                </div>
                 <p className="mt-2 text-sm text-slate-400">{deal.strategy ?? 'Strategy not set'}</p>
               </div>
               <div className="metric-card">
                 <div className="fine-print">Seller Guidance</div>
-                <div className="mt-3 text-base font-semibold text-white">{formatCurrency(deal.sellerGuidanceKrw)}</div>
-                <p className="mt-2 text-sm text-slate-400">Bid {formatCurrency(deal.bidGuidanceKrw)}</p>
+                <div className="mt-3 text-base font-semibold text-white">
+                  {formatCurrency(deal.sellerGuidanceKrw)}
+                </div>
+                <p className="mt-2 text-sm text-slate-400">
+                  Bid {formatCurrency(deal.bidGuidanceKrw)}
+                </p>
               </div>
               <div className="metric-card">
                 <div className="fine-print">Latest Bid Revision</div>
@@ -104,7 +117,9 @@ export default async function DealDetailPage({ params }: Props) {
                   {latestBid ? formatCurrency(latestBid.bidPriceKrw) : 'No bid yet'}
                 </div>
                 <p className="mt-2 text-sm text-slate-400">
-                  {latestBid ? `${latestBid.label} / ${latestBid.status.toLowerCase()}` : 'Log negotiation terms once price discovery starts.'}
+                  {latestBid
+                    ? `${latestBid.label} / ${latestBid.status.toLowerCase()}`
+                    : 'Log negotiation terms once price discovery starts.'}
                 </p>
               </div>
               <div className="metric-card">
@@ -121,24 +136,32 @@ export default async function DealDetailPage({ params }: Props) {
               <div className="metric-card">
                 <div className="fine-print">Latest Negotiation Event</div>
                 <div className="mt-3 text-base font-semibold text-white">
-                  {latestNegotiationEvent ? latestNegotiationEvent.eventType.toLowerCase().replaceAll('_', ' ') : 'No event yet'}
+                  {latestNegotiationEvent
+                    ? latestNegotiationEvent.eventType.toLowerCase().replaceAll('_', ' ')
+                    : 'No event yet'}
                 </div>
                 <p className="mt-2 text-sm text-slate-400">
                   {latestNegotiationEvent?.expiresAt
                     ? `Clock ends ${formatDate(latestNegotiationEvent.expiresAt)}`
-                    : latestNegotiationEvent?.title ?? 'Log seller counters, feedback, and exclusivity changes.'}
+                    : (latestNegotiationEvent?.title ??
+                      'Log seller counters, feedback, and exclusivity changes.')}
                 </p>
               </div>
               <div className="metric-card">
                 <div className="fine-print">Linked Asset</div>
-                <div className="mt-3 text-base font-semibold text-white">{deal.asset?.name ?? 'Standalone deal'}</div>
+                <div className="mt-3 text-base font-semibold text-white">
+                  {deal.asset?.name ?? 'Standalone deal'}
+                </div>
                 <p className="mt-2 text-sm text-slate-400">
-                  {deal.city ?? deal.asset?.address?.city ?? deal.market} / {deal.assetClass?.replaceAll('_', ' ') ?? 'Class pending'}
+                  {deal.city ?? deal.asset?.address?.city ?? deal.market} /{' '}
+                  {deal.assetClass?.replaceAll('_', ' ') ?? 'Class pending'}
                 </p>
               </div>
               <div className="metric-card">
                 <div className="fine-print">Origination</div>
-                <div className="mt-3 text-base font-semibold text-white">{origination.sourceLabel}</div>
+                <div className="mt-3 text-base font-semibold text-white">
+                  {origination.sourceLabel}
+                </div>
                 <p className="mt-2 text-sm text-slate-400">
                   sourcing {origination.scorePct.toFixed(0)}% / {origination.exclusivityLabel}
                 </p>
@@ -146,10 +169,14 @@ export default async function DealDetailPage({ params }: Props) {
               <div className="metric-card">
                 <div className="fine-print">Latest Valuation</div>
                 <div className="mt-3 text-base font-semibold text-white">
-                  {latestValuation ? formatCurrency(latestValuation.baseCaseValueKrw) : 'No run yet'}
+                  {latestValuation
+                    ? formatCurrency(latestValuation.baseCaseValueKrw)
+                    : 'No run yet'}
                 </div>
                 <p className="mt-2 text-sm text-slate-400">
-                  {latestValuation ? `Run ${formatDate(latestValuation.createdAt)}` : 'Link a valuation run to commercial decisions.'}
+                  {latestValuation
+                    ? `Run ${formatDate(latestValuation.createdAt)}`
+                    : 'Link a valuation run to commercial decisions.'}
                 </p>
               </div>
             </div>
@@ -182,9 +209,12 @@ export default async function DealDetailPage({ params }: Props) {
       <div className="grid gap-4 md:grid-cols-3">
         <div className="metric-card">
           <div className="fine-print">Checklist Completion</div>
-          <div className="mt-3 text-3xl font-semibold text-white">{snapshot.checklistCompletionPct.toFixed(0)}%</div>
+          <div className="mt-3 text-3xl font-semibold text-white">
+            {snapshot.checklistCompletionPct.toFixed(0)}%
+          </div>
           <p className="mt-2 text-sm text-slate-400">
-            {snapshot.completedChecklistCount} of {snapshot.requiredChecklistCount} stage requirements are complete.
+            {snapshot.completedChecklistCount} of {snapshot.requiredChecklistCount} stage
+            requirements are complete.
           </p>
         </div>
         <div className="metric-card">
@@ -194,7 +224,9 @@ export default async function DealDetailPage({ params }: Props) {
         </div>
         <div className="metric-card">
           <div className="fine-print">Exclusivity / Due Soon</div>
-          <div className="mt-3 text-3xl font-semibold text-white">{snapshot.exclusivityExpiresSoon ? 'Live' : snapshot.dueSoonTaskCount}</div>
+          <div className="mt-3 text-3xl font-semibold text-white">
+            {snapshot.exclusivityExpiresSoon ? 'Live' : snapshot.dueSoonTaskCount}
+          </div>
           <p className="mt-2 text-sm text-slate-400">
             {snapshot.activeExclusivityEvent?.expiresAt
               ? `Exclusivity until ${formatDate(snapshot.activeExclusivityEvent.expiresAt)}`
@@ -229,9 +261,12 @@ export default async function DealDetailPage({ params }: Props) {
       {deal.asset ? (
         <Card>
           <div className="eyebrow">Deal Documents</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">Upload diligence directly into this process</h2>
+          <h2 className="mt-2 text-2xl font-semibold text-white">
+            Upload diligence directly into this process
+          </h2>
           <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400">
-            Uploading from the deal page scopes DD auto-match to this execution record and avoids cross-deal leakage on shared assets.
+            Uploading from the deal page scopes DD auto-match to this execution record and avoids
+            cross-deal leakage on shared assets.
           </p>
           <div className="mt-6">
             <DocumentUploadForm assetId={deal.asset.id} dealId={deal.id} />

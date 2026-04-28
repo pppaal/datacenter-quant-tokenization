@@ -259,7 +259,12 @@ test('correlation penalty amplifies shock magnitudes', () => {
   };
 
   const baseResult = runMacroProFormaStress(prepared, severeScenario, baseScenarioInput, null);
-  const amplifiedResult = runMacroProFormaStress(prepared, severeScenario, baseScenarioInput, penalty);
+  const amplifiedResult = runMacroProFormaStress(
+    prepared,
+    severeScenario,
+    baseScenarioInput,
+    penalty
+  );
 
   assert.ok(baseResult.equityIrrDeltaPct !== null);
   assert.ok(amplifiedResult.equityIrrDeltaPct !== null);
@@ -271,7 +276,11 @@ test('correlation penalty amplifies shock magnitudes', () => {
 test('runMacroStressAnalysis aggregates multiple scenarios with shared baseline', () => {
   const prepared = makePrepared();
 
-  const analysis = runMacroStressAnalysis(prepared, [zeroShockScenario, rateShockScenario, severeScenario]);
+  const analysis = runMacroStressAnalysis(prepared, [
+    zeroShockScenario,
+    rateShockScenario,
+    severeScenario
+  ]);
 
   assert.equal(analysis.scenarios.length, 3);
   assert.ok(analysis.baseline.equityIrr !== null);
@@ -289,7 +298,10 @@ test('runFactorAttribution decomposes total impact by factor', () => {
   assert.equal(attribution.factors.length, 5);
   assert.equal(attribution.scenarioName, 'Severe');
 
-  const totalShare = attribution.factors.reduce((sum, f) => sum + f.contributionShareOfTotalDelta, 0);
+  const totalShare = attribution.factors.reduce(
+    (sum, f) => sum + f.contributionShareOfTotalDelta,
+    0
+  );
   // Shares should sum to approximately 100 (allow rounding)
   assert.ok(Math.abs(totalShare - 100) < 1.0);
 

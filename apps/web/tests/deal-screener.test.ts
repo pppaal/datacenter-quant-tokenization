@@ -125,9 +125,7 @@ test('screenListing: three+ failed rounds flagged as stale', () => {
     minimumBidKrw: 55_000_000_000 // 45% discount, well past sponsor floor
   };
   const score = screenListing(listing, baseCriteria, today);
-  assert.ok(
-    score.nextActions.some((a) => a.includes('권리분석') || a.includes('failed'))
-  );
+  assert.ok(score.nextActions.some((a) => a.includes('권리분석') || a.includes('failed')));
 });
 
 test('screenListing: off-market deal gets channel bonus', () => {

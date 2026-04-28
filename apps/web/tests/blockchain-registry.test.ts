@@ -24,5 +24,8 @@ test('blockchain registry helpers normalize document hashes and shorten tx ids',
     '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
   );
   assert.equal(shortenHash('0x1234567890abcdef1234567890abcdef', 6), '0x1234...abcdef');
-  assert.throws(() => normalizeDocumentHash('bad-hash'), /Document hash must be a 32-byte SHA-256 hex string/);
+  assert.throws(
+    () => normalizeDocumentHash('bad-hash'),
+    /Document hash must be a 32-byte SHA-256 hex string/
+  );
 });

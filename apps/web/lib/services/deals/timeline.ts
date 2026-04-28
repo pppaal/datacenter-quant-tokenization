@@ -36,7 +36,8 @@ export function buildDealTimeline(deal: DealDetailRecord): DealTimelineEvent[] {
     category:
       activity.activityType === ActivityType.NOTE
         ? 'note'
-        : activity.activityType === ActivityType.RISK_CREATED || activity.activityType === ActivityType.RISK_UPDATED
+        : activity.activityType === ActivityType.RISK_CREATED ||
+            activity.activityType === ActivityType.RISK_UPDATED
           ? 'risk'
           : 'execution',
     title: activity.title,
@@ -46,7 +47,8 @@ export function buildDealTimeline(deal: DealDetailRecord): DealTimelineEvent[] {
     tone:
       activity.activityType === ActivityType.RISK_CREATED
         ? 'warn'
-        : activity.activityType === ActivityType.STAGE_CHANGED || activity.activityType === ActivityType.TASK_CREATED
+        : activity.activityType === ActivityType.STAGE_CHANGED ||
+            activity.activityType === ActivityType.TASK_CREATED
           ? 'good'
           : 'neutral',
     meta: [
@@ -58,12 +60,9 @@ export function buildDealTimeline(deal: DealDetailRecord): DealTimelineEvent[] {
 
   for (const event of rawActivityEvents) {
     const previous = activityEvents[activityEvents.length - 1];
-    const isTaskChurn =
-      event.meta.includes('task updated') ||
-      event.meta.includes('task created');
+    const isTaskChurn = event.meta.includes('task updated') || event.meta.includes('task created');
     const previousIsTaskChurn =
-      previous?.meta.includes('task updated') ||
-      previous?.meta.includes('task created');
+      previous?.meta.includes('task updated') || previous?.meta.includes('task created');
 
     if (
       previous &&
@@ -88,7 +87,12 @@ export function buildDealTimeline(deal: DealDetailRecord): DealTimelineEvent[] {
     body: `Base case ${valuation.baseCaseValueKrw.toLocaleString()} KRW with ${valuation.confidenceScore.toFixed(0)} confidence.`,
     createdAt: valuation.createdAt,
     href: `/admin/valuations/${valuation.id}`,
-    tone: valuation.confidenceScore >= 70 ? 'good' : valuation.confidenceScore >= 55 ? 'neutral' : 'warn',
+    tone:
+      valuation.confidenceScore >= 70
+        ? 'good'
+        : valuation.confidenceScore >= 55
+          ? 'neutral'
+          : 'warn',
     meta: ['valuation', valuation.runLabel ?? 'latest run']
   }));
 
@@ -97,13 +101,16 @@ export function buildDealTimeline(deal: DealDetailRecord): DealTimelineEvent[] {
     kind: 'activity',
     category: 'execution',
     title: event.title,
-    body: [event.summary, event.expiresAt ? `expires ${event.expiresAt.toLocaleDateString()}` : null]
-      .filter(Boolean)
-      .join(' / ') || null,
+    body:
+      [event.summary, event.expiresAt ? `expires ${event.expiresAt.toLocaleDateString()}` : null]
+        .filter(Boolean)
+        .join(' / ') || null,
     createdAt: event.effectiveAt,
     href: null,
     tone:
-      event.eventType === 'SELLER_COUNTER' || event.eventType === 'EXCLUSIVITY_GRANTED' || event.eventType === 'EXCLUSIVITY_EXTENDED'
+      event.eventType === 'SELLER_COUNTER' ||
+      event.eventType === 'EXCLUSIVITY_GRANTED' ||
+      event.eventType === 'EXCLUSIVITY_EXTENDED'
         ? 'warn'
         : 'neutral',
     meta: [

@@ -70,9 +70,7 @@ export async function markNotificationRead(
   });
 }
 
-export async function markAllNotificationsRead(
-  db: NotificationDb = prisma
-): Promise<number> {
+export async function markAllNotificationsRead(db: NotificationDb = prisma): Promise<number> {
   const result = await db.notification.updateMany({
     where: {
       readAt: null
@@ -84,9 +82,7 @@ export async function markAllNotificationsRead(
   return result.count;
 }
 
-export async function countUnreadNotifications(
-  db: NotificationDb = prisma
-): Promise<number> {
+export async function countUnreadNotifications(db: NotificationDb = prisma): Promise<number> {
   return db.notification.count({
     where: {
       readAt: null

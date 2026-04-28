@@ -120,9 +120,9 @@ function scoreLeveredIrr(baseIrrPct: number | null, target: number): ScoredDimen
   const anchors: Anchor[] = [
     [target - 8, -3],
     [target - 4, -2],
-    [target - 2,  0],
-    [target,      2],
-    [target + 3,  3]
+    [target - 2, 0],
+    [target, 2],
+    [target + 3, 3]
   ];
   const score = baseIrrPct === null ? -2 : round2(interpolateScore(baseIrrPct, anchors));
   return {
@@ -139,11 +139,11 @@ function scoreLeveredIrr(baseIrrPct: number | null, target: number): ScoredDimen
 
 function scoreP10Irr(p10Pct: number | null, floor: number): ScoredDimension {
   const anchors: Anchor[] = [
-    [-3,         -3],
-    [0,          -2],
-    [floor - 2,  -1],
-    [floor,       1],
-    [floor + 2,   2]
+    [-3, -3],
+    [0, -2],
+    [floor - 2, -1],
+    [floor, 1],
+    [floor + 2, 2]
   ];
   const score = p10Pct === null ? -2 : round2(interpolateScore(p10Pct, anchors));
   return {
@@ -161,11 +161,11 @@ function scoreP10Irr(p10Pct: number | null, floor: number): ScoredDimension {
 function scoreProbBelow(prob: number, cap: number): ScoredDimension {
   // Lower prob = better. Anchors increase in x, decrease in y.
   const anchors: Anchor[] = [
-    [Math.max(0, cap - 0.15),  2],
-    [cap,                       1],
-    [cap + 0.15,               -1],
-    [cap + 0.30,               -2],
-    [cap + 0.45,               -3]
+    [Math.max(0, cap - 0.15), 2],
+    [cap, 1],
+    [cap + 0.15, -1],
+    [cap + 0.3, -2],
+    [cap + 0.45, -3]
   ];
   const score = round2(interpolateScore(prob, anchors));
   const anchorStr = anchors
@@ -187,9 +187,9 @@ function scoreMoic(moicP50: number | null, minMoic: number): ScoredDimension {
   const v = moicP50 ?? 0;
   const anchors: Anchor[] = [
     [minMoic - 0.8, -2],
-    [minMoic - 0.3,  0],
-    [minMoic,        1],
-    [minMoic + 0.5,  2]
+    [minMoic - 0.3, 0],
+    [minMoic, 1],
+    [minMoic + 0.5, 2]
   ];
   const score = round2(interpolateScore(v, anchors));
   const anchorStr = anchors
@@ -210,16 +210,14 @@ function scoreMoic(moicP50: number | null, minMoic: number): ScoredDimension {
 function scoreMacro(overall: number, cap: number): ScoredDimension {
   // Lower macro score = better risk environment.
   const anchors: Anchor[] = [
-    [Math.max(0, cap - 40),  2],
-    [Math.max(0, cap - 20),  1],
-    [cap,                    0],
-    [cap + 15,              -2],
-    [cap + 30,              -3]
+    [Math.max(0, cap - 40), 2],
+    [Math.max(0, cap - 20), 1],
+    [cap, 0],
+    [cap + 15, -2],
+    [cap + 30, -3]
   ];
   const score = round2(interpolateScore(overall, anchors));
-  const anchorStr = anchors
-    .map(([v, s]) => `${v}→${s >= 0 ? '+' : ''}${s}`)
-    .join(' / ');
+  const anchorStr = anchors.map(([v, s]) => `${v}→${s >= 0 ? '+' : ''}${s}`).join(' / ');
   return {
     dimension: 'Macro Risk',
     observed: `${overall}/100`,
@@ -248,8 +246,8 @@ function scoreDscr(
   } else {
     // Continuous penalty by yearsBelowFloor count: 0→+1, 1→0, 2→-0.5, 3→-1, 5→-2, 7+→-2.5
     const breachAnchors: Anchor[] = [
-      [0,  1],
-      [1,  0],
+      [0, 1],
+      [1, 0],
       [2, -0.5],
       [3, -1],
       [5, -2],
@@ -315,7 +313,10 @@ function tierOf(normalized: number, hardFails: number): { tier: VerdictTier; hea
     };
   }
   if (normalized >= 0.55) {
-    return { tier: 'STRONG_BUY', headline: 'Strong risk-adjusted returns across the distribution.' };
+    return {
+      tier: 'STRONG_BUY',
+      headline: 'Strong risk-adjusted returns across the distribution.'
+    };
   }
   if (normalized >= 0.25) {
     return { tier: 'BUY', headline: 'Attractive base case with manageable downside.' };
@@ -337,7 +338,8 @@ function tierOf(normalized: number, hardFails: number): { tier: VerdictTier; hea
 // ---------------------------------------------------------------------------
 export function evaluateInvestment(inputs: VerdictInputs): InvestmentVerdict {
   const hurdles: VerdictHurdles = { ...DEFAULT_HURDLES, ...(inputs.hurdles ?? {}) };
-  const { returnMetrics, monteCarlo, macroOverallScore, debtCovenantBreaches, refinancing } = inputs;
+  const { returnMetrics, monteCarlo, macroOverallScore, debtCovenantBreaches, refinancing } =
+    inputs;
 
   const p10 = monteCarlo.leveredIrr.p10;
   const p50 = monteCarlo.leveredIrr.p50;
@@ -383,7 +385,10 @@ export function evaluateInvestment(inputs: VerdictInputs): InvestmentVerdict {
 
   const positives = dimensions
     .filter((d) => d.score >= 0.05)
-    .map((d) => `${d.dimension}: ${d.observed} (score ${d.score >= 0 ? '+' : ''}${d.score.toFixed(2)}; ${d.threshold})`);
+    .map(
+      (d) =>
+        `${d.dimension}: ${d.observed} (score ${d.score >= 0 ? '+' : ''}${d.score.toFixed(2)}; ${d.threshold})`
+    );
   const negatives = dimensions
     .filter((d) => d.score <= -0.05 && d.score > -2.99)
     .map((d) => `${d.dimension}: ${d.observed} (score ${d.score.toFixed(2)}; ${d.threshold})`);
@@ -393,7 +398,10 @@ export function evaluateInvestment(inputs: VerdictInputs): InvestmentVerdict {
 
   // Conditions to unlock a CONDITIONAL verdict
   const conditions: string[] = [];
-  if (debtCovenantBreaches.yearsBelowFloor.length > 0 && debtCovenantBreaches.yearsBelowOne.length === 0) {
+  if (
+    debtCovenantBreaches.yearsBelowFloor.length > 0 &&
+    debtCovenantBreaches.yearsBelowOne.length === 0
+  ) {
     conditions.push(
       `Negotiate DSCR covenant step-down to ${hurdles.dscrCovenant.toFixed(2)}x or holiday for years ${debtCovenantBreaches.yearsBelowFloor.join(', ')}.`
     );

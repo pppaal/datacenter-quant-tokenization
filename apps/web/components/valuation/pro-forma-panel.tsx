@@ -87,7 +87,12 @@ function buildSectionHighlights(
     return [
       {
         label: 'Year 1 Op. Revenue',
-        value: formatStatementMetric(firstYear.totalOperatingRevenueKrw, 'currency', displayCurrency, fxRateToKrw)
+        value: formatStatementMetric(
+          firstYear.totalOperatingRevenueKrw,
+          'currency',
+          displayCurrency,
+          fxRateToKrw
+        )
       },
       {
         label: 'Stabilized Op. Revenue',
@@ -114,7 +119,9 @@ function buildSectionHighlights(
 
   if (section.title === 'Operating Costs') {
     const noiMarginPct =
-      firstYear.totalOperatingRevenueKrw > 0 ? (firstYear.noiKrw / firstYear.totalOperatingRevenueKrw) * 100 : 0;
+      firstYear.totalOperatingRevenueKrw > 0
+        ? (firstYear.noiKrw / firstYear.totalOperatingRevenueKrw) * 100
+        : 0;
 
     return [
       {
@@ -127,7 +134,12 @@ function buildSectionHighlights(
       },
       {
         label: 'Year 1 CFADS',
-        value: formatStatementMetric(firstYear.cfadsBeforeDebtKrw, 'currency', displayCurrency, fxRateToKrw)
+        value: formatStatementMetric(
+          firstYear.cfadsBeforeDebtKrw,
+          'currency',
+          displayCurrency,
+          fxRateToKrw
+        )
       }
     ];
   }
@@ -135,7 +147,12 @@ function buildSectionHighlights(
   return [
     {
       label: 'Year 1 Debt Service',
-      value: formatStatementMetric(firstYear.debtServiceKrw, 'currency', displayCurrency, fxRateToKrw)
+      value: formatStatementMetric(
+        firstYear.debtServiceKrw,
+        'currency',
+        displayCurrency,
+        fxRateToKrw
+      )
     },
     {
       label: 'Year 1 DSCR',
@@ -143,7 +160,12 @@ function buildSectionHighlights(
     },
     {
       label: 'Ending Debt',
-      value: formatStatementMetric(stabilizedYear.endingDebtBalanceKrw, 'currency', displayCurrency, fxRateToKrw)
+      value: formatStatementMetric(
+        stabilizedYear.endingDebtBalanceKrw,
+        'currency',
+        displayCurrency,
+        fxRateToKrw
+      )
     }
   ];
 }
@@ -229,7 +251,9 @@ function StatementTable({
               key={`${section.title}-${highlight.label}`}
               className="rounded-2xl border border-white/10 bg-slate-950/50 px-3 py-2"
             >
-              <div className="text-[11px] uppercase tracking-[0.16em] text-slate-500">{highlight.label}</div>
+              <div className="text-[11px] uppercase tracking-[0.16em] text-slate-500">
+                {highlight.label}
+              </div>
               <div className="mt-1 text-sm font-medium text-white">{highlight.value}</div>
             </div>
           ))}
@@ -247,23 +271,24 @@ function StatementTable({
                 const hasRenewalWindow = year.activeRenewalLeaseCount > 0 && rolloverBasePath;
                 const isActive = selectedRolloverYear === year.year;
                 return (
-                <th key={year.year} className="min-w-[140px] px-3 py-2 text-right">
-                  {hasRenewalWindow ? (
-                    <Link
-                      href={`${rolloverBasePath}?rolloverYear=${year.year}#lease-rollover-drilldown`}
-                      className={`inline-flex rounded-full border px-3 py-1 transition ${
-                        isActive
-                          ? 'border-amber-300/40 bg-amber-200/15 text-white'
-                          : 'border-white/10 bg-slate-950/40 text-slate-300 hover:border-amber-300/30 hover:text-white'
-                      }`}
-                    >
-                      Year {year.year}
-                    </Link>
-                  ) : (
-                    `Year ${year.year}`
-                  )}
-                </th>
-              )})}
+                  <th key={year.year} className="min-w-[140px] px-3 py-2 text-right">
+                    {hasRenewalWindow ? (
+                      <Link
+                        href={`${rolloverBasePath}?rolloverYear=${year.year}#lease-rollover-drilldown`}
+                        className={`inline-flex rounded-full border px-3 py-1 transition ${
+                          isActive
+                            ? 'border-amber-300/40 bg-amber-200/15 text-white'
+                            : 'border-white/10 bg-slate-950/40 text-slate-300 hover:border-amber-300/30 hover:text-white'
+                        }`}
+                      >
+                        Year {year.year}
+                      </Link>
+                    ) : (
+                      `Year ${year.year}`
+                    )}
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody>
@@ -276,12 +301,19 @@ function StatementTable({
                     : 'border-white/10 bg-white/[0.02] text-slate-200';
 
               return (
-                <tr key={`${section.title}-${row.key}`} className={`rounded-2xl border ${toneClass}`}>
-                  <td className="sticky left-0 z-10 bg-slate-950/95 px-3 py-3 backdrop-blur">{row.label}</td>
+                <tr
+                  key={`${section.title}-${row.key}`}
+                  className={`rounded-2xl border ${toneClass}`}
+                >
+                  <td className="sticky left-0 z-10 bg-slate-950/95 px-3 py-3 backdrop-blur">
+                    {row.label}
+                  </td>
                   {years.map((year) => {
                     const value = row.value(year);
                     const valueClass =
-                      row.displayAsNegative && value !== null && value > 0 ? 'text-rose-200' : 'text-inherit';
+                      row.displayAsNegative && value !== null && value > 0
+                        ? 'text-rose-200'
+                        : 'text-inherit';
                     const shouldLinkToDrilldown =
                       Boolean(rolloverBasePath) &&
                       year.activeRenewalLeaseCount > 0 &&
@@ -294,7 +326,10 @@ function StatementTable({
                           });
 
                     return (
-                      <td key={`${row.key}-${year.year}`} className={`px-3 py-3 text-right ${valueClass}`}>
+                      <td
+                        key={`${row.key}-${year.year}`}
+                        className={`px-3 py-3 text-right ${valueClass}`}
+                      >
                         {shouldLinkToDrilldown && value !== null ? (
                           <Link
                             href={`${rolloverBasePath}?rolloverYear=${year.year}#lease-rollover-drilldown`}
@@ -581,7 +616,8 @@ export function ProFormaPanel({
       <Card>
         <div className="eyebrow">Base Case Pro Forma</div>
         <div className="mt-4 rounded-[22px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
-          No stored base-case pro forma yet. Run a fresh valuation after the new cash-flow model is saved.
+          No stored base-case pro forma yet. Run a fresh valuation after the new cash-flow model is
+          saved.
         </div>
       </Card>
     );
@@ -601,32 +637,58 @@ export function ProFormaPanel({
     ? [
         [
           'Equity IRR',
-          proForma.summary.equityIrr !== null ? `${formatNumber(proForma.summary.equityIrr, 2)}%` : 'N/A',
-          proForma.summary.equityIrr !== null && proForma.summary.equityIrr >= 15 ? 'good' : proForma.summary.equityIrr !== null && proForma.summary.equityIrr >= 8 ? 'neutral' : 'warn'
+          proForma.summary.equityIrr !== null
+            ? `${formatNumber(proForma.summary.equityIrr, 2)}%`
+            : 'N/A',
+          proForma.summary.equityIrr !== null && proForma.summary.equityIrr >= 15
+            ? 'good'
+            : proForma.summary.equityIrr !== null && proForma.summary.equityIrr >= 8
+              ? 'neutral'
+              : 'warn'
         ],
         [
           'Unlevered IRR',
-          proForma.summary.unleveragedIrr !== null ? `${formatNumber(proForma.summary.unleveragedIrr, 2)}%` : 'N/A',
-          proForma.summary.unleveragedIrr !== null && proForma.summary.unleveragedIrr >= 10 ? 'good' : 'neutral'
+          proForma.summary.unleveragedIrr !== null
+            ? `${formatNumber(proForma.summary.unleveragedIrr, 2)}%`
+            : 'N/A',
+          proForma.summary.unleveragedIrr !== null && proForma.summary.unleveragedIrr >= 10
+            ? 'good'
+            : 'neutral'
         ],
         [
           'Equity Multiple',
           `${formatNumber(proForma.summary.equityMultiple, 2)}x`,
-          proForma.summary.equityMultiple >= 2.0 ? 'good' : proForma.summary.equityMultiple >= 1.5 ? 'neutral' : 'warn'
+          proForma.summary.equityMultiple >= 2.0
+            ? 'good'
+            : proForma.summary.equityMultiple >= 1.5
+              ? 'neutral'
+              : 'warn'
         ],
         [
           'Avg Cash-on-Cash',
           `${formatNumber(proForma.summary.averageCashOnCash, 2)}%`,
-          proForma.summary.averageCashOnCash >= 8 ? 'good' : proForma.summary.averageCashOnCash >= 5 ? 'neutral' : 'warn'
+          proForma.summary.averageCashOnCash >= 8
+            ? 'good'
+            : proForma.summary.averageCashOnCash >= 5
+              ? 'neutral'
+              : 'warn'
         ],
         [
           'Payback',
-          proForma.summary.paybackYear !== null ? `Year ${proForma.summary.paybackYear}` : 'Beyond horizon',
-          proForma.summary.paybackYear !== null && proForma.summary.paybackYear <= 7 ? 'good' : 'warn'
+          proForma.summary.paybackYear !== null
+            ? `Year ${proForma.summary.paybackYear}`
+            : 'Beyond horizon',
+          proForma.summary.paybackYear !== null && proForma.summary.paybackYear <= 7
+            ? 'good'
+            : 'warn'
         ],
         [
           'Initial Equity',
-          formatCurrencyFromKrwAtRate(proForma.summary.initialEquityKrw, displayCurrency, fxRateToKrw),
+          formatCurrencyFromKrwAtRate(
+            proForma.summary.initialEquityKrw,
+            displayCurrency,
+            fxRateToKrw
+          ),
           'neutral'
         ]
       ]
@@ -634,7 +696,9 @@ export function ProFormaPanel({
 
   const firstYear = proForma.years[0];
   const rolloverHighlights = buildRolloverHighlights(proForma.years, displayCurrency, fxRateToKrw);
-  const renewalYears = proForma.years.filter((year) => year.activeRenewalLeaseCount > 0).map((year) => year.year);
+  const renewalYears = proForma.years
+    .filter((year) => year.activeRenewalLeaseCount > 0)
+    .map((year) => year.year);
   const sections = buildStatementSections().map((section) => ({
     ...section,
     highlights: buildSectionHighlights(section, proForma.years, displayCurrency, fxRateToKrw)
@@ -649,20 +713,31 @@ export function ProFormaPanel({
             Revenue, operating costs, financing, and equity cash flow laid out as a statement.
           </div>
         </div>
-        <div className="text-sm text-slate-400">{formatNumber(proForma.years.length, 0)} forecast years</div>
+        <div className="text-sm text-slate-400">
+          {formatNumber(proForma.years.length, 0)} forecast years
+        </div>
       </div>
 
       {returnCards.length > 0 ? (
         <div className="mt-4 rounded-[26px] border border-emerald-500/20 bg-emerald-500/[0.04] p-4">
-          <div className="text-xs uppercase tracking-[0.18em] text-emerald-200/80">Return Metrics</div>
+          <div className="text-xs uppercase tracking-[0.18em] text-emerald-200/80">
+            Return Metrics
+          </div>
           <div className="mt-3 grid gap-3 md:grid-cols-3 xl:grid-cols-6">
             {returnCards.map(([label, value, tone]) => (
-              <div key={label} className={`rounded-2xl border p-4 ${
-                tone === 'good' ? 'border-emerald-400/20 bg-emerald-500/[0.06]'
-                  : tone === 'warn' ? 'border-orange-400/20 bg-orange-500/[0.06]'
-                    : 'border-white/10 bg-slate-950/40'
-              }`}>
-                <div className="text-[11px] uppercase tracking-[0.16em] text-slate-500">{label}</div>
+              <div
+                key={label}
+                className={`rounded-2xl border p-4 ${
+                  tone === 'good'
+                    ? 'border-emerald-400/20 bg-emerald-500/[0.06]'
+                    : tone === 'warn'
+                      ? 'border-orange-400/20 bg-orange-500/[0.06]'
+                      : 'border-white/10 bg-slate-950/40'
+                }`}
+              >
+                <div className="text-[11px] uppercase tracking-[0.16em] text-slate-500">
+                  {label}
+                </div>
                 <div className="mt-2 text-lg font-semibold text-white">{value}</div>
               </div>
             ))}
@@ -689,21 +764,30 @@ export function ProFormaPanel({
 
       {rolloverHighlights.length > 0 ? (
         <div className="mt-4 rounded-[26px] border border-amber-500/20 bg-amber-500/[0.06] p-4">
-          <div className="text-xs uppercase tracking-[0.18em] text-amber-200/80">Rollover Watch</div>
+          <div className="text-xs uppercase tracking-[0.18em] text-amber-200/80">
+            Rollover Watch
+          </div>
           <div className="mt-2 text-sm text-amber-50/80">
             Renewal-driven years, mark-to-market rollover pricing, and repeat-cycle exposure.
           </div>
           <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             {rolloverHighlights.map((highlight) => (
-              <div key={highlight.label} className="rounded-2xl border border-amber-400/15 bg-slate-950/35 p-4">
-                <div className="text-[11px] uppercase tracking-[0.16em] text-amber-100/60">{highlight.label}</div>
+              <div
+                key={highlight.label}
+                className="rounded-2xl border border-amber-400/15 bg-slate-950/35 p-4"
+              >
+                <div className="text-[11px] uppercase tracking-[0.16em] text-amber-100/60">
+                  {highlight.label}
+                </div>
                 <div className="mt-2 text-lg font-semibold text-white">{highlight.value}</div>
               </div>
             ))}
           </div>
           {rolloverBasePath && renewalYears.length > 0 ? (
             <div className="mt-4 flex flex-wrap items-center gap-2">
-              <div className="text-[11px] uppercase tracking-[0.16em] text-amber-100/60">Jump To Monthly Window</div>
+              <div className="text-[11px] uppercase tracking-[0.16em] text-amber-100/60">
+                Jump To Monthly Window
+              </div>
               {renewalYears.map((year) => {
                 const isActive = selectedRolloverYear === year;
                 return (
@@ -740,13 +824,23 @@ export function ProFormaPanel({
             </div>
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-            <div className="text-xs uppercase tracking-[0.16em] text-slate-500">Year 1 Occupied Load</div>
-            <div className="mt-2 text-lg font-semibold text-white">{formatNumber(firstYear.occupiedKw, 0)} kW</div>
+            <div className="text-xs uppercase tracking-[0.16em] text-slate-500">
+              Year 1 Occupied Load
+            </div>
+            <div className="mt-2 text-lg font-semibold text-white">
+              {formatNumber(firstYear.occupiedKw, 0)} kW
+            </div>
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-            <div className="text-xs uppercase tracking-[0.16em] text-slate-500">Year 1 Total Op. Revenue</div>
+            <div className="text-xs uppercase tracking-[0.16em] text-slate-500">
+              Year 1 Total Op. Revenue
+            </div>
             <div className="mt-2 text-lg font-semibold text-white">
-              {formatCurrencyFromKrwAtRate(firstYear.totalOperatingRevenueKrw, displayCurrency, fxRateToKrw)}
+              {formatCurrencyFromKrwAtRate(
+                firstYear.totalOperatingRevenueKrw,
+                displayCurrency,
+                fxRateToKrw
+              )}
             </div>
           </div>
         </div>

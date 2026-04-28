@@ -95,13 +95,16 @@ type ReimbursementMetrics = {
 
 function probabilityForLease(lease: BundleLease, scenario: ScenarioInput) {
   const base =
-    lease.probabilityPct ??
-    (lease.status === 'ACTIVE' ? 100 : lease.status === 'SIGNED' ? 88 : 68);
+    lease.probabilityPct ?? (lease.status === 'ACTIVE' ? 100 : lease.status === 'SIGNED' ? 88 : 68);
   return clamp((base + scenario.leaseProbabilityBumpPct) / 100, 0.35, 1);
 }
 
 function renewalProbabilityForLease(lease: BundleLease, referenceStep?: BundleLeaseStep) {
-  return clamp(ensureNumber(referenceStep?.renewProbabilityPct, lease.renewProbabilityPct ?? 0) / 100, 0, 1);
+  return clamp(
+    ensureNumber(referenceStep?.renewProbabilityPct, lease.renewProbabilityPct ?? 0) / 100,
+    0,
+    1
+  );
 }
 
 function resolveLastEffectiveStep(lease: BundleLease) {
@@ -144,7 +147,9 @@ function resolveLeaseYearContext(
   const endYear = lease.startYear + lease.termYears - 1;
   if (year < lease.startYear || year > endYear) return null;
 
-  const step = lease.steps.find((candidate) => year >= candidate.startYear && year <= candidate.endYear);
+  const step = lease.steps.find(
+    (candidate) => year >= candidate.startYear && year <= candidate.endYear
+  );
   const stepStartYear = step?.startYear ?? lease.startYear;
   const leasedKw = ensureNumber(step?.leasedKw, lease.leasedKw);
   const stepEscalationPct = ensureNumber(
@@ -170,7 +175,10 @@ function resolveLeaseYearContext(
 
 function resolveLeaseRatePerKwKrw(lease: BundleLease, context: LeaseYearContext, year: number) {
   const baseRatePerKwKrw = ensureNumber(context.step?.ratePerKwKrw, lease.baseRatePerKwKrw);
-  return baseRatePerKwKrw * (1 + context.stepEscalationPct / 100) ** Math.max(year - context.stepStartYear, 0);
+  return (
+    baseRatePerKwKrw *
+    (1 + context.stepEscalationPct / 100) ** Math.max(year - context.stepStartYear, 0)
+  );
 }
 
 function resolveRenewalReferenceRatePerKwKrw(
@@ -192,23 +200,32 @@ function resolveRenewalReferenceRatePerKwKrw(
   return resolveLeaseRatePerKwKrw(lease, terminalContext, termEndYear);
 }
 
-function resolveRenewalProfile(lease: BundleLease, referenceStep: BundleLeaseStep | undefined): RenewalProfile {
+function resolveRenewalProfile(
+  lease: BundleLease,
+  referenceStep: BundleLeaseStep | undefined
+): RenewalProfile {
   return {
     renewalCount: Math.max(
       Math.trunc(ensureNumber(referenceStep?.renewalCount, lease.renewalCount ?? 1)),
       0
     ),
     renewalTermYears: Math.max(
-      Math.trunc(ensureNumber(referenceStep?.renewalTermYears, lease.renewalTermYears ?? lease.termYears)),
+      Math.trunc(
+        ensureNumber(referenceStep?.renewalTermYears, lease.renewalTermYears ?? lease.termYears)
+      ),
       1
     ),
     renewalRentFreeMonths: clamp(
-      Math.trunc(ensureNumber(referenceStep?.renewalRentFreeMonths, lease.renewalRentFreeMonths ?? 0)),
+      Math.trunc(
+        ensureNumber(referenceStep?.renewalRentFreeMonths, lease.renewalRentFreeMonths ?? 0)
+      ),
       0,
       11
     ),
     rolloverDowntimeMonths: clamp(
-      Math.trunc(ensureNumber(referenceStep?.rolloverDowntimeMonths, lease.rolloverDowntimeMonths ?? 0)),
+      Math.trunc(
+        ensureNumber(referenceStep?.rolloverDowntimeMonths, lease.rolloverDowntimeMonths ?? 0)
+      ),
       0,
       11
     )
@@ -245,13 +262,13 @@ function resolveRenewalTenantCapitalCosts(
   };
 }
 
-function resolveTenantCapitalCosts(
-  lease: BundleLease,
-  context: LeaseYearContext
-) {
+function resolveTenantCapitalCosts(lease: BundleLease, context: LeaseYearContext) {
   const legacyFitOutCostKrw = context.isLeaseStartYear ? ensureNumber(lease.fitOutCostKrw, 0) : 0;
   const tenantImprovementFallbackKrw = legacyFitOutCostKrw * 0.82;
-  const leasingCommissionFallbackKrw = Math.max(legacyFitOutCostKrw - tenantImprovementFallbackKrw, 0);
+  const leasingCommissionFallbackKrw = Math.max(
+    legacyFitOutCostKrw - tenantImprovementFallbackKrw,
+    0
+  );
   const leaseLevelTenantImprovementKrw = ensureNumber(
     lease.tenantImprovementKrw,
     lease.leasingCommissionKrw !== null && lease.leasingCommissionKrw !== undefined
@@ -264,22 +281,22 @@ function resolveTenantCapitalCosts(
       ? Math.max(legacyFitOutCostKrw - ensureNumber(lease.tenantImprovementKrw, 0), 0)
       : leasingCommissionFallbackKrw
   );
-  const tenantImprovementKrw =
-    context.isStepStartYear
-      ? context.step?.tenantImprovementKrw !== null && context.step?.tenantImprovementKrw !== undefined
-        ? ensureNumber(context.step.tenantImprovementKrw, 0)
-        : context.isLeaseStartYear
-          ? leaseLevelTenantImprovementKrw
-          : 0
-      : 0;
-  const leasingCommissionKrw =
-    context.isStepStartYear
-      ? context.step?.leasingCommissionKrw !== null && context.step?.leasingCommissionKrw !== undefined
-        ? ensureNumber(context.step.leasingCommissionKrw, 0)
-        : context.isLeaseStartYear
-          ? leaseLevelLeasingCommissionKrw
-          : 0
-      : 0;
+  const tenantImprovementKrw = context.isStepStartYear
+    ? context.step?.tenantImprovementKrw !== null &&
+      context.step?.tenantImprovementKrw !== undefined
+      ? ensureNumber(context.step.tenantImprovementKrw, 0)
+      : context.isLeaseStartYear
+        ? leaseLevelTenantImprovementKrw
+        : 0
+    : 0;
+  const leasingCommissionKrw = context.isStepStartYear
+    ? context.step?.leasingCommissionKrw !== null &&
+      context.step?.leasingCommissionKrw !== undefined
+      ? ensureNumber(context.step.leasingCommissionKrw, 0)
+      : context.isLeaseStartYear
+        ? leaseLevelLeasingCommissionKrw
+        : 0
+    : 0;
 
   return {
     tenantImprovementKrw,
@@ -302,20 +319,32 @@ function leaseRevenueForYear(
       context
     );
     const monthlyRevenueKrw =
-      context.leasedKw * ratePerKwKrw * context.probability * context.occupancyFactor * scenario.revenueFactor;
-    const downtimeMonths = year === lease.startYear ? clamp(ensureNumber(lease.downtimeMonths, 0), 0, 11) : 0;
-    const rentFreeMonths =
-      context.isStepStartYear
-        ? clamp(ensureNumber(context.step?.rentFreeMonths, lease.rentFreeMonths ?? 0), 0, 11 - downtimeMonths)
-        : 0;
+      context.leasedKw *
+      ratePerKwKrw *
+      context.probability *
+      context.occupancyFactor *
+      scenario.revenueFactor;
+    const downtimeMonths =
+      year === lease.startYear ? clamp(ensureNumber(lease.downtimeMonths, 0), 0, 11) : 0;
+    const rentFreeMonths = context.isStepStartYear
+      ? clamp(
+          ensureNumber(context.step?.rentFreeMonths, lease.rentFreeMonths ?? 0),
+          0,
+          11 - downtimeMonths
+        )
+      : 0;
     const downtimeLossKrw = monthlyRevenueKrw * downtimeMonths;
     const rentFreeLossKrw = monthlyRevenueKrw * rentFreeMonths;
     const recoverableOpexRatio = clamp(
-      ensureNumber(context.step?.recoverableOpexRatioPct, lease.recoverableOpexRatioPct ?? 35) / 100,
+      ensureNumber(context.step?.recoverableOpexRatioPct, lease.recoverableOpexRatioPct ?? 35) /
+        100,
       0,
       1
     );
-    const fixedRecoveriesBaseKrw = ensureNumber(context.step?.fixedRecoveriesKrw, lease.fixedRecoveriesKrw ?? 0);
+    const fixedRecoveriesBaseKrw = ensureNumber(
+      context.step?.fixedRecoveriesKrw,
+      lease.fixedRecoveriesKrw ?? 0
+    );
     const fixedRecoveriesKrw =
       fixedRecoveriesBaseKrw *
       (1 + context.stepEscalationPct / 100) ** Math.max(year - context.stepStartYear, 0) *
@@ -368,7 +397,8 @@ function leaseRevenueForYear(
   const firstRenewalStartYear = lease.startYear + lease.termYears;
   const finalRenewalEndYear =
     firstRenewalStartYear + renewalProfile.renewalTermYears * renewalProfile.renewalCount - 1;
-  if (year < firstRenewalStartYear || year > finalRenewalEndYear) return emptyLeaseYearContribution();
+  if (year < firstRenewalStartYear || year > finalRenewalEndYear)
+    return emptyLeaseYearContribution();
 
   const cycleIndex = Math.floor((year - firstRenewalStartYear) / renewalProfile.renewalTermYears);
   const cycleStartYear = firstRenewalStartYear + cycleIndex * renewalProfile.renewalTermYears;
@@ -385,15 +415,15 @@ function leaseRevenueForYear(
     (1 + stepEscalationPct / 100) ** Math.max(year - firstRenewalStartYear, 0);
   const monthlyRevenueKrw =
     leasedKw * renewalRatePerKwKrw * probability * occupancyFactor * scenario.revenueFactor;
-  const downtimeMonths =
-    year === cycleStartYear
-      ? renewalProfile.rolloverDowntimeMonths
-      : 0;
+  const downtimeMonths = year === cycleStartYear ? renewalProfile.rolloverDowntimeMonths : 0;
   const renewalRentFreeMonths =
     year === cycleStartYear
       ? clamp(renewalProfile.renewalRentFreeMonths, 0, 11 - downtimeMonths)
       : 0;
-  const fixedRecoveriesBaseKrw = ensureNumber(referenceStep?.fixedRecoveriesKrw, lease.fixedRecoveriesKrw ?? 0);
+  const fixedRecoveriesBaseKrw = ensureNumber(
+    referenceStep?.fixedRecoveriesKrw,
+    lease.fixedRecoveriesKrw ?? 0
+  );
   const fixedRecoveriesKrw =
     fixedRecoveriesBaseKrw *
     (1 + stepEscalationPct / 100) ** Math.max(year - firstRenewalStartYear, 0) *
@@ -410,12 +440,8 @@ function leaseRevenueForYear(
     0,
     1
   );
-  const { tenantImprovementKrw, leasingCommissionKrw, fitOutCostKrw } = resolveRenewalTenantCapitalCosts(
-    lease,
-    referenceStep,
-    year,
-    cycleStartYear
-  );
+  const { tenantImprovementKrw, leasingCommissionKrw, fitOutCostKrw } =
+    resolveRenewalTenantCapitalCosts(lease, referenceStep, year, cycleStartYear);
   const operatingMonths = Math.max(12 - downtimeMonths - renewalRentFreeMonths, 0);
   const expenseStopKrw =
     ensureNumber(referenceStep?.expenseStopKrwPerKwMonth, lease.expenseStopKrwPerKwMonth ?? 0) *
@@ -579,7 +605,9 @@ function computeReimbursementMetrics(
       ? Math.max(
           siteOperatingExpenseKrw *
             clamp(
-              (contractedRecoverableOpexShareKw + residualOccupiedKw * residualRecoverableOpexRatio) / occupiedKw,
+              (contractedRecoverableOpexShareKw +
+                residualOccupiedKw * residualRecoverableOpexRatio) /
+                occupiedKw,
               0,
               1
             ) -
@@ -592,7 +620,8 @@ function computeReimbursementMetrics(
       ? powerCostKrw *
         clamp((contractedUtilityPassThroughShareKw + residualOccupiedKw * 0.14) / occupiedKw, 0, 1)
       : 0;
-  const reimbursementRevenueKrw = fixedRecoveriesKrw + siteRecoveriesKrw + utilityPassThroughRevenueKrw;
+  const reimbursementRevenueKrw =
+    fixedRecoveriesKrw + siteRecoveriesKrw + utilityPassThroughRevenueKrw;
 
   return {
     occupiedShare,
@@ -616,7 +645,10 @@ function buildLeaseCashFlowYear(
   const tenantCapitalCostKrw = totals.tenantImprovementKrw + totals.leasingCommissionKrw;
   const grossPotentialRevenueKrw = revenueKrw + totals.downtimeLossKrw + totals.rentFreeLossKrw;
   const noiKrw = Math.max(
-    totalOperatingRevenueKrw - operating.powerCostKrw - operating.siteOperatingExpenseKrw - operating.maintenanceReserveKrw,
+    totalOperatingRevenueKrw -
+      operating.powerCostKrw -
+      operating.siteOperatingExpenseKrw -
+      operating.maintenanceReserveKrw,
     0
   );
 
@@ -653,7 +685,9 @@ function buildLeaseCashFlowYear(
     cfadsBeforeDebtKrw: Math.max(noiKrw - tenantCapitalCostKrw, 0),
     activeRenewalLeaseCount: totals.activeRenewalLeaseCount,
     weightedRenewalRatePerKwKrw:
-      totals.renewalRateWeightKw > 0 ? totals.renewalRateKrwWeighted / totals.renewalRateWeightKw : null
+      totals.renewalRateWeightKw > 0
+        ? totals.renewalRateKrwWeighted / totals.renewalRateWeightKw
+        : null
   };
 }
 
@@ -664,7 +698,10 @@ export function computeLeaseDcf(
   const horizonYears = 10;
   const annualGrowthPct = prepared.annualGrowthPct;
   const exitCapRatePct = Math.max(prepared.baseCapRatePct + scenario.capRateShiftPct, 4.5);
-  const discountRatePct = Math.max(prepared.baseDiscountRatePct + scenario.discountRateShiftPct, 7.5);
+  const discountRatePct = Math.max(
+    prepared.baseDiscountRatePct + scenario.discountRateShiftPct,
+    7.5
+  );
   const baseResidualRampPct = Math.max(prepared.occupancyPct * 0.45, 28);
   const years: LeaseCashFlowYear[] = [];
 
@@ -701,7 +738,8 @@ export function computeLeaseDcf(
 
   const stabilizedYears = years.slice(-5);
   const stabilizedNoiKrw =
-    stabilizedYears.reduce((sum, year) => sum + year.noiKrw, 0) / Math.max(stabilizedYears.length, 1);
+    stabilizedYears.reduce((sum, year) => sum + year.noiKrw, 0) /
+    Math.max(stabilizedYears.length, 1);
   const incomeApproachValueKrw =
     (stabilizedNoiKrw / (exitCapRatePct / 100)) *
     prepared.stageFactor *
@@ -714,7 +752,10 @@ export function computeLeaseDcf(
     0
   );
   const terminalValueKrw =
-    (Math.max(stabilizedNoiKrw * (1 + annualGrowthPct / 100), prepared.capexBreakdown.totalCapexKrw * 0.01) /
+    (Math.max(
+      stabilizedNoiKrw * (1 + annualGrowthPct / 100),
+      prepared.capexBreakdown.totalCapexKrw * 0.01
+    ) /
       (Math.max(exitCapRatePct + 0.2, 4.8) / 100)) *
     prepared.stageFactor *
     prepared.permitPenalty *

@@ -67,7 +67,7 @@ function ipMatches(ip: string, entry: string): boolean {
     }
     if (bitsRemaining === 0) return true;
     const shift = 8 - bitsRemaining;
-    if ((ipBytes[i]! >> shift) !== (baseBytes[i]! >> shift)) return false;
+    if (ipBytes[i]! >> shift !== baseBytes[i]! >> shift) return false;
     return true;
   }
   return true;
@@ -161,7 +161,12 @@ export function applyEdgeRateLimit(pathname: string, ip: string | null): EdgeRat
   if (pathname.startsWith('/api/admin/')) {
     return {
       category: 'admin-api',
-      retryAfterMs: checkEdgeRateLimit('admin-api', ip, ADMIN_API_RATE_WINDOW_MS, ADMIN_API_RATE_MAX)
+      retryAfterMs: checkEdgeRateLimit(
+        'admin-api',
+        ip,
+        ADMIN_API_RATE_WINDOW_MS,
+        ADMIN_API_RATE_MAX
+      )
     };
   }
   if (pathname.startsWith('/api/ops/')) {
@@ -173,7 +178,12 @@ export function applyEdgeRateLimit(pathname: string, ip: string | null): EdgeRat
   if (pathname.startsWith('/api/')) {
     return {
       category: 'public-api',
-      retryAfterMs: checkEdgeRateLimit('public-api', ip, PUBLIC_API_RATE_WINDOW_MS, PUBLIC_API_RATE_MAX)
+      retryAfterMs: checkEdgeRateLimit(
+        'public-api',
+        ip,
+        PUBLIC_API_RATE_WINDOW_MS,
+        PUBLIC_API_RATE_MAX
+      )
     };
   }
   return { category: null, retryAfterMs: null };

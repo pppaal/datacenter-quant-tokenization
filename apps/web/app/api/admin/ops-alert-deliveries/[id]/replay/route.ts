@@ -1,8 +1,15 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
-import { getRequestIpAddress, resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
+import {
+  getRequestIpAddress,
+  resolveVerifiedAdminActorFromHeaders
+} from '@/lib/security/admin-request';
 import { recordAuditEvent } from '@/lib/services/audit';
-import { maskOpsAlertDestination, recordOpsAlertDelivery, replayOpsAlertDelivery } from '@/lib/services/ops-alerts';
+import {
+  maskOpsAlertDestination,
+  recordOpsAlertDelivery,
+  replayOpsAlertDelivery
+} from '@/lib/services/ops-alerts';
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const actor = await resolveVerifiedAdminActorFromHeaders(request.headers, prisma, {
@@ -35,7 +42,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         statusLabel: replay.delivered ? 'DELIVERED' : 'SKIPPED',
         reason: replay.reason,
         actorIdentifier: actor.identifier,
-        environmentLabel: process.env.VERCEL_ENV?.trim() || process.env.NODE_ENV?.trim() || 'unknown',
+        environmentLabel:
+          process.env.VERCEL_ENV?.trim() || process.env.NODE_ENV?.trim() || 'unknown',
         payload: delivery.payload ?? undefined,
         deliveredAt: replay.delivered ? new Date() : null
       },
@@ -83,8 +91,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
             statusLabel: 'FAILED',
             reason: 'replay_failed',
             actorIdentifier: actor.identifier,
-            environmentLabel: process.env.VERCEL_ENV?.trim() || process.env.NODE_ENV?.trim() || 'unknown',
-            errorMessage: error instanceof Error ? error.message : 'Failed to replay ops alert delivery.',
+            environmentLabel:
+              process.env.VERCEL_ENV?.trim() || process.env.NODE_ENV?.trim() || 'unknown',
+            errorMessage:
+              error instanceof Error ? error.message : 'Failed to replay ops alert delivery.',
             payload: originalDelivery.payload ?? undefined,
             deliveredAt: null
           },

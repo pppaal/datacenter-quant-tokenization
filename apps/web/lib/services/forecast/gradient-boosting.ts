@@ -117,7 +117,7 @@ function getMacroImpactScore(assumptions: unknown, key: string) {
   const impacts = macroRegime && isRecord(macroRegime.impacts) ? macroRegime.impacts : null;
   const dimensions = Array.isArray(impacts?.dimensions) ? impacts?.dimensions : [];
   const point = dimensions.find((dimension) => isRecord(dimension) && dimension.key === key);
-  return point && isRecord(point) ? toNumber(point.score) ?? 0 : 0;
+  return point && isRecord(point) ? (toNumber(point.score) ?? 0) : 0;
 }
 
 function clamp(value: number, min: number, max: number) {
@@ -170,9 +170,9 @@ function trainDecisionStump(samples: FeatureVector[], residuals: number[]): Deci
   let best: { stump: DecisionStump; error: number } | null = null;
 
   for (const featureKey of featureKeys) {
-    const thresholds = [...new Set(samples.map((sample) => sample[featureKey]).filter(Number.isFinite))].sort(
-      (left, right) => left - right
-    );
+    const thresholds = [
+      ...new Set(samples.map((sample) => sample[featureKey]).filter(Number.isFinite))
+    ].sort((left, right) => left - right);
     for (const threshold of thresholds) {
       const leftResiduals = residuals.filter((_, index) => samples[index][featureKey] <= threshold);
       const rightResiduals = residuals.filter((_, index) => samples[index][featureKey] > threshold);
@@ -196,7 +196,12 @@ function trainDecisionStump(samples: FeatureVector[], residuals: number[]): Deci
   return best?.stump ?? null;
 }
 
-function trainBoostedStumps(samples: FeatureVector[], targets: number[], estimatorCount = 6, learningRate = 0.35): BoostedStumpModel {
+function trainBoostedStumps(
+  samples: FeatureVector[],
+  targets: number[],
+  estimatorCount = 6,
+  learningRate = 0.35
+): BoostedStumpModel {
   const basePrediction = mean(targets);
   const estimators: DecisionStump[] = [];
   const runningPredictions = new Array(targets.length).fill(basePrediction);
@@ -244,7 +249,10 @@ function summarizeDrivers(model: BoostedStumpModel, sample: FeatureVector) {
     }));
 }
 
-export function buildGradientBoostingForecast(currentRun: ForecastRunLike, runs: ForecastRunLike[]): GradientBoostingForecast {
+export function buildGradientBoostingForecast(
+  currentRun: ForecastRunLike,
+  runs: ForecastRunLike[]
+): GradientBoostingForecast {
   const byAsset = new Map<string, ForecastRunLike[]>();
   for (const run of runs) {
     const group = byAsset.get(run.assetId) ?? [];
@@ -254,7 +262,9 @@ export function buildGradientBoostingForecast(currentRun: ForecastRunLike, runs:
 
   const samples: TrainingSample[] = [];
   for (const assetRuns of byAsset.values()) {
-    const ordered = [...assetRuns].sort((left, right) => left.createdAt.getTime() - right.createdAt.getTime());
+    const ordered = [...assetRuns].sort(
+      (left, right) => left.createdAt.getTime() - right.createdAt.getTime()
+    );
     for (let index = 0; index < ordered.length - 1; index += 1) {
       const current = ordered[index];
       const next = ordered[index + 1];
@@ -264,7 +274,8 @@ export function buildGradientBoostingForecast(currentRun: ForecastRunLike, runs:
       const nextDscr = getBaseDscr(next);
       samples.push({
         features: buildFeatureVector(current),
-        targetValueChangePct: ((next.baseCaseValueKrw - current.baseCaseValueKrw) / current.baseCaseValueKrw) * 100,
+        targetValueChangePct:
+          ((next.baseCaseValueKrw - current.baseCaseValueKrw) / current.baseCaseValueKrw) * 100,
         targetDscrChangePct: ((nextDscr - currentDscr) / Math.max(currentDscr, 0.01)) * 100
       });
     }

@@ -66,9 +66,8 @@ test('buildMockTxHash skips null and undefined parts', () => {
 
 test('mock-mode token-issuance returns deterministic txHashes', async () => {
   await withEnv({ BLOCKCHAIN_MOCK_MODE: 'true', NODE_ENV: 'development' }, async () => {
-    const { mintTokens, burnTokens, forceTransfer, pauseToken, unpauseToken } = await import(
-      '@/lib/services/onchain/token-issuance'
-    );
+    const { mintTokens, burnTokens, forceTransfer, pauseToken, unpauseToken } =
+      await import('@/lib/services/onchain/token-issuance');
     const deployment = {
       chainId: 31337,
       tokenAddress: '0x1234567890abcdef1234567890abcdef12345678' as const,
@@ -90,7 +89,11 @@ test('mock-mode token-issuance returns deterministic txHashes', async () => {
     assert.match(burnHash, /^0x[a-f0-9]{64}$/);
     assert.notEqual(burnHash, mintHash1);
 
-    const forceHash = await forceTransfer(deployment, { from: sender, to: recipient, amount: '100' });
+    const forceHash = await forceTransfer(deployment, {
+      from: sender,
+      to: recipient,
+      amount: '100'
+    });
     const pauseHash = await pauseToken(deployment);
     const unpauseHash = await unpauseToken(deployment);
     assert.match(forceHash, /^0x[a-f0-9]{64}$/);
@@ -102,9 +105,8 @@ test('mock-mode token-issuance returns deterministic txHashes', async () => {
 
 test('mock-mode identity-registry returns deterministic txHashes', async () => {
   await withEnv({ BLOCKCHAIN_MOCK_MODE: 'true', NODE_ENV: 'development' }, async () => {
-    const { registerIdentity, updateCountry, removeIdentity } = await import(
-      '@/lib/services/onchain/identity-registry'
-    );
+    const { registerIdentity, updateCountry, removeIdentity } =
+      await import('@/lib/services/onchain/identity-registry');
     const deployment = {
       chainId: 31337,
       tokenAddress: '0x1234567890abcdef1234567890abcdef12345678' as const,
@@ -132,9 +134,8 @@ test('mock-mode identity-registry returns deterministic txHashes', async () => {
 
 test('mock-mode compliance returns deterministic txHashes', async () => {
   await withEnv({ BLOCKCHAIN_MOCK_MODE: 'true', NODE_ENV: 'development' }, async () => {
-    const { blockCountry, unblockCountry, addModule, removeModule } = await import(
-      '@/lib/services/onchain/compliance'
-    );
+    const { blockCountry, unblockCountry, addModule, removeModule } =
+      await import('@/lib/services/onchain/compliance');
     const deployment = {
       chainId: 31337,
       tokenAddress: '0x1234567890abcdef1234567890abcdef12345678' as const,
@@ -161,9 +162,7 @@ test('mock-mode compliance returns deterministic txHashes', async () => {
 
 test('mock-mode valuation-anchor produces a complete result without RPC', async () => {
   await withEnv({ BLOCKCHAIN_MOCK_MODE: 'true', NODE_ENV: 'development' }, async () => {
-    const { anchorValuationOnchain } = await import(
-      '@/lib/services/onchain/valuation-anchor'
-    );
+    const { anchorValuationOnchain } = await import('@/lib/services/onchain/valuation-anchor');
     const result = await anchorValuationOnchain({
       assetCode: 'TEST-ASSET-1',
       valuation: { baseCaseValueKrw: 1_000_000_000, asOf: '2026-04-28' },

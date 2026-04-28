@@ -47,8 +47,8 @@ export function FeatureSnapshotPanel({
         <div>
           <div className="eyebrow">{title}</div>
           <p className="mt-2 max-w-3xl text-sm leading-7 text-slate-400">
-            These promoted namespaces are the approved underwriting layer used first by valuation, IC material, and
-            readiness packaging.
+            These promoted namespaces are the approved underwriting layer used first by valuation,
+            IC material, and readiness packaging.
           </p>
         </div>
         <Badge>{formatNumber(snapshots.length, 0)} namespaces</Badge>
@@ -60,10 +60,15 @@ export function FeatureSnapshotPanel({
       ) : (
         <div className="mt-4 grid gap-4 xl:grid-cols-2">
           {snapshots.map((snapshot) => (
-            <div key={snapshot.id} className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+            <div
+              key={snapshot.id}
+              className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+            >
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <div className="text-sm font-semibold text-white">{toLabel(snapshot.featureNamespace)}</div>
+                  <div className="text-sm font-semibold text-white">
+                    {toLabel(snapshot.featureNamespace)}
+                  </div>
                   <div className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">
                     {snapshot.sourceVersion ?? 'manual snapshot'}
                   </div>
@@ -75,8 +80,13 @@ export function FeatureSnapshotPanel({
               </div>
               <div className="mt-4 grid gap-3">
                 {snapshot.values.slice(0, 4).map((value) => (
-                  <div key={value.id} className="rounded-2xl border border-border bg-slate-950/40 p-3">
-                    <div className="text-[11px] uppercase tracking-[0.18em] text-slate-500">{value.key}</div>
+                  <div
+                    key={value.id}
+                    className="rounded-2xl border border-border bg-slate-950/40 p-3"
+                  >
+                    <div className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                      {value.key}
+                    </div>
                     <div className="mt-2 text-sm text-white">{formatFeatureValue(value)}</div>
                   </div>
                 ))}

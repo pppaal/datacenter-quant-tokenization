@@ -21,7 +21,8 @@ function resolveDebtFacilities(prepared: PreparedUnderwritingInputs): BundleDebt
   }
 
   const syntheticCommitmentKrw =
-    prepared.capexBreakdown.totalCapexKrw * (ensureNumber(prepared.bundle.asset.financingLtvPct, 55) / 100);
+    prepared.capexBreakdown.totalCapexKrw *
+    (ensureNumber(prepared.bundle.asset.financingLtvPct, 55) / 100);
 
   return [
     {
@@ -87,7 +88,9 @@ function resolveInterestRatePct(
   prepared: PreparedUnderwritingInputs,
   scenario: ScenarioInput
 ) {
-  return ensureNumber(facility.interestRatePct, prepared.baseDebtCostPct) + scenario.debtSpreadBumpPct;
+  return (
+    ensureNumber(facility.interestRatePct, prepared.baseDebtCostPct) + scenario.debtSpreadBumpPct
+  );
 }
 
 function resolveGraceYears(facility: BundleDebtFacility) {
@@ -111,7 +114,10 @@ function resolveYearlyPrincipalKrw(args: {
   if (args.year <= args.graceYears || args.currentBalanceKrw <= 0) return 0;
 
   if (args.facility.amortizationProfile === 'MORTGAGE') {
-    return args.currentBalanceKrw / Math.max(args.amortizationYears - (args.year - args.graceYears) + 1, 1);
+    return (
+      args.currentBalanceKrw /
+      Math.max(args.amortizationYears - (args.year - args.graceYears) + 1, 1)
+    );
   }
 
   if (args.facility.amortizationProfile === 'SCULPTED') {
@@ -120,7 +126,10 @@ function resolveYearlyPrincipalKrw(args: {
     return Math.max(permittedServiceKrw - args.yearlyInterestKrw, 0);
   }
 
-  if (args.facility.amortizationProfile === 'INTEREST_ONLY' || args.facility.amortizationProfile === 'BULLET') {
+  if (
+    args.facility.amortizationProfile === 'INTEREST_ONLY' ||
+    args.facility.amortizationProfile === 'BULLET'
+  ) {
     const balloonPct = clamp(ensureNumber(args.facility.balloonPct, 0), 0, 95);
     return args.year === args.horizonYears ? args.currentBalanceKrw * (1 - balloonPct / 100) : 0;
   }
@@ -140,7 +149,8 @@ function calculateFacilityYearMetrics(args: {
   const drawAmountKrw = annualDrawAmount(args.facility, args.year);
   const currentBalanceKrw = args.openingBalanceKrw + drawAmountKrw;
   const avgBalanceKrw = args.openingBalanceKrw + drawAmountKrw * 0.5;
-  const yearlyInterestKrw = avgBalanceKrw * (resolveInterestRatePct(args.facility, args.prepared, args.scenario) / 100);
+  const yearlyInterestKrw =
+    avgBalanceKrw * (resolveInterestRatePct(args.facility, args.prepared, args.scenario) / 100);
   const graceYears = resolveGraceYears(args.facility);
   const amortizationYears = resolveAmortizationYears(args.facility);
   const yearlyPrincipalKrw = clamp(
@@ -164,7 +174,10 @@ function calculateFacilityYearMetrics(args: {
     currentBalanceKrw,
     interestKrw: yearlyInterestKrw,
     principalKrw: yearlyPrincipalKrw,
-    endingBalanceKrw: Math.max(currentBalanceKrw - yearlyPrincipalKrw, currentBalanceKrw * (balloonPct / 100))
+    endingBalanceKrw: Math.max(
+      currentBalanceKrw - yearlyPrincipalKrw,
+      currentBalanceKrw * (balloonPct / 100)
+    )
   };
 }
 
@@ -173,13 +186,18 @@ function weightedInterestRatePct(
   prepared: PreparedUnderwritingInputs,
   scenario: ScenarioInput
 ) {
-  const totalCommitmentKrw = facilities.reduce((sum, facility) => sum + ensureNumber(facility.commitmentKrw, 0), 0);
+  const totalCommitmentKrw = facilities.reduce(
+    (sum, facility) => sum + ensureNumber(facility.commitmentKrw, 0),
+    0
+  );
   if (totalCommitmentKrw <= 0) return 0;
 
   return (
     facilities.reduce(
       (sum, facility) =>
-        sum + ensureNumber(facility.commitmentKrw, 0) * resolveInterestRatePct(facility, prepared, scenario),
+        sum +
+        ensureNumber(facility.commitmentKrw, 0) *
+          resolveInterestRatePct(facility, prepared, scenario),
       0
     ) / totalCommitmentKrw
   );
@@ -239,7 +257,10 @@ export function buildDebtSchedule(
       interestKrw,
       principalKrw,
       debtServiceKrw,
-      endingBalanceKrw: Array.from(facilityBalances.values()).reduce((sum, value) => sum + value, 0),
+      endingBalanceKrw: Array.from(facilityBalances.values()).reduce(
+        (sum, value) => sum + value,
+        0
+      ),
       dscr: debtServiceKrw > 0 ? cfadsBeforeDebtKrw[year - 1] / debtServiceKrw : null
     });
   }

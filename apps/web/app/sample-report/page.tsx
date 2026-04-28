@@ -39,7 +39,9 @@ export default async function SampleReportPage() {
   if (!latestRun) notFound();
 
   const scenarios = latestRun.scenarios ?? [];
-  const provenance = Array.isArray(latestRun.provenance) ? (latestRun.provenance as ProvenanceEntry[]) : [];
+  const provenance = Array.isArray(latestRun.provenance)
+    ? (latestRun.provenance as ProvenanceEntry[])
+    : [];
   const bullValue = scenarios[0]?.valuationKrw ?? null;
   const bearValue = scenarios[2]?.valuationKrw ?? null;
   const recommendation = getRecommendation(latestRun.confidenceScore);
@@ -88,19 +90,31 @@ export default async function SampleReportPage() {
                 <div className="metric-card">
                   <div className="fine-print">Recommendation</div>
                   <div className="mt-3 text-2xl font-semibold text-white">{recommendation}</div>
-                  <p className="mt-2 text-sm text-slate-400">Generated from confidence, scenario spread, and diligence posture.</p>
+                  <p className="mt-2 text-sm text-slate-400">
+                    Generated from confidence, scenario spread, and diligence posture.
+                  </p>
                 </div>
                 <div className="metric-card">
                   <div className="fine-print">Base Case Value</div>
                   <div className="mt-3 text-2xl font-semibold text-white">
-                    {formatCurrencyFromKrwAtRate(latestRun.baseCaseValueKrw, displayCurrency, fxRateToKrw)}
+                    {formatCurrencyFromKrwAtRate(
+                      latestRun.baseCaseValueKrw,
+                      displayCurrency,
+                      fxRateToKrw
+                    )}
                   </div>
-                  <p className="mt-2 text-sm text-slate-400">Current modeled value for committee discussion.</p>
+                  <p className="mt-2 text-sm text-slate-400">
+                    Current modeled value for committee discussion.
+                  </p>
                 </div>
                 <div className="metric-card">
                   <div className="fine-print">Confidence Score</div>
-                  <div className="mt-3 text-2xl font-semibold text-white">{formatNumber(latestRun.confidenceScore, 1)}</div>
-                  <p className="mt-2 text-sm text-slate-400">Reflects data coverage, freshness, and fallback usage.</p>
+                  <div className="mt-3 text-2xl font-semibold text-white">
+                    {formatNumber(latestRun.confidenceScore, 1)}
+                  </div>
+                  <p className="mt-2 text-sm text-slate-400">
+                    Reflects data coverage, freshness, and fallback usage.
+                  </p>
                 </div>
               </div>
             </div>
@@ -117,14 +131,14 @@ export default async function SampleReportPage() {
                     <span>Location</span>
                     <span>{asset.address?.city ?? 'N/A'}</span>
                   </div>
-                <div className="flex items-center justify-between rounded-[20px] border border-white/10 bg-white/[0.03] px-4 py-3">
-                  <span>{isDataCenter ? 'Power Capacity' : 'Rentable Area'}</span>
-                  <span>
-                    {isDataCenter
-                      ? `${formatNumber(asset.powerCapacityMw)} MW`
-                      : `${formatNumber(asset.rentableAreaSqm ?? asset.grossFloorAreaSqm)} sqm`}
-                  </span>
-                </div>
+                  <div className="flex items-center justify-between rounded-[20px] border border-white/10 bg-white/[0.03] px-4 py-3">
+                    <span>{isDataCenter ? 'Power Capacity' : 'Rentable Area'}</span>
+                    <span>
+                      {isDataCenter
+                        ? `${formatNumber(asset.powerCapacityMw)} MW`
+                        : `${formatNumber(asset.rentableAreaSqm ?? asset.grossFloorAreaSqm)} sqm`}
+                    </span>
+                  </div>
                   <div className="flex items-center justify-between rounded-[20px] border border-white/10 bg-white/[0.03] px-4 py-3">
                     <span>Engine Version</span>
                     <span>{latestRun.engineVersion}</span>
@@ -135,7 +149,8 @@ export default async function SampleReportPage() {
               <div className="rounded-[24px] border border-accent/20 bg-accent/10 p-5">
                 <div className="fine-print text-accent">Investment View</div>
                 <p className="mt-3 text-sm leading-7 text-slate-200">
-                  This sample IM shows how the platform converts structured asset inputs, scenario analysis, and diligence signals into a committee-ready investment narrative.
+                  This sample IM shows how the platform converts structured asset inputs, scenario
+                  analysis, and diligence signals into a committee-ready investment narrative.
                 </p>
               </div>
             </Card>
@@ -146,8 +161,16 @@ export default async function SampleReportPage() {
       <section className="app-shell py-4">
         <div className="grid gap-4 md:grid-cols-4">
           {[
-            ['Bull Case', formatCurrencyFromKrwAtRate(bullValue, displayCurrency, fxRateToKrw), 'upside scenario'],
-            ['Bear Case', formatCurrencyFromKrwAtRate(bearValue, displayCurrency, fxRateToKrw), 'downside scenario'],
+            [
+              'Bull Case',
+              formatCurrencyFromKrwAtRate(bullValue, displayCurrency, fxRateToKrw),
+              'upside scenario'
+            ],
+            [
+              'Bear Case',
+              formatCurrencyFromKrwAtRate(bearValue, displayCurrency, fxRateToKrw),
+              'downside scenario'
+            ],
             ['Implied Yield', formatPercent(scenarios[1]?.impliedYieldPct), 'base scenario'],
             ['Exit Cap Rate', formatPercent(scenarios[1]?.exitCapRatePct), 'base scenario']
           ].map(([label, value, detail]) => (
@@ -170,19 +193,22 @@ export default async function SampleReportPage() {
                 <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
                   <div className="fine-print">Asset Thesis</div>
                   <p className="mt-3 text-sm leading-7 text-slate-300">
-                    Asset quality, market positioning, and scenario resilience support the current underwriting case.
+                    Asset quality, market positioning, and scenario resilience support the current
+                    underwriting case.
                   </p>
                 </div>
                 <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
                   <div className="fine-print">Return Profile</div>
                   <p className="mt-3 text-sm leading-7 text-slate-300">
-                    The base scenario anchors committee discussion, while the bull and bear cases frame upside and downside.
+                    The base scenario anchors committee discussion, while the bull and bear cases
+                    frame upside and downside.
                   </p>
                 </div>
                 <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
                   <div className="fine-print">Diligence Posture</div>
                   <p className="mt-3 text-sm leading-7 text-slate-300">
-                    Remaining open items are tracked directly below in the risk list and diligence checklist.
+                    Remaining open items are tracked directly below in the risk list and diligence
+                    checklist.
                   </p>
                 </div>
               </div>
@@ -195,17 +221,25 @@ export default async function SampleReportPage() {
               <div className="mt-4 grid gap-4 text-sm text-slate-300">
                 <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
                   <div className="fine-print">Updated</div>
-                  <div className="mt-2 text-lg font-semibold text-white">{formatDate(latestRun.createdAt)}</div>
+                  <div className="mt-2 text-lg font-semibold text-white">
+                    {formatDate(latestRun.createdAt)}
+                  </div>
                 </div>
                 <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
                   <div className="fine-print">Latest Base Case</div>
                   <div className="mt-2 text-lg font-semibold text-white">
-                    {formatCurrencyFromKrwAtRate(latestRun.baseCaseValueKrw, displayCurrency, fxRateToKrw)}
+                    {formatCurrencyFromKrwAtRate(
+                      latestRun.baseCaseValueKrw,
+                      displayCurrency,
+                      fxRateToKrw
+                    )}
                   </div>
                 </div>
                 <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
                   <div className="fine-print">Confidence</div>
-                  <div className="mt-2 text-lg font-semibold text-white">{formatNumber(latestRun.confidenceScore, 1)}</div>
+                  <div className="mt-2 text-lg font-semibold text-white">
+                    {formatNumber(latestRun.confidenceScore, 1)}
+                  </div>
                 </div>
               </div>
             </Card>
@@ -214,7 +248,10 @@ export default async function SampleReportPage() {
               <div className="eyebrow">Key Risks</div>
               <ul className="mt-4 space-y-3 text-sm text-slate-300">
                 {latestRun.keyRisks.map((risk) => (
-                  <li key={risk} className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-3">
+                  <li
+                    key={risk}
+                    className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-3"
+                  >
                     {risk}
                   </li>
                 ))}
@@ -225,7 +262,10 @@ export default async function SampleReportPage() {
               <div className="eyebrow">DD Checklist</div>
               <ul className="mt-4 space-y-3 text-sm text-slate-300">
                 {latestRun.ddChecklist.map((item) => (
-                  <li key={item} className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-3">
+                  <li
+                    key={item}
+                    className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-3"
+                  >
                     {item}
                   </li>
                 ))}
@@ -263,11 +303,18 @@ export default async function SampleReportPage() {
           <Card className="space-y-4">
             <div className="eyebrow">Scenario Table</div>
             {scenarios.map((scenario) => (
-              <div key={scenario.id} className="rounded-[22px] border border-white/10 bg-slate-950/45 p-4">
+              <div
+                key={scenario.id}
+                className="rounded-[22px] border border-white/10 bg-slate-950/45 p-4"
+              >
                 <div className="flex items-center justify-between gap-3">
                   <h3 className="text-lg font-semibold text-white">{scenario.name}</h3>
                   <span className="text-sm text-slate-400">
-                    {formatCurrencyFromKrwAtRate(scenario.valuationKrw, displayCurrency, fxRateToKrw)}
+                    {formatCurrencyFromKrwAtRate(
+                      scenario.valuationKrw,
+                      displayCurrency,
+                      fxRateToKrw
+                    )}
                   </span>
                 </div>
                 <div className="mt-4 grid gap-3 text-sm text-slate-300 md:grid-cols-3">
@@ -294,9 +341,12 @@ export default async function SampleReportPage() {
 
             <Card className="hero-mesh print-hidden">
               <div className="eyebrow">Next Step</div>
-              <h2 className="mt-3 text-2xl font-semibold text-white">See how this IM is generated from a live workflow.</h2>
+              <h2 className="mt-3 text-2xl font-semibold text-white">
+                See how this IM is generated from a live workflow.
+              </h2>
               <p className="mt-4 text-sm leading-7 text-slate-300">
-                Open the admin console to create a new asset, run the analysis, and produce a new committee-ready memo from live data and assumptions.
+                Open the admin console to create a new asset, run the analysis, and produce a new
+                committee-ready memo from live data and assumptions.
               </p>
               <div className="mt-6 flex flex-wrap gap-3">
                 <Link href="/admin/assets/new">

@@ -57,7 +57,9 @@ function getTrendMomentum(trends: TrendAnalysis[], seriesKey: string): number {
  * Instead of using fixed shocks, it projects where each factor is heading
  * and constructs shocks proportional to the observed momentum.
  */
-export function generateTrendContinuationScenario(ctx: DynamicScenarioContext): MacroStressScenario {
+export function generateTrendContinuationScenario(
+  ctx: DynamicScenarioContext
+): MacroStressScenario {
   const lookup = buildFactorLookup(ctx.factors, ctx.market);
 
   const rateTrend = getTrendDirection(ctx.trends, 'policy_rate_pct');
@@ -74,23 +76,11 @@ export function generateTrendContinuationScenario(ctx: DynamicScenarioContext): 
   // Project 6-month forward shocks based on current momentum × amplification factor
   const amplification = 3; // 6 months × trend slope, with uncertainty premium
 
-  const rateShiftBps = clamp(
-    Math.round(rateMomentum * amplification * 100),
-    -50,
-    300
-  );
+  const rateShiftBps = clamp(Math.round(rateMomentum * amplification * 100), -50, 300);
 
-  const spreadShiftBps = clamp(
-    Math.round(creditMomentum * amplification),
-    -30,
-    200
-  );
+  const spreadShiftBps = clamp(Math.round(creditMomentum * amplification), -30, 200);
 
-  const vacancyShiftPct = clamp(
-    Number((vacancyMomentum * amplification).toFixed(1)),
-    -1,
-    5
-  );
+  const vacancyShiftPct = clamp(Number((vacancyMomentum * amplification).toFixed(1)), -1, 5);
 
   const growthShiftPct = clamp(
     Number((-Math.abs(growthMomentum) * amplification).toFixed(1)),
@@ -109,11 +99,13 @@ export function generateTrendContinuationScenario(ctx: DynamicScenarioContext): 
   if (spreadShiftBps > 30) activeStresses.push(`spreads +${spreadShiftBps}bps`);
   if (vacancyShiftPct > 1.0) activeStresses.push(`vacancy +${vacancyShiftPct}pp`);
   if (growthShiftPct < -0.5) activeStresses.push(`growth ${growthShiftPct}pp`);
-  if (constructionCostShiftPct > 3.0) activeStresses.push(`construction +${constructionCostShiftPct}%`);
+  if (constructionCostShiftPct > 3.0)
+    activeStresses.push(`construction +${constructionCostShiftPct}%`);
 
-  const description = activeStresses.length > 0
-    ? `Current trends extended 6 months: ${activeStresses.join(', ')}`
-    : 'Current trends project minimal stress over the next 6 months';
+  const description =
+    activeStresses.length > 0
+      ? `Current trends extended 6 months: ${activeStresses.join(', ')}`
+      : 'Current trends project minimal stress over the next 6 months';
 
   return {
     name: 'Trend Continuation',
@@ -153,9 +145,10 @@ export function generateTailRiskScenario(ctx: DynamicScenarioContext): MacroStre
   if (demandDir === 'NEGATIVE') headwinds.push('demand');
   if (constructionDir === 'NEGATIVE') headwinds.push('construction');
 
-  const description = headwinds.length > 0
-    ? `Tail-risk stress centered on current headwinds: ${headwinds.join(', ')}. 2σ adverse shocks applied.`
-    : 'Baseline tail-risk scenario with moderate shocks across all dimensions.';
+  const description =
+    headwinds.length > 0
+      ? `Tail-risk stress centered on current headwinds: ${headwinds.join(', ')}. 2σ adverse shocks applied.`
+      : 'Baseline tail-risk scenario with moderate shocks across all dimensions.';
 
   return {
     name: 'Dynamic Tail Risk',
@@ -175,8 +168,5 @@ export function generateTailRiskScenario(ctx: DynamicScenarioContext): MacroStre
  * alongside the existing static scenarios.
  */
 export function generateDynamicScenarios(ctx: DynamicScenarioContext): MacroStressScenario[] {
-  return [
-    generateTrendContinuationScenario(ctx),
-    generateTailRiskScenario(ctx)
-  ];
+  return [generateTrendContinuationScenario(ctx), generateTailRiskScenario(ctx)];
 }

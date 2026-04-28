@@ -34,10 +34,16 @@ export function SatelliteRiskSummary({
       <div className="mt-2 flex items-start justify-between gap-3">
         <div>
           <div className="flex flex-wrap gap-2">
-            <Badge tone={getSatelliteRiskTone(floodRiskScore)}>Flood {getSatelliteRiskLabel(floodRiskScore)}</Badge>
-            <Badge tone={getSatelliteRiskTone(wildfireRiskScore)}>Fire {getSatelliteRiskLabel(wildfireRiskScore)}</Badge>
+            <Badge tone={getSatelliteRiskTone(floodRiskScore)}>
+              Flood {getSatelliteRiskLabel(floodRiskScore)}
+            </Badge>
+            <Badge tone={getSatelliteRiskTone(wildfireRiskScore)}>
+              Fire {getSatelliteRiskLabel(wildfireRiskScore)}
+            </Badge>
           </div>
-          {!compact && climateNote ? <div className="mt-3 text-sm text-slate-400">{climateNote}</div> : null}
+          {!compact && climateNote ? (
+            <div className="mt-3 text-sm text-slate-400">{climateNote}</div>
+          ) : null}
           {!compact && !climateNote ? (
             <div className="mt-3 text-sm text-slate-500">No satellite climate overlay yet.</div>
           ) : null}

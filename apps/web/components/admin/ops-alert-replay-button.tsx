@@ -23,15 +23,22 @@ export function OpsAlertReplayButton({ deliveryId }: OpsAlertReplayButtonProps) 
       const response = await fetch(`/api/admin/ops-alert-deliveries/${deliveryId}/replay`, {
         method: 'POST'
       });
-      const payload = (await response.json().catch(() => null)) as { error?: string; delivery?: { statusLabel?: string } } | null;
+      const payload = (await response.json().catch(() => null)) as {
+        error?: string;
+        delivery?: { statusLabel?: string };
+      } | null;
       if (!response.ok) {
         throw new Error(payload?.error ?? 'Failed to replay alert delivery.');
       }
 
-      setFeedback(`Replay recorded as ${payload?.delivery?.statusLabel?.toLowerCase() ?? 'delivered'}.`);
+      setFeedback(
+        `Replay recorded as ${payload?.delivery?.statusLabel?.toLowerCase() ?? 'delivered'}.`
+      );
       router.refresh();
     } catch (caughtError) {
-      setError(caughtError instanceof Error ? caughtError.message : 'Failed to replay alert delivery.');
+      setError(
+        caughtError instanceof Error ? caughtError.message : 'Failed to replay alert delivery.'
+      );
     } finally {
       setSubmitting(false);
     }
@@ -39,11 +46,21 @@ export function OpsAlertReplayButton({ deliveryId }: OpsAlertReplayButtonProps) 
 
   return (
     <div className="mt-3 flex flex-wrap items-center gap-3" data-testid="ops-alert-replay">
-      <Button type="button" variant="secondary" onClick={replay} disabled={submitting} data-testid="ops-alert-replay-button">
+      <Button
+        type="button"
+        variant="secondary"
+        onClick={replay}
+        disabled={submitting}
+        data-testid="ops-alert-replay-button"
+      >
         {submitting ? 'Replaying...' : 'Replay Alert'}
       </Button>
       {feedback ? (
-        <div className="text-sm text-emerald-300" data-testid="ops-alert-replay-feedback" role="status">
+        <div
+          className="text-sm text-emerald-300"
+          data-testid="ops-alert-replay-feedback"
+          role="status"
+        >
           {feedback}
         </div>
       ) : null}

@@ -50,22 +50,34 @@ export function ReportExportCover({
         </div>
 
         <div className="space-y-4">
-          <div className="font-mono text-[11px] uppercase tracking-[0.34em] text-slate-500">{coverTitle(report)}</div>
-          <h1 className="text-5xl font-semibold leading-[0.95] tracking-[-0.05em] text-slate-950">{assetName}</h1>
+          <div className="font-mono text-[11px] uppercase tracking-[0.34em] text-slate-500">
+            {coverTitle(report)}
+          </div>
+          <h1 className="text-5xl font-semibold leading-[0.95] tracking-[-0.05em] text-slate-950">
+            {assetName}
+          </h1>
           <p className="max-w-3xl text-base leading-8 text-slate-700">{coverSubtitle(report)}</p>
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">
           <div className="rounded-[20px] border border-slate-200 px-4 py-4">
-            <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-slate-500">Location</div>
+            <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-slate-500">
+              Location
+            </div>
             <div className="mt-2 text-lg font-semibold text-slate-950">{locationLabel}</div>
           </div>
           <div className="rounded-[20px] border border-slate-200 px-4 py-4">
-            <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-slate-500">Generated</div>
-            <div className="mt-2 text-lg font-semibold text-slate-950">{report.generatedAtLabel}</div>
+            <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-slate-500">
+              Generated
+            </div>
+            <div className="mt-2 text-lg font-semibold text-slate-950">
+              {report.generatedAtLabel}
+            </div>
           </div>
           <div className="rounded-[20px] border border-slate-200 px-4 py-4">
-            <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-slate-500">Version</div>
+            <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-slate-500">
+              Version
+            </div>
             <div className="mt-2 text-lg font-semibold text-slate-950">{report.versionLabel}</div>
           </div>
         </div>
@@ -73,15 +85,21 @@ export function ReportExportCover({
         <div className="grid gap-4 md:grid-cols-3">
           {leadFacts.map((fact) => (
             <div key={fact.label} className="rounded-[20px] border border-slate-200 px-4 py-4">
-              <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-slate-500">{fact.label}</div>
+              <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-slate-500">
+                {fact.label}
+              </div>
               <div className="mt-2 text-lg font-semibold text-slate-950">{fact.value}</div>
-              {fact.detail ? <p className="mt-2 text-sm leading-7 text-slate-600">{fact.detail}</p> : null}
+              {fact.detail ? (
+                <p className="mt-2 text-sm leading-7 text-slate-600">{fact.detail}</p>
+              ) : null}
             </div>
           ))}
         </div>
 
         <div className="rounded-[20px] border border-slate-200 bg-slate-50 px-5 py-5">
-          <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-slate-500">Distribution Notice</div>
+          <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-slate-500">
+            Distribution Notice
+          </div>
           <p className="mt-3 text-sm leading-7 text-slate-700">{report.distributionNotice}</p>
         </div>
       </div>

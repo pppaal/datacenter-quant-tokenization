@@ -112,7 +112,13 @@ const STAGE_OBSOLESCENCE_PCT: Record<string, number> = {
 // per-district construction cost is unavailable. Keyed on province with
 // Seoul-prime submarket upgrade.
 const PRIME_SEOUL_DISTRICTS = new Set([
-  '강남구', '서초구', '송파구', '용산구', '영등포구', '중구', '종로구'
+  '강남구',
+  '서초구',
+  '송파구',
+  '용산구',
+  '영등포구',
+  '중구',
+  '종로구'
 ]);
 
 function regionalCostMultiplier(province: string | null, district: string | null): number {
@@ -122,7 +128,13 @@ function regionalCostMultiplier(province: string | null, district: string | null
     return 1.1;
   }
   if (province.includes('경기') || province.includes('인천')) return 1.05;
-  if (province.includes('부산') || province.includes('대구') || province.includes('광주') || province.includes('대전') || province.includes('울산')) {
+  if (
+    province.includes('부산') ||
+    province.includes('대구') ||
+    province.includes('광주') ||
+    province.includes('대전') ||
+    province.includes('울산')
+  ) {
     return 0.95;
   }
   return 0.9;
@@ -166,7 +178,10 @@ function areaSimilarityWeight(subjectAreaSqm: number, compAreaSqm: number | null
 function recencyWeight(transactionDate: Date | null, underwritingYear: number): number {
   if (!transactionDate || isNaN(transactionDate.getTime())) return 0.5;
   const now = new Date(underwritingYear, 5, 30); // mid-year anchor
-  const monthsAgo = Math.max(0, (now.getTime() - transactionDate.getTime()) / (1000 * 60 * 60 * 24 * 30));
+  const monthsAgo = Math.max(
+    0,
+    (now.getTime() - transactionDate.getTime()) / (1000 * 60 * 60 * 24 * 30)
+  );
   // Exponential decay, half-life RECENCY_HALF_LIFE_MONTHS.
   return Math.pow(0.5, monthsAgo / RECENCY_HALF_LIFE_MONTHS);
 }
@@ -266,7 +281,12 @@ function computeSalesComparisonApproach(
     if (!comp.pricePerSqmKrw || comp.pricePerSqmKrw <= 0) continue;
     const area = areaSimilarityWeight(inputs.rentableAreaSqm, comp.areaSqm);
     const recency = recencyWeight(comp.transactionDate, underwritingYear);
-    const market = marketMatchWeight(comp.market, comp.region, inputs.subjectMarket, inputs.subjectProvince);
+    const market = marketMatchWeight(
+      comp.market,
+      comp.region,
+      inputs.subjectMarket,
+      inputs.subjectProvince
+    );
     const combined = area * recency * market;
     if (combined <= 0.05) continue; // drop essentially-irrelevant comps
     weighted.push({ pricePerSqmKrw: comp.pricePerSqmKrw, weight: combined });
@@ -312,7 +332,12 @@ function computeCostApproach(
       regionalCostMultiplier(inputs.subjectProvince, inputs.subjectDistrict);
 
   const replacementCostNewKrw = regionalCostPerSqm * inputs.rentableAreaSqm;
-  const obs = computeObsolescencePct(inputs.approvalYear, inputs.stage, inputs.assetClass, underwritingYear);
+  const obs = computeObsolescencePct(
+    inputs.approvalYear,
+    inputs.stage,
+    inputs.assetClass,
+    underwritingYear
+  );
   const depreciated = replacementCostNewKrw * (1 - obs.pct / 100);
 
   // If stage is pre-built (no structure yet), cost approach represents
@@ -393,11 +418,12 @@ export function buildThreeApproachValuation(
       : `Cost approach using asset-class baseline × regional multiplier (${regionalCostMultiplier(inputs.subjectProvince, inputs.subjectDistrict).toFixed(2)})`
   ];
 
-  const methodology = available.length === 3
-    ? `All three appraisal approaches reconciled with stage-weighted profile (primary: ${primaryApproach}).`
-    : available.some((a) => a.approach === 'salesComparison')
-      ? 'Income + cost + market-validated sales comparison reconciled.'
-      : 'Income + cost reconciled; no usable comps for market validation.';
+  const methodology =
+    available.length === 3
+      ? `All three appraisal approaches reconciled with stage-weighted profile (primary: ${primaryApproach}).`
+      : available.some((a) => a.approach === 'salesComparison')
+        ? 'Income + cost + market-validated sales comparison reconciled.'
+        : 'Income + cost reconciled; no usable comps for market validation.';
 
   return {
     approaches: [income, sales, cost],
@@ -452,7 +478,8 @@ export function deriveThreeApproachInputs(
     comparableSetEntries,
     transactionComps,
     approvalYear: bundle.buildingContext?.approvalYear ?? null,
-    regionalConstructionCostPerSqmKrw: bundle.buildingContext?.regionalConstructionCostPerSqmKrw ?? null,
+    regionalConstructionCostPerSqmKrw:
+      bundle.buildingContext?.regionalConstructionCostPerSqmKrw ?? null,
     fallbackReplacementCostPerSqmKrw
   };
 }

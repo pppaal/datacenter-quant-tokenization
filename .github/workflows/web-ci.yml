@@ -76,10 +76,8 @@ jobs:
       - name: Lint (ESLint)
         run: npm run lint
 
-      # `npm run format` (Prettier --check) is intentionally not enforced
-      # in CI yet — the existing tree predates the Prettier config and
-      # would require a single-shot `npm run format:fix` reformat first.
-      # Run it locally before contributing new files.
+      - name: Format check (Prettier)
+        run: npm run format
 
       - name: Typecheck
         run: npm run typecheck

@@ -17,7 +17,9 @@ const outcomes = [
 
 export function CommitteePacketDecisionForm({ packetId }: { packetId: string }) {
   const router = useRouter();
-  const [outcome, setOutcome] = useState<CommitteeDecisionOutcome>(CommitteeDecisionOutcome.APPROVED);
+  const [outcome, setOutcome] = useState<CommitteeDecisionOutcome>(
+    CommitteeDecisionOutcome.APPROVED
+  );
   const [notes, setNotes] = useState('');
   const [followUpActions, setFollowUpActions] = useState('');
   const [busy, setBusy] = useState(false);
@@ -55,7 +57,10 @@ export function CommitteePacketDecisionForm({ packetId }: { packetId: string }) 
   }
 
   return (
-    <div className="mt-3 space-y-3 rounded-[18px] border border-white/10 bg-slate-950/35 p-3" data-testid="ic-packet-decision-form">
+    <div
+      className="mt-3 space-y-3 rounded-[18px] border border-white/10 bg-slate-950/35 p-3"
+      data-testid="ic-packet-decision-form"
+    >
       <div className="fine-print">Committee Decision</div>
       <Select
         value={outcome}
@@ -83,8 +88,18 @@ export function CommitteePacketDecisionForm({ packetId }: { packetId: string }) 
         data-testid="ic-packet-decision-followup"
       />
       <div className="flex items-center justify-between gap-3">
-        {error ? <div className="text-xs text-rose-300">{error}</div> : <div className="text-xs text-slate-500">Write the IC outcome into packet lineage.</div>}
-        <Button type="button" variant="secondary" onClick={onSubmit} disabled={busy} data-testid="ic-packet-decision-submit">
+        {error ? (
+          <div className="text-xs text-rose-300">{error}</div>
+        ) : (
+          <div className="text-xs text-slate-500">Write the IC outcome into packet lineage.</div>
+        )}
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={onSubmit}
+          disabled={busy}
+          data-testid="ic-packet-decision-submit"
+        >
           {busy ? 'Saving...' : 'Record Decision'}
         </Button>
       </div>

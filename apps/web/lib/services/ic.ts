@@ -302,9 +302,7 @@ export function buildCommitteePacketLockReadiness(
       blockers.push(`${diligenceSummary.blockedCount} specialist DD lane(s) are blocked.`);
     }
     if (diligenceSummary.missingCoreTypes.length > 0) {
-      blockers.push(
-        `Missing core DD lane(s): ${diligenceSummary.missingCoreTypes.join(', ')}.`
-      );
+      blockers.push(`Missing core DD lane(s): ${diligenceSummary.missingCoreTypes.join(', ')}.`);
     }
     if (diligenceSummary.uncoveredCoreTypes.length > 0) {
       blockers.push(
@@ -325,7 +323,10 @@ export function buildCommitteePacketLockReadiness(
   };
 }
 
-function buildCommitteePacketFingerprint(packet: CommitteePacketRecord, readiness: CommitteePacketLockReadiness) {
+function buildCommitteePacketFingerprint(
+  packet: CommitteePacketRecord,
+  readiness: CommitteePacketLockReadiness
+) {
   return crypto
     .createHash('sha256')
     .update(

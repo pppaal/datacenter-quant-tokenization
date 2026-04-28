@@ -76,11 +76,14 @@ export async function seedPortfolioAndCapitalShell(prisma: PrismaClient): Promis
                 title: 'Yeouido Leasing And Capex Plan',
                 executiveSummary:
                   'Hold through rent reversion and selective lobby/cooling system capex, with an exit case tied to CBD cap-rate compression.',
-                holdStrategy: 'Protect occupancy while capturing mark-to-market on mid-term rollover.',
-                leasingPlan: 'Close current downtime, defend anchor occupancy, and improve passing-to-market spread.',
+                holdStrategy:
+                  'Protect occupancy while capturing mark-to-market on mid-term rollover.',
+                leasingPlan:
+                  'Close current downtime, defend anchor occupancy, and improve passing-to-market spread.',
                 capexPlan: 'Lobby refresh, HVAC optimization, and amenity package upgrades.',
                 financingPlan: 'Maintain current senior term debt while preserving DSCR cushion.',
-                dispositionPlan: 'Target domestic institutional office buyer universe within 24 months.'
+                dispositionPlan:
+                  'Target domestic institutional office buyer universe within 24 months.'
               }
             },
             initiatives: {
@@ -92,7 +95,8 @@ export async function seedPortfolioAndCapitalShell(prisma: PrismaClient): Promis
                   priority: TaskPriority.HIGH,
                   ownerName: 'Office Asset Management Lead',
                   targetDate: new Date('2026-05-31T00:00:00.000Z'),
-                  summary: 'Negotiate anchor rollover package and defend occupancy before the next committee packet.',
+                  summary:
+                    'Negotiate anchor rollover package and defend occupancy before the next committee packet.',
                   nextStep: 'Issue final TI / LC proposal and confirm board timing.'
                 },
                 {
@@ -102,7 +106,8 @@ export async function seedPortfolioAndCapitalShell(prisma: PrismaClient): Promis
                   priority: TaskPriority.MEDIUM,
                   ownerName: 'Capital Projects Team',
                   targetDate: new Date('2026-06-15T00:00:00.000Z'),
-                  summary: 'Tie lobby and arrival refresh to leasing campaign before summer marketing.',
+                  summary:
+                    'Tie lobby and arrival refresh to leasing campaign before summer marketing.',
                   nextStep: 'Lock final contractor budget and tenant communications plan.'
                 }
               ]
@@ -184,7 +189,8 @@ export async function seedPortfolioAndCapitalShell(prisma: PrismaClient): Promis
                 passingRentKrwPerSqmMonth: 40600,
                 marketRentKrwPerSqmMonth: 43000,
                 occupancyPct: 93.2,
-                watchlistSummary: 'Two mid-size tenants roll in the next 24 months; leasing spread remains positive.'
+                watchlistSummary:
+                  'Two mid-size tenants roll in the next 24 months; leasing spread remains positive.'
               }
             },
             budgets: {
@@ -288,10 +294,13 @@ export async function seedPortfolioAndCapitalShell(prisma: PrismaClient): Promis
                 executiveSummary:
                   'Stabilize the first cloud anchor, clear remaining power allocation, and prepare a refinance once contracted revenue is fully visible.',
                 holdStrategy: 'Increase contracted MW and preserve refinancing optionality.',
-                leasingPlan: 'Convert AI pod pipeline and push staged ramp toward full utilization.',
+                leasingPlan:
+                  'Convert AI pod pipeline and push staged ramp toward full utilization.',
                 capexPlan: 'Electrical redundancy and white-space fit-out finishing package.',
-                financingPlan: 'Bridge from construction debt into term debt once DSCR and anchor contracts season.',
-                dispositionPlan: 'Maintain optionality for infra buyers or hold within core-plus vehicle.'
+                financingPlan:
+                  'Bridge from construction debt into term debt once DSCR and anchor contracts season.',
+                dispositionPlan:
+                  'Maintain optionality for infra buyers or hold within core-plus vehicle.'
               }
             },
             initiatives: {
@@ -303,8 +312,10 @@ export async function seedPortfolioAndCapitalShell(prisma: PrismaClient): Promis
                   priority: TaskPriority.URGENT,
                   ownerName: 'Digital Infra Leasing Lead',
                   targetDate: new Date('2026-04-30T00:00:00.000Z'),
-                  summary: 'Close the AI training pod to clear the covenant watch and support refinance timing.',
-                  blockerSummary: 'Tenant board approval and utility redundancy sign-off are both outstanding.',
+                  summary:
+                    'Close the AI training pod to clear the covenant watch and support refinance timing.',
+                  blockerSummary:
+                    'Tenant board approval and utility redundancy sign-off are both outstanding.',
                   nextStep: 'Run sponsor / tenant utility workshop and collect revised board pack.'
                 },
                 {
@@ -314,7 +325,8 @@ export async function seedPortfolioAndCapitalShell(prisma: PrismaClient): Promis
                   priority: TaskPriority.HIGH,
                   ownerName: 'Portfolio Finance Team',
                   targetDate: new Date('2026-06-10T00:00:00.000Z'),
-                  summary: 'Prepare updated lender pack once fit-out and lease evidence are fully approved.',
+                  summary:
+                    'Prepare updated lender pack once fit-out and lease evidence are fully approved.',
                   nextStep: 'Roll approved evidence and Q2 KPI trend into the refinance materials.'
                 }
               ]
@@ -396,7 +408,8 @@ export async function seedPortfolioAndCapitalShell(prisma: PrismaClient): Promis
                 passingRentKrwPerSqmMonth: 225000,
                 marketRentKrwPerSqmMonth: 228000,
                 occupancyPct: 71.2,
-                watchlistSummary: 'AI training pod remains unsigned and drives the next 24-month rollover concentration.'
+                watchlistSummary:
+                  'AI training pod remains unsigned and drives the next 24-month rollover concentration.'
               }
             },
             budgets: {
@@ -501,7 +514,8 @@ export async function seedPortfolioAndCapitalShell(prisma: PrismaClient): Promis
       investedCapitalKrw: 342000000000,
       dryPowderKrw: 188000000000,
       vintageYear: 2025,
-      thesis: 'Korean office and digital infrastructure strategy with review-gated research and disciplined capital formation.',
+      thesis:
+        'Korean office and digital infrastructure strategy with review-gated research and disciplined capital formation.',
       portfolioId: portfolio.id,
       vehicles: {
         create: [
@@ -628,7 +642,8 @@ export async function seedPortfolioAndCapitalShell(prisma: PrismaClient): Promis
         releaseStatus: InvestorReportReleaseStatus.RELEASED,
         title: 'Q1 2026 Investor Update',
         periodEnd: new Date('2026-03-31T00:00:00.000Z'),
-        draftSummary: 'Released quarterly investor letter covering occupancy, refinancing posture, and committee-approved business-plan actions.',
+        draftSummary:
+          'Released quarterly investor letter covering occupancy, refinancing posture, and committee-approved business-plan actions.',
         reviewNotes: 'Released after capital activity reconciliation and operator sign-off.',
         publishedAt: new Date('2026-04-01T00:00:00.000Z'),
         storagePath: 'seed/funds/hirf-i/q1-2026-investor-update.pdf',
@@ -641,8 +656,10 @@ export async function seedPortfolioAndCapitalShell(prisma: PrismaClient): Promis
         releaseStatus: InvestorReportReleaseStatus.READY,
         title: 'Q2 2026 Pension Sleeve Draft',
         periodEnd: new Date('2026-06-30T00:00:00.000Z'),
-        draftSummary: 'Draft LP update focused on leasing pipeline, covenant watch items, and staged refinance readiness.',
-        reviewNotes: 'Awaiting final IC follow-up on the Seoul campus stabilization package before release.',
+        draftSummary:
+          'Draft LP update focused on leasing pipeline, covenant watch items, and staged refinance readiness.',
+        reviewNotes:
+          'Awaiting final IC follow-up on the Seoul campus stabilization package before release.',
         notes: 'Held in ready state for controlled release after IC follow-up closes.'
       }
     ]

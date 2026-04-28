@@ -59,8 +59,10 @@ export function buildMicroResearchSummary(
       key: 'zoning_permit_entitlement' as const,
       label: playbook.researchDisciplineLabels.zoning_permit_entitlement,
       status: toStatus(
-        (reviewSummary.disciplines.find((item) => item.key === 'power_permit')?.approvedCount ?? 0) > 0,
-        (reviewSummary.disciplines.find((item) => item.key === 'power_permit')?.pendingCount ?? 0) > 0
+        (reviewSummary.disciplines.find((item) => item.key === 'power_permit')?.approvedCount ??
+          0) > 0,
+        (reviewSummary.disciplines.find((item) => item.key === 'power_permit')?.pendingCount ?? 0) >
+          0
       ),
       detail:
         reviewSummary.disciplines.find((item) => item.key === 'power_permit')?.items[0]?.detail ??
@@ -69,7 +71,10 @@ export function buildMicroResearchSummary(
     {
       key: 'building_physical' as const,
       label: playbook.researchDisciplineLabels.building_physical,
-      status: toStatus(Boolean(asset.buildingSnapshot?.structureDescription), Boolean(asset.siteProfile?.siteNotes)),
+      status: toStatus(
+        Boolean(asset.buildingSnapshot?.structureDescription),
+        Boolean(asset.siteProfile?.siteNotes)
+      ),
       detail:
         asset.buildingSnapshot?.structureDescription ??
         asset.siteProfile?.siteNotes ??
@@ -79,8 +84,10 @@ export function buildMicroResearchSummary(
       key: 'ownership_encumbrance_planning' as const,
       label: playbook.researchDisciplineLabels.ownership_encumbrance_planning,
       status: toStatus(
-        (reviewSummary.disciplines.find((item) => item.key === 'legal_title')?.approvedCount ?? 0) > 0,
-        (reviewSummary.disciplines.find((item) => item.key === 'legal_title')?.pendingCount ?? 0) > 0
+        (reviewSummary.disciplines.find((item) => item.key === 'legal_title')?.approvedCount ?? 0) >
+          0,
+        (reviewSummary.disciplines.find((item) => item.key === 'legal_title')?.pendingCount ?? 0) >
+          0
       ),
       detail:
         reviewSummary.disciplines.find((item) => item.key === 'legal_title')?.items[0]?.detail ??
@@ -90,8 +97,10 @@ export function buildMicroResearchSummary(
       key: 'lease_revenue' as const,
       label: playbook.researchDisciplineLabels.lease_revenue,
       status: toStatus(
-        (reviewSummary.disciplines.find((item) => item.key === 'lease_revenue')?.approvedCount ?? 0) > 0,
-        (reviewSummary.disciplines.find((item) => item.key === 'lease_revenue')?.pendingCount ?? 0) > 0
+        (reviewSummary.disciplines.find((item) => item.key === 'lease_revenue')?.approvedCount ??
+          0) > 0,
+        (reviewSummary.disciplines.find((item) => item.key === 'lease_revenue')?.pendingCount ??
+          0) > 0
       ),
       detail:
         reviewSummary.disciplines.find((item) => item.key === 'lease_revenue')?.items[0]?.detail ??
@@ -100,7 +109,10 @@ export function buildMicroResearchSummary(
     {
       key: 'tax_debt_structure' as const,
       label: playbook.researchDisciplineLabels.tax_debt_structure,
-      status: toStatus(Boolean(asset.taxAssumption || (asset.debtFacilities?.length ?? 0) > 0), Boolean(asset.debtFacilities?.length)),
+      status: toStatus(
+        Boolean(asset.taxAssumption || (asset.debtFacilities?.length ?? 0) > 0),
+        Boolean(asset.debtFacilities?.length)
+      ),
       detail:
         asset.debtFacilities && asset.debtFacilities.length > 0
           ? `${asset.debtFacilities.length} debt facility row(s) support the current structure view.`

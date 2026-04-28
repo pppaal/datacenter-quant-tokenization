@@ -93,7 +93,8 @@ export async function buildFundWaterfall(
   const navKrw = Math.max(calledKrw - distributedKrw, 0);
 
   const dpiMultiple = calledKrw > 0 ? Number((distributedKrw / calledKrw).toFixed(2)) : 0;
-  const tvpiMultiple = calledKrw > 0 ? Number(((distributedKrw + navKrw) / calledKrw).toFixed(2)) : 0;
+  const tvpiMultiple =
+    calledKrw > 0 ? Number(((distributedKrw + navKrw) / calledKrw).toFixed(2)) : 0;
 
   const investors: FundWaterfallInvestorRow[] = fund.commitments
     .map((commitment) => {
@@ -121,7 +122,8 @@ export async function buildFundWaterfall(
   const preferredReturnAmount = Math.min(hurdlePreferredReturn, remainingAfterRoc);
   const remainingAfterPref = Math.max(remainingAfterRoc - preferredReturnAmount, 0);
 
-  const catchUpTarget = (preferredReturnAmount * CARRIED_INTEREST_PCT) / (100 - CARRIED_INTEREST_PCT);
+  const catchUpTarget =
+    (preferredReturnAmount * CARRIED_INTEREST_PCT) / (100 - CARRIED_INTEREST_PCT);
   const gpCatchUpAmount = Math.min(catchUpTarget, remainingAfterPref);
   const remainingAfterCatchUp = Math.max(remainingAfterPref - gpCatchUpAmount, 0);
 

@@ -66,10 +66,16 @@ export function ReviewActionForm({
   }
 
   return (
-    <div className="space-y-3 rounded-[20px] border border-white/10 bg-slate-950/30 p-4" data-testid="review-action-form">
+    <div
+      className="space-y-3 rounded-[20px] border border-white/10 bg-slate-950/30 p-4"
+      data-testid="review-action-form"
+    >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="fine-print">Review Decision</div>
-        <div className={`text-sm font-medium ${toneForStatus(currentStatus)}`} data-testid="review-status">
+        <div
+          className={`text-sm font-medium ${toneForStatus(currentStatus)}`}
+          data-testid="review-status"
+        >
           {currentStatus}
         </div>
       </div>
@@ -82,8 +88,8 @@ export function ReviewActionForm({
       />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="max-w-md text-xs leading-6 text-slate-500">
-          Approval refreshes the approved feature layer and downstream valuation, report, and readiness inputs for this
-          asset.
+          Approval refreshes the approved feature layer and downstream valuation, report, and
+          readiness inputs for this asset.
         </div>
         <div className="flex flex-wrap gap-2">
           <Button
@@ -95,7 +101,12 @@ export function ReviewActionForm({
           >
             {submitting === 'REJECT' ? 'Rejecting...' : 'Reject Evidence'}
           </Button>
-          <Button type="button" disabled={submitting !== null} onClick={() => submit('APPROVE')} data-testid="review-approve">
+          <Button
+            type="button"
+            disabled={submitting !== null}
+            onClick={() => submit('APPROVE')}
+            data-testid="review-approve"
+          >
             {submitting === 'APPROVE' ? 'Approving...' : 'Approve Evidence'}
           </Button>
         </div>

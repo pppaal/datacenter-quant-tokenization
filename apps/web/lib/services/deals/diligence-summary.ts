@@ -54,27 +54,44 @@ const baseCoreDiligenceTypes: DealDiligenceWorkstreamType[] = [
 
 export function getCoreDiligenceTypes(assetClass: AssetClass | null | undefined) {
   const types = [...baseCoreDiligenceTypes];
-  if (assetClass === AssetClass.DATA_CENTER || assetClass === AssetClass.INDUSTRIAL || assetClass === AssetClass.LAND) {
+  if (
+    assetClass === AssetClass.DATA_CENTER ||
+    assetClass === AssetClass.INDUSTRIAL ||
+    assetClass === AssetClass.LAND
+  ) {
     types.push(DealDiligenceWorkstreamType.ENVIRONMENTAL);
   }
   return types;
 }
 
 export function getDealDiligenceWorkstreams(deal: DealListRecord | DealDetailRecord) {
-  return ('diligenceWorkstreams' in deal ? deal.diligenceWorkstreams : []) as DiligenceWorkstreamLike[];
+  return (
+    'diligenceWorkstreams' in deal ? deal.diligenceWorkstreams : []
+  ) as DiligenceWorkstreamLike[];
 }
 
 export function buildDealDiligenceSummary(
   deal: DealListRecord | DealDetailRecord,
   workstreams: DiligenceWorkstreamLike[] = getDealDiligenceWorkstreams(deal)
 ): DealDiligenceSummary {
-  const coreRequiredTypes = getCoreDiligenceTypes(deal.assetClass ?? deal.asset?.assetClass ?? null);
-  const signedOff = workstreams.filter((item) => item.status === DealDiligenceWorkstreamStatus.SIGNED_OFF);
-  const blocked = workstreams.filter((item) => item.status === DealDiligenceWorkstreamStatus.BLOCKED);
-  const readyForSignoff = workstreams.filter((item) => item.status === DealDiligenceWorkstreamStatus.READY_FOR_SIGNOFF);
+  const coreRequiredTypes = getCoreDiligenceTypes(
+    deal.assetClass ?? deal.asset?.assetClass ?? null
+  );
+  const signedOff = workstreams.filter(
+    (item) => item.status === DealDiligenceWorkstreamStatus.SIGNED_OFF
+  );
+  const blocked = workstreams.filter(
+    (item) => item.status === DealDiligenceWorkstreamStatus.BLOCKED
+  );
+  const readyForSignoff = workstreams.filter(
+    (item) => item.status === DealDiligenceWorkstreamStatus.READY_FOR_SIGNOFF
+  );
   const workstreamTypes = new Set(workstreams.map((item) => item.workstreamType));
   const missingCoreTypes = coreRequiredTypes.filter((item) => !workstreamTypes.has(item));
-  const deliverableCount = workstreams.reduce((total, item) => total + (item.deliverables?.length ?? 0), 0);
+  const deliverableCount = workstreams.reduce(
+    (total, item) => total + (item.deliverables?.length ?? 0),
+    0
+  );
   const uncoveredCoreTypes = coreRequiredTypes.filter((type) => {
     const lane = workstreams.find((item) => item.workstreamType === type);
     return !lane || (lane.deliverables?.length ?? 0) === 0;

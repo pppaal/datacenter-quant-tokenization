@@ -55,10 +55,7 @@ import {
   getChecklistTemplates,
   getStageIndex
 } from './deals/stage';
-import {
-  buildDealDiligenceSummary,
-  getDealDiligenceWorkstreams
-} from './deals/diligence-summary';
+import { buildDealDiligenceSummary, getDealDiligenceWorkstreams } from './deals/diligence-summary';
 import type { DiligenceWorkstreamLike } from './deals/diligence-summary';
 
 export {
@@ -541,7 +538,10 @@ function buildWorkstreamLine(workstream: DiligenceWorkstreamLike) {
     workstream.reportTitle ? `report ${workstream.reportTitle}` : null
   ].filter(Boolean);
 
-  const detail = [workstream.summary, workstream.blockerSummary ? `blocker: ${workstream.blockerSummary}` : null]
+  const detail = [
+    workstream.summary,
+    workstream.blockerSummary ? `blocker: ${workstream.blockerSummary}` : null
+  ]
     .filter(Boolean)
     .join(' / ');
 
@@ -567,7 +567,9 @@ export function buildDealDiligenceWorkpaper(deal: DealDetailRecord): DealDiligen
     if (leftDue !== rightDue) return leftDue - rightDue;
     return left.workstreamType.localeCompare(right.workstreamType);
   });
-  const openRequests = deal.documentRequests.filter((request) => request.status === DealRequestStatus.REQUESTED);
+  const openRequests = deal.documentRequests.filter(
+    (request) => request.status === DealRequestStatus.REQUESTED
+  );
   const keyDocuments = (deal.asset?.documents ?? []).slice(0, 8);
   const sections: DealDiligenceWorkpaperSection[] = [
     {
@@ -592,7 +594,9 @@ export function buildDealDiligenceWorkpaper(deal: DealDetailRecord): DealDiligen
       lines:
         openRequests.length > 0
           ? openRequests.map((request) => {
-              const counterpartyLabel = request.counterparty?.name ? ` / ${request.counterparty.name}` : '';
+              const counterpartyLabel = request.counterparty?.name
+                ? ` / ${request.counterparty.name}`
+                : '';
               return `${request.title}${counterpartyLabel} / ${toSentenceCase(request.status)} / due ${formatWorkpaperDate(request.dueDate)}${
                 request.notes ? ` / ${request.notes}` : ''
               }`;
@@ -605,7 +609,9 @@ export function buildDealDiligenceWorkpaper(deal: DealDetailRecord): DealDiligen
       lines:
         keyDocuments.length > 0
           ? keyDocuments.map((document) => {
-              const hashLabel = document.documentHash ? document.documentHash.slice(0, 12) : 'no-hash';
+              const hashLabel = document.documentHash
+                ? document.documentHash.slice(0, 12)
+                : 'no-hash';
               return `${document.title} / ${toSentenceCase(document.documentType)} / v${document.currentVersion} / ${hashLabel}`;
             })
           : ['No supporting asset documents are linked yet.']
@@ -622,10 +628,19 @@ export function buildDealDiligenceWorkpaper(deal: DealDetailRecord): DealDiligen
     exportFileBase: `${slugify(deal.dealCode)}-dd-workpaper-${generatedAt.toISOString().slice(0, 10)}`,
     summaryFacts: [
       { label: 'Stage', value: formatEnumLabel(deal.stage) },
-      { label: 'Checklist Completion', value: `${Math.round(snapshot?.checklistCompletionPct ?? 0)}%` },
-      { label: 'Readiness', value: `${readiness.scorePct}% / ${readiness.readyToClose ? 'Ready' : `${readiness.blockerCount} blocker(s)`}` },
+      {
+        label: 'Checklist Completion',
+        value: `${Math.round(snapshot?.checklistCompletionPct ?? 0)}%`
+      },
+      {
+        label: 'Readiness',
+        value: `${readiness.scorePct}% / ${readiness.readyToClose ? 'Ready' : `${readiness.blockerCount} blocker(s)`}`
+      },
       { label: 'Close Probability', value: `${probability.scorePct}% / ${probability.band}` },
-      { label: 'Origination', value: `${Math.round(origination.scorePct)}% / ${origination.sourceLabel}` },
+      {
+        label: 'Origination',
+        value: `${Math.round(origination.scorePct)}% / ${origination.sourceLabel}`
+      },
       {
         label: 'Specialist Sign-Off',
         value: `${diligenceSummary.signedOffCount}/${diligenceSummary.coreRequiredTypes.length} core lanes signed off`
@@ -634,7 +649,10 @@ export function buildDealDiligenceWorkpaper(deal: DealDetailRecord): DealDiligen
         label: 'Deliverables',
         value: `${diligenceSummary.deliverableCount} linked / ${diligenceSummary.uncoveredCoreTypes.length} core lanes without evidence`
       },
-      { label: 'Coverage', value: `${coverage.completedCount}/${coverage.totalCount} checks complete` }
+      {
+        label: 'Coverage',
+        value: `${coverage.completedCount}/${coverage.totalCount} checks complete`
+      }
     ],
     sections
   };
@@ -814,7 +832,9 @@ function scoreDealDocumentRequestMatch(input: {
         .filter((token) => token.length >= 3)
     )
   );
-  const requestTokens = buildExecutionTokenSet(`${input.requestTitle} ${input.requestCategory ?? ''}`);
+  const requestTokens = buildExecutionTokenSet(
+    `${input.requestTitle} ${input.requestCategory ?? ''}`
+  );
   const documentTokens = buildExecutionTokenSet(
     `${input.documentTitle} ${input.documentSummary ?? ''} ${documentTypeKeywords[input.documentType].join(' ')}`
   );
@@ -1131,7 +1151,9 @@ export async function updateDealStage(id: string, input: unknown, db: PrismaClie
     dealId: id,
     activityType: ActivityType.STAGE_CHANGED,
     title: 'Stage updated',
-    body: parsed.note ?? `Moved from ${formatStageLabel(current.stage)} to ${formatStageLabel(parsed.stage)}.`,
+    body:
+      parsed.note ??
+      `Moved from ${formatStageLabel(current.stage)} to ${formatStageLabel(parsed.stage)}.`,
     stageFrom: current.stage,
     stageTo: parsed.stage
   });
@@ -1149,7 +1171,11 @@ export async function updateDealStage(id: string, input: unknown, db: PrismaClie
   return getDealById(id, db);
 }
 
-export async function createDealCounterparty(dealId: string, input: unknown, db: PrismaClient = prisma) {
+export async function createDealCounterparty(
+  dealId: string,
+  input: unknown,
+  db: PrismaClient = prisma
+) {
   const parsed = dealCounterpartySchema.parse(input);
   const deal = await db.deal.findUnique({ where: { id: dealId } });
   if (!deal) throw new Error('Deal not found');
@@ -1295,7 +1321,11 @@ export async function createDealTask(dealId: string, input: unknown, db: PrismaC
   return task;
 }
 
-export async function createDealDocumentRequest(dealId: string, input: unknown, db: PrismaClient = prisma) {
+export async function createDealDocumentRequest(
+  dealId: string,
+  input: unknown,
+  db: PrismaClient = prisma
+) {
   const parsed = dealDocumentRequestCreateSchema.parse(input);
   const deal = await db.deal.findUnique({ where: { id: dealId } });
   if (!deal) throw new Error('Deal not found');
@@ -1383,7 +1413,7 @@ export async function updateDealDocumentRequest(
       parsed.receivedAt !== undefined
         ? parsed.receivedAt
         : nextStatus === 'RECEIVED'
-          ? request.receivedAt ?? new Date()
+          ? (request.receivedAt ?? new Date())
           : nextStatus === 'WAIVED'
             ? null
             : request.receivedAt,
@@ -1506,15 +1536,17 @@ export async function updateDealDiligenceWorkstream(
         parsed.signedOffAt !== undefined
           ? parsed.signedOffAt
           : nextStatus === DealDiligenceWorkstreamStatus.SIGNED_OFF
-            ? workstream.signedOffAt ?? new Date()
-            : nextStatus === DealDiligenceWorkstreamStatus.NOT_STARTED || nextStatus === DealDiligenceWorkstreamStatus.IN_PROGRESS || nextStatus === DealDiligenceWorkstreamStatus.BLOCKED
+            ? (workstream.signedOffAt ?? new Date())
+            : nextStatus === DealDiligenceWorkstreamStatus.NOT_STARTED ||
+                nextStatus === DealDiligenceWorkstreamStatus.IN_PROGRESS ||
+                nextStatus === DealDiligenceWorkstreamStatus.BLOCKED
               ? null
               : undefined,
       signedOffByLabel:
         parsed.signedOffByLabel !== undefined
           ? parsed.signedOffByLabel
           : nextStatus === DealDiligenceWorkstreamStatus.SIGNED_OFF
-            ? workstream.signedOffByLabel ?? 'deal operator'
+            ? (workstream.signedOffByLabel ?? 'deal operator')
             : undefined,
       summary: parsed.summary ?? undefined,
       blockerSummary: parsed.blockerSummary ?? undefined,
@@ -1554,7 +1586,8 @@ export async function attachDealDiligenceDeliverable(
     }
   });
   if (!workstream) throw new Error('Diligence workstream not found');
-  if (!workstream.deal.assetId) throw new Error('Linked asset is required for diligence deliverables');
+  if (!workstream.deal.assetId)
+    throw new Error('Linked asset is required for diligence deliverables');
 
   const document = await db.document.findFirst({
     where: {
@@ -1698,7 +1731,9 @@ export async function autoMatchDealDocumentRequestsForAsset(
   }
 
   const secondBestScore = candidates[1]?.score ?? null;
-  const shouldAutoMatch = bestCandidate.score >= 6 && (secondBestScore === null || bestCandidate.score - secondBestScore >= 2);
+  const shouldAutoMatch =
+    bestCandidate.score >= 6 &&
+    (secondBestScore === null || bestCandidate.score - secondBestScore >= 2);
 
   if (!shouldAutoMatch) {
     const suggestedCandidates = candidates.slice(0, 3);
@@ -1733,7 +1768,11 @@ export async function autoMatchDealDocumentRequestsForAsset(
       }
     });
 
-    await recordDealProbabilitySnapshot(bestCandidate.request.dealId, 'dd_request_match_suggested', db);
+    await recordDealProbabilitySnapshot(
+      bestCandidate.request.dealId,
+      'dd_request_match_suggested',
+      db
+    );
     return [];
   }
 
@@ -1793,42 +1832,52 @@ export function getDealMaterialUpdatedAt(
   const negotiationEvents = deal.negotiationEvents ?? [];
   const activityLogs = deal.activityLogs ?? [];
 
-  return maxDateFromValues([
-    deal.updatedAt,
-    ...tasks.flatMap((task) => [
-      task.updatedAt,
-      task.createdAt,
-      'completedAt' in task ? (task.completedAt ?? null) : null
-    ]),
-    ...riskFlags.flatMap((risk) => [
-      risk.updatedAt,
-      risk.createdAt,
-      'resolvedAt' in risk ? (risk.resolvedAt ?? null) : null
-    ]),
-    ...documentRequests.flatMap((request) => [
-      request.updatedAt,
-      request.createdAt,
-      request.requestedAt,
-      request.receivedAt
-    ]),
-    ...bidRevisions.flatMap((bid) => [bid.updatedAt, bid.createdAt, bid.submittedAt]),
-    ...lenderQuotes.flatMap((quote) => [quote.updatedAt, quote.createdAt, quote.quotedAt]),
-    ...negotiationEvents.flatMap((event) => [event.updatedAt, event.createdAt, event.effectiveAt]),
-    ...activityLogs.flatMap((activity) => [
-      'updatedAt' in activity ? activity.updatedAt : null,
-      activity.createdAt
-    ])
-  ]) ?? deal.updatedAt;
+  return (
+    maxDateFromValues([
+      deal.updatedAt,
+      ...tasks.flatMap((task) => [
+        task.updatedAt,
+        task.createdAt,
+        'completedAt' in task ? (task.completedAt ?? null) : null
+      ]),
+      ...riskFlags.flatMap((risk) => [
+        risk.updatedAt,
+        risk.createdAt,
+        'resolvedAt' in risk ? (risk.resolvedAt ?? null) : null
+      ]),
+      ...documentRequests.flatMap((request) => [
+        request.updatedAt,
+        request.createdAt,
+        request.requestedAt,
+        request.receivedAt
+      ]),
+      ...bidRevisions.flatMap((bid) => [bid.updatedAt, bid.createdAt, bid.submittedAt]),
+      ...lenderQuotes.flatMap((quote) => [quote.updatedAt, quote.createdAt, quote.quotedAt]),
+      ...negotiationEvents.flatMap((event) => [
+        event.updatedAt,
+        event.createdAt,
+        event.effectiveAt
+      ]),
+      ...activityLogs.flatMap((activity) => [
+        'updatedAt' in activity ? activity.updatedAt : null,
+        activity.createdAt
+      ])
+    ]) ?? deal.updatedAt
+  );
 }
 
 function getDealProbabilityObservedAt(deal: DealDetailRecord) {
-  return maxDate(
-    getDealMaterialUpdatedAt(deal),
-    deal.asset?.valuations[0]?.createdAt ?? null
-  ) ?? deal.updatedAt;
+  return (
+    maxDate(getDealMaterialUpdatedAt(deal), deal.asset?.valuations[0]?.createdAt ?? null) ??
+    deal.updatedAt
+  );
 }
 
-export async function createDealBidRevision(dealId: string, input: unknown, db: PrismaClient = prisma) {
+export async function createDealBidRevision(
+  dealId: string,
+  input: unknown,
+  db: PrismaClient = prisma
+) {
   const parsed = dealBidRevisionCreateSchema.parse(input);
   const deal = await db.deal.findUnique({ where: { id: dealId } });
   if (!deal) throw new Error('Deal not found');
@@ -1851,7 +1900,8 @@ export async function createDealBidRevision(dealId: string, input: unknown, db: 
       exclusivityDays: parsed.exclusivityDays ?? null,
       diligenceDays: parsed.diligenceDays ?? null,
       closeTimelineDays: parsed.closeTimelineDays ?? null,
-      submittedAt: parsed.submittedAt ?? (parsed.status !== DealBidStatus.DRAFT ? new Date() : null),
+      submittedAt:
+        parsed.submittedAt ?? (parsed.status !== DealBidStatus.DRAFT ? new Date() : null),
       notes: parsed.notes ?? null
     },
     include: {
@@ -1911,7 +1961,7 @@ export async function updateDealBidRevision(
         parsed.submittedAt !== undefined
           ? parsed.submittedAt
           : nextStatus !== DealBidStatus.DRAFT
-            ? bidRevision.submittedAt ?? new Date()
+            ? (bidRevision.submittedAt ?? new Date())
             : bidRevision.submittedAt,
       notes: parsed.notes ?? undefined
     },
@@ -1937,7 +1987,11 @@ export async function updateDealBidRevision(
   return updated;
 }
 
-export async function createDealLenderQuote(dealId: string, input: unknown, db: PrismaClient = prisma) {
+export async function createDealLenderQuote(
+  dealId: string,
+  input: unknown,
+  db: PrismaClient = prisma
+) {
   const parsed = dealLenderQuoteCreateSchema.parse(input);
   const deal = await db.deal.findUnique({ where: { id: dealId } });
   if (!deal) throw new Error('Deal not found');
@@ -2044,7 +2098,11 @@ export async function updateDealLenderQuote(
   return updated;
 }
 
-export async function createDealNegotiationEvent(dealId: string, input: unknown, db: PrismaClient = prisma) {
+export async function createDealNegotiationEvent(
+  dealId: string,
+  input: unknown,
+  db: PrismaClient = prisma
+) {
   const parsed = dealNegotiationEventCreateSchema.parse(input);
   const deal = await db.deal.findUnique({ where: { id: dealId } });
   if (!deal) throw new Error('Deal not found');
@@ -2157,7 +2215,12 @@ export async function updateDealNegotiationEvent(
   return updated;
 }
 
-export async function updateDealTask(dealId: string, taskId: string, input: unknown, db: PrismaClient = prisma) {
+export async function updateDealTask(
+  dealId: string,
+  taskId: string,
+  input: unknown,
+  db: PrismaClient = prisma
+) {
   const parsed = dealTaskUpdateSchema.parse(input);
   const task = await db.task.findFirst({
     where: { id: taskId, dealId }
@@ -2189,7 +2252,11 @@ export async function updateDealTask(dealId: string, taskId: string, input: unkn
   return updated;
 }
 
-export async function createDealRiskFlag(dealId: string, input: unknown, db: PrismaClient = prisma) {
+export async function createDealRiskFlag(
+  dealId: string,
+  input: unknown,
+  db: PrismaClient = prisma
+) {
   const parsed = dealRiskFlagSchema.parse(input);
   const deal = await db.deal.findUnique({ where: { id: dealId } });
   if (!deal) throw new Error('Deal not found');
@@ -2251,7 +2318,11 @@ export async function updateDealRiskFlag(
   return updated;
 }
 
-export async function createDealActivity(dealId: string, input: unknown, db: PrismaClient = prisma) {
+export async function createDealActivity(
+  dealId: string,
+  input: unknown,
+  db: PrismaClient = prisma
+) {
   const parsed = dealActivitySchema.parse(input);
   const deal = await db.deal.findUnique({ where: { id: dealId } });
   if (!deal) throw new Error('Deal not found');
@@ -2284,7 +2355,9 @@ export async function seedDealStageChecklist(dealId: string, db: PrismaClient = 
   const deal = await getDealById(dealId, db);
   if (!deal) throw new Error('Deal not found');
 
-  const templates = getChecklistTemplates(deal.stage).filter((template) => template.kind === 'task');
+  const templates = getChecklistTemplates(deal.stage).filter(
+    (template) => template.kind === 'task'
+  );
   const existingKeys = new Set(deal.tasks.map((task) => task.checklistKey).filter(Boolean));
   const createdTasks = [];
 
@@ -2383,14 +2456,15 @@ export async function closeOutDeal(dealId: string, input: unknown, db: PrismaCli
   const deal = await db.deal.findUnique({ where: { id: dealId } });
   if (!deal) throw new Error('Deal not found');
 
-  if (parsed.outcome === 'CLOSED_WON' && deal.stage !== DealStage.CLOSING && deal.stage !== DealStage.ASSET_MANAGEMENT) {
+  if (
+    parsed.outcome === 'CLOSED_WON' &&
+    deal.stage !== DealStage.CLOSING &&
+    deal.stage !== DealStage.ASSET_MANAGEMENT
+  ) {
     throw new Error('Winning close-out requires the deal to be in closing or asset management');
   }
 
-  const nextStage =
-    parsed.outcome === 'CLOSED_WON'
-      ? DealStage.ASSET_MANAGEMENT
-      : deal.stage;
+  const nextStage = parsed.outcome === 'CLOSED_WON' ? DealStage.ASSET_MANAGEMENT : deal.stage;
 
   await db.deal.update({
     where: { id: dealId },
@@ -2399,9 +2473,13 @@ export async function closeOutDeal(dealId: string, input: unknown, db: PrismaCli
       statusLabel: parsed.outcome,
       closedAt: new Date(),
       closeOutcome: parsed.outcome,
-      lossReason: parsed.outcome === 'CLOSED_LOST' ? parsed.lossReason ?? DealLossReason.OTHER : null,
+      lossReason:
+        parsed.outcome === 'CLOSED_LOST' ? (parsed.lossReason ?? DealLossReason.OTHER) : null,
       closeSummary: parsed.summary,
-      nextAction: parsed.outcome === 'CLOSED_WON' ? 'Transition execution items into asset management.' : null,
+      nextAction:
+        parsed.outcome === 'CLOSED_WON'
+          ? 'Transition execution items into asset management.'
+          : null,
       archivedAt: parsed.outcome === 'CLOSED_LOST' ? new Date() : null
     }
   });
@@ -2419,7 +2497,8 @@ export async function closeOutDeal(dealId: string, input: unknown, db: PrismaCli
     parsed.outcome === 'CLOSED_WON'
       ? {
           title: 'Complete asset management handoff',
-          description: 'Hand over open items, reporting cadence, and unresolved commercial issues to asset management.',
+          description:
+            'Hand over open items, reporting cadence, and unresolved commercial issues to asset management.',
           checklistKey: 'closeout::asset-management-handoff',
           isRequired: true
         }
@@ -2453,13 +2532,14 @@ export async function closeOutDeal(dealId: string, input: unknown, db: PrismaCli
   return getDealById(dealId, db);
 }
 
-
 export function buildDealExecutionSnapshot(deal: Awaited<ReturnType<typeof getDealById>>) {
   if (!deal) return null;
 
   const now = Date.now();
   const openTasks = deal.tasks.filter((task) => task.status !== TaskStatus.DONE);
-  const urgentTasks = openTasks.filter((task) => task.priority === 'URGENT' || task.priority === 'HIGH');
+  const urgentTasks = openTasks.filter(
+    (task) => task.priority === 'URGENT' || task.priority === 'HIGH'
+  );
   const overdueTasks = openTasks.filter((task) => task.dueDate && task.dueDate.getTime() < now);
   const dueSoonTasks = openTasks.filter((task) => {
     if (!task.dueDate) return false;
@@ -2474,11 +2554,12 @@ export function buildDealExecutionSnapshot(deal: Awaited<ReturnType<typeof getDe
       request.documentId == null &&
       ('matchSuggestion' in request ? request.matchSuggestion : null) != null
   ).length;
-  const nextTask = [...openTasks].sort((left, right) => {
-    const leftDue = left.dueDate?.getTime() ?? Number.MAX_SAFE_INTEGER;
-    const rightDue = right.dueDate?.getTime() ?? Number.MAX_SAFE_INTEGER;
-    return leftDue - rightDue || left.sortOrder - right.sortOrder;
-  })[0] ?? null;
+  const nextTask =
+    [...openTasks].sort((left, right) => {
+      const leftDue = left.dueDate?.getTime() ?? Number.MAX_SAFE_INTEGER;
+      const rightDue = right.dueDate?.getTime() ?? Number.MAX_SAFE_INTEGER;
+      return leftDue - rightDue || left.sortOrder - right.sortOrder;
+    })[0] ?? null;
   const stageChecklist = buildDealStageChecklist(deal);
   const requiredChecklistCount = stageChecklist.length;
   const completedChecklistCount = stageChecklist.filter((item) => item.status === 'done').length;
@@ -2520,13 +2601,13 @@ export function buildDealExecutionSnapshot(deal: Awaited<ReturnType<typeof getDe
         ? `${overdueTasks.length} overdue task${overdueTasks.length === 1 ? '' : 's'} need attention.`
         : exclusivityExpiresSoon
           ? `Exclusivity expires ${activeExclusivityEvent?.expiresAt?.toLocaleDateString()}.`
-        : suggestedRequestCount > 0
-          ? `${suggestedRequestCount} DD request suggestion${suggestedRequestCount === 1 ? '' : 's'} still need operator confirmation.`
-        : dueSoonTasks.length > 0
-          ? `${dueSoonTasks.length} task${dueSoonTasks.length === 1 ? '' : 's'} due in the next 72 hours.`
-          : openTasks.length > 0
-            ? 'No overdue tasks. Keep the next queued item moving.'
-            : 'No open tasks right now. Seed the current stage checklist or add the next action task.',
+          : suggestedRequestCount > 0
+            ? `${suggestedRequestCount} DD request suggestion${suggestedRequestCount === 1 ? '' : 's'} still need operator confirmation.`
+            : dueSoonTasks.length > 0
+              ? `${dueSoonTasks.length} task${dueSoonTasks.length === 1 ? '' : 's'} due in the next 72 hours.`
+              : openTasks.length > 0
+                ? 'No overdue tasks. Keep the next queued item moving.'
+                : 'No open tasks right now. Seed the current stage checklist or add the next action task.',
     notesByRole
   };
 }
@@ -2540,7 +2621,9 @@ export function buildDealDataCoverage(
   const latestValuation = deal.asset?.valuations[0] ?? null;
   const documentCount = deal.asset?.documents.length ?? 0;
   const requestCount = deal.documentRequests.length;
-  const fulfilledRequestCount = deal.documentRequests.filter((request) => request.status === DealRequestStatus.RECEIVED).length;
+  const fulfilledRequestCount = deal.documentRequests.filter(
+    (request) => request.status === DealRequestStatus.RECEIVED
+  ).length;
   const bidRevisionCount = deal.bidRevisions.length;
   const lenderQuoteCount = deal.lenderQuotes.length;
   const negotiationEventCount = deal.negotiationEvents.length;
@@ -2557,7 +2640,9 @@ export function buildDealDataCoverage(
       key: 'linked-asset',
       title: 'Linked asset record',
       status: deal.asset ? 'done' : 'missing',
-      detail: deal.asset ? 'The deal is anchored to a tracked asset record.' : 'Link the deal to an asset before execution deepens.'
+      detail: deal.asset
+        ? 'The deal is anchored to a tracked asset record.'
+        : 'Link the deal to an asset before execution deepens.'
     },
     {
       key: 'market-valuation',
@@ -2571,7 +2656,10 @@ export function buildDealDataCoverage(
       key: 'process-documents',
       title: 'Diligence documents loaded',
       status: documentCount > 0 ? 'done' : 'missing',
-      detail: documentCount > 0 ? `${documentCount} linked documents are available.` : 'No linked diligence files are visible yet.'
+      detail:
+        documentCount > 0
+          ? `${documentCount} linked documents are available.`
+          : 'No linked diligence files are visible yet.'
     },
     {
       key: 'external-contacts',
@@ -2623,7 +2711,10 @@ export function buildDealDataCoverage(
     {
       key: 'bid-revisions',
       title: 'Negotiation history tracked',
-      status: getStageIndex(deal.stage) >= getStageIndex(DealStage.LOI) && bidRevisionCount === 0 ? 'missing' : 'done',
+      status:
+        getStageIndex(deal.stage) >= getStageIndex(DealStage.LOI) && bidRevisionCount === 0
+          ? 'missing'
+          : 'done',
       detail:
         bidRevisionCount > 0
           ? `${bidRevisionCount} bid revision${bidRevisionCount === 1 ? '' : 's'} captured.`
@@ -2633,7 +2724,9 @@ export function buildDealDataCoverage(
       key: 'lender-process',
       title: 'Financing quotes tracked',
       status:
-        getStageIndex(deal.stage) >= getStageIndex(DealStage.IC) && lenderQuoteCount === 0 ? 'missing' : 'done',
+        getStageIndex(deal.stage) >= getStageIndex(DealStage.IC) && lenderQuoteCount === 0
+          ? 'missing'
+          : 'done',
       detail:
         lenderQuoteCount > 0
           ? `${lenderQuoteCount} lender quote${lenderQuoteCount === 1 ? '' : 's'} captured.`
@@ -2643,7 +2736,9 @@ export function buildDealDataCoverage(
       key: 'negotiation-events',
       title: 'Counter and feedback log',
       status:
-        getStageIndex(deal.stage) >= getStageIndex(DealStage.LOI) && negotiationEventCount === 0 ? 'missing' : 'done',
+        getStageIndex(deal.stage) >= getStageIndex(DealStage.LOI) && negotiationEventCount === 0
+          ? 'missing'
+          : 'done',
       detail:
         negotiationEventCount > 0
           ? `${negotiationEventCount} negotiation event${negotiationEventCount === 1 ? '' : 's'} captured.`
@@ -2703,17 +2798,18 @@ export function buildDealClosingReadiness(
   const stageIndex = getStageIndex(deal.stage);
   const latestValuation = deal.asset?.valuations[0] ?? null;
   const acceptedBid =
-    deal.bidRevisions.find((bid) => bid.status === DealBidStatus.ACCEPTED) ?? deal.bidRevisions[0] ?? null;
+    deal.bidRevisions.find((bid) => bid.status === DealBidStatus.ACCEPTED) ??
+    deal.bidRevisions[0] ??
+    null;
   const approvedLenderQuote =
     deal.lenderQuotes.find(
-      (quote) =>
-        quote.status === 'CREDIT_APPROVED' ||
-        quote.status === 'CLOSED'
+      (quote) => quote.status === 'CREDIT_APPROVED' || quote.status === 'CLOSED'
     ) ?? null;
   const hasLiveExclusivity = !!snapshot?.activeExclusivityEvent;
   const totalRequestCount = deal.documentRequests.length;
   const clearedRequestCount = deal.documentRequests.filter(
-    (request) => request.status === DealRequestStatus.RECEIVED || request.status === DealRequestStatus.WAIVED
+    (request) =>
+      request.status === DealRequestStatus.RECEIVED || request.status === DealRequestStatus.WAIVED
   ).length;
   const suggestedRequestCount = deal.documentRequests.filter(
     (request) =>
@@ -2752,27 +2848,24 @@ export function buildDealClosingReadiness(
     {
       key: 'financing-approved',
       title: 'Financing approval',
-      status:
-        approvedLenderQuote
-          ? 'done'
-          : stageIndex >= getStageIndex(DealStage.IC)
-            ? 'missing'
-            : 'open',
-      detail:
-        approvedLenderQuote
-          ? `${approvedLenderQuote.facilityLabel} is ${approvedLenderQuote.status.toLowerCase()}.`
-          : 'No approved lender quote or closed financing is logged.',
+      status: approvedLenderQuote
+        ? 'done'
+        : stageIndex >= getStageIndex(DealStage.IC)
+          ? 'missing'
+          : 'open',
+      detail: approvedLenderQuote
+        ? `${approvedLenderQuote.facilityLabel} is ${approvedLenderQuote.status.toLowerCase()}.`
+        : 'No approved lender quote or closed financing is logged.',
       isBlocker: true
     },
     {
       key: 'live-exclusivity',
       title: 'Live exclusivity clock',
-      status:
-        hasLiveExclusivity
-          ? 'done'
-          : stageIndex >= getStageIndex(DealStage.LOI)
-            ? 'missing'
-            : 'open',
+      status: hasLiveExclusivity
+        ? 'done'
+        : stageIndex >= getStageIndex(DealStage.LOI)
+          ? 'missing'
+          : 'open',
       detail: hasLiveExclusivity
         ? `Exclusivity runs until ${snapshot?.activeExclusivityEvent?.expiresAt?.toLocaleDateString()}.`
         : 'No live exclusivity event is protecting the process.',
@@ -2818,24 +2911,22 @@ export function buildDealClosingReadiness(
             ? `${diligenceSummary.blockedCount} workstream blocker${diligenceSummary.blockedCount === 1 ? '' : 's'} still need intervention.`
             : diligenceSummary.uncoveredCoreTypes.length > 0
               ? `Attach supporting deliverables for ${diligenceSummary.uncoveredCoreTypes.map((item) => toSentenceCase(item)).join(', ')} before packet lock.`
-            : `${diligenceSummary.signedOffCount} signed-off workstream${diligenceSummary.signedOffCount === 1 ? '' : 's'} are logged across ${diligenceSummary.totalCount} tracked lanes.`,
+              : `${diligenceSummary.signedOffCount} signed-off workstream${diligenceSummary.signedOffCount === 1 ? '' : 's'} are logged across ${diligenceSummary.totalCount} tracked lanes.`,
       isBlocker: stageIndex >= getStageIndex(DealStage.IC)
     },
     {
       key: 'recent-valuation',
       title: 'Recent valuation anchor',
-      status:
-        !latestValuation
-          ? 'missing'
-          : valuationFreshnessDays !== null && valuationFreshnessDays <= 30
-            ? 'done'
-            : 'open',
-      detail:
-        latestValuation
-          ? valuationFreshnessDays !== null && valuationFreshnessDays <= 30
-            ? `Latest valuation is ${valuationFreshnessDays} day${valuationFreshnessDays === 1 ? '' : 's'} old.`
-            : `Latest valuation is ${valuationFreshnessDays ?? '?'} days old and should be refreshed.`
-          : 'No linked valuation is available.',
+      status: !latestValuation
+        ? 'missing'
+        : valuationFreshnessDays !== null && valuationFreshnessDays <= 30
+          ? 'done'
+          : 'open',
+      detail: latestValuation
+        ? valuationFreshnessDays !== null && valuationFreshnessDays <= 30
+          ? `Latest valuation is ${valuationFreshnessDays} day${valuationFreshnessDays === 1 ? '' : 's'} old.`
+          : `Latest valuation is ${valuationFreshnessDays ?? '?'} days old and should be refreshed.`
+        : 'No linked valuation is available.',
       isBlocker: stageIndex >= getStageIndex(DealStage.IC)
     },
     {
@@ -2847,21 +2938,19 @@ export function buildDealClosingReadiness(
           : (snapshot?.checklistCompletionPct ?? 0) > 0
             ? 'open'
             : 'missing',
-      detail:
-        snapshot
-          ? `${snapshot.completedChecklistCount} of ${snapshot.requiredChecklistCount} required items are complete.`
-          : 'Stage checklist has not been evaluated.',
+      detail: snapshot
+        ? `${snapshot.completedChecklistCount} of ${snapshot.requiredChecklistCount} required items are complete.`
+        : 'Stage checklist has not been evaluated.',
       isBlocker: true
     },
     {
       key: 'execution-contacts',
       title: 'Execution counterparties assigned',
-      status:
-        hasExecutionContacts
-          ? 'done'
-          : stageIndex >= getStageIndex(DealStage.CLOSING)
-            ? 'missing'
-            : 'open',
+      status: hasExecutionContacts
+        ? 'done'
+        : stageIndex >= getStageIndex(DealStage.CLOSING)
+          ? 'missing'
+          : 'open',
       detail: hasExecutionContacts
         ? 'Buyer or lender execution contacts are logged.'
         : 'Assign at least one buyer or lender execution contact.',
@@ -2875,7 +2964,9 @@ export function buildDealClosingReadiness(
     return sum;
   }, 0);
   const blockerCount = checks.filter((check) => check.isBlocker && check.status !== 'done').length;
-  const blockers = checks.filter((check) => check.isBlocker && check.status !== 'done').map((check) => check.title);
+  const blockers = checks
+    .filter((check) => check.isBlocker && check.status !== 'done')
+    .map((check) => check.title);
 
   return {
     scorePct: checks.length > 0 ? (weightedCompletion / checks.length) * 100 : 100,
@@ -2917,7 +3008,8 @@ export function buildDealCloseProbability(
   const staleValuation =
     latestValuation != null &&
     Date.now() - latestValuation.createdAt.getTime() > 1000 * 60 * 60 * 24 * 30;
-  const staleExecution = Date.now() - getDealMaterialUpdatedAt(deal).getTime() > 1000 * 60 * 60 * 24 * 7;
+  const staleExecution =
+    Date.now() - getDealMaterialUpdatedAt(deal).getTime() > 1000 * 60 * 60 * 24 * 7;
   const openRiskCount = deal.riskFlags.filter((risk) => !risk.isResolved).length;
   const criticalRiskCount = deal.riskFlags.filter(
     (risk) => !risk.isResolved && risk.severity === RiskSeverity.CRITICAL
@@ -3028,7 +3120,9 @@ export function buildDealOriginationProfile(
   const snapshotView = snapshot ?? buildDealExecutionSnapshot(deal as DealDetailRecord);
   const counterparties = deal.counterparties ?? [];
   const roles = counterparties.map((counterparty) => counterparty.role);
-  const hasSellerCoverage = roles.some((role) => role === 'BROKER' || role === 'SELLER' || role === 'OWNER');
+  const hasSellerCoverage = roles.some(
+    (role) => role === 'BROKER' || role === 'SELLER' || role === 'OWNER'
+  );
   const hasLenderCoverage = roles.some((role) => role === 'LENDER');
   const primaryCoverage = counterparties.filter(
     (counterparty) => counterparty.coverageStatus === RelationshipCoverageStatus.PRIMARY
@@ -3037,13 +3131,14 @@ export function buildDealOriginationProfile(
     if (!counterparty.lastContactAt) return false;
     return Date.now() - counterparty.lastContactAt.getTime() <= 1000 * 60 * 60 * 24 * 21;
   });
-  const latestRecentContact = [...counterparties]
-    .filter((counterparty) => counterparty.lastContactAt)
-    .sort((left, right) => {
-      const leftValue = left.lastContactAt?.getTime() ?? 0;
-      const rightValue = right.lastContactAt?.getTime() ?? 0;
-      return rightValue - leftValue;
-    })[0] ?? null;
+  const latestRecentContact =
+    [...counterparties]
+      .filter((counterparty) => counterparty.lastContactAt)
+      .sort((left, right) => {
+        const leftValue = left.lastContactAt?.getTime() ?? 0;
+        const rightValue = right.lastContactAt?.getTime() ?? 0;
+        return rightValue - leftValue;
+      })[0] ?? null;
   const activeExclusivityEvent =
     snapshotView?.activeExclusivityEvent ??
     deal.negotiationEvents.find(
@@ -3056,13 +3151,21 @@ export function buildDealOriginationProfile(
   const hasLiveExclusivity = !!activeExclusivityEvent;
   const hasAcceptedBid = deal.bidRevisions.some((bid) => bid.status === DealBidStatus.ACCEPTED);
   const hasLiveBid = deal.bidRevisions.some(
-    (bid) => bid.status === DealBidStatus.SUBMITTED || bid.status === DealBidStatus.COUNTERED || bid.status === DealBidStatus.BAFO
+    (bid) =>
+      bid.status === DealBidStatus.SUBMITTED ||
+      bid.status === DealBidStatus.COUNTERED ||
+      bid.status === DealBidStatus.BAFO
   );
   const researchSnapshots = deal.asset?.researchSnapshots ?? [];
   const coverageTasks = deal.asset?.coverageTasks ?? [];
-  const freshResearchCount = researchSnapshots.filter((item) => item.freshnessStatus === 'FRESH').length;
-  const conflictOrStaleCoverage = coverageTasks.filter((task) => task.status !== TaskStatus.DONE).length;
-  const staleExecution = Date.now() - getDealMaterialUpdatedAt(deal).getTime() > 1000 * 60 * 60 * 24 * 7;
+  const freshResearchCount = researchSnapshots.filter(
+    (item) => item.freshnessStatus === 'FRESH'
+  ).length;
+  const conflictOrStaleCoverage = coverageTasks.filter(
+    (task) => task.status !== TaskStatus.DONE
+  ).length;
+  const staleExecution =
+    Date.now() - getDealMaterialUpdatedAt(deal).getTime() > 1000 * 60 * 60 * 24 * 7;
   const openRiskCount = deal.riskFlags.filter((risk) => !risk.isResolved).length;
   const sourceSet = deal.originationSource != null;
 
@@ -3074,7 +3177,11 @@ export function buildDealOriginationProfile(
   score += primaryCoverage.length > 0 ? 14 : -6;
   score += primaryCoverage.length > 1 ? 4 : 0;
   score += recentContacts.length > 0 ? 10 : -5;
-  score += hasLiveExclusivity ? 15 : getStageIndex(deal.stage) >= getStageIndex(DealStage.LOI) ? -10 : 0;
+  score += hasLiveExclusivity
+    ? 15
+    : getStageIndex(deal.stage) >= getStageIndex(DealStage.LOI)
+      ? -10
+      : 0;
   score += hasAcceptedBid ? 8 : hasLiveBid ? 4 : 0;
   score += freshResearchCount > 0 ? 8 : 0;
   score -= Math.min(conflictOrStaleCoverage * 2, 10);
@@ -3083,7 +3190,8 @@ export function buildDealOriginationProfile(
   score -= deal.nextAction ? 0 : 5;
   score = Math.max(5, Math.min(98, score));
 
-  const band: DealOriginationProfile['band'] = score >= 75 ? 'HIGH' : score >= 50 ? 'MEDIUM' : 'LOW';
+  const band: DealOriginationProfile['band'] =
+    score >= 75 ? 'HIGH' : score >= 50 ? 'MEDIUM' : 'LOW';
   const strengths = [
     sourceSet ? `Source path is tagged as ${formatEnumLabel(deal.originationSource)}.` : null,
     primaryCoverage.length > 0
@@ -3093,8 +3201,14 @@ export function buildDealOriginationProfile(
       ? `${recentContacts.length} counterparty touchpoint${recentContacts.length === 1 ? '' : 's'} were logged in the last 21 days.`
       : null,
     hasLiveExclusivity ? 'Live exclusivity is protecting the pursuit.' : null,
-    hasAcceptedBid ? 'Accepted paper is already in the process.' : hasLiveBid ? 'A live bid is already in market.' : null,
-    freshResearchCount > 0 ? `${freshResearchCount} fresh research snapshot${freshResearchCount === 1 ? '' : 's'} support the process.` : null
+    hasAcceptedBid
+      ? 'Accepted paper is already in the process.'
+      : hasLiveBid
+        ? 'A live bid is already in market.'
+        : null,
+    freshResearchCount > 0
+      ? `${freshResearchCount} fresh research snapshot${freshResearchCount === 1 ? '' : 's'} support the process.`
+      : null
   ].filter((item): item is string => !!item);
   const blockers = [
     !hasSellerCoverage ? 'No broker, seller, or owner-side relationship is logged.' : null,
@@ -3103,7 +3217,9 @@ export function buildDealOriginationProfile(
     !hasLiveExclusivity && getStageIndex(deal.stage) >= getStageIndex(DealStage.LOI)
       ? 'LOI-stage or deeper process has no live exclusivity clock.'
       : null,
-    conflictOrStaleCoverage > 0 ? `${conflictOrStaleCoverage} research blocker${conflictOrStaleCoverage === 1 ? '' : 's'} still sit open.` : null,
+    conflictOrStaleCoverage > 0
+      ? `${conflictOrStaleCoverage} research blocker${conflictOrStaleCoverage === 1 ? '' : 's'} still sit open.`
+      : null,
     staleExecution ? 'Deal execution record is stale.' : null
   ].filter((item): item is string => !!item);
 
@@ -3179,7 +3295,8 @@ export function buildDealCloseProbabilityHistory(
     headline: current.probability.headline,
     openRiskCount: deal.riskFlags.filter((risk) => !risk.isResolved).length,
     overdueTaskCount: deal.tasks.filter(
-      (task) => task.status !== TaskStatus.DONE && task.dueDate && task.dueDate.getTime() < Date.now()
+      (task) =>
+        task.status !== TaskStatus.DONE && task.dueDate && task.dueDate.getTime() < Date.now()
     ).length,
     pendingSuggestedRequestCount: deal.documentRequests.filter(
       (request) =>
@@ -3188,13 +3305,18 @@ export function buildDealCloseProbabilityHistory(
         (request.matchSuggestion ?? null) != null
     ).length,
     flags: [
-      deal.bidRevisions.some((bid) => bid.status === DealBidStatus.ACCEPTED) ? 'accepted bid' : null,
-      deal.lenderQuotes.some((quote) => quote.status === 'CREDIT_APPROVED' || quote.status === 'CLOSED')
+      deal.bidRevisions.some((bid) => bid.status === DealBidStatus.ACCEPTED)
+        ? 'accepted bid'
+        : null,
+      deal.lenderQuotes.some(
+        (quote) => quote.status === 'CREDIT_APPROVED' || quote.status === 'CLOSED'
+      )
         ? 'approved financing'
         : null,
       deal.negotiationEvents.some(
         (event) =>
-          (event.eventType === 'EXCLUSIVITY_GRANTED' || event.eventType === 'EXCLUSIVITY_EXTENDED') &&
+          (event.eventType === 'EXCLUSIVITY_GRANTED' ||
+            event.eventType === 'EXCLUSIVITY_EXTENDED') &&
           event.expiresAt &&
           event.expiresAt.getTime() >= Date.now()
       )
@@ -3206,12 +3328,14 @@ export function buildDealCloseProbabilityHistory(
           request.documentId == null &&
           (request.matchSuggestion ?? null) != null
       )
-        ? `pending DD suggestions (${deal.documentRequests.filter(
-            (request) =>
-              request.status === DealRequestStatus.REQUESTED &&
-              request.documentId == null &&
-              (request.matchSuggestion ?? null) != null
-          ).length})`
+        ? `pending DD suggestions (${
+            deal.documentRequests.filter(
+              (request) =>
+                request.status === DealRequestStatus.REQUESTED &&
+                request.documentId == null &&
+                (request.matchSuggestion ?? null) != null
+            ).length
+          })`
         : null
     ].filter(Boolean) as string[]
   };
@@ -3323,6 +3447,7 @@ export async function syncDealProbabilitySnapshotsForAssetDeals(
     }
   });
 
-  return Promise.all(deals.map((deal) => recordDealProbabilitySnapshot(deal.id, snapshotReason, db)));
+  return Promise.all(
+    deals.map((deal) => recordDealProbabilitySnapshot(deal.id, snapshotReason, db))
+  );
 }
-

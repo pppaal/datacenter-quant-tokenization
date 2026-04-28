@@ -51,7 +51,12 @@ export async function registerIdentity(
   const wallet = ensureAddress(input.wallet, 'wallet');
   const countryCode = ensureCountryCode(input.countryCode, 'countryCode');
   if (isTokenizationMockMode()) {
-    return buildMockTxHash('registerIdentity', deployment.identityRegistryAddress, wallet, countryCode);
+    return buildMockTxHash(
+      'registerIdentity',
+      deployment.identityRegistryAddress,
+      wallet,
+      countryCode
+    );
   }
   const clients = getTokenizationClients(deployment);
   return clients.walletClient.writeContract({
@@ -68,7 +73,12 @@ export async function updateCountry(
   const wallet = ensureAddress(input.wallet, 'wallet');
   const countryCode = ensureCountryCode(input.countryCode, 'countryCode');
   if (isTokenizationMockMode()) {
-    return buildMockTxHash('updateCountry', deployment.identityRegistryAddress, wallet, countryCode);
+    return buildMockTxHash(
+      'updateCountry',
+      deployment.identityRegistryAddress,
+      wallet,
+      countryCode
+    );
   }
   const clients = getTokenizationClients(deployment);
   return clients.walletClient.writeContract({

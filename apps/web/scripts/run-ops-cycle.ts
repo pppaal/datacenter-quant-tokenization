@@ -1,16 +1,24 @@
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
-import { persistOpsAlertAttempts, recordOpsAlertDelivery, sendOpsWebhookAlerts } from '@/lib/services/ops-alerts';
+import {
+  persistOpsAlertAttempts,
+  recordOpsAlertDelivery,
+  sendOpsWebhookAlerts
+} from '@/lib/services/ops-alerts';
 import { runOpsCycle } from '@/lib/services/ops-worker';
 
 async function main() {
   const actorIdentifier = process.env.OPS_ACTOR?.trim() || 'ops-script';
-  const environmentLabel = process.env.VERCEL_ENV?.trim() || process.env.NODE_ENV?.trim() || 'unknown';
+  const environmentLabel =
+    process.env.VERCEL_ENV?.trim() || process.env.NODE_ENV?.trim() || 'unknown';
   console.log('[ops] starting combined ops cycle...');
-  const { sourceRun, researchRun, alertSummary, attemptSummary } = await runOpsCycle({
-    actorIdentifier,
-    scheduled: false
-  }, prisma);
+  const { sourceRun, researchRun, alertSummary, attemptSummary } = await runOpsCycle(
+    {
+      actorIdentifier,
+      scheduled: false
+    },
+    prisma
+  );
   console.log(
     `[ops] source refresh ${sourceRun.statusLabel.toLowerCase()} - refreshed ${sourceRun.refreshedAssetCount}, failed ${sourceRun.failedAssetCount}.`
   );
@@ -30,24 +38,28 @@ async function main() {
     sourceRun,
     researchRun
   });
-  await persistOpsAlertAttempts(alert.attempts, {
-    actorIdentifier,
-    environmentLabel,
-    payload: {
-      status: 'SUCCESS',
+  await persistOpsAlertAttempts(
+    alert.attempts,
+    {
       actorIdentifier,
-      alertSummary,
-      attemptSummary,
-      sourceRun: {
-        id: sourceRun.id,
-        statusLabel: sourceRun.statusLabel
-      },
-      researchRun: {
-        id: researchRun.id,
-        statusLabel: researchRun.statusLabel
+      environmentLabel,
+      payload: {
+        status: 'SUCCESS',
+        actorIdentifier,
+        alertSummary,
+        attemptSummary,
+        sourceRun: {
+          id: sourceRun.id,
+          statusLabel: sourceRun.statusLabel
+        },
+        researchRun: {
+          id: researchRun.id,
+          statusLabel: researchRun.statusLabel
+        }
       }
-    }
-  }, prisma);
+    },
+    prisma
+  );
 
   if (alert.deliveredAny) {
     const deliveredAttempt = alert.attempts.find((attempt) => attempt.delivered);
@@ -65,7 +77,8 @@ main()
   })
   .catch(async (error) => {
     const actorIdentifier = process.env.OPS_ACTOR?.trim() || 'ops-script';
-    const environmentLabel = process.env.VERCEL_ENV?.trim() || process.env.NODE_ENV?.trim() || 'unknown';
+    const environmentLabel =
+      process.env.VERCEL_ENV?.trim() || process.env.NODE_ENV?.trim() || 'unknown';
     const errorMessage = error instanceof Error ? error.message : String(error);
     console.error('[ops] cycle failed:', errorMessage);
 
@@ -76,16 +89,20 @@ main()
         alertSummary: 'Ops cycle failed before completing source refresh and research sync.',
         errorMessage
       });
-      await persistOpsAlertAttempts(alert.attempts, {
-        actorIdentifier,
-        environmentLabel,
-        payload: {
-          status: 'FAILED',
+      await persistOpsAlertAttempts(
+        alert.attempts,
+        {
           actorIdentifier,
-          alertSummary: 'Ops cycle failed before completing source refresh and research sync.',
-          errorMessage
-        }
-      }, prisma);
+          environmentLabel,
+          payload: {
+            status: 'FAILED',
+            actorIdentifier,
+            alertSummary: 'Ops cycle failed before completing source refresh and research sync.',
+            errorMessage
+          }
+        },
+        prisma
+      );
       if (alert.deliveredAny) {
         const deliveredAttempt = alert.attempts.find((attempt) => attempt.delivered);
         console.error(

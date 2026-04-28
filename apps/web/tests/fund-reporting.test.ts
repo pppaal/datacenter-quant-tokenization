@@ -7,7 +7,7 @@ test('updateInvestorReportRelease stamps review metadata and publish timestamp o
 
   const result = await updateInvestorReportRelease(
     'report-1',
-        {
+    {
       releaseStatus: 'RELEASED',
       draftSummary: 'Quarterly investor letter draft',
       reviewNotes: 'IC follow-up closed'
@@ -19,11 +19,11 @@ test('updateInvestorReportRelease stamps review metadata and publish timestamp o
     {
       investorReport: {
         findUnique: async () => ({
-              id: 'report-1',
-              fundId: 'fund-1',
-              releaseStatus: 'READY',
-              publishedAt: null,
-              reviewedAt: null
+          id: 'report-1',
+          fundId: 'fund-1',
+          releaseStatus: 'READY',
+          publishedAt: null,
+          reviewedAt: null
         }),
         update: async (args: any) => {
           capturedUpdate = args;

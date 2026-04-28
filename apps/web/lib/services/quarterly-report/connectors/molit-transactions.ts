@@ -19,8 +19,8 @@ type MolitCommercialRow = {
   법정동명?: string;
   시군구?: string;
   건물주용도?: string;
-  거래금액?: string;   // "500,000" in 만원 units
-  건물면적?: string;   // sqm
+  거래금액?: string; // "500,000" in 만원 units
+  건물면적?: string; // sqm
   대지권면적?: string;
   년?: string;
   월?: string;
@@ -40,8 +40,8 @@ type MolitXmlBody = {
 };
 
 export type MolitTransactionAggregate = {
-  submarket: string;        // district name
-  yyyymm: string;           // "202601"
+  submarket: string; // district name
+  yyyymm: string; // "202601"
   transactionCount: number;
   transactionVolumeKrw: number;
   medianPriceKrwPerSqm: number | null;
@@ -110,16 +110,26 @@ export async function fetchMolitCommercialMonth(
 
   const header = parsed.response?.header;
   if (header?.resultCode && header.resultCode !== '000') {
-    throw new Error(`MOLIT ${district} ${yyyymm} api error: ${header.resultCode} ${header.resultMsg ?? ''}`);
+    throw new Error(
+      `MOLIT ${district} ${yyyymm} api error: ${header.resultCode} ${header.resultMsg ?? ''}`
+    );
   }
 
   const rawItems = parsed.response?.body?.items?.item;
-  const items: MolitCommercialRow[] = Array.isArray(rawItems) ? rawItems : rawItems ? [rawItems] : [];
+  const items: MolitCommercialRow[] = Array.isArray(rawItems)
+    ? rawItems
+    : rawItems
+      ? [rawItems]
+      : [];
 
   let volumeKrw = 0;
   const pricesPerSqm: number[] = [];
   for (const row of items) {
-    const manwon = Number(String(row.거래금액 ?? '').replace(/,/g, '').trim());
+    const manwon = Number(
+      String(row.거래금액 ?? '')
+        .replace(/,/g, '')
+        .trim()
+    );
     const areaSqm = Number(String(row.건물면적 ?? '').trim());
     if (!Number.isFinite(manwon) || manwon <= 0) continue;
     const krw = manwon * 10_000;
@@ -146,7 +156,7 @@ export async function fetchMolitCommercialMonth(
  */
 export async function aggregateQuarter(
   district: string,
-  quarter: string  // "2026Q1"
+  quarter: string // "2026Q1"
 ): Promise<MolitTransactionAggregate | null> {
   const match = /^(\d{4})Q([1-4])$/.exec(quarter);
   if (!match) throw new Error(`Invalid quarter "${quarter}" (expected YYYYQn)`);

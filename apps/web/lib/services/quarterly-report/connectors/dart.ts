@@ -24,7 +24,7 @@ type DartListRow = {
   report_nm: string;
   rcept_no: string;
   flr_nm: string;
-  rcept_dt: string;  // "20260115"
+  rcept_dt: string; // "20260115"
   rm: string;
 };
 

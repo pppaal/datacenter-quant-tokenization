@@ -65,7 +65,7 @@ function num(value: number | null | undefined, decimals = 2): string {
 
 function buildApgujeongInputs(): PreparedUnderwritingInputs {
   const totalCapexKrw = 103.8 * B;
-  const landKrw = 45 * B;    // ~1,500 sqm @ 30M KRW/sqm, Apgujeong-ro prime
+  const landKrw = 45 * B; // ~1,500 sqm @ 30M KRW/sqm, Apgujeong-ro prime
   const shellKrw = 9 * B;
   const electricalKrw = 15 * B;
   const mechanicalKrw = 10 * B;
@@ -97,13 +97,13 @@ function buildApgujeongInputs(): PreparedUnderwritingInputs {
     } as unknown as PreparedUnderwritingInputs['bundle'],
     stage: 'STABILIZED',
     capacityMw: 6,
-    capacityKw: 5000,           // IT load
+    capacityKw: 5000, // IT load
     occupancyPct: 82,
-    baseMonthlyRatePerKwKrw: 280_000,      // premium Gangnam rate
-    baseCapRatePct: 5.8,                   // prime location → tight cap
+    baseMonthlyRatePerKwKrw: 280_000, // premium Gangnam rate
+    baseCapRatePct: 5.8, // prime location → tight cap
     baseDiscountRatePct: 8.8,
     baseDebtCostPct: 5.3,
-    baseReplacementCostPerMwKrw: 9.8 * B,  // urban construction premium
+    baseReplacementCostPerMwKrw: 9.8 * B, // urban construction premium
     powerPriceKrwPerKwh: 145,
     pueTarget: 1.35,
     annualGrowthPct: 2.8,
@@ -112,7 +112,7 @@ function buildApgujeongInputs(): PreparedUnderwritingInputs {
     permitPenalty: 1,
     floodPenalty: 1,
     wildfirePenalty: 1,
-    locationPremium: 1.15,                 // Apgujeong premium
+    locationPremium: 1.15, // Apgujeong premium
     comparableCalibration: {
       entryCount: 0,
       weightedCapRatePct: null,
@@ -175,31 +175,63 @@ function buildApgujeongInputs(): PreparedUnderwritingInputs {
     },
     curatedFeatureOverrides: {
       marketInputs: {
-        monthlyRatePerKwKrw: null, capRatePct: null, discountRatePct: null,
-        debtCostPct: null, constructionCostPerMwKrw: null, note: null, sourceVersion: null
+        monthlyRatePerKwKrw: null,
+        capRatePct: null,
+        discountRatePct: null,
+        debtCostPct: null,
+        constructionCostPerMwKrw: null,
+        note: null,
+        sourceVersion: null
       },
       satelliteRisk: {
-        floodRiskScore: null, wildfireRiskScore: null, climateNote: null, sourceVersion: null
+        floodRiskScore: null,
+        wildfireRiskScore: null,
+        climateNote: null,
+        sourceVersion: null
       },
       permitInputs: {
-        permitStage: null, powerApprovalStatus: null, timelineNote: null, sourceVersion: null
+        permitStage: null,
+        powerApprovalStatus: null,
+        timelineNote: null,
+        sourceVersion: null
       },
       powerMicro: {
-        utilityName: null, substationDistanceKm: null, tariffKrwPerKwh: null,
-        renewableAvailabilityPct: null, pueTarget: null, backupFuelHours: null, sourceVersion: null
+        utilityName: null,
+        substationDistanceKm: null,
+        tariffKrwPerKwh: null,
+        renewableAvailabilityPct: null,
+        pueTarget: null,
+        backupFuelHours: null,
+        sourceVersion: null
       },
       revenueMicro: {
-        primaryTenant: null, leasedKw: null, baseRatePerKwKrw: null, termYears: null,
-        probabilityPct: null, annualEscalationPct: null, sourceVersion: null
+        primaryTenant: null,
+        leasedKw: null,
+        baseRatePerKwKrw: null,
+        termYears: null,
+        probabilityPct: null,
+        annualEscalationPct: null,
+        sourceVersion: null
       },
       legalMicro: {
-        ownerName: null, ownerEntityType: null, ownershipPct: null, encumbranceType: null,
-        encumbranceHolder: null, securedAmountKrw: null, priorityRank: null,
-        constraintType: null, constraintTitle: null, constraintSeverity: null, sourceVersion: null
+        ownerName: null,
+        ownerEntityType: null,
+        ownershipPct: null,
+        encumbranceType: null,
+        encumbranceHolder: null,
+        securedAmountKrw: null,
+        priorityRank: null,
+        constraintType: null,
+        constraintTitle: null,
+        constraintSeverity: null,
+        sourceVersion: null
       },
       reviewReadiness: {
-        readinessStatus: null, reviewPhase: null, legalStructure: null,
-        nextAction: null, sourceVersion: null
+        readinessStatus: null,
+        reviewPhase: null,
+        legalStructure: null,
+        nextAction: null,
+        sourceVersion: null
       }
     }
   };
@@ -214,7 +246,9 @@ function main() {
   const prepared = buildApgujeongInputs();
 
   console.log(`  Location             : Apgujeong-ro, Gangnam-gu, Seoul (premium urban edge-DC)`);
-  console.log(`  Power capacity       : ${prepared.capacityMw} MW gross / ${prepared.capacityKw / 1000} MW IT load`);
+  console.log(
+    `  Power capacity       : ${prepared.capacityMw} MW gross / ${prepared.capacityKw / 1000} MW IT load`
+  );
   console.log(`  Occupancy assumption : ${pct(prepared.occupancyPct)}`);
   console.log(`  Monthly rate per kW  : ${prepared.baseMonthlyRatePerKwKrw.toLocaleString()} KRW`);
   console.log(`  Cap rate (entry)     : ${pct(prepared.baseCapRatePct)}`);
@@ -225,9 +259,13 @@ function main() {
   console.log(`  Total capex          : ${krw(prepared.capexBreakdown.totalCapexKrw)}`);
   console.log(`    land               : ${krw(prepared.capexBreakdown.landValueKrw)}`);
   console.log(`    hard (shell+MEP+IT): ${krw(prepared.capexBreakdown.hardCostKrw)}`);
-  console.log(`    soft + contingency : ${krw(prepared.capexBreakdown.softCostKrw + prepared.capexBreakdown.contingencyKrw)}`);
+  console.log(
+    `    soft + contingency : ${krw(prepared.capexBreakdown.softCostKrw + prepared.capexBreakdown.contingencyKrw)}`
+  );
   console.log(`  Annual opex          : ${krw(prepared.baseOpexKrw)}`);
-  console.log(`  LTV                  : 55% → initial debt ~${krw(prepared.capexBreakdown.totalCapexKrw * 0.55)}`);
+  console.log(
+    `  LTV                  : 55% → initial debt ~${krw(prepared.capexBreakdown.totalCapexKrw * 0.55)}`
+  );
 
   const baseScenario = dataCenterScenarioInputs.find((s) => s.name === 'Base')!;
 
@@ -239,7 +277,9 @@ function main() {
   console.log(`  Replacement cost      : ${krw(costApproach.replacementCostKrw)}`);
   console.log(`  Replacement floor     : ${krw(costApproach.replacementCostFloorKrw)}`);
   console.log(`  Directly-indicated    : ${krw(costApproach.directComparableValueKrw)}`);
-  console.log(`  Location premium      : ${prepared.locationPremium.toFixed(3)}x  (applied upstream to inputs)`);
+  console.log(
+    `  Location premium      : ${prepared.locationPremium.toFixed(3)}x  (applied upstream to inputs)`
+  );
 
   // -------------------------------------------------------------------------
   // Stage 2 — Lease DCF
@@ -249,14 +289,16 @@ function main() {
   console.log(`  Stabilized NOI        : ${krw(leaseDcf.stabilizedNoiKrw)}`);
   console.log(`  Annual revenue        : ${krw(leaseDcf.annualRevenueKrw)}`);
   console.log(`  Annual opex           : ${krw(leaseDcf.annualOpexKrw)}`);
-  console.log(`  Terminal value        : ${krw(leaseDcf.terminalValueKrw)} (year ${leaseDcf.terminalYear})`);
+  console.log(
+    `  Terminal value        : ${krw(leaseDcf.terminalValueKrw)} (year ${leaseDcf.terminalYear})`
+  );
   console.log(`  Income approach value : ${krw(leaseDcf.incomeApproachValueKrw)}`);
   console.log(`  Lease-driven value    : ${krw(leaseDcf.leaseDrivenValueKrw)}`);
   console.log('\n  Year-by-year (revenue / NOI / CFADS):');
   for (const y of leaseDcf.years.slice(0, 10)) {
     console.log(
       `    Y${String(y.year).padStart(2)} | rev ${krw(y.totalOperatingRevenueKrw, 1).padStart(10)} · ` +
-      `NOI ${krw(y.noiKrw, 1).padStart(10)} · CFADS ${krw(y.cfadsBeforeDebtKrw, 1).padStart(10)}`
+        `NOI ${krw(y.noiKrw, 1).padStart(10)} · CFADS ${krw(y.cfadsBeforeDebtKrw, 1).padStart(10)}`
     );
   }
 
@@ -284,8 +326,8 @@ function main() {
     const yr = y as typeof y & { dscr: number | null; endingBalanceKrw: number };
     console.log(
       `    Y${String(y.year).padStart(2)} | int ${krw(y.interestKrw, 2).padStart(10)} · ` +
-      `prin ${krw(y.principalKrw, 2).padStart(10)} · DSCR ${num(yr.dscr).padStart(6)}x · ` +
-      `bal ${krw(yr.endingBalanceKrw, 1).padStart(10)}`
+        `prin ${krw(y.principalKrw, 2).padStart(10)} · DSCR ${num(yr.dscr).padStart(6)}x · ` +
+        `bal ${krw(yr.endingBalanceKrw, 1).padStart(10)}`
     );
   }
 
@@ -351,19 +393,33 @@ function main() {
 
   sub('7a · Cap Rate × Exit Cap Rate');
   const capMatrix = buildCapRateExitSensitivity(
-    proForma, totalCapex, initialDebt, prepared.baseCapRatePct, prepared.baseCapRatePct + 0.5, stabilizedNoi
+    proForma,
+    totalCapex,
+    initialDebt,
+    prepared.baseCapRatePct,
+    prepared.baseCapRatePct + 0.5,
+    stabilizedNoi
   );
   printMatrix(capMatrix);
 
   sub('7b · Occupancy × Rent');
   const occMatrix = buildOccupancyRentSensitivity(
-    proForma, totalCapex, initialDebt, prepared.occupancyPct, terminalValue
+    proForma,
+    totalCapex,
+    initialDebt,
+    prepared.occupancyPct,
+    terminalValue
   );
   printMatrix(occMatrix);
 
   sub('7c · Interest Rate Parallel Shift');
   const rateRows = buildInterestRateSensitivity(
-    proForma, totalCapex, initialDebt, prepared.baseDebtCostPct, terminalValue, 180
+    proForma,
+    totalCapex,
+    initialDebt,
+    prepared.baseDebtCostPct,
+    terminalValue,
+    180
   );
   console.log('     Shift    | IRR       | Multiple');
   for (const row of rateRows) {
@@ -382,35 +438,61 @@ function main() {
     {
       name: 'Trend Continuation',
       description: '6-month projected drift (mild)',
-      shocks: { rateShiftBps: 75, spreadShiftBps: 25, vacancyShiftPct: 1.0, growthShiftPct: -0.5, constructionCostShiftPct: 3.0 }
+      shocks: {
+        rateShiftBps: 75,
+        spreadShiftBps: 25,
+        vacancyShiftPct: 1.0,
+        growthShiftPct: -0.5,
+        constructionCostShiftPct: 3.0
+      }
     },
     {
       name: 'Rate Shock',
       description: 'BoK + Fed tightening',
-      shocks: { rateShiftBps: 200, spreadShiftBps: 50, vacancyShiftPct: 1.5, growthShiftPct: -1.0, constructionCostShiftPct: 0 }
+      shocks: {
+        rateShiftBps: 200,
+        spreadShiftBps: 50,
+        vacancyShiftPct: 1.5,
+        growthShiftPct: -1.0,
+        constructionCostShiftPct: 0
+      }
     },
     {
       name: 'Tail Risk (2-sigma)',
       description: 'Rates + credit + vacancy + growth + cost',
-      shocks: { rateShiftBps: 300, spreadShiftBps: 150, vacancyShiftPct: 4.0, growthShiftPct: -2.5, constructionCostShiftPct: 15.0 }
+      shocks: {
+        rateShiftBps: 300,
+        spreadShiftBps: 150,
+        vacancyShiftPct: 4.0,
+        growthShiftPct: -2.5,
+        constructionCostShiftPct: 15.0
+      }
     }
   ];
 
   const analysis = runMacroStressAnalysis(prepared, scenarios);
-  console.log(`  Baseline IRR / Multiple : ${pct(analysis.baseline.equityIrr)} · ${num(analysis.baseline.equityMultiple)}x`);
+  console.log(
+    `  Baseline IRR / Multiple : ${pct(analysis.baseline.equityIrr)} · ${num(analysis.baseline.equityMultiple)}x`
+  );
 
   for (const sc of analysis.scenarios) {
     sub(`${sc.scenarioName} — ${sc.verdict}`);
     console.log(`  ${sc.description}`);
-    console.log(`  IRR (base → stressed) : ${pct(sc.baseline.equityIrr)} → ${pct(sc.stressed.equityIrr)}  (Δ ${num(sc.equityIrrDeltaPct)}pp)`);
-    console.log(`  Multiple              : ${num(sc.baseline.equityMultiple)}x → ${num(sc.stressed.equityMultiple)}x  (Δ ${num(sc.equityMultipleDelta)}x)`);
+    console.log(
+      `  IRR (base → stressed) : ${pct(sc.baseline.equityIrr)} → ${pct(sc.stressed.equityIrr)}  (Δ ${num(sc.equityIrrDeltaPct)}pp)`
+    );
+    console.log(
+      `  Multiple              : ${num(sc.baseline.equityMultiple)}x → ${num(sc.stressed.equityMultiple)}x  (Δ ${num(sc.equityMultipleDelta)}x)`
+    );
     console.log(`  Worst DSCR            : ${num(sc.worstDscr)}x`);
     console.log(`  Ending debt           : ${krw(sc.stressedEndingDebtKrw)}`);
     console.log(`  → ${sc.commentary}`);
     console.log(`  Line items:`);
     for (const li of sc.lineItemImpacts) {
       const sign = li.deltaPct >= 0 ? '+' : '';
-      console.log(`    ${li.label.padEnd(18)} | ${krw(li.baselineKrw, 1).padStart(10)} → ${krw(li.stressedKrw, 1).padStart(10)}  (${sign}${num(li.deltaPct)}%)`);
+      console.log(
+        `    ${li.label.padEnd(18)} | ${krw(li.baselineKrw, 1).padStart(10)} → ${krw(li.stressedKrw, 1).padStart(10)}  (${sign}${num(li.deltaPct)}%)`
+      );
     }
   }
 

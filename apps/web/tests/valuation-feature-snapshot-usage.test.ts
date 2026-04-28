@@ -37,7 +37,15 @@ test('valuation feature source descriptors collect promoted feature source versi
 
   assert.deepEqual(
     descriptors.map((descriptor) => descriptor.namespace),
-    ['document_facts', 'market_inputs', 'satellite_risk', 'power_micro', 'revenue_micro', 'legal_micro', 'readiness_legal']
+    [
+      'document_facts',
+      'market_inputs',
+      'satellite_risk',
+      'power_micro',
+      'revenue_micro',
+      'legal_micro',
+      'readiness_legal'
+    ]
   );
   assert.equal(descriptors[0]?.label, 'Document Facts');
   assert.equal(descriptors[2]?.sourceVersion, 'siteProfile:2026-03-22T00:00:00.000Z');
@@ -109,6 +117,12 @@ test('valuation feature snapshot filter returns only snapshots used by the run',
 
   assert.deepEqual(
     filtered.map((snapshot) => snapshot.id),
-    ['snapshot_document', 'snapshot_market', 'snapshot_satellite', 'snapshot_power', 'snapshot_legal']
+    [
+      'snapshot_document',
+      'snapshot_market',
+      'snapshot_satellite',
+      'snapshot_power',
+      'snapshot_legal'
+    ]
   );
 });

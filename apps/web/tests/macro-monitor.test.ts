@@ -4,7 +4,10 @@ import type { MacroFactor } from '@prisma/client';
 import { buildMacroMonitor } from '@/lib/services/macro/monitor';
 import { buildQuantAllocationView, buildQuantMarketSignals } from '@/lib/services/macro/quant';
 
-function factor(input: Partial<MacroFactor> & Pick<MacroFactor, 'market' | 'factorKey' | 'label' | 'value' | 'direction'>): MacroFactor {
+function factor(
+  input: Partial<MacroFactor> &
+    Pick<MacroFactor, 'market' | 'factorKey' | 'label' | 'value' | 'direction'>
+): MacroFactor {
   return {
     id: input.id ?? `${input.market}-${input.factorKey}`,
     assetId: input.assetId ?? null,
@@ -33,14 +36,67 @@ function factor(input: Partial<MacroFactor> & Pick<MacroFactor, 'market' | 'fact
 
 test('buildMacroMonitor summarizes market headwinds and missing factors', () => {
   const factors = [
-    factor({ market: 'US', factorKey: 'rate_level', label: 'Rate Level', value: 6.5, direction: 'NEGATIVE' }),
-    factor({ market: 'US', factorKey: 'credit_stress', label: 'Credit Stress', value: 245, direction: 'NEGATIVE', unit: 'bps' }),
-    factor({ market: 'US', factorKey: 'liquidity', label: 'Liquidity', value: 76, direction: 'NEGATIVE', unit: 'idx' }),
-    factor({ market: 'US', factorKey: 'property_demand', label: 'Property Demand', value: 12, direction: 'POSITIVE', unit: 'score' }),
-    factor({ market: 'KR', factorKey: 'rate_level', label: 'Rate Level', value: 4.2, direction: 'POSITIVE' }),
-    factor({ market: 'KR', factorKey: 'liquidity', label: 'Liquidity', value: 108, direction: 'POSITIVE', unit: 'idx' }),
-    factor({ market: 'KR', factorKey: 'growth_momentum', label: 'Growth Momentum', value: 2.8, direction: 'POSITIVE' }),
-    factor({ market: 'KR', factorKey: 'property_demand', label: 'Property Demand', value: 10, direction: 'POSITIVE', unit: 'score' })
+    factor({
+      market: 'US',
+      factorKey: 'rate_level',
+      label: 'Rate Level',
+      value: 6.5,
+      direction: 'NEGATIVE'
+    }),
+    factor({
+      market: 'US',
+      factorKey: 'credit_stress',
+      label: 'Credit Stress',
+      value: 245,
+      direction: 'NEGATIVE',
+      unit: 'bps'
+    }),
+    factor({
+      market: 'US',
+      factorKey: 'liquidity',
+      label: 'Liquidity',
+      value: 76,
+      direction: 'NEGATIVE',
+      unit: 'idx'
+    }),
+    factor({
+      market: 'US',
+      factorKey: 'property_demand',
+      label: 'Property Demand',
+      value: 12,
+      direction: 'POSITIVE',
+      unit: 'score'
+    }),
+    factor({
+      market: 'KR',
+      factorKey: 'rate_level',
+      label: 'Rate Level',
+      value: 4.2,
+      direction: 'POSITIVE'
+    }),
+    factor({
+      market: 'KR',
+      factorKey: 'liquidity',
+      label: 'Liquidity',
+      value: 108,
+      direction: 'POSITIVE',
+      unit: 'idx'
+    }),
+    factor({
+      market: 'KR',
+      factorKey: 'growth_momentum',
+      label: 'Growth Momentum',
+      value: 2.8,
+      direction: 'POSITIVE'
+    }),
+    factor({
+      market: 'KR',
+      factorKey: 'property_demand',
+      label: 'Property Demand',
+      value: 10,
+      direction: 'POSITIVE',
+      unit: 'score'
+    })
   ];
 
   const quantSignals = buildQuantMarketSignals(factors);

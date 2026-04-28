@@ -20,10 +20,12 @@ function makeAssetStub() {
     market: 'KR',
     status: 'SCREENING',
     stage: 'DD',
-    description: 'Special situation edge data center opportunity with near-term refinancing pressure.',
+    description:
+      'Special situation edge data center opportunity with near-term refinancing pressure.',
     ownerName: 'Edge Holdings',
     sponsorName: 'North River Capital',
-    developmentSummary: 'Partial fit-out complete; power delivery and title clean-up remain gating items.',
+    developmentSummary:
+      'Partial fit-out complete; power delivery and title clean-up remain gating items.',
     powerCapacityMw: 20,
     grossFloorAreaSqm: 28000,
     rentableAreaSqm: 26000,
@@ -59,13 +61,71 @@ function makeAssetStub() {
     },
     capexLineItems: [{ id: 'cap-1' }, { id: 'cap-2' }, { id: 'cap-3' }, { id: 'cap-4' }],
     leases: [
-      { id: 'lease-1', reviewStatus: 'APPROVED', reviewNotes: null, reviewedAt: new Date(), reviewedById: 'user-1', updatedAt: new Date() },
-      { id: 'lease-2', reviewStatus: 'PENDING', reviewNotes: null, reviewedAt: null, reviewedById: null, updatedAt: new Date() }
+      {
+        id: 'lease-1',
+        reviewStatus: 'APPROVED',
+        reviewNotes: null,
+        reviewedAt: new Date(),
+        reviewedById: 'user-1',
+        updatedAt: new Date()
+      },
+      {
+        id: 'lease-2',
+        reviewStatus: 'PENDING',
+        reviewNotes: null,
+        reviewedAt: null,
+        reviewedById: null,
+        updatedAt: new Date()
+      }
     ],
     debtFacilities: [{ id: 'debt-1' }],
-    ownershipRecords: [{ id: 'own-1', reviewStatus: 'APPROVED', updatedAt: new Date(), ownerName: 'Edge Holdings', entityType: 'SPV', ownershipPct: 100, reviewNotes: null, reviewedAt: new Date(), reviewedById: 'user-1', sourceStatus: 'MANUAL', sourceUpdatedAt: new Date() }],
-    encumbranceRecords: [{ id: 'enc-1', reviewStatus: 'APPROVED', updatedAt: new Date(), encumbranceType: 'Mortgage', holderName: 'Infra Bank', securedAmountKrw: 42000000000, priorityRank: 1, reviewNotes: null, reviewedAt: new Date(), reviewedById: 'user-1', sourceStatus: 'MANUAL', sourceUpdatedAt: new Date() }],
-    planningConstraints: [{ id: 'plan-1', reviewStatus: 'PENDING', updatedAt: new Date(), constraintType: 'Easement', title: 'Shared ingress', severity: 'Medium', description: 'Pending legal confirmation', reviewNotes: null, reviewedAt: null, reviewedById: null, sourceStatus: 'MANUAL', sourceUpdatedAt: new Date() }],
+    ownershipRecords: [
+      {
+        id: 'own-1',
+        reviewStatus: 'APPROVED',
+        updatedAt: new Date(),
+        ownerName: 'Edge Holdings',
+        entityType: 'SPV',
+        ownershipPct: 100,
+        reviewNotes: null,
+        reviewedAt: new Date(),
+        reviewedById: 'user-1',
+        sourceStatus: 'MANUAL',
+        sourceUpdatedAt: new Date()
+      }
+    ],
+    encumbranceRecords: [
+      {
+        id: 'enc-1',
+        reviewStatus: 'APPROVED',
+        updatedAt: new Date(),
+        encumbranceType: 'Mortgage',
+        holderName: 'Infra Bank',
+        securedAmountKrw: 42000000000,
+        priorityRank: 1,
+        reviewNotes: null,
+        reviewedAt: new Date(),
+        reviewedById: 'user-1',
+        sourceStatus: 'MANUAL',
+        sourceUpdatedAt: new Date()
+      }
+    ],
+    planningConstraints: [
+      {
+        id: 'plan-1',
+        reviewStatus: 'PENDING',
+        updatedAt: new Date(),
+        constraintType: 'Easement',
+        title: 'Shared ingress',
+        severity: 'Medium',
+        description: 'Pending legal confirmation',
+        reviewNotes: null,
+        reviewedAt: null,
+        reviewedById: null,
+        sourceStatus: 'MANUAL',
+        sourceUpdatedAt: new Date()
+      }
+    ],
     featureSnapshots: [],
     researchSnapshots: [
       {
@@ -74,7 +134,8 @@ function makeAssetStub() {
         viewType: 'HOUSE',
         approvalStatus: 'APPROVED',
         title: 'National macro fabric',
-        summary: 'Approved data-center house view remains conditionally investable with refinancing and legal cleanup focus.',
+        summary:
+          'Approved data-center house view remains conditionally investable with refinancing and legal cleanup focus.',
         freshnessStatus: 'STALE',
         freshnessLabel: '38d old',
         snapshotDate: new Date('2026-03-20T00:00:00.000Z'),
@@ -178,7 +239,10 @@ function makeAssetStub() {
         baseCaseValueKrw: 138_000_000_000,
         underwritingMemo:
           'Refinancing pressure and legal cleanup create a special situation entry point. Cash flow remains viable if permit and rollover issues are resolved quickly.',
-        keyRisks: ['Permit timing is still conditional.', 'Mortgage release mechanics need legal confirmation.'],
+        keyRisks: [
+          'Permit timing is still conditional.',
+          'Mortgage release mechanics need legal confirmation.'
+        ],
         ddChecklist: ['Confirm mortgage release path.', 'Refresh utility sign-off package.'],
         assumptions: {
           proForma: {
@@ -211,12 +275,36 @@ function makeAssetStub() {
           }
         },
         provenance: [
-          { field: 'powerPrice', sourceSystem: 'manual', value: 158, mode: 'manual', freshnessLabel: 'fresh' }
+          {
+            field: 'powerPrice',
+            sourceSystem: 'manual',
+            value: 158,
+            mode: 'manual',
+            freshnessLabel: 'fresh'
+          }
         ],
         scenarios: [
-          { name: 'Bull', valuationKrw: 150_000_000_000, impliedYieldPct: 8.9, exitCapRatePct: 6.2, debtServiceCoverage: 1.28 },
-          { name: 'Base', valuationKrw: 138_000_000_000, impliedYieldPct: 8.1, exitCapRatePct: 6.5, debtServiceCoverage: 1.14 },
-          { name: 'Bear', valuationKrw: 121_000_000_000, impliedYieldPct: 7.5, exitCapRatePct: 6.9, debtServiceCoverage: 1.03 }
+          {
+            name: 'Bull',
+            valuationKrw: 150_000_000_000,
+            impliedYieldPct: 8.9,
+            exitCapRatePct: 6.2,
+            debtServiceCoverage: 1.28
+          },
+          {
+            name: 'Base',
+            valuationKrw: 138_000_000_000,
+            impliedYieldPct: 8.1,
+            exitCapRatePct: 6.5,
+            debtServiceCoverage: 1.14
+          },
+          {
+            name: 'Bear',
+            valuationKrw: 121_000_000_000,
+            impliedYieldPct: 7.5,
+            exitCapRatePct: 6.9,
+            debtServiceCoverage: 1.03
+          }
         ]
       }
     ],
@@ -298,9 +386,36 @@ function makeOfficeAssetStub() {
       updatedAt: now
     },
     capexLineItems: [{ id: 'cap-1' }],
-    leases: [{ id: 'lease-1', reviewStatus: 'APPROVED', reviewNotes: null, reviewedAt: now, reviewedById: 'user-1', updatedAt: now, tenantName: 'Anchor Tenant', status: 'ACTIVE', termYears: 5, notes: 'WALE support' }],
+    leases: [
+      {
+        id: 'lease-1',
+        reviewStatus: 'APPROVED',
+        reviewNotes: null,
+        reviewedAt: now,
+        reviewedById: 'user-1',
+        updatedAt: now,
+        tenantName: 'Anchor Tenant',
+        status: 'ACTIVE',
+        termYears: 5,
+        notes: 'WALE support'
+      }
+    ],
     debtFacilities: [{ id: 'debt-1' }],
-    ownershipRecords: [{ id: 'own-1', reviewStatus: 'APPROVED', updatedAt: now, ownerName: 'Han River Office Holdings', entityType: 'SPV', ownershipPct: 100, reviewNotes: null, reviewedAt: now, reviewedById: 'user-1', sourceStatus: 'MANUAL', sourceUpdatedAt: now }],
+    ownershipRecords: [
+      {
+        id: 'own-1',
+        reviewStatus: 'APPROVED',
+        updatedAt: now,
+        ownerName: 'Han River Office Holdings',
+        entityType: 'SPV',
+        ownershipPct: 100,
+        reviewNotes: null,
+        reviewedAt: now,
+        reviewedById: 'user-1',
+        sourceStatus: 'MANUAL',
+        sourceUpdatedAt: now
+      }
+    ],
     encumbranceRecords: [],
     planningConstraints: [],
     featureSnapshots: [],
@@ -342,15 +457,34 @@ function makeOfficeAssetStub() {
         engineVersion: 'kr-office-v1',
         confidenceScore: 72,
         baseCaseValueKrw: 318000000000,
-        underwritingMemo: 'Office underwriting case built from approved leasing and legal evidence.',
+        underwritingMemo:
+          'Office underwriting case built from approved leasing and legal evidence.',
         keyRisks: ['Near-term rollover requires leasing execution.'],
         ddChecklist: ['Refresh office rent comp set.'],
         assumptions: {},
         provenance: [],
         scenarios: [
-          { name: 'Bull', valuationKrw: 340000000000, impliedYieldPct: 5, exitCapRatePct: 4.6, debtServiceCoverage: 1.32 },
-          { name: 'Base', valuationKrw: 318000000000, impliedYieldPct: 4.8, exitCapRatePct: 4.9, debtServiceCoverage: 1.23 },
-          { name: 'Bear', valuationKrw: 286000000000, impliedYieldPct: 4.4, exitCapRatePct: 5.3, debtServiceCoverage: 1.1 }
+          {
+            name: 'Bull',
+            valuationKrw: 340000000000,
+            impliedYieldPct: 5,
+            exitCapRatePct: 4.6,
+            debtServiceCoverage: 1.32
+          },
+          {
+            name: 'Base',
+            valuationKrw: 318000000000,
+            impliedYieldPct: 4.8,
+            exitCapRatePct: 4.9,
+            debtServiceCoverage: 1.23
+          },
+          {
+            name: 'Bear',
+            valuationKrw: 286000000000,
+            impliedYieldPct: 4.4,
+            exitCapRatePct: 5.3,
+            debtServiceCoverage: 1.1
+          }
         ]
       }
     ],
@@ -382,9 +516,15 @@ test('report bundle and markdown export reuse valuation and document traceabilit
   assert.match(markdown, /Traceability/);
   assert.match(markdown, /## Control Sheet/);
   assert.match(markdown, /Confirm mortgage release path\./);
-  assert.ok(report.traceability.some((fact) => fact.label === 'Approved Evidence' && fact.value === '5'));
+  assert.ok(
+    report.traceability.some((fact) => fact.label === 'Approved Evidence' && fact.value === '5')
+  );
   assert.ok(report.traceability.some((fact) => fact.label === 'Research Freshness'));
-  assert.ok(report.traceability.some((fact) => fact.label === 'House View' && fact.value.includes('approved')));
+  assert.ok(
+    report.traceability.some(
+      (fact) => fact.label === 'House View' && fact.value.includes('approved')
+    )
+  );
   assert.ok(report.controlSheet.some((fact) => fact.label === 'Research Coverage Queue'));
   assert.ok(report.controlSheet.some((fact) => fact.label === 'Review Packet Fingerprint'));
 });
@@ -404,8 +544,12 @@ test('dd checklist and risk memo attach supporting document references', async (
   const ddReport = buildDealReport(bundle, 'dd-checklist');
   const riskReport = buildDealReport(bundle, 'risk-memo');
 
-  const ddSources = ddReport.sections.flatMap((section) => section.checklist?.flatMap((item) => item.sources ?? []) ?? []);
-  const riskSources = riskReport.sections.flatMap((section) => section.checklist?.flatMap((item) => item.sources ?? []) ?? []);
+  const ddSources = ddReport.sections.flatMap(
+    (section) => section.checklist?.flatMap((item) => item.sources ?? []) ?? []
+  );
+  const riskSources = riskReport.sections.flatMap(
+    (section) => section.checklist?.flatMap((item) => item.sources ?? []) ?? []
+  );
 
   assert.ok(ddSources.some((source) => source.includes('Power Study')));
   assert.ok(riskSources.some((source) => source.includes('Title Extract')));

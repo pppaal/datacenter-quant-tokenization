@@ -14,10 +14,7 @@ import { listPortfolios } from '@/lib/services/portfolio';
 import { assetBundleInclude } from '@/lib/services/assets';
 import { buildAssetEvidenceReviewSummary } from '@/lib/services/review';
 import { buildAssetResearchDossier } from '@/lib/services/research/dossier';
-import {
-  deriveResearchFreshness,
-  getFreshnessTone
-} from '@/lib/services/research/freshness';
+import { deriveResearchFreshness, getFreshnessTone } from '@/lib/services/research/freshness';
 import { createPrismaSourceCacheStore } from '@/lib/sources/cache';
 import {
   createKoreaPublicDatasetAdapter,
@@ -28,7 +25,13 @@ import {
 } from '@/lib/sources/adapters/korea-public';
 import { slugify } from '@/lib/utils';
 
-export type ResearchWorkspaceTab = 'macro' | 'markets' | 'submarkets' | 'assets' | 'optimization' | 'coverage';
+export type ResearchWorkspaceTab =
+  | 'macro'
+  | 'markets'
+  | 'submarkets'
+  | 'assets'
+  | 'optimization'
+  | 'coverage';
 type SnapshotViewType = 'SOURCE' | 'HOUSE';
 type SnapshotApprovalStatus = 'DRAFT' | 'APPROVED' | 'SUPERSEDED';
 
@@ -354,7 +357,10 @@ function inferSnapshotViewType(snapshot: {
   viewType?: SnapshotViewType | null;
 }) {
   if (snapshot.viewType) return snapshot.viewType;
-  if (snapshot.snapshotType === 'official-source' || snapshot.snapshotType === 'market-official-source') {
+  if (
+    snapshot.snapshotType === 'official-source' ||
+    snapshot.snapshotType === 'market-official-source'
+  ) {
     return 'SOURCE';
   }
   return 'HOUSE';
@@ -394,7 +400,10 @@ async function persistOfficialSourceNormalizedSeries(
             normalizedKey: `${definition.key}.${metric.key}`,
             label: metric.key.replaceAll('.', ' ').replaceAll('_', ' '),
             value: metric.value,
-            target: definition.key === 'kosis' || definition.key === 'bok_ecos' ? ('macro' as const) : ('market' as const),
+            target:
+              definition.key === 'kosis' || definition.key === 'bok_ecos'
+                ? ('macro' as const)
+                : ('market' as const),
             unit: null,
             assetClass: null
           }));
@@ -508,9 +517,11 @@ function getAssetResearchObservedAt(asset: AssetResearchObservedInput) {
     asset.documents?.[0]?.updatedAt
   ];
 
-  return candidates
-    .filter((value): value is Date => value instanceof Date)
-    .sort((left, right) => right.getTime() - left.getTime())[0] ?? null;
+  return (
+    candidates
+      .filter((value): value is Date => value instanceof Date)
+      .sort((left, right) => right.getTime() - left.getTime())[0] ?? null
+  );
 }
 
 export function shouldRefreshResearchWorkspace(status: WorkspaceSyncSnapshot) {
@@ -523,36 +534,41 @@ export function shouldRefreshResearchWorkspace(status: WorkspaceSyncSnapshot) {
 }
 
 async function getResearchWorkspaceSyncSnapshot(db: PrismaClient): Promise<WorkspaceSyncSnapshot> {
-  const [latestOfficialSync, latestAssetSync, assetCount, freshAssetSnapshotCount, staleOfficialSourceCount] =
-    await Promise.all([
-      db.researchSnapshot.findFirst({
-        where: { snapshotType: 'official-source' },
-        orderBy: { updatedAt: 'desc' },
-        select: { updatedAt: true }
-      }),
-      db.researchSnapshot.findFirst({
-        where: { snapshotType: 'asset-dossier' },
-        orderBy: { updatedAt: 'desc' },
-        select: { updatedAt: true }
-      }),
-      db.asset.count(),
-      db.researchSnapshot.count({
-        where: {
-          snapshotType: 'asset-dossier',
-          freshnessStatus: {
-            in: [SourceStatus.FRESH, SourceStatus.STALE]
-          }
+  const [
+    latestOfficialSync,
+    latestAssetSync,
+    assetCount,
+    freshAssetSnapshotCount,
+    staleOfficialSourceCount
+  ] = await Promise.all([
+    db.researchSnapshot.findFirst({
+      where: { snapshotType: 'official-source' },
+      orderBy: { updatedAt: 'desc' },
+      select: { updatedAt: true }
+    }),
+    db.researchSnapshot.findFirst({
+      where: { snapshotType: 'asset-dossier' },
+      orderBy: { updatedAt: 'desc' },
+      select: { updatedAt: true }
+    }),
+    db.asset.count(),
+    db.researchSnapshot.count({
+      where: {
+        snapshotType: 'asset-dossier',
+        freshnessStatus: {
+          in: [SourceStatus.FRESH, SourceStatus.STALE]
         }
-      }),
-      db.coverageTask.count({
-        where: {
-          taskType: 'official-source-freshness',
-          status: {
-            not: TaskStatus.DONE
-          }
+      }
+    }),
+    db.coverageTask.count({
+      where: {
+        taskType: 'official-source-freshness',
+        status: {
+          not: TaskStatus.DONE
         }
-      })
-    ]);
+      }
+    })
+  ]);
 
   return {
     latestOfficialSyncAt: latestOfficialSync?.updatedAt ?? null,
@@ -562,7 +578,10 @@ async function getResearchWorkspaceSyncSnapshot(db: PrismaClient): Promise<Works
   };
 }
 
-async function listRecentResearchSyncRuns(db: PrismaClient, limit = 6): Promise<ResearchSyncRunSurface[]> {
+async function listRecentResearchSyncRuns(
+  db: PrismaClient,
+  limit = 6
+): Promise<ResearchSyncRunSurface[]> {
   return db.researchSyncRun.findMany({
     take: limit,
     orderBy: {
@@ -813,7 +832,9 @@ async function ensureResearchTopology(db: PrismaClient): Promise<ResearchScopeLi
 
   const universeMap = new Map<string, { id: string; label: string }>();
   const submarketMap = new Map<string, { id: string; label: string }>();
-  const assetClasses = [...new Set(assets.map((asset) => asset.assetClass).filter(Boolean))] as AssetClass[];
+  const assetClasses = [
+    ...new Set(assets.map((asset) => asset.assetClass).filter(Boolean))
+  ] as AssetClass[];
 
   for (const assetClass of assetClasses) {
     const playbook = getAssetClassPlaybook(assetClass);
@@ -846,7 +867,10 @@ async function ensureResearchTopology(db: PrismaClient): Promise<ResearchScopeLi
     const rawSubmarkets = [
       ...new Set(
         classAssets
-          .map((asset) => asset.marketSnapshot?.metroRegion ?? asset.address?.district ?? asset.address?.city)
+          .map(
+            (asset) =>
+              asset.marketSnapshot?.metroRegion ?? asset.address?.district ?? asset.address?.city
+          )
           .filter(Boolean)
       )
     ] as string[];
@@ -854,7 +878,9 @@ async function ensureResearchTopology(db: PrismaClient): Promise<ResearchScopeLi
     for (const label of rawSubmarkets) {
       const submarketKey = slugify(label);
       const sampleAsset = classAssets.find(
-        (asset) => (asset.marketSnapshot?.metroRegion ?? asset.address?.district ?? asset.address?.city) === label
+        (asset) =>
+          (asset.marketSnapshot?.metroRegion ?? asset.address?.district ?? asset.address?.city) ===
+          label
       );
       const submarket = await db.submarket.upsert({
         where: {
@@ -1032,7 +1058,8 @@ async function syncAssetAndMarketResearch(db: PrismaClient, topology: ResearchSc
     const playbook = getAssetClassPlaybook(asset.assetClass);
     const marketKey = `kr-${asset.assetClass.toLowerCase()}`;
     const marketUniverse = topology.marketUniverseByKey.get(marketKey);
-    const rawSubmarket = asset.marketSnapshot?.metroRegion ?? asset.address?.district ?? asset.address?.city ?? null;
+    const rawSubmarket =
+      asset.marketSnapshot?.metroRegion ?? asset.address?.district ?? asset.address?.city ?? null;
     const submarketKey = rawSubmarket ? `${marketKey}:${slugify(rawSubmarket)}` : null;
     const submarket = submarketKey ? topology.submarketByKey.get(submarketKey) : null;
     const observedAt = getAssetResearchObservedAt(asset);
@@ -1067,14 +1094,16 @@ async function syncAssetAndMarketResearch(db: PrismaClient, topology: ResearchSc
         },
         provenance: {
           sources: [
-            ...new Set([
-              'macroFactors',
-              'marketIndicatorSeries',
-              'transactionComps',
-              'rentComps',
-              'documents',
-              reviewSummary.totals.approved > 0 ? 'approvedEvidence' : null
-            ].filter(Boolean))
+            ...new Set(
+              [
+                'macroFactors',
+                'marketIndicatorSeries',
+                'transactionComps',
+                'rentComps',
+                'documents',
+                reviewSummary.totals.approved > 0 ? 'approvedEvidence' : null
+              ].filter(Boolean)
+            )
           ],
           latestDocumentHash: dossier.documents.latestDocumentHash,
           chainAnchorReference: dossier.chainAnchorReference
@@ -1105,14 +1134,16 @@ async function syncAssetAndMarketResearch(db: PrismaClient, topology: ResearchSc
         },
         provenance: {
           sources: [
-            ...new Set([
-              'macroFactors',
-              'marketIndicatorSeries',
-              'transactionComps',
-              'rentComps',
-              'documents',
-              reviewSummary.totals.approved > 0 ? 'approvedEvidence' : null
-            ].filter(Boolean))
+            ...new Set(
+              [
+                'macroFactors',
+                'marketIndicatorSeries',
+                'transactionComps',
+                'rentComps',
+                'documents',
+                reviewSummary.totals.approved > 0 ? 'approvedEvidence' : null
+              ].filter(Boolean)
+            )
           ],
           latestDocumentHash: dossier.documents.latestDocumentHash,
           chainAnchorReference: dossier.chainAnchorReference
@@ -1169,7 +1200,7 @@ async function syncAssetAndMarketResearch(db: PrismaClient, topology: ResearchSc
           ? current.lastObservedAt.getTime() >= observedAt.getTime()
             ? current.lastObservedAt
             : observedAt
-          : current.lastObservedAt ?? observedAt;
+          : (current.lastObservedAt ?? observedAt);
       current.latestThesis = dossier.marketThesis;
       marketAccumulator.set(marketKey, current);
     }
@@ -1192,7 +1223,7 @@ async function syncAssetAndMarketResearch(db: PrismaClient, topology: ResearchSc
           ? current.lastObservedAt.getTime() >= observedAt.getTime()
             ? current.lastObservedAt
             : observedAt
-          : current.lastObservedAt ?? observedAt;
+          : (current.lastObservedAt ?? observedAt);
       current.latestThesis = dossier.marketThesis;
       submarketAccumulator.set(submarketKey, current);
     }
@@ -1405,8 +1436,12 @@ export function buildResearchPrioritySignal(
     [key: string]: unknown;
   }
 ) {
-  const dossier = buildAssetResearchDossier(asset as Parameters<typeof buildAssetResearchDossier>[0]);
-  const taskCount = (asset.coverageTasks ?? []).filter((task: { status?: TaskStatus | null }) => task.status !== TaskStatus.DONE).length;
+  const dossier = buildAssetResearchDossier(
+    asset as Parameters<typeof buildAssetResearchDossier>[0]
+  );
+  const taskCount = (asset.coverageTasks ?? []).filter(
+    (task: { status?: TaskStatus | null }) => task.status !== TaskStatus.DONE
+  ).length;
   const blockerCount = dossier.pendingBlockers.length;
   const freshnessStatus = dossier.freshness.status;
 
@@ -1414,11 +1449,7 @@ export function buildResearchPrioritySignal(
     100 -
     blockerCount * 10 -
     taskCount * 8 -
-    (freshnessStatus === SourceStatus.FRESH
-      ? 0
-      : freshnessStatus === SourceStatus.STALE
-        ? 10
-        : 18);
+    (freshnessStatus === SourceStatus.FRESH ? 0 : freshnessStatus === SourceStatus.STALE ? 10 : 18);
 
   return {
     scorePct: Math.max(15, Math.min(95, score)),
@@ -1440,7 +1471,9 @@ export function buildResearchCoverageSurface(input: {
   coverageTasks?: CoverageTaskSurface[] | null;
 }) {
   const latestSnapshot = input.researchSnapshots?.[0] ?? null;
-  const openTaskCount = (input.coverageTasks ?? []).filter((task) => task.status !== TaskStatus.DONE).length;
+  const openTaskCount = (input.coverageTasks ?? []).filter(
+    (task) => task.status !== TaskStatus.DONE
+  ).length;
   const freshnessStatus = latestSnapshot?.freshnessStatus ?? SourceStatus.FAILED;
   const freshnessLabel = latestSnapshot?.freshnessLabel ?? 'missing coverage';
 
@@ -1455,11 +1488,21 @@ export function buildResearchCoverageSurface(input: {
   };
 }
 
-export async function getResearchWorkspaceData(db: PrismaClient = prisma): Promise<ResearchWorkspaceData> {
+export async function getResearchWorkspaceData(
+  db: PrismaClient = prisma
+): Promise<ResearchWorkspaceData> {
   const initialStatus = await getResearchWorkspaceSyncSnapshot(db);
   const finalStatus = initialStatus;
 
-  const [macroSnapshots, marketUniverses, submarkets, assets, portfolios, coverageTasks, recentRuns] = await Promise.all([
+  const [
+    macroSnapshots,
+    marketUniverses,
+    submarkets,
+    assets,
+    portfolios,
+    coverageTasks,
+    recentRuns
+  ] = await Promise.all([
     db.researchSnapshot.findMany({
       where: {
         snapshotType: 'official-source'
@@ -1599,7 +1642,8 @@ export async function getResearchWorkspaceData(db: PrismaClient = prisma): Promi
               inferApprovalStatus(item) === 'APPROVED'
           ) ??
           marketUniverse.researchSnapshots.find(
-            (item) => item.snapshotType === 'market-thesis' && inferSnapshotViewType(item) === 'HOUSE'
+            (item) =>
+              item.snapshotType === 'market-thesis' && inferSnapshotViewType(item) === 'HOUSE'
           ) ??
           null;
         const draftSnapshot =
@@ -1608,7 +1652,9 @@ export async function getResearchWorkspaceData(db: PrismaClient = prisma): Promi
           ) ?? null;
         const sourceSnapshot =
           marketUniverse.researchSnapshots.find(
-            (item) => item.snapshotType === 'market-official-source' && inferSnapshotViewType(item) === 'SOURCE'
+            (item) =>
+              item.snapshotType === 'market-official-source' &&
+              inferSnapshotViewType(item) === 'SOURCE'
           ) ?? null;
 
         return {
@@ -1658,12 +1704,14 @@ export async function getResearchWorkspaceData(db: PrismaClient = prisma): Promi
             inferApprovalStatus(item) === 'APPROVED'
         ) ??
         submarket.researchSnapshots.find(
-          (item) => item.snapshotType === 'submarket-thesis' && inferSnapshotViewType(item) === 'HOUSE'
+          (item) =>
+            item.snapshotType === 'submarket-thesis' && inferSnapshotViewType(item) === 'HOUSE'
         ) ??
         null;
       const draftSnapshot =
         submarket.researchSnapshots.find(
-          (item) => item.snapshotType === 'submarket-thesis' && inferApprovalStatus(item) === 'DRAFT'
+          (item) =>
+            item.snapshotType === 'submarket-thesis' && inferApprovalStatus(item) === 'DRAFT'
         ) ?? null;
 
       return {

@@ -234,7 +234,10 @@ async function runTool(
   if (name === 'search_news') {
     const input = rawInput as { query?: unknown };
     if (typeof input.query !== 'string' || !input.query.trim()) {
-      return { payload: JSON.stringify({ error: 'search_news requires string `query`' }), summary: 'invalid args' };
+      return {
+        payload: JSON.stringify({ error: 'search_news requires string `query`' }),
+        summary: 'invalid args'
+      };
     }
     const q = sanitizeFreeText(input.query, 200);
     const rawResults = await toolset.searchNews(q);
@@ -256,13 +259,19 @@ async function runTool(
         snippet: r.snippet.slice(0, 400)
       }))
     };
-    return { payload: JSON.stringify(payload), summary: `${deduped.length} new sources for "${q}"` };
+    return {
+      payload: JSON.stringify(payload),
+      summary: `${deduped.length} new sources for "${q}"`
+    };
   }
 
   if (name === 'fetch_page') {
     const input = rawInput as { url?: unknown };
     if (typeof input.url !== 'string' || !input.url.trim()) {
-      return { payload: JSON.stringify({ error: 'fetch_page requires string `url`' }), summary: 'invalid args' };
+      return {
+        payload: JSON.stringify({ error: 'fetch_page requires string `url`' }),
+        summary: 'invalid args'
+      };
     }
     const page = await toolset.fetchPage(input.url);
     const payload = {
@@ -271,10 +280,16 @@ async function runTool(
       publishedAt: page.publishedAt ? page.publishedAt.toISOString().slice(0, 10) : null,
       text: page.text.slice(0, 4000)
     };
-    return { payload: JSON.stringify(payload), summary: `fetched ${page.url} (${payload.text.length} chars)` };
+    return {
+      payload: JSON.stringify(payload),
+      summary: `fetched ${page.url} (${payload.text.length} chars)`
+    };
   }
 
-  return { payload: JSON.stringify({ error: `unknown tool: ${name}` }), summary: `unknown tool ${name}` };
+  return {
+    payload: JSON.stringify({ error: `unknown tool: ${name}` }),
+    summary: `unknown tool ${name}`
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -348,7 +363,9 @@ async function runOfflineAgent(
     sources,
     claims,
     synthesis,
-    toolCalls: [{ name: 'search_news', input: { query: query.question }, resultSummary: probe.summary }],
+    toolCalls: [
+      { name: 'search_news', input: { query: query.question }, resultSummary: probe.summary }
+    ],
     generatedBy: 'offline-template',
     promptTokens: null,
     completionTokens: null

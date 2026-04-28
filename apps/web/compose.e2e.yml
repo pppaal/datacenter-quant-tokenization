@@ -7,9 +7,9 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: korea_dc_underwriting
     ports:
-      - "5434:5432"
+      - '5434:5432'
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d korea_dc_underwriting"]
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d korea_dc_underwriting']
       interval: 5s
       timeout: 5s
       retries: 20

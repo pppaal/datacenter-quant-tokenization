@@ -6,7 +6,10 @@ import { assetBundleInclude } from '@/lib/services/assets';
 import { pickBaseDscr } from '@/lib/services/valuation/scenario-utils';
 import { realizedOutcomeSchema } from '@/lib/validations/realized-outcome';
 
-type RunForComparison = Pick<ValuationRun, 'id' | 'assetId' | 'createdAt' | 'baseCaseValueKrw' | 'assumptions'> & {
+type RunForComparison = Pick<
+  ValuationRun,
+  'id' | 'assetId' | 'createdAt' | 'baseCaseValueKrw' | 'assumptions'
+> & {
   asset: Pick<Asset, 'id' | 'name' | 'assetCode' | 'assetClass'>;
   scenarios: Array<{
     name: string;
@@ -57,7 +60,11 @@ export function normalizeRealizedOutcomeObservationDate(date: Date) {
   return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
 }
 
-export async function createRealizedOutcome(assetId: string, input: unknown, db: PrismaClient = prisma) {
+export async function createRealizedOutcome(
+  assetId: string,
+  input: unknown,
+  db: PrismaClient = prisma
+) {
   const parsed = realizedOutcomeSchema.parse(input);
   const asset = await db.asset.findUnique({
     where: { id: assetId },
@@ -74,7 +81,10 @@ export async function createRealizedOutcome(assetId: string, input: unknown, db:
 
   if (!asset) throw new Error('Asset not found');
 
-  const inputCurrency = resolveInputCurrency(asset.address?.country ?? asset.market, parsed.inputCurrency);
+  const inputCurrency = resolveInputCurrency(
+    asset.address?.country ?? asset.market,
+    parsed.inputCurrency
+  );
   const observationDate = normalizeRealizedOutcomeObservationDate(parsed.observationDate);
 
   await db.realizedOutcome.upsert({
@@ -88,7 +98,10 @@ export async function createRealizedOutcome(assetId: string, input: unknown, db:
       occupancyPct: parsed.occupancyPct,
       noiKrw: typeof parsed.noiKrw === 'number' ? convertToKrw(parsed.noiKrw, inputCurrency) : null,
       rentGrowthPct: parsed.rentGrowthPct,
-      valuationKrw: typeof parsed.valuationKrw === 'number' ? convertToKrw(parsed.valuationKrw, inputCurrency) : null,
+      valuationKrw:
+        typeof parsed.valuationKrw === 'number'
+          ? convertToKrw(parsed.valuationKrw, inputCurrency)
+          : null,
       debtServiceCoverage: parsed.debtServiceCoverage,
       exitCapRatePct: parsed.exitCapRatePct,
       notes: parsed.notes,
@@ -101,7 +114,10 @@ export async function createRealizedOutcome(assetId: string, input: unknown, db:
       occupancyPct: parsed.occupancyPct,
       noiKrw: typeof parsed.noiKrw === 'number' ? convertToKrw(parsed.noiKrw, inputCurrency) : null,
       rentGrowthPct: parsed.rentGrowthPct,
-      valuationKrw: typeof parsed.valuationKrw === 'number' ? convertToKrw(parsed.valuationKrw, inputCurrency) : null,
+      valuationKrw:
+        typeof parsed.valuationKrw === 'number'
+          ? convertToKrw(parsed.valuationKrw, inputCurrency)
+          : null,
       debtServiceCoverage: parsed.debtServiceCoverage,
       exitCapRatePct: parsed.exitCapRatePct,
       notes: parsed.notes,
@@ -304,9 +320,13 @@ export function buildRealizedOutcomeSummary({
     assetCoverage: outcomesByAsset.size,
     matchedRunCount: matched.length,
     meanAbsoluteValueChangePct:
-      valueErrors.length > 0 ? round(valueErrors.reduce((sum, value) => sum + value, 0) / valueErrors.length) : null,
+      valueErrors.length > 0
+        ? round(valueErrors.reduce((sum, value) => sum + value, 0) / valueErrors.length)
+        : null,
     meanAbsoluteDscrChangePct:
-      dscrErrors.length > 0 ? round(dscrErrors.reduce((sum, value) => sum + value, 0) / dscrErrors.length) : null,
+      dscrErrors.length > 0
+        ? round(dscrErrors.reduce((sum, value) => sum + value, 0) / dscrErrors.length)
+        : null,
     watchlist
   };
 }

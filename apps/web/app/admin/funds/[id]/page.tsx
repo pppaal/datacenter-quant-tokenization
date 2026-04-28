@@ -43,25 +43,35 @@ export default async function FundDetailPage({ params }: Props) {
         <h1 className="mt-3 text-5xl font-semibold leading-[0.96] tracking-[-0.05em] text-white md:text-6xl">
           {fund.name}
         </h1>
-        <p className="mt-4 max-w-4xl text-base leading-8 text-slate-200">{dashboard.investorUpdateDraft}</p>
+        <p className="mt-4 max-w-4xl text-base leading-8 text-slate-200">
+          {dashboard.investorUpdateDraft}
+        </p>
       </section>
 
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <div className="fine-print">Commitments</div>
-          <div className="mt-3 text-3xl font-semibold text-white">{formatCurrency(dashboard.math.totalCommitmentKrw)}</div>
+          <div className="mt-3 text-3xl font-semibold text-white">
+            {formatCurrency(dashboard.math.totalCommitmentKrw)}
+          </div>
         </Card>
         <Card>
           <div className="fine-print">Called</div>
-          <div className="mt-3 text-3xl font-semibold text-white">{formatCurrency(dashboard.math.totalCalledKrw)}</div>
+          <div className="mt-3 text-3xl font-semibold text-white">
+            {formatCurrency(dashboard.math.totalCalledKrw)}
+          </div>
         </Card>
         <Card>
           <div className="fine-print">Distributed</div>
-          <div className="mt-3 text-3xl font-semibold text-white">{formatCurrency(dashboard.math.totalDistributedKrw)}</div>
+          <div className="mt-3 text-3xl font-semibold text-white">
+            {formatCurrency(dashboard.math.totalDistributedKrw)}
+          </div>
         </Card>
         <Card>
           <div className="fine-print">Dry Powder</div>
-          <div className="mt-3 text-3xl font-semibold text-white">{formatCurrency(dashboard.math.dryPowderKrw)}</div>
+          <div className="mt-3 text-3xl font-semibold text-white">
+            {formatCurrency(dashboard.math.dryPowderKrw)}
+          </div>
         </Card>
       </div>
 
@@ -75,7 +85,9 @@ export default async function FundDetailPage({ params }: Props) {
             </div>
             <div>
               <div className="fine-print">Investor Coverage Summary</div>
-              <p className="mt-2 text-sm leading-7 text-slate-300">{briefs.investorCoverageBrief}</p>
+              <p className="mt-2 text-sm leading-7 text-slate-300">
+                {briefs.investorCoverageBrief}
+              </p>
             </div>
             <div>
               <div className="fine-print">Report Release Summary</div>
@@ -95,10 +107,15 @@ export default async function FundDetailPage({ params }: Props) {
           <div className="eyebrow">Top Investors</div>
           <div className="mt-4 space-y-3">
             {dashboard.topInvestors.map((commitment) => (
-              <div key={commitment.id} className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
+              <div
+                key={commitment.id}
+                className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4"
+              >
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <div className="text-sm font-semibold text-white">{commitment.investor.name}</div>
+                    <div className="text-sm font-semibold text-white">
+                      {commitment.investor.name}
+                    </div>
                     <div className="mt-1 text-xs text-slate-400">
                       {commitment.investor.investorType ?? 'Institutional investor'}
                     </div>
@@ -117,20 +134,29 @@ export default async function FundDetailPage({ params }: Props) {
           <div className="eyebrow">Vehicles And Mandates</div>
           <div className="mt-4 space-y-3">
             {fund.vehicles.map((vehicle) => (
-              <div key={vehicle.id} className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
+              <div
+                key={vehicle.id}
+                className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4"
+              >
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <div className="text-sm font-semibold text-white">{vehicle.name}</div>
                     <div className="mt-1 text-xs text-slate-400">
-                      {vehicle.vehicleType.toLowerCase()} / {vehicle.assetClassFocus ?? 'multi-asset'}
+                      {vehicle.vehicleType.toLowerCase()} /{' '}
+                      {vehicle.assetClassFocus ?? 'multi-asset'}
                     </div>
                   </div>
-                  <div className="text-right text-sm text-white">{vehicle.jurisdiction ?? 'KR'}</div>
+                  <div className="text-right text-sm text-white">
+                    {vehicle.jurisdiction ?? 'KR'}
+                  </div>
                 </div>
               </div>
             ))}
             {fund.mandates.map((mandate) => (
-              <div key={mandate.id} className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
+              <div
+                key={mandate.id}
+                className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4"
+              >
                 <div className="text-sm font-semibold text-white">{mandate.title}</div>
                 <div className="mt-1 text-xs text-slate-400">
                   {mandate.investorName ?? 'Institutional mandate'} / {mandate.statusLabel}
@@ -146,26 +172,39 @@ export default async function FundDetailPage({ params }: Props) {
           <div className="eyebrow">Capital Calls And Distributions</div>
           <div className="mt-4 space-y-3">
             {fund.capitalCalls.map((call) => (
-              <div key={call.id} className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
+              <div
+                key={call.id}
+                className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4"
+              >
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <div className="text-sm font-semibold text-white">Capital Call</div>
-                    <div className="mt-1 text-xs text-slate-400">{formatDate(call.callDate)} / {call.status.toLowerCase()}</div>
+                    <div className="mt-1 text-xs text-slate-400">
+                      {formatDate(call.callDate)} / {call.status.toLowerCase()}
+                    </div>
                   </div>
-                  <div className="text-right text-sm text-white">{formatCurrency(call.amountKrw)}</div>
+                  <div className="text-right text-sm text-white">
+                    {formatCurrency(call.amountKrw)}
+                  </div>
                 </div>
               </div>
             ))}
             {fund.distributions.map((distribution) => (
-              <div key={distribution.id} className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
+              <div
+                key={distribution.id}
+                className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4"
+              >
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <div className="text-sm font-semibold text-white">Distribution</div>
                     <div className="mt-1 text-xs text-slate-400">
-                      {formatDate(distribution.distributionDate)} / {distribution.status.toLowerCase()}
+                      {formatDate(distribution.distributionDate)} /{' '}
+                      {distribution.status.toLowerCase()}
                     </div>
                   </div>
-                  <div className="text-right text-sm text-white">{formatCurrency(distribution.amountKrw)}</div>
+                  <div className="text-right text-sm text-white">
+                    {formatCurrency(distribution.amountKrw)}
+                  </div>
                 </div>
               </div>
             ))}
@@ -176,29 +215,43 @@ export default async function FundDetailPage({ params }: Props) {
       </div>
 
       <Card>
-          <div className="eyebrow">Investor Reporting And DDQ</div>
-          <div className="mt-4 space-y-3">
-            {fund.investorReports.map((report) => (
-              <div key={report.id} className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
-                <div className="flex flex-wrap items-center gap-2">
-                  <div className="text-sm font-semibold text-white">{report.title}</div>
-                  <Badge tone={report.releaseStatus === 'RELEASED' ? 'good' : report.releaseStatus === 'READY' ? 'warn' : 'neutral'}>
-                    {report.releaseStatus.toLowerCase().replaceAll('_', ' ')}
-                  </Badge>
-                </div>
-                <div className="mt-1 text-xs text-slate-400">
-                  {report.reportType.toLowerCase().replaceAll('_', ' ')} / {report.periodEnd ? formatDate(report.periodEnd) : 'period pending'}
-                </div>
-                {report.draftSummary ? <div className="mt-2 text-xs leading-6 text-slate-400">{report.draftSummary}</div> : null}
+        <div className="eyebrow">Investor Reporting And DDQ</div>
+        <div className="mt-4 space-y-3">
+          {fund.investorReports.map((report) => (
+            <div
+              key={report.id}
+              className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4"
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="text-sm font-semibold text-white">{report.title}</div>
+                <Badge
+                  tone={
+                    report.releaseStatus === 'RELEASED'
+                      ? 'good'
+                      : report.releaseStatus === 'READY'
+                        ? 'warn'
+                        : 'neutral'
+                  }
+                >
+                  {report.releaseStatus.toLowerCase().replaceAll('_', ' ')}
+                </Badge>
               </div>
-            ))}
-            {fund.ddqResponses.map((ddq) => (
-              <div key={ddq.id} className="rounded-[20px] border border-white/[0.03] p-4">
-                <div className="text-sm font-semibold text-white">{ddq.title}</div>
-                <div className="mt-1 text-xs text-slate-400">{ddq.statusLabel}</div>
+              <div className="mt-1 text-xs text-slate-400">
+                {report.reportType.toLowerCase().replaceAll('_', ' ')} /{' '}
+                {report.periodEnd ? formatDate(report.periodEnd) : 'period pending'}
               </div>
-            ))}
-          </div>
+              {report.draftSummary ? (
+                <div className="mt-2 text-xs leading-6 text-slate-400">{report.draftSummary}</div>
+              ) : null}
+            </div>
+          ))}
+          {fund.ddqResponses.map((ddq) => (
+            <div key={ddq.id} className="rounded-[20px] border border-white/[0.03] p-4">
+              <div className="text-sm font-semibold text-white">{ddq.title}</div>
+              <div className="mt-1 text-xs text-slate-400">{ddq.statusLabel}</div>
+            </div>
+          ))}
+        </div>
       </Card>
     </div>
   );

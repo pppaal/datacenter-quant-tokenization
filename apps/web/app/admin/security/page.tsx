@@ -28,22 +28,48 @@ export default async function AdminSecurityPage() {
     <div className="space-y-8">
       <Card className="hero-mesh">
         <div className="flex flex-wrap items-center gap-3">
-          <Badge tone={authConfig.mode === 'configured' ? 'good' : authConfig.mode === 'disabled' ? 'warn' : 'danger'}>
+          <Badge
+            tone={
+              authConfig.mode === 'configured'
+                ? 'good'
+                : authConfig.mode === 'disabled'
+                  ? 'warn'
+                  : 'danger'
+            }
+          >
             {authConfig.mode}
           </Badge>
-          <Badge tone={security.storageReadiness.status === 'good' ? 'good' : security.storageReadiness.status === 'warning' ? 'warn' : 'danger'}>
+          <Badge
+            tone={
+              security.storageReadiness.status === 'good'
+                ? 'good'
+                : security.storageReadiness.status === 'warning'
+                  ? 'warn'
+                  : 'danger'
+            }
+          >
             {security.storageReadiness.mode}
           </Badge>
         </div>
-        <h2 className="mt-5 text-4xl font-semibold tracking-[-0.04em] text-white">Security, audit, and operator controls</h2>
+        <h2 className="mt-5 text-4xl font-semibold tracking-[-0.04em] text-white">
+          Security, audit, and operator controls
+        </h2>
         <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-400">
-          Review admin-access posture, document-storage readiness, and mutation audit trails before promoting this
-          environment into live institutional use.
+          Review admin-access posture, document-storage readiness, and mutation audit trails before
+          promoting this environment into live institutional use.
         </p>
         <div className="mt-4 rounded-[22px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-300">
           <div className="flex flex-wrap items-center gap-3">
-            <Badge tone={security.opsAlerts.requiresIntervention || security.opsAlerts.hasActiveAlert ? 'danger' : 'good'}>
-              {security.opsAlerts.requiresIntervention || security.opsAlerts.hasActiveAlert ? 'ops alert' : 'ops stable'}
+            <Badge
+              tone={
+                security.opsAlerts.requiresIntervention || security.opsAlerts.hasActiveAlert
+                  ? 'danger'
+                  : 'good'
+              }
+            >
+              {security.opsAlerts.requiresIntervention || security.opsAlerts.hasActiveAlert
+                ? 'ops alert'
+                : 'ops stable'}
             </Badge>
             <span>{security.opsAlerts.headline}</span>
           </div>
@@ -66,7 +92,15 @@ export default async function AdminSecurityPage() {
           <div className="mt-4 space-y-3 text-sm text-slate-300">
             <div className="flex items-center justify-between gap-3">
               <span>Mode</span>
-              <Badge tone={authConfig.mode === 'configured' ? 'good' : authConfig.mode === 'disabled' ? 'warn' : 'danger'}>
+              <Badge
+                tone={
+                  authConfig.mode === 'configured'
+                    ? 'good'
+                    : authConfig.mode === 'disabled'
+                      ? 'warn'
+                      : 'danger'
+                }
+              >
                 {authConfig.mode}
               </Badge>
             </div>
@@ -77,19 +111,28 @@ export default async function AdminSecurityPage() {
             <div className="flex items-center justify-between gap-3">
               <span>Viewer credentials</span>
               <span className="text-white">
-                {formatNumber(authConfig.credentials.filter((entry) => entry.role === 'VIEWER').length, 0)}
+                {formatNumber(
+                  authConfig.credentials.filter((entry) => entry.role === 'VIEWER').length,
+                  0
+                )}
               </span>
             </div>
             <div className="flex items-center justify-between gap-3">
               <span>Analyst credentials</span>
               <span className="text-white">
-                {formatNumber(authConfig.credentials.filter((entry) => entry.role === 'ANALYST').length, 0)}
+                {formatNumber(
+                  authConfig.credentials.filter((entry) => entry.role === 'ANALYST').length,
+                  0
+                )}
               </span>
             </div>
             <div className="flex items-center justify-between gap-3">
               <span>Admin credentials</span>
               <span className="text-white">
-                {formatNumber(authConfig.credentials.filter((entry) => entry.role === 'ADMIN').length, 0)}
+                {formatNumber(
+                  authConfig.credentials.filter((entry) => entry.role === 'ADMIN').length,
+                  0
+                )}
               </span>
             </div>
             {authConfig.errors.length > 0 ? (
@@ -105,7 +148,15 @@ export default async function AdminSecurityPage() {
           <div className="mt-4 space-y-3 text-sm text-slate-300">
             <div className="flex items-center justify-between gap-3">
               <span>Mode</span>
-              <Badge tone={security.storageReadiness.status === 'good' ? 'good' : security.storageReadiness.status === 'warning' ? 'warn' : 'danger'}>
+              <Badge
+                tone={
+                  security.storageReadiness.status === 'good'
+                    ? 'good'
+                    : security.storageReadiness.status === 'warning'
+                      ? 'warn'
+                      : 'danger'
+                }
+              >
                 {security.storageReadiness.mode}
               </Badge>
             </div>
@@ -131,8 +182,9 @@ export default async function AdminSecurityPage() {
               <span className="text-white">{security.aiReadiness.model}</span>
             </div>
             <p className="leading-7 text-slate-400">
-              Memo generation and extraction can still fall back, but institutional deployment should pin an approved
-              production model and rotate keys through the deployment platform.
+              Memo generation and extraction can still fall back, but institutional deployment
+              should pin an approved production model and rotate keys through the deployment
+              platform.
             </p>
           </div>
         </Card>
@@ -153,7 +205,8 @@ export default async function AdminSecurityPage() {
             <div className="flex items-center justify-between gap-3">
               <span>Mapped identities</span>
               <span className="text-white">
-                {formatNumber(security.identityBindings.mappedBindings, 0)} / {formatNumber(security.identityBindings.totalBindings, 0)}
+                {formatNumber(security.identityBindings.mappedBindings, 0)} /{' '}
+                {formatNumber(security.identityBindings.totalBindings, 0)}
               </span>
             </div>
             <div className="flex items-center justify-between gap-3">
@@ -166,7 +219,9 @@ export default async function AdminSecurityPage() {
             <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4 text-xs leading-6 text-slate-400">
               Latest identity seen:{' '}
               <span className="text-white">
-                {security.identityBindings.latestSeenAt ? formatDate(security.identityBindings.latestSeenAt) : 'none'}
+                {security.identityBindings.latestSeenAt
+                  ? formatDate(security.identityBindings.latestSeenAt)
+                  : 'none'}
               </span>
             </div>
           </div>
@@ -177,7 +232,9 @@ export default async function AdminSecurityPage() {
           <div className="mt-4 space-y-3 text-sm text-slate-300">
             <div className="flex items-center justify-between gap-3">
               <span>Failure streak threshold</span>
-              <span className="text-white">{formatNumber(security.opsAlerts.failureStreakThreshold, 0)} runs</span>
+              <span className="text-white">
+                {formatNumber(security.opsAlerts.failureStreakThreshold, 0)} runs
+              </span>
             </div>
             <div className="flex items-center justify-between gap-3">
               <span>Stale run window</span>
@@ -200,8 +257,8 @@ export default async function AdminSecurityPage() {
               </Badge>
             </div>
             <p className="leading-7 text-slate-400">
-              These thresholds define when the security surface escalates from informational alerts to explicit operator
-              intervention.
+              These thresholds define when the security surface escalates from informational alerts
+              to explicit operator intervention.
             </p>
           </div>
         </Card>
@@ -211,7 +268,9 @@ export default async function AdminSecurityPage() {
         <div className="flex items-center justify-between gap-4">
           <div>
             <div className="eyebrow">Delivery Intervention Queue</div>
-            <h2 className="mt-2 text-2xl font-semibold text-white">Ops alerts that still need operator follow-up</h2>
+            <h2 className="mt-2 text-2xl font-semibold text-white">
+              Ops alerts that still need operator follow-up
+            </h2>
           </div>
           <Badge tone={replayableDeliveries.length > 0 ? 'warn' : 'good'}>
             {formatNumber(replayableDeliveries.length, 0)} open
@@ -220,18 +279,25 @@ export default async function AdminSecurityPage() {
         <div className="mt-5 space-y-3">
           {replayableDeliveries.length > 0 ? (
             replayableDeliveries.map((delivery) => (
-              <div key={delivery.id} className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+              <div
+                key={delivery.id}
+                className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+              >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge>{delivery.channel}</Badge>
                     <Badge tone="warn">{delivery.statusLabel.toLowerCase()}</Badge>
                   </div>
-                  <div className="text-xs uppercase tracking-[0.18em] text-slate-500">{formatDate(delivery.createdAt)}</div>
+                  <div className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                    {formatDate(delivery.createdAt)}
+                  </div>
                 </div>
                 <div className="mt-3 grid gap-3 text-sm text-slate-300 md:grid-cols-3">
                   <div>
                     <div className="fine-print">Destination</div>
-                    <div className="mt-1 break-all">{maskOpsAlertDestination(delivery.destination)}</div>
+                    <div className="mt-1 break-all">
+                      {maskOpsAlertDestination(delivery.destination)}
+                    </div>
                   </div>
                   <div>
                     <div className="fine-print">Reason</div>
@@ -239,11 +305,15 @@ export default async function AdminSecurityPage() {
                   </div>
                   <div>
                     <div className="fine-print">Action</div>
-                    <div className="mt-1 text-slate-400">Replay this alert after confirming webhook routing or fallback config.</div>
+                    <div className="mt-1 text-slate-400">
+                      Replay this alert after confirming webhook routing or fallback config.
+                    </div>
                   </div>
                 </div>
                 <OpsAlertReplayButton deliveryId={delivery.id} />
-                {delivery.errorMessage ? <div className="mt-3 text-sm text-rose-200">{delivery.errorMessage}</div> : null}
+                {delivery.errorMessage ? (
+                  <div className="mt-3 text-sm text-rose-200">{delivery.errorMessage}</div>
+                ) : null}
               </div>
             ))
           ) : (
@@ -258,10 +328,12 @@ export default async function AdminSecurityPage() {
         <div className="flex items-center justify-between gap-4">
           <div>
             <div className="eyebrow">Ops Queue</div>
-            <h2 className="mt-2 text-2xl font-semibold text-white">Queued and dead-letter ops work</h2>
+            <h2 className="mt-2 text-2xl font-semibold text-white">
+              Queued and dead-letter ops work
+            </h2>
             <p className="mt-2 text-sm text-slate-400">
-              Track queued scheduler work outside request handling and requeue failed items after the underlying source,
-              credential, or environment issue is fixed.
+              Track queued scheduler work outside request handling and requeue failed items after
+              the underlying source, credential, or environment issue is fixed.
             </p>
           </div>
           <Badge tone={interventionWorkItems.length > 0 ? 'warn' : 'neutral'}>
@@ -271,7 +343,11 @@ export default async function AdminSecurityPage() {
         <div className="mt-5 space-y-3">
           {security.opsWorkItems.length > 0 ? (
             security.opsWorkItems.map((item) => (
-              <div key={item.id} className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4" data-testid="ops-work-item-card">
+              <div
+                key={item.id}
+                className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+                data-testid="ops-work-item-card"
+              >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge>{item.workType.toLowerCase()}</Badge>
@@ -287,7 +363,9 @@ export default async function AdminSecurityPage() {
                       {item.status.toLowerCase()}
                     </Badge>
                   </div>
-                  <div className="text-xs uppercase tracking-[0.18em] text-slate-500">{formatDate(item.createdAt)}</div>
+                  <div className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                    {formatDate(item.createdAt)}
+                  </div>
                 </div>
                 <div className="mt-3 grid gap-3 text-sm text-slate-300 md:grid-cols-4">
                   <div>
@@ -306,11 +384,15 @@ export default async function AdminSecurityPage() {
                   </div>
                   <div>
                     <div className="fine-print">Dead-lettered</div>
-                    <div className="mt-1">{item.deadLetteredAt ? formatDate(item.deadLetteredAt) : 'N/A'}</div>
+                    <div className="mt-1">
+                      {item.deadLetteredAt ? formatDate(item.deadLetteredAt) : 'N/A'}
+                    </div>
                   </div>
                 </div>
-                {item.lastError ? <div className="mt-3 text-sm text-rose-200">{item.lastError}</div> : null}
-                {(item.status === 'FAILED' || item.status === 'DEAD_LETTER') ? (
+                {item.lastError ? (
+                  <div className="mt-3 text-sm text-rose-200">{item.lastError}</div>
+                ) : null}
+                {item.status === 'FAILED' || item.status === 'DEAD_LETTER' ? (
                   <OpsWorkItemReplayButton workItemId={item.id} />
                 ) : null}
               </div>
@@ -327,9 +409,12 @@ export default async function AdminSecurityPage() {
         <div className="flex items-center justify-between gap-4">
           <div>
             <div className="eyebrow">Unmapped Reviewer Identities</div>
-            <h2 className="mt-2 text-2xl font-semibold text-white">SSO identities that still need a bound user</h2>
+            <h2 className="mt-2 text-2xl font-semibold text-white">
+              SSO identities that still need a bound user
+            </h2>
             <p className="mt-2 text-sm text-slate-400">
-              Map each provider subject to a canonical operator before using reviewer analytics or operator scorecards.
+              Map each provider subject to a canonical operator before using reviewer analytics or
+              operator scorecards.
             </p>
           </div>
           <Badge tone={security.identityBindings.unmappedBindings > 0 ? 'warn' : 'good'}>
@@ -347,7 +432,9 @@ export default async function AdminSecurityPage() {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge>{binding.provider}</Badge>
-                    <div className="text-sm font-semibold text-white">{binding.emailSnapshot ?? binding.identifierSnapshot}</div>
+                    <div className="text-sm font-semibold text-white">
+                      {binding.emailSnapshot ?? binding.identifierSnapshot}
+                    </div>
                   </div>
                   <div className="text-xs uppercase tracking-[0.18em] text-slate-500">
                     Last seen {formatDate(binding.lastSeenAt)}
@@ -364,7 +451,9 @@ export default async function AdminSecurityPage() {
                   </div>
                   <div>
                     <div className="fine-print">Next action</div>
-                    <div className="mt-1 text-slate-400">Map this subject to a canonical `User` before relying on reviewer analytics.</div>
+                    <div className="mt-1 text-slate-400">
+                      Map this subject to a canonical `User` before relying on reviewer analytics.
+                    </div>
                   </div>
                 </div>
                 <AdminIdentityBindingForm
@@ -388,10 +477,12 @@ export default async function AdminSecurityPage() {
         <div className="flex items-center justify-between gap-4">
           <div>
             <div className="eyebrow">Operator Seats</div>
-            <h2 className="mt-2 text-2xl font-semibold text-white">Canonical operators and seat lifecycle</h2>
+            <h2 className="mt-2 text-2xl font-semibold text-white">
+              Canonical operators and seat lifecycle
+            </h2>
             <p className="mt-2 text-sm text-slate-400">
-              Manage role assignment and active status for the canonical `User` records that reviewer attribution and
-              operator analytics bind to.
+              Manage role assignment and active status for the canonical `User` records that
+              reviewer attribution and operator analytics bind to.
             </p>
           </div>
           <Badge tone="neutral">{formatNumber(security.operatorSeats.length, 0)} seats</Badge>
@@ -399,15 +490,23 @@ export default async function AdminSecurityPage() {
         <div className="mt-5 space-y-3">
           {security.operatorSeats.length > 0 ? (
             security.operatorSeats.map((seat) => (
-              <div key={seat.id} className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4" data-testid="operator-seat-card">
+              <div
+                key={seat.id}
+                className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+                data-testid="operator-seat-card"
+              >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <div className="text-sm font-semibold text-white">{seat.name}</div>
-                    <div className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">{seat.email}</div>
+                    <div className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">
+                      {seat.email}
+                    </div>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge>{seat.role}</Badge>
-                    <Badge tone={seat.isActive ? 'good' : 'warn'}>{seat.isActive ? 'active' : 'inactive'}</Badge>
+                    <Badge tone={seat.isActive ? 'good' : 'warn'}>
+                      {seat.isActive ? 'active' : 'inactive'}
+                    </Badge>
                   </div>
                 </div>
                 <AdminOperatorSeatForm
@@ -437,13 +536,17 @@ export default async function AdminSecurityPage() {
         <div className="mt-5 grid gap-3 md:grid-cols-3">
           {security.actorSummary.length > 0 ? (
             security.actorSummary.map((actor) => (
-              <div key={`${actor.actorIdentifier}-${actor.actorRole}`} className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+              <div
+                key={`${actor.actorIdentifier}-${actor.actorRole}`}
+                className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+              >
                 <div className="flex items-center justify-between gap-3">
                   <div className="font-semibold text-white">{actor.actorIdentifier}</div>
                   <Badge>{actor.actorRole}</Badge>
                 </div>
                 <div className="mt-3 text-sm text-slate-400">
-                  {formatNumber(actor.eventCount, 0)} events / last seen {formatDate(actor.lastSeenAt)}
+                  {formatNumber(actor.eventCount, 0)} events / last seen{' '}
+                  {formatDate(actor.lastSeenAt)}
                 </div>
               </div>
             ))
@@ -466,14 +569,21 @@ export default async function AdminSecurityPage() {
         <div className="mt-5 space-y-3">
           {security.auditEvents.length > 0 ? (
             security.auditEvents.map((event) => (
-              <div key={event.id} className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+              <div
+                key={event.id}
+                className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+              >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge>{event.actorRole}</Badge>
-                    <Badge tone={event.statusLabel === 'SUCCESS' ? 'good' : 'warn'}>{event.statusLabel}</Badge>
+                    <Badge tone={event.statusLabel === 'SUCCESS' ? 'good' : 'warn'}>
+                      {event.statusLabel}
+                    </Badge>
                     <div className="text-sm font-semibold text-white">{event.action}</div>
                   </div>
-                  <div className="text-xs uppercase tracking-[0.18em] text-slate-500">{formatDate(event.createdAt)}</div>
+                  <div className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                    {formatDate(event.createdAt)}
+                  </div>
                 </div>
                 <div className="mt-3 grid gap-3 text-sm text-slate-300 md:grid-cols-4">
                   <div>
@@ -482,11 +592,16 @@ export default async function AdminSecurityPage() {
                   </div>
                   <div>
                     <div className="fine-print">Entity</div>
-                    <div className="mt-1">{event.entityType}{event.entityId ? ` / ${event.entityId}` : ''}</div>
+                    <div className="mt-1">
+                      {event.entityType}
+                      {event.entityId ? ` / ${event.entityId}` : ''}
+                    </div>
                   </div>
                   <div>
                     <div className="fine-print">Route</div>
-                    <div className="mt-1">{event.requestMethod ?? 'N/A'} {event.requestPath ?? 'N/A'}</div>
+                    <div className="mt-1">
+                      {event.requestMethod ?? 'N/A'} {event.requestPath ?? 'N/A'}
+                    </div>
                   </div>
                   <div>
                     <div className="fine-print">Asset</div>
@@ -508,22 +623,39 @@ export default async function AdminSecurityPage() {
           <div className="flex items-center justify-between gap-4">
             <div>
               <div className="eyebrow">Research Sync Runs</div>
-              <h2 className="mt-2 text-2xl font-semibold text-white">Recent research fabric refresh history</h2>
+              <h2 className="mt-2 text-2xl font-semibold text-white">
+                Recent research fabric refresh history
+              </h2>
             </div>
-            <Badge tone="neutral">{formatNumber(security.opsRuns.researchSyncRuns.length, 0)} runs</Badge>
+            <Badge tone="neutral">
+              {formatNumber(security.opsRuns.researchSyncRuns.length, 0)} runs
+            </Badge>
           </div>
           <div className="mt-5 space-y-3">
             {security.opsRuns.researchSyncRuns.length > 0 ? (
               security.opsRuns.researchSyncRuns.map((run) => (
-                <div key={run.id} className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+                <div
+                  key={run.id}
+                  className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+                >
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge>{run.triggerType.toLowerCase()}</Badge>
-                      <Badge tone={run.statusLabel === 'SUCCESS' ? 'good' : run.statusLabel === 'RUNNING' ? 'warn' : 'danger'}>
+                      <Badge
+                        tone={
+                          run.statusLabel === 'SUCCESS'
+                            ? 'good'
+                            : run.statusLabel === 'RUNNING'
+                              ? 'warn'
+                              : 'danger'
+                        }
+                      >
                         {run.statusLabel.toLowerCase()}
                       </Badge>
                     </div>
-                    <div className="text-xs uppercase tracking-[0.18em] text-slate-500">{formatDate(run.startedAt)}</div>
+                    <div className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                      {formatDate(run.startedAt)}
+                    </div>
                   </div>
                   <div className="mt-3 grid gap-3 text-sm text-slate-300 md:grid-cols-4">
                     <div>
@@ -562,22 +694,39 @@ export default async function AdminSecurityPage() {
           <div className="flex items-center justify-between gap-4">
             <div>
               <div className="eyebrow">Source Refresh Runs</div>
-              <h2 className="mt-2 text-2xl font-semibold text-white">Recent source and enrichment refresh history</h2>
+              <h2 className="mt-2 text-2xl font-semibold text-white">
+                Recent source and enrichment refresh history
+              </h2>
             </div>
-            <Badge tone="neutral">{formatNumber(security.opsRuns.sourceRefreshRuns.length, 0)} runs</Badge>
+            <Badge tone="neutral">
+              {formatNumber(security.opsRuns.sourceRefreshRuns.length, 0)} runs
+            </Badge>
           </div>
           <div className="mt-5 space-y-3">
             {security.opsRuns.sourceRefreshRuns.length > 0 ? (
               security.opsRuns.sourceRefreshRuns.map((run) => (
-                <div key={run.id} className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+                <div
+                  key={run.id}
+                  className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+                >
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge>{run.triggerType.toLowerCase()}</Badge>
-                      <Badge tone={run.statusLabel === 'SUCCESS' ? 'good' : run.statusLabel === 'RUNNING' ? 'warn' : 'danger'}>
+                      <Badge
+                        tone={
+                          run.statusLabel === 'SUCCESS'
+                            ? 'good'
+                            : run.statusLabel === 'RUNNING'
+                              ? 'warn'
+                              : 'danger'
+                        }
+                      >
                         {run.statusLabel.toLowerCase()}
                       </Badge>
                     </div>
-                    <div className="text-xs uppercase tracking-[0.18em] text-slate-500">{formatDate(run.startedAt)}</div>
+                    <div className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                      {formatDate(run.startedAt)}
+                    </div>
                   </div>
                   <div className="mt-3 grid gap-3 text-sm text-slate-300 md:grid-cols-4">
                     <div>
@@ -617,27 +766,47 @@ export default async function AdminSecurityPage() {
         <div className="flex items-center justify-between gap-4">
           <div>
             <div className="eyebrow">Alert Delivery Log</div>
-            <h2 className="mt-2 text-2xl font-semibold text-white">Recent ops alert delivery attempts</h2>
+            <h2 className="mt-2 text-2xl font-semibold text-white">
+              Recent ops alert delivery attempts
+            </h2>
           </div>
-          <Badge tone="neutral">{formatNumber(security.opsAlertDeliveries.length, 0)} deliveries</Badge>
+          <Badge tone="neutral">
+            {formatNumber(security.opsAlertDeliveries.length, 0)} deliveries
+          </Badge>
         </div>
         <div className="mt-5 space-y-3">
           {security.opsAlertDeliveries.length > 0 ? (
             security.opsAlertDeliveries.map((delivery) => (
-              <div key={delivery.id} className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4" data-testid="ops-alert-delivery-card">
+              <div
+                key={delivery.id}
+                className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+                data-testid="ops-alert-delivery-card"
+              >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge>{delivery.channel}</Badge>
-                    <Badge tone={delivery.statusLabel === 'DELIVERED' ? 'good' : delivery.statusLabel === 'SKIPPED' ? 'warn' : 'danger'}>
+                    <Badge
+                      tone={
+                        delivery.statusLabel === 'DELIVERED'
+                          ? 'good'
+                          : delivery.statusLabel === 'SKIPPED'
+                            ? 'warn'
+                            : 'danger'
+                      }
+                    >
                       {delivery.statusLabel.toLowerCase()}
                     </Badge>
                   </div>
-                  <div className="text-xs uppercase tracking-[0.18em] text-slate-500">{formatDate(delivery.createdAt)}</div>
+                  <div className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                    {formatDate(delivery.createdAt)}
+                  </div>
                 </div>
                 <div className="mt-3 grid gap-3 text-sm text-slate-300 md:grid-cols-4">
                   <div>
                     <div className="fine-print">Destination</div>
-                    <div className="mt-1 break-all">{maskOpsAlertDestination(delivery.destination)}</div>
+                    <div className="mt-1 break-all">
+                      {maskOpsAlertDestination(delivery.destination)}
+                    </div>
                   </div>
                   <div>
                     <div className="fine-print">Reason</div>
@@ -649,13 +818,18 @@ export default async function AdminSecurityPage() {
                   </div>
                   <div>
                     <div className="fine-print">Delivered</div>
-                    <div className="mt-1">{delivery.deliveredAt ? formatDate(delivery.deliveredAt) : 'not delivered'}</div>
+                    <div className="mt-1">
+                      {delivery.deliveredAt ? formatDate(delivery.deliveredAt) : 'not delivered'}
+                    </div>
                   </div>
                 </div>
-                {(delivery.statusLabel === 'FAILED' || delivery.statusLabel === 'SKIPPED') && delivery.channel === 'webhook' ? (
+                {(delivery.statusLabel === 'FAILED' || delivery.statusLabel === 'SKIPPED') &&
+                delivery.channel === 'webhook' ? (
                   <OpsAlertReplayButton deliveryId={delivery.id} />
                 ) : null}
-                {delivery.errorMessage ? <div className="mt-3 text-sm text-rose-200">{delivery.errorMessage}</div> : null}
+                {delivery.errorMessage ? (
+                  <div className="mt-3 text-sm text-rose-200">{delivery.errorMessage}</div>
+                ) : null}
               </div>
             ))
           ) : (

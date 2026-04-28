@@ -38,7 +38,7 @@ export const KNOWN_ADDRESSES: KnownAddress[] = [
   {
     jibunAddress: '서울특별시 영등포구 여의도동 23',
     roadAddress: '서울특별시 영등포구 국제금융로 10',
-    latitude: 37.52140,
+    latitude: 37.5214,
     longitude: 126.92573,
     pnu: '1156011000100230000',
     districtName: '영등포구'

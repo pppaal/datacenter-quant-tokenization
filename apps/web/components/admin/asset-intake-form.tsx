@@ -5,7 +5,11 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AssetClass, AssetStage, AssetStatus } from '@prisma/client';
-import { resolveInputCurrency, supportedCurrencies, type SupportedCurrency } from '@/lib/finance/currency';
+import {
+  resolveInputCurrency,
+  supportedCurrencies,
+  type SupportedCurrency
+} from '@/lib/finance/currency';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
@@ -152,9 +156,16 @@ const currencyMoneyFields = new Set<keyof AssetIntakeInput>([
   'opexAssumptionKrw'
 ]);
 
-function withCurrencyLabel(label: string, currency: SupportedCurrency, key: keyof AssetIntakeInput) {
+function withCurrencyLabel(
+  label: string,
+  currency: SupportedCurrency,
+  key: keyof AssetIntakeInput
+) {
   if (!currencyMoneyFields.has(key)) return label;
-  return `${label.replace(/\s*\(KRW\)/g, '').replace(/\s*\(Annual KRW\)/g, ' (Annual)').replace(/\s*\/ month \(KRW\)/g, ' / month')} (${currency})`;
+  return `${label
+    .replace(/\s*\(KRW\)/g, '')
+    .replace(/\s*\(Annual KRW\)/g, ' (Annual)')
+    .replace(/\s*\/ month \(KRW\)/g, ' / month')} (${currency})`;
 }
 
 export function AssetIntakeForm({ defaultValues, assetId }: Props) {
@@ -184,11 +195,11 @@ export function AssetIntakeForm({ defaultValues, assetId }: Props) {
         ? 'Office'
         : assetClass === AssetClass.INDUSTRIAL
           ? 'Industrial'
-        : assetClass === AssetClass.RETAIL
-          ? 'Retail'
-        : assetClass === AssetClass.MULTIFAMILY
-          ? 'Multifamily'
-          : 'Data Center';
+          : assetClass === AssetClass.RETAIL
+            ? 'Retail'
+            : assetClass === AssetClass.MULTIFAMILY
+              ? 'Multifamily'
+              : 'Data Center';
 
     if (
       !currentAssetType ||
@@ -252,8 +263,8 @@ export function AssetIntakeForm({ defaultValues, assetId }: Props) {
             {assetId ? 'Refine assumptions and rerun diligence' : 'Open a new underwriting case'}
           </h3>
           <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-400">
-            This form writes directly into the underwriting OS and seeds the asset, address, research, and review
-            workflow in one path.
+            This form writes directly into the underwriting OS and seeds the asset, address,
+            research, and review workflow in one path.
           </p>
         </div>
         <div className="grid gap-3 text-sm text-slate-300 sm:grid-cols-2">
@@ -263,7 +274,9 @@ export function AssetIntakeForm({ defaultValues, assetId }: Props) {
           </div>
           <div className="metric-card">
             <div className="fine-print">2. Enrich</div>
-            <div className="mt-2 text-base font-semibold text-white">Source overlays and permits</div>
+            <div className="mt-2 text-base font-semibold text-white">
+              Source overlays and permits
+            </div>
           </div>
           <div className="metric-card">
             <div className="fine-print">3. Value</div>
@@ -271,7 +284,9 @@ export function AssetIntakeForm({ defaultValues, assetId }: Props) {
           </div>
           <div className="metric-card">
             <div className="fine-print">4. Review</div>
-            <div className="mt-2 text-base font-semibold text-white">Memo and evidence readiness</div>
+            <div className="mt-2 text-base font-semibold text-white">
+              Memo and evidence readiness
+            </div>
           </div>
         </div>
       </div>
@@ -325,8 +340,8 @@ export function AssetIntakeForm({ defaultValues, assetId }: Props) {
           </label>
         </div>
         <p className="text-sm text-slate-400">
-          Monetary inputs are entered in {displayCurrency} and normalized to KRW internally for the current valuation,
-          sensitivity, and memo engine.
+          Monetary inputs are entered in {displayCurrency} and normalized to KRW internally for the
+          current valuation, sensitivity, and memo engine.
         </p>
       </section>
 
@@ -342,7 +357,9 @@ export function AssetIntakeForm({ defaultValues, assetId }: Props) {
         <div>
           <div className="eyebrow">Economics</div>
           <h4 className="mt-2 text-xl font-semibold text-white">
-            {assetClass === AssetClass.DATA_CENTER ? 'Capacity and financing assumptions' : 'Income and exit assumptions'}
+            {assetClass === AssetClass.DATA_CENTER
+              ? 'Capacity and financing assumptions'
+              : 'Income and exit assumptions'}
           </h4>
         </div>
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -354,7 +371,7 @@ export function AssetIntakeForm({ defaultValues, assetId }: Props) {
                 ? retailFields
                 : assetClass === AssetClass.MULTIFAMILY
                   ? multifamilyFields
-              : underwritingFields
+                  : underwritingFields
           ).map(renderField)}
         </div>
       </section>
@@ -386,7 +403,8 @@ export function AssetIntakeForm({ defaultValues, assetId }: Props) {
 
       <div className="flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-5">
         <p className="max-w-2xl text-sm text-slate-400">
-          Saving this record updates the shared asset profile used by enrichment adapters, valuation runs, document uploads, and the downstream review layer.
+          Saving this record updates the shared asset profile used by enrichment adapters, valuation
+          runs, document uploads, and the downstream review layer.
         </p>
         <Button type="submit" disabled={submitting}>
           {submitting ? 'Saving...' : assetId ? 'Update Asset' : 'Create Asset'}

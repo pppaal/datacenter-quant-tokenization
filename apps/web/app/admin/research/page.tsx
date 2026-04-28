@@ -8,7 +8,10 @@ import { ResearchWorkspacePanel } from '@/components/admin/research-workspace-pa
 import { hasRequiredAdminRole } from '@/lib/security/admin-auth';
 import { getAdminActorFromHeaders } from '@/lib/security/admin-request';
 import { buildMacroDashboard } from '@/lib/services/macro-dashboard';
-import { getResearchWorkspaceData, type ResearchWorkspaceTab } from '@/lib/services/research/workspace';
+import {
+  getResearchWorkspaceData,
+  type ResearchWorkspaceTab
+} from '@/lib/services/research/workspace';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,16 +21,33 @@ type Props = {
   }>;
 };
 
-const validTabs: ResearchWorkspaceTab[] = ['macro', 'markets', 'submarkets', 'assets', 'optimization', 'coverage'];
+const validTabs: ResearchWorkspaceTab[] = [
+  'macro',
+  'markets',
+  'submarkets',
+  'assets',
+  'optimization',
+  'coverage'
+];
 
-async function ResearchContent({ activeTab, canApproveHouseView }: { activeTab: ResearchWorkspaceTab; canApproveHouseView: boolean }) {
+async function ResearchContent({
+  activeTab,
+  canApproveHouseView
+}: {
+  activeTab: ResearchWorkspaceTab;
+  canApproveHouseView: boolean;
+}) {
   const [data, macroDashboard] = await Promise.all([
     getResearchWorkspaceData(),
-    activeTab === 'macro' ? buildMacroDashboard() : Promise.resolve(null),
+    activeTab === 'macro' ? buildMacroDashboard() : Promise.resolve(null)
   ]);
   return (
     <>
-      <ResearchWorkspacePanel data={data} activeTab={activeTab} canApproveHouseView={canApproveHouseView} />
+      <ResearchWorkspacePanel
+        data={data}
+        activeTab={activeTab}
+        canApproveHouseView={canApproveHouseView}
+      />
       {activeTab === 'macro' && macroDashboard ? (
         <MacroDashboardPanel data={macroDashboard} />
       ) : null}
@@ -60,9 +80,10 @@ export default async function AdminResearchPage({ searchParams }: Props) {
           Official-source research fabric for underwriting, deals, portfolio, and capital workflows.
         </h1>
         <p className="mt-4 max-w-4xl text-base leading-8 text-slate-200">
-          This workspace turns Korean public-source coverage, approved micro evidence, and market/submarket research
-          into a shared operating layer. Every thesis and metric is surfaced with freshness, provenance, and a coverage
-          queue that can be worked before underwriting, sourcing, hold monitoring, or investor reporting relies on it.
+          This workspace turns Korean public-source coverage, approved micro evidence, and
+          market/submarket research into a shared operating layer. Every thesis and metric is
+          surfaced with freshness, provenance, and a coverage queue that can be worked before
+          underwriting, sourcing, hold monitoring, or investor reporting relies on it.
         </p>
         {canRefreshResearch ? (
           <div className="mt-6">

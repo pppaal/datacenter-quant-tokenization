@@ -99,26 +99,36 @@ function extractLineItemValue(line: string, multiplier: number) {
 
 function toCanonicalLineDefinition(lineLabel: string) {
   const normalized = lineLabel.toLowerCase();
-  if (/(revenue|sales|rental revenue)/.test(normalized)) return { lineKey: 'revenueKrw', lineLabel: 'Revenue' };
+  if (/(revenue|sales|rental revenue)/.test(normalized))
+    return { lineKey: 'revenueKrw', lineLabel: 'Revenue' };
   if (/ebitda/.test(normalized)) return { lineKey: 'ebitdaKrw', lineLabel: 'EBITDA' };
-  if (/(operating cash flow|cash flow from operations|net cash from operating activities)/.test(normalized)) {
+  if (
+    /(operating cash flow|cash flow from operations|net cash from operating activities)/.test(
+      normalized
+    )
+  ) {
     return { lineKey: 'operatingCashFlowKrw', lineLabel: 'Operating Cash Flow' };
   }
   if (/(capital expenditures|capital expenditure|capex)/.test(normalized)) {
     return { lineKey: 'capexKrw', lineLabel: 'Capex' };
   }
-  if (/(cash and cash equivalents|cash balance|cash)/.test(normalized)) return { lineKey: 'cashKrw', lineLabel: 'Cash' };
-  if (/(current maturities|debt due within one year|short-term debt|short term debt)/.test(normalized)) {
+  if (/(cash and cash equivalents|cash balance|cash)/.test(normalized))
+    return { lineKey: 'cashKrw', lineLabel: 'Cash' };
+  if (
+    /(current maturities|debt due within one year|short-term debt|short term debt)/.test(normalized)
+  ) {
     return { lineKey: 'currentDebtMaturitiesKrw', lineLabel: 'Current Debt Maturities' };
   }
   if (/(total debt|borrowings|net debt|debt)/.test(normalized) && !/cash/.test(normalized)) {
     return { lineKey: 'totalDebtKrw', lineLabel: 'Total Debt' };
   }
-  if (/current assets/.test(normalized)) return { lineKey: 'currentAssetsKrw', lineLabel: 'Current Assets' };
+  if (/current assets/.test(normalized))
+    return { lineKey: 'currentAssetsKrw', lineLabel: 'Current Assets' };
   if (/current liabilities/.test(normalized)) {
     return { lineKey: 'currentLiabilitiesKrw', lineLabel: 'Current Liabilities' };
   }
-  if (/total assets|assets/.test(normalized)) return { lineKey: 'totalAssetsKrw', lineLabel: 'Total Assets' };
+  if (/total assets|assets/.test(normalized))
+    return { lineKey: 'totalAssetsKrw', lineLabel: 'Total Assets' };
   if (/(total equity|shareholders' equity|equity)/.test(normalized)) {
     return { lineKey: 'totalEquityKrw', lineLabel: 'Total Equity' };
   }
@@ -126,7 +136,10 @@ function toCanonicalLineDefinition(lineLabel: string) {
     return { lineKey: 'interestExpenseKrw', lineLabel: 'Interest Expense' };
   }
 
-  const lineKey = normalized.replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 48);
+  const lineKey = normalized
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 48);
   return lineKey ? { lineKey, lineLabel } : null;
 }
 
@@ -157,7 +170,10 @@ function findLineItemValue(
 
   for (const lineItem of lineItems) {
     const label = lineItem.lineLabel.toLowerCase();
-    if (lowerAliases.some((alias) => label.includes(alias)) && !lowerExcludes.some((alias) => label.includes(alias))) {
+    if (
+      lowerAliases.some((alias) => label.includes(alias)) &&
+      !lowerExcludes.some((alias) => label.includes(alias))
+    ) {
       return lineItem.valueKrw;
     }
   }
@@ -202,7 +218,10 @@ function mergeStatementCandidates(
 ) {
   if (!primary && !fallback) return null;
 
-  const mergedLineItems = dedupeLineItems([...(primary?.lineItems ?? []), ...(fallback?.lineItems ?? [])]);
+  const mergedLineItems = dedupeLineItems([
+    ...(primary?.lineItems ?? []),
+    ...(fallback?.lineItems ?? [])
+  ]);
   const merged: ParsedFinancialStatementCandidate = {
     counterpartyName: primary?.counterpartyName ?? fallback?.counterpartyName,
     counterpartyRole: primary?.counterpartyRole ?? fallback?.counterpartyRole,
@@ -217,8 +236,10 @@ function mergeStatementCandidates(
     capexKrw: primary?.capexKrw ?? fallback?.capexKrw ?? null,
     totalDebtKrw: primary?.totalDebtKrw ?? fallback?.totalDebtKrw ?? null,
     currentAssetsKrw: primary?.currentAssetsKrw ?? fallback?.currentAssetsKrw ?? null,
-    currentLiabilitiesKrw: primary?.currentLiabilitiesKrw ?? fallback?.currentLiabilitiesKrw ?? null,
-    currentDebtMaturitiesKrw: primary?.currentDebtMaturitiesKrw ?? fallback?.currentDebtMaturitiesKrw ?? null,
+    currentLiabilitiesKrw:
+      primary?.currentLiabilitiesKrw ?? fallback?.currentLiabilitiesKrw ?? null,
+    currentDebtMaturitiesKrw:
+      primary?.currentDebtMaturitiesKrw ?? fallback?.currentDebtMaturitiesKrw ?? null,
     totalAssetsKrw: primary?.totalAssetsKrw ?? fallback?.totalAssetsKrw ?? null,
     totalEquityKrw: primary?.totalEquityKrw ?? fallback?.totalEquityKrw ?? null,
     interestExpenseKrw: primary?.interestExpenseKrw ?? fallback?.interestExpenseKrw ?? null,
@@ -241,8 +262,10 @@ function finalizeParsedStatement(
   const normalized = input.extractedText.replace(/\s+/g, ' ').trim();
   const statementBase = {
     counterpartyName:
-      candidate.counterpartyName?.trim() || inferCounterpartyName(input.title, normalized, input.assetName),
-    counterpartyRole: candidate.counterpartyRole?.trim() || inferCounterpartyRole(`${input.title} ${normalized}`),
+      candidate.counterpartyName?.trim() ||
+      inferCounterpartyName(input.title, normalized, input.assetName),
+    counterpartyRole:
+      candidate.counterpartyRole?.trim() || inferCounterpartyRole(`${input.title} ${normalized}`),
     statementType: candidate.statementType?.trim() || 'ANNUAL',
     fiscalYear: candidate.fiscalYear ?? extractFiscalYear(normalized, input.title),
     fiscalPeriod: candidate.fiscalPeriod?.trim() || 'FY',
@@ -262,7 +285,9 @@ function finalizeParsedStatement(
   };
 
   const lineItems = dedupeLineItems([
-    ...(candidate.lineItems ?? []).filter((lineItem) => lineItem.valueKrw !== null && Number.isFinite(lineItem.valueKrw)),
+    ...(candidate.lineItems ?? []).filter(
+      (lineItem) => lineItem.valueKrw !== null && Number.isFinite(lineItem.valueKrw)
+    ),
     ...buildLineItems(statementBase)
   ]);
 
@@ -292,8 +317,9 @@ function inferCounterpartyRole(text: string) {
 
 function inferCounterpartyName(title: string, extractedText: string, assetName: string) {
   const explicitMatch =
-    extractedText.match(/(?:company|issuer|sponsor|borrower|tenant|operator)\s*:\s*([A-Za-z0-9&(),'`\-\s]{3,80}?)(?:[.;]|$)/i) ??
-    title.match(/^(.+?)\s+(?:fy\d{4}|financial|statements|accounts)/i);
+    extractedText.match(
+      /(?:company|issuer|sponsor|borrower|tenant|operator)\s*:\s*([A-Za-z0-9&(),'`\-\s]{3,80}?)(?:[.;]|$)/i
+    ) ?? title.match(/^(.+?)\s+(?:fy\d{4}|financial|statements|accounts)/i);
 
   const candidate = explicitMatch?.[1]?.trim();
   if (candidate && candidate.toLowerCase() !== assetName.toLowerCase()) {
@@ -304,11 +330,14 @@ function inferCounterpartyName(title: string, extractedText: string, assetName: 
 }
 
 function extractFiscalYear(text: string, title: string) {
-  const yearMatch = text.match(/\b(?:fy|fiscal year|year ended)\s*(20\d{2})\b/i) ?? title.match(/\b(20\d{2})\b/);
+  const yearMatch =
+    text.match(/\b(?:fy|fiscal year|year ended)\s*(20\d{2})\b/i) ?? title.match(/\b(20\d{2})\b/);
   return yearMatch?.[1] ? Number(yearMatch[1]) : null;
 }
 
-function buildLineItems(statement: Omit<ParsedFinancialStatement, 'lineItems'>): StatementLineItem[] {
+function buildLineItems(
+  statement: Omit<ParsedFinancialStatement, 'lineItems'>
+): StatementLineItem[] {
   const items: StatementLineItem[] = [];
   const definitions: Array<[StatementLineItem['lineKey'], string, number | null]> = [
     ['revenueKrw', 'Revenue', statement.revenueKrw],
@@ -348,30 +377,53 @@ function buildHeuristicCandidate(input: {
   const candidateLineItems = collectCandidateLineItems(input.extractedText);
   const revenueKrw =
     findLineItemValue(candidateLineItems, ['revenue', 'sales', 'rental revenue']) ??
-    extractFinancialValue(normalized, [/(?:revenue|sales)[^\d]{0,24}(?:krw|usd)?\s*([\d,]+(?:\.\d+)?)/i].map(
-      (pattern) => new RegExp(pattern.source, pattern.flags)
-    ));
+    extractFinancialValue(
+      normalized,
+      [/(?:revenue|sales)[^\d]{0,24}(?:krw|usd)?\s*([\d,]+(?:\.\d+)?)/i].map(
+        (pattern) => new RegExp(pattern.source, pattern.flags)
+      )
+    );
   const ebitdaKrw =
     findLineItemValue(candidateLineItems, ['ebitda']) ??
     extractFinancialValue(normalized, [/ebitda[^\d]{0,24}(?:krw|usd)?\s*([\d,]+(?:\.\d+)?)/i]);
   const cashKrw =
     findLineItemValue(candidateLineItems, ['cash and cash equivalents', 'cash balance', 'cash']) ??
-    extractFinancialValue(normalized, [/(?:cash(?: and equivalents)?|cash balance)[^\d]{0,24}(?:krw|usd)?\s*([\d,]+(?:\.\d+)?)/i]);
+    extractFinancialValue(normalized, [
+      /(?:cash(?: and equivalents)?|cash balance)[^\d]{0,24}(?:krw|usd)?\s*([\d,]+(?:\.\d+)?)/i
+    ]);
   const operatingCashFlowKrw =
-    findLineItemValue(candidateLineItems, ['operating cash flow', 'cash flow from operations', 'net cash from operating activities']) ??
-    extractFinancialValue(normalized, [/(?:operating cash flow|cash flow from operations|net cash from operating activities)[^\d]{0,24}(?:krw|usd)?\s*([\d,]+(?:\.\d+)?)/i]);
+    findLineItemValue(candidateLineItems, [
+      'operating cash flow',
+      'cash flow from operations',
+      'net cash from operating activities'
+    ]) ??
+    extractFinancialValue(normalized, [
+      /(?:operating cash flow|cash flow from operations|net cash from operating activities)[^\d]{0,24}(?:krw|usd)?\s*([\d,]+(?:\.\d+)?)/i
+    ]);
   const capexKrw =
-    findLineItemValue(candidateLineItems, ['capital expenditures', 'capital expenditure', 'capex']) ??
-    extractFinancialValue(normalized, [/(?:capital expenditures|capital expenditure|capex)[^\d]{0,24}(?:krw|usd)?\s*([\d,]+(?:\.\d+)?)/i]);
+    findLineItemValue(candidateLineItems, [
+      'capital expenditures',
+      'capital expenditure',
+      'capex'
+    ]) ??
+    extractFinancialValue(normalized, [
+      /(?:capital expenditures|capital expenditure|capex)[^\d]{0,24}(?:krw|usd)?\s*([\d,]+(?:\.\d+)?)/i
+    ]);
   const totalDebtKrw =
     findLineItemValue(candidateLineItems, ['total debt', 'borrowings', 'debt'], ['cash']) ??
-    extractFinancialValue(normalized, [/(?:total debt|net debt|borrowings)[^\d]{0,24}(?:krw|usd)?\s*([\d,]+(?:\.\d+)?)/i]);
+    extractFinancialValue(normalized, [
+      /(?:total debt|net debt|borrowings)[^\d]{0,24}(?:krw|usd)?\s*([\d,]+(?:\.\d+)?)/i
+    ]);
   const currentAssetsKrw =
     findLineItemValue(candidateLineItems, ['current assets']) ??
-    extractFinancialValue(normalized, [/(?:current assets)[^\d]{0,24}(?:krw|usd)?\s*([\d,]+(?:\.\d+)?)/i]);
+    extractFinancialValue(normalized, [
+      /(?:current assets)[^\d]{0,24}(?:krw|usd)?\s*([\d,]+(?:\.\d+)?)/i
+    ]);
   const currentLiabilitiesKrw =
     findLineItemValue(candidateLineItems, ['current liabilities']) ??
-    extractFinancialValue(normalized, [/(?:current liabilities)[^\d]{0,24}(?:krw|usd)?\s*([\d,]+(?:\.\d+)?)/i]);
+    extractFinancialValue(normalized, [
+      /(?:current liabilities)[^\d]{0,24}(?:krw|usd)?\s*([\d,]+(?:\.\d+)?)/i
+    ]);
   const currentDebtMaturitiesKrw =
     findLineItemValue(candidateLineItems, [
       'current debt maturities',
@@ -380,16 +432,24 @@ function buildHeuristicCandidate(input: {
       'short-term debt',
       'short term debt'
     ]) ??
-    extractFinancialValue(normalized, [/(?:current maturities|debt due within one year|short[- ]term debt)[^\d]{0,24}(?:krw|usd)?\s*([\d,]+(?:\.\d+)?)/i]);
+    extractFinancialValue(normalized, [
+      /(?:current maturities|debt due within one year|short[- ]term debt)[^\d]{0,24}(?:krw|usd)?\s*([\d,]+(?:\.\d+)?)/i
+    ]);
   const totalAssetsKrw =
     findLineItemValue(candidateLineItems, ['total assets', 'assets']) ??
-    extractFinancialValue(normalized, [/(?:total assets|assets)[^\d]{0,24}(?:krw|usd)?\s*([\d,]+(?:\.\d+)?)/i]);
+    extractFinancialValue(normalized, [
+      /(?:total assets|assets)[^\d]{0,24}(?:krw|usd)?\s*([\d,]+(?:\.\d+)?)/i
+    ]);
   const totalEquityKrw =
     findLineItemValue(candidateLineItems, ['total equity', "shareholders' equity", 'equity']) ??
-    extractFinancialValue(normalized, [/(?:total equity|shareholders'? equity|equity)[^\d]{0,24}(?:krw|usd)?\s*([\d,]+(?:\.\d+)?)/i]);
+    extractFinancialValue(normalized, [
+      /(?:total equity|shareholders'? equity|equity)[^\d]{0,24}(?:krw|usd)?\s*([\d,]+(?:\.\d+)?)/i
+    ]);
   const interestExpenseKrw =
     findLineItemValue(candidateLineItems, ['interest expense', 'finance cost', 'interest']) ??
-    extractFinancialValue(normalized, [/(?:interest expense|finance cost)[^\d]{0,24}(?:krw|usd)?\s*([\d,]+(?:\.\d+)?)/i]);
+    extractFinancialValue(normalized, [
+      /(?:interest expense|finance cost)[^\d]{0,24}(?:krw|usd)?\s*([\d,]+(?:\.\d+)?)/i
+    ]);
 
   const candidate: ParsedFinancialStatementCandidate = {
     counterpartyName: inferCounterpartyName(input.title, normalized, input.assetName),
@@ -424,11 +484,14 @@ export function parseFinancialStatementFromText(input: {
   return finalizeParsedStatement(input, buildHeuristicCandidate(input));
 }
 
-export async function parseFinancialStatement(input: {
-  title: string;
-  extractedText: string;
-  assetName: string;
-}, deps?: { aiExtractor?: typeof extractFinancialStatementWithAi }) {
+export async function parseFinancialStatement(
+  input: {
+    title: string;
+    extractedText: string;
+    assetName: string;
+  },
+  deps?: { aiExtractor?: typeof extractFinancialStatementWithAi }
+) {
   const heuristic = buildHeuristicCandidate(input);
   const aiExtractor = deps?.aiExtractor ?? extractFinancialStatementWithAi;
   const aiCandidate = await aiExtractor(input);
@@ -453,7 +516,9 @@ export function buildCreditAssessmentFromStatement(statement: ParsedFinancialSta
       ? Number((statement.cashKrw / statement.totalDebtKrw).toFixed(2))
       : null;
   const currentRatio =
-    statement.currentAssetsKrw !== null && statement.currentLiabilitiesKrw && statement.currentLiabilitiesKrw > 0
+    statement.currentAssetsKrw !== null &&
+    statement.currentLiabilitiesKrw &&
+    statement.currentLiabilitiesKrw > 0
       ? Number((statement.currentAssetsKrw / statement.currentLiabilitiesKrw).toFixed(2))
       : null;
   const workingCapitalKrw =
@@ -469,7 +534,10 @@ export function buildCreditAssessmentFromStatement(statement: ParsedFinancialSta
     statement.currentDebtMaturitiesKrw > 0 &&
     (statement.cashKrw !== null || statement.operatingCashFlowKrw !== null)
       ? Number(
-          (((statement.cashKrw ?? 0) + Math.max(statement.operatingCashFlowKrw ?? 0, 0)) / statement.currentDebtMaturitiesKrw).toFixed(2)
+          (
+            ((statement.cashKrw ?? 0) + Math.max(statement.operatingCashFlowKrw ?? 0, 0)) /
+            statement.currentDebtMaturitiesKrw
+          ).toFixed(2)
         )
       : null;
 
@@ -531,7 +599,9 @@ export function buildCreditAssessmentFromStatement(statement: ParsedFinancialSta
     interestCoverage !== null ? `Interest coverage ${interestCoverage}x.` : null,
     cashToDebtRatio !== null ? `Cash to debt ${cashToDebtRatio}x.` : null,
     currentRatio !== null ? `Current ratio ${currentRatio}x.` : null,
-    currentMaturityCoverage !== null ? `Near-term maturity coverage ${currentMaturityCoverage}x.` : null
+    currentMaturityCoverage !== null
+      ? `Near-term maturity coverage ${currentMaturityCoverage}x.`
+      : null
   ].filter(Boolean);
 
   return {

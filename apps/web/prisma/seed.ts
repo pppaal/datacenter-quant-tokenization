@@ -202,13 +202,48 @@ type SeedAssetInput = {
 
 function buildCapexLineItems(totalCapexKrw: number, landPct: number) {
   return [
-    { category: CapexCategory.LAND, label: 'Land and assembly', amountKrw: totalCapexKrw * landPct, spendYear: 0 },
-    { category: CapexCategory.SHELL_CORE, label: 'Shell and core', amountKrw: totalCapexKrw * 0.22, spendYear: 1 },
-    { category: CapexCategory.ELECTRICAL, label: 'Electrical and utility interconnection', amountKrw: totalCapexKrw * 0.24, spendYear: 1 },
-    { category: CapexCategory.MECHANICAL, label: 'Cooling and mechanical package', amountKrw: totalCapexKrw * 0.16, spendYear: 1 },
-    { category: CapexCategory.IT_FIT_OUT, label: 'White space and fit-out', amountKrw: totalCapexKrw * 0.1, spendYear: 2 },
-    { category: CapexCategory.SOFT_COST, label: 'Professional fees and developer overhead', amountKrw: totalCapexKrw * 0.09, spendYear: 0 },
-    { category: CapexCategory.CONTINGENCY, label: 'Contingency', amountKrw: totalCapexKrw * (0.19 - landPct), spendYear: 2 }
+    {
+      category: CapexCategory.LAND,
+      label: 'Land and assembly',
+      amountKrw: totalCapexKrw * landPct,
+      spendYear: 0
+    },
+    {
+      category: CapexCategory.SHELL_CORE,
+      label: 'Shell and core',
+      amountKrw: totalCapexKrw * 0.22,
+      spendYear: 1
+    },
+    {
+      category: CapexCategory.ELECTRICAL,
+      label: 'Electrical and utility interconnection',
+      amountKrw: totalCapexKrw * 0.24,
+      spendYear: 1
+    },
+    {
+      category: CapexCategory.MECHANICAL,
+      label: 'Cooling and mechanical package',
+      amountKrw: totalCapexKrw * 0.16,
+      spendYear: 1
+    },
+    {
+      category: CapexCategory.IT_FIT_OUT,
+      label: 'White space and fit-out',
+      amountKrw: totalCapexKrw * 0.1,
+      spendYear: 2
+    },
+    {
+      category: CapexCategory.SOFT_COST,
+      label: 'Professional fees and developer overhead',
+      amountKrw: totalCapexKrw * 0.09,
+      spendYear: 0
+    },
+    {
+      category: CapexCategory.CONTINGENCY,
+      label: 'Contingency',
+      amountKrw: totalCapexKrw * (0.19 - landPct),
+      spendYear: 2
+    }
   ];
 }
 
@@ -226,26 +261,76 @@ function buildMacroSeriesSeedRows(
   // 12 monthly deltas (oldest → newest) for each series key.
   // Provides enough history for trend analysis, moving averages, and anomaly detection.
   const rows: Array<[string, string, string, number, number[]]> = [
-    ['inflation_pct', 'Inflation', '%', marketSnapshot.inflationPct,
-      [-0.6, -0.5, -0.45, -0.35, -0.3, -0.25, -0.2, -0.15, -0.12, -0.1, -0.05, 0]],
-    ['debt_cost_pct', 'Debt Cost', '%', marketSnapshot.debtCostPct,
-      [-0.8, -0.7, -0.6, -0.55, -0.45, -0.35, -0.3, -0.25, -0.2, -0.15, -0.05, 0]],
-    ['cap_rate_pct', 'Market Cap Rate', '%', marketSnapshot.capRatePct,
-      [-0.5, -0.45, -0.4, -0.35, -0.3, -0.25, -0.2, -0.15, -0.1, -0.08, -0.03, 0]],
-    ['discount_rate_pct', 'Discount Rate', '%', marketSnapshot.discountRatePct,
-      [-0.5, -0.45, -0.4, -0.35, -0.3, -0.2, -0.15, -0.12, -0.1, -0.05, -0.02, 0]],
-    ['vacancy_pct', 'Vacancy', '%', marketSnapshot.vacancyPct,
-      [1.5, 1.3, 1.1, 0.9, 0.8, 0.7, 0.5, 0.4, 0.3, 0.2, 0.1, 0]],
-    ['policy_rate_pct', 'Policy Rate', '%', 3.5,
-      [-0.75, -0.75, -0.5, -0.5, -0.5, -0.25, -0.25, -0.25, 0, 0, 0, 0]],
-    ['credit_spread_bps', 'Credit Spread', 'bps', 180,
-      [40, 35, 30, 25, 20, 15, 10, 5, 0, -5, -5, 0]],
-    ['rent_growth_pct', 'Rent Growth', '%', 2.1,
-      [-0.5, -0.3, -0.2, -0.1, 0.1, 0.2, 0.3, 0.3, 0.2, 0.1, 0.05, 0]],
-    ['transaction_volume_index', 'Transaction Volume', 'idx', 98,
-      [-15, -12, -10, -8, -6, -5, -4, -3, -2, -1, 0, 0]],
-    ['construction_cost_index', 'Construction Cost', 'idx', 108,
-      [-12, -10, -8, -7, -6, -5, -4, -3, -2, -1, -0.5, 0]],
+    [
+      'inflation_pct',
+      'Inflation',
+      '%',
+      marketSnapshot.inflationPct,
+      [-0.6, -0.5, -0.45, -0.35, -0.3, -0.25, -0.2, -0.15, -0.12, -0.1, -0.05, 0]
+    ],
+    [
+      'debt_cost_pct',
+      'Debt Cost',
+      '%',
+      marketSnapshot.debtCostPct,
+      [-0.8, -0.7, -0.6, -0.55, -0.45, -0.35, -0.3, -0.25, -0.2, -0.15, -0.05, 0]
+    ],
+    [
+      'cap_rate_pct',
+      'Market Cap Rate',
+      '%',
+      marketSnapshot.capRatePct,
+      [-0.5, -0.45, -0.4, -0.35, -0.3, -0.25, -0.2, -0.15, -0.1, -0.08, -0.03, 0]
+    ],
+    [
+      'discount_rate_pct',
+      'Discount Rate',
+      '%',
+      marketSnapshot.discountRatePct,
+      [-0.5, -0.45, -0.4, -0.35, -0.3, -0.2, -0.15, -0.12, -0.1, -0.05, -0.02, 0]
+    ],
+    [
+      'vacancy_pct',
+      'Vacancy',
+      '%',
+      marketSnapshot.vacancyPct,
+      [1.5, 1.3, 1.1, 0.9, 0.8, 0.7, 0.5, 0.4, 0.3, 0.2, 0.1, 0]
+    ],
+    [
+      'policy_rate_pct',
+      'Policy Rate',
+      '%',
+      3.5,
+      [-0.75, -0.75, -0.5, -0.5, -0.5, -0.25, -0.25, -0.25, 0, 0, 0, 0]
+    ],
+    [
+      'credit_spread_bps',
+      'Credit Spread',
+      'bps',
+      180,
+      [40, 35, 30, 25, 20, 15, 10, 5, 0, -5, -5, 0]
+    ],
+    [
+      'rent_growth_pct',
+      'Rent Growth',
+      '%',
+      2.1,
+      [-0.5, -0.3, -0.2, -0.1, 0.1, 0.2, 0.3, 0.3, 0.2, 0.1, 0.05, 0]
+    ],
+    [
+      'transaction_volume_index',
+      'Transaction Volume',
+      'idx',
+      98,
+      [-15, -12, -10, -8, -6, -5, -4, -3, -2, -1, 0, 0]
+    ],
+    [
+      'construction_cost_index',
+      'Construction Cost',
+      'idx',
+      108,
+      [-12, -10, -8, -7, -6, -5, -4, -3, -2, -1, -0.5, 0]
+    ]
   ];
 
   return rows.flatMap(([seriesKey, label, unit, currentValue, deltas]) =>
@@ -511,7 +596,8 @@ async function seedAsset(input: SeedAssetInput) {
           reviewStatus: ReviewStatus.APPROVED,
           reviewedAt: approvedAt,
           reviewedById: reviewer?.id ?? null,
-          reviewNotes: 'Utility tariff, resiliency assumptions, and substation distance verified against latest diligence pack.'
+          reviewNotes:
+            'Utility tariff, resiliency assumptions, and substation distance verified against latest diligence pack.'
         }
       });
     }
@@ -523,7 +609,8 @@ async function seedAsset(input: SeedAssetInput) {
           reviewStatus: ReviewStatus.APPROVED,
           reviewedAt: approvedAt,
           reviewedById: reviewer?.id ?? null,
-          reviewNotes: 'Power allocation timing and planning status confirmed for committee circulation.'
+          reviewNotes:
+            'Power allocation timing and planning status confirmed for committee circulation.'
         }
       });
     }
@@ -535,7 +622,8 @@ async function seedAsset(input: SeedAssetInput) {
           reviewStatus: ReviewStatus.APPROVED,
           reviewedAt: approvedAt,
           reviewedById: reviewer?.id ?? null,
-          reviewNotes: 'Anchor lease economics and staged ramp verified against sponsor-marked term sheet.'
+          reviewNotes:
+            'Anchor lease economics and staged ramp verified against sponsor-marked term sheet.'
         }
       });
     }
@@ -553,7 +641,8 @@ async function seedAsset(input: SeedAssetInput) {
         reviewStatus: ReviewStatus.APPROVED,
         reviewedAt: approvedAt,
         reviewedById: reviewer?.id ?? null,
-        reviewNotes: 'Title chain and SPC ownership structure validated for current underwriting package.'
+        reviewNotes:
+          'Title chain and SPC ownership structure validated for current underwriting package.'
       }
     });
   }
@@ -698,7 +787,8 @@ async function seedAsset(input: SeedAssetInput) {
             readinessStatus: ReadinessStatus.ANCHORED,
             reviewPhase: 'Evidence anchored',
             chainName: 'Demo Registry / Sepolia',
-            nextAction: 'Institutional packet is staged and the latest document hash is anchored for committee review.'
+            nextAction:
+              'Institutional packet is staged and the latest document hash is anchored for committee review.'
           }
         });
       }
@@ -793,7 +883,8 @@ async function seedOfficeAsset() {
           reviewStatus: ReviewStatus.APPROVED,
           reviewedAt: now,
           reviewedById: reviewer?.id ?? null,
-          reviewNotes: 'Operational permit status confirmed against building ledger and management packet.'
+          reviewNotes:
+            'Operational permit status confirmed against building ledger and management packet.'
         }
       },
       energySnapshot: {
@@ -808,7 +899,8 @@ async function seedOfficeAsset() {
           reviewStatus: ReviewStatus.APPROVED,
           reviewedAt: now,
           reviewedById: reviewer?.id ?? null,
-          reviewNotes: 'Base-building utility and backup context confirmed for current operating case.'
+          reviewNotes:
+            'Base-building utility and backup context confirmed for current operating case.'
         }
       },
       officeDetail: {
@@ -833,7 +925,8 @@ async function seedOfficeAsset() {
           inflationPct: 2.1,
           constructionCostPerMwKrw: null,
           discountRatePct: 7.4,
-          marketNotes: 'Prime Seoul office cap rates remain disciplined, while incentive pressure is concentrated in secondary stock.',
+          marketNotes:
+            'Prime Seoul office cap rates remain disciplined, while incentive pressure is concentrated in secondary stock.',
           sourceStatus: SourceStatus.FRESH,
           sourceUpdatedAt: now
         }
@@ -1020,11 +1113,13 @@ async function seedOfficeAsset() {
             probabilityPct: 100,
             renewProbabilityPct: 70,
             downtimeMonths: 6,
-            notes: 'Anchor office tenant; approved evidence references lease schedule and WALE support.',
+            notes:
+              'Anchor office tenant; approved evidence references lease schedule and WALE support.',
             reviewStatus: ReviewStatus.APPROVED,
             reviewedAt: now,
             reviewedById: reviewer?.id ?? null,
-            reviewNotes: 'Anchor tenant rent roll and WALE support verified against the lease abstract.'
+            reviewNotes:
+              'Anchor tenant rent roll and WALE support verified against the lease abstract.'
           }
         ]
       },
@@ -1111,7 +1206,14 @@ async function seedOfficeAsset() {
           reserveMonths: 4,
           notes: 'Refinancing-ready senior term facility.',
           draws: {
-            create: [{ drawYear: 0, drawMonth: 1, amountKrw: 162000000000, notes: 'Acquisition refinancing draw' }]
+            create: [
+              {
+                drawYear: 0,
+                drawMonth: 1,
+                amountKrw: 162000000000,
+                notes: 'Acquisition refinancing draw'
+              }
+            ]
           }
         }
       },
@@ -1133,7 +1235,8 @@ async function seedOfficeAsset() {
                 storagePath: 'seed/SEOUL-YEOUIDO-01/1.pdf',
                 sourceLink: 'https://example.com/office-rent-roll',
                 extractedText: 'Rent roll and WALE support package.',
-                aiSummary: 'Current rent roll, WALE, rollover profile, and TI / LC reserve support.',
+                aiSummary:
+                  'Current rent roll, WALE, rollover profile, and TI / LC reserve support.',
                 documentHash: deterministicDocumentHash('seed-doc', 'office-rent-roll')
               }
             }
@@ -1142,7 +1245,8 @@ async function seedOfficeAsset() {
             title: 'Title And Mortgage Extract',
             documentType: DocumentType.OTHER,
             sourceLink: 'https://example.com/office-title',
-            aiSummary: 'Title chain, mortgage position, and ownership confirmation for the office SPV.',
+            aiSummary:
+              'Title chain, mortgage position, and ownership confirmation for the office SPV.',
             documentHash: deterministicDocumentHash('seed-doc', 'office-title'),
             latestStoragePath: 'seed/SEOUL-YEOUIDO-01/2.pdf',
             versions: {
@@ -1154,7 +1258,8 @@ async function seedOfficeAsset() {
                 storagePath: 'seed/SEOUL-YEOUIDO-01/2.pdf',
                 sourceLink: 'https://example.com/office-title',
                 extractedText: 'Title extract and mortgage schedule.',
-                aiSummary: 'Title chain, mortgage position, and ownership confirmation for the office SPV.',
+                aiSummary:
+                  'Title chain, mortgage position, and ownership confirmation for the office SPV.',
                 documentHash: deterministicDocumentHash('seed-doc', 'office-title')
               }
             }
@@ -1163,7 +1268,8 @@ async function seedOfficeAsset() {
             title: 'Office Market Update',
             documentType: DocumentType.IM,
             sourceLink: 'https://example.com/office-market-update',
-            aiSummary: 'Prime Seoul office market update with rent, vacancy, and transaction context.',
+            aiSummary:
+              'Prime Seoul office market update with rent, vacancy, and transaction context.',
             documentHash: deterministicDocumentHash('seed-doc', 'office-market'),
             latestStoragePath: 'seed/SEOUL-YEOUIDO-01/3.pdf',
             versions: {
@@ -1175,7 +1281,8 @@ async function seedOfficeAsset() {
                 storagePath: 'seed/SEOUL-YEOUIDO-01/3.pdf',
                 sourceLink: 'https://example.com/office-market-update',
                 extractedText: 'Prime Seoul office market update and benchmark pack.',
-                aiSummary: 'Prime Seoul office market update with rent, vacancy, and transaction context.',
+                aiSummary:
+                  'Prime Seoul office market update with rent, vacancy, and transaction context.',
                 documentHash: deterministicDocumentHash('seed-doc', 'office-market')
               }
             }
@@ -1429,7 +1536,8 @@ async function main() {
     financingRatePct: 5.2,
     ownerName: 'Seoul Infra Development SPC',
     sponsorName: 'Nexus Infrastructure Advisory',
-    developmentSummary: 'Power-led underwriting case positioned for investment committee circulation.',
+    developmentSummary:
+      'Power-led underwriting case positioned for investment committee circulation.',
     siteProfile: {
       gridAvailability: '154 kV line available within 1.2 km',
       fiberAccess: 'Dual carrier route confirmed',
@@ -1471,7 +1579,8 @@ async function main() {
       inflationPct: 2.3,
       constructionCostPerMwKrw: 7800000000,
       discountRatePct: 9.4,
-      marketNotes: 'Hyperscale demand remains strong, but power queue discipline drives the committee timeline.'
+      marketNotes:
+        'Hyperscale demand remains strong, but power queue discipline drives the committee timeline.'
     },
     comparableEntries: [
       {
@@ -1592,7 +1701,8 @@ async function main() {
       promoteThresholdPct: 10,
       promoteSharePct: 15,
       reserveTargetMonths: 6,
-      distributionWaterfall: 'Operating cash to reserves, debt service, investor pref, sponsor promote.',
+      distributionWaterfall:
+        'Operating cash to reserves, debt service, investor pref, sponsor promote.',
       notes: 'Indicative waterfall pending counsel sign-off.'
     },
     debtFacilities: [
@@ -1613,7 +1723,12 @@ async function main() {
         notes: 'Indicative construction-to-term facility.',
         draws: [
           { drawYear: 1, drawMonth: 2, amountKrw: 54000000000, notes: 'Initial shell/core draw' },
-          { drawYear: 2, drawMonth: 6, amountKrw: 44000000000, notes: 'Electrical and fit-out draw' }
+          {
+            drawYear: 2,
+            drawMonth: 6,
+            amountKrw: 44000000000,
+            notes: 'Electrical and fit-out draw'
+          }
         ]
       }
     ],
@@ -1622,7 +1737,8 @@ async function main() {
         title: 'Power Allocation Review Memo',
         documentType: DocumentType.POWER_STUDY,
         sourceLink: 'https://example.com/power-review',
-        aiSummary: 'Utility diligence memo covering allocation timing, redundancy assumptions, and queue positioning.',
+        aiSummary:
+          'Utility diligence memo covering allocation timing, redundancy assumptions, and queue positioning.',
         documentHash: deterministicDocumentHash('seed-doc', 'seoul-power')
       },
       {
@@ -1660,7 +1776,8 @@ async function main() {
     financingRatePct: 5.1,
     ownerName: 'Cheongna Digital Infrastructure Co.',
     sponsorName: 'Harbor Latitude Capital',
-    developmentSummary: 'West-corridor opportunity balancing AI demand with reclamation-area diligence.',
+    developmentSummary:
+      'West-corridor opportunity balancing AI demand with reclamation-area diligence.',
     siteProfile: {
       gridAvailability: '345 kV expansion corridor under review',
       fiberAccess: 'Carrier hotel adjacency planned',
@@ -1668,7 +1785,8 @@ async function main() {
       floodRiskScore: 2.2,
       wildfireRiskScore: 0.9,
       seismicRiskScore: 1.3,
-      siteNotes: 'Storm-surge hardening and groundwater management remain open diligence workstreams.'
+      siteNotes:
+        'Storm-surge hardening and groundwater management remain open diligence workstreams.'
     },
     buildingSnapshot: {
       zoning: 'Planned industrial',
@@ -1702,7 +1820,8 @@ async function main() {
       inflationPct: 2.3,
       constructionCostPerMwKrw: 7450000000,
       discountRatePct: 9.8,
-      marketNotes: 'AI workload spillover provides demand support, but utility sequencing remains central to underwriting.'
+      marketNotes:
+        'AI workload spillover provides demand support, but utility sequencing remains central to underwriting.'
     },
     comparableEntries: [
       {
@@ -1822,8 +1941,18 @@ async function main() {
         reserveMonths: 6,
         notes: 'Construction facility sized off west-corridor AI take-up.',
         draws: [
-          { drawYear: 1, drawMonth: 3, amountKrw: 43000000000, notes: 'District and shell package' },
-          { drawYear: 2, drawMonth: 5, amountKrw: 33000000000, notes: 'Cooling and fit-out package' }
+          {
+            drawYear: 1,
+            drawMonth: 3,
+            amountKrw: 43000000000,
+            notes: 'District and shell package'
+          },
+          {
+            drawYear: 2,
+            drawMonth: 5,
+            amountKrw: 33000000000,
+            notes: 'Cooling and fit-out package'
+          }
         ]
       }
     ],
@@ -1832,14 +1961,16 @@ async function main() {
         title: 'District Planning Diligence Pack',
         documentType: DocumentType.PERMIT,
         sourceLink: 'https://example.com/cheongna-permit',
-        aiSummary: 'Planning pack covering zoning conditions, district approval sequence, and environmental consultation notes.',
+        aiSummary:
+          'Planning pack covering zoning conditions, district approval sequence, and environmental consultation notes.',
         documentHash: deterministicDocumentHash('seed-doc', 'incheon-permit')
       },
       {
         title: 'Renewables Access Analysis',
         documentType: DocumentType.REPORT,
         sourceLink: 'https://example.com/cheongna-renewables',
-        aiSummary: 'Review note summarizing renewable procurement options and expected tariff benefits.',
+        aiSummary:
+          'Review note summarizing renewable procurement options and expected tariff benefits.',
         documentHash: deterministicDocumentHash('seed-doc', 'incheon-renewables')
       }
     ],
@@ -1870,7 +2001,8 @@ async function main() {
     financingRatePct: 5.0,
     ownerName: 'Southeast Data Infrastructure Fund',
     sponsorName: 'Blue Current Partners',
-    developmentSummary: 'Early-stage regional diligence case emphasizing power and edge-demand validation.',
+    developmentSummary:
+      'Early-stage regional diligence case emphasizing power and edge-demand validation.',
     siteProfile: {
       gridAvailability: '154 kV feed with reserve land for substation bay',
       fiberAccess: 'Regional submarine cable backhaul proximity',
@@ -1878,7 +2010,8 @@ async function main() {
       floodRiskScore: 2.7,
       wildfireRiskScore: 1.5,
       seismicRiskScore: 1.2,
-      siteNotes: 'Typhoon hardening and marine corrosion design inputs should be verified before IC.'
+      siteNotes:
+        'Typhoon hardening and marine corrosion design inputs should be verified before IC.'
     },
     buildingSnapshot: {
       zoning: 'Industrial mixed use',
@@ -1912,7 +2045,8 @@ async function main() {
       inflationPct: 2.3,
       constructionCostPerMwKrw: 6900000000,
       discountRatePct: 10.2,
-      marketNotes: 'Regional demand profile requires deeper tenant validation than Seoul metro cases.'
+      marketNotes:
+        'Regional demand profile requires deeper tenant validation than Seoul metro cases.'
     },
     comparableEntries: [
       {
@@ -2042,7 +2176,8 @@ async function main() {
         title: 'Site Assembly Memorandum',
         documentType: DocumentType.IM,
         sourceLink: 'https://example.com/busan-site',
-        aiSummary: 'Site assembly memo summarizing land control, expansion pads, and early diligence status.',
+        aiSummary:
+          'Site assembly memo summarizing land control, expansion pads, and early diligence status.',
         documentHash: deterministicDocumentHash('seed-doc', 'busan-site')
       }
     ],
@@ -2056,7 +2191,9 @@ async function main() {
   await seedResearchAndMacro(prisma);
   await seedQuarterlyMarketBootstrap(prisma);
 
-  console.log('Seed complete: Korean real-estate demo assets, deal execution pipeline, portfolio/fund operating shells, committee governance, and research workspace loaded.');
+  console.log(
+    'Seed complete: Korean real-estate demo assets, deal execution pipeline, portfolio/fund operating shells, committee governance, and research workspace loaded.'
+  );
 }
 
 main()

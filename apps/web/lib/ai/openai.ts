@@ -43,8 +43,7 @@ export async function generateUnderwritingMemo(
       messages: [
         {
           role: 'system',
-          content:
-            `You write concise institutional investment memos for ${assetClassLabel} real-estate opportunities. Use terms like investment memo, analysis, scenario, return profile, downside, and diligence support. Avoid retail offering or return-guarantee language.`
+          content: `You write concise institutional investment memos for ${assetClassLabel} real-estate opportunities. Use terms like investment memo, analysis, scenario, return profile, downside, and diligence support. Avoid retail offering or return-guarantee language.`
         },
         {
           role: 'user',
@@ -129,27 +128,28 @@ export async function extractDocumentFactsWithAi(input: {
     const content = response.choices[0]?.message?.content?.trim() ?? '';
     const parsed = JSON.parse(content || '{}') as { facts?: unknown[] };
 
-    const mapped = (parsed.facts ?? [])
-      .map((item) => {
-        if (!item || typeof item !== 'object') return null;
-        const candidate = item as Record<string, unknown>;
-        const fact: ExtractedDocumentFactInput = {
-          factType: typeof candidate.factType === 'string' ? candidate.factType : 'document_note',
-          factKey: typeof candidate.factKey === 'string' ? candidate.factKey : 'note',
-          factValueText: typeof candidate.factValueText === 'string' ? candidate.factValueText : null,
-          factValueNumber:
-            typeof candidate.factValueNumber === 'number' && Number.isFinite(candidate.factValueNumber)
-              ? candidate.factValueNumber
-              : null,
-          factValueDate: typeof candidate.factValueDate === 'string' ? candidate.factValueDate : null,
-          unit: typeof candidate.unit === 'string' ? candidate.unit : null,
-          confidenceScore:
-            typeof candidate.confidenceScore === 'number' && Number.isFinite(candidate.confidenceScore)
-              ? Math.min(1, Math.max(0, candidate.confidenceScore))
-              : 0.65
-        };
-        return fact;
-      });
+    const mapped = (parsed.facts ?? []).map((item) => {
+      if (!item || typeof item !== 'object') return null;
+      const candidate = item as Record<string, unknown>;
+      const fact: ExtractedDocumentFactInput = {
+        factType: typeof candidate.factType === 'string' ? candidate.factType : 'document_note',
+        factKey: typeof candidate.factKey === 'string' ? candidate.factKey : 'note',
+        factValueText: typeof candidate.factValueText === 'string' ? candidate.factValueText : null,
+        factValueNumber:
+          typeof candidate.factValueNumber === 'number' &&
+          Number.isFinite(candidate.factValueNumber)
+            ? candidate.factValueNumber
+            : null,
+        factValueDate: typeof candidate.factValueDate === 'string' ? candidate.factValueDate : null,
+        unit: typeof candidate.unit === 'string' ? candidate.unit : null,
+        confidenceScore:
+          typeof candidate.confidenceScore === 'number' &&
+          Number.isFinite(candidate.confidenceScore)
+            ? Math.min(1, Math.max(0, candidate.confidenceScore))
+            : 0.65
+      };
+      return fact;
+    });
 
     return mapped.filter((fact): fact is ExtractedDocumentFactInput => fact !== null);
   } catch {
@@ -203,8 +203,10 @@ export async function extractFinancialStatementWithAi(input: {
       : undefined;
 
     return {
-      counterpartyName: typeof parsed.counterpartyName === 'string' ? parsed.counterpartyName : undefined,
-      counterpartyRole: typeof parsed.counterpartyRole === 'string' ? parsed.counterpartyRole : undefined,
+      counterpartyName:
+        typeof parsed.counterpartyName === 'string' ? parsed.counterpartyName : undefined,
+      counterpartyRole:
+        typeof parsed.counterpartyRole === 'string' ? parsed.counterpartyRole : undefined,
       statementType: typeof parsed.statementType === 'string' ? parsed.statementType : undefined,
       fiscalYear: toNullableNumber(parsed.fiscalYear),
       fiscalPeriod: typeof parsed.fiscalPeriod === 'string' ? parsed.fiscalPeriod : undefined,

@@ -104,7 +104,10 @@ export function inferFactsFromText(text: string): ExtractedDocumentFactInput[] {
   }
 
   const percentPatterns = [
-    { regex: /occupancy(?: assumption)?[^.\d]{0,12}(\d[\d,]*(?:\.\d+)?)\s*%/i, factKey: 'occupancy_pct' },
+    {
+      regex: /occupancy(?: assumption)?[^.\d]{0,12}(\d[\d,]*(?:\.\d+)?)\s*%/i,
+      factKey: 'occupancy_pct'
+    },
     { regex: /cap\s*rate[^.\d]{0,12}(\d[\d,]*(?:\.\d+)?)\s*%/i, factKey: 'cap_rate_pct' },
     { regex: /discount\s*rate[^.\d]{0,12}(\d[\d,]*(?:\.\d+)?)\s*%/i, factKey: 'discount_rate_pct' }
   ];
@@ -125,8 +128,16 @@ export function inferFactsFromText(text: string): ExtractedDocumentFactInput[] {
 
   const moneyPatterns = [
     { regex: /capex[^.\d]{0,20}krw\s*([\d,]+(?:\.\d+)?)/i, factType: 'cost', factKey: 'capex_krw' },
-    { regex: /budget[^.\d]{0,20}krw\s*([\d,]+(?:\.\d+)?)/i, factType: 'cost', factKey: 'budget_krw' },
-    { regex: /monthly\s+rate[^.\d]{0,20}krw\s*([\d,]+(?:\.\d+)?)/i, factType: 'lease', factKey: 'monthly_rate_per_kw_krw' }
+    {
+      regex: /budget[^.\d]{0,20}krw\s*([\d,]+(?:\.\d+)?)/i,
+      factType: 'cost',
+      factKey: 'budget_krw'
+    },
+    {
+      regex: /monthly\s+rate[^.\d]{0,20}krw\s*([\d,]+(?:\.\d+)?)/i,
+      factType: 'lease',
+      factKey: 'monthly_rate_per_kw_krw'
+    }
   ];
 
   for (const pattern of moneyPatterns) {
@@ -144,8 +155,10 @@ export function inferFactsFromText(text: string): ExtractedDocumentFactInput[] {
   }
 
   const permitSentence =
-    findSentence(sentences, /permit stage|power approval status|zoning approval status|environmental review status/i) ??
-    findSentence(sentences, /power allocation|permit/i);
+    findSentence(
+      sentences,
+      /permit stage|power approval status|zoning approval status|environmental review status/i
+    ) ?? findSentence(sentences, /power allocation|permit/i);
   if (permitSentence) {
     facts.push({
       factType: 'permit',

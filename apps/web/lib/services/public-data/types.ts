@@ -27,52 +27,64 @@ export type ParcelIdentifier = {
 export type BuildingRecord = {
   pnu: string;
   buildingName: string | null;
-  mainUse: string;               // 주용도 e.g. "업무시설", "제2종근린생활시설"
-  structure: string | null;      // 구조 e.g. "철근콘크리트"
+  mainUse: string; // 주용도 e.g. "업무시설", "제2종근린생활시설"
+  structure: string | null; // 구조 e.g. "철근콘크리트"
   floorsAboveGround: number | null;
   floorsBelowGround: number | null;
-  grossFloorAreaSqm: number | null;  // 연면적
-  buildingAreaSqm: number | null;    // 건축면적
-  landAreaSqm: number | null;        // 대지면적
-  approvalYear: number | null;       // 사용승인년도
+  grossFloorAreaSqm: number | null; // 연면적
+  buildingAreaSqm: number | null; // 건축면적
+  landAreaSqm: number | null; // 대지면적
+  approvalYear: number | null; // 사용승인년도
   elevatorCount: number | null;
   parkingCount: number | null;
   buildingCoveragePct: number | null; // 건폐율
-  floorAreaRatioPct: number | null;   // 용적률
+  floorAreaRatioPct: number | null; // 용적률
 };
 
 export type UseZone = {
   pnu: string;
-  primaryZone: string;       // 용도지역 e.g. "제3종일반주거지역"
-  specialDistrict: string | null;  // 용도지구
+  primaryZone: string; // 용도지역 e.g. "제3종일반주거지역"
+  specialDistrict: string | null; // 용도지구
   urbanPlanFacility: string | null;
-  zoningCode: KoreaZoningCode;     // enum form for routing
+  zoningCode: KoreaZoningCode; // enum form for routing
 };
 
 export type KoreaZoningCode =
-  | 'RESIDENTIAL_1' | 'RESIDENTIAL_2' | 'RESIDENTIAL_3'
-  | 'COMMERCIAL_CENTRAL' | 'COMMERCIAL_GENERAL' | 'COMMERCIAL_NEIGHBORHOOD' | 'COMMERCIAL_DISTRIBUTION'
-  | 'INDUSTRIAL_EXCLUSIVE' | 'INDUSTRIAL_GENERAL' | 'INDUSTRIAL_QUASI'
-  | 'GREEN_PRESERVATION' | 'GREEN_PRODUCTION' | 'GREEN_NATURAL'
-  | 'MANAGEMENT_PLAN' | 'MANAGEMENT_PRODUCTION' | 'MANAGEMENT_CONSERVATION'
-  | 'AGRICULTURE' | 'NATURE_RESERVE'
+  | 'RESIDENTIAL_1'
+  | 'RESIDENTIAL_2'
+  | 'RESIDENTIAL_3'
+  | 'COMMERCIAL_CENTRAL'
+  | 'COMMERCIAL_GENERAL'
+  | 'COMMERCIAL_NEIGHBORHOOD'
+  | 'COMMERCIAL_DISTRIBUTION'
+  | 'INDUSTRIAL_EXCLUSIVE'
+  | 'INDUSTRIAL_GENERAL'
+  | 'INDUSTRIAL_QUASI'
+  | 'GREEN_PRESERVATION'
+  | 'GREEN_PRODUCTION'
+  | 'GREEN_NATURAL'
+  | 'MANAGEMENT_PLAN'
+  | 'MANAGEMENT_PRODUCTION'
+  | 'MANAGEMENT_CONSERVATION'
+  | 'AGRICULTURE'
+  | 'NATURE_RESERVE'
   | 'UNKNOWN';
 
 export type LandPricing = {
   pnu: string;
-  officialLandPriceKrwPerSqm: number;     // 공시지가 (current year)
+  officialLandPriceKrwPerSqm: number; // 공시지가 (current year)
   officialLandPriceYear: number;
   recentTransactionKrwPerSqm: number | null; // 실거래가 most recent
   recentTransactionDate: string | null;
-  vacancyPct: number | null;              // market vacancy in micro-area
+  vacancyPct: number | null; // market vacancy in micro-area
 };
 
 export type RentalComparable = {
-  source: string;                         // e.g. "R-ONE 2025Q4"
+  source: string; // e.g. "R-ONE 2025Q4"
   distanceKm: number;
   assetClassHint: 'OFFICE' | 'RETAIL' | 'LOGISTICS' | 'MULTIFAMILY' | 'DATA_CENTER' | 'MIXED_USE';
-  monthlyRentKrwPerSqm: number | null;    // office/retail/multifamily
-  monthlyRentKrwPerKw: number | null;     // data center
+  monthlyRentKrwPerSqm: number | null; // office/retail/multifamily
+  monthlyRentKrwPerKw: number | null; // data center
   capRatePct: number | null;
   occupancyPct: number | null;
   transactionDate: string | null;
@@ -83,16 +95,16 @@ export type GridAccess = {
   pnu: string;
   nearestSubstationName: string;
   nearestSubstationDistanceKm: number;
-  availableCapacityMw: number | null;     // estimated remaining feeder capacity
-  tariffKrwPerKwh: number;                // KEPCO industrial tariff (일반용 or 산업용)
+  availableCapacityMw: number | null; // estimated remaining feeder capacity
+  tariffKrwPerKwh: number; // KEPCO industrial tariff (일반용 or 산업용)
   fiberBackboneAvailable: boolean;
   renewableSourcingAvailablePct: number | null;
 };
 
 export type MacroMicroSnapshot = {
   // Market context keyed to the micro-location (district-level)
-  district: string;                       // 구/시
-  metroRegion: string;                    // e.g. "수도권 남부"
+  district: string; // 구/시
+  metroRegion: string; // e.g. "수도권 남부"
   submarketVacancyPct: number | null;
   submarketRentGrowthPct: number | null;
   submarketCapRatePct: number | null;

@@ -77,7 +77,16 @@ test('forecast ensemble policy ranks models by use case from readiness and valid
 
   assert.equal(policy.useCases.length, 3);
   assert.equal(policy.useCases[0]?.weights.length, 3);
-  assert.equal(policy.useCases.find((useCase) => useCase.key === 'market-nowcast')?.championModelKey, 'macro-regime-nowcast');
-  assert.equal(policy.useCases.find((useCase) => useCase.key === 'committee-downside')?.championModelKey, 'monte-carlo-envelope');
-  assert.equal(policy.useCases.find((useCase) => useCase.key === 'asset-drift')?.championModelKey, 'gradient-boosting-forecast');
+  assert.equal(
+    policy.useCases.find((useCase) => useCase.key === 'market-nowcast')?.championModelKey,
+    'macro-regime-nowcast'
+  );
+  assert.equal(
+    policy.useCases.find((useCase) => useCase.key === 'committee-downside')?.championModelKey,
+    'monte-carlo-envelope'
+  );
+  assert.equal(
+    policy.useCases.find((useCase) => useCase.key === 'asset-drift')?.championModelKey,
+    'gradient-boosting-forecast'
+  );
 });

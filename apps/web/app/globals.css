@@ -13,8 +13,8 @@
   --success: 150 58% 54%;
   --warning: 38 96% 63%;
   --danger: 8 88% 66%;
-  --font-sans: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-  --font-mono: "IBM Plex Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  --font-sans: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
 }
 
 * {
@@ -75,7 +75,9 @@ a {
   background-image:
     radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.8) 1px, transparent 0),
     linear-gradient(135deg, rgba(255, 255, 255, 0.04), transparent 45%);
-  background-size: 22px 22px, 100% 100%;
+  background-size:
+    22px 22px,
+    100% 100%;
   mix-blend-mode: screen;
 }
 

@@ -76,7 +76,10 @@ test('scheduled source refresh selects stale assets and reports stale source sys
 
         if (args?.take) {
           return baseAssets
-            .filter((asset) => !asset.lastEnrichedAt || asset.lastEnrichedAt < new Date('2026-03-20T06:00:00.000Z'))
+            .filter(
+              (asset) =>
+                !asset.lastEnrichedAt || asset.lastEnrichedAt < new Date('2026-03-20T06:00:00.000Z')
+            )
             .slice(0, args.take)
             .map(({ address, ...asset }) => asset);
         }

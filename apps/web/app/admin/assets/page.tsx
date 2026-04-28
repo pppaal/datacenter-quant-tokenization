@@ -39,9 +39,9 @@ export default async function AssetsPage() {
             Korean real-estate dossiers moving through evidence, valuation, and committee review.
           </h2>
           <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-400">
-            Track which office, data-center, logistics, or land opportunities are still in intake, which now have
-            approved underwriting evidence, and which are ready for refreshed valuation, IC material, and registry-ready
-            packaging.
+            Track which office, data-center, logistics, or land opportunities are still in intake,
+            which now have approved underwriting evidence, and which are ready for refreshed
+            valuation, IC material, and registry-ready packaging.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Link href="/admin/assets/explorer">
@@ -75,8 +75,9 @@ export default async function AssetsPage() {
       <div className="grid gap-5">
         {assets.length === 0 ? (
           <Card className="rounded-[24px] border border-white/10 bg-white/[0.03] p-6 text-sm leading-7 text-slate-400">
-            No asset dossiers exist yet. Start with <span className="font-semibold text-slate-200">New Asset Intake</span>{' '}
-            to create the first institutional underwriting file.
+            No asset dossiers exist yet. Start with{' '}
+            <span className="font-semibold text-slate-200">New Asset Intake</span> to create the
+            first institutional underwriting file.
           </Card>
         ) : null}
 
@@ -112,7 +113,7 @@ export default async function AssetsPage() {
 
                   <div className="mt-5 grid gap-4 md:grid-cols-4">
                     <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
-                    <div className="fine-print">Location</div>
+                      <div className="fine-print">Location</div>
                       <div className="mt-2 text-lg font-semibold text-white">
                         {asset.address?.city ?? 'N/A'} / {asset.assetClass}
                       </div>
@@ -139,7 +140,9 @@ export default async function AssetsPage() {
                     </div>
                     <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
                       <div className="fine-print">Updated</div>
-                      <div className="mt-2 text-lg font-semibold text-white">{formatDate(asset.updatedAt)}</div>
+                      <div className="mt-2 text-lg font-semibold text-white">
+                        {formatDate(asset.updatedAt)}
+                      </div>
                     </div>
                   </div>
 
@@ -152,7 +155,8 @@ export default async function AssetsPage() {
                   <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
                     <div className="eyebrow">Latest IM Snapshot</div>
                     <p className="mt-4 text-sm leading-7 text-slate-300">
-                      {latestRun?.underwritingMemo ?? 'No generated IM yet. Run the analysis to create the first committee memo.'}
+                      {latestRun?.underwritingMemo ??
+                        'No generated IM yet. Run the analysis to create the first committee memo.'}
                     </p>
                   </div>
 

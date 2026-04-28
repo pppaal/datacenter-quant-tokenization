@@ -137,7 +137,7 @@ export async function fetchBokData(months = 12): Promise<DataProviderResult> {
         continue;
       }
 
-      const data = await response.json() as {
+      const data = (await response.json()) as {
         StatisticSearch?: {
           row?: Array<{
             TIME: string;
@@ -164,7 +164,9 @@ export async function fetchBokData(months = 12): Promise<DataProviderResult> {
         });
       }
     } catch (err) {
-      errors.push(`BOK ${mapping.seriesKey}: ${err instanceof Error ? err.message : 'unknown error'}`);
+      errors.push(
+        `BOK ${mapping.seriesKey}: ${err instanceof Error ? err.message : 'unknown error'}`
+      );
     }
   }
 
@@ -248,7 +250,7 @@ export async function fetchFredData(months = 12): Promise<DataProviderResult> {
         continue;
       }
 
-      const data = await response.json() as {
+      const data = (await response.json()) as {
         observations?: Array<{
           date: string;
           value: string;
@@ -269,7 +271,9 @@ export async function fetchFredData(months = 12): Promise<DataProviderResult> {
         });
       }
     } catch (err) {
-      errors.push(`FRED ${mapping.fredId}: ${err instanceof Error ? err.message : 'unknown error'}`);
+      errors.push(
+        `FRED ${mapping.fredId}: ${err instanceof Error ? err.message : 'unknown error'}`
+      );
     }
   }
 

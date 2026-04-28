@@ -43,9 +43,27 @@ test('valuation quality summary flags missing core inputs and exposes active fea
       }
     },
     [
-      { field: 'capRatePct', sourceSystem: 'market_feature_snapshot', value: 6.4, mode: 'manual', freshnessLabel: 'market' },
-      { field: 'wildfireRiskScore', sourceSystem: 'satellite_feature_snapshot', value: 2.1, mode: 'api', freshnessLabel: 'satellite' },
-      { field: 'powerFeatureSnapshot', sourceSystem: 'power_feature_snapshot', value: null, mode: 'fallback', freshnessLabel: 'not applied' }
+      {
+        field: 'capRatePct',
+        sourceSystem: 'market_feature_snapshot',
+        value: 6.4,
+        mode: 'manual',
+        freshnessLabel: 'market'
+      },
+      {
+        field: 'wildfireRiskScore',
+        sourceSystem: 'satellite_feature_snapshot',
+        value: 2.1,
+        mode: 'api',
+        freshnessLabel: 'satellite'
+      },
+      {
+        field: 'powerFeatureSnapshot',
+        sourceSystem: 'power_feature_snapshot',
+        value: null,
+        mode: 'fallback',
+        freshnessLabel: 'not applied'
+      }
     ]
   );
 

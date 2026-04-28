@@ -1,7 +1,16 @@
-import { AssetClass, AssetStatus, ReviewStatus, type Prisma, type PrismaClient } from '@prisma/client';
+import {
+  AssetClass,
+  AssetStatus,
+  ReviewStatus,
+  type Prisma,
+  type PrismaClient
+} from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { buildMacroFactorCreateInputs } from '@/lib/services/macro/factors';
-import { buildMacroSeriesCreateInputs, normalizeMacroObservationDate } from '@/lib/services/macro/series';
+import {
+  buildMacroSeriesCreateInputs,
+  normalizeMacroObservationDate
+} from '@/lib/services/macro/series';
 import { promoteAssetSnapshotsToFeatures } from '@/lib/services/feature-promotion';
 import { createMemorySourceCacheStore, createPrismaSourceCacheStore } from '@/lib/sources/cache';
 import { createBuildingPermitAdapter } from '@/lib/sources/adapters/building';
@@ -250,12 +259,7 @@ const assetMoneyFields = [
 ] as const;
 
 function resolveSourceCacheStore(db: unknown): SourceCacheStore {
-  if (
-    db &&
-    typeof db === 'object' &&
-    'sourceCache' in db &&
-    'sourceOverride' in db
-  ) {
+  if (db && typeof db === 'object' && 'sourceCache' in db && 'sourceOverride' in db) {
     return createPrismaSourceCacheStore(db as PrismaClient);
   }
 
@@ -284,11 +288,16 @@ async function normalizeAssetMoneyFieldsToKrw<T extends AssetIntakeInput | Asset
 
 export async function createAsset(
   input: unknown,
-  db: Pick<PrismaClient, 'asset'> & Partial<Pick<PrismaClient, 'sourceCache' | 'sourceOverride'>> = prisma
+  db: Pick<PrismaClient, 'asset'> &
+    Partial<Pick<PrismaClient, 'sourceCache' | 'sourceOverride'>> = prisma
 ) {
   const parsed = assetIntakeSchema.parse(input);
   const inputCurrency = resolveInputCurrency(parsed.country, parsed.inputCurrency);
-  const normalized = await normalizeAssetMoneyFieldsToKrw(parsed, inputCurrency, resolveSourceCacheStore(db));
+  const normalized = await normalizeAssetMoneyFieldsToKrw(
+    parsed,
+    inputCurrency,
+    resolveSourceCacheStore(db)
+  );
   return db.asset.create({
     data: buildAssetCreateInput(normalized, { normalizeMoney: false }),
     include: assetBundleInclude
@@ -308,8 +317,15 @@ export async function updateAsset(
   if (!existing) throw new Error('Asset not found');
 
   const parsed = assetIntakeUpdateSchema.parse(input);
-  const inputCurrency = resolveInputCurrency(parsed.country ?? existing.address?.country, parsed.inputCurrency);
-  const normalized = await normalizeAssetMoneyFieldsToKrw(parsed, inputCurrency, resolveSourceCacheStore(db));
+  const inputCurrency = resolveInputCurrency(
+    parsed.country ?? existing.address?.country,
+    parsed.inputCurrency
+  );
+  const normalized = await normalizeAssetMoneyFieldsToKrw(
+    parsed,
+    inputCurrency,
+    resolveSourceCacheStore(db)
+  );
 
   return db.asset.update({
     where: { id },
@@ -340,16 +356,14 @@ export async function updateAsset(
       exitCapRatePct: parsed.exitCapRatePct,
       officeDetail:
         parsed.assetClass === AssetClass.OFFICE &&
-        (
-          parsed.stabilizedRentPerSqmMonthKrw !== undefined ||
+        (parsed.stabilizedRentPerSqmMonthKrw !== undefined ||
           parsed.otherIncomeKrw !== undefined ||
           parsed.vacancyAllowancePct !== undefined ||
           parsed.creditLossPct !== undefined ||
           parsed.tenantImprovementReserveKrw !== undefined ||
           parsed.leasingCommissionReserveKrw !== undefined ||
           parsed.annualCapexReserveKrw !== undefined ||
-          parsed.weightedAverageLeaseTermYears !== undefined
-        )
+          parsed.weightedAverageLeaseTermYears !== undefined)
           ? {
               upsert: {
                 update: {
@@ -702,7 +716,9 @@ export async function enrichAssetFromSources(assetId: string, db: PrismaClient =
             inflationPct: macro.data.inflationPct,
             constructionCostPerMwKrw: macro.data.constructionCostPerMwKrw,
             discountRatePct: macro.data.discountRatePct,
-            marketNotes: [macro.data.marketNotes, marketData.data.marketNotes].filter(Boolean).join(' '),
+            marketNotes: [macro.data.marketNotes, marketData.data.marketNotes]
+              .filter(Boolean)
+              .join(' '),
             sourceStatus: marketData.status === 'FRESH' ? marketData.status : macro.status,
             sourceUpdatedAt
           },
@@ -715,7 +731,9 @@ export async function enrichAssetFromSources(assetId: string, db: PrismaClient =
             inflationPct: macro.data.inflationPct,
             constructionCostPerMwKrw: macro.data.constructionCostPerMwKrw,
             discountRatePct: macro.data.discountRatePct,
-            marketNotes: [macro.data.marketNotes, marketData.data.marketNotes].filter(Boolean).join(' '),
+            marketNotes: [macro.data.marketNotes, marketData.data.marketNotes]
+              .filter(Boolean)
+              .join(' '),
             sourceStatus: marketData.status === 'FRESH' ? marketData.status : macro.status,
             sourceUpdatedAt
           }
@@ -804,7 +822,9 @@ export async function enrichAssetFromSources(assetId: string, db: PrismaClient =
         market: asset.market,
         region: indicator.region ?? marketData.data.metroRegion ?? macro.data.metroRegion,
         indicatorKey: indicator.indicatorKey,
-        observationDate: indicator.observationDate ? new Date(indicator.observationDate) : sourceUpdatedAt,
+        observationDate: indicator.observationDate
+          ? new Date(indicator.observationDate)
+          : sourceUpdatedAt,
         value: indicator.value,
         unit: indicator.unit ?? null,
         sourceSystem: marketData.sourceSystem,
@@ -813,7 +833,10 @@ export async function enrichAssetFromSources(assetId: string, db: PrismaClient =
     });
   }
 
-  if ((asset.comparableSet?.entries.length ?? 0) === 0 && marketData.data.transactionComps.length > 0) {
+  if (
+    (asset.comparableSet?.entries.length ?? 0) === 0 &&
+    marketData.data.transactionComps.length > 0
+  ) {
     const comparableSet = await db.comparableSet.upsert({
       where: {
         assetId

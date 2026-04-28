@@ -16,7 +16,8 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  const dryRun = url.searchParams.get('dry-run') === '1' || url.searchParams.get('dry-run') === 'true';
+  const dryRun =
+    url.searchParams.get('dry-run') === '1' || url.searchParams.get('dry-run') === 'true';
   try {
     const result = await runAuditPrune({ dryRun });
     return NextResponse.json({ ok: true, ...result });

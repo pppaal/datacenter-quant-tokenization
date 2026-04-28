@@ -1,4 +1,12 @@
-import { DealBidStatus, DealLenderQuoteStatus, DealNegotiationEventType, DealStage, RiskSeverity, TaskPriority, TaskStatus } from '@prisma/client';
+import {
+  DealBidStatus,
+  DealLenderQuoteStatus,
+  DealNegotiationEventType,
+  DealStage,
+  RiskSeverity,
+  TaskPriority,
+  TaskStatus
+} from '@prisma/client';
 import { toSentenceCase } from '@/lib/utils';
 
 export const dealStageOptions = [
@@ -12,7 +20,15 @@ export const dealStageOptions = [
   DealStage.ASSET_MANAGEMENT
 ] as const;
 
-export const dealCounterpartyRoleOptions = ['BROKER', 'SELLER', 'OWNER', 'BUYER', 'LENDER', 'LAW_FIRM', 'ADVISOR'] as const;
+export const dealCounterpartyRoleOptions = [
+  'BROKER',
+  'SELLER',
+  'OWNER',
+  'BUYER',
+  'LENDER',
+  'LAW_FIRM',
+  'ADVISOR'
+] as const;
 
 export const taskStatusOptions = [
   TaskStatus.OPEN,
@@ -171,10 +187,12 @@ export const dealStageChecklistTemplates: Record<DealStage, DealChecklistTemplat
     {
       key: 'source-initial-triage',
       title: 'Initial triage completed',
-      description: 'Write down the first commercial read and whether the process is worth screening.',
+      description:
+        'Write down the first commercial read and whether the process is worth screening.',
       kind: 'task',
       defaultTaskTitle: 'Complete sourced-opportunity triage',
-      defaultTaskDescription: 'Review teaser, seller setup, and immediate reasons to pass or continue.',
+      defaultTaskDescription:
+        'Review teaser, seller setup, and immediate reasons to pass or continue.',
       priority: TaskPriority.HIGH
     },
     {
@@ -246,7 +264,8 @@ export const dealStageChecklistTemplates: Record<DealStage, DealChecklistTemplat
       description: 'Core legal DD has an owner and a deadline.',
       kind: 'task',
       defaultTaskTitle: 'Open legal diligence workstream',
-      defaultTaskDescription: 'Engage counsel, identify key title/contract blockers, and track answers.',
+      defaultTaskDescription:
+        'Engage counsel, identify key title/contract blockers, and track answers.',
       priority: TaskPriority.HIGH
     },
     {
@@ -255,7 +274,8 @@ export const dealStageChecklistTemplates: Record<DealStage, DealChecklistTemplat
       description: 'Underwrite operations, leases, counterparties, and downside cases.',
       kind: 'task',
       defaultTaskTitle: 'Run commercial and underwriting diligence',
-      defaultTaskDescription: 'Confirm underwriting assumptions, key contracts, and downside cases.',
+      defaultTaskDescription:
+        'Confirm underwriting assumptions, key contracts, and downside cases.',
       priority: TaskPriority.HIGH
     }
   ],
@@ -304,7 +324,8 @@ export const dealStageChecklistTemplates: Record<DealStage, DealChecklistTemplat
       description: 'The first 30-day operating plan is documented.',
       kind: 'task',
       defaultTaskTitle: 'Prepare asset management handoff',
-      defaultTaskDescription: 'Document first 30-day priorities, reporting cadence, and unresolved issues.',
+      defaultTaskDescription:
+        'Document first 30-day priorities, reporting cadence, and unresolved issues.',
       priority: TaskPriority.MEDIUM
     },
     {

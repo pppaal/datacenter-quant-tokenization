@@ -6,14 +6,17 @@ import {
   hasRequiredAdminRole
 } from '@/lib/security/admin-auth';
 import { ADMIN_SESSION_COOKIE, parseAdminSessionToken } from '@/lib/security/admin-session';
-import {
-  applyEdgeRateLimit,
-  isAllowedIp,
-  resolveClientIp
-} from '@/lib/security/edge-protection';
+import { applyEdgeRateLimit, isAllowedIp, resolveClientIp } from '@/lib/security/edge-protection';
 
 function isPublicApiPath(pathname: string) {
-  return pathname === '/api/health' || pathname === '/api/inquiries' || pathname === '/api/admin/session' || pathname === '/api/admin/sso/login' || pathname === '/api/admin/sso/callback' || pathname.startsWith('/api/admin/scim/');
+  return (
+    pathname === '/api/health' ||
+    pathname === '/api/inquiries' ||
+    pathname === '/api/admin/session' ||
+    pathname === '/api/admin/sso/login' ||
+    pathname === '/api/admin/sso/callback' ||
+    pathname.startsWith('/api/admin/scim/')
+  );
 }
 
 function isPublicAdminPath(pathname: string) {
@@ -30,7 +33,10 @@ function isAuthorizedOpsRequest(request: NextRequest) {
     return false;
   }
 
-  const bearer = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '').trim();
+  const bearer = request.headers
+    .get('authorization')
+    ?.replace(/^Bearer\s+/i, '')
+    .trim();
   const headerToken = request.headers.get('x-ops-cron-token')?.trim();
   return bearer === expectedToken || headerToken === expectedToken;
 }
@@ -47,7 +53,10 @@ function unauthorizedResponse(request: NextRequest) {
 
 function forbiddenResponse(request: NextRequest, requiredRole: string) {
   if (request.nextUrl.pathname.startsWith('/api/')) {
-    return NextResponse.json({ error: `Insufficient role. ${requiredRole} access required.` }, { status: 403 });
+    return NextResponse.json(
+      { error: `Insufficient role. ${requiredRole} access required.` },
+      { status: 403 }
+    );
   }
 
   return new NextResponse(`Insufficient role. ${requiredRole} access required.`, {
@@ -70,9 +79,10 @@ export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const clientIp = resolveClientIp(request);
   const inboundRequestId = request.headers.get('x-request-id')?.trim();
-  const requestId = inboundRequestId && /^[a-zA-Z0-9._-]{8,128}$/.test(inboundRequestId)
-    ? inboundRequestId
-    : generateRequestId();
+  const requestId =
+    inboundRequestId && /^[a-zA-Z0-9._-]{8,128}$/.test(inboundRequestId)
+      ? inboundRequestId
+      : generateRequestId();
 
   if (!isAllowedIp(pathname, clientIp)) {
     return new NextResponse('IP not on allowlist for this surface', {
@@ -159,7 +169,8 @@ export async function middleware(request: NextRequest) {
   if (actor.email) requestHeaders.set('x-admin-email', actor.email);
   if (actor.userId) requestHeaders.set('x-admin-user-id', actor.userId);
   if (actor.sessionId) requestHeaders.set('x-admin-session-id', actor.sessionId);
-  if (typeof actor.sessionVersion === 'number') requestHeaders.set('x-admin-session-version', String(actor.sessionVersion));
+  if (typeof actor.sessionVersion === 'number')
+    requestHeaders.set('x-admin-session-version', String(actor.sessionVersion));
 
   const response = NextResponse.next({
     request: {
@@ -171,8 +182,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    '/admin/:path*',
-    '/api/:path*'
-  ]
+  matcher: ['/admin/:path*', '/api/:path*']
 };

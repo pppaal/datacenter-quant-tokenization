@@ -455,7 +455,9 @@ export async function listRecentOpsAlertDeliveries(
   });
 }
 
-export function parseOpsCycleAlertPayload(payload: Prisma.JsonValue | null | undefined): OpsCycleAlertPayload | null {
+export function parseOpsCycleAlertPayload(
+  payload: Prisma.JsonValue | null | undefined
+): OpsCycleAlertPayload | null {
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
     return null;
   }
@@ -465,20 +467,30 @@ export function parseOpsCycleAlertPayload(payload: Prisma.JsonValue | null | und
   const actorIdentifier = candidate.actorIdentifier;
   const alertSummary = candidate.alertSummary;
 
-  if ((status !== 'SUCCESS' && status !== 'FAILED') || typeof actorIdentifier !== 'string' || typeof alertSummary !== 'string') {
+  if (
+    (status !== 'SUCCESS' && status !== 'FAILED') ||
+    typeof actorIdentifier !== 'string' ||
+    typeof alertSummary !== 'string'
+  ) {
     return null;
   }
 
   const attemptSummaryCandidate =
-    candidate.attemptSummary && typeof candidate.attemptSummary === 'object' && !Array.isArray(candidate.attemptSummary)
+    candidate.attemptSummary &&
+    typeof candidate.attemptSummary === 'object' &&
+    !Array.isArray(candidate.attemptSummary)
       ? (candidate.attemptSummary as Record<string, unknown>)
       : null;
   const sourceRunCandidate =
-    candidate.sourceRun && typeof candidate.sourceRun === 'object' && !Array.isArray(candidate.sourceRun)
+    candidate.sourceRun &&
+    typeof candidate.sourceRun === 'object' &&
+    !Array.isArray(candidate.sourceRun)
       ? (candidate.sourceRun as Record<string, unknown>)
       : null;
   const researchRunCandidate =
-    candidate.researchRun && typeof candidate.researchRun === 'object' && !Array.isArray(candidate.researchRun)
+    candidate.researchRun &&
+    typeof candidate.researchRun === 'object' &&
+    !Array.isArray(candidate.researchRun)
       ? (candidate.researchRun as Record<string, unknown>)
       : null;
 
@@ -495,13 +507,19 @@ export function parseOpsCycleAlertPayload(payload: Prisma.JsonValue | null | und
     sourceRun: sourceRunCandidate
       ? {
           id: typeof sourceRunCandidate.id === 'string' ? sourceRunCandidate.id : undefined,
-          statusLabel: typeof sourceRunCandidate.statusLabel === 'string' ? sourceRunCandidate.statusLabel : undefined
+          statusLabel:
+            typeof sourceRunCandidate.statusLabel === 'string'
+              ? sourceRunCandidate.statusLabel
+              : undefined
         }
       : undefined,
     researchRun: researchRunCandidate
       ? {
           id: typeof researchRunCandidate.id === 'string' ? researchRunCandidate.id : undefined,
-          statusLabel: typeof researchRunCandidate.statusLabel === 'string' ? researchRunCandidate.statusLabel : undefined
+          statusLabel:
+            typeof researchRunCandidate.statusLabel === 'string'
+              ? researchRunCandidate.statusLabel
+              : undefined
         }
       : undefined,
     errorMessage: typeof candidate.errorMessage === 'string' ? candidate.errorMessage : null
@@ -525,7 +543,7 @@ export async function replayOpsAlertDelivery(
   const matchingTarget =
     delivery.channel === 'webhook_secondary'
       ? targets.find((target) => target.channel === 'webhook_secondary')
-      : targets.find((target) => target.channel === 'webhook_primary') ?? targets[0];
+      : (targets.find((target) => target.channel === 'webhook_primary') ?? targets[0]);
 
   if (!matchingTarget) {
     return {

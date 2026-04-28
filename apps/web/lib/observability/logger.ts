@@ -31,7 +31,10 @@ const requestContextStorage = new AsyncLocalStorage<RequestContext>();
  * optional actor / role) so the entire request can be reconstructed from
  * a log drain by filtering on a single trace id.
  */
-export function withRequestContext<T>(context: RequestContext, fn: () => Promise<T> | T): Promise<T> | T {
+export function withRequestContext<T>(
+  context: RequestContext,
+  fn: () => Promise<T> | T
+): Promise<T> | T {
   return requestContextStorage.run(context, fn);
 }
 
@@ -119,7 +122,10 @@ export async function reportError(
 ): Promise<void> {
   const url = process.env.ERROR_REPORT_WEBHOOK_URL?.trim();
   logger.error('runtime_error', {
-    error: error instanceof Error ? { name: error.name, message: error.message, stack: error.stack } : error,
+    error:
+      error instanceof Error
+        ? { name: error.name, message: error.message, stack: error.stack }
+        : error,
     ...context
   });
   if (!url) return;

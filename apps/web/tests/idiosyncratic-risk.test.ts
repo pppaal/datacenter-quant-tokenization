@@ -92,5 +92,8 @@ test('continuous scoring: small input change → small score change (no cliffs)'
   });
   const baseScore = base.factors.find((f) => f.key === 'capex_backlog')!.score;
   const bumpScore = bump.factors.find((f) => f.key === 'capex_backlog')!.score;
-  assert.ok(Math.abs(bumpScore - baseScore) < 1, `expected smooth, got jump ${baseScore}→${bumpScore}`);
+  assert.ok(
+    Math.abs(bumpScore - baseScore) < 1,
+    `expected smooth, got jump ${baseScore}→${bumpScore}`
+  );
 });

@@ -30,11 +30,11 @@ export default async function IdentityPage() {
         <div className="eyebrow">Identity</div>
         <h2 className="mt-2 text-3xl font-semibold text-white">KYC records &amp; chain bridging</h2>
         <p className="mt-2 text-sm text-slate-400">
-          Off-chain KYC records ingested via provider webhooks. Approved records can be bridged
-          into the on-chain IdentityRegistry per tokenized asset using
+          Off-chain KYC records ingested via provider webhooks. Approved records can be bridged into
+          the on-chain IdentityRegistry per tokenized asset using
           <code className="mx-1 rounded bg-white/5 px-1.5 py-0.5">POST /api/kyc/bridge</code>.
-          Rejected and revoked records remove the wallet from any registry where it was
-          previously allow-listed.
+          Rejected and revoked records remove the wallet from any registry where it was previously
+          allow-listed.
         </p>
       </div>
 
@@ -42,9 +42,7 @@ export default async function IdentityPage() {
         <Card>
           <div className="text-sm text-slate-300">
             No KYC records yet. POST test events to
-            <code className="mx-1 rounded bg-white/5 px-1.5 py-0.5">
-              /api/kyc/webhook/mock
-            </code>
+            <code className="mx-1 rounded bg-white/5 px-1.5 py-0.5">/api/kyc/webhook/mock</code>
             with <code>KYC_MOCK_SKIP_SIG=1</code> set for local runs.
           </div>
         </Card>

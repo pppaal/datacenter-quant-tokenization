@@ -3,10 +3,18 @@ import { headers } from 'next/headers';
 import { AdminAccessScopeType } from '@prisma/client';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { filterRowsByGrantedScopeIds, listGrantedScopeIdsForUser } from '@/lib/security/admin-access';
+import {
+  filterRowsByGrantedScopeIds,
+  listGrantedScopeIdsForUser
+} from '@/lib/security/admin-access';
 import { prisma } from '@/lib/db/prisma';
 import { resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
-import { buildFundDashboard, listFunds, type FundDashboard, type FundRecord } from '@/lib/services/capital';
+import {
+  buildFundDashboard,
+  listFunds,
+  type FundDashboard,
+  type FundRecord
+} from '@/lib/services/capital';
 import { formatCurrency, formatNumber } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
@@ -17,7 +25,11 @@ export default async function FundsPage() {
     requireActiveSeat: true
   });
   const funds = await listFunds();
-  const grantedFundIds = await listGrantedScopeIdsForUser(actor?.userId, AdminAccessScopeType.FUND, prisma);
+  const grantedFundIds = await listGrantedScopeIdsForUser(
+    actor?.userId,
+    AdminAccessScopeType.FUND,
+    prisma
+  );
   const scopedFunds = filterRowsByGrantedScopeIds(funds, grantedFundIds);
   const rows: Array<{ fund: FundRecord; dashboard: FundDashboard }> = scopedFunds.map((fund) => ({
     fund,
@@ -32,8 +44,8 @@ export default async function FundsPage() {
           Funds, vehicles, commitments, and reporting shells for an investment firm.
         </h1>
         <p className="mt-4 max-w-4xl text-base leading-8 text-slate-200">
-          This is not a retail capital surface. It is the first institutional data model for commitments, calls,
-          distributions, investor reporting, and DDQ responses.
+          This is not a retail capital surface. It is the first institutional data model for
+          commitments, calls, distributions, investor reporting, and DDQ responses.
         </p>
       </section>
 
@@ -48,24 +60,34 @@ export default async function FundsPage() {
                     <Badge>{fund.code}</Badge>
                     {fund.strategy ? <Badge tone="neutral">{fund.strategy}</Badge> : null}
                   </div>
-                  <p className="mt-3 text-sm leading-7 text-slate-300">{dashboard.investorUpdateDraft}</p>
+                  <p className="mt-3 text-sm leading-7 text-slate-300">
+                    {dashboard.investorUpdateDraft}
+                  </p>
                 </div>
                 <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                   <div>
                     <div className="fine-print">Commitments</div>
-                    <div className="mt-2 text-sm text-white">{formatCurrency(dashboard.math.totalCommitmentKrw)}</div>
+                    <div className="mt-2 text-sm text-white">
+                      {formatCurrency(dashboard.math.totalCommitmentKrw)}
+                    </div>
                   </div>
                   <div>
                     <div className="fine-print">Called</div>
-                    <div className="mt-2 text-sm text-white">{formatCurrency(dashboard.math.totalCalledKrw)}</div>
+                    <div className="mt-2 text-sm text-white">
+                      {formatCurrency(dashboard.math.totalCalledKrw)}
+                    </div>
                   </div>
                   <div>
                     <div className="fine-print">Distributed</div>
-                    <div className="mt-2 text-sm text-white">{formatCurrency(dashboard.math.totalDistributedKrw)}</div>
+                    <div className="mt-2 text-sm text-white">
+                      {formatCurrency(dashboard.math.totalDistributedKrw)}
+                    </div>
                   </div>
                   <div>
                     <div className="fine-print">Investors</div>
-                    <div className="mt-2 text-sm text-white">{formatNumber(fund.commitments.length, 0)}</div>
+                    <div className="mt-2 text-sm text-white">
+                      {formatNumber(fund.commitments.length, 0)}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -76,9 +98,12 @@ export default async function FundsPage() {
         {rows.length === 0 ? (
           <Card>
             <div className="eyebrow">No Fund Shell Yet</div>
-            <h2 className="mt-3 text-2xl font-semibold text-white">Seed or connect a capital structure</h2>
+            <h2 className="mt-3 text-2xl font-semibold text-white">
+              Seed or connect a capital structure
+            </h2>
             <p className="mt-3 text-sm leading-7 text-slate-400">
-              Capital OS starts with fund, vehicle, investor, commitment, call, distribution, and reporting shells.
+              Capital OS starts with fund, vehicle, investor, commitment, call, distribution, and
+              reporting shells.
             </p>
           </Card>
         ) : null}

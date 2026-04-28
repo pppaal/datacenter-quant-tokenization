@@ -12,7 +12,11 @@ import type {
   ValuationStrategyContext
 } from '@/lib/services/valuation/types';
 
-export type { UnderwritingAnalysis, UnderwritingBundle, UnderwritingScenario } from '@/lib/services/valuation/types';
+export type {
+  UnderwritingAnalysis,
+  UnderwritingBundle,
+  UnderwritingScenario
+} from '@/lib/services/valuation/types';
 
 type AssetClassValuationStrategy = {
   buildAnalysis(
@@ -56,7 +60,9 @@ async function loadMacroProfileRuntimeRules() {
   }
 }
 
-export async function buildValuationAnalysis(bundle: UnderwritingBundle): Promise<UnderwritingAnalysis> {
+export async function buildValuationAnalysis(
+  bundle: UnderwritingBundle
+): Promise<UnderwritingAnalysis> {
   const profileRules = await loadMacroProfileRuntimeRules();
   return getValuationStrategy(bundle.asset.assetClass).buildAnalysis(bundle, {
     profileRules

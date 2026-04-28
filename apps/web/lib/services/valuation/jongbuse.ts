@@ -69,16 +69,12 @@ const GENERAL_LAND_BRACKETS: ProgressiveBracket[] = [
   { upperKrw: null, ratePct: 3.0 }
 ];
 
-function applyProgressive(
-  taxableKrw: number,
-  brackets: ProgressiveBracket[]
-): number {
+function applyProgressive(taxableKrw: number, brackets: ProgressiveBracket[]): number {
   if (taxableKrw <= 0) return 0;
   let remaining = taxableKrw;
   let tax = 0;
   for (const bracket of brackets) {
-    const slice =
-      bracket.upperKrw == null ? remaining : Math.min(remaining, bracket.upperKrw);
+    const slice = bracket.upperKrw == null ? remaining : Math.min(remaining, bracket.upperKrw);
     tax += slice * (bracket.ratePct / 100);
     remaining -= slice;
     if (remaining <= 0) break;

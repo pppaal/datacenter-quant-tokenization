@@ -23,9 +23,7 @@ function isBlockchainMockMode(env: NodeJS.ProcessEnv = process.env) {
 }
 
 function buildMockTxHash(...parts: Array<string | null | undefined>) {
-  const digest = createHash('sha256')
-    .update(parts.filter(Boolean).join(':'))
-    .digest('hex');
+  const digest = createHash('sha256').update(parts.filter(Boolean).join(':')).digest('hex');
   return `0x${digest}`;
 }
 
@@ -34,7 +32,11 @@ function getMockRegistryConfig() {
     chainId: '31337',
     chainName: 'mock-registry',
     registryAddress: '0x000000000000000000000000000000000000dEaD',
-    metadataBaseUrl: (process.env.BLOCKCHAIN_METADATA_BASE_URL ?? process.env.APP_BASE_URL ?? 'http://localhost:3000')
+    metadataBaseUrl: (
+      process.env.BLOCKCHAIN_METADATA_BASE_URL ??
+      process.env.APP_BASE_URL ??
+      'http://localhost:3000'
+    )
       .trim()
       .replace(/\/$/, ''),
     accountAddress: '0x000000000000000000000000000000000000c0de'
@@ -178,11 +180,14 @@ export async function stageReviewReadiness(assetId: string, db: PrismaClient = p
   }
 
   const refreshedAsset = await getReadinessAssetContext(assetId, db);
-  if (!refreshedAsset || !refreshedAsset.readinessProject) throw new Error('Readiness project not found');
+  if (!refreshedAsset || !refreshedAsset.readinessProject)
+    throw new Error('Readiness project not found');
   const latestDocument = refreshedAsset.documents[0];
   const latestValuation = refreshedAsset.valuations[0];
   const latestFeatureSnapshot = refreshedAsset.featureSnapshots[0];
-  const packet = buildReviewPacketManifest(refreshedAsset as Parameters<typeof buildReviewPacketManifest>[0]);
+  const packet = buildReviewPacketManifest(
+    refreshedAsset as Parameters<typeof buildReviewPacketManifest>[0]
+  );
   const packetPayload = {
     assetCode: refreshedAsset.assetCode,
     packetFingerprint: packet.fingerprint,
@@ -251,8 +256,9 @@ export async function registerAssetOnchain(assetId: string, db: PrismaClient = p
     const config = getMockRegistryConfig();
     const registryAssetId = buildRegistryAssetId(asset.assetCode);
     const metadataRef = buildRegistryMetadataRef(asset.id, config.metadataBaseUrl);
-    const existing = asset.readinessProject.onchainRecords.find((record) =>
-      record.recordType === 'ASSET_REGISTERED' || record.recordType === 'ASSET_METADATA_UPDATED'
+    const existing = asset.readinessProject.onchainRecords.find(
+      (record) =>
+        record.recordType === 'ASSET_REGISTERED' || record.recordType === 'ASSET_METADATA_UPDATED'
     );
     const txHash = buildMockTxHash('register', registryAssetId, metadataRef);
 
@@ -376,12 +382,15 @@ export async function anchorLatestDocumentOnchain(assetId: string, db: PrismaCli
     const config = getMockRegistryConfig();
     const registryAssetId = buildRegistryAssetId(asset.assetCode);
     const normalizedDocumentHash = normalizeDocumentHash(latestDocument.documentHash);
-    const existingRegistration = asset.readinessProject.onchainRecords.find((record) =>
-      record.recordType === 'ASSET_REGISTERED' || record.recordType === 'ASSET_METADATA_UPDATED'
+    const existingRegistration = asset.readinessProject.onchainRecords.find(
+      (record) =>
+        record.recordType === 'ASSET_REGISTERED' || record.recordType === 'ASSET_METADATA_UPDATED'
     );
 
     if (!existingRegistration) {
-      throw new Error('Asset is not registered onchain yet. Register it before anchoring documents.');
+      throw new Error(
+        'Asset is not registered onchain yet. Register it before anchoring documents.'
+      );
     }
 
     const alreadyAnchored = asset.readinessProject.onchainRecords.some(
@@ -390,7 +399,9 @@ export async function anchorLatestDocumentOnchain(assetId: string, db: PrismaCli
         record.documentId === latestDocument.id &&
         record.status === ReadinessStatus.ANCHORED
     );
-    const txHash = alreadyAnchored ? null : buildMockTxHash('anchor', registryAssetId, normalizedDocumentHash);
+    const txHash = alreadyAnchored
+      ? null
+      : buildMockTxHash('anchor', registryAssetId, normalizedDocumentHash);
 
     await upsertReadinessRecord({
       db,

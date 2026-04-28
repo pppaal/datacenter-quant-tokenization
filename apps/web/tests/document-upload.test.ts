@@ -26,7 +26,9 @@ test('document upload stores a file, summary, and hash metadata', async () => {
         return {
           id: 'document_1',
           ...args.data,
-          versions: args.data.versions.create ? [{ id: 'version_1', ...args.data.versions.create }] : []
+          versions: args.data.versions.create
+            ? [{ id: 'version_1', ...args.data.versions.create }]
+            : []
         };
       }
     }

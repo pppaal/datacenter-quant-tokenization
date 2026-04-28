@@ -1,4 +1,11 @@
-import { AssetClass, ResearchApprovalStatus, ResearchViewType, SourceStatus, type Prisma, type PrismaClient } from '@prisma/client';
+import {
+  AssetClass,
+  ResearchApprovalStatus,
+  ResearchViewType,
+  SourceStatus,
+  type Prisma,
+  type PrismaClient
+} from '@prisma/client';
 
 /**
  * Seeds the research workspace (market universes, submarkets, snapshots,
@@ -38,7 +45,8 @@ export async function seedResearchAndMacro(prisma: PrismaClient): Promise<void> 
       label: 'Korea Logistics & Industrial',
       country: 'KR',
       assetClass: AssetClass.INDUSTRIAL,
-      thesis: 'Cold-chain and last-mile demand remain supportive; new supply wave digesting in Gyeonggi-do through 2026.',
+      thesis:
+        'Cold-chain and last-mile demand remain supportive; new supply wave digesting in Gyeonggi-do through 2026.',
       statusLabel: 'ACTIVE'
     }
   });
@@ -64,7 +72,8 @@ export async function seedResearchAndMacro(prisma: PrismaClient): Promise<void> 
       city: 'Seoul',
       district: 'Yeongdeungpo-gu',
       assetClass: AssetClass.OFFICE,
-      thesis: 'Financial district, vacancy below 5%, domestic tenant rotation from Gangnam improving absorption.',
+      thesis:
+        'Financial district, vacancy below 5%, domestic tenant rotation from Gangnam improving absorption.',
       statusLabel: 'ACTIVE'
     }
   });
@@ -88,7 +97,8 @@ export async function seedResearchAndMacro(prisma: PrismaClient): Promise<void> 
       city: 'Seongnam',
       district: 'Bundang-gu',
       assetClass: AssetClass.OFFICE,
-      thesis: 'Tech-campus submarket, dominated by Naver, Kakao, and Nexon tenants. 10% discount to CBD face rents.',
+      thesis:
+        'Tech-campus submarket, dominated by Naver, Kakao, and Nexon tenants. 10% discount to CBD face rents.',
       statusLabel: 'ACTIVE'
     }
   });
@@ -100,7 +110,8 @@ export async function seedResearchAndMacro(prisma: PrismaClient): Promise<void> 
       city: 'Incheon',
       district: 'Seo-gu',
       assetClass: AssetClass.DATA_CENTER,
-      thesis: 'Greenfield hyperscale cluster, grid allocations prioritized under 2025 MOTIE framework.',
+      thesis:
+        'Greenfield hyperscale cluster, grid allocations prioritized under 2025 MOTIE framework.',
       statusLabel: 'ACTIVE'
     }
   });
@@ -111,7 +122,8 @@ export async function seedResearchAndMacro(prisma: PrismaClient): Promise<void> 
       label: 'Gyeonggi Anseong',
       city: 'Anseong',
       assetClass: AssetClass.DATA_CENTER,
-      thesis: 'Power-abundant second-ring submarket, 18-month substation lead time is the binding constraint.',
+      thesis:
+        'Power-abundant second-ring submarket, 18-month substation lead time is the binding constraint.',
       statusLabel: 'ACTIVE'
     }
   });
@@ -298,12 +310,42 @@ export async function seedResearchAndMacro(prisma: PrismaClient): Promise<void> 
 
   // --- Submarket-thesis snapshots ---
   const smDefs = [
-    { id: smCbd.id, key: 'seoul-cbd', label: 'Seoul CBD', metrics: { vacancy_pct: 6.4, face_rent_krw_pyeong: 158000 } },
-    { id: smYdp.id, key: 'seoul-yeouido', label: 'Yeouido', metrics: { vacancy_pct: 4.2, face_rent_krw_pyeong: 142000 } },
-    { id: smGng.id, key: 'seoul-gangnam', label: 'Gangnam', metrics: { vacancy_pct: 4.8, face_rent_krw_pyeong: 162000 } },
-    { id: smPgy.id, key: 'seongnam-pangyo', label: 'Pangyo', metrics: { vacancy_pct: 5.1, in_place_rent_krw_pyeong: 118000 } },
-    { id: smInc.id, key: 'incheon-cheongna', label: 'Incheon Cheongna', metrics: { pipeline_mw: 120 } },
-    { id: smGyg.id, key: 'gyeonggi-anseong', label: 'Gyeonggi Anseong', metrics: { substation_queue_months: 18 } },
+    {
+      id: smCbd.id,
+      key: 'seoul-cbd',
+      label: 'Seoul CBD',
+      metrics: { vacancy_pct: 6.4, face_rent_krw_pyeong: 158000 }
+    },
+    {
+      id: smYdp.id,
+      key: 'seoul-yeouido',
+      label: 'Yeouido',
+      metrics: { vacancy_pct: 4.2, face_rent_krw_pyeong: 142000 }
+    },
+    {
+      id: smGng.id,
+      key: 'seoul-gangnam',
+      label: 'Gangnam',
+      metrics: { vacancy_pct: 4.8, face_rent_krw_pyeong: 162000 }
+    },
+    {
+      id: smPgy.id,
+      key: 'seongnam-pangyo',
+      label: 'Pangyo',
+      metrics: { vacancy_pct: 5.1, in_place_rent_krw_pyeong: 118000 }
+    },
+    {
+      id: smInc.id,
+      key: 'incheon-cheongna',
+      label: 'Incheon Cheongna',
+      metrics: { pipeline_mw: 120 }
+    },
+    {
+      id: smGyg.id,
+      key: 'gyeonggi-anseong',
+      label: 'Gyeonggi Anseong',
+      metrics: { substation_queue_months: 18 }
+    },
     { id: smBsn.id, key: 'busan-myeongji', label: 'Busan Myeongji', metrics: { planned_mw: 80 } }
   ];
   const submarketSnapshots: Prisma.ResearchSnapshotCreateManyInput[] = smDefs.map((s) => ({
@@ -341,7 +383,8 @@ export async function seedResearchAndMacro(prisma: PrismaClient): Promise<void> 
         viewType: ResearchViewType.HOUSE,
         approvalStatus: ResearchApprovalStatus.APPROVED,
         title: 'Seoul CBD Macro View — Q1 2026',
-        summary: 'BOK base rate held at 3.25%. Office vacancy compressed 30bps QoQ to 6.4%. Construction cost index up 6.1% YoY.',
+        summary:
+          'BOK base rate held at 3.25%. Office vacancy compressed 30bps QoQ to 6.4%. Construction cost index up 6.1% YoY.',
         snapshotDate: new Date('2026-03-25'),
         sourceSystem: 'kosis',
         freshnessStatus: SourceStatus.FRESH,
@@ -357,7 +400,8 @@ export async function seedResearchAndMacro(prisma: PrismaClient): Promise<void> 
         viewType: ResearchViewType.HOUSE,
         approvalStatus: ResearchApprovalStatus.APPROVED,
         title: 'Yeouido Submarket Brief — Q1 2026',
-        summary: 'Grade-A stock 1.28M sqm with 4.2% vacancy. Average face rent KRW 142k/pyeong/mo, up 5.1% YoY.',
+        summary:
+          'Grade-A stock 1.28M sqm with 4.2% vacancy. Average face rent KRW 142k/pyeong/mo, up 5.1% YoY.',
         snapshotDate: new Date('2026-03-25'),
         sourceSystem: 'seed',
         freshnessStatus: SourceStatus.FRESH,
@@ -373,7 +417,8 @@ export async function seedResearchAndMacro(prisma: PrismaClient): Promise<void> 
         viewType: ResearchViewType.HOUSE,
         approvalStatus: ResearchApprovalStatus.APPROVED,
         title: 'Yeouido Core — Asset Underwriting Memo',
-        summary: 'Stabilized NOI KRW 21.3bn, in-place cap rate 4.35%, 3-year WALT. Anchor tenant renewal at +7% in March 2026.',
+        summary:
+          'Stabilized NOI KRW 21.3bn, in-place cap rate 4.35%, 3-year WALT. Anchor tenant renewal at +7% in March 2026.',
         snapshotDate: new Date('2026-03-20'),
         sourceSystem: 'internal',
         freshnessStatus: SourceStatus.FRESH,
@@ -393,7 +438,8 @@ export async function seedResearchAndMacro(prisma: PrismaClient): Promise<void> 
         viewType: ResearchViewType.HOUSE,
         approvalStatus: ResearchApprovalStatus.APPROVED,
         title: 'Korea Hyperscale Macro — Q1 2026',
-        summary: 'AI training demand absorbed 340MW in 2025. Power approval queue tightened — 18-month critical path. MEP cost 7.2% YoY.',
+        summary:
+          'AI training demand absorbed 340MW in 2025. Power approval queue tightened — 18-month critical path. MEP cost 7.2% YoY.',
         snapshotDate: new Date('2026-03-25'),
         sourceSystem: 'seed',
         freshnessStatus: SourceStatus.FRESH,
@@ -409,7 +455,8 @@ export async function seedResearchAndMacro(prisma: PrismaClient): Promise<void> 
         viewType: ResearchViewType.HOUSE,
         approvalStatus: ResearchApprovalStatus.APPROVED,
         title: 'Seoul Metro Hyperscale Cluster Brief',
-        summary: 'Gyeonggi-Incheon cluster 1.2GW commissioned. Vacancy sub-2%. PUE leaders 1.32, laggards 1.51.',
+        summary:
+          'Gyeonggi-Incheon cluster 1.2GW commissioned. Vacancy sub-2%. PUE leaders 1.32, laggards 1.51.',
         snapshotDate: new Date('2026-03-25'),
         sourceSystem: 'seed',
         freshnessStatus: SourceStatus.FRESH,
@@ -425,7 +472,8 @@ export async function seedResearchAndMacro(prisma: PrismaClient): Promise<void> 
         viewType: ResearchViewType.HOUSE,
         approvalStatus: ResearchApprovalStatus.APPROVED,
         title: 'Seoul Hyperscale I — Underwriting Memo',
-        summary: 'Phase-1 72MW commissioned Jan 2026, 95% pre-let. Stabilized NOI KRW 48bn, entry yield 6.15%.',
+        summary:
+          'Phase-1 72MW commissioned Jan 2026, 95% pre-let. Stabilized NOI KRW 48bn, entry yield 6.15%.',
         snapshotDate: new Date('2026-03-22'),
         sourceSystem: 'internal',
         freshnessStatus: SourceStatus.FRESH,
@@ -444,7 +492,8 @@ export async function seedResearchAndMacro(prisma: PrismaClient): Promise<void> 
       viewType: ResearchViewType.HOUSE,
       approvalStatus: ResearchApprovalStatus.APPROVED,
       title: 'Incheon AI Colocation — Underwriting Memo',
-      summary: 'Greenfield 120MW planned. Grid allocation confirmed Feb 2026; LOI covers 45MW. Development yield target 6.8%.',
+      summary:
+        'Greenfield 120MW planned. Grid allocation confirmed Feb 2026; LOI covers 45MW. Development yield target 6.8%.',
       snapshotDate: new Date('2026-03-18'),
       sourceSystem: 'internal',
       freshnessStatus: SourceStatus.FRESH,
@@ -462,7 +511,8 @@ export async function seedResearchAndMacro(prisma: PrismaClient): Promise<void> 
       viewType: ResearchViewType.HOUSE,
       approvalStatus: ResearchApprovalStatus.APPROVED,
       title: 'Pangyo Innovation Office — Underwriting Memo',
-      summary: 'Tech-heavy tenant mix. In-place rent KRW 118k/pyeong, 10% below CBD. 91% occupancy.',
+      summary:
+        'Tech-heavy tenant mix. In-place rent KRW 118k/pyeong, 10% below CBD. 91% occupancy.',
       snapshotDate: new Date('2026-03-15'),
       sourceSystem: 'internal',
       freshnessStatus: SourceStatus.FRESH,
@@ -480,7 +530,8 @@ export async function seedResearchAndMacro(prisma: PrismaClient): Promise<void> 
       viewType: ResearchViewType.HOUSE,
       approvalStatus: ResearchApprovalStatus.DRAFT,
       title: 'Busan Edge Compute Park — Early Screen',
-      summary: 'Secondary metro edge-compute play. Land basis attractive but tenant demand thinner — 18-month lease-up.',
+      summary:
+        'Secondary metro edge-compute play. Land basis attractive but tenant demand thinner — 18-month lease-up.',
       snapshotDate: new Date('2026-03-10'),
       sourceSystem: 'internal',
       freshnessStatus: SourceStatus.FRESH,
@@ -505,10 +556,22 @@ export async function seedResearchAndMacro(prisma: PrismaClient): Promise<void> 
     { key: 'construction_pressure', label: 'Construction Cost', unit: '%' },
     { key: 'property_demand', label: 'Prime Demand Score', unit: 'score' }
   ] as const;
-  const marketFactors: Record<string, { values: number[]; directions: string[]; commentaries: string[] }> = {
+  const marketFactors: Record<
+    string,
+    { values: number[]; directions: string[]; commentaries: string[] }
+  > = {
     'Seoul CBD': {
       values: [2.9, 3.25, -25, 135, 112, 2.4, 6.1, 18],
-      directions: ['NEGATIVE', 'NEGATIVE', 'POSITIVE', 'NEGATIVE', 'POSITIVE', 'POSITIVE', 'NEGATIVE', 'POSITIVE'],
+      directions: [
+        'NEGATIVE',
+        'NEGATIVE',
+        'POSITIVE',
+        'NEGATIVE',
+        'POSITIVE',
+        'POSITIVE',
+        'NEGATIVE',
+        'POSITIVE'
+      ],
       commentaries: [
         'CPI trending above BOK target',
         'BOK base rate held at 3.25%',
@@ -522,7 +585,16 @@ export async function seedResearchAndMacro(prisma: PrismaClient): Promise<void> 
     },
     Yeouido: {
       values: [2.9, 3.25, -25, 120, 104, 2.4, 5.8, 14],
-      directions: ['NEGATIVE', 'NEGATIVE', 'POSITIVE', 'NEGATIVE', 'POSITIVE', 'POSITIVE', 'NEGATIVE', 'POSITIVE'],
+      directions: [
+        'NEGATIVE',
+        'NEGATIVE',
+        'POSITIVE',
+        'NEGATIVE',
+        'POSITIVE',
+        'POSITIVE',
+        'NEGATIVE',
+        'POSITIVE'
+      ],
       commentaries: [
         'Inflation slightly sticky but improving',
         'Same as national policy',
@@ -536,7 +608,16 @@ export async function seedResearchAndMacro(prisma: PrismaClient): Promise<void> 
     },
     Incheon: {
       values: [2.9, 3.25, -25, 140, 98, 2.4, 7.2, 22],
-      directions: ['NEGATIVE', 'NEGATIVE', 'POSITIVE', 'NEGATIVE', 'NEGATIVE', 'POSITIVE', 'NEGATIVE', 'POSITIVE'],
+      directions: [
+        'NEGATIVE',
+        'NEGATIVE',
+        'POSITIVE',
+        'NEGATIVE',
+        'NEGATIVE',
+        'POSITIVE',
+        'NEGATIVE',
+        'POSITIVE'
+      ],
       commentaries: [
         'Same national CPI read',
         'National policy',

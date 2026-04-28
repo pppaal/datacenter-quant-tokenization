@@ -3,7 +3,10 @@ import { z } from 'zod';
 import { AdminAccessScopeType } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { assertActorScopeAccess } from '@/lib/security/admin-access';
-import { getRequestIpAddress, resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
+import {
+  getRequestIpAddress,
+  resolveVerifiedAdminActorFromHeaders
+} from '@/lib/security/admin-request';
 import { recordAuditEvent } from '@/lib/services/audit';
 import {
   addModule,
@@ -22,10 +25,26 @@ import {
 const addressRe = /^0x[a-fA-F0-9]{40}$/;
 
 const ComplianceSchema = z.discriminatedUnion('action', [
-  z.object({ action: z.literal('addModule'), assetId: z.string().min(1), moduleAddress: z.string().regex(addressRe) }),
-  z.object({ action: z.literal('removeModule'), assetId: z.string().min(1), moduleAddress: z.string().regex(addressRe) }),
-  z.object({ action: z.literal('blockCountry'), assetId: z.string().min(1), countryCode: z.number().int().min(1).max(65535) }),
-  z.object({ action: z.literal('unblockCountry'), assetId: z.string().min(1), countryCode: z.number().int().min(1).max(65535) })
+  z.object({
+    action: z.literal('addModule'),
+    assetId: z.string().min(1),
+    moduleAddress: z.string().regex(addressRe)
+  }),
+  z.object({
+    action: z.literal('removeModule'),
+    assetId: z.string().min(1),
+    moduleAddress: z.string().regex(addressRe)
+  }),
+  z.object({
+    action: z.literal('blockCountry'),
+    assetId: z.string().min(1),
+    countryCode: z.number().int().min(1).max(65535)
+  }),
+  z.object({
+    action: z.literal('unblockCountry'),
+    assetId: z.string().min(1),
+    countryCode: z.number().int().min(1).max(65535)
+  })
 ]);
 
 export async function GET(request: Request) {

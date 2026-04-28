@@ -107,7 +107,9 @@ const EMPTY_MARKET_DATA: MarketData = {
 };
 
 function normalizeMarket(input?: string | null) {
-  return String(input ?? 'KR').trim().toUpperCase();
+  return String(input ?? 'KR')
+    .trim()
+    .toUpperCase();
 }
 
 function normalizeNumber(value: unknown) {
@@ -118,17 +120,23 @@ function normalizeString(value: unknown) {
   return typeof value === 'string' && value.trim().length > 0 ? value : null;
 }
 
-function isNormalizedIndicator(candidate: NormalizedIndicatorCandidate): candidate is MarketIndicatorData {
+function isNormalizedIndicator(
+  candidate: NormalizedIndicatorCandidate
+): candidate is MarketIndicatorData {
   return candidate.indicatorKey.length > 0 && candidate.value !== null;
 }
 
 function isNormalizedTransactionComp(
   candidate: NormalizedTransactionCompCandidate
 ): candidate is MarketTransactionCompData {
-  return candidate.label.length > 0 && candidate.region.length > 0 && candidate.comparableType.length > 0;
+  return (
+    candidate.label.length > 0 && candidate.region.length > 0 && candidate.comparableType.length > 0
+  );
 }
 
-function isNormalizedRentComp(candidate: NormalizedRentCompCandidate): candidate is MarketRentCompData {
+function isNormalizedRentComp(
+  candidate: NormalizedRentCompCandidate
+): candidate is MarketRentCompData {
   return (
     candidate.region.length > 0 &&
     candidate.comparableType.length > 0 &&

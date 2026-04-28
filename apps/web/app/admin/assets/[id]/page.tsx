@@ -3,7 +3,11 @@ import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { AdminAccessScopeType, AssetClass } from '@prisma/client';
 import { AssetEnrichmentButton } from '@/components/admin/asset-enrichment-button';
-import { convertFromKrw, formatCurrencyFromKrwAtRate, resolveDisplayCurrency } from '@/lib/finance/currency';
+import {
+  convertFromKrw,
+  formatCurrencyFromKrwAtRate,
+  resolveDisplayCurrency
+} from '@/lib/finance/currency';
 import { AssetIntakeForm } from '@/components/admin/asset-intake-form';
 import { CapexBookForm } from '@/components/admin/capex-book-form';
 import { ComparableBookForm } from '@/components/admin/comparable-book-form';
@@ -44,7 +48,11 @@ import { getAssetById } from '@/lib/services/assets';
 import { getFxRateMap } from '@/lib/services/fx';
 import { buildRealizedOutcomeComparison } from '@/lib/services/realized-outcomes';
 import { buildAssetResearchDossier } from '@/lib/services/research/dossier';
-import { buildAssetEvidenceReviewSummary, extractReviewPacketSummary, getLatestReviewPacketRecord } from '@/lib/services/review';
+import {
+  buildAssetEvidenceReviewSummary,
+  extractReviewPacketSummary,
+  getLatestReviewPacketRecord
+} from '@/lib/services/review';
 import { formatDate, formatNumber, formatPercent } from '@/lib/utils';
 import { buildFeatureAssumptionMappings } from '@/lib/valuation/feature-assumption-mapping';
 import { filterValuationFeatureSnapshots } from '@/lib/valuation/feature-snapshot-usage';
@@ -66,7 +74,10 @@ function getRecommendation(confidenceScore?: number | null) {
   return 'Further Diligence Required';
 }
 
-function toInputCurrencyValue(amountKrw: number | null | undefined, currency: ReturnType<typeof resolveDisplayCurrency>) {
+function toInputCurrencyValue(
+  amountKrw: number | null | undefined,
+  currency: ReturnType<typeof resolveDisplayCurrency>
+) {
   return convertFromKrw(amountKrw, currency) ?? undefined;
 }
 
@@ -83,7 +94,9 @@ export default async function AssetDetailPage({
     ? resolvedSearchParams?.rolloverYear[0]
     : resolvedSearchParams?.rolloverYear;
   const selectedRolloverYear =
-    rolloverYearParam && Number.isFinite(Number(rolloverYearParam)) ? Number(rolloverYearParam) : null;
+    rolloverYearParam && Number.isFinite(Number(rolloverYearParam))
+      ? Number(rolloverYearParam)
+      : null;
   const actor = await resolveVerifiedAdminActorFromHeaders(await headers(), prisma, {
     allowBasic: false,
     requireActiveSeat: true
@@ -94,7 +107,9 @@ export default async function AssetDetailPage({
   if (!asset) notFound();
 
   const latestRun = asset.valuations[0];
-  const provenance = Array.isArray(latestRun?.provenance) ? (latestRun.provenance as ProvenanceEntry[]) : [];
+  const provenance = Array.isArray(latestRun?.provenance)
+    ? (latestRun.provenance as ProvenanceEntry[])
+    : [];
   const satelliteRisk = resolveSatelliteRiskSnapshot({
     assumptions: latestRun?.assumptions,
     siteProfile: asset.siteProfile
@@ -110,10 +125,15 @@ export default async function AssetDetailPage({
   const isDataCenter = asset.assetClass === AssetClass.DATA_CENTER;
   const playbook = getAssetClassPlaybook(asset.assetClass);
   const latestDocument = asset.documents[0];
-  const latestReviewPacketRecord = getLatestReviewPacketRecord(asset.readinessProject?.onchainRecords);
+  const latestReviewPacketRecord = getLatestReviewPacketRecord(
+    asset.readinessProject?.onchainRecords
+  );
   const latestReviewPacket = extractReviewPacketSummary(latestReviewPacketRecord);
-  const latestOnchainRecord = asset.readinessProject?.onchainRecords.find((record) => Boolean(record.txHash)) ?? null;
-  const reviewSummary = buildAssetEvidenceReviewSummary(asset as Parameters<typeof buildAssetEvidenceReviewSummary>[0]);
+  const latestOnchainRecord =
+    asset.readinessProject?.onchainRecords.find((record) => Boolean(record.txHash)) ?? null;
+  const reviewSummary = buildAssetEvidenceReviewSummary(
+    asset as Parameters<typeof buildAssetEvidenceReviewSummary>[0]
+  );
   const researchDossier = buildAssetResearchDossier(asset);
   const displayCurrency = resolveDisplayCurrency(asset.address?.country ?? asset.market);
   const fxRateToKrw = (await getFxRateMap([displayCurrency]))[displayCurrency];
@@ -141,7 +161,8 @@ export default async function AssetDetailPage({
     : {
         status: 'NO_MATCH' as const,
         match: null,
-        commentary: 'Run an analysis first, then capture a later realized outcome to validate the macro view.'
+        commentary:
+          'Run an analysis first, then capture a later realized outcome to validate the macro view.'
       };
 
   return (
@@ -151,7 +172,9 @@ export default async function AssetDetailPage({
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <div className="eyebrow">Asset Dossier</div>
-              <h2 className="mt-2 text-4xl font-semibold tracking-[-0.04em] text-white">{asset.name}</h2>
+              <h2 className="mt-2 text-4xl font-semibold tracking-[-0.04em] text-white">
+                {asset.name}
+              </h2>
             </div>
             <div className="flex gap-2">
               <Badge>{asset.status}</Badge>
@@ -170,7 +193,10 @@ export default async function AssetDetailPage({
                   ? `${formatNumber(asset.powerCapacityMw)} MW`
                   : `${formatNumber(asset.rentableAreaSqm ?? asset.grossFloorAreaSqm)} sqm`
               ],
-              ['Base Case', formatCurrencyFromKrwAtRate(asset.currentValuationKrw, displayCurrency, fxRateToKrw)],
+              [
+                'Base Case',
+                formatCurrencyFromKrwAtRate(asset.currentValuationKrw, displayCurrency, fxRateToKrw)
+              ],
               ['Updated', formatDate(asset.updatedAt)]
             ].map(([label, value]) => (
               <div key={label} className="metric-card">
@@ -184,13 +210,20 @@ export default async function AssetDetailPage({
         <Card className="space-y-5">
           <div>
             <div className="eyebrow">Analysis Control</div>
-            <h3 className="mt-2 text-2xl font-semibold text-white">Run return analysis and update the IM</h3>
+            <h3 className="mt-2 text-2xl font-semibold text-white">
+              Run return analysis and update the IM
+            </h3>
           </div>
 
           <ValuationRunForm assetId={asset.id} />
 
           <div className="grid gap-3">
-            <QuickValuationRunButton assetId={asset.id} assetCode={asset.assetCode} fullWidth label="Quick Re-run" />
+            <QuickValuationRunButton
+              assetId={asset.id}
+              assetCode={asset.assetCode}
+              fullWidth
+              label="Quick Re-run"
+            />
             <AssetEnrichmentButton assetId={asset.id} fullWidth />
           </div>
 
@@ -198,7 +231,8 @@ export default async function AssetDetailPage({
             <div className="fine-print">Underwriting Position</div>
             <div className="mt-3 text-2xl font-semibold text-white">{recommendation}</div>
             <p className="mt-2 text-sm leading-7 text-slate-400">
-              Based on the latest valuation confidence, approved evidence coverage, and current diligence blockers.
+              Based on the latest valuation confidence, approved evidence coverage, and current
+              diligence blockers.
             </p>
           </div>
 
@@ -222,7 +256,9 @@ export default async function AssetDetailPage({
             <div>
               <div className="eyebrow">Latest Investment Memo</div>
               <h3 className="mt-2 text-2xl font-semibold text-white">
-                <span data-testid="latest-run-label">{latestRun ? latestRun.runLabel : 'No IM generated yet'}</span>
+                <span data-testid="latest-run-label">
+                  {latestRun ? latestRun.runLabel : 'No IM generated yet'}
+                </span>
               </h3>
             </div>
             {latestRun ? <Badge tone="good">{recommendation}</Badge> : null}
@@ -230,7 +266,8 @@ export default async function AssetDetailPage({
 
           <div className="mt-5 space-y-5">
             <p className="text-sm leading-8 text-slate-300">
-              {latestRun?.underwritingMemo ?? 'Run the analysis to generate a new investment memo for this asset.'}
+              {latestRun?.underwritingMemo ??
+                'Run the analysis to generate a new investment memo for this asset.'}
             </p>
 
             {latestRun ? (
@@ -238,16 +275,24 @@ export default async function AssetDetailPage({
                 <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
                   <div className="fine-print">Base Case</div>
                   <div className="mt-3 text-xl font-semibold text-white">
-                    {formatCurrencyFromKrwAtRate(latestRun.baseCaseValueKrw, displayCurrency, fxRateToKrw)}
+                    {formatCurrencyFromKrwAtRate(
+                      latestRun.baseCaseValueKrw,
+                      displayCurrency,
+                      fxRateToKrw
+                    )}
                   </div>
                 </div>
                 <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
                   <div className="fine-print">Confidence</div>
-                  <div className="mt-3 text-xl font-semibold text-white">{formatNumber(latestRun.confidenceScore, 1)}</div>
+                  <div className="mt-3 text-xl font-semibold text-white">
+                    {formatNumber(latestRun.confidenceScore, 1)}
+                  </div>
                 </div>
                 <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
                   <div className="fine-print">Prepared</div>
-                  <div className="mt-3 text-xl font-semibold text-white">{formatDate(latestRun.createdAt)}</div>
+                  <div className="mt-3 text-xl font-semibold text-white">
+                    {formatDate(latestRun.createdAt)}
+                  </div>
                 </div>
               </div>
             ) : null}
@@ -268,7 +313,9 @@ export default async function AssetDetailPage({
             <div className="eyebrow">Research Snapshot</div>
             <div className="mt-4 grid gap-4 text-sm text-slate-300">
               <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
-                <div className="text-slate-500">{isDataCenter ? 'Grid / Fiber' : 'Site / Access'}</div>
+                <div className="text-slate-500">
+                  {isDataCenter ? 'Grid / Fiber' : 'Site / Access'}
+                </div>
                 <div className="mt-2">{asset.siteProfile?.gridAvailability}</div>
                 <div className="mt-1 text-slate-400">{asset.siteProfile?.fiberAccess}</div>
               </div>
@@ -298,7 +345,10 @@ export default async function AssetDetailPage({
               <div className="eyebrow">Key Risks</div>
               <ul className="mt-4 space-y-3 text-sm text-slate-300">
                 {latestRun.keyRisks.map((risk) => (
-                  <li key={risk} className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-3">
+                  <li
+                    key={risk}
+                    className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-3"
+                  >
                     {risk}
                   </li>
                 ))}
@@ -314,7 +364,10 @@ export default async function AssetDetailPage({
         emptyMessage="No approved feature snapshots yet. Approve normalized evidence or run enrichment before relying on this asset in committee materials."
       />
 
-      <ResearchDossierPanel dossier={researchDossier} canApproveHouseView={actor?.role === 'ADMIN'} />
+      <ResearchDossierPanel
+        dossier={researchDossier}
+        canApproveHouseView={actor?.role === 'ADMIN'}
+      />
 
       <ReviewQueuePanel
         summaries={[reviewSummary]}
@@ -336,50 +389,55 @@ export default async function AssetDetailPage({
           <div className="eyebrow">Micro Research Capture</div>
           <h3 className="mt-2 text-2xl font-semibold text-white">{playbook.intakeHeading}</h3>
           <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400">
-            Use this panel to capture normalized evidence that changes downside, execution certainty, and approved
-            feature coverage for this asset class.
+            Use this panel to capture normalized evidence that changes downside, execution
+            certainty, and approved feature coverage for this asset class.
           </p>
         </div>
         <div className="mt-5">
           <MicroDataForm
             assetId={asset.id}
             inputCurrency={displayCurrency}
-            reviewStatuses={[
-              asset.energySnapshot
-                ? {
-                    label: 'Energy / Building Services',
-                    status: asset.energySnapshot.reviewStatus
-                  }
-                : null,
-              asset.permitSnapshot
-                ? {
-                    label: 'Permit / Entitlement',
-                    status: asset.permitSnapshot.reviewStatus
-                  }
-                : null,
-              asset.ownershipRecords[0]
-                ? {
-                    label: 'Ownership',
-                    status: asset.ownershipRecords[0].reviewStatus
-                  }
-                : null,
-              asset.encumbranceRecords[0]
-                ? {
-                    label: 'Encumbrance',
-                    status: asset.encumbranceRecords[0].reviewStatus
-                  }
-                : null,
-              asset.planningConstraints[0]
-                ? {
-                    label: 'Planning',
-                    status: asset.planningConstraints[0].reviewStatus
-                  }
-                : null
-            ].filter(Boolean) as Array<{ label: string; status: any }>}
+            reviewStatuses={
+              [
+                asset.energySnapshot
+                  ? {
+                      label: 'Energy / Building Services',
+                      status: asset.energySnapshot.reviewStatus
+                    }
+                  : null,
+                asset.permitSnapshot
+                  ? {
+                      label: 'Permit / Entitlement',
+                      status: asset.permitSnapshot.reviewStatus
+                    }
+                  : null,
+                asset.ownershipRecords[0]
+                  ? {
+                      label: 'Ownership',
+                      status: asset.ownershipRecords[0].reviewStatus
+                    }
+                  : null,
+                asset.encumbranceRecords[0]
+                  ? {
+                      label: 'Encumbrance',
+                      status: asset.encumbranceRecords[0].reviewStatus
+                    }
+                  : null,
+                asset.planningConstraints[0]
+                  ? {
+                      label: 'Planning',
+                      status: asset.planningConstraints[0].reviewStatus
+                    }
+                  : null
+              ].filter(Boolean) as Array<{ label: string; status: any }>
+            }
             defaultValues={{
               utilityName: asset.energySnapshot?.utilityName ?? '',
               substationDistanceKm: asset.energySnapshot?.substationDistanceKm ?? undefined,
-              tariffKrwPerKwh: toInputCurrencyValue(asset.energySnapshot?.tariffKrwPerKwh, displayCurrency),
+              tariffKrwPerKwh: toInputCurrencyValue(
+                asset.energySnapshot?.tariffKrwPerKwh,
+                displayCurrency
+              ),
               renewableAvailabilityPct: asset.energySnapshot?.renewableAvailabilityPct ?? undefined,
               pueTarget: asset.energySnapshot?.pueTarget ?? undefined,
               backupFuelHours: asset.energySnapshot?.backupFuelHours ?? undefined,
@@ -393,7 +451,10 @@ export default async function AssetDetailPage({
               ownershipPct: asset.ownershipRecords[0]?.ownershipPct ?? undefined,
               encumbranceType: asset.encumbranceRecords[0]?.encumbranceType ?? '',
               encumbranceHolderName: asset.encumbranceRecords[0]?.holderName ?? '',
-                securedAmountKrw: toInputCurrencyValue(asset.encumbranceRecords[0]?.securedAmountKrw, displayCurrency),
+              securedAmountKrw: toInputCurrencyValue(
+                asset.encumbranceRecords[0]?.securedAmountKrw,
+                displayCurrency
+              ),
               priorityRank: asset.encumbranceRecords[0]?.priorityRank ?? undefined,
               encumbranceStatus: asset.encumbranceRecords[0]?.statusLabel ?? '',
               planningConstraintType: asset.planningConstraints[0]?.constraintType ?? '',
@@ -416,8 +477,9 @@ export default async function AssetDetailPage({
                 : 'Contracted demand and lease stack'}
           </h3>
           <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400">
-            Capture signed, active, or pipeline lease evidence here. The valuation engine uses approved lease and
-            revenue context first, then falls back to residual assumptions where coverage is still thin.
+            Capture signed, active, or pipeline lease evidence here. The valuation engine uses
+            approved lease and revenue context first, then falls back to residual assumptions where
+            coverage is still thin.
           </p>
         </div>
         <div className="mt-5">
@@ -443,7 +505,10 @@ export default async function AssetDetailPage({
               renewalTermYears: lease.renewalTermYears ?? undefined,
               renewalCount: lease.renewalCount ?? undefined,
               rentFreeMonths: lease.rentFreeMonths ?? undefined,
-              markToMarketRatePerKwKrw: toInputCurrencyValue(lease.markToMarketRatePerKwKrw, displayCurrency),
+              markToMarketRatePerKwKrw: toInputCurrencyValue(
+                lease.markToMarketRatePerKwKrw,
+                displayCurrency
+              ),
               renewalTenantImprovementKrw: toInputCurrencyValue(
                 lease.renewalTenantImprovementKrw,
                 displayCurrency
@@ -452,11 +517,20 @@ export default async function AssetDetailPage({
                 lease.renewalLeasingCommissionKrw,
                 displayCurrency
               ),
-              tenantImprovementKrw: toInputCurrencyValue(lease.tenantImprovementKrw, displayCurrency),
-              leasingCommissionKrw: toInputCurrencyValue(lease.leasingCommissionKrw, displayCurrency),
+              tenantImprovementKrw: toInputCurrencyValue(
+                lease.tenantImprovementKrw,
+                displayCurrency
+              ),
+              leasingCommissionKrw: toInputCurrencyValue(
+                lease.leasingCommissionKrw,
+                displayCurrency
+              ),
               recoverableOpexRatioPct: lease.recoverableOpexRatioPct ?? undefined,
               fixedRecoveriesKrw: toInputCurrencyValue(lease.fixedRecoveriesKrw, displayCurrency),
-              expenseStopKrwPerKwMonth: toInputCurrencyValue(lease.expenseStopKrwPerKwMonth, displayCurrency),
+              expenseStopKrwPerKwMonth: toInputCurrencyValue(
+                lease.expenseStopKrwPerKwMonth,
+                displayCurrency
+              ),
               utilityPassThroughPct: lease.utilityPassThroughPct ?? undefined,
               fitOutCostKrw: toInputCurrencyValue(lease.fitOutCostKrw, displayCurrency),
               leaseNotes: lease.notes ?? '',
@@ -513,7 +587,10 @@ export default async function AssetDetailPage({
                     displayCurrency
                   ),
                   recoverableOpexRatioPct: underwritingStep.recoverableOpexRatioPct ?? undefined,
-                  fixedRecoveriesKrw: toInputCurrencyValue(underwritingStep.fixedRecoveriesKrw, displayCurrency),
+                  fixedRecoveriesKrw: toInputCurrencyValue(
+                    underwritingStep.fixedRecoveriesKrw,
+                    displayCurrency
+                  ),
                   expenseStopKrwPerKwMonth: toInputCurrencyValue(
                     underwritingStep.expenseStopKrwPerKwMonth,
                     displayCurrency
@@ -530,10 +607,13 @@ export default async function AssetDetailPage({
       <Card>
         <div>
           <div className="eyebrow">Comparable Book</div>
-          <h3 className="mt-2 text-2xl font-semibold text-white">Pricing calibration and market peers</h3>
+          <h3 className="mt-2 text-2xl font-semibold text-white">
+            Pricing calibration and market peers
+          </h3>
           <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400">
-            Add peer assets with pricing signals and weights so the underwriting no longer leans only on generic market
-            snapshots. This directly improves cap-rate, rate, and direct-value calibration.
+            Add peer assets with pricing signals and weights so the underwriting no longer leans
+            only on generic market snapshots. This directly improves cap-rate, rate, and
+            direct-value calibration.
           </p>
         </div>
         <div className="mt-5">
@@ -555,7 +635,10 @@ export default async function AssetDetailPage({
                 occupancyPct: entry.occupancyPct,
                 valuationKrw: toInputCurrencyValue(entry.valuationKrw, displayCurrency),
                 pricePerMwKrw: toInputCurrencyValue(entry.pricePerMwKrw, displayCurrency),
-                monthlyRatePerKwKrw: toInputCurrencyValue(entry.monthlyRatePerKwKrw, displayCurrency),
+                monthlyRatePerKwKrw: toInputCurrencyValue(
+                  entry.monthlyRatePerKwKrw,
+                  displayCurrency
+                ),
                 capRatePct: entry.capRatePct,
                 discountRatePct: entry.discountRatePct,
                 weightPct: entry.weightPct,
@@ -569,10 +652,13 @@ export default async function AssetDetailPage({
       <Card>
         <div>
           <div className="eyebrow">Capex Book</div>
-          <h3 className="mt-2 text-2xl font-semibold text-white">Replacement-cost structure and downside floor</h3>
+          <h3 className="mt-2 text-2xl font-semibold text-white">
+            Replacement-cost structure and downside floor
+          </h3>
           <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400">
-            Split the development budget into land, shell/core, electrical, mechanical, IT fit-out, soft cost, and
-            contingency so the replacement floor and retained hard-cost logic stop leaning on fallback allocation.
+            Split the development budget into land, shell/core, electrical, mechanical, IT fit-out,
+            soft cost, and contingency so the replacement floor and retained hard-cost logic stop
+            leaning on fallback allocation.
           </p>
         </div>
         <div className="mt-5">
@@ -595,10 +681,12 @@ export default async function AssetDetailPage({
       <Card>
         <div>
           <div className="eyebrow">Debt Book</div>
-          <h3 className="mt-2 text-2xl font-semibold text-white">Facility terms, draws, and debt-service realism</h3>
+          <h3 className="mt-2 text-2xl font-semibold text-white">
+            Facility terms, draws, and debt-service realism
+          </h3>
           <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400">
-            Enter actual lender terms and draw timing so DSCR, reserve sizing, and ending debt balance reflect the real
-            capital stack instead of the synthetic underwriting facility.
+            Enter actual lender terms and draw timing so DSCR, reserve sizing, and ending debt
+            balance reflect the real capital stack instead of the synthetic underwriting facility.
           </p>
         </div>
         <div className="mt-5">
@@ -636,10 +724,13 @@ export default async function AssetDetailPage({
         <Card>
           <div>
             <div className="eyebrow">Realized Outcome Capture</div>
-            <h3 className="mt-2 text-2xl font-semibold text-white">Observed asset performance after the underwriting run</h3>
+            <h3 className="mt-2 text-2xl font-semibold text-white">
+              Observed asset performance after the underwriting run
+            </h3>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400">
-              Capture actual occupancy, NOI, value, and DSCR after the run closes. This is the feedback loop the macro
-              team needs to validate regime overlays against real asset outcomes.
+              Capture actual occupancy, NOI, value, and DSCR after the run closes. This is the
+              feedback loop the macro team needs to validate regime overlays against real asset
+              outcomes.
             </p>
           </div>
           <div className="mt-5">
@@ -659,10 +750,15 @@ export default async function AssetDetailPage({
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <div className="eyebrow">Review Readiness</div>
-            <h3 className="mt-2 text-2xl font-semibold text-white">Registry-ready evidence packaging</h3>
+            <h3 className="mt-2 text-2xl font-semibold text-white">
+              Registry-ready evidence packaging
+            </h3>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Badge tone={asset.readinessProject?.readinessStatus === 'ANCHORED' ? 'good' : 'warn'} data-testid="readiness-status">
+            <Badge
+              tone={asset.readinessProject?.readinessStatus === 'ANCHORED' ? 'good' : 'warn'}
+              data-testid="readiness-status"
+            >
               {asset.readinessProject?.readinessStatus ?? 'NOT_STARTED'}
             </Badge>
             <Badge>{asset.readinessProject?.reviewPhase ?? 'Committee review'}</Badge>
@@ -680,13 +776,17 @@ export default async function AssetDetailPage({
             <div>
               <div className="text-slate-500">Latest document hash</div>
               <div className="mt-2 font-mono text-white">
-                {latestDocument ? shortenHash(latestDocument.documentHash, 12) : 'No document uploaded'}
+                {latestDocument
+                  ? shortenHash(latestDocument.documentHash, 12)
+                  : 'No document uploaded'}
               </div>
             </div>
             <div>
               <div className="text-slate-500">Latest tx</div>
               <div className="mt-2 font-mono text-white" data-testid="readiness-latest-tx">
-                {latestOnchainRecord?.txHash ? shortenHash(latestOnchainRecord.txHash, 12) : 'No onchain transaction yet'}
+                {latestOnchainRecord?.txHash
+                  ? shortenHash(latestOnchainRecord.txHash, 12)
+                  : 'No onchain transaction yet'}
               </div>
             </div>
             <div>
@@ -699,7 +799,9 @@ export default async function AssetDetailPage({
             </div>
             <div>
               <div className="text-slate-500">Chain</div>
-              <div className="mt-2 text-white">{asset.readinessProject?.chainName ?? 'Registry not connected'}</div>
+              <div className="mt-2 text-white">
+                {asset.readinessProject?.chainName ?? 'Registry not connected'}
+              </div>
             </div>
           </div>
 
@@ -724,7 +826,11 @@ export default async function AssetDetailPage({
             provenance={provenance}
           />
           <FeatureAssumptionMapping rows={featureAssumptionMappings} />
-          <ValuationHistoryTable runs={asset.valuations} displayCurrency={displayCurrency} fxRateToKrw={fxRateToKrw} />
+          <ValuationHistoryTable
+            runs={asset.valuations}
+            displayCurrency={displayCurrency}
+            fxRateToKrw={fxRateToKrw}
+          />
           <ValuationBreakdown
             assumptions={latestRun.assumptions as Record<string, number | string | null>}
             provenance={provenance}
@@ -830,7 +936,8 @@ export default async function AssetDetailPage({
               rentableAreaSqm: asset.rentableAreaSqm ?? undefined,
               vacancyAllowancePct: asset.officeDetail?.vacancyAllowancePct ?? undefined,
               creditLossPct: asset.officeDetail?.creditLossPct ?? undefined,
-              weightedAverageLeaseTermYears: asset.officeDetail?.weightedAverageLeaseTermYears ?? undefined,
+              weightedAverageLeaseTermYears:
+                asset.officeDetail?.weightedAverageLeaseTermYears ?? undefined,
               occupancyAssumptionPct: asset.occupancyAssumptionPct ?? undefined,
               stabilizedOccupancyPct: asset.stabilizedOccupancyPct ?? undefined,
               tenantAssumption: asset.tenantAssumption ?? '',
@@ -853,7 +960,10 @@ export default async function AssetDetailPage({
                 asset.officeDetail?.stabilizedRentPerSqmMonthKrw,
                 displayCurrency
               ),
-              otherIncomeKrw: toInputCurrencyValue(asset.officeDetail?.otherIncomeKrw, displayCurrency),
+              otherIncomeKrw: toInputCurrencyValue(
+                asset.officeDetail?.otherIncomeKrw,
+                displayCurrency
+              ),
               tenantImprovementReserveKrw: toInputCurrencyValue(
                 asset.officeDetail?.tenantImprovementReserveKrw,
                 displayCurrency

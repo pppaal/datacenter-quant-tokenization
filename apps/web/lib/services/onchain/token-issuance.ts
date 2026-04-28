@@ -13,7 +13,9 @@ function toBase(amount: string | bigint, label: string): bigint {
   }
   const trimmed = amount.trim();
   if (!/^\d+$/.test(trimmed)) {
-    throw new Error(`${label} must be a non-negative integer (base units, decimals applied upstream).`);
+    throw new Error(
+      `${label} must be a non-negative integer (base units, decimals applied upstream).`
+    );
   }
   const n = BigInt(trimmed);
   if (n <= 0n) throw new Error(`${label} must be positive.`);

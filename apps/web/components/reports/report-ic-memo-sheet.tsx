@@ -6,15 +6,24 @@ function findSection(report: DealReport, id: string) {
   return report.sections.find((section) => section.id === id);
 }
 
-function renderFactGrid(facts: ReportFact[] | undefined, keyPrefix: string, columns = 'md:grid-cols-2 xl:grid-cols-3') {
+function renderFactGrid(
+  facts: ReportFact[] | undefined,
+  keyPrefix: string,
+  columns = 'md:grid-cols-2 xl:grid-cols-3'
+) {
   if (!facts?.length) return null;
   return (
     <div className={`grid gap-4 ${columns}`}>
       {facts.map((fact) => (
-        <div key={`${keyPrefix}-${fact.label}`} className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+        <div
+          key={`${keyPrefix}-${fact.label}`}
+          className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+        >
           <div className="fine-print">{fact.label}</div>
           <div className="mt-3 text-lg font-semibold text-white">{fact.value}</div>
-          {fact.detail ? <p className="mt-2 text-sm leading-7 text-slate-400">{fact.detail}</p> : null}
+          {fact.detail ? (
+            <p className="mt-2 text-sm leading-7 text-slate-400">{fact.detail}</p>
+          ) : null}
         </div>
       ))}
     </div>
@@ -81,7 +90,9 @@ export function ReportIcMemoSheet({
     <div className="report-ic-sheet space-y-6 pb-16">
       <section className="surface hero-mesh report-ic-hero">
         <div className="flex flex-wrap items-center gap-3">
-          <Badge tone={report.status === 'production-ready' ? 'good' : 'warn'}>{report.statusLabel}</Badge>
+          <Badge tone={report.status === 'production-ready' ? 'good' : 'warn'}>
+            {report.statusLabel}
+          </Badge>
           <Badge>{report.audienceLabel}</Badge>
           <Badge>{assetCode}</Badge>
         </div>
@@ -104,7 +115,9 @@ export function ReportIcMemoSheet({
 
           <Card className="grid gap-4">
             <div className="eyebrow">{decision?.kicker ?? 'Decision Request'}</div>
-            <h2 className="text-2xl font-semibold text-white">{decision?.title ?? 'Committee Posture'}</h2>
+            <h2 className="text-2xl font-semibold text-white">
+              {decision?.title ?? 'Committee Posture'}
+            </h2>
             {renderBody(decision)}
             <div className="grid gap-3 text-sm text-slate-300">
               <div className="flex items-center justify-between rounded-[20px] border border-white/10 bg-white/[0.03] px-4 py-3">
@@ -133,7 +146,9 @@ export function ReportIcMemoSheet({
           <div key={fact.label} className="metric-card">
             <div className="fine-print">{fact.label}</div>
             <div className="mt-3 text-2xl font-semibold text-white">{fact.value}</div>
-            {fact.detail ? <p className="mt-2 text-sm leading-7 text-slate-400">{fact.detail}</p> : null}
+            {fact.detail ? (
+              <p className="mt-2 text-sm leading-7 text-slate-400">{fact.detail}</p>
+            ) : null}
           </div>
         ))}
       </section>
@@ -141,7 +156,9 @@ export function ReportIcMemoSheet({
       <section className="report-export-appendix grid gap-6 xl:grid-cols-[1.02fr_0.98fr]">
         <Card>
           <div className="eyebrow">{transaction?.kicker ?? 'Transaction Context'}</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">{transaction?.title ?? 'Why This Deal Is On The Table'}</h2>
+          <h2 className="mt-2 text-2xl font-semibold text-white">
+            {transaction?.title ?? 'Why This Deal Is On The Table'}
+          </h2>
           <div className="mt-5">{renderBody(transaction)}</div>
           {transaction?.bullets?.length ? (
             <div className="mt-5">
@@ -153,7 +170,9 @@ export function ReportIcMemoSheet({
 
         <Card>
           <div className="eyebrow">{valuation?.kicker ?? 'Valuation'}</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">{valuation?.title ?? 'Underwriting And Downside Frame'}</h2>
+          <h2 className="mt-2 text-2xl font-semibold text-white">
+            {valuation?.title ?? 'Underwriting And Downside Frame'}
+          </h2>
           <div className="mt-5">{renderFactGrid(valuation?.facts, 'valuation')}</div>
         </Card>
       </section>
@@ -161,7 +180,9 @@ export function ReportIcMemoSheet({
       <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
         <Card>
           <div className="eyebrow">{cashflow?.kicker ?? 'Cash Flow'}</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">{cashflow?.title ?? 'Opening-Year Cash Flow And Capital Stack'}</h2>
+          <h2 className="mt-2 text-2xl font-semibold text-white">
+            {cashflow?.title ?? 'Opening-Year Cash Flow And Capital Stack'}
+          </h2>
           <div className="mt-5">{renderFactGrid(cashflow?.facts, 'cashflow')}</div>
           {cashflow?.bullets?.length ? (
             <div className="mt-5">
@@ -173,7 +194,9 @@ export function ReportIcMemoSheet({
 
         <Card>
           <div className="eyebrow">{diligence?.kicker ?? 'Diligence'}</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">{diligence?.title ?? 'Coverage And Gating Items'}</h2>
+          <h2 className="mt-2 text-2xl font-semibold text-white">
+            {diligence?.title ?? 'Coverage And Gating Items'}
+          </h2>
           <div className="mt-5">{renderFactGrid(diligence?.facts, 'diligence')}</div>
           {diligence?.bullets?.length ? (
             <div className="mt-5">
@@ -190,7 +213,10 @@ export function ReportIcMemoSheet({
           <h2 className="mt-2 text-2xl font-semibold text-white">Linked Support Documents</h2>
           <div className="mt-5 grid gap-4 md:grid-cols-2">
             {evidenceDocs.map((document) => (
-              <div key={document.id} className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-4">
+              <div
+                key={document.id}
+                className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-4"
+              >
                 <div className="text-sm font-semibold text-white">{document.title}</div>
                 <div className="mt-2 text-xs uppercase tracking-[0.16em] text-slate-500">
                   {document.documentType} / v{document.currentVersion}
@@ -208,10 +234,15 @@ export function ReportIcMemoSheet({
           <h2 className="mt-2 text-2xl font-semibold text-white">Control And Integrity</h2>
           <div className="mt-5 space-y-3">
             {traceability.map((fact) => (
-              <div key={fact.label} className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-4">
+              <div
+                key={fact.label}
+                className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-4"
+              >
                 <div className="fine-print">{fact.label}</div>
                 <div className="mt-2 text-lg font-semibold text-white">{fact.value}</div>
-                {fact.detail ? <p className="mt-2 text-sm leading-7 text-slate-400">{fact.detail}</p> : null}
+                {fact.detail ? (
+                  <p className="mt-2 text-sm leading-7 text-slate-400">{fact.detail}</p>
+                ) : null}
               </div>
             ))}
           </div>

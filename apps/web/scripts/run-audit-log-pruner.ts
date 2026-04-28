@@ -57,7 +57,9 @@ export async function runAuditPrune(options: { dryRun?: boolean } = {}): Promise
   const [auditCount, opsAlertCount, notificationCount, opsWorkItemCount] = await Promise.all([
     prisma.auditEvent.count({ where: { createdAt: { lt: auditCutoff } } }),
     prisma.opsAlertDelivery.count({ where: { createdAt: { lt: opsAlertCutoff } } }),
-    prisma.notification.count({ where: { readAt: { not: null }, createdAt: { lt: notificationCutoff } } }),
+    prisma.notification.count({
+      where: { readAt: { not: null }, createdAt: { lt: notificationCutoff } }
+    }),
     prisma.opsWorkItem.count({
       where: {
         createdAt: { lt: opsWorkItemCutoff },
@@ -94,19 +96,20 @@ export async function runAuditPrune(options: { dryRun?: boolean } = {}): Promise
     };
   }
 
-  const [auditDeleted, opsAlertDeleted, notificationDeleted, opsWorkItemDeleted] = await Promise.all([
-    prisma.auditEvent.deleteMany({ where: { createdAt: { lt: auditCutoff } } }),
-    prisma.opsAlertDelivery.deleteMany({ where: { createdAt: { lt: opsAlertCutoff } } }),
-    prisma.notification.deleteMany({
-      where: { readAt: { not: null }, createdAt: { lt: notificationCutoff } }
-    }),
-    prisma.opsWorkItem.deleteMany({
-      where: {
-        createdAt: { lt: opsWorkItemCutoff },
-        OR: [{ status: 'SUCCEEDED' }, { status: 'DEAD_LETTER' }]
-      }
-    })
-  ]);
+  const [auditDeleted, opsAlertDeleted, notificationDeleted, opsWorkItemDeleted] =
+    await Promise.all([
+      prisma.auditEvent.deleteMany({ where: { createdAt: { lt: auditCutoff } } }),
+      prisma.opsAlertDelivery.deleteMany({ where: { createdAt: { lt: opsAlertCutoff } } }),
+      prisma.notification.deleteMany({
+        where: { readAt: { not: null }, createdAt: { lt: notificationCutoff } }
+      }),
+      prisma.opsWorkItem.deleteMany({
+        where: {
+          createdAt: { lt: opsWorkItemCutoff },
+          OR: [{ status: 'SUCCEEDED' }, { status: 'DEAD_LETTER' }]
+        }
+      })
+    ]);
 
   logger.info('audit_pruner_result', {
     auditDeleted: auditDeleted.count,
@@ -138,7 +141,9 @@ async function main(): Promise<void> {
 if (require.main === module) {
   main()
     .catch((error) => {
-      logger.error('audit_pruner_failed', { error: error instanceof Error ? error.message : String(error) });
+      logger.error('audit_pruner_failed', {
+        error: error instanceof Error ? error.message : String(error)
+      });
       process.exitCode = 1;
     })
     .finally(async () => {

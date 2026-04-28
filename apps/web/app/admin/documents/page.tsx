@@ -19,7 +19,9 @@ export default async function DocumentsPage() {
     <div className="space-y-6">
       <div>
         <div className="eyebrow">Data Room</div>
-        <h2 className="mt-2 text-3xl font-semibold text-white">Documents, summaries, and version history</h2>
+        <h2 className="mt-2 text-3xl font-semibold text-white">
+          Documents, summaries, and version history
+        </h2>
       </div>
       <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
         <Card>
@@ -32,7 +34,10 @@ export default async function DocumentsPage() {
           <div className="eyebrow">Tracked Documents</div>
           <div className="mt-4 space-y-4">
             {documents.map((document) => (
-              <div key={document.id} className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+              <div
+                key={document.id}
+                className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+              >
                 {(() => {
                   const sourceVersion = `document:${document.id}:v${document.currentVersion}`;
                   const promotedSnapshots = document.asset.featureSnapshots.filter(
@@ -71,11 +76,17 @@ export default async function DocumentsPage() {
                       {document.versions[0]?.facts.length ? (
                         <div className="mt-4 grid gap-3 md:grid-cols-2">
                           {document.versions[0].facts.map((fact) => (
-                            <div key={fact.id} className="rounded-2xl border border-border bg-slate-950/40 p-4">
-                              <div className="text-xs uppercase tracking-[0.18em] text-slate-500">{fact.factKey}</div>
+                            <div
+                              key={fact.id}
+                              className="rounded-2xl border border-border bg-slate-950/40 p-4"
+                            >
+                              <div className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                                {fact.factKey}
+                              </div>
                               <div className="mt-2 text-sm text-white">
                                 {fact.factValueText ??
-                                  (fact.factValueNumber !== null && fact.factValueNumber !== undefined
+                                  (fact.factValueNumber !== null &&
+                                  fact.factValueNumber !== undefined
                                     ? `${formatNumber(fact.factValueNumber, 2)}${fact.unit ? ` ${fact.unit}` : ''}`
                                     : 'N/A')}
                               </div>
@@ -91,22 +102,33 @@ export default async function DocumentsPage() {
                           {document.versions[0].financialStatements.map((statement) => {
                             const latestAssessment = statement.creditAssessments[0];
                             const metrics =
-                              latestAssessment?.metrics && typeof latestAssessment.metrics === 'object'
+                              latestAssessment?.metrics &&
+                              typeof latestAssessment.metrics === 'object'
                                 ? (latestAssessment.metrics as CreditMetrics)
                                 : null;
 
                             return (
-                              <div key={statement.id} className="rounded-2xl border border-border bg-slate-950/40 p-4">
+                              <div
+                                key={statement.id}
+                                className="rounded-2xl border border-border bg-slate-950/40 p-4"
+                              >
                                 <div className="text-xs uppercase tracking-[0.18em] text-slate-500">
                                   {statement.counterparty.role} / {statement.statementType}
                                 </div>
-                                <div className="mt-2 text-sm font-semibold text-white">{statement.counterparty.name}</div>
+                                <div className="mt-2 text-sm font-semibold text-white">
+                                  {statement.counterparty.name}
+                                </div>
                                 <div className="mt-2 text-sm text-slate-300">
-                                  Revenue {formatNumber(statement.revenueKrw, 0)} / EBITDA {formatNumber(statement.ebitdaKrw, 0)}
+                                  Revenue {formatNumber(statement.revenueKrw, 0)} / EBITDA{' '}
+                                  {formatNumber(statement.ebitdaKrw, 0)}
                                 </div>
                                 {metrics ? (
                                   <div className="mt-2 text-xs text-slate-500">
-                                    Current ratio {metrics.currentRatio ? `${formatNumber(metrics.currentRatio, 2)}x` : 'N/A'} / Maturity coverage{' '}
+                                    Current ratio{' '}
+                                    {metrics.currentRatio
+                                      ? `${formatNumber(metrics.currentRatio, 2)}x`
+                                      : 'N/A'}{' '}
+                                    / Maturity coverage{' '}
                                     {metrics.currentMaturityCoverage
                                       ? `${formatNumber(metrics.currentMaturityCoverage, 2)}x`
                                       : 'N/A'}
@@ -114,7 +136,8 @@ export default async function DocumentsPage() {
                                 ) : null}
                                 {latestAssessment ? (
                                   <div className="mt-2 text-xs text-slate-500">
-                                    Credit {latestAssessment.riskLevel} / score {formatNumber(latestAssessment.score, 0)}
+                                    Credit {latestAssessment.riskLevel} / score{' '}
+                                    {formatNumber(latestAssessment.score, 0)}
                                   </div>
                                 ) : null}
                               </div>
@@ -132,7 +155,8 @@ export default async function DocumentsPage() {
                         </div>
                       ) : null}
                       <div className="mt-3 font-mono text-[11px] uppercase tracking-[0.2em] text-slate-500">
-                        Updated {formatDate(document.updatedAt)} / Hash {document.documentHash.slice(0, 12)}
+                        Updated {formatDate(document.updatedAt)} / Hash{' '}
+                        {document.documentHash.slice(0, 12)}
                       </div>
                     </>
                   );

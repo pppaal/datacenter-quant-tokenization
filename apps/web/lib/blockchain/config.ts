@@ -10,8 +10,7 @@ export type BlockchainConfig = {
   metadataBaseUrl: string;
 };
 
-const MOCK_PRIVATE_KEY: Hex =
-  '0x0000000000000000000000000000000000000000000000000000000000000001';
+const MOCK_PRIVATE_KEY: Hex = '0x0000000000000000000000000000000000000000000000000000000000000001';
 const MOCK_REGISTRY_ADDRESS: Address = '0x000000000000000000000000000000000000dEaD';
 
 function readRequiredEnv(name: string) {
@@ -35,7 +34,11 @@ function normalizeHex(value: string, expectedBytes: number, label: string): Hex 
 }
 
 export function getBlockchainConfig(): BlockchainConfig {
-  const metadataBaseUrl = (process.env.BLOCKCHAIN_METADATA_BASE_URL ?? process.env.APP_BASE_URL ?? 'http://localhost:3000')
+  const metadataBaseUrl = (
+    process.env.BLOCKCHAIN_METADATA_BASE_URL ??
+    process.env.APP_BASE_URL ??
+    'http://localhost:3000'
+  )
     .trim()
     .replace(/\/$/, '');
 
@@ -45,7 +48,8 @@ export function getBlockchainConfig(): BlockchainConfig {
       chainName: process.env.BLOCKCHAIN_CHAIN_NAME?.trim() ?? 'mock-registry',
       rpcUrl: process.env.BLOCKCHAIN_RPC_URL?.trim() ?? 'http://localhost:0',
       registryAddress:
-        (process.env.BLOCKCHAIN_REGISTRY_ADDRESS?.trim() as Address | undefined) ?? MOCK_REGISTRY_ADDRESS,
+        (process.env.BLOCKCHAIN_REGISTRY_ADDRESS?.trim() as Address | undefined) ??
+        MOCK_REGISTRY_ADDRESS,
       privateKey: MOCK_PRIVATE_KEY,
       metadataBaseUrl
     };
@@ -60,8 +64,16 @@ export function getBlockchainConfig(): BlockchainConfig {
     chainId,
     chainName: readRequiredEnv('BLOCKCHAIN_CHAIN_NAME'),
     rpcUrl: readRequiredEnv('BLOCKCHAIN_RPC_URL'),
-    registryAddress: normalizeHex(readRequiredEnv('BLOCKCHAIN_REGISTRY_ADDRESS'), 20, 'BLOCKCHAIN_REGISTRY_ADDRESS') as Address,
-    privateKey: normalizeHex(readRequiredEnv('BLOCKCHAIN_PRIVATE_KEY'), 32, 'BLOCKCHAIN_PRIVATE_KEY'),
+    registryAddress: normalizeHex(
+      readRequiredEnv('BLOCKCHAIN_REGISTRY_ADDRESS'),
+      20,
+      'BLOCKCHAIN_REGISTRY_ADDRESS'
+    ) as Address,
+    privateKey: normalizeHex(
+      readRequiredEnv('BLOCKCHAIN_PRIVATE_KEY'),
+      32,
+      'BLOCKCHAIN_PRIVATE_KEY'
+    ),
     metadataBaseUrl
   };
 }

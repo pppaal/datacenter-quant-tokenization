@@ -37,8 +37,10 @@ function ScenarioCard({
 }) {
   const tone = verdictTone(scenario.verdict);
   const borderClass =
-    tone === 'good' ? 'border-emerald-400/20 bg-emerald-500/[0.04]'
-      : tone === 'warn' ? 'border-rose-400/20 bg-rose-500/[0.04]'
+    tone === 'good'
+      ? 'border-emerald-400/20 bg-emerald-500/[0.04]'
+      : tone === 'warn'
+        ? 'border-rose-400/20 bg-rose-500/[0.04]'
         : 'border-amber-400/20 bg-amber-500/[0.04]';
 
   return (
@@ -55,16 +57,22 @@ function ScenarioCard({
         <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-3">
           <div className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Equity IRR</div>
           <div className="mt-1 text-sm font-semibold text-white">
-            {scenario.stressed.equityIrr !== null ? `${formatNumber(scenario.stressed.equityIrr, 2)}%` : 'N/A'}
+            {scenario.stressed.equityIrr !== null
+              ? `${formatNumber(scenario.stressed.equityIrr, 2)}%`
+              : 'N/A'}
           </div>
-          <div className="text-[11px] text-slate-400">{formatDelta(scenario.equityIrrDeltaPct, 'pp')}</div>
+          <div className="text-[11px] text-slate-400">
+            {formatDelta(scenario.equityIrrDeltaPct, 'pp')}
+          </div>
         </div>
         <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-3">
           <div className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Multiple</div>
           <div className="mt-1 text-sm font-semibold text-white">
             {formatNumber(scenario.stressed.equityMultiple, 2)}x
           </div>
-          <div className="text-[11px] text-slate-400">{formatDelta(scenario.equityMultipleDelta, 'x')}</div>
+          <div className="text-[11px] text-slate-400">
+            {formatDelta(scenario.equityMultipleDelta, 'x')}
+          </div>
         </div>
         <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-3">
           <div className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Worst DSCR</div>
@@ -72,13 +80,19 @@ function ScenarioCard({
             {scenario.worstDscr !== null ? `${formatNumber(scenario.worstDscr, 2)}x` : 'N/A'}
           </div>
           <div className="text-[11px] text-slate-400">
-            {scenario.worstDscr !== null && scenario.worstDscr < 1.0 ? 'Covenant breach' : 'Covenant safe'}
+            {scenario.worstDscr !== null && scenario.worstDscr < 1.0
+              ? 'Covenant breach'
+              : 'Covenant safe'}
           </div>
         </div>
         <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-3">
           <div className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Ending Debt</div>
           <div className="mt-1 text-sm font-semibold text-white">
-            {formatCurrencyFromKrwAtRate(scenario.stressedEndingDebtKrw, displayCurrency, fxRateToKrw)}
+            {formatCurrencyFromKrwAtRate(
+              scenario.stressedEndingDebtKrw,
+              displayCurrency,
+              fxRateToKrw
+            )}
           </div>
         </div>
       </div>
@@ -94,13 +108,21 @@ function ScenarioCard({
       {scenario.lineItemImpacts.length > 0 ? (
         <div className="mt-3 grid gap-2 md:grid-cols-4">
           {scenario.lineItemImpacts.map((item) => (
-            <div key={item.label} className="rounded-2xl border border-white/10 bg-slate-950/35 p-3">
-              <div className="text-[11px] uppercase tracking-[0.16em] text-slate-500">{item.label}</div>
+            <div
+              key={item.label}
+              className="rounded-2xl border border-white/10 bg-slate-950/35 p-3"
+            >
+              <div className="text-[11px] uppercase tracking-[0.16em] text-slate-500">
+                {item.label}
+              </div>
               <div className="mt-1 text-sm text-white">
                 {formatCurrencyFromKrwAtRate(item.stressedKrw, displayCurrency, fxRateToKrw)}
               </div>
-              <div className={`text-[11px] ${item.deltaPct >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
-                {item.deltaPct >= 0 ? '+' : ''}{formatNumber(item.deltaPct, 2)}%
+              <div
+                className={`text-[11px] ${item.deltaPct >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}
+              >
+                {item.deltaPct >= 0 ? '+' : ''}
+                {formatNumber(item.deltaPct, 2)}%
               </div>
             </div>
           ))}
@@ -138,7 +160,9 @@ function FactorAttributionBar({ attribution }: { attribution: MacroFactorAttribu
               <span className="font-medium text-white">{f.factorLabel}</span>
               <span className="text-slate-300">
                 {formatDelta(f.isolatedIrrDeltaPct, 'pp')} ·{' '}
-                <span className="text-slate-500">{formatNumber(f.contributionShareOfTotalDelta, 0)}% share</span>
+                <span className="text-slate-500">
+                  {formatNumber(f.contributionShareOfTotalDelta, 0)}% share
+                </span>
               </span>
             </div>
             <div className="mt-2 h-1.5 w-full rounded-full bg-slate-800">
@@ -195,25 +219,35 @@ export function MacroStressPanel({
         <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-3">
           <div className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Baseline IRR</div>
           <div className="mt-1 text-lg font-semibold text-white">
-            {analysis.baseline.equityIrr !== null ? `${formatNumber(analysis.baseline.equityIrr, 2)}%` : 'N/A'}
+            {analysis.baseline.equityIrr !== null
+              ? `${formatNumber(analysis.baseline.equityIrr, 2)}%`
+              : 'N/A'}
           </div>
         </div>
         <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-3">
-          <div className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Baseline Multiple</div>
+          <div className="text-[11px] uppercase tracking-[0.16em] text-slate-500">
+            Baseline Multiple
+          </div>
           <div className="mt-1 text-lg font-semibold text-white">
             {formatNumber(analysis.baseline.equityMultiple, 2)}x
           </div>
         </div>
         <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-3">
-          <div className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Baseline Cash-on-Cash</div>
+          <div className="text-[11px] uppercase tracking-[0.16em] text-slate-500">
+            Baseline Cash-on-Cash
+          </div>
           <div className="mt-1 text-lg font-semibold text-white">
             {formatNumber(analysis.baseline.averageCashOnCash, 2)}%
           </div>
         </div>
         <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-3">
-          <div className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Baseline Payback</div>
+          <div className="text-[11px] uppercase tracking-[0.16em] text-slate-500">
+            Baseline Payback
+          </div>
           <div className="mt-1 text-lg font-semibold text-white">
-            {analysis.baseline.paybackYear !== null ? `Year ${analysis.baseline.paybackYear}` : 'Beyond horizon'}
+            {analysis.baseline.paybackYear !== null
+              ? `Year ${analysis.baseline.paybackYear}`
+              : 'Beyond horizon'}
           </div>
         </div>
       </div>

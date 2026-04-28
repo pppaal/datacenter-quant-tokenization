@@ -99,7 +99,12 @@ export async function fundDistribution(
 
   let txHash: Hex;
   if (isTokenizationMockMode()) {
-    txHash = buildMockTxHash('createDistribution', distributorAddress, dist.merkleRoot, total.toString());
+    txHash = buildMockTxHash(
+      'createDistribution',
+      distributorAddress,
+      dist.merkleRoot,
+      total.toString()
+    );
   } else {
     const clients = getRegistryChainClients();
     if (clients.config.chainId !== dist.chainId) {
@@ -153,6 +158,8 @@ export async function getAllocationProof(input: {
   const db = input.db ?? prisma;
   const holder = ensureAddress(input.holder, 'holder').toLowerCase();
   return db.tokenDistributionAllocation.findUnique({
-    where: { distributionId_holderAddress: { distributionId: input.distributionId, holderAddress: holder } }
+    where: {
+      distributionId_holderAddress: { distributionId: input.distributionId, holderAddress: holder }
+    }
   });
 }

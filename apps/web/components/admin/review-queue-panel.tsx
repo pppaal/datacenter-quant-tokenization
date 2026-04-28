@@ -26,7 +26,10 @@ export function ReviewQueuePanel({
   title?: string;
   emptyMessage?: string;
 }) {
-  const pendingCount = summaries.reduce((count, summary) => count + summary.pendingEvidenceCount, 0);
+  const pendingCount = summaries.reduce(
+    (count, summary) => count + summary.pendingEvidenceCount,
+    0
+  );
 
   return (
     <Card>
@@ -37,8 +40,8 @@ export function ReviewQueuePanel({
             Approve normalized evidence before it enters the approved feature layer
           </h3>
           <p className="mt-2 max-w-3xl text-sm leading-7 text-slate-400">
-            Review normalized site, legal, lease, and asset-level evidence before valuation, IC material, and
-            readiness packaging rely on it.
+            Review normalized site, legal, lease, and asset-level evidence before valuation, IC
+            material, and readiness packaging rely on it.
           </p>
         </div>
         <Badge>{pendingCount} pending</Badge>
@@ -64,8 +67,8 @@ export function ReviewQueuePanel({
                     <Badge>{summary.assetClassLabel}</Badge>
                   </div>
                   <p className="mt-2 text-sm text-slate-400">
-                    {summary.totals.approved} approved · {summary.totals.pending} pending · {summary.totals.rejected}{' '}
-                    rejected
+                    {summary.totals.approved} approved · {summary.totals.pending} pending ·{' '}
+                    {summary.totals.rejected} rejected
                   </p>
                   {summary.pendingBlockers.length > 0 ? (
                     <div className="mt-3 rounded-2xl border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs leading-6 text-amber-100">
@@ -81,7 +84,10 @@ export function ReviewQueuePanel({
                 <div className="flex flex-col items-start gap-3">
                   <div className="flex flex-wrap gap-2">
                     {summary.disciplines.map((discipline) => (
-                      <Badge key={discipline.key} tone={discipline.pendingCount > 0 ? 'warn' : 'good'}>
+                      <Badge
+                        key={discipline.key}
+                        tone={discipline.pendingCount > 0 ? 'warn' : 'good'}
+                      >
                         {discipline.label}: {discipline.pendingCount} pending
                       </Badge>
                     ))}
@@ -99,13 +105,16 @@ export function ReviewQueuePanel({
                 {summary.disciplines
                   .filter((discipline) => discipline.items.length > 0)
                   .map((discipline) => (
-                    <div key={discipline.key} className="rounded-[20px] border border-white/10 bg-slate-950/25 p-4">
+                    <div
+                      key={discipline.key}
+                      className="rounded-[20px] border border-white/10 bg-slate-950/25 p-4"
+                    >
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <div>
                           <div className="text-sm font-semibold text-white">{discipline.label}</div>
                           <div className="mt-1 text-xs text-slate-500">
-                            {discipline.approvedCount} approved · {discipline.pendingCount} pending ·{' '}
-                            {discipline.rejectedCount} rejected
+                            {discipline.approvedCount} approved · {discipline.pendingCount} pending
+                            · {discipline.rejectedCount} rejected
                           </div>
                         </div>
                       </div>
@@ -120,13 +129,19 @@ export function ReviewQueuePanel({
                             <div className="flex flex-wrap items-start justify-between gap-3">
                               <div className="space-y-2">
                                 <div className="flex flex-wrap items-center gap-2">
-                                  <div className="text-sm font-semibold text-white">{item.title}</div>
-                                  <Badge tone={toneForStatus(item.reviewStatus)}>{item.reviewStatus}</Badge>
+                                  <div className="text-sm font-semibold text-white">
+                                    {item.title}
+                                  </div>
+                                  <Badge tone={toneForStatus(item.reviewStatus)}>
+                                    {item.reviewStatus}
+                                  </Badge>
                                 </div>
                                 <div className="text-sm text-slate-400">{item.detail}</div>
                                 <div className="text-xs text-slate-500">
                                   Updated {formatDate(item.updatedAt)}
-                                  {item.sourceUpdatedAt ? ` · source ${formatDate(item.sourceUpdatedAt)}` : ''}
+                                  {item.sourceUpdatedAt
+                                    ? ` · source ${formatDate(item.sourceUpdatedAt)}`
+                                    : ''}
                                 </div>
                                 {item.reviewNotes ? (
                                   <div className="rounded-2xl border border-white/10 bg-slate-950/30 px-3 py-2 text-xs text-slate-400">

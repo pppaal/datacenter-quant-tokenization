@@ -1,6 +1,10 @@
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { convertFromKrwAtRate, formatCurrencyFromKrwAtRate, type SupportedCurrency } from '@/lib/finance/currency';
+import {
+  convertFromKrwAtRate,
+  formatCurrencyFromKrwAtRate,
+  type SupportedCurrency
+} from '@/lib/finance/currency';
 import { formatNumber, formatPercent, toSentenceCase } from '@/lib/utils';
 import { buildDebtBreakdown } from '@/lib/valuation/debt-breakdown';
 
@@ -57,19 +61,35 @@ function buildValueStack(
   return [
     {
       label: 'Replacement Floor',
-      value: formatCurrencyFromKrwAtRate(pickNumber(assumptions, 'replacementCostFloorKrw'), displayCurrency, fxRateToKrw)
+      value: formatCurrencyFromKrwAtRate(
+        pickNumber(assumptions, 'replacementCostFloorKrw'),
+        displayCurrency,
+        fxRateToKrw
+      )
     },
     {
       label: 'Income Approach',
-      value: formatCurrencyFromKrwAtRate(pickNumber(assumptions, 'incomeApproachValueKrw'), displayCurrency, fxRateToKrw)
+      value: formatCurrencyFromKrwAtRate(
+        pickNumber(assumptions, 'incomeApproachValueKrw'),
+        displayCurrency,
+        fxRateToKrw
+      )
     },
     {
       label: 'DCF Value',
-      value: formatCurrencyFromKrwAtRate(pickNumber(assumptions, 'dcfValueKrw'), displayCurrency, fxRateToKrw)
+      value: formatCurrencyFromKrwAtRate(
+        pickNumber(assumptions, 'dcfValueKrw'),
+        displayCurrency,
+        fxRateToKrw
+      )
     },
     {
       label: 'Weighted Value',
-      value: formatCurrencyFromKrwAtRate(pickNumber(assumptions, 'weightedValueKrw'), displayCurrency, fxRateToKrw),
+      value: formatCurrencyFromKrwAtRate(
+        pickNumber(assumptions, 'weightedValueKrw'),
+        displayCurrency,
+        fxRateToKrw
+      ),
       tone: 'good'
     }
   ];
@@ -97,7 +117,10 @@ function buildOperatingInputs(
     },
     {
       label: 'Monthly Rate / kW',
-      value: monthlyRate !== null ? `${formatCurrencyFromKrwAtRate(monthlyRate, displayCurrency, fxRateToKrw)} / kW` : 'N/A'
+      value:
+        monthlyRate !== null
+          ? `${formatCurrencyFromKrwAtRate(monthlyRate, displayCurrency, fxRateToKrw)} / kW`
+          : 'N/A'
     },
     {
       label: 'Power Tariff',
@@ -216,19 +239,54 @@ export function ValuationBreakdown({
           <div className="eyebrow">Debt Stack Impact</div>
           <div className="flex flex-wrap gap-2">
             <Badge>{formatNumber(debtBreakdown.facilities.length, 0)} facilities</Badge>
-            <Badge tone={debtBreakdown.baseDscr !== null && debtBreakdown.baseDscr >= 1.2 ? 'good' : 'warn'}>
-              Base DSCR {debtBreakdown.baseDscr !== null ? `${formatNumber(debtBreakdown.baseDscr, 2)}x` : 'N/A'}
+            <Badge
+              tone={
+                debtBreakdown.baseDscr !== null && debtBreakdown.baseDscr >= 1.2 ? 'good' : 'warn'
+              }
+            >
+              Base DSCR{' '}
+              {debtBreakdown.baseDscr !== null
+                ? `${formatNumber(debtBreakdown.baseDscr, 2)}x`
+                : 'N/A'}
             </Badge>
           </div>
         </div>
 
         <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
           {[
-            ['Total Commitment', formatCurrencyFromKrwAtRate(debtBreakdown.totalCommitmentKrw, displayCurrency, fxRateToKrw)],
-            ['Drawn / Scheduled', formatCurrencyFromKrwAtRate(debtBreakdown.totalDrawnAmountKrw, displayCurrency, fxRateToKrw)],
+            [
+              'Total Commitment',
+              formatCurrencyFromKrwAtRate(
+                debtBreakdown.totalCommitmentKrw,
+                displayCurrency,
+                fxRateToKrw
+              )
+            ],
+            [
+              'Drawn / Scheduled',
+              formatCurrencyFromKrwAtRate(
+                debtBreakdown.totalDrawnAmountKrw,
+                displayCurrency,
+                fxRateToKrw
+              )
+            ],
             ['Weighted Rate', formatPercent(debtBreakdown.weightedInterestRatePct, 2)],
-            ['Reserve Requirement', formatCurrencyFromKrwAtRate(debtBreakdown.reserveRequirementKrw, displayCurrency, fxRateToKrw)],
-            ['Ending Balance', formatCurrencyFromKrwAtRate(debtBreakdown.endingDebtBalanceKrw, displayCurrency, fxRateToKrw)]
+            [
+              'Reserve Requirement',
+              formatCurrencyFromKrwAtRate(
+                debtBreakdown.reserveRequirementKrw,
+                displayCurrency,
+                fxRateToKrw
+              )
+            ],
+            [
+              'Ending Balance',
+              formatCurrencyFromKrwAtRate(
+                debtBreakdown.endingDebtBalanceKrw,
+                displayCurrency,
+                fxRateToKrw
+              )
+            ]
           ].map(([label, value]) => (
             <div key={label} className="rounded-2xl border border-border bg-slate-950/40 p-4">
               <div className="text-xs uppercase tracking-[0.18em] text-slate-500">{label}</div>
@@ -240,7 +298,10 @@ export function ValuationBreakdown({
         {debtBreakdown.facilities.length > 0 ? (
           <div className="mt-4 space-y-3">
             {debtBreakdown.facilities.map((facility) => (
-              <div key={`${facility.label}-${facility.facilityTypeLabel}`} className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+              <div
+                key={`${facility.label}-${facility.facilityTypeLabel}`}
+                className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+              >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <div className="text-sm font-semibold text-white">{facility.label}</div>
@@ -256,33 +317,63 @@ export function ValuationBreakdown({
 
                 <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
                   <div className="rounded-2xl border border-border bg-slate-950/40 p-3">
-                    <div className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Commitment</div>
+                    <div className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                      Commitment
+                    </div>
                     <div className="mt-2 text-sm text-white">
-                      {formatCurrencyFromKrwAtRate(facility.commitmentKrw, displayCurrency, fxRateToKrw)}
+                      {formatCurrencyFromKrwAtRate(
+                        facility.commitmentKrw,
+                        displayCurrency,
+                        fxRateToKrw
+                      )}
                     </div>
                   </div>
                   <div className="rounded-2xl border border-border bg-slate-950/40 p-3">
-                    <div className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Drawn / Scheduled</div>
+                    <div className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                      Drawn / Scheduled
+                    </div>
                     <div className="mt-2 text-sm text-white">
-                      {formatCurrencyFromKrwAtRate(facility.drawnAmountKrw, displayCurrency, fxRateToKrw)}
+                      {formatCurrencyFromKrwAtRate(
+                        facility.drawnAmountKrw,
+                        displayCurrency,
+                        fxRateToKrw
+                      )}
                     </div>
                   </div>
                   <div className="rounded-2xl border border-border bg-slate-950/40 p-3">
-                    <div className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Rate Contribution</div>
-                    <div className="mt-2 text-sm text-white">{formatPercent(facility.rateContributionPct, 2)}</div>
-                  </div>
-                  <div className="rounded-2xl border border-border bg-slate-950/40 p-3">
-                    <div className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Reserve Load</div>
+                    <div className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                      Rate Contribution
+                    </div>
                     <div className="mt-2 text-sm text-white">
-                      {formatCurrencyFromKrwAtRate(facility.reserveContributionKrw, displayCurrency, fxRateToKrw)}
+                      {formatPercent(facility.rateContributionPct, 2)}
                     </div>
                   </div>
                   <div className="rounded-2xl border border-border bg-slate-950/40 p-3">
-                    <div className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Ending Balance Proxy</div>
-                    <div className="mt-2 text-sm text-white">
-                      {formatCurrencyFromKrwAtRate(facility.endingBalanceContributionKrw, displayCurrency, fxRateToKrw)}
+                    <div className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                      Reserve Load
                     </div>
-                    <div className="mt-1 text-xs text-slate-500">{facility.drawCount} draws in schedule</div>
+                    <div className="mt-2 text-sm text-white">
+                      {formatCurrencyFromKrwAtRate(
+                        facility.reserveContributionKrw,
+                        displayCurrency,
+                        fxRateToKrw
+                      )}
+                    </div>
+                  </div>
+                  <div className="rounded-2xl border border-border bg-slate-950/40 p-3">
+                    <div className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                      Ending Balance Proxy
+                    </div>
+                    <div className="mt-2 text-sm text-white">
+                      {formatCurrencyFromKrwAtRate(
+                        facility.endingBalanceContributionKrw,
+                        displayCurrency,
+                        fxRateToKrw
+                      )}
+                    </div>
+                    <div className="mt-1 text-xs text-slate-500">
+                      {facility.drawCount} draws in schedule
+                    </div>
                   </div>
                 </div>
               </div>
@@ -290,7 +381,8 @@ export function ValuationBreakdown({
           </div>
         ) : (
           <div className="mt-4 rounded-[22px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
-            No stored debt facilities yet. The current valuation is likely leaning on the synthetic underwriting facility.
+            No stored debt facilities yet. The current valuation is likely leaning on the synthetic
+            underwriting facility.
           </div>
         )}
       </Card>

@@ -208,9 +208,15 @@ test('quant macro consumer builds cross-asset signals from persisted factors', (
   assert.equal(signals.length, 1);
   assert.equal(signals[0]?.market, 'US');
   assert.equal(signals[0]?.signals.find((signal) => signal.key === 'risk')?.stance, 'RISK_ON');
-  assert.equal(signals[0]?.signals.find((signal) => signal.key === 'duration')?.stance, 'LONG_DURATION');
+  assert.equal(
+    signals[0]?.signals.find((signal) => signal.key === 'duration')?.stance,
+    'LONG_DURATION'
+  );
   assert.equal(signals[0]?.signals.find((signal) => signal.key === 'credit')?.stance, 'OVERWEIGHT');
-  assert.equal(signals[0]?.signals.find((signal) => signal.key === 'realAssets')?.stance, 'OVERWEIGHT');
+  assert.equal(
+    signals[0]?.signals.find((signal) => signal.key === 'realAssets')?.stance,
+    'OVERWEIGHT'
+  );
 
   const allocation = buildQuantAllocationView(signals);
   assert.equal(allocation.length, 1);
@@ -219,8 +225,12 @@ test('quant macro consumer builds cross-asset signals from persisted factors', (
   assert.ok((allocation[0]?.score ?? 0) > 0.75);
 
   const assetClassAllocation = buildQuantAssetClassAllocationView(signals);
-  const office = assetClassAllocation.find((item) => item.market === 'US' && item.assetClass === 'OFFICE');
-  const dataCenter = assetClassAllocation.find((item) => item.market === 'US' && item.assetClass === 'DATA_CENTER');
+  const office = assetClassAllocation.find(
+    (item) => item.market === 'US' && item.assetClass === 'OFFICE'
+  );
+  const dataCenter = assetClassAllocation.find(
+    (item) => item.market === 'US' && item.assetClass === 'DATA_CENTER'
+  );
 
   assert.ok(office);
   assert.ok(dataCenter);

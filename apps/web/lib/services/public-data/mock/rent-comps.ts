@@ -11,17 +11,19 @@ import type {
 } from '@/lib/services/public-data/types';
 
 // Rough tier lookup via lat/lng bounding boxes for demo districts.
-function submarketTier(loc: LatLng): 'TIER_1_GANGNAM' | 'TIER_1_CBD' | 'TIER_2_SEOUL' | 'TIER_3_METRO' | 'TIER_4_RURAL' {
+function submarketTier(
+  loc: LatLng
+): 'TIER_1_GANGNAM' | 'TIER_1_CBD' | 'TIER_2_SEOUL' | 'TIER_3_METRO' | 'TIER_4_RURAL' {
   const { latitude: lat, longitude: lng } = loc;
   // Gangnam core (Apgujeong, Cheongdam, Sinsa, Yeoksam)
   if (lat >= 37.51 && lat <= 37.54 && lng >= 127.01 && lng <= 127.07) return 'TIER_1_GANGNAM';
   // CBD (Yeouido, Gwanghwamun, Jongno, Jamsil)
   if (lat >= 37.52 && lat <= 37.58 && lng >= 126.92 && lng <= 126.99) return 'TIER_1_CBD';
-  if (lat >= 37.50 && lat <= 37.52 && lng >= 127.08 && lng <= 127.12) return 'TIER_1_CBD'; // Jamsil
+  if (lat >= 37.5 && lat <= 37.52 && lng >= 127.08 && lng <= 127.12) return 'TIER_1_CBD'; // Jamsil
   // Seoul rest
-  if (lat >= 37.45 && lat <= 37.65 && lng >= 126.80 && lng <= 127.20) return 'TIER_2_SEOUL';
+  if (lat >= 37.45 && lat <= 37.65 && lng >= 126.8 && lng <= 127.2) return 'TIER_2_SEOUL';
   // Metro (Gyeonggi, Incheon)
-  if (lat >= 36.80 && lat <= 37.80 && lng >= 126.40 && lng <= 127.80) return 'TIER_3_METRO';
+  if (lat >= 36.8 && lat <= 37.8 && lng >= 126.4 && lng <= 127.8) return 'TIER_3_METRO';
   return 'TIER_4_RURAL';
 }
 
@@ -40,29 +42,64 @@ type CompTemplate = {
 
 const TIER_COMPS: Record<ReturnType<typeof submarketTier>, CompTemplate> = {
   TIER_1_GANGNAM: {
-    rentOfficeKrwPerSqm: 145_000, rentRetailKrwPerSqm: 310_000, rentLogisticsKrwPerSqm: 28_000,
-    rentMultifamilyKrwPerSqm: 95_000, rentDataCenterKrwPerKw: 280_000,
-    capOffice: 4.6, capRetail: 4.2, capLogistics: 5.8, capMultifamily: 3.9, capDataCenter: 5.8
+    rentOfficeKrwPerSqm: 145_000,
+    rentRetailKrwPerSqm: 310_000,
+    rentLogisticsKrwPerSqm: 28_000,
+    rentMultifamilyKrwPerSqm: 95_000,
+    rentDataCenterKrwPerKw: 280_000,
+    capOffice: 4.6,
+    capRetail: 4.2,
+    capLogistics: 5.8,
+    capMultifamily: 3.9,
+    capDataCenter: 5.8
   },
   TIER_1_CBD: {
-    rentOfficeKrwPerSqm: 132_000, rentRetailKrwPerSqm: 220_000, rentLogisticsKrwPerSqm: 26_000,
-    rentMultifamilyKrwPerSqm: 82_000, rentDataCenterKrwPerKw: 260_000,
-    capOffice: 4.8, capRetail: 4.5, capLogistics: 5.9, capMultifamily: 4.1, capDataCenter: 6.0
+    rentOfficeKrwPerSqm: 132_000,
+    rentRetailKrwPerSqm: 220_000,
+    rentLogisticsKrwPerSqm: 26_000,
+    rentMultifamilyKrwPerSqm: 82_000,
+    rentDataCenterKrwPerKw: 260_000,
+    capOffice: 4.8,
+    capRetail: 4.5,
+    capLogistics: 5.9,
+    capMultifamily: 4.1,
+    capDataCenter: 6.0
   },
   TIER_2_SEOUL: {
-    rentOfficeKrwPerSqm: 95_000, rentRetailKrwPerSqm: 140_000, rentLogisticsKrwPerSqm: 22_000,
-    rentMultifamilyKrwPerSqm: 62_000, rentDataCenterKrwPerKw: 220_000,
-    capOffice: 5.4, capRetail: 5.2, capLogistics: 6.2, capMultifamily: 4.5, capDataCenter: 6.3
+    rentOfficeKrwPerSqm: 95_000,
+    rentRetailKrwPerSqm: 140_000,
+    rentLogisticsKrwPerSqm: 22_000,
+    rentMultifamilyKrwPerSqm: 62_000,
+    rentDataCenterKrwPerKw: 220_000,
+    capOffice: 5.4,
+    capRetail: 5.2,
+    capLogistics: 6.2,
+    capMultifamily: 4.5,
+    capDataCenter: 6.3
   },
   TIER_3_METRO: {
-    rentOfficeKrwPerSqm: 58_000, rentRetailKrwPerSqm: 85_000, rentLogisticsKrwPerSqm: 14_000,
-    rentMultifamilyKrwPerSqm: 38_000, rentDataCenterKrwPerKw: 180_000,
-    capOffice: 6.2, capRetail: 6.0, capLogistics: 6.5, capMultifamily: 5.0, capDataCenter: 6.8
+    rentOfficeKrwPerSqm: 58_000,
+    rentRetailKrwPerSqm: 85_000,
+    rentLogisticsKrwPerSqm: 14_000,
+    rentMultifamilyKrwPerSqm: 38_000,
+    rentDataCenterKrwPerKw: 180_000,
+    capOffice: 6.2,
+    capRetail: 6.0,
+    capLogistics: 6.5,
+    capMultifamily: 5.0,
+    capDataCenter: 6.8
   },
   TIER_4_RURAL: {
-    rentOfficeKrwPerSqm: 32_000, rentRetailKrwPerSqm: 48_000, rentLogisticsKrwPerSqm: 9_000,
-    rentMultifamilyKrwPerSqm: 22_000, rentDataCenterKrwPerKw: 150_000,
-    capOffice: 7.5, capRetail: 7.2, capLogistics: 7.0, capMultifamily: 5.8, capDataCenter: 7.5
+    rentOfficeKrwPerSqm: 32_000,
+    rentRetailKrwPerSqm: 48_000,
+    rentLogisticsKrwPerSqm: 9_000,
+    rentMultifamilyKrwPerSqm: 22_000,
+    rentDataCenterKrwPerKw: 150_000,
+    capOffice: 7.5,
+    capRetail: 7.2,
+    capLogistics: 7.0,
+    capMultifamily: 5.8,
+    capDataCenter: 7.5
   }
 };
 

@@ -4,7 +4,10 @@ import { recordAuditEvent } from '@/lib/services/audit';
 import { runResearchWorkspaceSync } from '@/lib/services/research/workspace';
 
 function isAuthorized(request: Request, expectedToken: string) {
-  const bearer = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '').trim();
+  const bearer = request.headers
+    .get('authorization')
+    ?.replace(/^Bearer\s+/i, '')
+    .trim();
   const headerToken = request.headers.get('x-ops-cron-token')?.trim();
   return bearer === expectedToken || headerToken === expectedToken;
 }

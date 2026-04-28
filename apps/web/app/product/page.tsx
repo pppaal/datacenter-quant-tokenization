@@ -5,23 +5,19 @@ import { Card } from '@/components/ui/card';
 const sections = [
   {
     title: 'Research Intake And Deal Dossier',
-    body:
-      'Capture sponsor, location, market, pricing, operating assumptions, financing context, and live execution data in one structured investment record.'
+    body: 'Capture sponsor, location, market, pricing, operating assumptions, financing context, and live execution data in one structured investment record.'
   },
   {
     title: 'Evidence Review And Provenance',
-    body:
-      'Pull geospatial, permit, utility, market, macro, and document-derived evidence into the same record while tracking freshness, fallback usage, provenance, and review state.'
+    body: 'Pull geospatial, permit, utility, market, macro, and document-derived evidence into the same record while tracking freshness, fallback usage, provenance, and review state.'
   },
   {
     title: 'Underwriting, IC, And Readiness',
-    body:
-      'Run valuation, downside, diligence, and committee workflows, then package review-gated outputs with deterministic readiness metadata.'
+    body: 'Run valuation, downside, diligence, and committee workflows, then package review-gated outputs with deterministic readiness metadata.'
   },
   {
     title: 'Portfolio And Capital Shell',
-    body:
-      'Track held-asset KPI history, covenant tests, capex plans, vehicles, investors, commitments, calls, distributions, and reporting shells in the same operating system.'
+    body: 'Track held-asset KPI history, covenant tests, capex plans, vehicles, investors, commitments, calls, distributions, and reporting shells in the same operating system.'
   }
 ];
 
@@ -42,17 +38,20 @@ export default function ProductOverviewPage() {
             through one research, underwriting, and portfolio workflow.
           </h1>
           <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-300">
-            Nexus Seoul is an AI-native operating system for Korean real-estate investment teams. Open a case,
-            enrich the record, review evidence, underwrite the opportunity, manage the deal, and carry the asset
-            into portfolio and capital workflows from the same application.
+            Nexus Seoul is an AI-native operating system for Korean real-estate investment teams.
+            Open a case, enrich the record, review evidence, underwrite the opportunity, manage the
+            deal, and carry the asset into portfolio and capital workflows from the same
+            application.
           </p>
           <p className="mt-4 max-w-3xl text-base leading-7 text-slate-400">
-            DATA_CENTER remains one vertical pack, OFFICE is the first full non-data-center pack, and
-            INDUSTRIAL / LOGISTICS is the next native playbook on the same review-gated evidence stack.
+            DATA_CENTER remains one vertical pack, OFFICE is the first full non-data-center pack,
+            and INDUSTRIAL / LOGISTICS is the next native playbook on the same review-gated evidence
+            stack.
           </p>
           <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-500">
-            The blockchain layer remains registry-only: document hashes, registry ids, and packet metadata can be
-            anchored, while evidence, extracted text, valuations, and workflows stay offchain.
+            The blockchain layer remains registry-only: document hashes, registry ids, and packet
+            metadata can be anchored, while evidence, extracted text, valuations, and workflows stay
+            offchain.
           </p>
         </div>
       </section>
@@ -61,9 +60,10 @@ export default function ProductOverviewPage() {
         <div className="mb-6 max-w-3xl">
           <div className="eyebrow">Why It Matters</div>
           <p className="mt-3 text-sm leading-7 text-slate-400">
-            The product combines research, underwriting, execution, portfolio operations, and capital shell data in
-            one operating system. Teams do not need to split asset intake, diligence, IC material, portfolio
-            tracking, and investor reporting across separate tools.
+            The product combines research, underwriting, execution, portfolio operations, and
+            capital shell data in one operating system. Teams do not need to split asset intake,
+            diligence, IC material, portfolio tracking, and investor reporting across separate
+            tools.
           </p>
         </div>
         <div className="grid gap-5 lg:grid-cols-2">

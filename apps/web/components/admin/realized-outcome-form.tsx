@@ -8,7 +8,10 @@ import type { SupportedCurrency } from '@/lib/finance/currency';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { realizedOutcomeSchema, type RealizedOutcomeInput } from '@/lib/validations/realized-outcome';
+import {
+  realizedOutcomeSchema,
+  type RealizedOutcomeInput
+} from '@/lib/validations/realized-outcome';
 
 const numericFields: Array<keyof RealizedOutcomeInput> = [
   'occupancyPct',
@@ -101,19 +104,23 @@ export function RealizedOutcomeForm({
       <input type="hidden" {...form.register('inputCurrency')} />
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {([
-          'observationDate',
-          'occupancyPct',
-          'noiKrw',
-          'rentGrowthPct',
-          'valuationKrw',
-          'debtServiceCoverage',
-          'exitCapRatePct'
-        ] as Array<keyof RealizedOutcomeInput>).map((key) => (
+        {(
+          [
+            'observationDate',
+            'occupancyPct',
+            'noiKrw',
+            'rentGrowthPct',
+            'valuationKrw',
+            'debtServiceCoverage',
+            'exitCapRatePct'
+          ] as Array<keyof RealizedOutcomeInput>
+        ).map((key) => (
           <label key={key} className="space-y-2">
             <span className="fine-print">{getLabel(key, inputCurrency)}</span>
             <Input
-              type={key === 'observationDate' ? 'date' : numericFields.includes(key) ? 'number' : 'text'}
+              type={
+                key === 'observationDate' ? 'date' : numericFields.includes(key) ? 'number' : 'text'
+              }
               step={getStep(key)}
               {...form.register(key)}
             />
@@ -132,8 +139,9 @@ export function RealizedOutcomeForm({
 
       <div className="flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-4">
         <p className="max-w-2xl text-sm text-slate-400">
-          Capture actual post-underwriting outcomes so the macro and forecast layers can be checked against realized
-          occupancy, value, and DSCR. Monetary inputs are entered in {inputCurrency} and normalized to KRW internally.
+          Capture actual post-underwriting outcomes so the macro and forecast layers can be checked
+          against realized occupancy, value, and DSCR. Monetary inputs are entered in{' '}
+          {inputCurrency} and normalized to KRW internally.
         </p>
         <div className="flex items-center gap-3">
           {errorMessage ? <span className="text-sm text-rose-300">{errorMessage}</span> : null}

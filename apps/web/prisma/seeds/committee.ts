@@ -112,7 +112,8 @@ export async function seedCommitteeGovernance(prisma: PrismaClient): Promise<voi
         reviewPacketFingerprint: 'review-gangseo-2026q2',
         decisionSummary:
           'Conditional approval pending final utility allocation confirmation and lender-side diligence closeout.',
-        followUpSummary: 'Track utility allocation letter and close lender diligence package before release.'
+        followUpSummary:
+          'Track utility allocation letter and close lender diligence package before release.'
       }
     });
 

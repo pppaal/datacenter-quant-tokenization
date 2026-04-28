@@ -30,10 +30,12 @@ export default async function DistributionsPage() {
     <div className="space-y-6">
       <div>
         <div className="eyebrow">Distributions</div>
-        <h2 className="mt-2 text-3xl font-semibold text-white">Dividend &amp; coupon distributions</h2>
+        <h2 className="mt-2 text-3xl font-semibold text-white">
+          Dividend &amp; coupon distributions
+        </h2>
         <p className="mt-2 text-sm text-slate-400">
-          Pull-based payouts via on-chain DividendDistributor. Operators draft a distribution from
-          a balance snapshot, fund it on-chain, and serve per-holder proofs from
+          Pull-based payouts via on-chain DividendDistributor. Operators draft a distribution from a
+          balance snapshot, fund it on-chain, and serve per-holder proofs from
           <code className="ml-1 rounded bg-white/5 px-1.5 py-0.5">
             /api/tokenization/distributions/&lt;id&gt;/proofs/&lt;holder&gt;
           </code>
@@ -66,7 +68,8 @@ export default async function DistributionsPage() {
                       </span>
                     </div>
                     <div className="mt-1 text-xs text-slate-500">
-                      distributor {shortenHash(d.distributorAddress)} / quote {shortenHash(d.quoteAssetAddress)}
+                      distributor {shortenHash(d.distributorAddress)} / quote{' '}
+                      {shortenHash(d.quoteAssetAddress)}
                     </div>
                   </div>
                   <Badge tone={tone(d.status)}>{d.status}</Badge>

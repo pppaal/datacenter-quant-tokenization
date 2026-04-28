@@ -54,7 +54,10 @@ test('micro data update upserts energy and permit snapshots and creates a primar
   assert.equal(capturedUpdate.data.energySnapshot.upsert.create.utilityName, 'KEPCO');
   assert.equal(capturedUpdate.data.energySnapshot.upsert.create.sourceStatus, SourceStatus.MANUAL);
   assert.equal(capturedUpdate.data.energySnapshot.upsert.create.reviewStatus, ReviewStatus.PENDING);
-  assert.equal(capturedUpdate.data.permitSnapshot.upsert.create.permitStage, 'Power allocation review');
+  assert.equal(
+    capturedUpdate.data.permitSnapshot.upsert.create.permitStage,
+    'Power allocation review'
+  );
   assert.equal(capturedUpdate.data.permitSnapshot.upsert.create.reviewStatus, ReviewStatus.PENDING);
   assert.equal(capturedUpdate.data.leases.create.tenantName, 'Anchor Cloud Co.');
   assert.equal(capturedUpdate.data.leases.create.status, LeaseStatus.SIGNED);
@@ -79,7 +82,8 @@ test('micro data update creates legal ownership, encumbrance, and planning recor
       planningConstraintType: 'Access easement',
       planningConstraintTitle: 'Shared ingress corridor',
       planningConstraintSeverity: 'Medium',
-      planningConstraintDescription: 'Road widening coordination remains open with the local authority.'
+      planningConstraintDescription:
+        'Road widening coordination remains open with the local authority.'
     },
     {
       db: {

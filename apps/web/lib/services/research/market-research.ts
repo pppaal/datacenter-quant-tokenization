@@ -79,8 +79,10 @@ function scoreIndicatorForPlaybook(indicatorKey: string, playbookIndicators: str
     if (normalizedKey.includes(normalizedIndicator)) return score + 4;
     if (normalizedIndicator.includes('rent') && normalizedKey.includes('rent')) return score + 3;
     if (normalizedIndicator.includes('cap') && normalizedKey.includes('cap')) return score + 3;
-    if (normalizedIndicator.includes('vacancy') && normalizedKey.includes('vacancy')) return score + 3;
-    if (normalizedIndicator.includes('transaction') && normalizedKey.includes('transaction')) return score + 3;
+    if (normalizedIndicator.includes('vacancy') && normalizedKey.includes('vacancy'))
+      return score + 3;
+    if (normalizedIndicator.includes('transaction') && normalizedKey.includes('transaction'))
+      return score + 3;
     if (normalizedIndicator.includes('land') && normalizedKey.includes('land')) return score + 3;
     return score;
   }, 0);
@@ -135,7 +137,9 @@ export function buildMarketResearchSummary(asset: MarketResearchAsset): MarketRe
     );
   }
   if (pipelineCount > 0) {
-    thesisParts.push(`${pipelineCount} pipeline project(s) are also tracked for forward supply context.`);
+    thesisParts.push(
+      `${pipelineCount} pipeline project(s) are also tracked for forward supply context.`
+    );
   }
   if (asset.marketSnapshot?.marketNotes) {
     thesisParts.push(asset.marketSnapshot.marketNotes);

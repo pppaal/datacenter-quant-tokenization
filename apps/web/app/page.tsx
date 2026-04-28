@@ -5,10 +5,7 @@ import { SiteNav } from '@/components/marketing/site-nav';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import {
-  formatCurrencyFromKrwAtRate,
-  resolveDisplayCurrency
-} from '@/lib/finance/currency';
+import { formatCurrencyFromKrwAtRate, resolveDisplayCurrency } from '@/lib/finance/currency';
 import { getLandingData } from '@/lib/services/dashboard';
 import { getFxRateMap } from '@/lib/services/fx';
 import { formatNumber, formatPercent } from '@/lib/utils';
@@ -41,19 +38,23 @@ const workflow = [
 const outputs = [
   {
     label: 'Valuation Surface',
-    detail: 'Base case value, downside, approved evidence coverage, and scenario dispersion in one investment view.'
+    detail:
+      'Base case value, downside, approved evidence coverage, and scenario dispersion in one investment view.'
   },
   {
     label: 'Research Dossier',
-    detail: 'Macro thesis, market indicators, comps, permit context, and approved micro evidence tied to the same asset record.'
+    detail:
+      'Macro thesis, market indicators, comps, permit context, and approved micro evidence tied to the same asset record.'
   },
   {
     label: 'IC And DD Output',
-    detail: 'Committee memo, DD checklist, and risk memo grounded in approved evidence and current valuation state.'
+    detail:
+      'Committee memo, DD checklist, and risk memo grounded in approved evidence and current valuation state.'
   },
   {
     label: 'Execution Trail',
-    detail: 'Deals, document hashes, review packets, and registry-only anchor references linked back to each opportunity.'
+    detail:
+      'Deals, document hashes, review packets, and registry-only anchor references linked back to each opportunity.'
   }
 ];
 
@@ -77,7 +78,8 @@ export default async function LandingPage() {
     (total, asset) => total + (asset.rentableAreaSqm ?? asset.grossFloorAreaSqm ?? 0),
     0
   );
-  const latestBaseValue = assets[0]?.valuations[0]?.baseCaseValueKrw ?? assets[0]?.currentValuationKrw ?? null;
+  const latestBaseValue =
+    assets[0]?.valuations[0]?.baseCaseValueKrw ?? assets[0]?.currentValuationKrw ?? null;
   const latestBaseValueCurrency = assets[0]
     ? resolveDisplayCurrency(assets[0].address?.country ?? assets[0].market)
     : 'KRW';
@@ -105,16 +107,19 @@ export default async function LandingPage() {
                   from research through portfolio management.
                 </h1>
                 <p className="max-w-3xl text-lg leading-8 text-slate-300">
-                  Run research, review-gated underwriting, deal execution, portfolio operations, and capital-formation
-                  workflows in one operator system built for Korean real-estate investing.
+                  Run research, review-gated underwriting, deal execution, portfolio operations, and
+                  capital-formation workflows in one operator system built for Korean real-estate
+                  investing.
                 </p>
                 <p className="max-w-3xl text-base leading-7 text-slate-400">
-                  DATA_CENTER remains one vertical pack, OFFICE is the first full non-data-center pack, and
-                  INDUSTRIAL / LOGISTICS is the next native playbook on the same review-gated evidence model.
+                  DATA_CENTER remains one vertical pack, OFFICE is the first full non-data-center
+                  pack, and INDUSTRIAL / LOGISTICS is the next native playbook on the same
+                  review-gated evidence model.
                 </p>
                 <p className="max-w-3xl text-sm leading-7 text-slate-500">
-                  Files, extracted text, valuation logic, and workflows remain offchain. Only registry identifiers,
-                  document hashes, and packet metadata are anchorable onchain under the registry-only model.
+                  Files, extracted text, valuation logic, and workflows remain offchain. Only
+                  registry identifiers, document hashes, and packet metadata are anchorable onchain
+                  under the registry-only model.
                 </p>
               </div>
 
@@ -151,7 +156,10 @@ export default async function LandingPage() {
               <div className="eyebrow">What You Get</div>
               <div className="mt-4 grid gap-4">
                 {outputs.map((item) => (
-                  <div key={item.label} className="rounded-[24px] border border-white/10 bg-slate-950/45 p-5">
+                  <div
+                    key={item.label}
+                    className="rounded-[24px] border border-white/10 bg-slate-950/45 p-5"
+                  >
                     <div className="fine-print">{item.label}</div>
                     <p className="mt-3 text-sm leading-7 text-slate-300">{item.detail}</p>
                   </div>
@@ -163,7 +171,10 @@ export default async function LandingPage() {
               <div className="eyebrow">Workflow</div>
               <div className="mt-4 grid gap-3">
                 {workflow.map((item) => (
-                  <div key={item.step} className="flex gap-4 rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+                  <div
+                    key={item.step}
+                    className="flex gap-4 rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+                  >
                     <div className="font-mono text-sm text-accent">{item.step}</div>
                     <div>
                       <div className="text-base font-semibold text-white">{item.title}</div>
@@ -185,7 +196,11 @@ export default async function LandingPage() {
             ['Tracked Area', `${formatNumber(totalArea)} sqm`, 'across current assets'],
             [
               'Latest Base Value',
-              formatCurrencyFromKrwAtRate(latestBaseValue, latestBaseValueCurrency, latestBaseValueFxRate),
+              formatCurrencyFromKrwAtRate(
+                latestBaseValue,
+                latestBaseValueCurrency,
+                latestBaseValueFxRate
+              ),
               'latest modeled base case'
             ]
           ].map(([label, value, detail]) => (
@@ -204,8 +219,8 @@ export default async function LandingPage() {
             <div className="eyebrow">Asset Pipeline</div>
             <h2 className="section-title mt-3">Current underwriting and research cases</h2>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-400">
-              Each asset below runs through the same operating chain: intake, research enrichment, evidence review,
-              underwriting, execution, and readiness packaging.
+              Each asset below runs through the same operating chain: intake, research enrichment,
+              evidence review, underwriting, execution, and readiness packaging.
             </p>
           </div>
           <Link
@@ -267,21 +282,42 @@ export default async function LandingPage() {
         <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
           <Card>
             <div className="eyebrow">Platform Stack</div>
-            <h2 className="section-title mt-3">One product for analysis, memo generation, and review.</h2>
+            <h2 className="section-title mt-3">
+              One product for analysis, memo generation, and review.
+            </h2>
             <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-400">
-              A single Next.js application handles asset intake, enrichment, return analysis, IM generation, and
-              document workflow. The frontend reads like a product, while the backend stays connected to real service
-              layers.
+              A single Next.js application handles asset intake, enrichment, return analysis, IM
+              generation, and document workflow. The frontend reads like a product, while the
+              backend stays connected to real service layers.
             </p>
 
             <div className="mt-6 grid gap-3">
               {[
-                ['Assets API', '/api/assets', 'Creates the asset dossier used by every downstream analysis and memo run.'],
-                ['Valuation API', '/api/valuations', 'Runs the model and writes back valuation output plus the generated IM.'],
-                ['Document API', '/api/documents/upload', 'Stores diligence files, extracted notes, and version history.'],
-                ['Inquiry API', '/api/inquiries', 'Captures demo and review requests in the same operating system.']
+                [
+                  'Assets API',
+                  '/api/assets',
+                  'Creates the asset dossier used by every downstream analysis and memo run.'
+                ],
+                [
+                  'Valuation API',
+                  '/api/valuations',
+                  'Runs the model and writes back valuation output plus the generated IM.'
+                ],
+                [
+                  'Document API',
+                  '/api/documents/upload',
+                  'Stores diligence files, extracted notes, and version history.'
+                ],
+                [
+                  'Inquiry API',
+                  '/api/inquiries',
+                  'Captures demo and review requests in the same operating system.'
+                ]
               ].map(([label, route, detail]) => (
-                <div key={route} className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+                <div
+                  key={route}
+                  className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+                >
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="text-lg font-semibold text-white">{label}</div>
                     <span className="fine-print">{route}</span>
@@ -319,8 +355,8 @@ export default async function LandingPage() {
             <div className="eyebrow">Institutional Inquiry</div>
             <h2 className="section-title mt-3">Review the workflow and sample IM.</h2>
             <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-400">
-              Explore the analysis flow, generated memo, and admin console. Inquiry records are stored in the same
-              backend stack used by the rest of the platform.
+              Explore the analysis flow, generated memo, and admin console. Inquiry records are
+              stored in the same backend stack used by the rest of the platform.
             </p>
           </div>
           <InquiryForm />
@@ -333,8 +369,8 @@ export default async function LandingPage() {
             <div className="eyebrow">Final CTA</div>
             <h2 className="section-title mt-3">Run the analysis, then open the memo.</h2>
             <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300">
-              Intake, enrichment, valuation, risk summary, and investment memo generation now sit inside one operating
-              workflow for real estate underwriting.
+              Intake, enrichment, valuation, risk summary, and investment memo generation now sit
+              inside one operating workflow for real estate underwriting.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3 lg:justify-end">

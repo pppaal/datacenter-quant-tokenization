@@ -160,7 +160,15 @@ async function mutateTicketStatus(params: {
   allowFromStatuses: Array<TransferTicket['status']>;
   db: PrismaClient;
 }) {
-  const { ticketDbId, targetStatus, functionName, extraArgs = [], decidedBy, allowFromStatuses, db } = params;
+  const {
+    ticketDbId,
+    targetStatus,
+    functionName,
+    extraArgs = [],
+    decidedBy,
+    allowFromStatuses,
+    db
+  } = params;
   const ticket = await db.transferTicket.findUnique({ where: { id: ticketDbId } });
   if (!ticket) throw new Error(`TransferTicket ${ticketDbId} not found`);
   if (!allowFromStatuses.includes(ticket.status)) {
@@ -230,11 +238,7 @@ export function rejectTicket(
   });
 }
 
-export function cancelTicket(
-  ticketDbId: string,
-  reason: string,
-  db: PrismaClient = prisma
-) {
+export function cancelTicket(ticketDbId: string, reason: string, db: PrismaClient = prisma) {
   const reasonBytes = ensureBytes32(reason, 'reason');
   return mutateTicketStatus({
     ticketDbId,

@@ -40,9 +40,11 @@ When importing the project into Vercel, set the **Root Directory** to
 Pick one:
 
 - **Neon** (serverless, recommended):
+
   ```
   postgresql://<user>:<password>@<project>-pooler.<region>.neon.tech/<db>?sslmode=require
   ```
+
   Use the **pooled** connection string (suffix `-pooler`) for the serverless
   runtime. Keep a direct connection string handy for running migrations.
 
@@ -121,25 +123,30 @@ Vercel will:
 ## 4. Troubleshooting
 
 ### `PrismaClientInitializationError: environment variable not found: DATABASE_URL`
+
 `DATABASE_URL` is missing or not exposed to the target environment. Double
 check the Vercel dashboard env-var scope (Production vs Preview vs Development)
 and redeploy. Prisma reads this at runtime, not just at build time.
 
 ### Admin login fails with `invalid session` or 500 on `/api/admin/session`
+
 `ADMIN_SESSION_SECRET` is unset or differs between deployments. Set a stable
 long random value in Vercel (`openssl rand -hex 32`). Rotating the secret
 invalidates every existing browser session - expected behavior.
 
 ### `@prisma/client did not initialize yet` at runtime
+
 The Prisma client wasn't regenerated during install. Confirm `vercel.json`'s
 `installCommand` is `npm install && npx prisma generate`. If you override it in
 the dashboard, the JSON file is ignored. A clean redeploy (clearing the build
 cache) usually resolves it.
 
 ### Windows local build fails with `EINVAL: invalid argument, readlink`
+
 This is a known OneDrive + Next.js interaction on Windows. The project path
 (`C:\Users\pjyrh\OneDrive\Desktop\datacenter-quant-tokenization`) is inside
 OneDrive, which uses reparse points that Node's `fs.readlink` chokes on. Fixes:
+
 - Move the repo outside the OneDrive-synced folder (e.g. `C:\dev\...`), **or**
 - Pause OneDrive sync for the folder before running `npm run build`, **or**
 - Use WSL2 / Linux for local builds.
@@ -147,11 +154,13 @@ OneDrive, which uses reparse points that Node's `fs.readlink` chokes on. Fixes:
 This only affects **local** builds; Vercel's Linux build runners are unaffected.
 
 ### API route times out at 10s
+
 The default Vercel function timeout is 10s on the Hobby plan. `vercel.json`
 raises API routes to 60s, but on **Hobby** this is capped at 10s regardless.
 Upgrade to Pro or above to honor the 60s setting.
 
 ### Cron routes return 401
+
 `/api/ops/*` cron endpoints require a bearer matching `OPS_CRON_TOKEN`. Set the
 env var and configure Vercel Cron (or external scheduler) to send
 `Authorization: Bearer <OPS_CRON_TOKEN>`.

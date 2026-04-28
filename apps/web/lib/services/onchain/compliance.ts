@@ -23,8 +23,7 @@ export async function canTransferPreflight(
   const clients = getTokenizationClients(deployment);
   const from = ensureAddress(input.from, 'from');
   const to = ensureAddress(input.to, 'to');
-  const amount =
-    typeof input.amount === 'bigint' ? input.amount : BigInt(input.amount as string);
+  const amount = typeof input.amount === 'bigint' ? input.amount : BigInt(input.amount as string);
   return (await clients.publicClient.readContract({
     ...clients.compliance,
     functionName: 'canTransfer',

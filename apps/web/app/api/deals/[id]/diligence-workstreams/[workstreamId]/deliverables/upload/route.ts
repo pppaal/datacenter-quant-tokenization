@@ -2,7 +2,10 @@ import { NextResponse } from 'next/server';
 import { AdminAccessScopeType } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { assertActorScopeAccess } from '@/lib/security/admin-access';
-import { getRequestIpAddress, resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
+import {
+  getRequestIpAddress,
+  resolveVerifiedAdminActorFromHeaders
+} from '@/lib/security/admin-request';
 import { UploadPolicyError, validateDocumentUpload } from '@/lib/security/upload-policy';
 import { recordAuditEvent } from '@/lib/services/audit';
 import { uploadDocumentVersion } from '@/lib/services/documents';
@@ -41,7 +44,10 @@ export async function POST(
     });
 
     if (!deal?.assetId) {
-      return NextResponse.json({ error: 'Deal must be linked to an asset before uploading diligence deliverables.' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Deal must be linked to an asset before uploading diligence deliverables.' },
+        { status: 400 }
+      );
     }
 
     const formData = await request.formData();

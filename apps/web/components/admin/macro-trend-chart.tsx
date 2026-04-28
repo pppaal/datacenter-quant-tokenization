@@ -34,7 +34,11 @@ type ChartGeometry = {
   midY: number;
 };
 
-function buildGeometry(points: DataPoint[], chartWidth: number, chartHeight: number): ChartGeometry | null {
+function buildGeometry(
+  points: DataPoint[],
+  chartWidth: number,
+  chartHeight: number
+): ChartGeometry | null {
   if (points.length < 2) return null;
   const values = points.map((p) => p.value);
   const minVal = Math.min(...values);
@@ -66,7 +70,7 @@ function buildGeometry(points: DataPoint[], chartWidth: number, chartHeight: num
     areaPath,
     latestX: last.x,
     latestY: last.y,
-    midY: CHART_PADDING + innerH / 2,
+    midY: CHART_PADDING + innerH / 2
   };
 }
 

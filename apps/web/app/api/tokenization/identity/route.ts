@@ -3,7 +3,10 @@ import { z } from 'zod';
 import { AdminAccessScopeType } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { assertActorScopeAccess } from '@/lib/security/admin-access';
-import { getRequestIpAddress, resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
+import {
+  getRequestIpAddress,
+  resolveVerifiedAdminActorFromHeaders
+} from '@/lib/security/admin-request';
 import { recordAuditEvent } from '@/lib/services/audit';
 import {
   getIdentity,
@@ -17,7 +20,10 @@ import {
 } from '@/lib/services/onchain/tokenization-repo';
 
 const addressRe = /^0x[a-fA-F0-9]{40}$/;
-const WalletQuerySchema = z.object({ assetId: z.string().min(1), wallet: z.string().regex(addressRe) });
+const WalletQuerySchema = z.object({
+  assetId: z.string().min(1),
+  wallet: z.string().regex(addressRe)
+});
 
 const RegisterSchema = z.object({
   assetId: z.string().min(1),

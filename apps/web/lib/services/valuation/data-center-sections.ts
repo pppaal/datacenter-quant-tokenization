@@ -45,8 +45,10 @@ export function buildDataCenterConfidenceScore(prepared: PreparedUnderwritingInp
     prepared.curatedFeatureOverrides.legalMicro.sourceVersion
   ].filter(Boolean).length;
 
-  const legalSeverity = prepared.curatedFeatureOverrides.legalMicro.constraintSeverity?.toLowerCase() ?? '';
-  const legalPenalty = legalSeverity.includes('high') || legalSeverity.includes('severe') ? 0.35 : 0;
+  const legalSeverity =
+    prepared.curatedFeatureOverrides.legalMicro.constraintSeverity?.toLowerCase() ?? '';
+  const legalPenalty =
+    legalSeverity.includes('high') || legalSeverity.includes('severe') ? 0.35 : 0;
   const encumbrancePenalty =
     typeof prepared.curatedFeatureOverrides.legalMicro.priorityRank === 'number' &&
     prepared.curatedFeatureOverrides.legalMicro.priorityRank <= 1
@@ -121,7 +123,8 @@ export function buildDataCenterKeyRisks(
     base.equityWaterfall.grossExitValueKrw > base.weightedValueKrw
       ? 'Exit proceeds are meaningful to equity value, so terminal assumptions remain a major sensitivity.'
       : 'Current value still depends heavily on downside floor protection rather than terminal upside.',
-    prepared.bundle.siteProfile?.wildfireRiskScore && prepared.bundle.siteProfile.wildfireRiskScore >= 2
+    prepared.bundle.siteProfile?.wildfireRiskScore &&
+    prepared.bundle.siteProfile.wildfireRiskScore >= 2
       ? 'Satellite fire-screening shows elevated nearby hotspot activity and should be checked against infrastructure buffers.'
       : 'Current wildfire-screening signals do not indicate persistent nearby hotspot pressure.'
   ].slice(0, 5);
@@ -153,7 +156,8 @@ export function buildDataCenterAssumptions(
   evaluations: DataCenterScenarioEvaluation[],
   buildApproachMix: (evaluation: DataCenterScenarioEvaluation) => Record<string, number>
 ) {
-  const base = evaluations.find((evaluation) => evaluation.scenario.name === 'Base') ?? evaluations[0];
+  const base =
+    evaluations.find((evaluation) => evaluation.scenario.name === 'Base') ?? evaluations[0];
   const approachMix = buildApproachMix(base);
 
   return {
@@ -184,7 +188,10 @@ export function buildDataCenterAssumptions(
     leasing: {
       leaseCount: prepared.leases.length,
       contractedKw: roundKrw(
-        prepared.leases.reduce((sum, lease) => sum + lease.leasedKw * ((lease.probabilityPct ?? 100) / 100), 0)
+        prepared.leases.reduce(
+          (sum, lease) => sum + lease.leasedKw * ((lease.probabilityPct ?? 100) / 100),
+          0
+        )
       ),
       baseYearRevenueKrw: roundKrw(base.leaseDcf.annualRevenueKrw),
       stabilizedNoiKrw: roundKrw(base.leaseDcf.stabilizedNoiKrw)
@@ -220,13 +227,17 @@ export function buildDataCenterAssumptions(
     },
     satelliteRisk: {
       floodRiskScore:
-        prepared.curatedFeatureOverrides.satelliteRisk.floodRiskScore ?? prepared.bundle.siteProfile?.floodRiskScore ?? null,
+        prepared.curatedFeatureOverrides.satelliteRisk.floodRiskScore ??
+        prepared.bundle.siteProfile?.floodRiskScore ??
+        null,
       wildfireRiskScore:
         prepared.curatedFeatureOverrides.satelliteRisk.wildfireRiskScore ??
         prepared.bundle.siteProfile?.wildfireRiskScore ??
         null,
       climateNote:
-        prepared.curatedFeatureOverrides.satelliteRisk.climateNote ?? prepared.bundle.siteProfile?.siteNotes ?? null
+        prepared.curatedFeatureOverrides.satelliteRisk.climateNote ??
+        prepared.bundle.siteProfile?.siteNotes ??
+        null
     },
     approaches: {
       ...approachMix,
@@ -252,7 +263,9 @@ export function buildDataCenterProvenance(prepared: PreparedUnderwritingInputs):
   return [
     {
       field: 'address',
-      value: prepared.bundle.address ? `${prepared.bundle.address.line1}, ${prepared.bundle.address.city}` : null,
+      value: prepared.bundle.address
+        ? `${prepared.bundle.address.line1}, ${prepared.bundle.address.city}`
+        : null,
       sourceSystem: 'manual-intake',
       mode: 'manual',
       fetchedAt,
@@ -261,13 +274,16 @@ export function buildDataCenterProvenance(prepared: PreparedUnderwritingInputs):
     {
       field: 'capRatePct',
       value: prepared.baseCapRatePct,
-      sourceSystem: prepared.comparableCalibration.entryCount > 0 ? 'comparable-calibration' : 'korea-macro-rates',
+      sourceSystem:
+        prepared.comparableCalibration.entryCount > 0
+          ? 'comparable-calibration'
+          : 'korea-macro-rates',
       mode: prepared.comparableCalibration.entryCount > 0 ? 'manual' : 'fallback',
       fetchedAt: prepared.bundle.marketSnapshot?.sourceUpdatedAt?.toISOString() ?? fetchedAt,
       freshnessLabel:
         prepared.comparableCalibration.entryCount > 0
           ? `${prepared.comparableCalibration.entryCount} comp entries`
-          : prepared.bundle.marketSnapshot?.sourceStatus.toLowerCase() ?? 'fallback dataset'
+          : (prepared.bundle.marketSnapshot?.sourceStatus.toLowerCase() ?? 'fallback dataset')
     },
     {
       field: 'wildfireRiskScore',
@@ -275,15 +291,21 @@ export function buildDataCenterProvenance(prepared: PreparedUnderwritingInputs):
       sourceSystem: 'nasa-firms',
       mode: prepared.bundle.siteProfile?.wildfireRiskScore ? 'api' : 'fallback',
       fetchedAt,
-      freshnessLabel: prepared.bundle.siteProfile?.wildfireRiskScore ? 'satellite hotspot overlay' : 'fallback dataset'
+      freshnessLabel: prepared.bundle.siteProfile?.wildfireRiskScore
+        ? 'satellite hotspot overlay'
+        : 'fallback dataset'
     },
     {
       field: 'capexBreakdown',
       value: prepared.capexBreakdown.totalCapexKrw,
-      sourceSystem: prepared.bundle.capexLineItems?.length ? 'capex-line-items' : 'manual-capex-assumption',
+      sourceSystem: prepared.bundle.capexLineItems?.length
+        ? 'capex-line-items'
+        : 'manual-capex-assumption',
       mode: 'manual',
       fetchedAt,
-      freshnessLabel: prepared.bundle.capexLineItems?.length ? 'line-item cost model' : 'fallback allocation'
+      freshnessLabel: prepared.bundle.capexLineItems?.length
+        ? 'line-item cost model'
+        : 'fallback allocation'
     },
     {
       field: 'leaseCount',
@@ -296,10 +318,12 @@ export function buildDataCenterProvenance(prepared: PreparedUnderwritingInputs):
     {
       field: 'debtFacilities',
       value: prepared.debtFacilities.length || 1,
-      sourceSystem: prepared.debtFacilities.length > 0 ? 'debt-term-sheet' : 'synthetic-project-finance',
+      sourceSystem:
+        prepared.debtFacilities.length > 0 ? 'debt-term-sheet' : 'synthetic-project-finance',
       mode: 'manual',
       fetchedAt,
-      freshnessLabel: prepared.debtFacilities.length > 0 ? 'term-sheet inputs' : 'synthetic facility'
+      freshnessLabel:
+        prepared.debtFacilities.length > 0 ? 'term-sheet inputs' : 'synthetic facility'
     },
     {
       field: 'documentFeatureSnapshot',
@@ -363,7 +387,8 @@ export function buildDataCenterProvenance(prepared: PreparedUnderwritingInputs):
       sourceSystem: 'readiness_feature_snapshot',
       mode: prepared.curatedFeatureOverrides.reviewReadiness.sourceVersion ? 'manual' : 'fallback',
       fetchedAt,
-      freshnessLabel: prepared.curatedFeatureOverrides.reviewReadiness.sourceVersion ?? 'not applied'
+      freshnessLabel:
+        prepared.curatedFeatureOverrides.reviewReadiness.sourceVersion ?? 'not applied'
     },
     {
       field: 'macro.guidance',

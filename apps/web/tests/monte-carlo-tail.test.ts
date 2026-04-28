@@ -15,7 +15,7 @@ function baseInputs(): ProFormaInputs {
     exitCapRatePct: 5.5,
     year1Noi: Math.round((purchase * capRatePct) / 100),
     growthPct: 2.5,
-    opexRatio: 0.30,
+    opexRatio: 0.3,
     propertyTaxPct: 0.3,
     insurancePct: 0.1,
     corpTaxPct: 22,
@@ -48,10 +48,16 @@ test('CVaR ≤ VaR (expected shortfall is no better than the percentile cut)', (
   const t = r.leveredIrr.tail;
 
   if (t.expectedShortfall95 !== null && t.p5 !== null) {
-    assert.ok(t.expectedShortfall95 <= t.p5 + 1e-9, `ES95 (${t.expectedShortfall95}) should be ≤ P5 (${t.p5})`);
+    assert.ok(
+      t.expectedShortfall95 <= t.p5 + 1e-9,
+      `ES95 (${t.expectedShortfall95}) should be ≤ P5 (${t.p5})`
+    );
   }
   if (t.expectedShortfall99 !== null && t.p1 !== null) {
-    assert.ok(t.expectedShortfall99 <= t.p1 + 1e-9, `ES99 (${t.expectedShortfall99}) should be ≤ P1 (${t.p1})`);
+    assert.ok(
+      t.expectedShortfall99 <= t.p1 + 1e-9,
+      `ES99 (${t.expectedShortfall99}) should be ≤ P1 (${t.p1})`
+    );
   }
 });
 

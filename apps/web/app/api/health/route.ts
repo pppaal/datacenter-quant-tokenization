@@ -48,11 +48,15 @@ async function probeStorage(): Promise<ProbeResult> {
     };
   }
   const config: S3ClientConfig = {
-    region: process.env.DOCUMENT_STORAGE_REGION?.trim() || process.env.AWS_REGION?.trim() || 'us-east-1',
+    region:
+      process.env.DOCUMENT_STORAGE_REGION?.trim() || process.env.AWS_REGION?.trim() || 'us-east-1',
     endpoint: process.env.DOCUMENT_STORAGE_ENDPOINT?.trim() || undefined,
     forcePathStyle: process.env.DOCUMENT_STORAGE_FORCE_PATH_STYLE === 'true'
   };
-  if (process.env.DOCUMENT_STORAGE_ACCESS_KEY_ID && process.env.DOCUMENT_STORAGE_SECRET_ACCESS_KEY) {
+  if (
+    process.env.DOCUMENT_STORAGE_ACCESS_KEY_ID &&
+    process.env.DOCUMENT_STORAGE_SECRET_ACCESS_KEY
+  ) {
     config.credentials = {
       accessKeyId: process.env.DOCUMENT_STORAGE_ACCESS_KEY_ID,
       secretAccessKey: process.env.DOCUMENT_STORAGE_SECRET_ACCESS_KEY
