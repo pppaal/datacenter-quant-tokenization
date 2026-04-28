@@ -159,13 +159,16 @@ because the regression risk in a single PR outweighed the benefit:
   per domain (asset factory, office, deals, portfolio, committee,
   research, datacenters, quarterly). Each domain function should accept
   `prisma` as a parameter rather than reading the module-level instance.
-- **`lib/services/deals.ts` (~3,500 LOC)** — natural seams: schema /
-  includes / types, diligence (summary + workpaper), CRUD mutations
-  (counterparty / task / bid / lender / negotiation / risk / activity),
-  lifecycle (archive / restore / closeOut), execution snapshot +
-  coverage + closing-readiness + close-probability, origination
-  profile + history, timeline. Many functions cross-reference; split
-  with a clean dependency graph.
+- **`lib/services/deals.ts`** — partial split started in
+  `lib/services/deals/`: `timeline.ts`, `stage.ts`,
+  `diligence-summary.ts` extracted (3,567 → 3,328 LOC). Remaining
+  view builders (`buildDealExecutionSnapshot`, `buildDealDataCoverage`,
+  `buildDealClosingReadiness`, `buildDealCloseProbability`,
+  `buildDealCloseProbabilityHistory`, `buildDealOriginationProfile`,
+  `buildDealDiligenceWorkpaper` + serializer) form a tightly-coupled
+  cluster — extract them together as `deals/views.ts` rather than
+  individually. CRUD mutations stay in `deals.ts` because they own
+  the validation schema imports + audit boilerplate.
 - **Existing dead-import warnings (~38)** — `lint:strict` will flag
   them. Clean up incrementally and tighten `no-unused-vars` to `error`
   in `eslint.config.mjs`.

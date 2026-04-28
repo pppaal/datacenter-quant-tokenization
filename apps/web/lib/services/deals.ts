@@ -47,10 +47,34 @@ import {
   dealUpdateSchema
 } from '@/lib/validations/deal';
 
-export const dealStageMeta = dealStageOrder.map((stage) => ({
-  value: stage,
-  label: stage.toLowerCase().replaceAll('_', ' ')
-}));
+import {
+  buildDealStageChecklist,
+  buildDealStageSummary,
+  dealStageMeta,
+  getChecklistTaskKey,
+  getChecklistTemplates,
+  getStageIndex
+} from './deals/stage';
+import {
+  buildDealDiligenceSummary,
+  getDealDiligenceWorkstreams
+} from './deals/diligence-summary';
+import type { DiligenceWorkstreamLike } from './deals/diligence-summary';
+
+export {
+  buildDealStageChecklist,
+  buildDealStageSummary,
+  dealStageMeta,
+  getChecklistTaskKey,
+  getChecklistTemplates,
+  getStageIndex
+};
+export {
+  buildDealDiligenceSummary,
+  getDealDiligenceWorkstreams,
+  getCoreDiligenceTypes
+} from './deals/diligence-summary';
+export type { DealDiligenceSummary, DiligenceWorkstreamLike } from './deals/diligence-summary';
 
 export const dealListInclude = Prisma.validator<Prisma.DealInclude>()({
   asset: {
@@ -407,17 +431,8 @@ export type DealDetailRecord = Prisma.DealGetPayload<{
   include: typeof dealDetailInclude;
 }>;
 
-export type DealTimelineEvent = {
-  id: string;
-  kind: 'activity' | 'valuation';
-  category: 'execution' | 'note' | 'risk' | 'valuation';
-  title: string;
-  body: string | null;
-  createdAt: Date;
-  href: string | null;
-  tone: 'neutral' | 'good' | 'warn';
-  meta: string[];
-};
+export { buildDealTimeline } from './deals/timeline';
+export type { DealTimelineEvent } from './deals/timeline';
 
 export type DealDataCoverage = {
   scorePct: number;
@@ -485,110 +500,6 @@ export type DealCloseProbabilityHistoryPoint = {
   pendingSuggestedRequestCount: number;
   flags: string[];
 };
-
-type DiligenceWorkstreamLike = {
-  id: string;
-  workstreamType: DealDiligenceWorkstreamType;
-  status: DealDiligenceWorkstreamStatus;
-  ownerLabel?: string | null;
-  advisorName?: string | null;
-  reportTitle?: string | null;
-  requestedAt?: Date | null;
-  dueDate?: Date | null;
-  signedOffAt?: Date | null;
-  signedOffByLabel?: string | null;
-  summary?: string | null;
-  blockerSummary?: string | null;
-  notes?: string | null;
-  deliverables?: Array<{
-    id: string;
-    note?: string | null;
-    document: {
-      id: string;
-      title: string;
-      documentType: string;
-      currentVersion: number;
-      documentHash: string;
-      updatedAt: Date;
-    };
-  }>;
-};
-
-export type DealDiligenceSummary = {
-  totalCount: number;
-  signedOffCount: number;
-  blockedCount: number;
-  readyForSignoffCount: number;
-  deliverableCount: number;
-  uncoveredCoreTypes: DealDiligenceWorkstreamType[];
-  coreRequiredTypes: DealDiligenceWorkstreamType[];
-  missingCoreTypes: DealDiligenceWorkstreamType[];
-  staleRequestedCount: number;
-  headline: string;
-};
-
-const baseCoreDiligenceTypes: DealDiligenceWorkstreamType[] = [
-  DealDiligenceWorkstreamType.LEGAL,
-  DealDiligenceWorkstreamType.COMMERCIAL,
-  DealDiligenceWorkstreamType.TECHNICAL
-];
-
-function getCoreDiligenceTypes(assetClass: AssetClass | null | undefined) {
-  const types = [...baseCoreDiligenceTypes];
-  if (assetClass === AssetClass.DATA_CENTER || assetClass === AssetClass.INDUSTRIAL || assetClass === AssetClass.LAND) {
-    types.push(DealDiligenceWorkstreamType.ENVIRONMENTAL);
-  }
-  return types;
-}
-
-function getDealDiligenceWorkstreams(deal: DealListRecord | DealDetailRecord) {
-  return ('diligenceWorkstreams' in deal ? deal.diligenceWorkstreams : []) as DiligenceWorkstreamLike[];
-}
-
-export function buildDealDiligenceSummary(
-  deal: DealListRecord | DealDetailRecord,
-  workstreams: DiligenceWorkstreamLike[] = getDealDiligenceWorkstreams(deal)
-): DealDiligenceSummary {
-  const coreRequiredTypes = getCoreDiligenceTypes(deal.assetClass ?? deal.asset?.assetClass ?? null);
-  const signedOff = workstreams.filter((item) => item.status === DealDiligenceWorkstreamStatus.SIGNED_OFF);
-  const blocked = workstreams.filter((item) => item.status === DealDiligenceWorkstreamStatus.BLOCKED);
-  const readyForSignoff = workstreams.filter((item) => item.status === DealDiligenceWorkstreamStatus.READY_FOR_SIGNOFF);
-  const workstreamTypes = new Set(workstreams.map((item) => item.workstreamType));
-  const missingCoreTypes = coreRequiredTypes.filter((item) => !workstreamTypes.has(item));
-  const deliverableCount = workstreams.reduce((total, item) => total + (item.deliverables?.length ?? 0), 0);
-  const uncoveredCoreTypes = coreRequiredTypes.filter((type) => {
-    const lane = workstreams.find((item) => item.workstreamType === type);
-    return !lane || (lane.deliverables?.length ?? 0) === 0;
-  });
-  const staleRequestedCount = workstreams.filter((item) => {
-    if (!item.requestedAt || item.signedOffAt) return false;
-    return Date.now() - item.requestedAt.getTime() > 1000 * 60 * 60 * 24 * 14;
-  }).length;
-
-  const headline =
-    missingCoreTypes.length === 0 && blocked.length === 0
-      ? signedOff.length >= coreRequiredTypes.length
-        ? uncoveredCoreTypes.length === 0
-          ? 'Core specialist diligence is signed off and committee-ready.'
-          : 'Core specialist diligence is signed off, but supporting deliverables still need to be attached.'
-        : 'Core diligence workstreams are open with no immediate specialist blockers.'
-      : missingCoreTypes.length > 0
-        ? `${missingCoreTypes.length} core diligence workstream${missingCoreTypes.length === 1 ? '' : 's'} still need to be opened.`
-        : `${blocked.length} diligence workstream${blocked.length === 1 ? '' : 's'} are blocked and need intervention.`;
-
-  return {
-    totalCount: workstreams.length,
-    signedOffCount: signedOff.length,
-    blockedCount: blocked.length,
-    readyForSignoffCount: readyForSignoff.length,
-    deliverableCount,
-    uncoveredCoreTypes,
-    coreRequiredTypes,
-    missingCoreTypes,
-    staleRequestedCount,
-    headline
-  };
-}
 
 export type DealDiligenceWorkpaperFact = {
   label: string;
@@ -756,22 +667,10 @@ export function serializeDealDiligenceWorkpaperToMarkdown(workpaper: DealDiligen
   return lines.join('\n');
 }
 
-function sameUtcDay(left: Date, right: Date) {
-  return (
-    left.getUTCFullYear() === right.getUTCFullYear() &&
-    left.getUTCMonth() === right.getUTCMonth() &&
-    left.getUTCDate() === right.getUTCDate()
-  );
-}
-
 function getPendingSuggestedSnapshotCount(snapshot: unknown) {
   if (!snapshot || typeof snapshot !== 'object') return 0;
   const rawValue = (snapshot as Record<string, unknown>).pendingSuggestedRequestCount;
   return typeof rawValue === 'number' && Number.isFinite(rawValue) ? rawValue : 0;
-}
-
-function getStageIndex(stage: DealStage) {
-  return dealStageOrder.indexOf(stage);
 }
 
 function assertValidStageTransition(from: DealStage, to: DealStage) {
@@ -813,14 +712,6 @@ function getDefaultNextAction(stage: DealStage) {
     default:
       return null;
   }
-}
-
-function getChecklistTemplates(stage: DealStage) {
-  return dealStageChecklistTemplates[stage] ?? [];
-}
-
-function getChecklistTaskKey(stage: DealStage, key: string) {
-  return `${stage.toLowerCase()}::${key}`;
 }
 
 function formatStageLabel(stage: DealStage) {
@@ -2562,47 +2453,6 @@ export async function closeOutDeal(dealId: string, input: unknown, db: PrismaCli
   return getDealById(dealId, db);
 }
 
-export function buildDealStageSummary(stage: DealStage) {
-  const index = getStageIndex(stage);
-  return dealStageMeta.map((item, itemIndex) => ({
-    ...item,
-    isCurrent: item.value === stage,
-    isCompleted: itemIndex < index,
-    isUpcoming: itemIndex > index
-  }));
-}
-
-export function buildDealStageChecklist(deal: DealDetailRecord) {
-  return getChecklistTemplates(deal.stage).map((template) => {
-    if (template.kind === 'task') {
-      const checklistKey = getChecklistTaskKey(deal.stage, template.key);
-      const task = deal.tasks.find((item) => item.checklistKey === checklistKey);
-      return {
-        ...template,
-        status: task ? (task.status === TaskStatus.DONE ? 'done' : 'open') : 'missing',
-        taskId: task?.id ?? null
-      };
-    }
-
-    if (template.kind === 'field') {
-      const value = template.fieldName ? deal[template.fieldName] : null;
-      return {
-        ...template,
-        status: value ? 'done' : 'missing',
-        taskId: null
-      };
-    }
-
-    const counterpartyExists = template.counterpartyRole
-      ? deal.counterparties.some((counterparty) => counterparty.role === template.counterpartyRole)
-      : false;
-    return {
-      ...template,
-      status: counterpartyExists ? 'done' : 'missing',
-      taskId: null
-    };
-  });
-}
 
 export function buildDealExecutionSnapshot(deal: Awaited<ReturnType<typeof getDealById>>) {
   if (!deal) return null;
@@ -3476,92 +3326,3 @@ export async function syncDealProbabilitySnapshotsForAssetDeals(
   return Promise.all(deals.map((deal) => recordDealProbabilitySnapshot(deal.id, snapshotReason, db)));
 }
 
-export function buildDealTimeline(deal: DealDetailRecord): DealTimelineEvent[] {
-  const rawActivityEvents: DealTimelineEvent[] = deal.activityLogs.map((activity) => ({
-    id: `activity-${activity.id}`,
-    kind: 'activity',
-    category:
-      activity.activityType === ActivityType.NOTE
-        ? 'note'
-        : activity.activityType === ActivityType.RISK_CREATED || activity.activityType === ActivityType.RISK_UPDATED
-          ? 'risk'
-          : 'execution',
-    title: activity.title,
-    body: activity.body,
-    createdAt: activity.createdAt,
-    href: null,
-    tone:
-      activity.activityType === ActivityType.RISK_CREATED
-        ? 'warn'
-        : activity.activityType === ActivityType.STAGE_CHANGED || activity.activityType === ActivityType.TASK_CREATED
-          ? 'good'
-          : 'neutral',
-    meta: [
-      activity.activityType.toLowerCase().replaceAll('_', ' '),
-      activity.counterparty ? activity.counterparty.role.toLowerCase() : null
-    ].filter(Boolean) as string[]
-  }));
-  const activityEvents: DealTimelineEvent[] = [];
-
-  for (const event of rawActivityEvents) {
-    const previous = activityEvents[activityEvents.length - 1];
-    const isTaskChurn =
-      event.meta.includes('task updated') ||
-      event.meta.includes('task created');
-    const previousIsTaskChurn =
-      previous?.meta.includes('task updated') ||
-      previous?.meta.includes('task created');
-
-    if (
-      previous &&
-      isTaskChurn &&
-      previousIsTaskChurn &&
-      sameUtcDay(previous.createdAt, event.createdAt)
-    ) {
-      previous.title = 'Task queue updated';
-      previous.body = previous.body ?? event.body;
-      previous.meta = [...new Set([...previous.meta, ...event.meta, 'task batch'])];
-      continue;
-    }
-
-    activityEvents.push(event);
-  }
-
-  const valuationEvents: DealTimelineEvent[] = (deal.asset?.valuations ?? []).map((valuation) => ({
-    id: `valuation-${valuation.id}`,
-    kind: 'valuation',
-    category: 'valuation',
-    title: 'Valuation run updated',
-    body: `Base case ${valuation.baseCaseValueKrw.toLocaleString()} KRW with ${valuation.confidenceScore.toFixed(0)} confidence.`,
-    createdAt: valuation.createdAt,
-    href: `/admin/valuations/${valuation.id}`,
-    tone: valuation.confidenceScore >= 70 ? 'good' : valuation.confidenceScore >= 55 ? 'neutral' : 'warn',
-    meta: ['valuation', valuation.runLabel ?? 'latest run']
-  }));
-
-  const negotiationEvents: DealTimelineEvent[] = deal.negotiationEvents.map((event) => ({
-    id: `negotiation-${event.id}`,
-    kind: 'activity',
-    category: 'execution',
-    title: event.title,
-    body: [event.summary, event.expiresAt ? `expires ${event.expiresAt.toLocaleDateString()}` : null]
-      .filter(Boolean)
-      .join(' / ') || null,
-    createdAt: event.effectiveAt,
-    href: null,
-    tone:
-      event.eventType === 'SELLER_COUNTER' || event.eventType === 'EXCLUSIVITY_GRANTED' || event.eventType === 'EXCLUSIVITY_EXTENDED'
-        ? 'warn'
-        : 'neutral',
-    meta: [
-      'negotiation',
-      event.eventType.toLowerCase().replaceAll('_', ' '),
-      event.counterparty ? event.counterparty.role.toLowerCase() : null,
-      event.bidRevision ? event.bidRevision.label : null
-    ].filter(Boolean) as string[]
-  }));
-
-  return [...activityEvents, ...negotiationEvents, ...valuationEvents]
-    .sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime())
-    .slice(0, 20);
-}
