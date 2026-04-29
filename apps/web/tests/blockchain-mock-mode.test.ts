@@ -175,3 +175,10 @@ test('mock-mode valuation-anchor produces a complete result without RPC', async 
     assert.ok(result.canonicalBytes > 0);
   });
 });
+
+test('getRegistryChainClients refuses to instantiate in mock mode', async () => {
+  await withEnv({ BLOCKCHAIN_MOCK_MODE: 'true', NODE_ENV: 'development' }, async () => {
+    const { getRegistryChainClients } = await import('@/lib/blockchain/client');
+    assert.throws(() => getRegistryChainClients(), /mock mode/);
+  });
+});

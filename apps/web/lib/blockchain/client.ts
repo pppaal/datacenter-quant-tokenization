@@ -1,9 +1,25 @@
 import { createPublicClient, createWalletClient, defineChain, fallback, http } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { getBlockchainConfig } from '@/lib/blockchain/config';
+import { isTokenizationMockMode } from '@/lib/blockchain/mock-mode';
 import { runSerial } from '@/lib/blockchain/tx-queue';
 
 export function getRegistryChainClients() {
+  // Hard guard: mock mode produces a deterministic fake EOA + registry
+  // address. If a future caller forgets to gate on isTokenizationMockMode
+  // upstream, instantiating a real viem client bound to that fake key would
+  // happily attempt to send transactions to whatever RPC is configured —
+  // including, in the worst case, mainnet. Failing loudly here turns that
+  // class of misconfiguration into a startup error instead of a silent
+  // foot-gun. Service-layer callers all already branch on mock mode first
+  // and short-circuit to buildMockTxHash, so this assertion is unreachable
+  // on the happy path.
+  if (isTokenizationMockMode()) {
+    throw new Error(
+      'getRegistryChainClients() called in mock mode. Use buildMockTxHash() / ' +
+        'isTokenizationMockMode() to gate onchain calls instead.'
+    );
+  }
   const config = getBlockchainConfig();
   const chain = defineChain({
     id: config.chainId,
