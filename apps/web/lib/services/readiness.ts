@@ -7,6 +7,7 @@ import {
   buildRegistryMetadataRef,
   normalizeDocumentHash
 } from '@/lib/blockchain/registry';
+import { awaitTxReceipt } from '@/lib/blockchain/tx';
 import { prisma } from '@/lib/db/prisma';
 import { promoteAssetSnapshotsToFeatures } from '@/lib/services/feature-promotion';
 import { buildReviewPacketManifest } from '@/lib/services/review';
@@ -323,7 +324,9 @@ export async function registerAssetOnchain(assetId: string, db: PrismaClient = p
     });
 
     txHash = await walletClient.writeContract(simulation.request);
-    await publicClient.waitForTransactionReceipt({ hash: txHash as `0x${string}` });
+    await awaitTxReceipt(publicClient, txHash as `0x${string}`, {
+      label: isActive ? 'updateAssetMetadata' : 'registerAsset'
+    });
   }
 
   await db.readinessProject.update({
@@ -479,7 +482,9 @@ export async function anchorLatestDocumentOnchain(assetId: string, db: PrismaCli
     });
 
     txHash = await walletClient.writeContract(simulation.request);
-    await publicClient.waitForTransactionReceipt({ hash: txHash as `0x${string}` });
+    await awaitTxReceipt(publicClient, txHash as `0x${string}`, {
+      label: 'anchorDocumentHash'
+    });
   }
 
   await upsertReadinessRecord({

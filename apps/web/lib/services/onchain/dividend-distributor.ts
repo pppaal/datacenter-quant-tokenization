@@ -4,6 +4,7 @@ import { erc20Abi } from 'viem';
 import { dividendDistributorAbi } from '@/lib/blockchain/tokenization-abi';
 import { getRegistryChainClients } from '@/lib/blockchain/client';
 import { buildMockTxHash, isTokenizationMockMode } from '@/lib/blockchain/mock-mode';
+import { awaitTxReceipt } from '@/lib/blockchain/tx';
 import { prisma } from '@/lib/db/prisma';
 import { ensureAddress } from './tokenization-client';
 import { buildAllocationTree, type AllocationLeaf } from './distribution-merkle';
@@ -127,7 +128,9 @@ export async function fundDistribution(
         functionName: 'approve',
         args: [distributorAddress, total]
       });
-      await clients.publicClient.waitForTransactionReceipt({ hash: approveHash });
+      await awaitTxReceipt(clients.publicClient, approveHash, {
+        label: 'distribution-token-approve'
+      });
     }
 
     txHash = await clients.walletClient.writeContract({
@@ -141,6 +144,7 @@ export async function fundDistribution(
         BigInt(Math.floor(dist.reclaimAfter.getTime() / 1000))
       ]
     });
+    await awaitTxReceipt(clients.publicClient, txHash, { label: 'createDistribution' });
   }
 
   const updated = await db.tokenDistribution.update({

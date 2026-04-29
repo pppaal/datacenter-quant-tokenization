@@ -17,6 +17,7 @@ import { stringToHex, encodeEventTopics, decodeEventLog } from 'viem';
 import { transferAgentAbi } from '@/lib/blockchain/tokenization-abi';
 import { getRegistryChainClients } from '@/lib/blockchain/client';
 import { buildMockTxHash, isTokenizationMockMode } from '@/lib/blockchain/mock-mode';
+import { awaitTxReceipt } from '@/lib/blockchain/tx';
 import { prisma } from '@/lib/db/prisma';
 import { ensureAddress, ensureBytes32 } from './tokenization-client';
 
@@ -104,7 +105,7 @@ export async function openTicket(
         rfqRef as Hex
       ]
     });
-    const receipt = await clients.publicClient.waitForTransactionReceipt({ hash: txHash });
+    const receipt = await awaitTxReceipt(clients.publicClient, txHash, { label: 'openTicket' });
 
     const topic = encodeEventTopics({
       abi: transferAgentAbi,
@@ -193,7 +194,7 @@ async function mutateTicketStatus(params: {
       functionName,
       args: [BigInt(ticket.ticketId), ...extraArgs] as readonly unknown[]
     });
-    await clients.publicClient.waitForTransactionReceipt({ hash: txHash });
+    await awaitTxReceipt(clients.publicClient, txHash, { label: functionName });
   }
 
   const updates: Partial<TransferTicket> = { status: targetStatus };

@@ -7,6 +7,7 @@ import {
 import { getRegistryChainClients } from '@/lib/blockchain/client';
 import { buildMockTxHash, isTokenizationMockMode } from '@/lib/blockchain/mock-mode';
 import { buildRegistryAssetId } from '@/lib/blockchain/registry';
+import { awaitTxReceipt } from '@/lib/blockchain/tx';
 import { canonicalizeToJson } from './canonicalize';
 import { pinCanonicalJson } from './ipfs';
 
@@ -101,7 +102,7 @@ export async function anchorValuationOnchain(
       args: [registryAssetId, documentHash]
     });
     txHash = (await walletClient.writeContract(simulation.request)) as Hex;
-    await publicClient.waitForTransactionReceipt({ hash: txHash });
+    await awaitTxReceipt(publicClient, txHash, { label: 'anchorDocumentHash' });
   }
 
   return {
