@@ -88,6 +88,14 @@ export type ResearchReport = {
 export type ResearchToolset = {
   searchNews: (query: string) => Promise<ResearchSource[]>;
   fetchPage: (url: string) => Promise<ResearchFetchedPage>;
+  /**
+   * Optional semantic search over the operator's own document corpus
+   * (DocumentEmbedding). When wired, the agent prefers this over web
+   * search for facts that should already exist in our uploaded
+   * underwriting / regulatory documents — cheaper, faster, and more
+   * trustworthy than guessing which web page might cite the same number.
+   */
+  searchCorpus?: (query: string) => Promise<ResearchSource[]>;
 };
 
 // ---------------------------------------------------------------------------
@@ -127,6 +135,22 @@ const TOOLS: Tool[] = [
         url: { type: 'string', description: 'Absolute URL from a prior search result.' }
       },
       required: ['url']
+    }
+  },
+  {
+    name: 'search_corpus',
+    description:
+      'Semantic search over the operator’s own indexed document corpus ' +
+      '(DD reports, IM packets, regulatory filings already uploaded). ' +
+      'Prefer this over search_news for facts likely covered by our own ' +
+      'documents — it returns precise passage matches with internal ' +
+      'document IDs that can be cited as sourceId “doc:<documentId>”.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Korean or English semantic query.' }
+      },
+      required: ['query']
     }
   }
 ];
@@ -181,7 +205,8 @@ function buildSystemPrompt(): string {
     '당신은 한국 상업용 부동산 리서치 애널리스트다. 투자위원회가 읽는다고 가정하고 답변한다.',
     '',
     '원칙:',
-    '1. 모든 수치·주장은 반드시 search_news/fetch_page 도구로 수집한 1차·2차 출처에서만 인용한다.',
+    '1. 모든 수치·주장은 반드시 search_corpus / search_news / fetch_page 도구로 수집한 1차·2차 출처에서만 인용한다.',
+    '   사내 업로드 자료(DD 보고서, IM, 공시 등)에 답이 있을 가능성이 높으면 search_corpus를 먼저 호출한다.',
     '2. 출처가 부족하면 부족하다고 명시한다. 수치를 추정·창작하지 않는다.',
     '3. 주장마다 inline citation marker `[S1]`, `[S2]` 형태로 붙인다 — 마커는 반환 JSON의 sources 배열 인덱스(1-based)를 가리킨다.',
     '4. Tool 루프가 끝나면 JSON 형식의 최종 보고서만 출력한다. 마크다운 래퍼/프로즈 설명 금지.',
@@ -283,6 +308,49 @@ async function runTool(
     return {
       payload: JSON.stringify(payload),
       summary: `fetched ${page.url} (${payload.text.length} chars)`
+    };
+  }
+
+  if (name === 'search_corpus') {
+    if (!toolset.searchCorpus) {
+      return {
+        payload: JSON.stringify({
+          error: 'search_corpus is not wired in this environment',
+          results: []
+        }),
+        summary: 'corpus search unavailable'
+      };
+    }
+    const input = rawInput as { query?: unknown };
+    if (typeof input.query !== 'string' || !input.query.trim()) {
+      return {
+        payload: JSON.stringify({ error: 'search_corpus requires string `query`' }),
+        summary: 'invalid args'
+      };
+    }
+    const q = sanitizeFreeText(input.query, 200);
+    const rawResults = await toolset.searchCorpus(q);
+    const deduped = rawResults.filter((r) => {
+      const key = sourceKey(r);
+      if (state.seen.has(key)) return false;
+      state.seen.add(key);
+      state.indexedSources.push(r);
+      return true;
+    });
+    const payload = {
+      query: q,
+      results: deduped.slice(0, 8).map((r) => ({
+        id: r.id,
+        url: r.url,
+        title: r.title,
+        publisher: r.publisher,
+        publishedAt: r.publishedAt ? r.publishedAt.toISOString().slice(0, 10) : null,
+        snippet: r.snippet.slice(0, 400)
+      }))
+    };
+    return {
+      payload: JSON.stringify(payload),
+      summary: `corpus: ${deduped.length} new passages for "${q}"`
     };
   }
 

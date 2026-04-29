@@ -23,6 +23,7 @@ import type {
   ResearchSource,
   ResearchToolset
 } from '@/lib/services/research/research-agent';
+import { semanticSearch } from '@/lib/services/research/document-indexer';
 import { safeFetch } from '@/lib/security/safe-fetch';
 
 // ---------------------------------------------------------------------------
@@ -136,6 +137,41 @@ export function createDatabaseToolset(
         };
       }
       throw new Error(`database toolset cannot fetch external URL: ${url}`);
+    },
+
+    /**
+     * Semantic-search adapter over DocumentEmbedding. Each hit becomes a
+     * ResearchSource so the agent can dedupe corpus passages alongside
+     * web sources via the same `seen` set. Title is rebuilt from the
+     * Document.title to give the agent a meaningful hint when it later
+     * references the result by sourceId.
+     */
+    async searchCorpus(query: string): Promise<ResearchSource[]> {
+      if (!query.trim()) return [];
+      const hits = await semanticSearch({ queryText: query, limit }, prisma);
+      if (hits.length === 0) return [];
+
+      // Lookup the Document.title for each unique DocumentVersion.id so
+      // the source.title field shows something meaningful. The semantic
+      // search returned passage text, not the parent file name.
+      const versionIds = [...new Set(hits.map((h) => h.documentId))];
+      const versions = await prisma.documentVersion.findMany({
+        where: { id: { in: versionIds } },
+        select: { id: true, document: { select: { title: true } }, createdAt: true }
+      });
+      const versionLookup = new Map(versions.map((v) => [v.id, v]));
+
+      return hits.map((hit) => {
+        const meta = versionLookup.get(hit.documentId);
+        return {
+          id: `corpus:${hit.documentId}:${hit.chunkIndex}`,
+          url: `internal://document/${hit.documentId}#chunk=${hit.chunkIndex}`,
+          title: meta?.document?.title ?? `Document ${hit.documentId.slice(0, 8)}`,
+          publisher: 'internal-corpus',
+          publishedAt: meta?.createdAt ?? null,
+          snippet: hit.text.slice(0, 600)
+        };
+      });
     }
   };
 }
@@ -465,6 +501,25 @@ export function combineToolsets(...toolsets: ResearchToolset[]): ResearchToolset
         }
       }
       throw lastError instanceof Error ? lastError : new Error(`no toolset fetched ${url}`);
+    },
+    async searchCorpus(query: string): Promise<ResearchSource[]> {
+      const seen = new Set<string>();
+      const out: ResearchSource[] = [];
+      for (const t of toolsets) {
+        if (!t.searchCorpus) continue;
+        try {
+          const results = await t.searchCorpus(query);
+          for (const r of results) {
+            const key = normalizedUrlKey(r.url);
+            if (seen.has(key)) continue;
+            seen.add(key);
+            out.push(r);
+          }
+        } catch {
+          // individual toolset failure shouldn't kill the overall search
+        }
+      }
+      return out;
     }
   };
 }
