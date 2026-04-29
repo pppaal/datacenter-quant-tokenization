@@ -21,6 +21,29 @@ const sections = [
   }
 ];
 
+const comparison = [
+  {
+    dimension: '데이터 모델',
+    legacy: '엑셀 시트 · PDF · 이메일 · 폴더로 분산. 같은 자산의 가정이 여러 버전으로 떠 다님.',
+    nexus: '하나의 투자 레코드. 가정 · 증거 · 산출물이 같은 ID 아래 결정론적으로 묶입니다.'
+  },
+  {
+    dimension: '증거 · 출처 추적',
+    legacy: '평가 시트 한 칸의 숫자가 어느 시장 보고서에서 왔는지 추적 불가. IC 직전 검증 부담.',
+    nexus: '신선도, 폴백 사용 여부, 출처(provenance), 리뷰 상태가 셀 단위로 따라옵니다.'
+  },
+  {
+    dimension: 'IC · 위원회 워크플로',
+    legacy: 'IM · 메모 · 모델을 매번 재정렬. 위원 의견이 별도 채널에 흩어짐.',
+    nexus: '검토 게이팅 워크플로 위에서 평가 · 다운사이드 · DD가 묶여 readiness 메타데이터로 잠깁니다.'
+  },
+  {
+    dimension: '포트폴리오 · LP 리포팅',
+    legacy: '보유 자산 KPI · 펀드 리포트가 별도 스프레드시트에서 재집계. 분기마다 같은 작업 반복.',
+    nexus: 'KPI 이력 · 커버넌트 · capex · 캐피털콜 · 배당 셸이 같은 OS에서 자동 누적됩니다.'
+  }
+];
+
 const personas = [
   {
     role: '투자운용본부 / 자산운용본부',
@@ -112,6 +135,39 @@ export default function ProductOverviewPage() {
               <h3 className="mt-4 text-xl font-semibold text-white">{persona.role}</h3>
               <p className="mt-4 text-sm leading-7 text-slate-400">{persona.body}</p>
             </Card>
+          ))}
+        </div>
+      </section>
+
+      <section className="app-shell py-10">
+        <div className="mb-6 max-w-3xl">
+          <div className="eyebrow">기존 워크플로 vs Nexus Seoul</div>
+          <h2 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-white md:text-4xl">
+            엑셀 · PDF 핸드오프를 검토 게이팅 데이터 모델로.
+          </h2>
+          <p className="mt-3 text-sm leading-7 text-slate-400">
+            대부분의 한국 운용사는 리서치 · 언더라이팅 · 포트폴리오 데이터를 부서별 스프레드시트와
+            메일로 다룹니다. Nexus Seoul은 같은 데이터를 하나의 운영 레코드 위에 두고 추적 가능한
+            상태로 만듭니다.
+          </p>
+        </div>
+        <div className="overflow-hidden rounded-3xl border border-white/10 bg-slate-950/40">
+          <div className="grid grid-cols-12 border-b border-white/10 bg-white/5 px-6 py-3 text-[11px] font-mono uppercase tracking-[0.24em] text-slate-400">
+            <div className="col-span-3">영역</div>
+            <div className="col-span-4">기존 도구 (스프레드시트 · PDF · 메일)</div>
+            <div className="col-span-5">Nexus Seoul</div>
+          </div>
+          {comparison.map((row, index) => (
+            <div
+              key={row.dimension}
+              className={`grid grid-cols-12 gap-4 px-6 py-5 text-sm leading-7 ${
+                index === comparison.length - 1 ? '' : 'border-b border-white/5'
+              }`}
+            >
+              <div className="col-span-3 font-semibold text-white">{row.dimension}</div>
+              <div className="col-span-4 text-slate-400">{row.legacy}</div>
+              <div className="col-span-5 text-slate-200">{row.nexus}</div>
+            </div>
           ))}
         </div>
       </section>
