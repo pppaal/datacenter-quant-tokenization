@@ -130,6 +130,10 @@ async function upsertReadinessRecord(args: {
   txHash?: string | null;
   chainId?: string | null;
   anchoredAt?: Date | null;
+  blockNumber?: bigint | null;
+  gasUsed?: bigint | null;
+  effectiveGasPrice?: string | null;
+  receiptStatus?: string | null;
 }) {
   const payload = args.payload as Prisma.InputJsonValue;
   const existing = await args.db.onchainRecord.findFirst({
@@ -151,7 +155,11 @@ async function upsertReadinessRecord(args: {
         payload,
         txHash: args.txHash ?? existing.txHash,
         chainId: args.chainId ?? existing.chainId,
-        anchoredAt: args.anchoredAt ?? existing.anchoredAt
+        anchoredAt: args.anchoredAt ?? existing.anchoredAt,
+        blockNumber: args.blockNumber ?? existing.blockNumber,
+        gasUsed: args.gasUsed ?? existing.gasUsed,
+        effectiveGasPrice: args.effectiveGasPrice ?? existing.effectiveGasPrice,
+        receiptStatus: args.receiptStatus ?? existing.receiptStatus
       }
     });
   }
@@ -165,7 +173,11 @@ async function upsertReadinessRecord(args: {
       payload,
       txHash: args.txHash,
       chainId: args.chainId,
-      anchoredAt: args.anchoredAt
+      anchoredAt: args.anchoredAt,
+      blockNumber: args.blockNumber ?? null,
+      gasUsed: args.gasUsed ?? null,
+      effectiveGasPrice: args.effectiveGasPrice ?? null,
+      receiptStatus: args.receiptStatus ?? null
     }
   });
 }
@@ -313,6 +325,12 @@ export async function registerAssetOnchain(assetId: string, db: PrismaClient = p
   });
   const isActive = onchainAsset.status === ASSET_STATUS.Active;
   let txHash: string | null = null;
+  let receiptMetadata: {
+    blockNumber: bigint;
+    gasUsed: bigint;
+    effectiveGasPrice: string;
+    receiptStatus: string;
+  } | null = null;
 
   if (!isActive || onchainAsset.metadataRef !== metadataRef) {
     const simulation = await publicClient.simulateContract({
@@ -324,9 +342,15 @@ export async function registerAssetOnchain(assetId: string, db: PrismaClient = p
     });
 
     txHash = await walletClient.writeContract(simulation.request);
-    await awaitTxReceipt(publicClient, txHash as `0x${string}`, {
+    const receipt = await awaitTxReceipt(publicClient, txHash as `0x${string}`, {
       label: isActive ? 'updateAssetMetadata' : 'registerAsset'
     });
+    receiptMetadata = {
+      blockNumber: receipt.blockNumber,
+      gasUsed: receipt.gasUsed,
+      effectiveGasPrice: receipt.effectiveGasPrice.toString(),
+      receiptStatus: receipt.status
+    };
   }
 
   await db.readinessProject.update({
@@ -349,6 +373,10 @@ export async function registerAssetOnchain(assetId: string, db: PrismaClient = p
         txHash,
         chainId: String(config.chainId),
         anchoredAt: new Date(),
+        blockNumber: receiptMetadata?.blockNumber ?? null,
+        gasUsed: receiptMetadata?.gasUsed ?? null,
+        effectiveGasPrice: receiptMetadata?.effectiveGasPrice ?? null,
+        receiptStatus: receiptMetadata?.receiptStatus ?? null,
         payload: {
           assetCode: asset.assetCode,
           registryAssetId,
@@ -471,6 +499,12 @@ export async function anchorLatestDocumentOnchain(assetId: string, db: PrismaCli
   });
 
   let txHash: string | null = null;
+  let receiptMetadata: {
+    blockNumber: bigint;
+    gasUsed: bigint;
+    effectiveGasPrice: string;
+    receiptStatus: string;
+  } | null = null;
 
   if (!alreadyAnchored) {
     const simulation = await publicClient.simulateContract({
@@ -482,9 +516,15 @@ export async function anchorLatestDocumentOnchain(assetId: string, db: PrismaCli
     });
 
     txHash = await walletClient.writeContract(simulation.request);
-    await awaitTxReceipt(publicClient, txHash as `0x${string}`, {
+    const receipt = await awaitTxReceipt(publicClient, txHash as `0x${string}`, {
       label: 'anchorDocumentHash'
     });
+    receiptMetadata = {
+      blockNumber: receipt.blockNumber,
+      gasUsed: receipt.gasUsed,
+      effectiveGasPrice: receipt.effectiveGasPrice.toString(),
+      receiptStatus: receipt.status
+    };
   }
 
   await upsertReadinessRecord({
@@ -503,7 +543,11 @@ export async function anchorLatestDocumentOnchain(assetId: string, db: PrismaCli
     },
     txHash,
     chainId: String(config.chainId),
-    anchoredAt: new Date()
+    anchoredAt: new Date(),
+    blockNumber: receiptMetadata?.blockNumber ?? null,
+    gasUsed: receiptMetadata?.gasUsed ?? null,
+    effectiveGasPrice: receiptMetadata?.effectiveGasPrice ?? null,
+    receiptStatus: receiptMetadata?.receiptStatus ?? null
   });
 
   await db.readinessProject.update({

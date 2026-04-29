@@ -2183,6 +2183,13 @@ model OnchainRecord {
   status             ReadinessStatus @default(NOT_STARTED)
   payload            Json
   anchoredAt         DateTime?
+  // Receipt metadata captured after waitForTransactionReceipt. Nullable
+  // because mock-mode rows have no real receipt and pre-#10 rows were
+  // written without them.
+  blockNumber        BigInt?
+  gasUsed            BigInt?
+  effectiveGasPrice  String?
+  receiptStatus      String?
   createdAt          DateTime        @default(now())
   readinessProject   ReadinessProject @relation(fields: [readinessProjectId], references: [id], onDelete: Cascade)
   document           Document?       @relation(fields: [documentId], references: [id], onDelete: SetNull)
