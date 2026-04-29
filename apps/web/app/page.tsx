@@ -96,30 +96,29 @@ export default async function LandingPage() {
             <div className="floating-orb absolute right-10 top-10 hidden h-28 w-28 rounded-full bg-accent/10 blur-2xl lg:block" />
             <div className="relative space-y-8">
               <div className="flex flex-wrap items-center gap-3">
-                <Badge tone="good">Korea Real Estate Investment-Firm OS</Badge>
-                <Badge>Research + Underwriting + Deals + Portfolio + Capital Shell</Badge>
+                <Badge tone="good">한국 부동산 운용사 OS</Badge>
+                <Badge>리서치 · 언더라이팅 · 딜 · 포트폴리오 · 자본조달</Badge>
               </div>
 
               <div className="space-y-5">
                 <h1 className="max-w-5xl text-5xl font-semibold leading-[0.95] tracking-[-0.05em] text-white md:text-7xl">
-                  Operate Korean real-estate investments
+                  부동산 투자의 모든 단계를
                   <br />
-                  from research through portfolio management.
+                  하나의 운영 시스템에서.
                 </h1>
                 <p className="max-w-3xl text-lg leading-8 text-slate-300">
-                  Run research, review-gated underwriting, deal execution, portfolio operations, and
-                  capital-formation workflows in one operator system built for Korean real-estate
-                  investing.
+                  Nexus Seoul은 한국 부동산 투자팀을 위한 AI 네이티브 운영 시스템입니다. 리서치
+                  인테이크, 증거 검토, 언더라이팅, 딜 실행, 포트폴리오 관리, 자본조달 워크플로를
+                  단일 애플리케이션에서 운영합니다.
                 </p>
                 <p className="max-w-3xl text-base leading-7 text-slate-400">
-                  DATA_CENTER remains one vertical pack, OFFICE is the first full non-data-center
-                  pack, and INDUSTRIAL / LOGISTICS is the next native playbook on the same
-                  review-gated evidence model.
+                  데이터센터·오피스·산업/물류·랜드 자산군을 동일한 검토 게이팅(review-gated) 증거
+                  모델 위에서 다룹니다. 스프레드시트로 흩어지는 가정·문서·메모를 자산 레코드 하나에
+                  묶어 위원회가 읽는 그 숫자가 어디서 왔는지 항상 추적 가능하게 만듭니다.
                 </p>
                 <p className="max-w-3xl text-sm leading-7 text-slate-500">
-                  Files, extracted text, valuation logic, and workflows remain offchain. Only
-                  registry identifiers, document hashes, and packet metadata are anchorable onchain
-                  under the registry-only model.
+                  문서·추출 텍스트·평가 로직·워크플로는 모두 오프체인에 머무릅니다. 레지스트리
+                  식별자, 문서 해시, 패킷 메타데이터만 온체인에 앵커링되는 registry-only 구조입니다.
                 </p>
               </div>
 
