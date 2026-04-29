@@ -289,11 +289,126 @@ async function httpFetchPage(url: string): Promise<ResearchFetchedPage> {
   };
 }
 
+// ---------------------------------------------------------------------------
+// Vendor web search — Tavily / Serper. Both expose a "give me search results
+// for a query" endpoint and return enough structure (url + title + snippet
+// + published time) to map onto ResearchSource without HTML scraping.
+//
+// Selection rule: TAVILY_API_KEY is preferred when both are set (Tavily's
+// /search endpoint surfaces published_date directly so the agent has real
+// freshness signals). Fall back to SERPER_API_KEY otherwise. With no key
+// at all the toolset returns []; the agent then degrades to its DB-only
+// discovery path, which is still useful for curated snapshots.
+// ---------------------------------------------------------------------------
+
+type VendorSearchResult = ResearchSource;
+
+async function tavilySearchNews(query: string, apiKey: string): Promise<VendorSearchResult[]> {
+  const response = await safeFetch('https://api.tavily.com/search', {
+    method: 'POST',
+    timeoutMs: HTTP_TIMEOUT_MS,
+    retries: 1,
+    retryBackoffMs: 200,
+    acceptedContentTypes: ['application/json'],
+    headers: {
+      'content-type': 'application/json',
+      'authorization': `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      query,
+      search_depth: 'basic',
+      max_results: 8,
+      include_answer: false
+    })
+  });
+  if (!response.ok) {
+    throw new Error(`tavily search ${response.status}`);
+  }
+  const body = (await response.json()) as {
+    results?: Array<{
+      url?: unknown;
+      title?: unknown;
+      content?: unknown;
+      published_date?: unknown;
+    }>;
+  };
+  const out: VendorSearchResult[] = [];
+  for (const item of body.results ?? []) {
+    if (typeof item.url !== 'string' || typeof item.title !== 'string') continue;
+    const publishedAt =
+      typeof item.published_date === 'string' ? new Date(item.published_date) : null;
+    out.push({
+      id: item.url,
+      url: item.url,
+      title: item.title,
+      publisher: tryHostname(item.url) ?? 'unknown',
+      publishedAt: publishedAt && !Number.isNaN(publishedAt.getTime()) ? publishedAt : null,
+      snippet: typeof item.content === 'string' ? item.content : ''
+    });
+  }
+  return out;
+}
+
+async function serperSearchNews(query: string, apiKey: string): Promise<VendorSearchResult[]> {
+  const response = await safeFetch('https://google.serper.dev/search', {
+    method: 'POST',
+    timeoutMs: HTTP_TIMEOUT_MS,
+    retries: 1,
+    retryBackoffMs: 200,
+    acceptedContentTypes: ['application/json'],
+    headers: {
+      'content-type': 'application/json',
+      'x-api-key': apiKey
+    },
+    body: JSON.stringify({ q: query, num: 8 })
+  });
+  if (!response.ok) {
+    throw new Error(`serper search ${response.status}`);
+  }
+  const body = (await response.json()) as {
+    organic?: Array<{ link?: unknown; title?: unknown; snippet?: unknown; date?: unknown }>;
+  };
+  const out: VendorSearchResult[] = [];
+  for (const item of body.organic ?? []) {
+    if (typeof item.link !== 'string' || typeof item.title !== 'string') continue;
+    const publishedAt = typeof item.date === 'string' ? new Date(item.date) : null;
+    out.push({
+      id: item.link,
+      url: item.link,
+      title: item.title,
+      publisher: tryHostname(item.link) ?? 'unknown',
+      publishedAt: publishedAt && !Number.isNaN(publishedAt.getTime()) ? publishedAt : null,
+      snippet: typeof item.snippet === 'string' ? item.snippet : ''
+    });
+  }
+  return out;
+}
+
+function tryHostname(url: string): string | null {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return null;
+  }
+}
+
 export function createHttpToolset(): ResearchToolset {
+  const tavilyKey = process.env.TAVILY_API_KEY?.trim();
+  const serperKey = process.env.SERPER_API_KEY?.trim();
   return {
-    async searchNews(_query: string): Promise<ResearchSource[]> {
-      // No vendor search API wired yet. Agent should use the DB toolset for
-      // discovery and come here only for fetch_page.
+    async searchNews(query: string): Promise<ResearchSource[]> {
+      const trimmed = query.trim();
+      if (!trimmed) return [];
+      try {
+        if (tavilyKey) return await tavilySearchNews(trimmed, tavilyKey);
+        if (serperKey) return await serperSearchNews(trimmed, serperKey);
+      } catch {
+        // Vendor search is best-effort; the agent has the DB toolset as a
+        // fallback discovery path. Returning [] degrades gracefully and
+        // surfaces the failure via the audit log when the agent tries the
+        // empty result and re-issues a different query.
+        return [];
+      }
       return [];
     },
     fetchPage: httpFetchPage

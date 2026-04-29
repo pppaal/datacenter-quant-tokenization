@@ -110,10 +110,72 @@ test('createHttpToolset: rejects non-http URLs', async () => {
   await assert.rejects(() => http.fetchPage('ftp://example.com/a'), /Disallowed scheme/);
 });
 
-test('createHttpToolset: search returns empty (no vendor API wired yet)', async () => {
-  const http = createHttpToolset();
-  const results = await http.searchNews('anything');
-  assert.deepEqual(results, []);
+test('createHttpToolset: search returns empty when no vendor API key is set', async () => {
+  const prevTavily = process.env.TAVILY_API_KEY;
+  const prevSerper = process.env.SERPER_API_KEY;
+  delete process.env.TAVILY_API_KEY;
+  delete process.env.SERPER_API_KEY;
+  try {
+    const http = createHttpToolset();
+    const results = await http.searchNews('anything');
+    assert.deepEqual(results, []);
+  } finally {
+    if (prevTavily !== undefined) process.env.TAVILY_API_KEY = prevTavily;
+    if (prevSerper !== undefined) process.env.SERPER_API_KEY = prevSerper;
+  }
+});
+
+test('createHttpToolset: tavily adapter shapes results when key is set', async () => {
+  const prevKey = process.env.TAVILY_API_KEY;
+  process.env.TAVILY_API_KEY = 'test-key';
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (async () =>
+    new Response(
+      JSON.stringify({
+        results: [
+          {
+            url: 'https://example.com/article',
+            title: 'Cap rate trend',
+            content: 'Q2 2026 Gangnam cap rates...',
+            published_date: '2026-04-01'
+          }
+        ]
+      }),
+      { status: 200, headers: { 'content-type': 'application/json' } }
+    )) as typeof fetch;
+  try {
+    const http = createHttpToolset();
+    const results = await http.searchNews('Gangnam cap rate');
+    assert.equal(results.length, 1);
+    assert.equal(results[0]!.url, 'https://example.com/article');
+    assert.equal(results[0]!.title, 'Cap rate trend');
+    assert.equal(results[0]!.publisher, 'example.com');
+    assert.ok(results[0]!.publishedAt instanceof Date);
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (prevKey === undefined) delete process.env.TAVILY_API_KEY;
+    else process.env.TAVILY_API_KEY = prevKey;
+  }
+});
+
+test('createHttpToolset: tavily adapter degrades to [] on vendor error', async () => {
+  const prevKey = process.env.TAVILY_API_KEY;
+  process.env.TAVILY_API_KEY = 'test-key';
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (async () =>
+    new Response('upstream blew up', {
+      status: 500,
+      headers: { 'content-type': 'application/json' }
+    })) as typeof fetch;
+  try {
+    const http = createHttpToolset();
+    const results = await http.searchNews('anything');
+    assert.deepEqual(results, []);
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (prevKey === undefined) delete process.env.TAVILY_API_KEY;
+    else process.env.TAVILY_API_KEY = prevKey;
+  }
 });
 
 test('pickEncoding prefers Content-Type charset', () => {

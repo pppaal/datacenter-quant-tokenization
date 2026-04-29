@@ -42,6 +42,8 @@ export type SafeFetchOptions = {
   allowedHosts?: string[] | null;
   headers?: Record<string, string>;
   method?: string;
+  /** Request body. String, ArrayBuffer, or Uint8Array — caller sets content-type. */
+  body?: string | ArrayBuffer | Uint8Array;
   /**
    * Retries on transient failures: network errors, 408, 425, 429, 5xx.
    * 4xx other than the listed retry-friendly codes are NOT retried — those
@@ -251,6 +253,7 @@ async function safeFetchOnce(
       response = await fetch(parsed.toString(), {
         method,
         headers,
+        body: options.body as BodyInit | undefined,
         redirect: 'manual',
         signal: controller.signal
       });
