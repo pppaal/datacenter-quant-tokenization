@@ -1,5 +1,10 @@
 import OpenAI from 'openai';
 import { openaiModel } from '@/lib/ai/models';
+import {
+  computeAiPromptHash,
+  getCachedAiResponse,
+  setCachedAiResponse
+} from '@/lib/services/ai/response-cache';
 import type { ExtractedDocumentFactInput } from '@/lib/services/document-extraction';
 import type { ForecastDecisionNarrative } from '@/lib/services/forecast/decision';
 import type { ParsedFinancialStatement } from '@/lib/services/financial-statements';
@@ -10,6 +15,58 @@ const model = openaiModel();
 function getClient() {
   if (!process.env.OPENAI_API_KEY) return null;
   return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+}
+
+type ChatMessage = { role: 'system' | 'user' | 'assistant'; content: string };
+
+/**
+ * Run a chat-completion call through the AiResponseCache.
+ *
+ * Hash key = SHA-256(canonical(model, system, messages)). Same input set →
+ * same hash → cached response. The hash deliberately excludes temperature
+ * + response_format because (a) those are stable per call site here, and
+ * (b) including them would mean a future temperature tweak invalidates
+ * every previously-cached row at once. If you change a call site's
+ * temperature you should change its TTL on the next deploy too.
+ *
+ * Cache failures (DB down, etc.) MUST NOT break the live path: every read
+ * + write is wrapped so the call site degrades to a fresh API hit.
+ */
+async function cachedChatCompletion(input: {
+  client: OpenAI;
+  systemPrompt: string;
+  userContent: string;
+  ttlSeconds: number;
+  responseFormat?: { type: 'json_object' };
+  temperature: number;
+}): Promise<{ content: string | null; cacheHit: boolean }> {
+  const messages: ChatMessage[] = [
+    { role: 'system', content: input.systemPrompt },
+    { role: 'user', content: input.userContent }
+  ];
+  const promptHash = computeAiPromptHash({ model, system: input.systemPrompt, messages });
+
+  const hit = await getCachedAiResponse({ promptHash, model }).catch(() => null);
+  if (hit) return { content: hit.response, cacheHit: true };
+
+  const response = await input.client.chat.completions.create({
+    model,
+    temperature: input.temperature,
+    response_format: input.responseFormat,
+    messages
+  });
+  const content = response.choices[0]?.message?.content?.trim() ?? null;
+  if (content) {
+    await setCachedAiResponse({
+      promptHash,
+      model,
+      response: content,
+      inputTokens: response.usage?.prompt_tokens ?? null,
+      outputTokens: response.usage?.completion_tokens ?? null,
+      ttlSeconds: input.ttlSeconds
+    }).catch(() => {});
+  }
+  return { content, cacheHit: false };
 }
 
 export async function generateUnderwritingMemo(
@@ -37,29 +94,26 @@ export async function generateUnderwritingMemo(
   if (!client) return fallback;
 
   try {
-    const response = await client.chat.completions.create({
-      model,
+    // 1h TTL: the analysis blob is sensitive to confidence, scenario
+    // values, and risk list, so a stale cache hit on a re-run after a
+    // valuation refresh would hide the change. Hashing covers the
+    // structured input directly so most re-renders within the hour are
+    // genuine duplicates.
+    const { content } = await cachedChatCompletion({
+      client,
+      systemPrompt: `You write concise institutional investment memos for ${assetClassLabel} real-estate opportunities. Use terms like investment memo, analysis, scenario, return profile, downside, and diligence support. Avoid retail offering or return-guarantee language.`,
+      userContent: JSON.stringify({
+        asset: analysis.asset,
+        scenarios: analysis.scenarios,
+        confidenceScore: analysis.confidenceScore,
+        keyRisks: analysis.keyRisks,
+        dueDiligenceChecklist: analysis.ddChecklist,
+        forecastDecisionNarrative: forecastNarrative
+      }),
       temperature: 0.2,
-      messages: [
-        {
-          role: 'system',
-          content: `You write concise institutional investment memos for ${assetClassLabel} real-estate opportunities. Use terms like investment memo, analysis, scenario, return profile, downside, and diligence support. Avoid retail offering or return-guarantee language.`
-        },
-        {
-          role: 'user',
-          content: JSON.stringify({
-            asset: analysis.asset,
-            scenarios: analysis.scenarios,
-            confidenceScore: analysis.confidenceScore,
-            keyRisks: analysis.keyRisks,
-            dueDiligenceChecklist: analysis.ddChecklist,
-            forecastDecisionNarrative: forecastNarrative
-          })
-        }
-      ]
+      ttlSeconds: 3600
     });
-
-    return response.choices[0]?.message?.content?.trim() || fallback;
+    return content || fallback;
   } catch {
     return fallback;
   }
@@ -76,23 +130,17 @@ export async function generateDocumentSummary(input: {
   if (!client || !preview) return fallback;
 
   try {
-    const response = await client.chat.completions.create({
-      model,
+    // 24h TTL: the input is the document text excerpt, which doesn't change
+    // unless the file is re-uploaded — at which point the hash changes too.
+    const { content } = await cachedChatCompletion({
+      client,
+      systemPrompt:
+        'Summarize diligence documents for an institutional asset-review platform. Keep it to 2 sentences. Avoid investment-advice language.',
+      userContent: `Asset: ${input.assetName}\nDocument: ${input.title}\nExcerpt:\n${preview}`,
       temperature: 0.1,
-      messages: [
-        {
-          role: 'system',
-          content:
-            'Summarize diligence documents for an institutional asset-review platform. Keep it to 2 sentences. Avoid investment-advice language.'
-        },
-        {
-          role: 'user',
-          content: `Asset: ${input.assetName}\nDocument: ${input.title}\nExcerpt:\n${preview}`
-        }
-      ]
+      ttlSeconds: 86400
     });
-
-    return response.choices[0]?.message?.content?.trim() || fallback;
+    return content || fallback;
   } catch {
     return fallback;
   }
@@ -108,24 +156,18 @@ export async function extractDocumentFactsWithAi(input: {
   if (!client || !preview) return [];
 
   try {
-    const response = await client.chat.completions.create({
-      model,
+    // 24h TTL: structured extraction over a fixed text excerpt is stable.
+    const { content: rawContent } = await cachedChatCompletion({
+      client,
+      systemPrompt:
+        'Extract structured diligence facts for institutional real-estate underwriting. Return JSON with a top-level "facts" array. Each fact should include factType, factKey, optional factValueText, optional factValueNumber, optional factValueDate as ISO string, optional unit, and confidenceScore between 0 and 1.',
+      userContent: `Asset: ${input.assetName}\nDocument: ${input.title}\nText:\n${preview}`,
       temperature: 0.1,
-      response_format: { type: 'json_object' },
-      messages: [
-        {
-          role: 'system',
-          content:
-            'Extract structured diligence facts for institutional real-estate underwriting. Return JSON with a top-level "facts" array. Each fact should include factType, factKey, optional factValueText, optional factValueNumber, optional factValueDate as ISO string, optional unit, and confidenceScore between 0 and 1.'
-        },
-        {
-          role: 'user',
-          content: `Asset: ${input.assetName}\nDocument: ${input.title}\nText:\n${preview}`
-        }
-      ]
+      responseFormat: { type: 'json_object' },
+      ttlSeconds: 86400
     });
 
-    const content = response.choices[0]?.message?.content?.trim() ?? '';
+    const content = rawContent ?? '';
     const parsed = JSON.parse(content || '{}') as { facts?: unknown[] };
 
     const mapped = (parsed.facts ?? []).map((item) => {
@@ -167,24 +209,19 @@ export async function extractFinancialStatementWithAi(input: {
   if (!client || !preview) return null;
 
   try {
-    const response = await client.chat.completions.create({
-      model,
+    // 24h TTL: financial extraction over a frozen text excerpt is the most
+    // strongly cacheable call we make — same numbers in, same numbers out.
+    const { content: rawContent } = await cachedChatCompletion({
+      client,
+      systemPrompt:
+        'Extract a structured financial statement for real-estate underwriting. Return JSON with keys: counterpartyName, counterpartyRole, statementType, fiscalYear, fiscalPeriod, currency, revenueKrw, ebitdaKrw, cashKrw, operatingCashFlowKrw, capexKrw, totalDebtKrw, currentAssetsKrw, currentLiabilitiesKrw, currentDebtMaturitiesKrw, totalAssetsKrw, totalEquityKrw, interestExpenseKrw, and optional lineItems array. Use normalized absolute numeric values, not formatted strings. If unknown, return null.',
+      userContent: `Asset: ${input.assetName}\nDocument: ${input.title}\nText:\n${preview}`,
       temperature: 0.1,
-      response_format: { type: 'json_object' },
-      messages: [
-        {
-          role: 'system',
-          content:
-            'Extract a structured financial statement for real-estate underwriting. Return JSON with keys: counterpartyName, counterpartyRole, statementType, fiscalYear, fiscalPeriod, currency, revenueKrw, ebitdaKrw, cashKrw, operatingCashFlowKrw, capexKrw, totalDebtKrw, currentAssetsKrw, currentLiabilitiesKrw, currentDebtMaturitiesKrw, totalAssetsKrw, totalEquityKrw, interestExpenseKrw, and optional lineItems array. Use normalized absolute numeric values, not formatted strings. If unknown, return null.'
-        },
-        {
-          role: 'user',
-          content: `Asset: ${input.assetName}\nDocument: ${input.title}\nText:\n${preview}`
-        }
-      ]
+      responseFormat: { type: 'json_object' },
+      ttlSeconds: 86400
     });
 
-    const content = response.choices[0]?.message?.content?.trim() ?? '';
+    const content = rawContent ?? '';
     const parsed = JSON.parse(content || '{}') as Record<string, unknown>;
     const toNullableNumber = (value: unknown) =>
       typeof value === 'number' && Number.isFinite(value) ? value : null;
