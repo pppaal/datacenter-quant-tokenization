@@ -124,22 +124,22 @@ export default async function LandingPage() {
 
               <div className="flex flex-wrap gap-3">
                 <Link href="/admin/assets/new">
-                  <Button>Open New Investment Case</Button>
+                  <Button>새 투자 건 시작</Button>
                 </Link>
                 <Link href="/sample-report">
-                  <Button variant="secondary">View Sample IC Output</Button>
+                  <Button variant="secondary">샘플 IC 메모 보기</Button>
                 </Link>
                 <Link href="/admin">
-                  <Button variant="ghost">Open Investment Console</Button>
+                  <Button variant="ghost">콘솔 열기</Button>
                 </Link>
               </div>
 
               <div className="grid gap-4 md:grid-cols-4">
                 {[
-                  ['Tracked Assets', formatNumber(summary.assetCount, 0)],
-                  ['Asset Classes', formatNumber(activeAssetClasses, 0)],
-                  ['Documents', formatNumber(summary.documentCount, 0)],
-                  ['IM Runs', formatNumber(summary.valuationCount, 0)]
+                  ['추적 중 자산', formatNumber(summary.assetCount, 0)],
+                  ['자산군', formatNumber(activeAssetClasses, 0)],
+                  ['문서', formatNumber(summary.documentCount, 0)],
+                  ['IM 실행 횟수', formatNumber(summary.valuationCount, 0)]
                 ].map(([label, value]) => (
                   <div key={label} className="metric-card">
                     <div className="fine-print">{label}</div>
