@@ -706,6 +706,11 @@ model ValuationRun {
   ddChecklist      String[]
   assumptions      Json
   provenance       Json
+  // SHA-256 of the canonical JSON of (engineVersion, assumptions). Two runs
+  // with the same hash were produced by the same engine version against
+  // identical assumptions and should yield identical scenarios; mismatch
+  // exposes engine drift or hidden assumption mutation.
+  inputsHash       String?
   createdById      String?
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
@@ -715,6 +720,8 @@ model ValuationRun {
   sensitivityRuns  SensitivityRun[]
   aiInsights       AiInsight[]
   committeePackets InvestmentCommitteePacket[]
+
+  @@index([assetId, inputsHash])
 }
 
 model ValuationScenario {
