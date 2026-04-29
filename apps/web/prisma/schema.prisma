@@ -2225,6 +2225,47 @@ model OnchainRecord {
 // (chainId, contractAddress); `lastBlock` records the highest block already
 // drained from `getLogs`, so the next poll resumes from `lastBlock + 1`.
 // `label` is informational ("registry", "token", "compliance", ...).
+// Vector embeddings for semantic search over the document corpus. The
+// `embedding` column is pgvector's vector(1536) type (sized for OpenAI
+// text-embedding-3-small / Anthropic voyage-3 family). Prisma 5 doesn't
+// type pgvector natively, so the column lives behind Unsupported and
+// callers use raw $queryRaw / $executeRaw to read or insert. The
+// vector extension is enabled by the matching migration.
+model DocumentEmbedding {
+  id          String   @id @default(cuid())
+  documentId  String
+  chunkIndex  Int
+  model       String
+  embedding   Unsupported("vector(1536)")
+  text        String
+  tokenCount  Int?
+  createdAt   DateTime @default(now())
+
+  @@unique([documentId, chunkIndex, model])
+  @@index([documentId])
+}
+
+// Cache for deterministic LLM responses. promptHash is SHA-256 over the
+// canonical request envelope (model + system + messages + tools), so any
+// callable LLM operation that is genuinely deterministic w.r.t. those
+// inputs can short-circuit on a cache hit. expiresAt drives TTL eviction
+// so stale market context doesn't linger past its useful life.
+model AiResponseCache {
+  id           String   @id @default(cuid())
+  promptHash   String
+  model        String
+  response     String
+  inputTokens  Int?
+  outputTokens Int?
+  createdAt    DateTime @default(now())
+  expiresAt    DateTime
+  hitCount     Int      @default(0)
+  lastHitAt    DateTime?
+
+  @@unique([promptHash, model])
+  @@index([expiresAt])
+}
+
 model OnchainEventCursor {
   id              String   @id @default(cuid())
   chainId         Int
