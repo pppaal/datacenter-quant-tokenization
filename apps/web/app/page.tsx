@@ -190,17 +190,17 @@ export default async function LandingPage() {
       <section className="app-shell py-2">
         <div className="grid gap-4 md:grid-cols-4">
           {[
-            ['Asset Classes', formatNumber(activeAssetClasses, 0), 'active underwriting sectors'],
-            ['Average Cap Rate', formatPercent(averageCapRate), 'latest market snapshots'],
-            ['Tracked Area', `${formatNumber(totalArea)} sqm`, 'across current assets'],
+            ['활성 자산군', formatNumber(activeAssetClasses, 0), '진행 중인 언더라이팅 섹터'],
+            ['평균 Cap Rate', formatPercent(averageCapRate), '최근 시장 스냅샷 기준'],
+            ['추적 면적', `${formatNumber(totalArea)} sqm`, '현재 자산 합계'],
             [
-              'Latest Base Value',
+              '최신 베이스 케이스',
               formatCurrencyFromKrwAtRate(
                 latestBaseValue,
                 latestBaseValueCurrency,
                 latestBaseValueFxRate
               ),
-              'latest modeled base case'
+              '가장 최근 모델링된 기준값'
             ]
           ].map(([label, value, detail]) => (
             <div key={label} className="metric-card">
@@ -215,18 +215,18 @@ export default async function LandingPage() {
       <section className="app-shell py-10">
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <div className="eyebrow">Asset Pipeline</div>
-            <h2 className="section-title mt-3">Current underwriting and research cases</h2>
+            <div className="eyebrow">자산 파이프라인</div>
+            <h2 className="section-title mt-3">현재 언더라이팅 · 리서치 진행 중인 자산</h2>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-400">
-              Each asset below runs through the same operating chain: intake, research enrichment,
-              evidence review, underwriting, execution, and readiness packaging.
+              아래 모든 자산이 동일한 운영 체인 — 인테이크 · 리서치 보강 · 증거 검토 · 언더라이팅 ·
+              실행 · 준비 패키징 — 을 통과합니다.
             </p>
           </div>
           <Link
             href="/product"
             className="fine-print rounded-full border border-white/10 px-4 py-3 transition hover:border-white/20 hover:text-white"
           >
-            Investment OS Overview
+            제품 개요 보기
           </Link>
         </div>
 
