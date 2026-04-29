@@ -2239,7 +2239,7 @@ model DocumentEmbedding {
   embedding   Unsupported("vector(1536)")
   text        String
   tokenCount  Int?
-  createdAt   DateTime @default(now())
+  indexedAt   DateTime @default(now())
 
   @@unique([documentId, chunkIndex, model])
   @@index([documentId])
