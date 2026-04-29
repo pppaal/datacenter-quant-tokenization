@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { Prisma } from '@prisma/client';
 import { applyCreditOverlay } from '@/lib/services/valuation/credit-overlay';
 import type { UnderwritingAnalysis, UnderwritingBundle } from '@/lib/services/valuation/types';
 
@@ -109,13 +110,13 @@ test('credit overlay reduces confidence and adds diligence when a counterparty s
           fxRateToKrw: null,
           fxAsOf: null,
           provenanceSystem: null,
-          revenueKrw: 100,
-          ebitdaKrw: 20,
-          cashKrw: 5,
-          totalDebtKrw: 80,
-          totalAssetsKrw: 120,
-          totalEquityKrw: 15,
-          interestExpenseKrw: 8,
+          revenueKrw: new Prisma.Decimal(100),
+          ebitdaKrw: new Prisma.Decimal(20),
+          cashKrw: new Prisma.Decimal(5),
+          totalDebtKrw: new Prisma.Decimal(80),
+          totalAssetsKrw: new Prisma.Decimal(120),
+          totalEquityKrw: new Prisma.Decimal(15),
+          interestExpenseKrw: new Prisma.Decimal(8),
           createdAt: now,
           updatedAt: now
         }

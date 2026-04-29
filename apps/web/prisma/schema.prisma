@@ -1384,13 +1384,13 @@ model FinancialStatement {
   // Distinct from documentVersionId (which is the file we extracted from)
   // because manual entry has no document version.
   provenanceSystem   String?
-  revenueKrw         Float?
-  ebitdaKrw          Float?
-  cashKrw            Float?
-  totalDebtKrw       Float?
-  totalAssetsKrw     Float?
-  totalEquityKrw     Float?
-  interestExpenseKrw Float?
+  revenueKrw         Decimal?           @db.Decimal(20, 2)
+  ebitdaKrw          Decimal?           @db.Decimal(20, 2)
+  cashKrw            Decimal?           @db.Decimal(20, 2)
+  totalDebtKrw       Decimal?           @db.Decimal(20, 2)
+  totalAssetsKrw     Decimal?           @db.Decimal(20, 2)
+  totalEquityKrw     Decimal?           @db.Decimal(20, 2)
+  interestExpenseKrw Decimal?           @db.Decimal(20, 2)
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
   asset              Asset              @relation(fields: [assetId], references: [id], onDelete: Cascade)
@@ -1413,7 +1413,7 @@ model FinancialLineItem {
   financialStatementId String
   lineKey              String
   lineLabel            String
-  valueKrw             Float
+  valueKrw             Decimal            @db.Decimal(20, 2)
   createdAt            DateTime           @default(now())
   financialStatement   FinancialStatement @relation(fields: [financialStatementId], references: [id], onDelete: Cascade)
 
