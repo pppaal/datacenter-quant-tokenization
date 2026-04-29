@@ -338,11 +338,34 @@ function buildResearchWorkspaceStatus(
 
 
 
-export async function syncResearchWorkspace(db: PrismaClient = prisma) {
+/**
+ * Sync scope selector. Lets the cron layer pick which slice of the research
+ * graph to refresh:
+ *   'all'         — full sweep (default; backwards-compatible)
+ *   'macro'       — KOSIS / BOK ECOS official sources only (weekly cadence)
+ *   'market'      — REB / MOLIT / building / land sources only (daily cadence)
+ *   'assets'      — per-asset dossier rebuild only (hourly cadence; cheap)
+ */
+export type ResearchSyncScope = 'all' | 'macro' | 'market' | 'assets';
+
+export async function syncResearchWorkspace(
+  db: PrismaClient = prisma,
+  options: { scope?: ResearchSyncScope } = {}
+) {
+  const scope = options.scope ?? 'all';
   const topology = await ensureResearchTopology(db);
-  const officialSync = await syncOfficialSourceResearch(db, topology);
-  const assetSync = await syncAssetAndMarketResearch(db, topology);
+  const officialSync =
+    scope === 'all' || scope === 'macro' || scope === 'market'
+      ? await syncOfficialSourceResearch(db, topology, {
+          cadence: scope === 'all' ? 'all' : scope
+        })
+      : { officialSourceCount: 0, macroSeriesCount: 0, marketIndicatorCount: 0 };
+  const assetSync =
+    scope === 'all' || scope === 'assets'
+      ? await syncAssetAndMarketResearch(db, topology)
+      : { assetDossierCount: 0, openCoverageTaskCount: 0 };
   return {
+    scope,
     topology,
     officialSync,
     assetSync
@@ -353,10 +376,12 @@ export async function runResearchWorkspaceSync(
   input: {
     triggerType?: ResearchSyncTriggerType;
     actorIdentifier?: string | null;
+    scope?: ResearchSyncScope;
   } = {},
   db: PrismaClient = prisma
 ) {
   const triggerType = input.triggerType ?? ResearchSyncTriggerType.WORKSPACE_REFRESH;
+  const scope = input.scope ?? 'all';
   const startedAt = new Date();
   const run = await db.researchSyncRun.create({
     data: {
@@ -367,7 +392,7 @@ export async function runResearchWorkspaceSync(
   });
 
   try {
-    const result = await syncResearchWorkspace(db);
+    const result = await syncResearchWorkspace(db, { scope });
     const snapshot = await getResearchWorkspaceSyncSnapshot(db);
     const finishedAt = new Date();
 
@@ -385,6 +410,7 @@ export async function runResearchWorkspaceSync(
         staleAssetDossierCount: snapshot.staleAssetDossierCount,
         coverageTaskCount: result.assetSync.openCoverageTaskCount,
         metadata: {
+          scope,
           macroSeriesCount: result.officialSync.macroSeriesCount,
           marketIndicatorCount: result.officialSync.marketIndicatorCount
         }

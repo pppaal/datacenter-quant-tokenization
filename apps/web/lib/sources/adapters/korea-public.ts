@@ -16,6 +16,20 @@ export type KoreaPublicDatasetKey =
   | 'gis_building_integration'
   | 'korea_building_energy';
 
+/**
+ * Recommended cron cadence for a dataset.
+ *
+ *  macro  — KOSIS, BOK ECOS. CPI, rates, unemployment update monthly /
+ *           per central-bank policy decision; weekly is conservative.
+ *  market — REB, MOLIT property statistics, transaction prices, building
+ *           ledger / permits. Daily because new transactions and permits
+ *           land throughout the day during business hours.
+ *
+ * The orchestrator filters listKoreaPublicDatasetDefinitions by this
+ * field so the macro and market crons can run on different schedules.
+ */
+export type KoreaPublicDatasetCadence = 'macro' | 'market';
+
 export type KoreaPublicDatasetDefinition = {
   key: KoreaPublicDatasetKey;
   label: string;
@@ -24,6 +38,7 @@ export type KoreaPublicDatasetDefinition = {
   envApiKeyKey?: string;
   coverage: string[];
   fallbackNote: string;
+  cadence: KoreaPublicDatasetCadence;
   normalizedMetrics?: KoreaPublicDatasetMetricDefinition[];
 };
 
@@ -105,6 +120,7 @@ const datasetDefinitions: Record<KoreaPublicDatasetKey, KoreaPublicDatasetDefini
     envApiKeyKey: 'KOREA_KOSIS_API_KEY',
     coverage: ['macro', 'rates', 'construction cost', 'transaction volume'],
     fallbackNote: 'Configured through existing KOSIS series env values or fallback macro data.',
+    cadence: 'macro',
     normalizedMetrics: [
       {
         normalizedKey: 'kr.cpi_yoy_pct',
@@ -144,6 +160,7 @@ const datasetDefinitions: Record<KoreaPublicDatasetKey, KoreaPublicDatasetDefini
     coverage: ['rates', 'financial conditions', 'macro'],
     fallbackNote:
       'Falls back to cached or manually staged macro observations when ECOS is not configured.',
+    cadence: 'macro',
     normalizedMetrics: [
       {
         normalizedKey: 'kr.base_rate_pct',
@@ -183,6 +200,7 @@ const datasetDefinitions: Record<KoreaPublicDatasetKey, KoreaPublicDatasetDefini
     envApiKeyKey: 'KOREA_REB_API_KEY',
     coverage: ['property market', 'office benchmarks', 'industrial benchmarks'],
     fallbackNote: 'Falls back to market snapshot and existing comp tables when REB is unavailable.',
+    cadence: 'market',
     normalizedMetrics: officeIndustrialMetricPack
   },
   molit_real_transaction: {
@@ -193,6 +211,7 @@ const datasetDefinitions: Record<KoreaPublicDatasetKey, KoreaPublicDatasetDefini
     envApiKeyKey: 'KOREA_MOLIT_REAL_TRANSACTION_API_KEY',
     coverage: ['transactions', 'price evidence'],
     fallbackNote: 'Falls back to stored transaction comps when MOLIT transactions are unavailable.',
+    cadence: 'market',
     normalizedMetrics: [
       {
         normalizedKey: 'office.transaction_count',
@@ -250,6 +269,7 @@ const datasetDefinitions: Record<KoreaPublicDatasetKey, KoreaPublicDatasetDefini
     coverage: ['building', 'physical'],
     fallbackNote:
       'Falls back to building snapshot and manual intake when the ledger API is unavailable.',
+    cadence: 'market',
     normalizedMetrics: [
       {
         normalizedKey: 'kr.building_count',
@@ -275,6 +295,7 @@ const datasetDefinitions: Record<KoreaPublicDatasetKey, KoreaPublicDatasetDefini
     coverage: ['permit', 'entitlement'],
     fallbackNote:
       'Falls back to permit snapshot and analyst review notes when the permit API is unavailable.',
+    cadence: 'market',
     normalizedMetrics: [
       {
         normalizedKey: 'kr.permit_count',
@@ -309,6 +330,7 @@ const datasetDefinitions: Record<KoreaPublicDatasetKey, KoreaPublicDatasetDefini
     coverage: ['planning', 'zoning'],
     fallbackNote:
       'Falls back to planning constraints and manual legal review when planning API is unavailable.',
+    cadence: 'market',
     normalizedMetrics: [
       {
         normalizedKey: 'kr.planning_restriction_count',
@@ -333,6 +355,7 @@ const datasetDefinitions: Record<KoreaPublicDatasetKey, KoreaPublicDatasetDefini
     envApiKeyKey: 'KOREA_MOLIT_LAND_CHARACTERISTICS_API_KEY',
     coverage: ['parcel', 'land'],
     fallbackNote: 'Falls back to parcel intake and geospatial overlays when unavailable.',
+    cadence: 'market',
     normalizedMetrics: [
       {
         normalizedKey: 'land.avg_site_area_sqm',
@@ -361,6 +384,7 @@ const datasetDefinitions: Record<KoreaPublicDatasetKey, KoreaPublicDatasetDefini
     coverage: ['land value', 'benchmarking'],
     fallbackNote:
       'Falls back to transaction comps and market snapshot when official land price API is unavailable.',
+    cadence: 'market',
     normalizedMetrics: [
       {
         normalizedKey: 'land.official_land_price_per_sqm_krw',
@@ -397,6 +421,7 @@ const datasetDefinitions: Record<KoreaPublicDatasetKey, KoreaPublicDatasetDefini
     coverage: ['parcel geometry', 'site'],
     fallbackNote:
       'Falls back to normalized address and site profile when cadastral geometry is unavailable.',
+    cadence: 'market',
     normalizedMetrics: [
       {
         normalizedKey: 'kr.parcel_count',
@@ -422,6 +447,7 @@ const datasetDefinitions: Record<KoreaPublicDatasetKey, KoreaPublicDatasetDefini
     coverage: ['building geometry', 'parcel overlays', 'site context'],
     fallbackNote:
       'Falls back to building snapshot, address normalization, and geospatial overlays when GIS building integration is unavailable.',
+    cadence: 'market',
     normalizedMetrics: [
       {
         normalizedKey: 'kr.gis_building_count',
@@ -447,6 +473,7 @@ const datasetDefinitions: Record<KoreaPublicDatasetKey, KoreaPublicDatasetDefini
     coverage: ['energy', 'physical operations'],
     fallbackNote:
       'Falls back to energy snapshot and analyst review notes when energy registry is unavailable.',
+    cadence: 'market',
     normalizedMetrics: [
       {
         normalizedKey: 'kr.energy_use_intensity_kwh_sqm',

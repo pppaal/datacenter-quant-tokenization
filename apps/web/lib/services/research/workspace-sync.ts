@@ -38,6 +38,7 @@ import {
   createKoreaPublicDatasetAdapter,
   extractKoreaPublicDatasetMetrics,
   listKoreaPublicDatasetDefinitions,
+  type KoreaPublicDatasetCadence,
   type KoreaPublicDatasetDefinition,
   type KoreaPublicNormalizedMetric
 } from '@/lib/sources/adapters/korea-public';
@@ -507,9 +508,16 @@ export async function ensureResearchTopology(db: PrismaClient): Promise<Research
   };
 }
 
-export async function syncOfficialSourceResearch(db: PrismaClient, topology: ResearchScopeLink) {
+export async function syncOfficialSourceResearch(
+  db: PrismaClient,
+  topology: ResearchScopeLink,
+  options: { cadence?: KoreaPublicDatasetCadence | 'all' } = {}
+) {
   const adapter = createKoreaPublicDatasetAdapter(createPrismaSourceCacheStore(db));
-  const definitions = listKoreaPublicDatasetDefinitions();
+  const cadenceFilter = options.cadence ?? 'all';
+  const definitions = listKoreaPublicDatasetDefinitions().filter((definition) =>
+    cadenceFilter === 'all' ? true : definition.cadence === cadenceFilter
+  );
   let macroSeriesCount = 0;
   let marketIndicatorCount = 0;
 
