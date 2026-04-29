@@ -225,18 +225,40 @@ function extractPublishedAt(html: string): Date | null {
   return null;
 }
 
+async function extractPdfText(buffer: ArrayBuffer): Promise<{ text: string; title: string | null }> {
+  // pdf-parse is loaded dynamically so the (relatively heavy) pdfjs-dist
+  // dependency isn't pulled into routes that never touch PDFs. PDFParse
+  // accepts a Uint8Array and exposes getText() / getInfo() methods.
+  const { PDFParse } = await import('pdf-parse');
+  const parser = new PDFParse({ data: new Uint8Array(buffer) });
+  try {
+    const [text, info] = await Promise.all([parser.getText(), parser.getInfo()]);
+    const meta = info.info as { Title?: unknown } | undefined;
+    const title = meta && typeof meta.Title === 'string' ? meta.Title : null;
+    return { text: text.text, title };
+  } finally {
+    await parser.destroy().catch(() => {});
+  }
+}
+
 async function httpFetchPage(url: string): Promise<ResearchFetchedPage> {
   // SSRF guard: rejects non-http(s) schemes, hostnames that resolve to
   // private/loopback/link-local/IMDS IPs, and bounds the redirect chain.
   // Content-Type whitelist: the agent surfaces arbitrary URLs from search
-  // results, and a 20MB binary or PDF previously decoded into garbage
-  // text that the LLM treated as legitimate context. The whitelist plus
-  // retry-on-transient-error handle the network reliability gap.
+  // results. HTML and PDF are both accepted; binary / image payloads are
+  // rejected here so the LLM doesn't receive UTF-decoded garbage as
+  // "context". The whitelist plus retry-on-transient-error handle the
+  // network reliability gap.
   const response = await safeFetch(url, {
     timeoutMs: HTTP_TIMEOUT_MS,
     retries: 2,
     retryBackoffMs: 300,
-    acceptedContentTypes: ['text/html', 'application/xhtml+xml', 'text/plain'],
+    acceptedContentTypes: [
+      'text/html',
+      'application/xhtml+xml',
+      'text/plain',
+      'application/pdf'
+    ],
     headers: {
       'user-agent': 'DatacenterQuant-ResearchAgent/1.0 (+https://example.internal/bot)'
     }
@@ -248,7 +270,17 @@ async function httpFetchPage(url: string): Promise<ResearchFetchedPage> {
   if (buffer.byteLength > HTTP_MAX_BYTES) {
     throw new Error(`response too large (${buffer.byteLength} > ${HTTP_MAX_BYTES})`);
   }
-  const html = decodeWithFallback(buffer, response.headers.get('content-type'));
+  const contentType = (response.headers.get('content-type') ?? '').toLowerCase();
+  if (contentType.startsWith('application/pdf')) {
+    const { text, title } = await extractPdfText(buffer);
+    return {
+      url,
+      title: title ?? url,
+      publishedAt: null,
+      text: text.replace(/\s+/g, ' ').slice(0, 20_000)
+    };
+  }
+  const html = decodeWithFallback(buffer, contentType);
   return {
     url,
     title: extractTitle(html) || url,
