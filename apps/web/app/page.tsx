@@ -351,11 +351,11 @@ export default async function LandingPage() {
       <section className="app-shell py-10">
         <Card className="grid gap-8 lg:grid-cols-[1fr_1fr]">
           <div>
-            <div className="eyebrow">Institutional Inquiry</div>
-            <h2 className="section-title mt-3">Review the workflow and sample IM.</h2>
+            <div className="eyebrow">기관 문의</div>
+            <h2 className="section-title mt-3">워크플로와 샘플 IM을 직접 확인하세요.</h2>
             <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-400">
-              Explore the analysis flow, generated memo, and admin console. Inquiry records are
-              stored in the same backend stack used by the rest of the platform.
+              분석 흐름, 자동 생성된 메모, 운영 콘솔을 둘러보세요. 문의 기록은 플랫폼의 다른
+              산출물과 같은 백엔드에 저장됩니다.
             </p>
           </div>
           <InquiryForm />
@@ -365,19 +365,19 @@ export default async function LandingPage() {
       <section className="app-shell py-6">
         <Card className="hero-mesh grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
           <div>
-            <div className="eyebrow">Final CTA</div>
-            <h2 className="section-title mt-3">Run the analysis, then open the memo.</h2>
+            <div className="eyebrow">시작하기</div>
+            <h2 className="section-title mt-3">분석을 실행하고 그 자리에서 메모를 엽니다.</h2>
             <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300">
-              Intake, enrichment, valuation, risk summary, and investment memo generation now sit
-              inside one operating workflow for real estate underwriting.
+              인테이크, 보강, 평가, 리스크 요약, 투자 메모 생성이 부동산 언더라이팅을 위한 하나의
+              운영 워크플로 안에 모입니다.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3 lg:justify-end">
             <Link href="/admin/assets/new">
-              <Button>Start Analysis</Button>
+              <Button>분석 시작</Button>
             </Link>
             <Link href="/sample-report">
-              <Button variant="secondary">Open Sample IM</Button>
+              <Button variant="secondary">샘플 IM 열기</Button>
             </Link>
           </div>
         </Card>
