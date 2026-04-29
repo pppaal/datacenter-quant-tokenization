@@ -2188,6 +2188,43 @@ model OnchainRecord {
   document           Document?       @relation(fields: [documentId], references: [id], onDelete: SetNull)
 }
 
+// Cursor for the chain → DB event indexer. One row per
+// (chainId, contractAddress); `lastBlock` records the highest block already
+// drained from `getLogs`, so the next poll resumes from `lastBlock + 1`.
+// `label` is informational ("registry", "token", "compliance", ...).
+model OnchainEventCursor {
+  id              String   @id @default(cuid())
+  chainId         Int
+  contractAddress String
+  label           String
+  lastBlock       BigInt   @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([chainId, contractAddress])
+}
+
+// Mirrored chain event. Indexer writes one row per matched log; the
+// (chainId, txHash, logIndex) tuple is the natural key, so re-running the
+// indexer is idempotent. `args` holds the viem-decoded event arguments
+// (BigInts pre-stringified) so consumers can read without an ABI.
+model OnchainEvent {
+  id              String   @id @default(cuid())
+  chainId         Int
+  blockNumber     BigInt
+  blockHash       String
+  txHash          String
+  logIndex        Int
+  contractAddress String
+  eventName       String
+  args            Json
+  indexedAt       DateTime @default(now())
+
+  @@unique([chainId, txHash, logIndex])
+  @@index([chainId, contractAddress, eventName])
+  @@index([chainId, blockNumber])
+}
+
 // Tokenization deployment manifest mirror. One row per asset for which an
 // ERC-3643 style AssetToken stack has been deployed. Columns marked `Address`
 // are 0x-prefixed hex strings (checksummed or lower-case both OK).
