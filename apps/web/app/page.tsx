@@ -15,46 +15,46 @@ export const dynamic = 'force-dynamic';
 const workflow = [
   {
     step: '01',
-    title: 'Research Intake',
-    body: 'Open a new investment case with asset, market, sponsor, financing, and document context in one operating record.'
+    title: '리서치 인테이크',
+    body: '자산·시장·스폰서·금융·문서 컨텍스트를 단일 운영 레코드 한 곳에 모아 새 투자 건을 시작합니다.'
   },
   {
     step: '02',
-    title: 'Evidence Review',
-    body: 'Pull market, permit, legal, lease, and geospatial evidence into the file and move only approved evidence into the underwriting layer.'
+    title: '증거 검토 (Review-Gated)',
+    body: '시장·인허가·법적·임차·지리공간 증거를 자산 레코드로 끌어오고, 승인된 증거만 언더라이팅 단계로 진입합니다.'
   },
   {
     step: '03',
-    title: 'Underwriting And IC',
-    body: 'Run valuation, downside, and diligence analysis, then generate committee-ready outputs from the same record.'
+    title: '언더라이팅 · IC',
+    body: '평가·다운사이드·DD 분석을 실행하고, 동일 레코드에서 위원회용 메모 · DD 체크리스트 · 리스크 메모를 자동 생성합니다.'
   },
   {
     step: '04',
-    title: 'Portfolio And Capital Ops',
-    body: 'Track live deals, held-asset KPIs, covenant watchlists, and capital formation shells without moving evidence or logic onchain.'
+    title: '포트폴리오 · 자본조달',
+    body: '실행 중인 딜, 보유 자산 KPI, 커버넌트 워치리스트, 펀드/SPV/투자자 셸을 동일 시스템에서 추적합니다.'
   }
 ];
 
 const outputs = [
   {
-    label: 'Valuation Surface',
+    label: '평가 결과 (Valuation Surface)',
     detail:
-      'Base case value, downside, approved evidence coverage, and scenario dispersion in one investment view.'
+      '베이스 케이스 가치, 다운사이드, 승인된 증거 커버리지, 시나리오 분산을 한 화면에서 봅니다.'
   },
   {
-    label: 'Research Dossier',
+    label: '리서치 도시에 (Dossier)',
     detail:
-      'Macro thesis, market indicators, comps, permit context, and approved micro evidence tied to the same asset record.'
+      '거시 thesis, 시장 지표, 비교거래, 인허가 맥락, 승인된 마이크로 증거를 같은 자산 레코드에 묶습니다.'
   },
   {
-    label: 'IC And DD Output',
+    label: 'IC · DD 산출물',
     detail:
-      'Committee memo, DD checklist, and risk memo grounded in approved evidence and current valuation state.'
+      '승인된 증거와 현재 평가 상태에 기반한 위원회 메모, DD 체크리스트, 리스크 메모를 자동 생성합니다.'
   },
   {
-    label: 'Execution Trail',
+    label: '실행 트레일',
     detail:
-      'Deals, document hashes, review packets, and registry-only anchor references linked back to each opportunity.'
+      '딜, 문서 해시, 검토 패킷, 레지스트리 앵커 참조를 각 투자건에 연결해 추적합니다.'
   }
 ];
 
