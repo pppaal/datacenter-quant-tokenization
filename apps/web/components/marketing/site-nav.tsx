@@ -21,19 +21,19 @@ export function SiteNav() {
             href="/product"
             className="rounded-full px-4 py-2 transition hover:bg-white/5 hover:text-white"
           >
-            Product
+            제품
           </Link>
           <Link
             href="/sample-report"
             className="rounded-full px-4 py-2 transition hover:bg-white/5 hover:text-white"
           >
-            Sample IM
+            샘플 IM
           </Link>
           <Link
             href="/admin"
             className="rounded-full border border-white/10 px-4 py-2 text-white transition hover:border-accent/40 hover:bg-white/5"
           >
-            Open Console
+            콘솔 열기
           </Link>
         </nav>
       </div>
