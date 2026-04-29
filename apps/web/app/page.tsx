@@ -60,10 +60,10 @@ const outputs = [
 
 function getPrimaryMetric(asset: Awaited<ReturnType<typeof getLandingData>>['assets'][number]) {
   if (asset.assetClass === AssetClass.DATA_CENTER) {
-    return ['Power', `${formatNumber(asset.powerCapacityMw)} MW`];
+    return ['전력 용량', `${formatNumber(asset.powerCapacityMw)} MW`];
   }
 
-  return ['Area', `${formatNumber(asset.rentableAreaSqm ?? asset.grossFloorAreaSqm)} sqm`];
+  return ['연면적', `${formatNumber(asset.rentableAreaSqm ?? asset.grossFloorAreaSqm)} sqm`];
 }
 
 export default async function LandingPage() {
@@ -249,7 +249,7 @@ export default async function LandingPage() {
                 </div>
                 <div className="mt-6 grid gap-3 text-sm text-slate-300">
                   <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.02] px-4 py-3">
-                    <span>Location</span>
+                    <span>위치</span>
                     <span>{asset.address?.city}</span>
                   </div>
                   <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.02] px-4 py-3">
@@ -261,7 +261,7 @@ export default async function LandingPage() {
                     <span>{formatPercent(asset.marketSnapshot?.capRatePct)}</span>
                   </div>
                   <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.02] px-4 py-3">
-                    <span>Latest Base Case</span>
+                    <span>최신 베이스 케이스</span>
                     <span>
                       {formatCurrencyFromKrwAtRate(
                         asset.valuations[0]?.baseCaseValueKrw ?? asset.currentValuationKrw,
