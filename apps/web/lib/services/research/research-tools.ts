@@ -164,6 +164,43 @@ function stripHtml(html: string): string {
     .trim();
 }
 
+/**
+ * Pick a TextDecoder label for the response body. Prefer the charset from
+ * Content-Type, then look for a meta http-equiv / meta charset tag in the
+ * first 4 KiB of bytes (decoded as latin-1 since charset tags are ASCII).
+ * Falls back to UTF-8. Korean government / KOSPI listed-company sites
+ * still serve a meaningful number of pages as EUC-KR or CP949; without
+ * this they decoded into corrupted bytes that the LLM treated as garbage.
+ */
+export function pickEncoding(contentType: string | null, head: Uint8Array): string {
+  const labelFromHeader = contentType?.toLowerCase().match(/charset=([^;\s]+)/);
+  if (labelFromHeader) return labelFromHeader[1]!.trim().toLowerCase();
+  const sniffed = new TextDecoder('latin1').decode(head);
+  const metaCharset =
+    /<meta[^>]+charset=["']?([a-zA-Z0-9_-]+)/i.exec(sniffed) ??
+    /<meta[^>]+http-equiv=["']?content-type["'][^>]+content=["'][^"']*charset=([a-zA-Z0-9_-]+)/i.exec(
+      sniffed
+    );
+  if (metaCharset) {
+    const label = metaCharset[1]!.toLowerCase();
+    // CP949 is a Microsoft superset of EUC-KR; Node's TextDecoder labels
+    // both via "euc-kr". ks_c_5601-1987 is the IANA name for the same.
+    if (label === 'cp949' || label === 'ksc5601' || label === 'ks_c_5601-1987') return 'euc-kr';
+    return label;
+  }
+  return 'utf-8';
+}
+
+export function decodeWithFallback(buffer: ArrayBuffer, contentType: string | null): string {
+  const head = new Uint8Array(buffer, 0, Math.min(buffer.byteLength, 4096));
+  const label = pickEncoding(contentType, head);
+  try {
+    return new TextDecoder(label, { fatal: false }).decode(buffer);
+  } catch {
+    return new TextDecoder('utf-8', { fatal: false }).decode(buffer);
+  }
+}
+
 function extractTitle(html: string): string {
   const og = /<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i.exec(html);
   if (og) return og[1]!.trim();
@@ -191,10 +228,15 @@ function extractPublishedAt(html: string): Date | null {
 async function httpFetchPage(url: string): Promise<ResearchFetchedPage> {
   // SSRF guard: rejects non-http(s) schemes, hostnames that resolve to
   // private/loopback/link-local/IMDS IPs, and bounds the redirect chain.
-  // The agent surfaces arbitrary URLs from search results, so without this
-  // an attacker who plants a link can read internal endpoints.
+  // Content-Type whitelist: the agent surfaces arbitrary URLs from search
+  // results, and a 20MB binary or PDF previously decoded into garbage
+  // text that the LLM treated as legitimate context. The whitelist plus
+  // retry-on-transient-error handle the network reliability gap.
   const response = await safeFetch(url, {
     timeoutMs: HTTP_TIMEOUT_MS,
+    retries: 2,
+    retryBackoffMs: 300,
+    acceptedContentTypes: ['text/html', 'application/xhtml+xml', 'text/plain'],
     headers: {
       'user-agent': 'DatacenterQuant-ResearchAgent/1.0 (+https://example.internal/bot)'
     }
@@ -206,7 +248,7 @@ async function httpFetchPage(url: string): Promise<ResearchFetchedPage> {
   if (buffer.byteLength > HTTP_MAX_BYTES) {
     throw new Error(`response too large (${buffer.byteLength} > ${HTTP_MAX_BYTES})`);
   }
-  const html = new TextDecoder('utf-8', { fatal: false }).decode(buffer);
+  const html = decodeWithFallback(buffer, response.headers.get('content-type'));
   return {
     url,
     title: extractTitle(html) || url,

@@ -42,6 +42,20 @@ export type SafeFetchOptions = {
   allowedHosts?: string[] | null;
   headers?: Record<string, string>;
   method?: string;
+  /**
+   * Retries on transient failures: network errors, 408, 425, 429, 5xx.
+   * 4xx other than the listed retry-friendly codes are NOT retried — those
+   * are auth / not-found / validation problems that won't change.
+   */
+  retries?: number;
+  /** Initial backoff in ms; doubles each attempt. */
+  retryBackoffMs?: number;
+  /**
+   * If set, response Content-Type prefix must match one of these (e.g.
+   * `['text/html', 'application/json', 'text/plain']`). Mismatch throws —
+   * prevents attempting to decode a 20MB binary as text.
+   */
+  acceptedContentTypes?: string[];
 };
 
 export class UnsafeUrlError extends Error {
@@ -53,6 +67,42 @@ export class UnsafeUrlError extends Error {
 
 const DEFAULT_TIMEOUT_MS = 10_000;
 const DEFAULT_MAX_REDIRECTS = 5;
+const RETRY_STATUS = new Set([408, 425, 429, 500, 502, 503, 504]);
+
+function isTransientNetworkError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  // Node fetch surfaces transient errors via TypeError with cause carrying
+  // an Error whose code matches one of these. AbortError is timeout — also
+  // transient.
+  const code = (error as { code?: string }).code;
+  if (
+    code === 'ECONNRESET' ||
+    code === 'ECONNREFUSED' ||
+    code === 'ETIMEDOUT' ||
+    code === 'ENOTFOUND' ||
+    code === 'EAI_AGAIN'
+  ) {
+    return true;
+  }
+  if (error.name === 'AbortError') return true;
+  const cause = (error as { cause?: unknown }).cause;
+  if (cause && typeof cause === 'object') {
+    return isTransientNetworkError(cause);
+  }
+  return false;
+}
+
+function contentTypeMatches(response: Response, accepted: string[] | undefined): boolean {
+  if (!accepted || accepted.length === 0) return true;
+  const ct = response.headers.get('content-type');
+  if (!ct) return false;
+  const lower = ct.toLowerCase();
+  return accepted.some((a) => lower.startsWith(a.toLowerCase()));
+}
+
+async function delay(ms: number) {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 function ipv4ToInt(address: string): number | null {
   const parts = address.split('.');
@@ -171,12 +221,10 @@ function ensureSafeUrl(rawUrl: string): URL {
   return parsed;
 }
 
-/**
- * Fetch with SSRF protection: scheme, hostname allowlist, and IP-range checks
- * are run on the original URL plus every redirect target. Manual redirect
- * handling is required because fetch() cannot pin the resolved IP per hop.
- */
-export async function safeFetch(rawUrl: string, options: SafeFetchOptions = {}): Promise<Response> {
+async function safeFetchOnce(
+  rawUrl: string,
+  options: SafeFetchOptions
+): Promise<Response> {
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const maxRedirects = options.maxRedirects ?? DEFAULT_MAX_REDIRECTS;
   const headers = options.headers ?? {};
@@ -189,6 +237,7 @@ export async function safeFetch(rawUrl: string, options: SafeFetchOptions = {}):
     const parsed = ensureSafeUrl(currentUrl);
     assertHostAllowed(parsed.hostname, allow);
     const resolved = await resolveSafeAddress(parsed.hostname);
+    void resolved; // captured for the pre-check; see header comment
 
     const remaining = timeoutMs - (Date.now() - startedAt);
     if (remaining <= 0) {
@@ -196,10 +245,6 @@ export async function safeFetch(rawUrl: string, options: SafeFetchOptions = {}):
     }
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), remaining);
-
-    // resolved is captured for the pre-check; we don't pin it on the
-    // dispatcher because the standard fetch() API doesn't expose that knob.
-    void resolved;
 
     let response: Response;
     try {
@@ -216,11 +261,56 @@ export async function safeFetch(rawUrl: string, options: SafeFetchOptions = {}):
     const status = response.status;
     if (status >= 300 && status < 400 && response.headers.has('location')) {
       const next = response.headers.get('location')!;
-      // Resolve the Location relative to the current URL so relative paths work.
       currentUrl = new URL(next, parsed).toString();
       continue;
+    }
+
+    if (!contentTypeMatches(response, options.acceptedContentTypes)) {
+      const ct = response.headers.get('content-type') ?? '<missing>';
+      throw new UnsafeUrlError(
+        `Content-Type "${ct}" is not in the accepted list [${(options.acceptedContentTypes ?? []).join(
+          ', '
+        )}].`
+      );
     }
     return response;
   }
   throw new UnsafeUrlError(`Too many redirects (>${maxRedirects}) starting at ${rawUrl}.`);
+}
+
+/**
+ * Fetch with SSRF protection: scheme, hostname allowlist, and IP-range checks
+ * are run on the original URL plus every redirect target. Manual redirect
+ * handling is required because fetch() cannot pin the resolved IP per hop.
+ *
+ * Transient errors (network glitches, 5xx, 429, 408, 425) are retried with
+ * exponential backoff up to `retries` additional attempts. UnsafeUrlError
+ * is NEVER retried — those are policy decisions, not transient failures.
+ */
+export async function safeFetch(rawUrl: string, options: SafeFetchOptions = {}): Promise<Response> {
+  const retries = Math.max(0, options.retries ?? 0);
+  const baseBackoff = Math.max(0, options.retryBackoffMs ?? 200);
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    try {
+      const response = await safeFetchOnce(rawUrl, options);
+      if (RETRY_STATUS.has(response.status) && attempt < retries) {
+        lastError = new Error(`Transient HTTP ${response.status} for ${rawUrl}`);
+        await delay(baseBackoff * 2 ** attempt);
+        continue;
+      }
+      return response;
+    } catch (error) {
+      // Policy errors must surface immediately — retrying won't fix an
+      // SSRF rejection or a content-type mismatch.
+      if (error instanceof UnsafeUrlError) throw error;
+      lastError = error;
+      if (attempt >= retries || !isTransientNetworkError(error)) throw error;
+      await delay(baseBackoff * 2 ** attempt);
+    }
+  }
+  // Loop exit only when retries exhausted on a retried 5xx.
+  throw lastError instanceof Error
+    ? lastError
+    : new Error(`safeFetch exhausted retries for ${rawUrl}`);
 }

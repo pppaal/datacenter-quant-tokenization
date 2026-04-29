@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { combineToolsets, createHttpToolset } from '@/lib/services/research/research-tools';
+import {
+  combineToolsets,
+  createHttpToolset,
+  decodeWithFallback,
+  pickEncoding
+} from '@/lib/services/research/research-tools';
 import {
   createMockToolset,
   type ResearchSource,
@@ -109,4 +114,46 @@ test('createHttpToolset: search returns empty (no vendor API wired yet)', async 
   const http = createHttpToolset();
   const results = await http.searchNews('anything');
   assert.deepEqual(results, []);
+});
+
+test('pickEncoding prefers Content-Type charset', () => {
+  const head = new TextEncoder().encode('<html><body>x</body></html>');
+  assert.equal(pickEncoding('text/html; charset=euc-kr', head), 'euc-kr');
+  assert.equal(pickEncoding('text/html; charset=UTF-8', head), 'utf-8');
+});
+
+test('pickEncoding falls back to <meta charset=...> when header lacks charset', () => {
+  const html = '<html><head><meta charset="EUC-KR"></head></html>';
+  const head = new TextEncoder().encode(html);
+  assert.equal(pickEncoding(null, head), 'euc-kr');
+  assert.equal(pickEncoding('text/html', head), 'euc-kr');
+});
+
+test('pickEncoding maps cp949 / ks_c_5601-1987 aliases to euc-kr', () => {
+  const head = new TextEncoder().encode('<meta charset="CP949">');
+  assert.equal(pickEncoding(null, head), 'euc-kr');
+  const head2 = new TextEncoder().encode(
+    '<meta http-equiv="content-type" content="text/html; charset=ks_c_5601-1987">'
+  );
+  assert.equal(pickEncoding(null, head2), 'euc-kr');
+});
+
+test('pickEncoding defaults to utf-8 when no charset is signaled', () => {
+  const head = new TextEncoder().encode('<html><body>plain</body></html>');
+  assert.equal(pickEncoding(null, head), 'utf-8');
+});
+
+test('decodeWithFallback decodes EUC-KR bytes correctly', () => {
+  // "안녕" in EUC-KR is 0xBE C8 0xB3 E7
+  const bytes = new Uint8Array([0xbe, 0xc8, 0xb3, 0xe7]);
+  const decoded = decodeWithFallback(bytes.buffer, 'text/plain; charset=euc-kr');
+  assert.equal(decoded, '안녕');
+});
+
+test('decodeWithFallback degrades to utf-8 on unknown label', () => {
+  const text = 'hello';
+  const bytes = new TextEncoder().encode(text);
+  const decoded = decodeWithFallback(bytes.buffer, 'text/plain; charset=not-a-real-charset');
+  // node text decoder throws for unknown labels — fallback path returns utf-8 text.
+  assert.equal(decoded, text);
 });

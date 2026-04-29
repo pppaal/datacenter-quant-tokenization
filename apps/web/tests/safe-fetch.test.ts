@@ -77,3 +77,83 @@ test('safeFetch rejects malformed URLs', async () => {
   await assert.rejects(safeFetch(''), UnsafeUrlError);
   await assert.rejects(safeFetch('not a url'), UnsafeUrlError);
 });
+
+// ---------------------------------------------------------------------------
+// Retry / Content-Type tests using a stubbed global fetch.
+// ---------------------------------------------------------------------------
+
+type StubResponse = { status: number; contentType?: string };
+
+function stubFetch(responses: StubResponse[]): { restore: () => void; calls: () => number } {
+  let i = 0;
+  const original = globalThis.fetch;
+  globalThis.fetch = (async () => {
+    const next = responses[Math.min(i, responses.length - 1)]!;
+    i += 1;
+    return new Response('ok', {
+      status: next.status,
+      headers: next.contentType ? { 'content-type': next.contentType } : {}
+    });
+  }) as typeof fetch;
+  return {
+    restore: () => {
+      globalThis.fetch = original;
+    },
+    calls: () => i
+  };
+}
+
+test('safeFetch retries on 503 then succeeds', async () => {
+  const stub = stubFetch([{ status: 503 }, { status: 503 }, { status: 200, contentType: 'text/html' }]);
+  try {
+    const res = await safeFetch('https://1.1.1.1/', { retries: 3, retryBackoffMs: 1 });
+    assert.equal(res.status, 200);
+    assert.equal(stub.calls(), 3);
+  } finally {
+    stub.restore();
+  }
+});
+
+test('safeFetch returns the last 5xx when retries exhausted', async () => {
+  const stub = stubFetch([{ status: 502 }, { status: 502 }, { status: 502 }]);
+  try {
+    const res = await safeFetch('https://1.1.1.1/', { retries: 2, retryBackoffMs: 1 });
+    assert.equal(res.status, 502);
+    assert.equal(stub.calls(), 3);
+  } finally {
+    stub.restore();
+  }
+});
+
+test('safeFetch does NOT retry 404', async () => {
+  const stub = stubFetch([{ status: 404 }]);
+  try {
+    const res = await safeFetch('https://1.1.1.1/', { retries: 5, retryBackoffMs: 1 });
+    assert.equal(res.status, 404);
+    assert.equal(stub.calls(), 1);
+  } finally {
+    stub.restore();
+  }
+});
+
+test('safeFetch enforces acceptedContentTypes', async () => {
+  const stub = stubFetch([{ status: 200, contentType: 'application/octet-stream' }]);
+  try {
+    await assert.rejects(
+      safeFetch('https://1.1.1.1/', { acceptedContentTypes: ['text/html'] }),
+      UnsafeUrlError
+    );
+  } finally {
+    stub.restore();
+  }
+});
+
+test('safeFetch acceptedContentTypes accepts a prefix match', async () => {
+  const stub = stubFetch([{ status: 200, contentType: 'text/html; charset=euc-kr' }]);
+  try {
+    const res = await safeFetch('https://1.1.1.1/', { acceptedContentTypes: ['text/html'] });
+    assert.equal(res.status, 200);
+  } finally {
+    stub.restore();
+  }
+});
