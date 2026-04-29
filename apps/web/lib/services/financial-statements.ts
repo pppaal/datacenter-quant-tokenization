@@ -655,6 +655,15 @@ export async function ingestFinancialStatement(
         }
       });
 
+  // Provenance: ingestion through this path is always from a document we
+  // extracted (UPLOAD) or a manual entry (no documentVersionId).
+  // sourceCurrency is captured separately from the display `currency`
+  // column so a USD-filed statement keeps its filing currency on record
+  // even after we convert into KRW for storage. fxRateToKrw / fxAsOf
+  // remain null until the AI parser exposes the rate it used; the columns
+  // exist so future parser improvements can pin the snapshot without
+  // another schema change.
+  const sourceCurrency = parsed.currency && parsed.currency !== 'KRW' ? parsed.currency : null;
   const statement = await db.financialStatement.create({
     data: {
       assetId: input.assetId,
@@ -664,6 +673,8 @@ export async function ingestFinancialStatement(
       fiscalYear: parsed.fiscalYear,
       fiscalPeriod: parsed.fiscalPeriod,
       currency: parsed.currency,
+      sourceCurrency,
+      provenanceSystem: input.documentVersionId ? 'UPLOAD' : 'MANUAL',
       revenueKrw: parsed.revenueKrw,
       ebitdaKrw: parsed.ebitdaKrw,
       cashKrw: parsed.cashKrw,

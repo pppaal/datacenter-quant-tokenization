@@ -1362,7 +1362,21 @@ model FinancialStatement {
   fiscalYear         Int?
   fiscalPeriod       String?
   periodEndDate      DateTime?
+  // Display currency for the *Krw columns. Historically defaulted to KRW
+  // and the column names assume that — kept stable for back-compat.
   currency           String             @default("KRW")
+  // Original filing currency. Differs from `currency` when the source
+  // document was filed in USD/JPY/etc and we converted to KRW for storage.
+  sourceCurrency     String?
+  // FX snapshot pinned at intake so the row reads consistently after market
+  // rates move. Without this, re-rendering an old IC memo with today's rate
+  // produces different numbers for the same statement.
+  fxRateToKrw        Float?
+  fxAsOf             DateTime?
+  // Where this statement came from: 'DART', 'UPLOAD', 'MANUAL', etc.
+  // Distinct from documentVersionId (which is the file we extracted from)
+  // because manual entry has no document version.
+  provenanceSystem   String?
   revenueKrw         Float?
   ebitdaKrw          Float?
   cashKrw            Float?
@@ -1380,6 +1394,11 @@ model FinancialStatement {
 
   @@index([assetId, counterpartyId, createdAt])
   @@index([documentVersionId, createdAt])
+  // Unique enforcement is a partial index defined in the migration that
+  // only applies when fiscalYear and fiscalPeriod are both populated; it
+  // can't be expressed via @@unique because Prisma 5 doesn't support
+  // partial unique constraints. See
+  // 20260429120000_add_financial_statement_fx_provenance.
 }
 
 model FinancialLineItem {
