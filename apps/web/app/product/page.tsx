@@ -21,6 +21,29 @@ const sections = [
   }
 ];
 
+const faqs = [
+  {
+    q: '블록체인은 어떤 범위에서 쓰입니까?',
+    a: 'Registry-only 구조입니다. 문서 해시, 레지스트리 식별자, 패킷 메타데이터만 앵커링됩니다. 증거 · 추출 텍스트 · 평가 · 워크플로 · 투자자 정보는 모두 오프체인에 머무릅니다. 토큰화 모듈도 ERC-3643 스타일 등록·이전 권한을 별도 운영자 키로 통제합니다.'
+  },
+  {
+    q: '어떤 자산군을 다룹니까?',
+    a: '데이터센터 · 오피스 · 산업/물류 · 랜드까지 동일한 검토 게이팅 증거 모델 위에서 다룹니다. 자산군별로 가정 템플릿과 KPI 셋이 다르지만, 데이터 레이어와 IC 워크플로는 동일합니다.'
+  },
+  {
+    q: '기존 모델 · 자료를 그대로 가져올 수 있습니까?',
+    a: 'PDF · 이미지 · CSV · 엑셀 등 문서 인테이크에서 추출된 텍스트는 출처와 함께 레코드에 적재됩니다. 평가 모델은 시스템의 결정론적 가정 트리에 매핑되어야 하므로 일부 마이그레이션이 필요하지만, 기존 IM · IC 메모는 첨부 · 인용으로 유지됩니다.'
+  },
+  {
+    q: '배포 형태는 어떻게 됩니까?',
+    a: '단일 운용사 인스턴스를 기본으로 합니다. Vercel + Postgres + S3 호환 스토리지 위에서 동작하며, IP 화이트리스트, Rate limit, 감사 로그, 세션 쿠키, registry-only 블록체인 키 운영 등 production hardening이 기본 포함됩니다.'
+  },
+  {
+    q: 'IC · 위원회 워크플로를 우리 운영 규칙에 맞출 수 있습니까?',
+    a: '예. 평가 → 다운사이드 → DD → 위원회 게이트는 자유롭게 구성됩니다. 검토자 역할, readiness 기준, 결재 단계는 운용사별로 정의되며, 시스템은 결정론적 readiness 메타데이터로 산출물을 잠급니다.'
+  }
+];
+
 const comparison = [
   {
     dimension: '데이터 모델',
@@ -168,6 +191,24 @@ export default function ProductOverviewPage() {
               <div className="col-span-4 text-slate-400">{row.legacy}</div>
               <div className="col-span-5 text-slate-200">{row.nexus}</div>
             </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="app-shell py-10">
+        <div className="mb-6 max-w-3xl">
+          <div className="eyebrow">자주 묻는 질문</div>
+          <h2 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-white md:text-4xl">
+            먼저 받는 질문 다섯 가지.
+          </h2>
+        </div>
+        <div className="grid gap-4 lg:grid-cols-2">
+          {faqs.map((faq, index) => (
+            <Card key={faq.q} className="min-h-[200px]">
+              <div className="fine-print">FAQ {String(index + 1).padStart(2, '0')}</div>
+              <h3 className="mt-3 text-lg font-semibold text-white">{faq.q}</h3>
+              <p className="mt-4 text-sm leading-7 text-slate-400">{faq.a}</p>
+            </Card>
           ))}
         </div>
       </section>
