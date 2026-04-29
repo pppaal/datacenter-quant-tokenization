@@ -1,4 +1,4 @@
-import { createPublicClient, createWalletClient, defineChain, http } from 'viem';
+import { createPublicClient, createWalletClient, defineChain, fallback, http } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { getBlockchainConfig } from '@/lib/blockchain/config';
 import { runSerial } from '@/lib/blockchain/tx-queue';
@@ -15,15 +15,23 @@ export function getRegistryChainClients() {
     },
     rpcUrls: {
       default: {
-        http: [config.rpcUrl]
+        http: config.rpcUrls
       }
     }
   });
   const account = privateKeyToAccount(config.privateKey);
+  // viem's fallback transport tries each underlying transport in order and
+  // moves on to the next on transient failure. With one URL it degrades to a
+  // plain http transport; with two or more (BLOCKCHAIN_RPC_URLS) it gives the
+  // service single-RPC-outage tolerance without per-call retry plumbing.
+  const transport =
+    config.rpcUrls.length > 1
+      ? fallback(config.rpcUrls.map((url) => http(url)))
+      : http(config.rpcUrls[0]);
   const walletClient = createWalletClient({
     account,
     chain,
-    transport: http(config.rpcUrl)
+    transport
   });
 
   // Serialize every writeContract call from this signer so concurrent admin
@@ -42,7 +50,7 @@ export function getRegistryChainClients() {
     chain,
     publicClient: createPublicClient({
       chain,
-      transport: http(config.rpcUrl)
+      transport
     }),
     walletClient
   };

@@ -4,7 +4,10 @@ import { isTokenizationMockMode } from './mock-mode';
 export type BlockchainConfig = {
   chainId: number;
   chainName: string;
+  /** Primary RPC URL — kept for backwards-compat in places that log a single value. */
   rpcUrl: string;
+  /** Ordered list of RPC URLs (rpcUrl + any extras from BLOCKCHAIN_RPC_URLS). */
+  rpcUrls: string[];
   registryAddress: Address;
   privateKey: Hex;
   metadataBaseUrl: string;
@@ -33,6 +36,29 @@ function normalizeHex(value: string, expectedBytes: number, label: string): Hex 
   return normalized as Hex;
 }
 
+/**
+ * Resolve the ordered RPC URL list. Primary URL comes from BLOCKCHAIN_RPC_URL;
+ * additional fallback endpoints (Alchemy / Infura / self-hosted) are read from
+ * BLOCKCHAIN_RPC_URLS as a comma-separated list. Duplicates are de-duplicated
+ * while preserving primary-first order so the fallback transport prefers the
+ * configured primary and only fans out on failure.
+ */
+function resolveRpcUrls(primary: string): string[] {
+  const extras = (process.env.BLOCKCHAIN_RPC_URLS ?? '')
+    .split(',')
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0);
+  const ordered = [primary, ...extras];
+  const seen = new Set<string>();
+  const deduped: string[] = [];
+  for (const url of ordered) {
+    if (seen.has(url)) continue;
+    seen.add(url);
+    deduped.push(url);
+  }
+  return deduped;
+}
+
 export function getBlockchainConfig(): BlockchainConfig {
   const metadataBaseUrl = (
     process.env.BLOCKCHAIN_METADATA_BASE_URL ??
@@ -43,10 +69,12 @@ export function getBlockchainConfig(): BlockchainConfig {
     .replace(/\/$/, '');
 
   if (isTokenizationMockMode()) {
+    const rpcUrl = process.env.BLOCKCHAIN_RPC_URL?.trim() ?? 'http://localhost:0';
     return {
       chainId: Number(process.env.BLOCKCHAIN_CHAIN_ID?.trim() ?? '31337'),
       chainName: process.env.BLOCKCHAIN_CHAIN_NAME?.trim() ?? 'mock-registry',
-      rpcUrl: process.env.BLOCKCHAIN_RPC_URL?.trim() ?? 'http://localhost:0',
+      rpcUrl,
+      rpcUrls: resolveRpcUrls(rpcUrl),
       registryAddress:
         (process.env.BLOCKCHAIN_REGISTRY_ADDRESS?.trim() as Address | undefined) ??
         MOCK_REGISTRY_ADDRESS,
@@ -60,10 +88,12 @@ export function getBlockchainConfig(): BlockchainConfig {
     throw new Error('BLOCKCHAIN_CHAIN_ID must be a positive integer.');
   }
 
+  const rpcUrl = readRequiredEnv('BLOCKCHAIN_RPC_URL');
   return {
     chainId,
     chainName: readRequiredEnv('BLOCKCHAIN_CHAIN_NAME'),
-    rpcUrl: readRequiredEnv('BLOCKCHAIN_RPC_URL'),
+    rpcUrl,
+    rpcUrls: resolveRpcUrls(rpcUrl),
     registryAddress: normalizeHex(
       readRequiredEnv('BLOCKCHAIN_REGISTRY_ADDRESS'),
       20,
