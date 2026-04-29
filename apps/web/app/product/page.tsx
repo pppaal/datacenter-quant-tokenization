@@ -21,6 +21,25 @@ const sections = [
   }
 ];
 
+const personas = [
+  {
+    role: '투자운용본부 / 자산운용본부',
+    body: '딜 인테이크부터 IC, 클로징, 보유 자산 KPI까지 한 시스템에서 운영합니다. 부서 간 엑셀·PDF 핸드오프를 줄이고, IC가 보는 숫자의 출처를 즉시 추적할 수 있습니다.'
+  },
+  {
+    role: '리서치 · 시장조사팀',
+    body: '시장 · 거시 · 임대 · 거래 사례 데이터를 신선도와 출처와 함께 같은 레코드에 적재합니다. 매번 새 보고서를 만드는 대신, 살아있는 증거 모델을 IC에 연결합니다.'
+  },
+  {
+    role: '실사(DD) · 언더라이팅팀',
+    body: '재무 · 법률 · 기술 DD 산출물을 검토 게이팅 워크플로 위에서 관리합니다. 평가 · 다운사이드 · 민감도 시나리오는 결정론적으로 재계산되고 readiness 메타데이터로 잠깁니다.'
+  },
+  {
+    role: '펀드 · 자본조달팀 (IR)',
+    body: '펀드 · SPV · 투자자 · 약정 · 캐피털콜 · 배당 · 리포팅 셸을 같은 OS에서 추적합니다. 같은 데이터로 IM, 분기 리포트, LP 커뮤니케이션을 산출합니다.'
+  }
+];
+
 export default function ProductOverviewPage() {
   return (
     <main className="pb-24">
@@ -70,6 +89,28 @@ export default function ProductOverviewPage() {
               <div className="fine-print">모듈 {String(index + 1).padStart(2, '0')}</div>
               <h2 className="mt-4 text-2xl font-semibold text-white">{section.title}</h2>
               <p className="mt-4 text-sm leading-7 text-slate-400">{section.body}</p>
+            </Card>
+          ))}
+        </div>
+      </section>
+
+      <section className="app-shell py-10">
+        <div className="mb-6 max-w-3xl">
+          <div className="eyebrow">누구를 위한 제품인가</div>
+          <h2 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-white md:text-4xl">
+            한국 부동산 운용사의 투자 워크플로 전반.
+          </h2>
+          <p className="mt-3 text-sm leading-7 text-slate-400">
+            리서치팀이 쌓은 증거가 IC 자료가 되고, IC 자료가 클로징 패킷이 되고, 클로징 패킷이
+            포트폴리오 KPI · 투자자 리포트로 이어지는 같은 레코드 위에서 동작합니다.
+          </p>
+        </div>
+        <div className="grid gap-5 lg:grid-cols-2">
+          {personas.map((persona) => (
+            <Card key={persona.role} className="min-h-[200px]">
+              <div className="fine-print">대상 사용자</div>
+              <h3 className="mt-4 text-xl font-semibold text-white">{persona.role}</h3>
+              <p className="mt-4 text-sm leading-7 text-slate-400">{persona.body}</p>
             </Card>
           ))}
         </div>
