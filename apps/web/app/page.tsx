@@ -280,14 +280,14 @@ export default async function LandingPage() {
       <section className="app-shell py-10">
         <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
           <Card>
-            <div className="eyebrow">Platform Stack</div>
+            <div className="eyebrow">플랫폼 구성</div>
             <h2 className="section-title mt-3">
-              One product for analysis, memo generation, and review.
+              분석, 메모 생성, 검토를 위한 하나의 제품.
             </h2>
             <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-400">
-              A single Next.js application handles asset intake, enrichment, return analysis, IM
-              generation, and document workflow. The frontend reads like a product, while the
-              backend stays connected to real service layers.
+              단일 Next.js 애플리케이션이 자산 인테이크, 보강, 수익 분석, IM 생성, 문서 워크플로를
+              모두 담당합니다. 프론트엔드는 운영 제품처럼 읽히고, 백엔드는 실제 서비스 레이어에
+              직접 연결되어 있습니다.
             </p>
 
             <div className="mt-6 grid gap-3">
@@ -295,22 +295,22 @@ export default async function LandingPage() {
                 [
                   'Assets API',
                   '/api/assets',
-                  'Creates the asset dossier used by every downstream analysis and memo run.'
+                  '자산 도시에를 생성합니다. 이후 모든 분석과 메모 실행이 이 레코드를 읽습니다.'
                 ],
                 [
                   'Valuation API',
                   '/api/valuations',
-                  'Runs the model and writes back valuation output plus the generated IM.'
+                  '모델을 실행하고 평가 결과 + 생성된 IM을 함께 기록합니다.'
                 ],
                 [
                   'Document API',
                   '/api/documents/upload',
-                  'Stores diligence files, extracted notes, and version history.'
+                  'DD 파일, 추출 노트, 버전 이력을 저장합니다.'
                 ],
                 [
                   'Inquiry API',
                   '/api/inquiries',
-                  'Captures demo and review requests in the same operating system.'
+                  '데모/검토 문의를 동일 시스템 안에 기록합니다.'
                 ]
               ].map(([label, route, detail]) => (
                 <div
@@ -328,13 +328,13 @@ export default async function LandingPage() {
           </Card>
 
           <Card className="hero-mesh">
-            <div className="eyebrow">Core Promise</div>
+            <div className="eyebrow">핵심 약속</div>
             <div className="mt-4 grid gap-4">
               {[
-                'Evaluate a deal before committee with structured assumptions, not scattered spreadsheets.',
-                'Compare bull, base, and bear scenarios instead of relying on a single static case.',
-                'Generate the investment memo automatically so the narrative stays tied to the model output.',
-                'Keep assumptions, diligence documents, and generated outputs inside one asset record.'
+                '흩어진 스프레드시트가 아니라 구조화된 가정으로 위원회 전 딜을 평가합니다.',
+                '단일 정적 케이스 대신 Bull · Base · Bear 시나리오를 비교합니다.',
+                '모델 출력에 직결된 IM(투자 메모)을 자동 생성해 숫자와 내러티브가 분리되지 않게 합니다.',
+                '가정·DD 문서·생성된 산출물 모두를 하나의 자산 레코드 안에서 관리합니다.'
               ].map((line) => (
                 <div
                   key={line}
