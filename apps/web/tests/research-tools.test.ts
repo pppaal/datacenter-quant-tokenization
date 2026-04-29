@@ -101,7 +101,8 @@ test('combineToolsets: swallows individual toolset search errors', async () => {
 
 test('createHttpToolset: rejects non-http URLs', async () => {
   const http = createHttpToolset();
-  await assert.rejects(() => http.fetchPage('ftp://example.com/a'), /http\(s\)/);
+  // safeFetch rejects non-http(s) schemes with "Disallowed scheme: ftp:"
+  await assert.rejects(() => http.fetchPage('ftp://example.com/a'), /Disallowed scheme/);
 });
 
 test('createHttpToolset: search returns empty (no vendor API wired yet)', async () => {

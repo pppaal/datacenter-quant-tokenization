@@ -4,6 +4,8 @@
 // BOK (Bank of Korea) ECOS API and US FRED API.
 // These fetch real-time macro series data to replace seed/hardcoded values.
 
+import { safeFetch } from '@/lib/security/safe-fetch';
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -97,13 +99,10 @@ const BOK_SERIES_MAPPINGS: BokSeriesMapping[] = [
 ];
 
 async function fetchWithTimeout(url: string, timeoutMs: number): Promise<Response> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    return await fetch(url, { signal: controller.signal });
-  } finally {
-    clearTimeout(timeout);
-  }
+  // Routes through safeFetch so an attacker can't redirect a vendor URL to
+  // an internal target (BOK / FRED responses include redirects on auth
+  // failure that we previously followed unconditionally).
+  return safeFetch(url, { timeoutMs });
 }
 
 export async function fetchBokData(months = 12): Promise<DataProviderResult> {

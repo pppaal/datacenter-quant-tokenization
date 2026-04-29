@@ -23,6 +23,7 @@ import type {
   ResearchSource,
   ResearchToolset
 } from '@/lib/services/research/research-agent';
+import { safeFetch } from '@/lib/security/safe-fetch';
 
 // ---------------------------------------------------------------------------
 // Database toolset — queries curated snapshots
@@ -188,36 +189,30 @@ function extractPublishedAt(html: string): Date | null {
 }
 
 async function httpFetchPage(url: string): Promise<ResearchFetchedPage> {
-  if (!/^https?:\/\//i.test(url)) {
-    throw new Error(`httpFetchPage only supports http(s) URLs: ${url}`);
-  }
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), HTTP_TIMEOUT_MS);
-  try {
-    const response = await fetch(url, {
-      signal: controller.signal,
-      redirect: 'follow',
-      headers: {
-        'user-agent': 'DatacenterQuant-ResearchAgent/1.0 (+https://example.internal/bot)'
-      }
-    });
-    if (!response.ok) {
-      throw new Error(`http ${response.status} for ${url}`);
+  // SSRF guard: rejects non-http(s) schemes, hostnames that resolve to
+  // private/loopback/link-local/IMDS IPs, and bounds the redirect chain.
+  // The agent surfaces arbitrary URLs from search results, so without this
+  // an attacker who plants a link can read internal endpoints.
+  const response = await safeFetch(url, {
+    timeoutMs: HTTP_TIMEOUT_MS,
+    headers: {
+      'user-agent': 'DatacenterQuant-ResearchAgent/1.0 (+https://example.internal/bot)'
     }
-    const buffer = await response.arrayBuffer();
-    if (buffer.byteLength > HTTP_MAX_BYTES) {
-      throw new Error(`response too large (${buffer.byteLength} > ${HTTP_MAX_BYTES})`);
-    }
-    const html = new TextDecoder('utf-8', { fatal: false }).decode(buffer);
-    return {
-      url,
-      title: extractTitle(html) || url,
-      publishedAt: extractPublishedAt(html),
-      text: stripHtml(html).slice(0, 20_000)
-    };
-  } finally {
-    clearTimeout(timer);
+  });
+  if (!response.ok) {
+    throw new Error(`http ${response.status} for ${url}`);
   }
+  const buffer = await response.arrayBuffer();
+  if (buffer.byteLength > HTTP_MAX_BYTES) {
+    throw new Error(`response too large (${buffer.byteLength} > ${HTTP_MAX_BYTES})`);
+  }
+  const html = new TextDecoder('utf-8', { fatal: false }).decode(buffer);
+  return {
+    url,
+    title: extractTitle(html) || url,
+    publishedAt: extractPublishedAt(html),
+    text: stripHtml(html).slice(0, 20_000)
+  };
 }
 
 export function createHttpToolset(): ResearchToolset {
