@@ -1,4 +1,6 @@
+import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { listTokenizedAssets } from '@/lib/services/onchain/tokenization-repo';
 import { shortenHash } from '@/lib/blockchain/registry';
@@ -52,7 +54,12 @@ export default async function TokenizationPage() {
                     chain {d.chainId} / registryAssetId {shortenHash(d.registryAssetId, 8)}
                   </div>
                 </div>
-                <Badge tone={d.paused ? 'warn' : 'good'}>{d.paused ? 'PAUSED' : 'LIVE'}</Badge>
+                <div className="flex items-center gap-3">
+                  <Badge tone={d.paused ? 'warn' : 'good'}>{d.paused ? 'PAUSED' : 'LIVE'}</Badge>
+                  <Link href={`/admin/tokenization/${d.assetId}/compliance`}>
+                    <Button variant="ghost">Manage compliance</Button>
+                  </Link>
+                </div>
               </div>
 
               <dl className="mt-5 grid gap-3 text-sm text-slate-300 md:grid-cols-2">
