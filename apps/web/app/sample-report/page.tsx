@@ -36,10 +36,17 @@ import {
   projectFinancials
 } from '@/lib/services/im/credit-analysis';
 import {
+  buildCashFlowSlice,
+  DEFAULT_CASH_FLOW_ASSUMPTIONS
+} from '@/lib/services/im/cash-flow';
+import { buildCovenantHeadroom } from '@/lib/services/im/covenant';
+import { buildLiquidityLadder } from '@/lib/services/im/liquidity';
+import {
   pickDebtAmortizationPct,
   pickInterestRatePct,
   pickRevenueGrowthPct
 } from '@/lib/services/im/projection-inputs';
+import { buildWaterfall, readSpvFromAssumptions } from '@/lib/services/im/waterfall';
 import { classifyFreshness } from '@/lib/services/im/freshness';
 import { describeHazard } from '@/lib/services/im/hazard';
 import { readMacroGuidance } from '@/lib/services/im/macro-guidance';
@@ -2447,6 +2454,49 @@ export default async function SampleReportPage({
                   rateShocks: [0, 100, 200, 300],
                   debtRepricedPct: 1.0
                 });
+
+                // Tier 1 derivatives — cash flow / FCF / CFADS / EBIT /
+                // Net income. Tax rate sourced from the asset's
+                // taxAssumption when present, falling back to the
+                // default. Maintenance capex / D&A / WC are sector
+                // proxies; the IM renders them under the FCF table.
+                const taxRateDecimal =
+                  typeof asset.taxAssumption?.corporateTaxPct === 'number'
+                    ? asset.taxAssumption.corporateTaxPct / 100
+                    : DEFAULT_CASH_FLOW_ASSUMPTIONS.taxRate;
+                const principalRepayment =
+                  bs.totalDebtKrw !== null
+                    ? bs.totalDebtKrw * (amortInput.value / 100)
+                    : 0;
+                const cashFlow = buildCashFlowSlice({
+                  ebitdaKrw: latestFs.ebitdaKrw,
+                  revenueKrw: latestFs.revenueKrw,
+                  interestExpenseKrw: latestFs.interestExpenseKrw,
+                  taxRate: taxRateDecimal,
+                  daRateOfRevenue: DEFAULT_CASH_FLOW_ASSUMPTIONS.daRateOfRevenue,
+                  maintCapexRateOfRevenue:
+                    DEFAULT_CASH_FLOW_ASSUMPTIONS.maintCapexRateOfRevenue,
+                  wcChangeRate: DEFAULT_CASH_FLOW_ASSUMPTIONS.wcChangeRate,
+                  principalRepaymentKrw: principalRepayment
+                });
+                // Tier 1 covenant headroom — current value distance from
+                // benchmark + first-breach-year over the projection.
+                const covenantHeadroom = buildCovenantHeadroom(projection);
+                // Tier 2 waterfall — tier table + LP/GP take at projected IRR.
+                const spv = readSpvFromAssumptions(latestRun.assumptions);
+                const projectedIrrPct =
+                  proForma?.summary.equityIrr ?? returnsSnapshot.goingInYieldPct;
+                const waterfall = buildWaterfall(spv, projectedIrrPct);
+                // Tier 2 liquidity ladder — facility maturities × liquid
+                // resources (cash + estimated annual operating CF).
+                const liquidity = buildLiquidityLadder(
+                  asset.debtFacilities ?? [],
+                  {
+                    cashKrw: bs.cashKrw,
+                    estimatedAnnualCashFlowKrw: cashFlow.operatingCashFlowKrw
+                  },
+                  new Date().getFullYear()
+                );
                 const riskTone =
                   latestCa?.riskLevel === 'LOW'
                     ? 'border-emerald-300/30 bg-emerald-300/[0.04] text-emerald-200'
@@ -2465,7 +2515,27 @@ export default async function SampleReportPage({
                     {/* Header */}
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
-                        <div className="text-base font-semibold text-white">{cp.name}</div>
+                        <div className="flex items-center gap-2">
+                          <div className="text-base font-semibold text-white">{cp.name}</div>
+                          {(() => {
+                            const provSys = latestFs.provenanceSystem ?? '';
+                            const sourceLabel =
+                              provSys.toUpperCase().includes('DART')
+                                ? { text: 'DART filing', tone: 'border-emerald-300/30 bg-emerald-300/[0.04] text-emerald-200' }
+                                : provSys.toUpperCase().includes('AUDIT')
+                                  ? { text: 'Audited', tone: 'border-emerald-300/30 bg-emerald-300/[0.04] text-emerald-200' }
+                                  : provSys.toUpperCase().includes('UPLOAD')
+                                    ? { text: 'Uploaded filing', tone: 'border-amber-300/30 bg-amber-300/[0.04] text-amber-200' }
+                                    : { text: 'Management estimate', tone: 'border-slate-300/30 bg-slate-300/[0.04] text-slate-300' };
+                            return (
+                              <span
+                                className={`rounded-[8px] border px-2 py-0.5 font-mono text-[9px] uppercase tracking-wide ${sourceLabel.tone}`}
+                              >
+                                {sourceLabel.text}
+                              </span>
+                            );
+                          })()}
+                        </div>
                         <div className="mt-1 text-[11px] text-slate-500">
                           <span className="uppercase tracking-wide">{cp.role}</span>
                           {' · '}
@@ -2474,8 +2544,14 @@ export default async function SampleReportPage({
                           {' · '}
                           <span>{latestFs.currency ?? 'KRW'}</span>
                           {latestFs.provenanceSystem
-                            ? ` · ${latestFs.provenanceSystem}`
-                            : ' · operator-entered'}
+                            ? ` · source: ${latestFs.provenanceSystem}`
+                            : ' · source: operator-entered (no filing)'}
+                          {' · '}
+                          <span>
+                            {(cp.financialStatements?.length ?? 0) === 1
+                              ? 'No prior periods on file'
+                              : `${cp.financialStatements?.length ?? 0} periods on file`}
+                          </span>
                         </div>
                       </div>
                       {latestCa ? (
@@ -2509,16 +2585,31 @@ export default async function SampleReportPage({
                             </dd>
                           </div>
                           <div className="flex justify-between">
+                            <dt className="text-slate-400">D&amp;A (assumed)</dt>
+                            <dd className="font-mono text-white">{fmt(cashFlow.daKrw)}</dd>
+                          </div>
+                          <div className="flex justify-between">
+                            <dt className="text-slate-400">EBIT</dt>
+                            <dd className="font-mono text-white">{fmt(cashFlow.ebitKrw)}</dd>
+                          </div>
+                          <div className="flex justify-between">
                             <dt className="text-slate-400">Interest expense</dt>
                             <dd className="font-mono text-white">{fmt(inc.interestExpenseKrw)}</dd>
                           </div>
                           <div className="flex justify-between border-t border-white/5 pt-1.5">
-                            <dt className="text-slate-300">Pre-tax income (proxy)</dt>
+                            <dt className="text-slate-300">Net income (post-tax)</dt>
                             <dd className="font-mono font-semibold text-white">
-                              {fmt(inc.preTaxIncomeProxyKrw)}
+                              {fmt(cashFlow.netIncomeKrw)}
                             </dd>
                           </div>
                         </dl>
+                        <p className="mt-3 text-[10px] leading-4 text-slate-500">
+                          D&amp;A: {(DEFAULT_CASH_FLOW_ASSUMPTIONS.daRateOfRevenue * 100).toFixed(1)}% of revenue (sector proxy);
+                          tax: {(taxRateDecimal * 100).toFixed(1)}%
+                          {asset.taxAssumption?.corporateTaxPct !== undefined && asset.taxAssumption.corporateTaxPct !== null
+                            ? ' (asset taxAssumption)'
+                            : ' (default)'}.
+                        </p>
                       </div>
                       <div className="rounded-[14px] border border-white/10 bg-white/[0.02] p-4">
                         <div className="fine-print">Balance sheet</div>
@@ -2560,6 +2651,305 @@ export default async function SampleReportPage({
                         </dl>
                       </div>
                     </div>
+
+                    {/* Cash flow + FCF + CFADS DSCR */}
+                    <div className="mt-5 grid gap-4 lg:grid-cols-2">
+                      <div className="rounded-[14px] border border-white/10 bg-white/[0.02] p-4">
+                        <div className="fine-print">Cash flow</div>
+                        <dl className="mt-3 space-y-1.5 text-xs">
+                          <div className="flex justify-between">
+                            <dt className="text-slate-400">Operating cash flow</dt>
+                            <dd className="font-mono text-white">{fmt(cashFlow.operatingCashFlowKrw)}</dd>
+                          </div>
+                          <div className="flex justify-between">
+                            <dt className="text-slate-400">Maintenance capex</dt>
+                            <dd className="font-mono text-white">
+                              ({fmt(cashFlow.maintenanceCapexKrw)})
+                            </dd>
+                          </div>
+                          <div className="flex justify-between border-t border-white/5 pt-1.5">
+                            <dt className="text-slate-300">Free cash flow</dt>
+                            <dd className="font-mono font-semibold text-white">
+                              {fmt(cashFlow.freeCashFlowKrw)}
+                            </dd>
+                          </div>
+                          <div className="flex justify-between">
+                            <dt className="text-slate-400">CFADS</dt>
+                            <dd className="font-mono text-white">{fmt(cashFlow.cfadsKrw)}</dd>
+                          </div>
+                          <div className="flex justify-between">
+                            <dt className="text-slate-400">Debt service (interest + principal)</dt>
+                            <dd className="font-mono text-white">{fmt(cashFlow.debtServiceKrw)}</dd>
+                          </div>
+                        </dl>
+                      </div>
+                      <div className="rounded-[14px] border border-white/10 bg-white/[0.02] p-4">
+                        <div className="fine-print">CFADS DSCR (lender-grade)</div>
+                        <div className="mt-3 text-3xl font-semibold text-white">
+                          {cashFlow.cfadsDscr !== null
+                            ? `${cashFlow.cfadsDscr.toFixed(2)}x`
+                            : '—'}
+                        </div>
+                        <p className="mt-2 text-[11px] leading-5 text-slate-400">
+                          CFADS ÷ debt service (interest + scheduled principal). Tighter than the
+                          headline EBITDA / interest coverage above because it nets out cash tax
+                          and maintenance capex. The 2.0x lender minimum is the typical project-
+                          finance covenant.
+                        </p>
+                        <div className="mt-3 grid gap-1.5 text-[10px] text-slate-500">
+                          <div>D&amp;A proxy: {(DEFAULT_CASH_FLOW_ASSUMPTIONS.daRateOfRevenue * 100).toFixed(1)}% of revenue</div>
+                          <div>Maint capex proxy: {(DEFAULT_CASH_FLOW_ASSUMPTIONS.maintCapexRateOfRevenue * 100).toFixed(1)}% of revenue</div>
+                          <div>WC drag: {(DEFAULT_CASH_FLOW_ASSUMPTIONS.wcChangeRate * 100).toFixed(1)}% of revenue</div>
+                          <div>Tax rate: {(taxRateDecimal * 100).toFixed(1)}%</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Covenant headroom */}
+                    {covenantHeadroom.length > 0 ? (
+                      <div className="mt-5 rounded-[14px] border border-white/10 bg-white/[0.02] p-4">
+                        <div className="fine-print">Covenant headroom &amp; first-breach year</div>
+                        <div className="mt-3 grid gap-3 md:grid-cols-2">
+                          {covenantHeadroom.map((c) => {
+                            const breachTone =
+                              c.firstBreachYear === null
+                                ? 'border-emerald-300/30 bg-emerald-300/[0.03]'
+                                : 'border-rose-300/30 bg-rose-300/[0.04]';
+                            return (
+                              <div
+                                key={c.ratioKey}
+                                className={`rounded-[12px] border ${breachTone} px-3 py-2`}
+                              >
+                                <div className="flex items-baseline justify-between gap-2">
+                                  <div>
+                                    <div className="text-sm font-semibold text-white">
+                                      {c.ratioLabel}
+                                    </div>
+                                    <div className="text-[10px] text-slate-500">
+                                      Covenant {c.preferred === 'lower' ? '≤' : '≥'}{' '}
+                                      {c.benchmark.toFixed(2)}x
+                                    </div>
+                                  </div>
+                                  <div className="text-right font-mono text-xs">
+                                    <div className="text-white">
+                                      {c.currentValue !== null
+                                        ? `${c.currentValue.toFixed(2)}x`
+                                        : '—'}
+                                    </div>
+                                    <div
+                                      className={
+                                        (c.headroomPct ?? 0) >= 0
+                                          ? 'text-emerald-300'
+                                          : 'text-rose-300'
+                                      }
+                                    >
+                                      {c.headroomPct !== null
+                                        ? `${c.headroomPct >= 0 ? '+' : ''}${c.headroomPct.toFixed(1)}% headroom`
+                                        : '—'}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="mt-2 text-[11px] text-slate-400">
+                                  {c.firstBreachYear === null ? (
+                                    <>
+                                      No breach across the projection horizon. Worst observed:{' '}
+                                      <span className="text-white">
+                                        {c.worstValue !== null
+                                          ? `${c.worstValue.toFixed(2)}x`
+                                          : '—'}
+                                      </span>{' '}
+                                      in {c.worstYear ?? '—'}.
+                                    </>
+                                  ) : (
+                                    <>
+                                      First breach in{' '}
+                                      <span className="font-semibold text-rose-200">
+                                        {c.firstBreachYear}
+                                      </span>
+                                      ; worst{' '}
+                                      <span className="text-white">
+                                        {c.worstValue !== null
+                                          ? `${c.worstValue.toFixed(2)}x`
+                                          : '—'}
+                                      </span>{' '}
+                                      in {c.worstYear ?? '—'}.
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {/* Liquidity ladder */}
+                    {liquidity.rows.length > 0 ? (
+                      <div className="mt-5 rounded-[14px] border border-white/10 bg-white/[0.02] p-4">
+                        <div className="flex flex-wrap items-baseline justify-between gap-2">
+                          <div className="fine-print">Liquidity ladder — facility maturity vs liquid resources</div>
+                          <div className="text-[10px] text-slate-500">
+                            12mo coverage:{' '}
+                            <span
+                              className={
+                                (liquidity.liquidityCoverage ?? 0) >= 1
+                                  ? 'text-emerald-300'
+                                  : 'text-rose-300'
+                              }
+                            >
+                              {liquidity.liquidityCoverage !== null
+                                ? `${liquidity.liquidityCoverage.toFixed(2)}x`
+                                : '—'}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="mt-3 overflow-x-auto rounded-[12px] border border-white/10">
+                          <table className="w-full text-xs">
+                            <thead>
+                              <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+                                <th className="px-2 py-2 font-semibold">Facility</th>
+                                <th className="px-2 py-2 text-right font-semibold">Drawn</th>
+                                <th className="px-2 py-2 text-right font-semibold">Rate</th>
+                                <th className="px-2 py-2 text-right font-semibold">Term</th>
+                                <th className="px-2 py-2 text-right font-semibold">Yearly amort</th>
+                                <th className="px-2 py-2 text-right font-semibold">Balloon</th>
+                                <th className="px-2 py-2 text-right font-semibold">Balloon yr</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-white/5 text-slate-200">
+                              {liquidity.rows.map((row) => (
+                                <tr key={row.facilityKey}>
+                                  <td className="px-2 py-2 text-slate-300">{row.label}</td>
+                                  <td className="px-2 py-2 text-right font-mono">{fmt(row.drawnKrw)}</td>
+                                  <td className="px-2 py-2 text-right font-mono">
+                                    {row.interestRatePct !== null
+                                      ? `${row.interestRatePct.toFixed(2)}%`
+                                      : '—'}
+                                  </td>
+                                  <td className="px-2 py-2 text-right font-mono">
+                                    {row.termYears !== null ? `${row.termYears.toFixed(0)} yr` : '—'}
+                                  </td>
+                                  <td className="px-2 py-2 text-right font-mono">
+                                    {fmt(row.yearlyAmortizationKrw)}
+                                  </td>
+                                  <td className="px-2 py-2 text-right font-mono">
+                                    {fmt(row.balloonKrw)}
+                                  </td>
+                                  <td className="px-2 py-2 text-right font-mono text-slate-400">
+                                    {row.balloonYear ?? '—'}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                        <div className="mt-3 grid gap-1.5 text-[10px] text-slate-500">
+                          <div>
+                            12-month debt service (interest + scheduled principal):{' '}
+                            <span className="font-mono text-slate-300">
+                              {fmt(liquidity.twelveMonthDebtServiceKrw)}
+                            </span>
+                          </div>
+                          <div>
+                            Resources: cash{' '}
+                            <span className="font-mono text-slate-300">
+                              {fmt(liquidity.cashOnHandKrw)}
+                            </span>{' '}
+                            + estimated annual operating CF{' '}
+                            <span className="font-mono text-slate-300">
+                              {fmt(liquidity.estimatedAnnualCashFlowKrw)}
+                            </span>
+                          </div>
+                          {liquidity.peakAnnualPrincipalKrw !== null ? (
+                            <div>
+                              Peak principal repayment year:{' '}
+                              <span className="font-mono text-slate-300">
+                                {liquidity.peakYear ?? '—'}
+                              </span>{' '}
+                              ({fmt(liquidity.peakAnnualPrincipalKrw)})
+                            </div>
+                          ) : null}
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {/* Distribution waterfall */}
+                    {waterfall.tiers.length > 0 ? (
+                      <div className="mt-5 rounded-[14px] border border-white/10 bg-white/[0.02] p-4">
+                        <div className="flex flex-wrap items-baseline justify-between gap-2">
+                          <div className="fine-print">Distribution waterfall</div>
+                          <div className="text-[10px] text-slate-500">
+                            Hurdle{' '}
+                            {waterfall.hurdleRatePct !== null
+                              ? `${waterfall.hurdleRatePct.toFixed(1)}%`
+                              : '—'}
+                            {' · '}
+                            Promote{' '}
+                            {waterfall.promoteSharePct !== null
+                              ? `${waterfall.promoteSharePct.toFixed(0)}%`
+                              : '—'}
+                            {' · '}
+                            Mgmt fee{' '}
+                            {waterfall.managementFeePct !== null
+                              ? `${waterfall.managementFeePct.toFixed(2)}%`
+                              : '—'}
+                          </div>
+                        </div>
+                        <div className="mt-3 overflow-x-auto rounded-[12px] border border-white/10">
+                          <table className="w-full text-xs">
+                            <thead>
+                              <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+                                <th className="px-2 py-2 font-semibold">Tier</th>
+                                <th className="px-2 py-2 text-right font-semibold">IRR threshold</th>
+                                <th className="px-2 py-2 text-right font-semibold">LP</th>
+                                <th className="px-2 py-2 text-right font-semibold">GP</th>
+                                <th className="px-2 py-2 font-semibold">Description</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-white/5 text-slate-200">
+                              {waterfall.tiers.map((t) => (
+                                <tr key={t.tier}>
+                                  <td className="px-2 py-2 text-white">{t.tier}</td>
+                                  <td className="px-2 py-2 text-right font-mono">
+                                    {t.irrThresholdPct !== null
+                                      ? `${t.irrThresholdPct.toFixed(1)}%`
+                                      : '—'}
+                                  </td>
+                                  <td className="px-2 py-2 text-right font-mono">
+                                    {t.lpSharePct.toFixed(0)}%
+                                  </td>
+                                  <td className="px-2 py-2 text-right font-mono">
+                                    {t.gpSharePct.toFixed(0)}%
+                                  </td>
+                                  <td className="px-2 py-2 text-[11px] text-slate-400">
+                                    {t.description}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                        {waterfall.lpTakePct !== null && waterfall.gpTakePct !== null ? (
+                          <p className="mt-3 text-[11px] leading-5 text-slate-400">
+                            At projected equity IRR{' '}
+                            <span className="font-mono text-slate-200">
+                              {waterfall.projectedEquityIrrPct !== null
+                                ? `${waterfall.projectedEquityIrrPct.toFixed(1)}%`
+                                : '—'}
+                            </span>
+                            : illustrative LP take{' '}
+                            <span className="font-mono text-emerald-200">
+                              ≈ {waterfall.lpTakePct.toFixed(0)}%
+                            </span>{' '}
+                            / GP take{' '}
+                            <span className="font-mono text-amber-200">
+                              ≈ {waterfall.gpTakePct.toFixed(0)}%
+                            </span>
+                            . Catch-up dollar amount and side-letter LP-specific terms not modeled.
+                          </p>
+                        ) : null}
+                      </div>
+                    ) : null}
 
                     {/* Credit ratios table */}
                     <div className="mt-5">
@@ -2749,8 +3139,11 @@ export default async function SampleReportPage({
                         </div>
                         <p className="mt-3 text-[10px] leading-4 text-slate-500">
                           Each cell shows interest coverage and leverage at the shock combo.
-                          Green = covenant pass; rose = covenant breach. Rate shock applied to
-                          the full debt balance ({(1.0 * 100).toFixed(0)}% repriced).
+                          Green = covenant pass; rose = covenant breach. Rate shock conservatively
+                          assumes 100% of the debt balance reprices on a parallel curve shift —
+                          actual exposure depends on the fixed/floating split per facility, which
+                          is not captured in the current schema. Treat the grid as the worst-case
+                          mark; partial fixed-rate hedging would mute the rate-axis shocks.
                         </p>
                       </div>
                     ) : null}
