@@ -23,6 +23,7 @@ const navItems: Array<AdminNavItem & { minimumRole: AdminAccessRole }> = [
   { href: '/admin/sources', label: 'Sources', minimumRole: 'ANALYST' },
   { href: '/admin/macro-profiles', label: 'Macro Profiles', minimumRole: 'ANALYST' },
   { href: '/admin/readiness', label: 'Readiness', minimumRole: 'ANALYST' },
+  { href: '/admin/sponsors', label: 'Sponsors', minimumRole: 'ANALYST' },
   { href: '/admin/ops/ai-cache', label: 'AI Ops', minimumRole: 'ADMIN' },
   { href: '/admin/security', label: 'Security', minimumRole: 'ADMIN' }
 ];

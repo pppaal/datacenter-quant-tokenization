@@ -2282,6 +2282,47 @@ model AiResponseCache {
   @@index([expiresAt])
 }
 
+// Sponsor track-record models. Real REPE IMs include a "Sponsor track
+// record" page when the deal is a JV: prior deals vintage, equity
+// multiple, gross IRR, exit year. LPs read this to underwrite manager
+// skill, not just the deal. Match by name (Asset.sponsorName), not FK,
+// so adding a Sponsor doesn't require asset backfill. See
+// 20260430070000_add_sponsor_track_record.
+model Sponsor {
+  id          String              @id @default(cuid())
+  name        String              @unique
+  shortName   String?
+  hqMarket    String?
+  aumKrw      Float?
+  fundCount   Int?
+  yearFounded Int?
+  websiteUrl  String?
+  notes       String?
+  priorDeals  SponsorPriorDeal[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+}
+
+model SponsorPriorDeal {
+  id             String      @id @default(cuid())
+  sponsorId      String
+  sponsor        Sponsor     @relation(fields: [sponsorId], references: [id], onDelete: Cascade)
+  dealName       String
+  vintageYear    Int
+  exitYear       Int?
+  assetClass     AssetClass?
+  market         String?
+  equityKrw      Float?
+  equityMultiple Float?
+  grossIrrPct    Float?
+  status         String      @default("EXITED")
+  notes          String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  @@index([sponsorId, vintageYear])
+}
+
 // Proprietary deal flow log. The Deal table tracks our own pipeline;
 // DealFlowEntry captures deals we SAW in the market — the proprietary
 // intel a brokerage relationship surfaces that REB / MOLIT can't.
