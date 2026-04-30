@@ -98,6 +98,9 @@ export default async function AdminResearchPage({ searchParams }: Props) {
           <Link href="/admin/research/tenant-demand">
             <Button variant="ghost">Tenant in the market</Button>
           </Link>
+          <Link href="/admin/research/timeseries-import">
+            <Button variant="ghost">Time-series import</Button>
+          </Link>
         </div>
       </section>
 
