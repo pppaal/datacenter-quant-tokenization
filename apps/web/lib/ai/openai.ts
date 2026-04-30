@@ -266,3 +266,55 @@ export async function extractFinancialStatementWithAi(input: {
     return null;
   }
 }
+
+export type QuarterlyNarrativeInput = {
+  quarterLabel: string;
+  capRateMatrix: string;
+  topTransactions: string;
+  houseViewBullets: string;
+};
+
+/**
+ * 3-paragraph quarterly market narrative for the House view publication.
+ * Input is already string-shaped by the caller (see
+ * lib/services/research/quarterly-narrative.ts); this just wraps the
+ * cached chat completion so behaviour is consistent with the other
+ * AI call sites — temp 0.3 (some flow), 6h TTL (a re-render in the
+ * same afternoon should be cheap, but a manual edit-then-re-run picks
+ * up the change).
+ */
+export async function generateQuarterlyMarketNarrative(
+  input: QuarterlyNarrativeInput
+): Promise<string | null> {
+  const client = getClient();
+  if (!client) return null;
+  try {
+    const { content } = await cachedChatCompletion({
+      client,
+      systemPrompt:
+        '당신은 한국 상업용 부동산 리서치 시니어 애널리스트다. 분기 IC 보고서의 도입 narrative를 작성한다. ' +
+        '원칙: 입력으로 받은 캡레이트 매트릭스 + 거래 명단 + 승인된 House view bullet 외의 숫자를 만들어내지 말 것. ' +
+        '3개 단락. (1) 시장 요약 — 분기 매트릭스에서 가장 큰 시그널 1-2개. ' +
+        '(2) 거래 헤드라인 — 최상위 거래 1-2건 인용. ' +
+        '(3) House view 정렬 — 승인된 view bullet과 매트릭스 사이 정렬/괴리. ' +
+        '한국어, 단락당 3-5문장, IC 톤. 마크다운 헤더 / 리스트 사용 금지.',
+      userContent: [
+        `분기: ${input.quarterLabel}`,
+        '',
+        '캡레이트 매트릭스 (서브마켓 × 등급 × 자산군):',
+        input.capRateMatrix,
+        '',
+        '분기 상위 거래:',
+        input.topTransactions,
+        '',
+        '승인된 House view (bullet):',
+        input.houseViewBullets
+      ].join('\n'),
+      temperature: 0.3,
+      ttlSeconds: 21600
+    });
+    return content;
+  } catch {
+    return null;
+  }
+}

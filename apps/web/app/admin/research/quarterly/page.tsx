@@ -3,8 +3,10 @@ import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { PrintImButton } from '@/components/marketing/print-im-button';
+import { generateQuarterlyMarketNarrative } from '@/lib/ai/openai';
 import { prisma } from '@/lib/db/prisma';
 import { aggregateCapRates } from '@/lib/services/research/cap-rate-aggregator';
+import { buildQuarterlyNarrativeInputs } from '@/lib/services/research/quarterly-narrative';
 import { formatDate, formatNumber } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
@@ -97,6 +99,23 @@ export default async function QuarterlyResearchPage(props: {
     prisma.marketUniverse.count()
   ]);
 
+  // Editorial narrative is best-effort: when OPENAI_API_KEY is absent
+  // the helper returns null and the page falls back to a "no narrative
+  // generated" badge instead of crashing.
+  const narrativeInputs = buildQuarterlyNarrativeInputs({
+    buckets: aggregation.fromTransactions.length > 0
+      ? aggregation.fromTransactions
+      : aggregation.fromIndicators,
+    transactions,
+    houseViews: houseViews.map((row) => ({ title: row.title, summary: row.summary }))
+  });
+  const narrative = await generateQuarterlyMarketNarrative({
+    quarterLabel: quarter.label,
+    capRateMatrix: narrativeInputs.capRateMatrix,
+    topTransactions: narrativeInputs.topTransactions,
+    houseViewBullets: narrativeInputs.houseViewBullets
+  });
+
   return (
     <main className="space-y-6">
       <div className="print-hidden flex flex-wrap items-center justify-between gap-3">
@@ -144,6 +163,35 @@ export default async function QuarterlyResearchPage(props: {
           deep-dive.
         </p>
       </header>
+
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="eyebrow">House view narrative</div>
+          {narrative ? (
+            <Badge tone="good">AI generated · ED review required</Badge>
+          ) : (
+            <Badge tone="warn">no narrative · OPENAI_API_KEY missing</Badge>
+          )}
+        </div>
+        {narrative ? (
+          <div className="space-y-3 rounded-[18px] border border-white/10 bg-white/[0.03] p-5 text-sm leading-7 text-slate-200">
+            {narrative.split(/\n{2,}/).map((paragraph, i) => (
+              <p key={i}>{paragraph.trim()}</p>
+            ))}
+            <p className="text-xs text-slate-500">
+              Generated from the cap-rate matrix + top transactions + approved house views below.
+              Editor must review and accept before this PDF is distributed externally — the badge
+              above goes green only after approval (see review-gate workflow).
+            </p>
+          </div>
+        ) : (
+          <div className="rounded-[18px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
+            Narrative generator skipped: no OPENAI_API_KEY in this environment. The publication
+            still renders the matrices, transactions, and approved house views below — the
+            narrative is editorial scaffolding, not a primary data source.
+          </div>
+        )}
+      </section>
 
       <section className="space-y-3">
         <div>
