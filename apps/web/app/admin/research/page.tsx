@@ -1,6 +1,8 @@
 import { Suspense } from 'react';
+import Link from 'next/link';
 import { headers } from 'next/headers';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { PanelSkeleton } from '@/components/ui/skeleton';
 import { MacroDashboardPanel } from '@/components/admin/macro-dashboard-panel';
 import { ResearchRefreshButton } from '@/components/admin/research-refresh-button';
@@ -85,11 +87,12 @@ export default async function AdminResearchPage({ searchParams }: Props) {
           surfaced with freshness, provenance, and a coverage queue that can be worked before
           underwriting, sourcing, hold monitoring, or investor reporting relies on it.
         </p>
-        {canRefreshResearch ? (
-          <div className="mt-6">
-            <ResearchRefreshButton />
-          </div>
-        ) : null}
+        <div className="mt-6 flex flex-wrap gap-3">
+          {canRefreshResearch ? <ResearchRefreshButton /> : null}
+          <Link href="/admin/research/comps">
+            <Button variant="ghost">Cap-rate matrix · comps</Button>
+          </Link>
+        </div>
       </section>
 
       <Suspense fallback={<PanelSkeleton rows={4} />}>
