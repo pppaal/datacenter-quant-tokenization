@@ -212,6 +212,13 @@ export const assetBundleInclude = {
     },
     take: 6
   },
+  committeePackets: {
+    orderBy: {
+      createdAt: 'desc' as const
+    },
+    take: 4
+  },
+  tokenization: true,
   transactionComps: {
     orderBy: {
       transactionDate: 'desc' as const

@@ -223,6 +223,36 @@ a {
     break-before: page;
   }
 
+  /* IM print polish: keep each section card on one page when possible
+     and avoid orphaned table headers. The .panel/.surface card frames
+     get a thin border for legibility on white. Tables shrink the
+     monospace font so wide grids still fit landscape A4. */
+  main section {
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+  main section > .panel,
+  main section > .surface {
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+  main table {
+    font-size: 10px !important;
+  }
+  main table thead {
+    display: table-header-group;
+  }
+  main table tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  /* Hide interactive chrome inside the IM during print. */
+  main nav[aria-label="IM table of contents"],
+  main button,
+  main a[href^="/admin"] {
+    display: none !important;
+  }
+
   .report-cover-page {
     break-after: page;
     page-break-after: always;

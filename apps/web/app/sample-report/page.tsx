@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { AssetClass } from '@prisma/client';
 import { formatCurrencyFromKrwAtRate, resolveDisplayCurrency } from '@/lib/finance/currency';
+import { ImToc } from '@/components/marketing/im-toc';
 import { PrintImButton } from '@/components/marketing/print-im-button';
 import { SiteNav } from '@/components/marketing/site-nav';
 import { Badge } from '@/components/ui/badge';
@@ -203,13 +204,88 @@ export default async function SampleReportPage() {
     ? asset.pipelineProjects
     : marketPipeline;
 
+  // TOC items mirror the same conditional gates used to render each
+  // section. Listed in render order so the active-section highlight
+  // matches the user's scroll position.
+  const tocItems: Array<{ id: string; label: string; show: boolean }> = [
+    { id: 'im-cover', label: 'Cover', show: true },
+    { id: 'im-macro', label: 'Macro backdrop', show: macroBackdrop.length > 0 },
+    { id: 'im-macro-guidance', label: 'Macro guidance', show: !!macroGuidance },
+    { id: 'im-returns', label: 'Returns / cap stack / tenancy', show: true },
+    { id: 'im-underwriting', label: 'Underwriting assumptions', show: true },
+    { id: 'im-hazard', label: 'Site hazard', show: !!asset.siteProfile },
+    {
+      id: 'im-title',
+      label: 'Title & planning',
+      show:
+        (asset.ownershipRecords?.length ?? 0) +
+          (asset.parcels?.length ?? 0) +
+          (asset.buildingRecords?.length ?? 0) +
+          (asset.planningConstraints?.length ?? 0) +
+          (asset.encumbranceRecords?.length ?? 0) >
+        0
+    },
+    { id: 'im-sources-uses', label: 'Sources & Uses', show: !!proForma },
+    { id: 'im-capex', label: 'Capex schedule', show: (asset.capexLineItems?.length ?? 0) > 0 },
+    { id: 'im-pnl', label: 'Year-by-year P&L', show: !!proForma && proForma.years.length > 0 },
+    { id: 'im-scenario', label: 'Scenario diff', show: scenarioDiff.length > 0 },
+    {
+      id: 'im-comps',
+      label: 'Comparable transactions',
+      show: txCompsToShow.length > 0 || rentCompsToShow.length > 0
+    },
+    {
+      id: 'im-research',
+      label: 'Research desk',
+      show:
+        (asset.researchSnapshots?.length ?? 0) +
+          (asset.coverageTasks?.length ?? 0) +
+          (asset.aiInsights?.length ?? 0) >
+        0
+    },
+    {
+      id: 'im-realized',
+      label: 'Outcomes & pipeline',
+      show: (asset.realizedOutcomes?.length ?? 0) > 0 || pipelineToShow.length > 0
+    },
+    { id: 'im-sensitivity', label: 'Sensitivity matrices', show: sensitivityGrids.length > 0 },
+    { id: 'im-confidence', label: 'Confidence breakdown', show: true },
+    { id: 'im-sponsor', label: 'Sponsor track record', show: !!sponsorTrack },
+    {
+      id: 'im-risks',
+      label: 'Risks & DD checklist',
+      show: latestRun.keyRisks.length + latestRun.ddChecklist.length > 0
+    },
+    {
+      id: 'im-counterparty',
+      label: 'Counterparty financials',
+      show: (asset.counterparties?.length ?? 0) > 0
+    },
+    { id: 'im-documents', label: 'Document evidence', show: (asset.documents?.length ?? 0) > 0 },
+    {
+      id: 'im-ic-packet',
+      label: 'IC packets',
+      show: (asset.committeePackets?.length ?? 0) > 0
+    },
+    {
+      id: 'im-features',
+      label: 'Feature snapshots',
+      show: (asset.featureSnapshots?.length ?? 0) > 0
+    },
+    { id: 'im-tokenization', label: 'Tokenization', show: !!asset.tokenization },
+    { id: 'im-memo', label: 'Investment memo', show: true }
+  ];
+  const visibleTocItems = tocItems.filter((t) => t.show).map(({ id, label }) => ({ id, label }));
+
   return (
     <main className="pb-24">
       <div className="print-hidden">
         <SiteNav />
       </div>
 
-      <section className="app-shell py-10">
+      <ImToc items={visibleTocItems} />
+
+      <section id="im-cover" className="app-shell py-10">
         <div className="surface hero-mesh">
           <div className="flex flex-wrap items-center gap-3">
             <Badge tone="good">Sample IM</Badge>
@@ -384,7 +460,7 @@ export default async function SampleReportPage() {
       ) : null}
 
       {macroBackdrop.length > 0 ? (
-        <section className="app-shell py-4">
+        <section id="im-macro" className="app-shell py-4">
           <Card>
             <div className="eyebrow">Macro backdrop</div>
             <p className="mt-2 text-sm text-slate-400">
@@ -414,7 +490,7 @@ export default async function SampleReportPage() {
       ) : null}
 
       {macroGuidance ? (
-        <section className="app-shell py-4">
+        <section id="im-macro-guidance" className="app-shell py-4">
           <Card>
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
@@ -481,7 +557,7 @@ export default async function SampleReportPage() {
         </section>
       ) : null}
 
-      <section className="app-shell py-4">
+      <section id="im-returns" className="app-shell py-4">
         <div className="grid gap-4 lg:grid-cols-3">
           <Card>
             <div className="eyebrow">Returns snapshot</div>
@@ -705,7 +781,7 @@ export default async function SampleReportPage() {
         </div>
       </section>
 
-      <section className="app-shell py-4">
+      <section id="im-underwriting" className="app-shell py-4">
         <Card>
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
@@ -829,7 +905,7 @@ export default async function SampleReportPage() {
       </section>
 
       {asset.siteProfile ? (
-        <section className="app-shell py-4">
+        <section id="im-hazard" className="app-shell py-4">
           <Card>
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
@@ -900,7 +976,7 @@ export default async function SampleReportPage() {
       (asset.buildingRecords && asset.buildingRecords.length > 0) ||
       (asset.planningConstraints && asset.planningConstraints.length > 0) ||
       (asset.encumbranceRecords && asset.encumbranceRecords.length > 0) ? (
-        <section className="app-shell py-4">
+        <section id="im-title" className="app-shell py-4">
           <Card>
             <div className="eyebrow">Title, parcel &amp; planning diligence</div>
             <p className="mt-2 max-w-3xl text-sm text-slate-400">
@@ -1064,7 +1140,7 @@ export default async function SampleReportPage() {
       ) : null}
 
       {proForma ? (
-        <section className="app-shell py-4">
+        <section id="im-sources-uses" className="app-shell py-4">
           <div className="grid gap-4 lg:grid-cols-2">
             <Card>
               <div className="eyebrow">Sources & Uses</div>
@@ -1218,7 +1294,7 @@ export default async function SampleReportPage() {
       ) : null}
 
       {asset.capexLineItems && asset.capexLineItems.length > 0 ? (
-        <section className="app-shell py-4">
+        <section id="im-capex" className="app-shell py-4">
           <Card>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
@@ -1291,7 +1367,7 @@ export default async function SampleReportPage() {
       ) : null}
 
       {proForma && proForma.years.length > 0 ? (
-        <section className="app-shell py-4">
+        <section id="im-pnl" className="app-shell py-4">
           <Card>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
@@ -1351,7 +1427,7 @@ export default async function SampleReportPage() {
       ) : null}
 
       {scenarioDiff.length > 0 ? (
-        <section className="app-shell py-4">
+        <section id="im-scenario" className="app-shell py-4">
           <Card>
             <div className="eyebrow">Scenario diff (vs base case)</div>
             <p className="mt-2 max-w-3xl text-sm text-slate-400">
@@ -1446,7 +1522,7 @@ export default async function SampleReportPage() {
       ) : null}
 
       {txCompsToShow.length > 0 || rentCompsToShow.length > 0 ? (
-        <section className="app-shell py-4">
+        <section id="im-comps" className="app-shell py-4">
           <Card>
             <div className="eyebrow">Comparable transactions &amp; rent comps</div>
             <p className="mt-2 max-w-3xl text-sm text-slate-400">
@@ -1567,7 +1643,7 @@ export default async function SampleReportPage() {
       {(asset.researchSnapshots && asset.researchSnapshots.length > 0) ||
       (asset.coverageTasks && asset.coverageTasks.length > 0) ||
       (asset.aiInsights && asset.aiInsights.length > 0) ? (
-        <section className="app-shell py-4">
+        <section id="im-research" className="app-shell py-4">
           <div className="grid gap-4 lg:grid-cols-2">
             {asset.researchSnapshots && asset.researchSnapshots.length > 0 ? (
               <Card>
@@ -1701,7 +1777,7 @@ export default async function SampleReportPage() {
 
       {(asset.realizedOutcomes && asset.realizedOutcomes.length > 0) ||
       pipelineToShow.length > 0 ? (
-        <section className="app-shell py-4">
+        <section id="im-realized" className="app-shell py-4">
           <div className="grid gap-4 lg:grid-cols-2">
             {asset.realizedOutcomes && asset.realizedOutcomes.length > 0 ? (
               <Card>
@@ -1825,7 +1901,7 @@ export default async function SampleReportPage() {
       ) : null}
 
       {sensitivityGrids.length > 0 ? (
-        <section className="app-shell py-4">
+        <section id="im-sensitivity" className="app-shell py-4">
           <Card>
             <div className="eyebrow">Sensitivity matrices</div>
             <p className="mt-2 max-w-3xl text-sm text-slate-400">
@@ -1917,7 +1993,7 @@ export default async function SampleReportPage() {
         </section>
       ) : null}
 
-      <section className="app-shell py-4">
+      <section id="im-confidence" className="app-shell py-4">
         <Card>
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
@@ -1994,7 +2070,7 @@ export default async function SampleReportPage() {
       </section>
 
       {sponsorTrack ? (
-        <section className="app-shell py-4">
+        <section id="im-sponsor" className="app-shell py-4">
           <Card>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
@@ -2074,7 +2150,7 @@ export default async function SampleReportPage() {
       ) : null}
 
       {(latestRun.keyRisks.length > 0 || latestRun.ddChecklist.length > 0) ? (
-        <section className="app-shell py-4">
+        <section id="im-risks" className="app-shell py-4">
           <div className="grid gap-4 lg:grid-cols-2">
             {latestRun.keyRisks.length > 0 ? (
               <Card>
@@ -2135,7 +2211,7 @@ export default async function SampleReportPage() {
       ) : null}
 
       {asset.counterparties && asset.counterparties.length > 0 ? (
-        <section className="app-shell py-4">
+        <section id="im-counterparty" className="app-shell py-4">
           <Card>
             <div className="eyebrow">Counterparty financials</div>
             <p className="mt-2 max-w-3xl text-sm text-slate-400">
@@ -2223,7 +2299,7 @@ export default async function SampleReportPage() {
       ) : null}
 
       {asset.documents && asset.documents.length > 0 ? (
-        <section className="app-shell py-4">
+        <section id="im-documents" className="app-shell py-4">
           <Card>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="eyebrow">Document evidence</div>
@@ -2290,7 +2366,152 @@ export default async function SampleReportPage() {
         </section>
       ) : null}
 
-      <section className="app-shell space-y-6 py-6">
+      {asset.committeePackets && asset.committeePackets.length > 0 ? (
+        <section id="im-ic-packet" className="app-shell py-4">
+          <Card>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="eyebrow">Investment committee packets</div>
+              <Badge>
+                {asset.committeePackets.length} packet
+                {asset.committeePackets.length === 1 ? '' : 's'}
+              </Badge>
+            </div>
+            <p className="mt-2 max-w-3xl text-sm text-slate-400">
+              IC packets generated against this asset. The decision summary records the
+              committee's outcome (CONDITIONAL / APPROVED / DEFERRED / DECLINED); follow-up
+              tracks the action items the deal team owes back.
+            </p>
+            <ul className="mt-5 space-y-3">
+              {asset.committeePackets.map((p) => {
+                const statusTone =
+                  p.status === 'APPROVED'
+                    ? 'border-emerald-300/30 bg-emerald-300/[0.04] text-emerald-200'
+                    : p.status === 'DECLINED'
+                      ? 'border-rose-300/30 bg-rose-300/[0.04] text-rose-200'
+                      : 'border-amber-300/30 bg-amber-300/[0.04] text-amber-200';
+                return (
+                  <li
+                    key={p.id}
+                    className="rounded-[16px] border border-white/10 bg-white/[0.02] p-4"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <div className="font-semibold text-white">{p.title}</div>
+                        <div className="mt-1 text-[11px] text-slate-500">
+                          <span className="font-mono">{p.packetCode}</span>
+                          {p.scheduledFor ? ` · scheduled ${formatDate(p.scheduledFor)}` : ''}
+                          {p.preparedByLabel ? ` · prepared by ${p.preparedByLabel}` : ''}
+                        </div>
+                      </div>
+                      <span
+                        className={`rounded-[10px] border px-2 py-1 text-[10px] font-mono uppercase tracking-wide ${statusTone}`}
+                      >
+                        {p.status}
+                      </span>
+                    </div>
+                    {p.decisionSummary ? (
+                      <p className="mt-3 text-sm leading-6 text-slate-200">
+                        <span className="text-[10px] uppercase tracking-wide text-slate-500">
+                          Decision · </span>
+                        {p.decisionSummary}
+                      </p>
+                    ) : null}
+                    {p.followUpSummary ? (
+                      <p className="mt-2 text-sm leading-6 text-slate-300">
+                        <span className="text-[10px] uppercase tracking-wide text-slate-500">
+                          Follow-up · </span>
+                        {p.followUpSummary}
+                      </p>
+                    ) : null}
+                  </li>
+                );
+              })}
+            </ul>
+          </Card>
+        </section>
+      ) : null}
+
+      {asset.featureSnapshots && asset.featureSnapshots.length > 0 ? (
+        <section id="im-features" className="app-shell py-4">
+          <Card>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="eyebrow">Feature snapshots</div>
+              <Badge>{asset.featureSnapshots.length}</Badge>
+            </div>
+            <p className="mt-2 max-w-3xl text-sm text-slate-400">
+              Engine-curated feature bundles per namespace (site / power / revenue / legal /
+              permit / market / readiness / satellite). Each snapshot captures the inputs the
+              valuation engine read at run time so a re-run against the same snapshot is exactly
+              reproducible.
+            </p>
+            <div className="mt-5 grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+              {asset.featureSnapshots.map((s) => (
+                <div
+                  key={s.id}
+                  className="rounded-[16px] border border-white/10 bg-white/[0.02] p-3"
+                >
+                  <div className="text-[11px] uppercase tracking-wide text-slate-500">
+                    {s.featureNamespace}
+                  </div>
+                  <div className="mt-2 font-mono text-xs text-slate-300">
+                    {s.values?.length ?? 0} value{(s.values?.length ?? 0) === 1 ? '' : 's'}
+                  </div>
+                  <div className="mt-1 text-[10px] text-slate-500">
+                    {formatDate(s.snapshotDate)}
+                  </div>
+                  {s.sourceVersion ? (
+                    <div className="mt-1 truncate text-[10px] text-slate-600" title={s.sourceVersion}>
+                      v{s.sourceVersion}
+                    </div>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          </Card>
+        </section>
+      ) : null}
+
+      {asset.tokenization ? (
+        <section id="im-tokenization" className="app-shell py-4">
+          <Card>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="eyebrow">Tokenization &amp; on-chain</div>
+              <Badge tone={asset.tokenization.paused ? 'warn' : 'good'}>
+                {asset.tokenization.paused ? 'PAUSED' : 'ACTIVE'}
+              </Badge>
+            </div>
+            <p className="mt-2 max-w-3xl text-sm text-slate-400">
+              ERC-3643-style on-chain registration for this asset. Identity registry gates
+              KYC; compliance contract enforces transfer rules; lockup/maxHolders/country modules
+              are deployed when configured.
+            </p>
+            <dl className="mt-5 grid gap-3 text-sm md:grid-cols-2">
+              <Row label="Chain ID">{asset.tokenization.chainId}</Row>
+              <Row label="Registry asset ID">
+                <span className="break-all">{asset.tokenization.registryAssetId}</span>
+              </Row>
+              <Row label="Token address">
+                <span className="break-all font-mono text-xs">{asset.tokenization.tokenAddress}</span>
+              </Row>
+              <Row label="Identity registry">
+                <span className="break-all font-mono text-xs">
+                  {asset.tokenization.identityRegistryAddress}
+                </span>
+              </Row>
+              <Row label="Compliance">
+                <span className="break-all font-mono text-xs">
+                  {asset.tokenization.complianceAddress}
+                </span>
+              </Row>
+              <Row label="Deployment block">
+                <span className="font-mono">{asset.tokenization.deploymentBlock}</span>
+              </Row>
+            </dl>
+          </Card>
+        </section>
+      ) : null}
+
+      <section id="im-memo" className="app-shell space-y-6 py-6">
         <div className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
           <Card>
             <div className="eyebrow">Investment Memo (IM)</div>
