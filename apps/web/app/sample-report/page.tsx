@@ -32,9 +32,14 @@ import {
   buildBalanceSheet,
   buildCreditRatios,
   buildIncomeStatement,
-  buildStressTest,
+  buildSensitivityMatrix,
   projectFinancials
 } from '@/lib/services/im/credit-analysis';
+import {
+  pickDebtAmortizationPct,
+  pickInterestRatePct,
+  pickRevenueGrowthPct
+} from '@/lib/services/im/projection-inputs';
 import { classifyFreshness } from '@/lib/services/im/freshness';
 import { describeHazard } from '@/lib/services/im/hazard';
 import { readMacroGuidance } from '@/lib/services/im/macro-guidance';
@@ -2420,18 +2425,26 @@ export default async function SampleReportPage({
                 const inc = buildIncomeStatement(latestFs);
                 const bs = buildBalanceSheet(latestFs);
                 const ratios = buildCreditRatios(latestFs);
-                // Project forward at 8% revenue growth (rough macro+lease-up
-                // proxy) with 5% per-year debt amortization. Real underwriting
-                // pulls these from the lease schedule and debt facility — this
-                // is a placeholder for sponsors lacking their own forecasts.
+                // Drive forward-projection inputs from the bundle's
+                // own data: macro rent_growth_pct anchors revenue
+                // growth; the asset's debt facility schedule anchors
+                // amortization pace. Each pick carries a provenance
+                // string the IM renders so the LP can challenge any
+                // input.
+                const growthInput = pickRevenueGrowthPct(asset.macroSeries ?? []);
+                const amortInput = pickDebtAmortizationPct(asset.debtFacilities ?? []);
+                const rateInput = pickInterestRatePct(
+                  asset.debtFacilities ?? [],
+                  asset.macroSeries ?? []
+                );
                 const projection = projectFinancials(latestFs, {
-                  revenueGrowthPct: 8,
-                  debtAmortizationPct: 5,
-                  horizonYears: 3
+                  revenueGrowthPct: growthInput.value,
+                  debtAmortizationPct: amortInput.value,
+                  horizonYears: 10
                 });
-                const stress = buildStressTest(latestFs, {
-                  ebitdaShockPct: 20,
-                  rateShockBps: 200,
+                const sensitivityMatrix = buildSensitivityMatrix(latestFs, {
+                  ebitdaShocks: [0, -10, -20, -30],
+                  rateShocks: [0, 100, 200, 300],
                   debtRepricedPct: 1.0
                 });
                 const riskTone =
@@ -2609,11 +2622,16 @@ export default async function SampleReportPage({
                       </div>
                     </div>
 
-                    {/* Three-year projection */}
+                    {/* 10-year projection — assumptions sourced from bundle data */}
                     {projection.length > 0 ? (
                       <div className="mt-5">
-                        <div className="fine-print">
-                          Three-year projection — 8% revenue growth, 5%/yr debt amortization
+                        <div className="flex flex-wrap items-baseline justify-between gap-2">
+                          <div className="fine-print">10-year projection</div>
+                          <div className="text-[10px] text-slate-500">
+                            Revenue growth: {growthInput.value.toFixed(1)}%/yr ·
+                            {' '}Debt amort: {amortInput.value.toFixed(1)}%/yr ·
+                            {' '}Margin held constant
+                          </div>
                         </div>
                         <div className="mt-3 overflow-x-auto rounded-[14px] border border-white/10">
                           <table className="w-full text-xs">
@@ -2653,64 +2671,87 @@ export default async function SampleReportPage({
                             </tbody>
                           </table>
                         </div>
+                        <ul className="mt-3 space-y-1 text-[10px] text-slate-500">
+                          <li>
+                            <span className="text-slate-400">Revenue growth source:</span>{' '}
+                            {growthInput.provenance}
+                          </li>
+                          <li>
+                            <span className="text-slate-400">Debt amortization source:</span>{' '}
+                            {amortInput.provenance}
+                          </li>
+                          <li>
+                            <span className="text-slate-400">Baseline rate:</span>{' '}
+                            {rateInput.provenance}
+                          </li>
+                        </ul>
                       </div>
                     ) : null}
 
-                    {/* Stress test */}
-                    {stress.length > 0 ? (
+                    {/* 2D Sensitivity matrix — interest coverage at every shock combo */}
+                    {sensitivityMatrix ? (
                       <div className="mt-5">
-                        <div className="fine-print">
-                          Stress test — EBITDA −20% and rate +200 bps, with covenant 4.0x leverage / 2.0x coverage
+                        <div className="flex flex-wrap items-baseline justify-between gap-2">
+                          <div className="fine-print">
+                            Sensitivity — interest coverage at every shock combo
+                          </div>
+                          <div className="text-[10px] text-slate-500">
+                            Covenant floor: leverage ≤ 4.0x · coverage ≥ 2.0x
+                          </div>
                         </div>
                         <div className="mt-3 overflow-x-auto rounded-[14px] border border-white/10">
                           <table className="w-full text-xs">
                             <thead>
                               <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
-                                <th className="px-2 py-2 font-semibold">Scenario</th>
-                                <th className="px-2 py-2 text-right font-semibold">EBITDA</th>
-                                <th className="px-2 py-2 text-right font-semibold">Interest</th>
-                                <th className="px-2 py-2 text-right font-semibold">Leverage</th>
-                                <th className="px-2 py-2 text-right font-semibold">Coverage</th>
-                                <th className="px-2 py-2 text-right font-semibold">Covenant</th>
+                                <th className="px-2 py-2 font-semibold">EBITDA shock ↓ / Rate shock →</th>
+                                {sensitivityMatrix.rateShocks.map((rs) => (
+                                  <th key={rs} className="px-2 py-2 text-right font-semibold">
+                                    {rs >= 0 ? '+' : ''}{rs} bps
+                                  </th>
+                                ))}
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5 text-slate-200">
-                              {stress.map((row) => (
-                                <tr
-                                  key={row.scenario}
-                                  className={
-                                    row.passesCovenant === false
-                                      ? 'bg-rose-300/[0.03]'
-                                      : ''
-                                  }
-                                >
-                                  <td className="px-2 py-2 text-slate-300">{row.scenario}</td>
-                                  <td className="px-2 py-2 text-right font-mono">{fmt(row.ebitdaKrw)}</td>
-                                  <td className="px-2 py-2 text-right font-mono">
-                                    {fmt(row.interestExpenseKrw)}
+                              {sensitivityMatrix.cells.map((row, ri) => (
+                                <tr key={sensitivityMatrix.ebitdaShocks[ri]}>
+                                  <td className="px-2 py-2 text-slate-400">
+                                    {sensitivityMatrix.ebitdaShocks[ri]! >= 0 ? '+' : ''}
+                                    {sensitivityMatrix.ebitdaShocks[ri]}%
                                   </td>
-                                  <td className="px-2 py-2 text-right font-mono">
-                                    {row.leverage !== null ? `${row.leverage.toFixed(2)}x` : '—'}
-                                  </td>
-                                  <td className="px-2 py-2 text-right font-mono">
-                                    {row.interestCoverage !== null
-                                      ? `${row.interestCoverage.toFixed(2)}x`
-                                      : '—'}
-                                  </td>
-                                  <td className="px-2 py-2 text-right font-mono">
-                                    {row.passesCovenant === true ? (
-                                      <span className="text-emerald-300">PASS</span>
-                                    ) : row.passesCovenant === false ? (
-                                      <span className="text-rose-300">BREACH</span>
-                                    ) : (
-                                      <span className="text-slate-500">—</span>
-                                    )}
-                                  </td>
+                                  {row.map((cell, ci) => {
+                                    const tone =
+                                      cell.passesCovenant === true
+                                        ? 'bg-emerald-300/[0.06] text-emerald-200'
+                                        : cell.passesCovenant === false
+                                          ? 'bg-rose-300/[0.06] text-rose-200'
+                                          : '';
+                                    return (
+                                      <td
+                                        key={ci}
+                                        className={`px-2 py-2 text-right font-mono ${tone}`}
+                                      >
+                                        {cell.interestCoverage !== null
+                                          ? `${cell.interestCoverage.toFixed(2)}x`
+                                          : '—'}
+                                        <div className="text-[9px] text-slate-500">
+                                          lev{' '}
+                                          {cell.leverage !== null
+                                            ? `${cell.leverage.toFixed(2)}x`
+                                            : '—'}
+                                        </div>
+                                      </td>
+                                    );
+                                  })}
                                 </tr>
                               ))}
                             </tbody>
                           </table>
                         </div>
+                        <p className="mt-3 text-[10px] leading-4 text-slate-500">
+                          Each cell shows interest coverage and leverage at the shock combo.
+                          Green = covenant pass; rose = covenant breach. Rate shock applied to
+                          the full debt balance ({(1.0 * 100).toFixed(0)}% repriced).
+                        </p>
                       </div>
                     ) : null}
 

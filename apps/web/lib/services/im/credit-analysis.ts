@@ -376,6 +376,70 @@ export type StressRow = {
 };
 
 /**
+ * Two-axis sensitivity matrix: EBITDA shocks × rate shocks. Each
+ * cell is a {coverage, leverage, passesCovenant} triple. Renders in
+ * the IM as a 4×4 grid where the LP can read covenant pass/fail at
+ * any combination of operating + financing stress.
+ */
+export type SensitivityCell = {
+  ebitdaShockPct: number;
+  rateShockBps: number;
+  ebitdaKrw: number;
+  interestExpenseKrw: number;
+  leverage: number | null;
+  interestCoverage: number | null;
+  passesCovenant: boolean | null;
+};
+
+export type SensitivityMatrix = {
+  ebitdaShocks: number[];
+  rateShocks: number[];
+  cells: SensitivityCell[][];
+};
+
+export function buildSensitivityMatrix(
+  stmt: FinancialStatementLike,
+  options: {
+    ebitdaShocks?: number[];
+    rateShocks?: number[];
+    debtRepricedPct?: number;
+  } = {}
+): SensitivityMatrix | null {
+  const inc = buildIncomeStatement(stmt);
+  const bs = buildBalanceSheet(stmt);
+  if (inc.ebitdaKrw === null || bs.totalDebtKrw === null) return null;
+
+  const ebitdaShocks = options.ebitdaShocks ?? [0, -10, -20, -30];
+  const rateShocks = options.rateShocks ?? [0, 100, 200, 300];
+  const baseInterest = inc.interestExpenseKrw ?? 0;
+  const debtRepricedPct = options.debtRepricedPct ?? 1.0;
+
+  const cells = ebitdaShocks.map((es) =>
+    rateShocks.map((rs): SensitivityCell => {
+      const ebitda = inc.ebitdaKrw! * (1 + es / 100);
+      const interest = baseInterest + bs.totalDebtKrw! * debtRepricedPct * (rs / 10_000);
+      const leverage = safeDiv(bs.totalDebtKrw, ebitda);
+      const coverage = interest > 0 ? safeDiv(ebitda, interest) : null;
+      const passes =
+        leverage !== null && coverage !== null
+          ? leverage <= 4.0 && coverage >= 2.0
+          : null;
+      return {
+        ebitdaShockPct: es,
+        rateShockBps: rs,
+        ebitdaKrw: ebitda,
+        interestExpenseKrw: interest,
+        leverage,
+        interestCoverage: coverage,
+        passesCovenant: passes
+      };
+    })
+  );
+
+  return { ebitdaShocks, rateShocks, cells };
+}
+
+/**
  * Two-axis stress: revenue / EBITDA shock × interest-rate shock.
  * Real PE due diligence runs this every committee meeting because
  * coverage covenants typically trip first.

@@ -4,6 +4,7 @@ import {
   buildBalanceSheet,
   buildCreditRatios,
   buildIncomeStatement,
+  buildSensitivityMatrix,
   buildStressTest,
   projectFinancials
 } from '@/lib/services/im/credit-analysis';
@@ -108,6 +109,35 @@ test('buildStressTest returns empty when inputs are missing', () => {
     buildStressTest({}, { ebitdaShockPct: 20, rateShockBps: 200 }),
     []
   );
+});
+
+test('buildSensitivityMatrix returns 4x4 grid by default with covenant flags', () => {
+  const m = buildSensitivityMatrix(SAMPLE);
+  assert.ok(m);
+  assert.equal(m!.ebitdaShocks.length, 4);
+  assert.equal(m!.rateShocks.length, 4);
+  assert.equal(m!.cells.length, 4);
+  assert.equal(m!.cells[0]!.length, 4);
+  // Top-left = base case (0/0): leverage 3.89, coverage 4.5 → PASS
+  assert.equal(m!.cells[0]![0]!.passesCovenant, true);
+  // Bottom-right = -30% / +300bps → both shocks → BREACH
+  assert.equal(m!.cells[3]![3]!.passesCovenant, false);
+  // Each cell carries its shock metadata
+  assert.equal(m!.cells[2]![1]!.ebitdaShockPct, -20);
+  assert.equal(m!.cells[2]![1]!.rateShockBps, 100);
+});
+
+test('buildSensitivityMatrix accepts custom shock arrays', () => {
+  const m = buildSensitivityMatrix(SAMPLE, {
+    ebitdaShocks: [0, -50],
+    rateShocks: [0, 500]
+  });
+  assert.equal(m!.cells.length, 2);
+  assert.equal(m!.cells[0]!.length, 2);
+});
+
+test('buildSensitivityMatrix returns null with missing inputs', () => {
+  assert.equal(buildSensitivityMatrix({}), null);
 });
 
 test('buildIncomeStatement accepts Decimal-shaped inputs', () => {
