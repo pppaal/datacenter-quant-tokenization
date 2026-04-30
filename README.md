@@ -83,6 +83,11 @@ Official adapter paths currently supported in code:
 - Optional NASA GPM IMERG precipitation and NASA FIRMS hotspot overlays for satellite risk screening
 - Python valuation engine under [`apps/web/services/valuation_python`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/services/valuation_python) with TypeScript fallback
 
+Investment Memo (IM) deep-dive — start here for system / IM card walkthrough:
+
+- [`apps/web/docs/im-architecture.md`](./apps/web/docs/im-architecture.md) — 3-layer architecture, 33-section structure, data trace example, recommended reading order
+- [`apps/web/docs/financial-helpers.md`](./apps/web/docs/financial-helpers.md) — `lib/services/im/*` helper reference (input / output / tests per file)
+
 Valuation variable reference:
 
 - [`apps/web/docs/valuation-variables.md`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/docs/valuation-variables.md)
