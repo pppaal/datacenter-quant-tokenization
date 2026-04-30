@@ -13,6 +13,14 @@ import { ValuationProvenance } from '@/components/valuation/valuation-provenance
 import { ValuationSignals } from '@/components/valuation/valuation-signals';
 import { getSampleReport } from '@/lib/services/dashboard';
 import { getFxRateMap } from '@/lib/services/fx';
+import {
+  computeCapitalStructure,
+  computeLeaseRollSummary,
+  computeReturnsSnapshot,
+  formatMacroValue,
+  pickMacroBackdrop,
+  rollupTenantCredit
+} from '@/lib/services/im/sections';
 import { formatDate, formatNumber, formatPercent } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
@@ -91,6 +99,17 @@ export default async function SampleReportPage() {
   const isDataCenter = asset.assetClass === AssetClass.DATA_CENTER;
   const displayCurrency = resolveDisplayCurrency(asset.address?.country ?? asset.market);
   const fxRateToKrw = (await getFxRateMap([displayCurrency]))[displayCurrency];
+
+  // REPE-grade IM section data. All inputs come from the asset bundle
+  // already loaded by getSampleReport (macroSeries / leases /
+  // debtFacilities / spvStructure / creditAssessments) — this layer
+  // just shapes them into the cards a Blackstone / Brookfield / KKR
+  // IM expects to see.
+  const macroBackdrop = pickMacroBackdrop(asset.macroSeries ?? []);
+  const leaseRoll = computeLeaseRollSummary(asset.leases ?? []);
+  const capStack = computeCapitalStructure(asset.debtFacilities ?? []);
+  const returnsSnapshot = computeReturnsSnapshot(scenarios);
+  const tenantCredit = rollupTenantCredit(asset.creditAssessments ?? []);
 
   return (
     <main className="pb-24">
@@ -223,6 +242,146 @@ export default async function SampleReportPage() {
               <p className="mt-2 text-sm text-slate-400">{detail}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      {macroBackdrop.length > 0 ? (
+        <section className="app-shell py-4">
+          <Card>
+            <div className="eyebrow">Macro backdrop</div>
+            <p className="mt-2 text-sm text-slate-400">
+              The latest observation per series from the research workspace's official-source feed
+              (KOSIS / BOK ECOS). Same numbers the cap-rate and discount-rate assumptions in the
+              base scenario depend on.
+            </p>
+            <div className="mt-5 grid gap-3 md:grid-cols-3 lg:grid-cols-6">
+              {macroBackdrop.map((point) => (
+                <div
+                  key={point.seriesKey}
+                  className="rounded-[18px] border border-white/10 bg-white/[0.03] p-4"
+                >
+                  <div className="fine-print">{point.label}</div>
+                  <div className="mt-2 text-xl font-semibold text-white">
+                    {formatMacroValue(point)}
+                  </div>
+                  <div className="mt-1 text-xs text-slate-500">
+                    {formatDate(point.observationDate)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </section>
+      ) : null}
+
+      <section className="app-shell py-4">
+        <div className="grid gap-4 lg:grid-cols-3">
+          <Card>
+            <div className="eyebrow">Returns snapshot</div>
+            <p className="mt-2 text-sm text-slate-400">
+              Pulled from the latest valuation run scenarios. Going-in yield + exit cap come from
+              the base case; min DSCR is the lower bound across all scenarios.
+            </p>
+            <dl className="mt-5 grid gap-3 text-sm">
+              <Row label="Going-in yield">
+                {returnsSnapshot.goingInYieldPct !== null
+                  ? formatPercent(returnsSnapshot.goingInYieldPct)
+                  : '—'}
+              </Row>
+              <Row label="Exit cap">
+                {returnsSnapshot.exitCapPct !== null
+                  ? formatPercent(returnsSnapshot.exitCapPct)
+                  : '—'}
+              </Row>
+              <Row label="Upside (base → bull)">
+                {returnsSnapshot.upsideToBullPct !== null
+                  ? `+${returnsSnapshot.upsideToBullPct.toFixed(1)}%`
+                  : '—'}
+              </Row>
+              <Row label="Downside (base → bear)">
+                {returnsSnapshot.downsideToBearPct !== null
+                  ? `${returnsSnapshot.downsideToBearPct.toFixed(1)}%`
+                  : '—'}
+              </Row>
+              <Row label="Min DSCR">
+                {returnsSnapshot.minDscr !== null
+                  ? `${returnsSnapshot.minDscr.toFixed(2)}x`
+                  : '—'}
+              </Row>
+            </dl>
+          </Card>
+
+          <Card>
+            <div className="eyebrow">Capital structure</div>
+            <p className="mt-2 text-sm text-slate-400">
+              {capStack.facilityCount === 0
+                ? 'No debt facilities recorded. The IM is presented unlevered until financing is committed.'
+                : `${capStack.facilityCount} facility${capStack.facilityCount === 1 ? '' : 'ies'} aggregated.`}
+            </p>
+            <dl className="mt-5 grid gap-3 text-sm">
+              <Row label="Total commitment">
+                {formatCurrencyFromKrwAtRate(
+                  capStack.totalCommitmentKrw,
+                  displayCurrency,
+                  fxRateToKrw
+                )}
+              </Row>
+              <Row label="Drawn">
+                {formatCurrencyFromKrwAtRate(capStack.totalDrawnKrw, displayCurrency, fxRateToKrw)}
+              </Row>
+              <Row label="Drawn / commitment">
+                {capStack.totalCommitmentKrw === 0
+                  ? '—'
+                  : `${capStack.drawnPctOfCommitment.toFixed(1)}%`}
+              </Row>
+              <Row label="Blended rate">
+                {capStack.totalCommitmentKrw === 0
+                  ? '—'
+                  : `${capStack.blendedRatePct.toFixed(2)}%`}
+              </Row>
+              <Row label="Facilities">
+                {asset.debtFacilities && asset.debtFacilities.length > 0
+                  ? asset.debtFacilities
+                      .map((f) => `${f.facilityType}${f.lenderName ? ` · ${f.lenderName}` : ''}`)
+                      .join(' / ')
+                  : '—'}
+              </Row>
+            </dl>
+          </Card>
+
+          <Card>
+            <div className="eyebrow">Tenancy snapshot</div>
+            <p className="mt-2 text-sm text-slate-400">
+              {leaseRoll.leaseCount === 0
+                ? 'No leases on file. Pre-stabilized asset; rent assumptions are projected only.'
+                : `${leaseRoll.leaseCount} lease${leaseRoll.leaseCount === 1 ? '' : 's'} aggregated; weighted by leasedKw.`}
+            </p>
+            <dl className="mt-5 grid gap-3 text-sm">
+              <Row label="Total leased capacity">
+                {leaseRoll.totalLeasedKw > 0
+                  ? `${formatNumber(leaseRoll.totalLeasedKw, 1)} kW`
+                  : '—'}
+              </Row>
+              <Row label="WALT">
+                {leaseRoll.weightedAvgTermYears > 0
+                  ? `${leaseRoll.weightedAvgTermYears.toFixed(1)} yrs`
+                  : '—'}
+              </Row>
+              <Row label="Weighted in-place rent">
+                {leaseRoll.weightedRentPerKwKrw > 0
+                  ? `${formatNumber(leaseRoll.weightedRentPerKwKrw, 0)} KRW/kW/mo`
+                  : '—'}
+              </Row>
+              <Row label="Mark-to-market gap">
+                {leaseRoll.markToMarketGapPct !== null
+                  ? `${leaseRoll.markToMarketGapPct >= 0 ? '+' : ''}${leaseRoll.markToMarketGapPct.toFixed(1)}%`
+                  : '—'}
+              </Row>
+              <Row label="Tenant credit (avg)">
+                {tenantCredit.count > 0 ? tenantCredit.averageScore.toFixed(0) : '—'}
+              </Row>
+            </dl>
+          </Card>
         </div>
       </section>
 
@@ -428,5 +587,14 @@ export default async function SampleReportPage() {
         </div>
       </section>
     </main>
+  );
+}
+
+function Row({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-4 rounded-[14px] border border-white/5 bg-white/[0.02] px-3 py-2 text-sm">
+      <dt className="text-xs uppercase tracking-wide text-slate-500">{label}</dt>
+      <dd className="font-mono text-sm text-white">{children}</dd>
+    </div>
   );
 }
