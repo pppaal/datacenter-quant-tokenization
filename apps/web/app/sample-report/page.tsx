@@ -25,6 +25,7 @@ import {
 import { getSponsorTrackByName } from '@/lib/services/im/sponsor';
 import { readCapexBreakdown, readUnderwritingAssumptions } from '@/lib/services/im/assumptions';
 import { buildConfidenceBreakdown } from '@/lib/services/im/confidence';
+import { describeHazard } from '@/lib/services/im/hazard';
 import { readMacroGuidance } from '@/lib/services/im/macro-guidance';
 import { buildScenarioDiff } from '@/lib/services/im/scenario-diff';
 import { pickMatrixRuns } from '@/lib/services/im/sensitivity';
@@ -186,6 +187,21 @@ export default async function SampleReportPage() {
         });
   const txCompsToShow = asset.transactionComps?.length ? asset.transactionComps : marketTxComps;
   const rentCompsToShow = asset.rentComps?.length ? asset.rentComps : marketRentComps;
+
+  // Pipeline projects — same fallback pattern as comps. Asset-direct
+  // entries first, then submarket entries (assetId NULL, same market)
+  // so the IM shows competitive supply even pre-stabilization.
+  const marketPipeline =
+    asset.pipelineProjects && asset.pipelineProjects.length > 0
+      ? []
+      : await prisma.pipelineProject.findMany({
+          where: { assetId: null, market: asset.market },
+          orderBy: { expectedDeliveryDate: 'asc' },
+          take: 8
+        });
+  const pipelineToShow = asset.pipelineProjects?.length
+    ? asset.pipelineProjects
+    : marketPipeline;
 
   return (
     <main className="pb-24">
@@ -812,6 +828,73 @@ export default async function SampleReportPage() {
         </Card>
       </section>
 
+      {asset.siteProfile ? (
+        <section className="app-shell py-4">
+          <Card>
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <div className="eyebrow">Site hazard scores</div>
+                <p className="mt-2 max-w-3xl text-sm text-slate-400">
+                  Per-asset hazard scores feed directly into the confidence-score penalty stack
+                  (flood × 0.05, wildfire × 0.04). Higher scores cut the headline confidence;
+                  insurance pricing and reserve requirements should track these too.
+                </p>
+              </div>
+              <Badge>
+                {asset.siteProfile.sourceStatus}
+              </Badge>
+            </div>
+            <div className="mt-5 grid gap-4 md:grid-cols-3">
+              {(
+                [
+                  ['Flood risk', asset.siteProfile.floodRiskScore],
+                  ['Wildfire risk', asset.siteProfile.wildfireRiskScore],
+                  ['Seismic risk', asset.siteProfile.seismicRiskScore]
+                ] as const
+              ).map(([label, score]) => {
+                const desc = describeHazard(score);
+                const tone =
+                  desc.tone === 'good'
+                    ? 'border-emerald-300/30 bg-emerald-300/[0.04]'
+                    : desc.tone === 'warn'
+                      ? 'border-amber-300/30 bg-amber-300/[0.04]'
+                      : desc.tone === 'risk'
+                        ? 'border-rose-300/30 bg-rose-300/[0.04]'
+                        : 'border-white/10 bg-white/[0.02]';
+                const dotTone =
+                  desc.tone === 'good'
+                    ? 'bg-emerald-300'
+                    : desc.tone === 'warn'
+                      ? 'bg-amber-300'
+                      : desc.tone === 'risk'
+                        ? 'bg-rose-300'
+                        : 'bg-slate-600';
+                return (
+                  <div key={label} className={`rounded-[18px] border p-4 ${tone}`}>
+                    <div className="flex items-center gap-2">
+                      <span className={`inline-block h-2 w-2 rounded-full ${dotTone}`} />
+                      <div className="text-[11px] uppercase tracking-wide text-slate-500">
+                        {label}
+                      </div>
+                    </div>
+                    <div className="mt-3 text-2xl font-semibold text-white">
+                      {score !== null && score !== undefined ? score.toFixed(1) : '—'}
+                    </div>
+                    <div className="mt-1 text-xs text-slate-400">{desc.label} band</div>
+                  </div>
+                );
+              })}
+            </div>
+            {asset.siteProfile.siteNotes ? (
+              <p className="mt-4 rounded-[14px] border border-white/5 bg-white/[0.02] px-3 py-2 text-xs leading-5 text-slate-400">
+                <span className="font-semibold text-slate-300">Notes: </span>
+                {asset.siteProfile.siteNotes}
+              </p>
+            ) : null}
+          </Card>
+        </section>
+      ) : null}
+
       {proForma ? (
         <section className="app-shell py-4">
           <div className="grid gap-4 lg:grid-cols-2">
@@ -1240,6 +1323,131 @@ export default async function SampleReportPage() {
         </section>
       ) : null}
 
+      {(asset.realizedOutcomes && asset.realizedOutcomes.length > 0) ||
+      pipelineToShow.length > 0 ? (
+        <section className="app-shell py-4">
+          <div className="grid gap-4 lg:grid-cols-2">
+            {asset.realizedOutcomes && asset.realizedOutcomes.length > 0 ? (
+              <Card>
+                <div className="eyebrow">Realized outcomes</div>
+                <p className="mt-2 text-sm text-slate-400">
+                  Actual occupancy, NOI, and DSCR observations against this asset. Used by the
+                  calibration loop to true-up the underwriting against realized performance.
+                </p>
+                <div className="mt-5 overflow-x-auto rounded-[14px] border border-white/10">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+                        <th className="px-2 py-2 font-semibold">Date</th>
+                        <th className="px-2 py-2 text-right font-semibold">Occ</th>
+                        <th className="px-2 py-2 text-right font-semibold">NOI</th>
+                        <th className="px-2 py-2 text-right font-semibold">DSCR</th>
+                        <th className="px-2 py-2 text-right font-semibold">Exit cap</th>
+                        <th className="px-2 py-2 text-right font-semibold">Source</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5 text-slate-200">
+                      {asset.realizedOutcomes.map((o) => (
+                        <tr key={o.id}>
+                          <td className="px-2 py-2 text-slate-400">
+                            {formatDate(o.observationDate)}
+                          </td>
+                          <td className="px-2 py-2 text-right font-mono">
+                            {typeof o.occupancyPct === 'number'
+                              ? `${o.occupancyPct.toFixed(1)}%`
+                              : '—'}
+                          </td>
+                          <td className="px-2 py-2 text-right font-mono">
+                            {typeof o.noiKrw === 'number'
+                              ? formatCurrencyFromKrwAtRate(
+                                  o.noiKrw,
+                                  displayCurrency,
+                                  fxRateToKrw
+                                )
+                              : '—'}
+                          </td>
+                          <td className="px-2 py-2 text-right font-mono">
+                            {typeof o.debtServiceCoverage === 'number'
+                              ? `${o.debtServiceCoverage.toFixed(2)}x`
+                              : '—'}
+                          </td>
+                          <td className="px-2 py-2 text-right font-mono">
+                            {typeof o.exitCapRatePct === 'number'
+                              ? `${o.exitCapRatePct.toFixed(2)}%`
+                              : '—'}
+                          </td>
+                          <td className="px-2 py-2 text-right text-[10px] text-slate-400">
+                            {o.sourceSystem}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            ) : null}
+
+            {pipelineToShow.length > 0 ? (
+              <Card>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="eyebrow">Competitive supply pipeline</div>
+                  <Badge>
+                    {pipelineToShow.length} project{pipelineToShow.length === 1 ? '' : 's'}
+                  </Badge>
+                </div>
+                <p className="mt-2 text-sm text-slate-400">
+                  Announced supply that will compete for absorption during the hold period.
+                  {asset.pipelineProjects?.length === 0 && pipelineToShow.length > 0
+                    ? ' (Showing market-wide pipeline — no asset-tied entries yet.)'
+                    : ''}
+                </p>
+                <div className="mt-5 overflow-x-auto rounded-[14px] border border-white/10">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+                        <th className="px-2 py-2 font-semibold">Project</th>
+                        <th className="px-2 py-2 font-semibold">Submarket</th>
+                        <th className="px-2 py-2 font-semibold">Stage</th>
+                        <th className="px-2 py-2 text-right font-semibold">MW / Sqm</th>
+                        <th className="px-2 py-2 text-right font-semibold">Delivery</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5 text-slate-200">
+                      {pipelineToShow.map((p) => (
+                        <tr key={p.id}>
+                          <td className="px-2 py-2">
+                            <div className="text-white">{p.projectName}</div>
+                            {p.sponsorName ? (
+                              <div className="text-[10px] text-slate-500">{p.sponsorName}</div>
+                            ) : null}
+                          </td>
+                          <td className="px-2 py-2 text-slate-300">
+                            {p.region ?? p.market}
+                          </td>
+                          <td className="px-2 py-2 text-slate-300">{p.stageLabel ?? '—'}</td>
+                          <td className="px-2 py-2 text-right font-mono">
+                            {typeof p.expectedPowerMw === 'number'
+                              ? `${p.expectedPowerMw.toFixed(0)} MW`
+                              : typeof p.expectedAreaSqm === 'number'
+                                ? `${formatNumber(p.expectedAreaSqm, 0)} sqm`
+                                : '—'}
+                          </td>
+                          <td className="px-2 py-2 text-right font-mono text-slate-400">
+                            {p.expectedDeliveryDate
+                              ? formatDate(p.expectedDeliveryDate)
+                              : '—'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
+
       {sensitivityGrids.length > 0 ? (
         <section className="app-shell py-4">
           <Card>
@@ -1634,6 +1842,74 @@ export default async function SampleReportPage() {
                 })}
               </ul>
             ) : null}
+          </Card>
+        </section>
+      ) : null}
+
+      {asset.documents && asset.documents.length > 0 ? (
+        <section className="app-shell py-4">
+          <Card>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="eyebrow">Document evidence</div>
+              <Badge>
+                {asset.documents.length} doc{asset.documents.length === 1 ? '' : 's'}
+              </Badge>
+            </div>
+            <p className="mt-2 max-w-3xl text-sm text-slate-400">
+              Source documents loaded against this asset. Each document version anchors specific
+              evidence (lease schedule, power study, IC model, lender term sheet) — committee can
+              click through to the original filing rather than rely on extracted summaries alone.
+            </p>
+            <div className="mt-5 overflow-x-auto rounded-[14px] border border-white/10">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+                    <th className="px-2 py-2 font-semibold">Title</th>
+                    <th className="px-2 py-2 font-semibold">Type</th>
+                    <th className="px-2 py-2 text-right font-semibold">Version</th>
+                    <th className="px-2 py-2 text-right font-semibold">Updated</th>
+                    <th className="px-2 py-2 text-right font-semibold">Source</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5 text-slate-200">
+                  {asset.documents.slice(0, 12).map((doc) => (
+                    <tr key={doc.id}>
+                      <td className="px-2 py-2">
+                        <div className="text-white">{doc.title}</div>
+                        {doc.aiSummary ? (
+                          <div className="text-[10px] leading-4 text-slate-500">
+                            {doc.aiSummary.length > 120
+                              ? `${doc.aiSummary.slice(0, 120)}…`
+                              : doc.aiSummary}
+                          </div>
+                        ) : null}
+                      </td>
+                      <td className="px-2 py-2 text-slate-300">
+                        {doc.documentType.replace(/_/g, ' ').toLowerCase()}
+                      </td>
+                      <td className="px-2 py-2 text-right font-mono">v{doc.currentVersion}</td>
+                      <td className="px-2 py-2 text-right font-mono text-slate-400">
+                        {formatDate(doc.updatedAt)}
+                      </td>
+                      <td className="px-2 py-2 text-right text-[10px]">
+                        {doc.sourceLink ? (
+                          <a
+                            href={doc.sourceLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-slate-300 hover:text-white hover:underline"
+                          >
+                            link ↗
+                          </a>
+                        ) : (
+                          <span className="text-slate-500">stored</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </Card>
         </section>
       ) : null}
