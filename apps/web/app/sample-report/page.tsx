@@ -28,6 +28,13 @@ import {
 import { getSponsorTrackByName } from '@/lib/services/im/sponsor';
 import { readCapexBreakdown, readUnderwritingAssumptions } from '@/lib/services/im/assumptions';
 import { buildConfidenceBreakdown } from '@/lib/services/im/confidence';
+import {
+  buildBalanceSheet,
+  buildCreditRatios,
+  buildIncomeStatement,
+  buildStressTest,
+  projectFinancials
+} from '@/lib/services/im/credit-analysis';
 import { classifyFreshness } from '@/lib/services/im/freshness';
 import { describeHazard } from '@/lib/services/im/hazard';
 import { readMacroGuidance } from '@/lib/services/im/macro-guidance';
@@ -2378,85 +2385,347 @@ export default async function SampleReportPage({
       {asset.counterparties && asset.counterparties.length > 0 ? (
         <section id="im-counterparty" className="app-shell py-4">
           <Card>
-            <div className="eyebrow">Counterparty financials</div>
-            <p className="mt-2 max-w-3xl text-sm text-slate-400">
-              Filed financials and credit assessments for the sponsor, key tenants, and material counterparties. Each row pins the most recent statement and the latest derived assessment.
-            </p>
-            <div className="mt-5 overflow-x-auto rounded-[14px] border border-white/10">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
-                    <th className="px-2 py-2 font-semibold">Counterparty</th>
-                    <th className="px-2 py-2 font-semibold">Role</th>
-                    <th className="px-2 py-2 text-right font-semibold">Revenue</th>
-                    <th className="px-2 py-2 text-right font-semibold">EBITDA</th>
-                    <th className="px-2 py-2 text-right font-semibold">Total debt</th>
-                    <th className="px-2 py-2 text-right font-semibold">Equity</th>
-                    <th className="px-2 py-2 text-right font-semibold">Score</th>
-                    <th className="px-2 py-2 text-right font-semibold">Risk</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5 text-slate-200">
-                  {asset.counterparties.map((cp) => {
-                    const latestFs = cp.financialStatements?.[0] ?? null;
-                    const latestCa = latestFs?.creditAssessments?.[0] ?? null;
-                    const fmtKrw = (d: { toNumber: () => number } | null | undefined) =>
-                      d
-                        ? formatCurrencyFromKrwAtRate(
-                            d.toNumber(),
-                            displayCurrency,
-                            fxRateToKrw
-                          )
-                        : '—';
-                    const riskTone =
-                      latestCa?.riskLevel === 'LOW'
-                        ? 'text-emerald-300'
-                        : latestCa?.riskLevel === 'HIGH'
-                          ? 'text-rose-300'
-                          : 'text-amber-300';
-                    return (
-                      <tr key={cp.id}>
-                        <td className="px-2 py-2">
-                          <div className="text-white">{cp.name}</div>
-                          {cp.shortName && cp.shortName !== cp.name ? (
-                            <div className="text-[10px] text-slate-500">{cp.shortName}</div>
-                          ) : null}
-                        </td>
-                        <td className="px-2 py-2 text-slate-300">{cp.role}</td>
-                        <td className="px-2 py-2 text-right font-mono">{fmtKrw(latestFs?.revenueKrw)}</td>
-                        <td className="px-2 py-2 text-right font-mono">{fmtKrw(latestFs?.ebitdaKrw)}</td>
-                        <td className="px-2 py-2 text-right font-mono">{fmtKrw(latestFs?.totalDebtKrw)}</td>
-                        <td className="px-2 py-2 text-right font-mono">{fmtKrw(latestFs?.totalEquityKrw)}</td>
-                        <td className="px-2 py-2 text-right font-mono">
-                          {latestCa ? latestCa.score.toFixed(0) : '—'}
-                        </td>
-                        <td className={`px-2 py-2 text-right font-mono text-[11px] ${riskTone}`}>
-                          {latestCa?.riskLevel ?? '—'}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="eyebrow">Counterparty financials</div>
+              <Badge>
+                {asset.counterparties.length} counterpart{asset.counterparties.length === 1 ? 'y' : 'ies'}
+              </Badge>
             </div>
-            {asset.counterparties.some((cp) => cp.financialStatements?.[0]?.creditAssessments?.[0]?.summary) ? (
-              <ul className="mt-4 space-y-2 text-xs leading-5 text-slate-400">
-                {asset.counterparties.map((cp) => {
-                  const summary =
-                    cp.financialStatements?.[0]?.creditAssessments?.[0]?.summary ?? null;
-                  if (!summary) return null;
+            <p className="mt-2 max-w-3xl text-sm text-slate-400">
+              Filed financials, derived credit ratios benchmarked against typical PE-sponsor
+              thresholds, three-year projection at stated growth, and stress-test against
+              EBITDA and rate shocks.
+            </p>
+
+            <div className="mt-5 space-y-8">
+              {asset.counterparties.map((cp) => {
+                const latestFs = cp.financialStatements?.[0] ?? null;
+                const latestCa = latestFs?.creditAssessments?.[0] ?? null;
+                if (!latestFs) {
                   return (
-                    <li
-                      key={`cp-summary-${cp.id}`}
-                      className="rounded-[12px] border border-white/5 bg-white/[0.015] px-3 py-2"
+                    <div
+                      key={cp.id}
+                      className="rounded-[18px] border border-white/10 bg-white/[0.02] p-4"
                     >
-                      <span className="font-semibold text-slate-300">{cp.name}: </span>
-                      {summary}
-                    </li>
+                      <div className="flex items-baseline justify-between gap-2">
+                        <div className="font-semibold text-white">{cp.name}</div>
+                        <span className="text-[10px] uppercase tracking-wide text-slate-500">
+                          {cp.role}
+                        </span>
+                      </div>
+                      <p className="mt-2 text-xs text-slate-400">No financial statement on file.</p>
+                    </div>
                   );
-                })}
-              </ul>
-            ) : null}
+                }
+                const inc = buildIncomeStatement(latestFs);
+                const bs = buildBalanceSheet(latestFs);
+                const ratios = buildCreditRatios(latestFs);
+                // Project forward at 8% revenue growth (rough macro+lease-up
+                // proxy) with 5% per-year debt amortization. Real underwriting
+                // pulls these from the lease schedule and debt facility — this
+                // is a placeholder for sponsors lacking their own forecasts.
+                const projection = projectFinancials(latestFs, {
+                  revenueGrowthPct: 8,
+                  debtAmortizationPct: 5,
+                  horizonYears: 3
+                });
+                const stress = buildStressTest(latestFs, {
+                  ebitdaShockPct: 20,
+                  rateShockBps: 200,
+                  debtRepricedPct: 1.0
+                });
+                const riskTone =
+                  latestCa?.riskLevel === 'LOW'
+                    ? 'border-emerald-300/30 bg-emerald-300/[0.04] text-emerald-200'
+                    : latestCa?.riskLevel === 'HIGH'
+                      ? 'border-rose-300/30 bg-rose-300/[0.04] text-rose-200'
+                      : 'border-amber-300/30 bg-amber-300/[0.04] text-amber-200';
+                const fmt = (v: number | null) =>
+                  v !== null
+                    ? formatCurrencyFromKrwAtRate(v, displayCurrency, fxRateToKrw)
+                    : '—';
+                return (
+                  <div
+                    key={cp.id}
+                    className="rounded-[20px] border border-white/10 bg-white/[0.015] p-5"
+                  >
+                    {/* Header */}
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <div className="text-base font-semibold text-white">{cp.name}</div>
+                        <div className="mt-1 text-[11px] text-slate-500">
+                          <span className="uppercase tracking-wide">{cp.role}</span>
+                          {' · '}
+                          <span>{latestFs.fiscalPeriod ?? 'FY'}</span>
+                          {latestFs.fiscalYear ? ` ${latestFs.fiscalYear}` : ''}
+                          {' · '}
+                          <span>{latestFs.currency ?? 'KRW'}</span>
+                          {latestFs.provenanceSystem
+                            ? ` · ${latestFs.provenanceSystem}`
+                            : ' · operator-entered'}
+                        </div>
+                      </div>
+                      {latestCa ? (
+                        <span
+                          className={`rounded-[10px] border px-2.5 py-1 font-mono text-[10px] uppercase tracking-wide ${riskTone}`}
+                        >
+                          {latestCa.riskLevel} · score {latestCa.score.toFixed(0)}
+                        </span>
+                      ) : null}
+                    </div>
+
+                    {/* Income statement + Balance sheet side-by-side */}
+                    <div className="mt-5 grid gap-4 lg:grid-cols-2">
+                      <div className="rounded-[14px] border border-white/10 bg-white/[0.02] p-4">
+                        <div className="fine-print">Income statement</div>
+                        <dl className="mt-3 space-y-1.5 text-xs">
+                          <div className="flex justify-between">
+                            <dt className="text-slate-400">Revenue</dt>
+                            <dd className="font-mono text-white">{fmt(inc.revenueKrw)}</dd>
+                          </div>
+                          <div className="flex justify-between">
+                            <dt className="text-slate-400">EBITDA</dt>
+                            <dd className="font-mono text-white">{fmt(inc.ebitdaKrw)}</dd>
+                          </div>
+                          <div className="flex justify-between">
+                            <dt className="text-slate-400">EBITDA margin</dt>
+                            <dd className="font-mono text-white">
+                              {inc.ebitdaMarginPct !== null
+                                ? `${inc.ebitdaMarginPct.toFixed(1)}%`
+                                : '—'}
+                            </dd>
+                          </div>
+                          <div className="flex justify-between">
+                            <dt className="text-slate-400">Interest expense</dt>
+                            <dd className="font-mono text-white">{fmt(inc.interestExpenseKrw)}</dd>
+                          </div>
+                          <div className="flex justify-between border-t border-white/5 pt-1.5">
+                            <dt className="text-slate-300">Pre-tax income (proxy)</dt>
+                            <dd className="font-mono font-semibold text-white">
+                              {fmt(inc.preTaxIncomeProxyKrw)}
+                            </dd>
+                          </div>
+                        </dl>
+                      </div>
+                      <div className="rounded-[14px] border border-white/10 bg-white/[0.02] p-4">
+                        <div className="fine-print">Balance sheet</div>
+                        <dl className="mt-3 space-y-1.5 text-xs">
+                          <div className="flex justify-between">
+                            <dt className="text-slate-400">Total assets</dt>
+                            <dd className="font-mono text-white">{fmt(bs.totalAssetsKrw)}</dd>
+                          </div>
+                          <div className="flex justify-between">
+                            <dt className="text-slate-400">Cash</dt>
+                            <dd className="font-mono text-white">{fmt(bs.cashKrw)}</dd>
+                          </div>
+                          <div className="flex justify-between">
+                            <dt className="text-slate-400">Total debt</dt>
+                            <dd className="font-mono text-white">{fmt(bs.totalDebtKrw)}</dd>
+                          </div>
+                          <div className="flex justify-between">
+                            <dt className="text-slate-400">Net debt</dt>
+                            <dd className="font-mono text-white">{fmt(bs.netDebtKrw)}</dd>
+                          </div>
+                          <div className="flex justify-between">
+                            <dt className="text-slate-400">Other liabilities</dt>
+                            <dd className="font-mono text-white">{fmt(bs.otherLiabilitiesKrw)}</dd>
+                          </div>
+                          <div className="flex justify-between border-t border-white/5 pt-1.5">
+                            <dt className="text-slate-300">Total equity</dt>
+                            <dd className="font-mono font-semibold text-white">
+                              {fmt(bs.totalEquityKrw)}
+                            </dd>
+                          </div>
+                          <div className="flex justify-between">
+                            <dt className="text-slate-400">Equity ratio</dt>
+                            <dd className="font-mono text-white">
+                              {bs.equityRatio !== null
+                                ? `${(bs.equityRatio * 100).toFixed(1)}%`
+                                : '—'}
+                            </dd>
+                          </div>
+                        </dl>
+                      </div>
+                    </div>
+
+                    {/* Credit ratios table */}
+                    <div className="mt-5">
+                      <div className="fine-print">Credit ratios — vs typical PE-sponsor thresholds</div>
+                      <div className="mt-3 overflow-x-auto rounded-[14px] border border-white/10">
+                        <table className="w-full text-xs">
+                          <thead>
+                            <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+                              <th className="px-2 py-2 font-semibold">Ratio</th>
+                              <th className="px-2 py-2 text-right font-semibold">Value</th>
+                              <th className="px-2 py-2 text-right font-semibold">Benchmark</th>
+                              <th className="px-2 py-2 font-semibold">Interpretation</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-white/5 text-slate-200">
+                            {ratios.map((r) => {
+                              const dotTone =
+                                r.tone === 'good'
+                                  ? 'bg-emerald-300'
+                                  : r.tone === 'warn'
+                                    ? 'bg-amber-300'
+                                    : r.tone === 'risk'
+                                      ? 'bg-rose-300'
+                                      : 'bg-slate-600';
+                              const fmtVal = (v: number | null) => {
+                                if (v === null) return '—';
+                                if (r.unit === 'x') return `${v.toFixed(2)}x`;
+                                if (r.unit === 'pct') return `${v.toFixed(1)}%`;
+                                return v.toFixed(2);
+                              };
+                              return (
+                                <tr key={r.key}>
+                                  <td className="px-2 py-2">
+                                    <div className="flex items-center gap-2">
+                                      <span className={`h-1.5 w-1.5 rounded-full ${dotTone}`} />
+                                      <div>
+                                        <div className="text-white">{r.label}</div>
+                                        <div className="text-[10px] text-slate-500">
+                                          {r.formula}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="px-2 py-2 text-right font-mono text-white">
+                                    {fmtVal(r.value)}
+                                  </td>
+                                  <td className="px-2 py-2 text-right font-mono text-slate-400">
+                                    {r.benchmark !== null
+                                      ? `${r.preferred === 'higher' ? '≥' : '≤'} ${fmtVal(r.benchmark)}`
+                                      : '—'}
+                                  </td>
+                                  <td className="px-2 py-2 text-[11px] text-slate-300">
+                                    {r.interpretation}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    {/* Three-year projection */}
+                    {projection.length > 0 ? (
+                      <div className="mt-5">
+                        <div className="fine-print">
+                          Three-year projection — 8% revenue growth, 5%/yr debt amortization
+                        </div>
+                        <div className="mt-3 overflow-x-auto rounded-[14px] border border-white/10">
+                          <table className="w-full text-xs">
+                            <thead>
+                              <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+                                <th className="px-2 py-2 font-semibold">Year</th>
+                                <th className="px-2 py-2 text-right font-semibold">Revenue</th>
+                                <th className="px-2 py-2 text-right font-semibold">EBITDA</th>
+                                <th className="px-2 py-2 text-right font-semibold">Margin</th>
+                                <th className="px-2 py-2 text-right font-semibold">Total debt</th>
+                                <th className="px-2 py-2 text-right font-semibold">Leverage</th>
+                                <th className="px-2 py-2 text-right font-semibold">Coverage</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-white/5 text-slate-200">
+                              {projection.map((row) => (
+                                <tr key={row.year}>
+                                  <td className="px-2 py-2 font-mono text-slate-400">{row.year}</td>
+                                  <td className="px-2 py-2 text-right font-mono">{fmt(row.revenueKrw)}</td>
+                                  <td className="px-2 py-2 text-right font-mono">{fmt(row.ebitdaKrw)}</td>
+                                  <td className="px-2 py-2 text-right font-mono text-slate-400">
+                                    {row.ebitdaMarginPct !== null
+                                      ? `${row.ebitdaMarginPct.toFixed(1)}%`
+                                      : '—'}
+                                  </td>
+                                  <td className="px-2 py-2 text-right font-mono">{fmt(row.totalDebtKrw)}</td>
+                                  <td className="px-2 py-2 text-right font-mono">
+                                    {row.leverage !== null ? `${row.leverage.toFixed(2)}x` : '—'}
+                                  </td>
+                                  <td className="px-2 py-2 text-right font-mono">
+                                    {row.interestCoverage !== null
+                                      ? `${row.interestCoverage.toFixed(2)}x`
+                                      : '—'}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {/* Stress test */}
+                    {stress.length > 0 ? (
+                      <div className="mt-5">
+                        <div className="fine-print">
+                          Stress test — EBITDA −20% and rate +200 bps, with covenant 4.0x leverage / 2.0x coverage
+                        </div>
+                        <div className="mt-3 overflow-x-auto rounded-[14px] border border-white/10">
+                          <table className="w-full text-xs">
+                            <thead>
+                              <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+                                <th className="px-2 py-2 font-semibold">Scenario</th>
+                                <th className="px-2 py-2 text-right font-semibold">EBITDA</th>
+                                <th className="px-2 py-2 text-right font-semibold">Interest</th>
+                                <th className="px-2 py-2 text-right font-semibold">Leverage</th>
+                                <th className="px-2 py-2 text-right font-semibold">Coverage</th>
+                                <th className="px-2 py-2 text-right font-semibold">Covenant</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-white/5 text-slate-200">
+                              {stress.map((row) => (
+                                <tr
+                                  key={row.scenario}
+                                  className={
+                                    row.passesCovenant === false
+                                      ? 'bg-rose-300/[0.03]'
+                                      : ''
+                                  }
+                                >
+                                  <td className="px-2 py-2 text-slate-300">{row.scenario}</td>
+                                  <td className="px-2 py-2 text-right font-mono">{fmt(row.ebitdaKrw)}</td>
+                                  <td className="px-2 py-2 text-right font-mono">
+                                    {fmt(row.interestExpenseKrw)}
+                                  </td>
+                                  <td className="px-2 py-2 text-right font-mono">
+                                    {row.leverage !== null ? `${row.leverage.toFixed(2)}x` : '—'}
+                                  </td>
+                                  <td className="px-2 py-2 text-right font-mono">
+                                    {row.interestCoverage !== null
+                                      ? `${row.interestCoverage.toFixed(2)}x`
+                                      : '—'}
+                                  </td>
+                                  <td className="px-2 py-2 text-right font-mono">
+                                    {row.passesCovenant === true ? (
+                                      <span className="text-emerald-300">PASS</span>
+                                    ) : row.passesCovenant === false ? (
+                                      <span className="text-rose-300">BREACH</span>
+                                    ) : (
+                                      <span className="text-slate-500">—</span>
+                                    )}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {latestCa?.summary ? (
+                      <p className="mt-5 rounded-[12px] border border-white/5 bg-white/[0.02] px-3 py-2 text-xs leading-5 text-slate-300">
+                        <span className="text-[10px] uppercase tracking-wide text-slate-500">
+                          Credit assessment ·{' '}
+                        </span>
+                        {latestCa.summary}
+                      </p>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
           </Card>
         </section>
       ) : null}
