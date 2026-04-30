@@ -226,6 +226,18 @@ export const assetBundleInclude = {
       { policyType: 'asc' as const }
     ]
   },
+  carbonRecords: {
+    orderBy: [
+      { vintageYear: 'desc' as const },
+      { scope: 'asc' as const }
+    ]
+  },
+  sideLetters: {
+    orderBy: [
+      { lpName: 'asc' as const },
+      { termCategory: 'asc' as const }
+    ]
+  },
   transactionComps: {
     orderBy: {
       transactionDate: 'desc' as const

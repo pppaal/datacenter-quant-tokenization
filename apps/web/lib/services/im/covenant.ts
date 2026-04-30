@@ -98,3 +98,69 @@ export function buildCovenantHeadroom(
 
   return out;
 }
+
+export type CovenantAlert = {
+  ratioKey: string;
+  ratioLabel: string;
+  severity: 'critical' | 'warning' | 'watch';
+  message: string;
+  firstBreachYear: string | null;
+  worstValue: number | null;
+  worstYear: string | null;
+};
+
+/**
+ * Translate covenant headroom output into committee-actionable
+ * alerts. Severity is:
+ *   critical — current value already breaches the covenant
+ *   warning  — projected breach within the horizon
+ *   watch    — headroom < 10% currently
+ *
+ * Used by both the IM (red banner) and the IC packet attachment
+ * pipeline (when wired) to surface deals that need refinancing
+ * provisions or covenant relief in the term sheet before close.
+ */
+export function buildCovenantAlerts(
+  headroom: CovenantHeadroom[]
+): CovenantAlert[] {
+  const alerts: CovenantAlert[] = [];
+  for (const h of headroom) {
+    if (h.headroomPct === null) continue;
+    if (h.headroomPct < 0) {
+      alerts.push({
+        ratioKey: h.ratioKey,
+        ratioLabel: h.ratioLabel,
+        severity: 'critical',
+        message: `${h.ratioLabel} currently breaches covenant — relief or refinance required pre-close.`,
+        firstBreachYear: 'now',
+        worstValue: h.worstValue,
+        worstYear: h.worstYear
+      });
+      continue;
+    }
+    if (h.firstBreachYear !== null) {
+      alerts.push({
+        ratioKey: h.ratioKey,
+        ratioLabel: h.ratioLabel,
+        severity: 'warning',
+        message: `${h.ratioLabel} projected to breach in ${h.firstBreachYear}; cash sweep / spring covenant negotiated terms recommended.`,
+        firstBreachYear: h.firstBreachYear,
+        worstValue: h.worstValue,
+        worstYear: h.worstYear
+      });
+      continue;
+    }
+    if (h.headroomPct < 10) {
+      alerts.push({
+        ratioKey: h.ratioKey,
+        ratioLabel: h.ratioLabel,
+        severity: 'watch',
+        message: `${h.ratioLabel} headroom thin (${h.headroomPct.toFixed(1)}%); monitor at quarterly compliance.`,
+        firstBreachYear: null,
+        worstValue: h.worstValue,
+        worstYear: h.worstYear
+      });
+    }
+  }
+  return alerts;
+}

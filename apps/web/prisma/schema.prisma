@@ -531,6 +531,8 @@ model Asset {
   tokenization          TokenizedAsset?
   media                 AssetMedia[]
   insurancePolicies     InsurancePolicy[]
+  carbonRecords         CarbonEmissionRecord[]
+  sideLetters           SideLetter[]
 }
 
 model Address {
@@ -2375,6 +2377,53 @@ model InsurancePolicy {
   updatedAt       DateTime @updatedAt
 
   @@index([assetId, policyType, status])
+}
+
+// Carbon-emissions register per asset. Replaces the IM's derived
+// estimate when actual measurements are on file. scope is 1/2/3
+// per GHG Protocol; methodology + sourceSystem track whether the
+// figure came from a third-party verifier (CDP/SBTi/ISO 14064)
+// or from internal calc. See 20260430100000_add_carbon_emission_record.
+model CarbonEmissionRecord {
+  id             String   @id @default(cuid())
+  assetId        String
+  asset          Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  scope          Int      // 1, 2, or 3
+  category       String   // PURCHASED_ELECTRICITY / FUEL_COMBUSTION / EMBODIED / OTHER
+  vintageYear    Int
+  tco2e          Float
+  methodology    String?  // GHG_PROTOCOL_LB / MARKET_BASED / SBTI / ISO_14064
+  verifiedBy     String?
+  sourceSystem   String?
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([assetId, scope, vintageYear])
+}
+
+// Side-letter terms register. Tracks LP-specific carve-outs from
+// the LPA — MFN-eligible terms, fee discounts, co-investment
+// rights, ESG opt-outs, reporting cadence overrides. Each entry
+// pins to an LP name + an asset / deal where the side-letter is
+// in force. See 20260430100000_add_side_letter.
+model SideLetter {
+  id              String   @id @default(cuid())
+  assetId         String
+  asset           Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  lpName          String
+  lpEntityType    String?
+  termCategory    String   // MFN / FEE_DISCOUNT / COINVESTMENT / REPORTING / ESG / KEY_PERSON
+  termSummary     String
+  effectiveFrom   DateTime?
+  expiresOn       DateTime?
+  mfnEligible     Boolean  @default(false)
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([assetId, termCategory])
+  @@index([lpName])
 }
 
 // Proprietary deal flow log. The Deal table tracks our own pipeline;

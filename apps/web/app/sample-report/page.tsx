@@ -41,8 +41,12 @@ import {
   projectCfadsDscr
 } from '@/lib/services/im/cash-flow';
 import { buildAuditTrail } from '@/lib/services/im/audit-trail';
+import { buildCapitalCallSchedule } from '@/lib/services/im/capital-calls';
 import { buildCounterpartyRollup } from '@/lib/services/im/counterparty-rollup';
-import { buildCovenantHeadroom } from '@/lib/services/im/covenant';
+import {
+  buildCovenantAlerts,
+  buildCovenantHeadroom
+} from '@/lib/services/im/covenant';
 import { buildEmissionsBreakdown, buildEsgSummary } from '@/lib/services/im/esg';
 import { buildInsuranceSummary } from '@/lib/services/im/insurance';
 import { buildFxExposure } from '@/lib/services/im/fx-exposure';
@@ -266,6 +270,17 @@ export default async function SampleReportPage({
     limit: 12
   });
 
+  // Tier 5 derivations:
+  // - Capital call schedule from initial equity + reserve outflows
+  // - Covenant alerts from existing covenant headroom (deal-specific)
+  const initialEquityKrw = proForma?.summary.initialEquityKrw ?? 0;
+  const capitalCalls = proForma
+    ? buildCapitalCallSchedule(proForma.years, {
+        initialEquityCommitmentKrw: initialEquityKrw,
+        baseYear: new Date().getFullYear()
+      })
+    : null;
+
   // Submarket comps. Asset-attached comps live on the bundle; we
   // also pull market-wide comps (assetId NULL) for the same market
   // so the IM has CBRE-style submarket evidence even when the asset
@@ -330,6 +345,11 @@ export default async function SampleReportPage({
         0
     },
     { id: 'im-sources-uses', label: 'Sources & Uses', show: !!proForma },
+    {
+      id: 'im-capital-calls',
+      label: 'Capital calls',
+      show: !!capitalCalls && capitalCalls.rows.length > 0
+    },
     { id: 'im-capex', label: 'Capex schedule', show: (asset.capexLineItems?.length ?? 0) > 0 },
     { id: 'im-pnl', label: 'Year-by-year P&L', show: !!proForma && proForma.years.length > 0 },
     { id: 'im-scenario', label: 'Scenario diff', show: scenarioDiff.length > 0 },
@@ -370,6 +390,11 @@ export default async function SampleReportPage({
       id: 'im-ic-packet',
       label: 'IC packets',
       show: (asset.committeePackets?.length ?? 0) > 0
+    },
+    {
+      id: 'im-side-letters',
+      label: 'Side-letter terms',
+      show: (asset.sideLetters?.length ?? 0) > 0
     },
     {
       id: 'im-features',
@@ -1314,10 +1339,68 @@ export default async function SampleReportPage({
               })}
             </div>
 
+            {asset.carbonRecords && asset.carbonRecords.length > 0 ? (
+              <div className="mt-5 rounded-[14px] border border-white/10 bg-white/[0.02] p-4">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <div className="fine-print">Carbon emissions register (verified)</div>
+                  <Badge tone="good">
+                    {asset.carbonRecords.length} measurement
+                    {asset.carbonRecords.length === 1 ? '' : 's'}
+                  </Badge>
+                </div>
+                <div className="mt-3 overflow-x-auto rounded-[12px] border border-white/10">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+                        <th className="px-2 py-2 font-semibold">Scope</th>
+                        <th className="px-2 py-2 font-semibold">Category</th>
+                        <th className="px-2 py-2 text-right font-semibold">Vintage</th>
+                        <th className="px-2 py-2 text-right font-semibold">tCO2e</th>
+                        <th className="px-2 py-2 font-semibold">Methodology</th>
+                        <th className="px-2 py-2 font-semibold">Verifier</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5 text-slate-200">
+                      {asset.carbonRecords.map((rec) => (
+                        <tr key={rec.id}>
+                          <td className="px-2 py-2 font-mono text-slate-300">
+                            Scope {rec.scope}
+                          </td>
+                          <td className="px-2 py-2 text-[11px] text-slate-300">
+                            {rec.category.replace(/_/g, ' ').toLowerCase()}
+                          </td>
+                          <td className="px-2 py-2 text-right font-mono text-slate-400">
+                            {rec.vintageYear}
+                          </td>
+                          <td className="px-2 py-2 text-right font-mono">
+                            {rec.tco2e.toLocaleString(undefined, {
+                              maximumFractionDigits: 0
+                            })}
+                          </td>
+                          <td className="px-2 py-2 text-[10px] text-slate-400">
+                            {rec.methodology ?? '—'}
+                          </td>
+                          <td className="px-2 py-2 text-[10px] text-slate-400">
+                            {rec.verifiedBy ?? '—'}
+                            {rec.notes ? (
+                              <div className="text-[9px] text-slate-500">{rec.notes}</div>
+                            ) : null}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : null}
+
             {emissionsBreakdown.totalAnnualtCO2e !== null ? (
               <div className="mt-5 rounded-[14px] border border-white/10 bg-white/[0.02] p-4">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <div className="fine-print">Scope 1 / 2 / 3 emissions estimate</div>
+                  <div className="fine-print">
+                    Scope 1 / 2 / 3 emissions estimate
+                    {(asset.carbonRecords?.length ?? 0) > 0 ? ' (derived — for comparison vs verified above)' : ''}
+                  </div>
                   <div className="text-[10px] text-slate-500">
                     Total ≈{' '}
                     <span className="font-mono text-slate-300">
@@ -1983,6 +2066,94 @@ export default async function SampleReportPage({
               </dl>
             </Card>
           </div>
+        </section>
+      ) : null}
+
+      {capitalCalls && capitalCalls.rows.length > 0 ? (
+        <section id="im-capital-calls" className="app-shell py-4">
+          <Card>
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <div className="eyebrow">Capital call schedule</div>
+                <p className="mt-2 max-w-3xl text-sm text-slate-400">
+                  Indicative LP capital-call sequence inferred from the year-by-year proforma
+                  outflows. Real fund vehicles publish a per-LP per-tranche schedule under the
+                  LPA; this view sizes the upfront, build-out, and reserve top-up calls so the
+                  LP can stage commitment cash.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Badge>
+                  Total commitment{' '}
+                  {formatCurrencyFromKrwAtRate(
+                    capitalCalls.totalCommitmentKrw,
+                    displayCurrency,
+                    fxRateToKrw
+                  )}
+                </Badge>
+                <Badge tone="good">
+                  Upfront {capitalCalls.upfrontPctOfCommitment.toFixed(0)}%
+                </Badge>
+              </div>
+            </div>
+            <div className="mt-5 overflow-x-auto rounded-[14px] border border-white/10">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+                    <th className="px-2 py-2 font-semibold">Call #</th>
+                    <th className="px-2 py-2 font-semibold">Period</th>
+                    <th className="px-2 py-2 font-semibold">Purpose</th>
+                    <th className="px-2 py-2 text-right font-semibold">Amount</th>
+                    <th className="px-2 py-2 text-right font-semibold">Cumulative</th>
+                    <th className="px-2 py-2 text-right font-semibold">% of commitment</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5 text-slate-200">
+                  {capitalCalls.rows.map((row) => (
+                    <tr key={row.callNumber}>
+                      <td className="px-2 py-2 font-mono text-slate-400">
+                        #{row.callNumber}
+                      </td>
+                      <td className="px-2 py-2 text-slate-300">{row.yearLabel}</td>
+                      <td className="px-2 py-2 text-[11px] text-slate-400">
+                        {row.purpose}
+                      </td>
+                      <td className="px-2 py-2 text-right font-mono">
+                        {formatCurrencyFromKrwAtRate(
+                          row.amountKrw,
+                          displayCurrency,
+                          fxRateToKrw
+                        )}
+                      </td>
+                      <td className="px-2 py-2 text-right font-mono text-slate-400">
+                        {formatCurrencyFromKrwAtRate(
+                          row.cumulativeKrw,
+                          displayCurrency,
+                          fxRateToKrw
+                        )}
+                      </td>
+                      <td className="px-2 py-2 text-right font-mono">
+                        {row.cumulativePctOfCommitment.toFixed(1)}%
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {capitalCalls.remainingUncalledKrw > 0 ? (
+              <p className="mt-3 text-[10px] text-slate-500">
+                Remaining uncalled commitment:{' '}
+                <span className="font-mono text-slate-300">
+                  {formatCurrencyFromKrwAtRate(
+                    capitalCalls.remainingUncalledKrw,
+                    displayCurrency,
+                    fxRateToKrw
+                  )}
+                </span>{' '}
+                · final indicative call: {capitalCalls.estimatedFinalCallYear ?? '—'}
+              </p>
+            ) : null}
+          </Card>
         </section>
       ) : null}
 
@@ -3030,6 +3201,7 @@ export default async function SampleReportPage({
                 // Tier 1 covenant headroom — current value distance from
                 // benchmark + first-breach-year over the projection.
                 const covenantHeadroom = buildCovenantHeadroom(projection);
+                const covenantAlerts = buildCovenantAlerts(covenantHeadroom);
                 // Tier 2 waterfall — tier table + LP/GP take at projected IRR.
                 const spv = readSpvFromAssumptions(latestRun.assumptions);
                 const projectedIrrPct =
@@ -3382,6 +3554,59 @@ export default async function SampleReportPage({
                         </div>
                       </div>
                     </div>
+
+                    {/* Covenant alerts banner — surfaced above the headroom card */}
+                    {covenantAlerts.length > 0 ? (
+                      <div className="mt-5 space-y-2">
+                        {covenantAlerts.map((a) => {
+                          const tone =
+                            a.severity === 'critical'
+                              ? 'border-rose-300/40 bg-rose-300/[0.06]'
+                              : a.severity === 'warning'
+                                ? 'border-amber-300/40 bg-amber-300/[0.05]'
+                                : 'border-amber-300/20 bg-amber-300/[0.03]';
+                          const dot =
+                            a.severity === 'critical'
+                              ? 'bg-rose-300'
+                              : 'bg-amber-300';
+                          const label =
+                            a.severity === 'critical'
+                              ? 'Critical'
+                              : a.severity === 'warning'
+                                ? 'Projected breach'
+                                : 'Watch';
+                          return (
+                            <div
+                              key={`${a.ratioKey}-${a.severity}`}
+                              className={`flex items-start gap-3 rounded-[14px] border ${tone} px-3 py-2 text-sm`}
+                            >
+                              <span className={`mt-1.5 inline-block h-2 w-2 rounded-full ${dot}`} />
+                              <div>
+                                <div className="text-[10px] uppercase tracking-wide text-slate-400">
+                                  Covenant alert · {label}
+                                </div>
+                                <p className="mt-1 text-slate-100">{a.message}</p>
+                                {a.firstBreachYear && a.firstBreachYear !== 'now' ? (
+                                  <p className="mt-1 text-[11px] text-slate-400">
+                                    First breach in{' '}
+                                    <span className="font-mono text-slate-200">
+                                      {a.firstBreachYear}
+                                    </span>
+                                    ; worst{' '}
+                                    <span className="font-mono text-slate-200">
+                                      {a.worstValue !== null
+                                        ? `${a.worstValue.toFixed(2)}x`
+                                        : '—'}
+                                    </span>{' '}
+                                    in {a.worstYear ?? '—'}.
+                                  </p>
+                                ) : null}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : null}
 
                     {/* Covenant headroom */}
                     {covenantHeadroom.length > 0 ? (
@@ -4064,6 +4289,76 @@ export default async function SampleReportPage({
                 );
               })}
             </ul>
+          </Card>
+        </section>
+      ) : null}
+
+      {asset.sideLetters && asset.sideLetters.length > 0 ? (
+        <section id="im-side-letters" className="app-shell py-4">
+          <Card>
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <div className="eyebrow">Side-letter terms</div>
+                <p className="mt-2 max-w-3xl text-sm text-slate-400">
+                  LP-specific carve-outs from the LPA. Most-favored-nation entries propagate to
+                  every LP at or below the threshold; co-investment, fee, ESG and reporting
+                  terms apply per signing LP. The IM surfaces the register so the committee can
+                  confirm fund-economics consistency before close.
+                </p>
+              </div>
+              <Badge>
+                {asset.sideLetters.length} term
+                {asset.sideLetters.length === 1 ? '' : 's'}
+              </Badge>
+            </div>
+            <div className="mt-5 overflow-x-auto rounded-[14px] border border-white/10">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+                    <th className="px-2 py-2 font-semibold">LP</th>
+                    <th className="px-2 py-2 font-semibold">Category</th>
+                    <th className="px-2 py-2 font-semibold">Term</th>
+                    <th className="px-2 py-2 text-right font-semibold">Effective</th>
+                    <th className="px-2 py-2 text-right font-semibold">MFN</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5 text-slate-200">
+                  {asset.sideLetters.map((sl) => (
+                    <tr key={sl.id}>
+                      <td className="px-2 py-2">
+                        <div className="text-white">{sl.lpName}</div>
+                        {sl.lpEntityType ? (
+                          <div className="text-[9px] text-slate-500">
+                            {sl.lpEntityType.replace(/_/g, ' ').toLowerCase()}
+                          </div>
+                        ) : null}
+                      </td>
+                      <td className="px-2 py-2">
+                        <span className="rounded-[6px] border border-white/10 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wide text-slate-300">
+                          {sl.termCategory.replace(/_/g, ' ')}
+                        </span>
+                      </td>
+                      <td className="px-2 py-2 text-[11px] text-slate-300">
+                        {sl.termSummary}
+                        {sl.notes ? (
+                          <div className="mt-0.5 text-[9px] text-slate-500">{sl.notes}</div>
+                        ) : null}
+                      </td>
+                      <td className="px-2 py-2 text-right font-mono text-slate-400">
+                        {sl.effectiveFrom ? formatDate(sl.effectiveFrom) : '—'}
+                      </td>
+                      <td className="px-2 py-2 text-right text-[10px]">
+                        {sl.mfnEligible ? (
+                          <span className="font-mono text-emerald-300">MFN-eligible</span>
+                        ) : (
+                          <span className="text-slate-500">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </Card>
         </section>
       ) : null}
