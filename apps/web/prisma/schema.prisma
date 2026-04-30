@@ -1567,6 +1567,13 @@ model TransactionComp {
   assetId         String?
   market          String
   region          String
+  // Asset-class + tier ('PRIME' / 'GRADE_A' / 'GRADE_B' / 'STRATA' /
+  // ...) on the comp row so the aggregator can produce CBRE-style
+  // submarket × tier cap-rate matrices. assetTier is free text rather
+  // than an enum because the taxonomy expands more often than the SQL
+  // schema should.
+  assetClass      AssetClass?
+  assetTier       String?
   comparableType  String
   transactionDate DateTime?
   priceKrw        Float?
@@ -1584,6 +1591,7 @@ model TransactionComp {
 
   @@index([assetId, transactionDate])
   @@index([market, region, transactionDate])
+  @@index([market, region, assetClass, assetTier, transactionDate])
 }
 
 model RentComp {
@@ -1613,6 +1621,11 @@ model MarketIndicatorSeries {
   assetId         String?
   market          String
   region          String?
+  // Asset-class + tier so cap-rate / vacancy / rent-growth points can
+  // be sliced like CBRE's submarket reports. Both nullable for
+  // back-compat with rows ingested before the tier taxonomy landed.
+  assetClass      AssetClass?
+  assetTier       String?
   indicatorKey    String
   observationDate DateTime
   value           Float?
@@ -1624,6 +1637,7 @@ model MarketIndicatorSeries {
 
   @@index([assetId, indicatorKey, observationDate])
   @@index([market, region, indicatorKey, observationDate])
+  @@index([market, region, assetClass, assetTier, indicatorKey, observationDate])
 }
 
 model MacroSeries {
