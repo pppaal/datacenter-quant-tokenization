@@ -90,9 +90,9 @@ const glossary = [
     body: '평가 입력값마다 어떤 시스템 · 보고서에서 왔는지, 언제 수집되었는지, 폴백 값인지 여부를 기록한 메타데이터. 위원회가 보는 모든 숫자의 추적 단위입니다.'
   },
   {
-    term: 'Engine Version',
-    ko: '엔진 버전',
-    body: '평가를 산출한 평가 엔진의 버전 식별자. 같은 자산이라도 엔진 버전이 다르면 가정 트리 · 가중치가 달라질 수 있어 비교 시 항상 함께 표기합니다.'
+    term: 'Model Version',
+    ko: '모델 버전',
+    body: '평가를 산출한 모델의 버전 식별자. 같은 자산이라도 모델 버전이 다르면 가정 트리 · 가중치가 달라질 수 있어 비교 시 항상 함께 표기합니다.'
   }
 ];
 
@@ -233,7 +233,7 @@ export default async function SampleReportPage({
   const tocItems: Array<{ id: string; label: string; show: boolean }> = [
     { id: 'im-cover', label: 'Cover', show: true },
     { id: 'im-macro', label: 'Macro backdrop', show: macroBackdrop.length > 0 },
-    { id: 'im-macro-guidance', label: 'Macro guidance', show: !!macroGuidance },
+    { id: 'im-macro-guidance', label: 'Macro regime overlay', show: !!macroGuidance },
     { id: 'im-returns', label: 'Returns / cap stack / tenancy', show: true },
     { id: 'im-underwriting', label: 'Underwriting assumptions', show: true },
     { id: 'im-hazard', label: 'Site hazard', show: !!asset.siteProfile },
@@ -312,31 +312,29 @@ export default async function SampleReportPage({
       <section id="im-cover" className="app-shell py-10">
         <div className="surface hero-mesh">
           <div className="flex flex-wrap items-center gap-3">
-            <Badge tone="good">Sample IM</Badge>
             <Badge>Investment Memo</Badge>
             <Badge>{asset.assetCode}</Badge>
+            <Badge>{latestRun.runLabel}</Badge>
           </div>
 
           <div className="mt-6 grid gap-8 lg:grid-cols-[1.05fr_0.95fr]">
             <div className="space-y-5">
               <div>
-                <div className="fine-print">Committee Draft</div>
+                <div className="fine-print">Committee Draft · {formatDate(latestRun.createdAt)}</div>
                 <h1 className="mt-3 text-5xl font-semibold leading-[0.96] tracking-[-0.05em] text-white md:text-6xl">
-                  Sample Investment Memo for
-                  <br />
                   {asset.name}
                 </h1>
               </div>
 
               <p className="max-w-3xl text-lg leading-8 text-slate-300">{asset.description}</p>
 
-              <div className="print-hidden flex flex-wrap gap-3">
+              <div
+                className="print-hidden flex flex-wrap gap-3"
+                data-im-print-hidden
+              >
                 <PrintImButton />
-                <Link href="/admin/assets/new">
-                  <Button>Start New Analysis</Button>
-                </Link>
                 <Link href="/admin">
-                  <Button variant="ghost">Open Console</Button>
+                  <Button variant="ghost">Operator console</Button>
                 </Link>
               </div>
 
@@ -345,7 +343,7 @@ export default async function SampleReportPage({
                   <div className="fine-print">Recommendation</div>
                   <div className="mt-3 text-2xl font-semibold text-white">{recommendation}</div>
                   <p className="mt-2 text-sm text-slate-400">
-                    Generated from confidence, scenario spread, and diligence posture.
+                    Confidence, scenario spread, and diligence posture aggregated.
                   </p>
                 </div>
                 <div className="metric-card">
@@ -358,7 +356,7 @@ export default async function SampleReportPage({
                     )}
                   </div>
                   <p className="mt-2 text-sm text-slate-400">
-                    Current modeled value for committee discussion.
+                    Underwriting base case anchoring the committee view.
                   </p>
                 </div>
                 <div className="metric-card">
@@ -367,7 +365,7 @@ export default async function SampleReportPage({
                     {formatNumber(latestRun.confidenceScore, 1)}
                   </div>
                   <p className="mt-2 text-sm text-slate-400">
-                    Reflects data coverage, freshness, and fallback usage.
+                    Composite of input coverage, freshness, and fallback usage.
                   </p>
                 </div>
               </div>
@@ -566,17 +564,22 @@ export default async function SampleReportPage({
                     </span>
                   </div>
                   <div className="flex items-center justify-between rounded-[20px] border border-white/10 bg-white/[0.03] px-4 py-3">
-                    <span>Engine Version</span>
+                    <span>Model Version</span>
                     <span>{latestRun.engineVersion}</span>
                   </div>
                 </div>
               </div>
 
               <div className="rounded-[24px] border border-accent/20 bg-accent/10 p-5">
-                <div className="fine-print text-accent">Investment View</div>
+                <div className="fine-print text-accent">Recommendation</div>
                 <p className="mt-3 text-sm leading-7 text-slate-200">
-                  This sample IM shows how the platform converts structured asset inputs, scenario
-                  analysis, and diligence signals into a committee-ready investment narrative.
+                  {recommendation}. Base case ranges{' '}
+                  {bearValue !== null && bullValue !== null
+                    ? `${formatCurrencyFromKrwAtRate(bearValue, displayCurrency, fxRateToKrw)} – ${formatCurrencyFromKrwAtRate(bullValue, displayCurrency, fxRateToKrw)}`
+                    : 'within scenario bounds'}{' '}
+                  across the bear and bull cases. Confidence{' '}
+                  {formatNumber(latestRun.confidenceScore, 1)} reflects current source coverage and
+                  diligence completion.
                 </p>
               </div>
             </Card>
@@ -660,9 +663,8 @@ export default async function SampleReportPage({
           <Card>
             <div className="eyebrow">Macro backdrop</div>
             <p className="mt-2 text-sm text-slate-400">
-              The latest observation per series from the research workspace's official-source feed
-              (KOSIS / BOK ECOS). Same numbers the cap-rate and discount-rate assumptions in the
-              base scenario depend on.
+              Latest reading per series from the official-source feed (KOSIS / BOK ECOS). The
+              cap-rate and discount-rate underwriting both anchor here.
             </p>
             <div className="mt-5 grid gap-3 md:grid-cols-3 lg:grid-cols-6">
               {macroBackdrop.map((point) => (
@@ -690,12 +692,9 @@ export default async function SampleReportPage({
           <Card>
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
-                <div className="eyebrow">Macro regime engine guidance</div>
+                <div className="eyebrow">Macro regime overlay</div>
                 <p className="mt-2 max-w-3xl text-sm text-slate-400">
-                  How the macro backdrop translates into engine shifts on the base scenario. Each
-                  shift is applied to its target input before the proforma runs — discount &amp;
-                  exit cap widen in tight capital markets, occupancy and growth get cut when
-                  leasing is soft, replacement cost steps up when construction inflation runs.
+                  Per-driver overlay applied to the base scenario before the proforma runs. Discount and exit cap widen in tight capital markets; occupancy and growth tighten when leasing is soft; replacement cost steps up with construction inflation.
                 </p>
               </div>
               <Badge>macro-regime-engine</Badge>
@@ -758,8 +757,7 @@ export default async function SampleReportPage({
           <Card>
             <div className="eyebrow">Returns snapshot</div>
             <p className="mt-2 text-sm text-slate-400">
-              Pulled from the latest valuation run scenarios. Going-in yield + exit cap come from
-              the base case; min DSCR is the lower bound across all scenarios.
+              Headline returns from the latest valuation run. Going-in yield and exit cap reflect the base case; minimum DSCR is the floor across all scenarios.
             </p>
             <dl className="mt-5 grid gap-3 text-sm">
               <Row label="Going-in yield">
@@ -795,7 +793,7 @@ export default async function SampleReportPage({
             <div className="eyebrow">Capital structure</div>
             <p className="mt-2 text-sm text-slate-400">
               {capStack.facilityCount === 0
-                ? 'No debt facilities recorded. The IM is presented unlevered until financing is committed.'
+                ? 'No facilities recorded. Presented unlevered pending committed financing.'
                 : `${capStack.facilityCount} facility${capStack.facilityCount === 1 ? '' : 'ies'} aggregated.`}
             </p>
             <dl className="mt-5 grid gap-3 text-sm">
@@ -885,7 +883,7 @@ export default async function SampleReportPage({
             <div className="eyebrow">Tenancy snapshot</div>
             <p className="mt-2 text-sm text-slate-400">
               {leaseRoll.leaseCount === 0
-                ? 'No leases on file. Pre-stabilized asset; rent assumptions are projected only.'
+                ? 'No leases on file. Pre-stabilization; rent underwriting is projected.'
                 : `${leaseRoll.leaseCount} lease${leaseRoll.leaseCount === 1 ? '' : 's'} aggregated; weighted by leasedKw.`}
             </p>
             <dl className="mt-5 grid gap-3 text-sm">
@@ -966,9 +964,7 @@ export default async function SampleReportPage({
                   </tbody>
                 </table>
                 <p className="border-t border-white/5 bg-white/[0.02] px-2 py-2 text-[10px] text-slate-500">
-                  WALT formula: Σ(termYears × leasedKw) / Σ(leasedKw). Weighted in-place rent uses
-                  baseRatePerKwKrw weighted the same way. MTM gap = blended MTM rate / blended
-                  in-place rate − 1.
+                  WALT = Σ(term × kW) / Σ(kW); weighted in-place rent uses the same kW weighting on contract rate; MTM gap = blended market rate / blended in-place rate − 1.
                 </p>
               </div>
             ) : null}
@@ -983,9 +979,7 @@ export default async function SampleReportPage({
             <div>
               <div className="eyebrow">Underwriting assumptions (base case)</div>
               <p className="mt-2 max-w-3xl text-sm text-slate-400">
-                The exact inputs the engine fed into the base scenario stored on this run. Cap rate
-                and discount rate are the primary value drivers; tax stack and SPV economics drive
-                the gap between unlevered and equity returns.
+                Inputs anchoring the base scenario on this run. Cap rate and discount rate are the primary value drivers; tax leakage and SPV economics drive the gap between unlevered and equity returns.
               </p>
             </div>
             <Badge tone="good">{latestRun.engineVersion}</Badge>
@@ -1107,9 +1101,7 @@ export default async function SampleReportPage({
               <div>
                 <div className="eyebrow">Site hazard scores</div>
                 <p className="mt-2 max-w-3xl text-sm text-slate-400">
-                  Per-asset hazard scores feed directly into the confidence-score penalty stack
-                  (flood × 0.05, wildfire × 0.04). Higher scores cut the headline confidence;
-                  insurance pricing and reserve requirements should track these too.
+                  Per-asset physical-risk readings. Flood and wildfire each carry a confidence-score penalty (×0.05 and ×0.04 respectively). Insurance pricing and reserve sizing track the same readings.
                 </p>
               </div>
               <div className="flex items-center gap-3">
@@ -1177,9 +1169,7 @@ export default async function SampleReportPage({
           <Card>
             <div className="eyebrow">Title, parcel &amp; planning diligence</div>
             <p className="mt-2 max-w-3xl text-sm text-slate-400">
-              Legal diligence anchors. Ownership records establish title; parcels carry zoning
-              and official land valuation; encumbrances flag liens and pledges; planning
-              constraints flag zoning overlays or height restrictions that bound the use case.
+              Legal diligence anchors. Ownership establishes title; parcels carry zoning and official land valuation; encumbrances list liens and pledges; planning constraints capture zoning overlays and use restrictions.
             </p>
 
             <div className="mt-5 grid gap-4 lg:grid-cols-2">
@@ -1342,8 +1332,7 @@ export default async function SampleReportPage({
             <Card>
               <div className="eyebrow">Sources & Uses</div>
               <p className="mt-2 text-sm text-slate-400">
-                Initial capitalization at close. Initial equity is total cost less initial debt
-                funding; reserve contributions accumulate from the equity year-1 outflow.
+                Initial capitalization at close. Equity equals total cost less drawn debt at funding; reserves accrue against the year-one equity outflow.
               </p>
               <dl className="mt-5 grid gap-3 text-sm">
                 <Row label="Sources · senior debt">
@@ -1447,9 +1436,7 @@ export default async function SampleReportPage({
             <Card>
               <div className="eyebrow">Equity returns</div>
               <p className="mt-2 text-sm text-slate-400">
-                Computed by computeReturnMetrics over the year-by-year cash flow stream stored on
-                the latest ValuationRun. Equity multiple = total LP distributions / initial
-                equity.
+                Levered returns computed from the year-by-year cash flow stream of the base case. Equity multiple = total distributions / initial equity.
               </p>
               <dl className="mt-5 grid gap-3 text-sm">
                 <Row label="Equity IRR">
@@ -1497,10 +1484,7 @@ export default async function SampleReportPage({
               <div>
                 <div className="eyebrow">Capex schedule (line items)</div>
                 <p className="mt-2 max-w-3xl text-sm text-slate-400">
-                  Operator-curated capex schedule. The Sources &amp; Uses card above shows the
-                  engine's category aggregates; this card shows the underlying budget line items
-                  the operator entered, with spend year and the embedded-vs-additive flag — so the
-                  LP can see what's already in purchase price vs what's additional capex.
+                  Capex schedule by trade package and spend year. Sources &amp; Uses above carries the category aggregates; this view splits the underlying budget lines, with embedded-in-price vs incremental capex flagged on each row.
                 </p>
               </div>
               <Badge>
@@ -1570,8 +1554,7 @@ export default async function SampleReportPage({
               <div>
                 <div className="eyebrow">Year-by-year P&L (base case)</div>
                 <p className="mt-2 text-sm text-slate-400">
-                  Stabilized revenue, NOI, debt service, and DSCR per year of the hold. Numbers in
-                  KRW (millions); switch to {displayCurrency} via the cover currency selector.
+                  Operating cash flow per year of the hold — revenue, NOI, debt service, DSCR. Numbers in KRW millions; toggle to {displayCurrency} via the cover currency selector.
                 </p>
               </div>
               <Badge tone="good">{proForma.years.length} year hold</Badge>
@@ -1628,9 +1611,8 @@ export default async function SampleReportPage({
           <Card>
             <div className="eyebrow">Scenario diff (vs base case)</div>
             <p className="mt-2 max-w-3xl text-sm text-slate-400">
-              Bull and bear cases are not just "+X% / -Y%" — each one moves a specific lever
-              relative to base. The columns show the delta in implied yield, exit cap, and DSCR
-              between each scenario and the base case.
+              Bull and bear cases reflect specific levers relative to base. Columns show the delta
+              in implied yield, exit cap, and DSCR for each scenario versus the base case.
             </p>
             <div className="mt-5 overflow-x-auto rounded-[18px] border border-white/10">
               <table className="w-full text-sm">
@@ -1723,11 +1705,9 @@ export default async function SampleReportPage({
           <Card>
             <div className="eyebrow">Comparable transactions &amp; rent comps</div>
             <p className="mt-2 max-w-3xl text-sm text-slate-400">
-              Submarket comparables anchoring the cap rate and rent assumptions. Transaction comps
-              support the value approach; rent comps support the WALT and mark-to-market gap. Each
-              row carries its sourceSystem so the LP can challenge any individual data point.
+              Submarket comparables anchoring cap-rate and rent underwriting. Transaction comps support the value approach; rent comps support WALT and mark-to-market. Each row references its source.
               {asset.transactionComps?.length === 0 && txCompsToShow.length > 0
-                ? ' (Showing market-wide comparables — asset is pre-stabilization with no direct comps.)'
+                ? ' Submarket-wide comparables shown for pre-stabilization assets without direct comps.'
                 : ''}
             </p>
 
@@ -1849,9 +1829,7 @@ export default async function SampleReportPage({
                   <Badge>{asset.researchSnapshots.length}</Badge>
                 </div>
                 <p className="mt-2 text-sm text-slate-400">
-                  Approved snapshots from the research workspace anchoring this asset's macro
-                  context. Each snapshot's freshnessStatus governs whether the underwriting can
-                  rely on it without a re-run.
+                  Approved research snapshots anchoring the asset macro context. Each snapshot freshness status determines whether the underwriting may rely on it without a refresh.
                 </p>
                 <ul className="mt-5 space-y-2">
                   {asset.researchSnapshots.slice(0, 6).map((s) => (
@@ -1890,8 +1868,7 @@ export default async function SampleReportPage({
                   </Badge>
                 </div>
                 <p className="mt-2 text-sm text-slate-400">
-                  Tasks the research desk has flagged as outstanding for this asset.
-                  HIGH-priority OPEN items reduce confidence and should be cleared before IC.
+                  Outstanding research coverage items for the asset. HIGH-priority open items reduce confidence and require closure prior to investment committee.
                 </p>
                 <ul className="mt-5 space-y-2">
                   {asset.coverageTasks.slice(0, 8).map((t) => {
@@ -1944,9 +1921,7 @@ export default async function SampleReportPage({
                   <Badge>{asset.aiInsights.length}</Badge>
                 </div>
                 <p className="mt-2 text-sm text-slate-400">
-                  Model-generated commentary on this asset and its valuation runs. Each insight
-                  carries the model name and an evidence reference so the committee can validate
-                  rather than treat the commentary as ground truth.
+                  Model-generated commentary on the asset and its valuation runs. Each insight carries model attribution and an evidence reference.
                 </p>
                 <ul className="mt-5 space-y-2">
                   {asset.aiInsights.slice(0, 6).map((insight) => (
@@ -1983,8 +1958,7 @@ export default async function SampleReportPage({
               <Card>
                 <div className="eyebrow">Realized outcomes</div>
                 <p className="mt-2 text-sm text-slate-400">
-                  Actual occupancy, NOI, and DSCR observations against this asset. Used by the
-                  calibration loop to true-up the underwriting against realized performance.
+                  Realized occupancy, NOI, and DSCR observations on the asset. Used to calibrate underwriting against actual performance.
                 </p>
                 <div className="mt-5 overflow-x-auto rounded-[14px] border border-white/10">
                   <table className="w-full text-xs">
@@ -2048,9 +2022,9 @@ export default async function SampleReportPage({
                   </Badge>
                 </div>
                 <p className="mt-2 text-sm text-slate-400">
-                  Announced supply that will compete for absorption during the hold period.
+                  Announced supply competing for absorption during the hold period.
                   {asset.pipelineProjects?.length === 0 && pipelineToShow.length > 0
-                    ? ' (Showing market-wide pipeline — no asset-tied entries yet.)'
+                    ? ' Submarket-wide entries shown where no asset-tied projects are recorded.'
                     : ''}
                 </p>
                 <div className="mt-5 overflow-x-auto rounded-[14px] border border-white/10">
@@ -2105,9 +2079,7 @@ export default async function SampleReportPage({
           <Card>
             <div className="eyebrow">Sensitivity matrices</div>
             <p className="mt-2 max-w-3xl text-sm text-slate-400">
-              Two-way shock grids the engine ran against the base case. Each cell shows the
-              resulting metric and its delta vs the base. Use to size the bid against committee
-              underwriting bands rather than a single point estimate.
+              Two-way shock grids against the base case. Each cell shows the resulting metric and its delta versus base — sized for the committee underwriting band rather than a single point estimate.
             </p>
             <div className="mt-5 grid gap-5 lg:grid-cols-2">
               {sensitivityGrids.map((grid) => {
@@ -2199,10 +2171,7 @@ export default async function SampleReportPage({
             <div>
               <div className="eyebrow">Confidence score breakdown</div>
               <p className="mt-2 max-w-3xl text-sm text-slate-400">
-                The score reflects data coverage. Each external section, structured section, and
-                anchor signal the engine finds adds points; risk signals subtract. The bundle below
-                shows which signals are present (green) and which are absent (slate) — that's the
-                shortlist of inputs that would push this score higher.
+                Coverage-driven composite. Each external section, structured section, and anchor signal contributes; physical-risk signals subtract. Present (green) and absent (slate) signals are listed below — closing the absent ones lifts the score.
               </p>
             </div>
             <div className="rounded-[16px] border border-white/10 bg-white/[0.03] px-4 py-3 text-right">
@@ -2261,10 +2230,7 @@ export default async function SampleReportPage({
             )}
           </div>
           <p className="mt-4 text-[11px] text-slate-500">
-            Per-signal weights are the data-center engine's nominal contributions. The engine
-            clamps the final number between 4.5 and 9.9 and applies a credit-overlay delta after,
-            so the listed contributions are illustrative — they don't sum to the printed score
-            exactly. Use this card to spot WHICH inputs are missing, not to recompute the score.
+            Per-signal weights are the data-center underwriting framework’s nominal contributions. The final score is clamped between 4.5 and 9.9 and adjusted by a credit overlay; the listed contributions are illustrative and do not reconcile exactly to the printed value.
           </p>
         </Card>
       </section>
@@ -2359,8 +2325,7 @@ export default async function SampleReportPage({
                   <Badge tone="warn">{latestRun.keyRisks.length}</Badge>
                 </div>
                 <p className="mt-2 text-sm text-slate-400">
-                  Engine-flagged risks at run time. Each item is a committee discussion point —
-                  unmitigated risks at IC reduce confidence and shift the recommendation.
+                  Outstanding underwriting risks. Each item requires committee discussion; unresolved risks reduce confidence and may shift the recommendation.
                 </p>
                 <ul className="mt-5 space-y-2">
                   {latestRun.keyRisks.map((risk, idx) => (
@@ -2386,9 +2351,9 @@ export default async function SampleReportPage({
                   <Badge>{latestRun.ddChecklist.length} open</Badge>
                 </div>
                 <p className="mt-2 text-sm text-slate-400">
-                  Punch list the engine emitted alongside this run. Items become "closed" as
-                  documents and structured inputs replace synthetic placeholders — driving
-                  confidence higher and unlocking IC promotion.
+                  Outstanding diligence items required to close. Items resolve as documents and
+                  structured inputs replace placeholders, lifting confidence toward
+                  investment-committee promotion.
                 </p>
                 <ul className="mt-5 space-y-2">
                   {latestRun.ddChecklist.map((item, idx) => (
@@ -2415,9 +2380,7 @@ export default async function SampleReportPage({
           <Card>
             <div className="eyebrow">Counterparty financials</div>
             <p className="mt-2 max-w-3xl text-sm text-slate-400">
-              Filed financials and credit assessments for the sponsor, key tenants, and material
-              counterparties tied to this deal. Each row pins the most recent statement plus the
-              latest derived assessment so the IM does not need a separate credit memo.
+              Filed financials and credit assessments for the sponsor, key tenants, and material counterparties. Each row pins the most recent statement and the latest derived assessment.
             </p>
             <div className="mt-5 overflow-x-auto rounded-[14px] border border-white/10">
               <table className="w-full text-xs">
@@ -2508,9 +2471,7 @@ export default async function SampleReportPage({
               </Badge>
             </div>
             <p className="mt-2 max-w-3xl text-sm text-slate-400">
-              Source documents loaded against this asset. Each document version anchors specific
-              evidence (lease schedule, power study, IC model, lender term sheet) — committee can
-              click through to the original filing rather than rely on extracted summaries alone.
+              Source documents on file. Each version anchors specific evidence — lease schedule, power study, IC model, lender term sheet — and links through to the original filing.
             </p>
             <div className="mt-5 overflow-x-auto rounded-[14px] border border-white/10">
               <table className="w-full text-xs">
@@ -2582,9 +2543,7 @@ export default async function SampleReportPage({
               </Badge>
             </div>
             <p className="mt-2 max-w-3xl text-sm text-slate-400">
-              IC packets generated against this asset. The decision summary records the
-              committee's outcome (CONDITIONAL / APPROVED / DEFERRED / DECLINED); follow-up
-              tracks the action items the deal team owes back.
+              Investment committee packets prepared on the asset. Decision summary records the outcome (CONDITIONAL / APPROVED / DEFERRED / DECLINED); follow-up captures the resulting action items.
             </p>
             <ul className="mt-5 space-y-3">
               {asset.committeePackets.map((p) => {
@@ -2647,10 +2606,7 @@ export default async function SampleReportPage({
               <Badge>{asset.featureSnapshots.length}</Badge>
             </div>
             <p className="mt-2 max-w-3xl text-sm text-slate-400">
-              Engine-curated feature bundles per namespace (site / power / revenue / legal /
-              permit / market / readiness / satellite). Each snapshot captures the inputs the
-              valuation engine read at run time so a re-run against the same snapshot is exactly
-              reproducible.
+              Underwriting input bundles by namespace (site, power, revenue, legal, permit, market, readiness, satellite). Each snapshot captures the inputs read at run time, supporting exact reproducibility on re-run.
             </p>
             <div className="mt-5 grid gap-3 md:grid-cols-2 lg:grid-cols-4">
               {asset.featureSnapshots.map((s) => (
@@ -2689,9 +2645,7 @@ export default async function SampleReportPage({
               </Badge>
             </div>
             <p className="mt-2 max-w-3xl text-sm text-slate-400">
-              ERC-3643-style on-chain registration for this asset. Identity registry gates
-              KYC; compliance contract enforces transfer rules; lockup/maxHolders/country modules
-              are deployed when configured.
+              On-chain registration. The identity registry gates KYC; the compliance contract enforces transfer rules; lockup, max-holders, and country-restriction modules deploy where configured.
             </p>
             <dl className="mt-5 grid gap-3 text-sm md:grid-cols-2">
               <Row label="Chain ID">{asset.tokenization.chainId}</Row>
