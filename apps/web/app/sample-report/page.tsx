@@ -1489,6 +1489,155 @@ export default async function SampleReportPage() {
         </section>
       ) : null}
 
+      {(latestRun.keyRisks.length > 0 || latestRun.ddChecklist.length > 0) ? (
+        <section className="app-shell py-4">
+          <div className="grid gap-4 lg:grid-cols-2">
+            {latestRun.keyRisks.length > 0 ? (
+              <Card>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="eyebrow">Key risks</div>
+                  <Badge tone="warn">{latestRun.keyRisks.length}</Badge>
+                </div>
+                <p className="mt-2 text-sm text-slate-400">
+                  Engine-flagged risks at run time. Each item is a committee discussion point —
+                  unmitigated risks at IC reduce confidence and shift the recommendation.
+                </p>
+                <ul className="mt-5 space-y-2">
+                  {latestRun.keyRisks.map((risk, idx) => (
+                    <li
+                      key={`risk-${idx}`}
+                      className="flex gap-3 rounded-[14px] border border-amber-300/20 bg-amber-300/[0.04] px-3 py-2 text-sm"
+                    >
+                      <span
+                        aria-hidden
+                        className="mt-1.5 inline-block h-2 w-2 shrink-0 rounded-full bg-amber-300"
+                      />
+                      <span className="leading-6 text-slate-200">{risk}</span>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            ) : null}
+
+            {latestRun.ddChecklist.length > 0 ? (
+              <Card>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="eyebrow">Due diligence checklist</div>
+                  <Badge>{latestRun.ddChecklist.length} open</Badge>
+                </div>
+                <p className="mt-2 text-sm text-slate-400">
+                  Punch list the engine emitted alongside this run. Items become "closed" as
+                  documents and structured inputs replace synthetic placeholders — driving
+                  confidence higher and unlocking IC promotion.
+                </p>
+                <ul className="mt-5 space-y-2">
+                  {latestRun.ddChecklist.map((item, idx) => (
+                    <li
+                      key={`dd-${idx}`}
+                      className="flex gap-3 rounded-[14px] border border-white/5 bg-white/[0.02] px-3 py-2 text-sm"
+                    >
+                      <span
+                        aria-hidden
+                        className="mt-1.5 inline-block h-3 w-3 shrink-0 rounded-[3px] border border-slate-500"
+                      />
+                      <span className="leading-6 text-slate-200">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
+
+      {asset.counterparties && asset.counterparties.length > 0 ? (
+        <section className="app-shell py-4">
+          <Card>
+            <div className="eyebrow">Counterparty financials</div>
+            <p className="mt-2 max-w-3xl text-sm text-slate-400">
+              Filed financials and credit assessments for the sponsor, key tenants, and material
+              counterparties tied to this deal. Each row pins the most recent statement plus the
+              latest derived assessment so the IM does not need a separate credit memo.
+            </p>
+            <div className="mt-5 overflow-x-auto rounded-[14px] border border-white/10">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+                    <th className="px-2 py-2 font-semibold">Counterparty</th>
+                    <th className="px-2 py-2 font-semibold">Role</th>
+                    <th className="px-2 py-2 text-right font-semibold">Revenue</th>
+                    <th className="px-2 py-2 text-right font-semibold">EBITDA</th>
+                    <th className="px-2 py-2 text-right font-semibold">Total debt</th>
+                    <th className="px-2 py-2 text-right font-semibold">Equity</th>
+                    <th className="px-2 py-2 text-right font-semibold">Score</th>
+                    <th className="px-2 py-2 text-right font-semibold">Risk</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5 text-slate-200">
+                  {asset.counterparties.map((cp) => {
+                    const latestFs = cp.financialStatements?.[0] ?? null;
+                    const latestCa = latestFs?.creditAssessments?.[0] ?? null;
+                    const fmtKrw = (d: { toNumber: () => number } | null | undefined) =>
+                      d
+                        ? formatCurrencyFromKrwAtRate(
+                            d.toNumber(),
+                            displayCurrency,
+                            fxRateToKrw
+                          )
+                        : '—';
+                    const riskTone =
+                      latestCa?.riskLevel === 'LOW'
+                        ? 'text-emerald-300'
+                        : latestCa?.riskLevel === 'HIGH'
+                          ? 'text-rose-300'
+                          : 'text-amber-300';
+                    return (
+                      <tr key={cp.id}>
+                        <td className="px-2 py-2">
+                          <div className="text-white">{cp.name}</div>
+                          {cp.shortName && cp.shortName !== cp.name ? (
+                            <div className="text-[10px] text-slate-500">{cp.shortName}</div>
+                          ) : null}
+                        </td>
+                        <td className="px-2 py-2 text-slate-300">{cp.role}</td>
+                        <td className="px-2 py-2 text-right font-mono">{fmtKrw(latestFs?.revenueKrw)}</td>
+                        <td className="px-2 py-2 text-right font-mono">{fmtKrw(latestFs?.ebitdaKrw)}</td>
+                        <td className="px-2 py-2 text-right font-mono">{fmtKrw(latestFs?.totalDebtKrw)}</td>
+                        <td className="px-2 py-2 text-right font-mono">{fmtKrw(latestFs?.totalEquityKrw)}</td>
+                        <td className="px-2 py-2 text-right font-mono">
+                          {latestCa ? latestCa.score.toFixed(0) : '—'}
+                        </td>
+                        <td className={`px-2 py-2 text-right font-mono text-[11px] ${riskTone}`}>
+                          {latestCa?.riskLevel ?? '—'}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            {asset.counterparties.some((cp) => cp.financialStatements?.[0]?.creditAssessments?.[0]?.summary) ? (
+              <ul className="mt-4 space-y-2 text-xs leading-5 text-slate-400">
+                {asset.counterparties.map((cp) => {
+                  const summary =
+                    cp.financialStatements?.[0]?.creditAssessments?.[0]?.summary ?? null;
+                  if (!summary) return null;
+                  return (
+                    <li
+                      key={`cp-summary-${cp.id}`}
+                      className="rounded-[12px] border border-white/5 bg-white/[0.015] px-3 py-2"
+                    >
+                      <span className="font-semibold text-slate-300">{cp.name}: </span>
+                      {summary}
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : null}
+          </Card>
+        </section>
+      ) : null}
+
       <section className="app-shell space-y-6 py-6">
         <div className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
           <Card>
