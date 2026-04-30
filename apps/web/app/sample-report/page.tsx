@@ -11,6 +11,7 @@ import { ConfidenceBreakdown } from '@/components/valuation/confidence-breakdown
 import { ValuationBreakdown } from '@/components/valuation/valuation-breakdown';
 import { ValuationProvenance } from '@/components/valuation/valuation-provenance';
 import { ValuationSignals } from '@/components/valuation/valuation-signals';
+import { prisma } from '@/lib/db/prisma';
 import { getSampleReport } from '@/lib/services/dashboard';
 import { getFxRateMap } from '@/lib/services/fx';
 import {
@@ -23,6 +24,8 @@ import {
 } from '@/lib/services/im/sections';
 import { getSponsorTrackByName } from '@/lib/services/im/sponsor';
 import { readCapexBreakdown, readUnderwritingAssumptions } from '@/lib/services/im/assumptions';
+import { buildConfidenceBreakdown } from '@/lib/services/im/confidence';
+import { readMacroGuidance } from '@/lib/services/im/macro-guidance';
 import { buildScenarioDiff } from '@/lib/services/im/scenario-diff';
 import { pickMatrixRuns } from '@/lib/services/im/sensitivity';
 import { pickProvenanceForCard, summarizeProvenance } from '@/lib/services/im/provenance-map';
@@ -151,6 +154,38 @@ export default async function SampleReportPage() {
   // Two-way sensitivity matrices the engine persisted with this run.
   // Typical: occupancy x exit cap (value), NOI x debt cost (DSCR).
   const sensitivityGrids = pickMatrixRuns(latestRun.sensitivityRuns ?? []);
+
+  // Confidence-score breakdown — which signals the bundle has, which
+  // it doesn't, so an LP can answer "what would push this to 9?"
+  const confidenceBreakdown = buildConfidenceBreakdown(asset, latestRun.confidenceScore);
+
+  // Macro-regime engine guidance — the per-dimension shifts the
+  // engine applied (discount/exit cap/debt cost/occupancy/growth/
+  // replacement cost) plus its narrative summary.
+  const macroGuidance = readMacroGuidance(latestRun.provenance);
+
+  // Submarket comps. Asset-attached comps live on the bundle; we
+  // also pull market-wide comps (assetId NULL) for the same market
+  // so the IM has CBRE-style submarket evidence even when the asset
+  // itself has no direct comparables logged yet.
+  const marketTxComps =
+    asset.transactionComps && asset.transactionComps.length > 0
+      ? []
+      : await prisma.transactionComp.findMany({
+          where: { assetId: null, market: asset.market },
+          orderBy: { transactionDate: 'desc' },
+          take: 8
+        });
+  const marketRentComps =
+    asset.rentComps && asset.rentComps.length > 0
+      ? []
+      : await prisma.rentComp.findMany({
+          where: { assetId: null, market: asset.market },
+          orderBy: { observationDate: 'desc' },
+          take: 8
+        });
+  const txCompsToShow = asset.transactionComps?.length ? asset.transactionComps : marketTxComps;
+  const rentCompsToShow = asset.rentComps?.length ? asset.rentComps : marketRentComps;
 
   return (
     <main className="pb-24">
@@ -358,6 +393,74 @@ export default async function SampleReportPage() {
               ))}
             </div>
             <ProvenancePill entries={provenanceByCard.macro} />
+          </Card>
+        </section>
+      ) : null}
+
+      {macroGuidance ? (
+        <section className="app-shell py-4">
+          <Card>
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <div className="eyebrow">Macro regime engine guidance</div>
+                <p className="mt-2 max-w-3xl text-sm text-slate-400">
+                  How the macro backdrop translates into engine shifts on the base scenario. Each
+                  shift is applied to its target input before the proforma runs — discount &amp;
+                  exit cap widen in tight capital markets, occupancy and growth get cut when
+                  leasing is soft, replacement cost steps up when construction inflation runs.
+                </p>
+              </div>
+              <Badge>macro-regime-engine</Badge>
+            </div>
+            {macroGuidance.weightLine ? (
+              <p className="mt-4 rounded-[14px] border border-white/5 bg-white/[0.02] px-3 py-2 text-xs text-slate-300">
+                {macroGuidance.weightLine}
+              </p>
+            ) : null}
+            <div className="mt-5 grid gap-3 md:grid-cols-3 lg:grid-cols-6">
+              {(
+                [
+                  ['Discount rate', macroGuidance.shifts.discountRateShiftPct, 'pts', 'add'],
+                  ['Exit cap rate', macroGuidance.shifts.exitCapRateShiftPct, 'pts', 'add'],
+                  ['Debt cost', macroGuidance.shifts.debtCostShiftPct, 'pts', 'add'],
+                  ['Occupancy', macroGuidance.shifts.occupancyShiftPct, 'pts', 'subtract'],
+                  ['Growth', macroGuidance.shifts.growthShiftPct, 'pts', 'subtract'],
+                  [
+                    'Replacement cost',
+                    macroGuidance.shifts.replacementCostShiftPct,
+                    '%',
+                    'add'
+                  ]
+                ] as const
+              ).map(([label, value, unit, badShift]) => {
+                if (value === null) return null;
+                const isWiden =
+                  (badShift === 'add' && value > 0) || (badShift === 'subtract' && value < 0);
+                const tone = value === 0 ? 'text-white' : isWiden ? 'text-rose-300' : 'text-emerald-300';
+                const sign = value > 0 ? '+' : '';
+                return (
+                  <div
+                    key={label}
+                    className="rounded-[16px] border border-white/10 bg-white/[0.02] p-3"
+                  >
+                    <div className="text-[11px] uppercase tracking-wide text-slate-500">{label}</div>
+                    <div className={`mt-2 font-mono text-sm ${tone}`}>
+                      {sign}
+                      {value.toFixed(2)} {unit}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {macroGuidance.summary.length > 0 ? (
+              <ul className="mt-5 space-y-1 text-xs leading-5 text-slate-400">
+                {macroGuidance.summary.map((line) => (
+                  <li key={line} className="before:mr-2 before:text-slate-600 before:content-['→']">
+                    {line}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
           </Card>
         </section>
       ) : null}
@@ -1018,6 +1121,125 @@ export default async function SampleReportPage() {
         </section>
       ) : null}
 
+      {txCompsToShow.length > 0 || rentCompsToShow.length > 0 ? (
+        <section className="app-shell py-4">
+          <Card>
+            <div className="eyebrow">Comparable transactions &amp; rent comps</div>
+            <p className="mt-2 max-w-3xl text-sm text-slate-400">
+              Submarket comparables anchoring the cap rate and rent assumptions. Transaction comps
+              support the value approach; rent comps support the WALT and mark-to-market gap. Each
+              row carries its sourceSystem so the LP can challenge any individual data point.
+              {asset.transactionComps?.length === 0 && txCompsToShow.length > 0
+                ? ' (Showing market-wide comparables — asset is pre-stabilization with no direct comps.)'
+                : ''}
+            </p>
+
+            {txCompsToShow.length > 0 ? (
+              <div className="mt-5 overflow-x-auto rounded-[14px] border border-white/10">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+                      <th className="px-2 py-2 font-semibold">Date</th>
+                      <th className="px-2 py-2 font-semibold">Submarket</th>
+                      <th className="px-2 py-2 font-semibold">Type / tier</th>
+                      <th className="px-2 py-2 text-right font-semibold">Price</th>
+                      <th className="px-2 py-2 text-right font-semibold">Cap rate</th>
+                      <th className="px-2 py-2 text-right font-semibold">Source</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5 text-slate-200">
+                    {txCompsToShow.slice(0, 8).map((c) => (
+                      <tr key={c.id}>
+                        <td className="px-2 py-2 text-slate-400">
+                          {c.transactionDate ? formatDate(c.transactionDate) : '—'}
+                        </td>
+                        <td className="px-2 py-2">
+                          <div className="text-white">{c.region}</div>
+                          <div className="text-[10px] text-slate-500">{c.market}</div>
+                        </td>
+                        <td className="px-2 py-2 text-slate-300">
+                          <div>{c.comparableType}</div>
+                          {c.assetTier ? (
+                            <div className="text-[10px] text-slate-500">{c.assetTier}</div>
+                          ) : null}
+                        </td>
+                        <td className="px-2 py-2 text-right font-mono">
+                          {typeof c.priceKrw === 'number' && c.priceKrw > 0
+                            ? formatCurrencyFromKrwAtRate(
+                                c.priceKrw,
+                                displayCurrency,
+                                fxRateToKrw
+                              )
+                            : '—'}
+                        </td>
+                        <td className="px-2 py-2 text-right font-mono">
+                          {typeof c.capRatePct === 'number'
+                            ? `${c.capRatePct.toFixed(2)}%`
+                            : '—'}
+                        </td>
+                        <td className="px-2 py-2 text-right text-[10px] text-slate-400">
+                          {c.sourceSystem}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : null}
+
+            {rentCompsToShow.length > 0 ? (
+              <div className="mt-5 overflow-x-auto rounded-[14px] border border-white/10">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+                      <th className="px-2 py-2 font-semibold">As of</th>
+                      <th className="px-2 py-2 font-semibold">Submarket</th>
+                      <th className="px-2 py-2 font-semibold">Type</th>
+                      <th className="px-2 py-2 text-right font-semibold">Rent / kW</th>
+                      <th className="px-2 py-2 text-right font-semibold">Rent / sqm</th>
+                      <th className="px-2 py-2 text-right font-semibold">Occ</th>
+                      <th className="px-2 py-2 text-right font-semibold">Source</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5 text-slate-200">
+                    {rentCompsToShow.slice(0, 8).map((r) => (
+                      <tr key={r.id}>
+                        <td className="px-2 py-2 text-slate-400">
+                          {r.observationDate ? formatDate(r.observationDate) : '—'}
+                        </td>
+                        <td className="px-2 py-2">
+                          <div className="text-white">{r.region}</div>
+                          <div className="text-[10px] text-slate-500">{r.market}</div>
+                        </td>
+                        <td className="px-2 py-2 text-slate-300">{r.comparableType}</td>
+                        <td className="px-2 py-2 text-right font-mono">
+                          {typeof r.monthlyRatePerKwKrw === 'number'
+                            ? `${formatNumber(r.monthlyRatePerKwKrw, 0)}`
+                            : '—'}
+                        </td>
+                        <td className="px-2 py-2 text-right font-mono">
+                          {typeof r.monthlyRentPerSqmKrw === 'number'
+                            ? `${formatNumber(r.monthlyRentPerSqmKrw, 0)}`
+                            : '—'}
+                        </td>
+                        <td className="px-2 py-2 text-right font-mono">
+                          {typeof r.occupancyPct === 'number'
+                            ? `${r.occupancyPct.toFixed(0)}%`
+                            : '—'}
+                        </td>
+                        <td className="px-2 py-2 text-right text-[10px] text-slate-400">
+                          {r.sourceSystem}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : null}
+          </Card>
+        </section>
+      ) : null}
+
       {sensitivityGrids.length > 0 ? (
         <section className="app-shell py-4">
           <Card>
@@ -1110,6 +1332,82 @@ export default async function SampleReportPage() {
           </Card>
         </section>
       ) : null}
+
+      <section className="app-shell py-4">
+        <Card>
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <div className="eyebrow">Confidence score breakdown</div>
+              <p className="mt-2 max-w-3xl text-sm text-slate-400">
+                The score reflects data coverage. Each external section, structured section, and
+                anchor signal the engine finds adds points; risk signals subtract. The bundle below
+                shows which signals are present (green) and which are absent (slate) — that's the
+                shortlist of inputs that would push this score higher.
+              </p>
+            </div>
+            <div className="rounded-[16px] border border-white/10 bg-white/[0.03] px-4 py-3 text-right">
+              <div className="fine-print">Final score</div>
+              <div className="mt-1 text-2xl font-semibold text-white">
+                {confidenceBreakdown.finalScore.toFixed(1)}
+              </div>
+              <div className="text-[10px] text-slate-500">
+                {confidenceBreakdown.presentCount} / {confidenceBreakdown.totalCount} positive signals present
+              </div>
+            </div>
+          </div>
+          <div className="mt-5 grid gap-4 lg:grid-cols-2">
+            {(['External sections', 'Structured sections', 'Geo & price anchors', 'Risk penalties'] as const).map(
+              (group) => {
+                const rows = confidenceBreakdown.signals.filter((s) => s.group === group);
+                if (rows.length === 0) return null;
+                return (
+                  <div
+                    key={group}
+                    className="rounded-[18px] border border-white/10 bg-white/[0.02] p-4"
+                  >
+                    <div className="fine-print">{group}</div>
+                    <ul className="mt-3 space-y-2 text-sm">
+                      {rows.map((row) => {
+                        const isPenalty = row.direction === 'subtract';
+                        const dot = row.present
+                          ? isPenalty
+                            ? 'bg-rose-400'
+                            : 'bg-emerald-400'
+                          : 'bg-slate-700';
+                        const sign = isPenalty ? '−' : '+';
+                        return (
+                          <li
+                            key={row.label}
+                            className="flex items-center justify-between gap-3 rounded-[12px] border border-white/5 bg-white/[0.015] px-3 py-2"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className={`inline-block h-2 w-2 rounded-full ${dot}`} />
+                              <span className="text-slate-200">{row.label}</span>
+                            </div>
+                            <span className="font-mono text-xs text-slate-400">
+                              {row.present
+                                ? `${sign}${row.weight.toFixed(2)} pts`
+                                : isPenalty
+                                  ? '—'
+                                  : `+${row.weight.toFixed(2)} pts (missing)`}
+                            </span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                );
+              }
+            )}
+          </div>
+          <p className="mt-4 text-[11px] text-slate-500">
+            Per-signal weights are the data-center engine's nominal contributions. The engine
+            clamps the final number between 4.5 and 9.9 and applies a credit-overlay delta after,
+            so the listed contributions are illustrative — they don't sum to the printed score
+            exactly. Use this card to spot WHICH inputs are missing, not to recompute the score.
+          </p>
+        </Card>
+      </section>
 
       {sponsorTrack ? (
         <section className="app-shell py-4">
