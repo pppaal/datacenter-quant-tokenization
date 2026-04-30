@@ -247,6 +247,12 @@ export default async function AssetDetailPage({
               Open Report Library
             </Button>
           </Link>
+
+          <Link href={`/admin/assets/${asset.id}/media`}>
+            <Button className="w-full" variant="ghost">
+              Manage Media (photos / floorplan)
+            </Button>
+          </Link>
         </Card>
       </div>
 

@@ -245,6 +245,12 @@ export const assetBundleInclude = {
         }
       }
     }
+  },
+  media: {
+    orderBy: [
+      { sortOrder: 'asc' as const },
+      { createdAt: 'asc' as const }
+    ]
   }
 } satisfies Prisma.AssetInclude;
 

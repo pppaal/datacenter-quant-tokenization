@@ -529,6 +529,7 @@ model Asset {
   portfolioAssets       PortfolioAsset[]
   committeePackets      InvestmentCommitteePacket[]
   tokenization          TokenizedAsset?
+  media                 AssetMedia[]
 }
 
 model Address {
@@ -2321,6 +2322,31 @@ model SponsorPriorDeal {
   updatedAt      DateTime    @updatedAt
 
   @@index([sponsorId, vintageYear])
+}
+
+// Per-asset media library. REPE IMs are not LPs' first experience of an
+// asset without a photo — every Blackstone / Brookfield / KKR cover has
+// a hero shot, and underwriting decks include site plan + floorplan +
+// renders. Files live behind the same `createDocumentStorageFromEnv()`
+// adapter as documents (local FS in dev, S3-compatible in prod). `kind`
+// is TEXT so the taxonomy can grow (HERO / EXTERIOR / INTERIOR /
+// SITE_PLAN / FLOORPLAN / RENDER / DRONE / FLOORPLATE / ...) without a
+// migration. See 20260430080000_add_asset_media.
+model AssetMedia {
+  id          String   @id @default(cuid())
+  assetId     String
+  asset       Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  kind        String   @default("PHOTO")
+  storagePath String
+  mimeType    String
+  sizeBytes   Int
+  caption     String?
+  sortOrder   Int      @default(0)
+  uploadedById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([assetId, sortOrder])
 }
 
 // Proprietary deal flow log. The Deal table tracks our own pipeline;
