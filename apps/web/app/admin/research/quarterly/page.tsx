@@ -69,7 +69,7 @@ export default async function QuarterlyResearchPage(props: {
 
   if (!quarter) notFound();
 
-  const [aggregation, transactions, houseViews, marketUniverses] = await Promise.all([
+  const [aggregation, transactions, houseViews, marketUniverses, pendingHouseViews] = await Promise.all([
     aggregateCapRates({ since: quarter.start }),
     prisma.transactionComp.findMany({
       where: {
@@ -93,11 +93,30 @@ export default async function QuarterlyResearchPage(props: {
       include: {
         marketUniverse: { select: { label: true } },
         submarket: { select: { label: true } },
-        asset: { select: { assetCode: true, name: true } }
+        asset: { select: { assetCode: true, name: true } },
+        approvedBy: { select: { name: true, email: true } }
       }
     }),
-    prisma.marketUniverse.count()
+    prisma.marketUniverse.count(),
+    // Visibility on the gate: surface DRAFT house views for the same
+    // window so the operator sees what the publication is excluding
+    // and has a one-click path to approve (or explicitly deny).
+    prisma.researchSnapshot.findMany({
+      where: {
+        viewType: 'HOUSE',
+        approvalStatus: 'DRAFT',
+        snapshotDate: { gte: quarter.start, lte: quarter.end }
+      },
+      orderBy: { snapshotDate: 'desc' },
+      take: 12,
+      include: {
+        marketUniverse: { select: { label: true } },
+        submarket: { select: { label: true } },
+        asset: { select: { assetCode: true, name: true } }
+      }
+    })
   ]);
+
 
   // Editorial narrative is best-effort: when OPENAI_API_KEY is absent
   // the helper returns null and the page falls back to a "no narrative
@@ -280,40 +299,100 @@ export default async function QuarterlyResearchPage(props: {
       </section>
 
       <section className="print-break space-y-4">
-        <div>
+        <div className="flex flex-wrap items-center gap-3">
           <div className="eyebrow">Approved house views</div>
-          <p className="mt-1 text-sm text-slate-400">
-            ResearchSnapshot rows with viewType=HOUSE and approvalStatus=APPROVED, dated within
-            the quarter. Editorial commentary the operator promoted from draft.
-          </p>
+          <Badge tone="good">{houseViews.length} approved</Badge>
+          {pendingHouseViews.length > 0 ? (
+            <Badge tone="warn">{pendingHouseViews.length} pending</Badge>
+          ) : null}
         </div>
+        <p className="text-sm text-slate-400">
+          ResearchSnapshot rows with viewType=HOUSE and approvalStatus=APPROVED, dated within
+          the quarter. Editorial commentary the operator promoted from draft. Approved-by name +
+          approval timestamp render so the IC reader can see who signed off.
+        </p>
         {houseViews.length === 0 ? (
           <div className="rounded-[18px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
-            No approved house views for this quarter. Promote drafts from the Research workspace.
+            No approved house views for this quarter. Promote drafts from the Research workspace
+            (button below) before re-rendering this PDF.
           </div>
         ) : (
           <div className="space-y-3">
-            {houseViews.map((snap) => (
-              <article
-                key={snap.id}
-                className="rounded-[18px] border border-white/10 bg-white/[0.03] p-5"
-              >
-                <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                  <Badge tone="good">{snap.snapshotType}</Badge>
-                  <span>{formatDate(snap.snapshotDate ?? snap.createdAt)}</span>
-                  {snap.marketUniverse?.label ? <span>· {snap.marketUniverse.label}</span> : null}
-                  {snap.submarket?.label ? <span>· {snap.submarket.label}</span> : null}
-                  {snap.asset?.assetCode ? <span>· {snap.asset.assetCode}</span> : null}
-                </div>
-                <h3 className="mt-2 text-xl font-semibold text-white">{snap.title}</h3>
-                {snap.summary ? (
-                  <p className="mt-3 text-sm leading-7 text-slate-300">{snap.summary}</p>
-                ) : null}
-              </article>
-            ))}
+            {houseViews.map((snap) => {
+              const ageDays = snap.approvedAt
+                ? Math.max(
+                    0,
+                    Math.round((Date.now() - snap.approvedAt.getTime()) / (1000 * 60 * 60 * 24))
+                  )
+                : null;
+              const stale = ageDays !== null && ageDays > 90;
+              return (
+                <article
+                  key={snap.id}
+                  className="rounded-[18px] border border-white/10 bg-white/[0.03] p-5"
+                >
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                    <Badge tone="good">{snap.snapshotType}</Badge>
+                    <span>{formatDate(snap.snapshotDate ?? snap.createdAt)}</span>
+                    {snap.marketUniverse?.label ? <span>· {snap.marketUniverse.label}</span> : null}
+                    {snap.submarket?.label ? <span>· {snap.submarket.label}</span> : null}
+                    {snap.asset?.assetCode ? <span>· {snap.asset.assetCode}</span> : null}
+                    {snap.approvedAt ? (
+                      <span>
+                        · approved {formatDate(snap.approvedAt)}
+                        {snap.approvedBy?.name ? ` by ${snap.approvedBy.name}` : ''}
+                      </span>
+                    ) : null}
+                    {stale ? <Badge tone="warn">{ageDays}d old · re-review</Badge> : null}
+                  </div>
+                  <h3 className="mt-2 text-xl font-semibold text-white">{snap.title}</h3>
+                  {snap.summary ? (
+                    <p className="mt-3 text-sm leading-7 text-slate-300">{snap.summary}</p>
+                  ) : null}
+                </article>
+              );
+            })}
           </div>
         )}
       </section>
+
+      {pendingHouseViews.length > 0 ? (
+        <section className="print-hidden space-y-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="eyebrow">Pending approval (excluded from this PDF)</div>
+            <Badge tone="warn">{pendingHouseViews.length} draft</Badge>
+          </div>
+          <p className="text-sm text-slate-400">
+            Drafts dated in the quarter window that are NOT in the published PDF above. The review
+            gate is hard: only APPROVED house views ship. Promote a draft from the Research
+            workspace's dossier panel, then re-render.
+          </p>
+          <ul className="space-y-2">
+            {pendingHouseViews.map((snap) => (
+              <li
+                key={snap.id}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-3 text-sm"
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge tone="warn">DRAFT</Badge>
+                  <span className="font-semibold text-white">{snap.title}</span>
+                  <span className="text-xs text-slate-500">
+                    {snap.marketUniverse?.label ? `${snap.marketUniverse.label} · ` : ''}
+                    {snap.submarket?.label ? `${snap.submarket.label} · ` : ''}
+                    {formatDate(snap.snapshotDate ?? snap.createdAt)}
+                  </span>
+                </div>
+                <Link
+                  href={`/admin/research?focus=${snap.id}`}
+                  className="text-accent hover:underline"
+                >
+                  Open in workspace →
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       <footer className="rounded-[18px] border border-white/10 bg-white/[0.03] px-5 py-4 text-xs text-slate-500">
         Generated {formatDate(new Date())} · {quarter.label} window
