@@ -22,6 +22,7 @@ import {
   rollupTenantCredit
 } from '@/lib/services/im/sections';
 import { getSponsorTrackByName } from '@/lib/services/im/sponsor';
+import { readCapexBreakdown, readUnderwritingAssumptions } from '@/lib/services/im/assumptions';
 import { readStoredBaseCaseProForma } from '@/lib/services/valuation/pro-forma';
 import { formatDate, formatNumber, formatPercent } from '@/lib/utils';
 
@@ -118,6 +119,11 @@ export default async function SampleReportPage() {
   // means the assumptions blob predates the stored-proforma update — the
   // S&U / P&L / IRR cards render an empty state when that happens.
   const proForma = readStoredBaseCaseProForma(latestRun.assumptions);
+  // The base-case scenario inputs the engine fed into proForma.
+  // Surfaced so an LP can answer "WHY this cap rate / discount rate /
+  // promote structure" without re-running the model.
+  const underwriting = readUnderwritingAssumptions(latestRun.assumptions);
+  const capexBreakdown = readCapexBreakdown(latestRun.assumptions);
   // Sponsor track record auto-links by case-insensitive name match on
   // Asset.sponsorName so creating a Sponsor row immediately surfaces in
   // the IM without an FK migration on the asset.
@@ -397,14 +403,65 @@ export default async function SampleReportPage() {
                   ? '—'
                   : `${capStack.blendedRatePct.toFixed(2)}%`}
               </Row>
-              <Row label="Facilities">
-                {asset.debtFacilities && asset.debtFacilities.length > 0
-                  ? asset.debtFacilities
-                      .map((f) => `${f.facilityType}${f.lenderName ? ` · ${f.lenderName}` : ''}`)
-                      .join(' / ')
-                  : '—'}
-              </Row>
             </dl>
+            {asset.debtFacilities && asset.debtFacilities.length > 0 ? (
+              <div className="mt-5 overflow-x-auto rounded-[14px] border border-white/10">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+                      <th className="px-2 py-2 font-semibold">Facility</th>
+                      <th className="px-2 py-2 text-right font-semibold">Commit</th>
+                      <th className="px-2 py-2 text-right font-semibold">Drawn</th>
+                      <th className="px-2 py-2 text-right font-semibold">Rate</th>
+                      <th className="px-2 py-2 text-right font-semibold">Term</th>
+                      <th className="px-2 py-2 text-right font-semibold">Amort</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5 text-slate-200">
+                    {asset.debtFacilities.map((f) => (
+                      <tr key={f.id}>
+                        <td className="px-2 py-2">
+                          <div className="text-white">{f.facilityType}</div>
+                          {f.lenderName ? (
+                            <div className="text-[10px] text-slate-500">{f.lenderName}</div>
+                          ) : null}
+                        </td>
+                        <td className="px-2 py-2 text-right font-mono">
+                          {formatCurrencyFromKrwAtRate(
+                            f.commitmentKrw,
+                            displayCurrency,
+                            fxRateToKrw
+                          )}
+                        </td>
+                        <td className="px-2 py-2 text-right font-mono text-slate-400">
+                          {f.drawnAmountKrw !== null
+                            ? formatCurrencyFromKrwAtRate(
+                                f.drawnAmountKrw,
+                                displayCurrency,
+                                fxRateToKrw
+                              )
+                            : '—'}
+                        </td>
+                        <td className="px-2 py-2 text-right font-mono">
+                          {f.interestRatePct.toFixed(2)}%
+                        </td>
+                        <td className="px-2 py-2 text-right font-mono text-slate-400">
+                          {f.amortizationTermMonths
+                            ? `${(f.amortizationTermMonths / 12).toFixed(0)} yr`
+                            : '—'}
+                        </td>
+                        <td className="px-2 py-2 text-right text-[10px] text-slate-400">
+                          {f.amortizationProfile.replace(/_/g, ' ').toLowerCase()}
+                          {typeof f.balloonPct === 'number' && f.balloonPct > 0
+                            ? ` · ${f.balloonPct.toFixed(0)}% balloon`
+                            : ''}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : null}
           </Card>
 
           <Card>
@@ -439,8 +496,189 @@ export default async function SampleReportPage() {
                 {tenantCredit.count > 0 ? tenantCredit.averageScore.toFixed(0) : '—'}
               </Row>
             </dl>
+            {asset.leases && asset.leases.length > 0 ? (
+              <div className="mt-5 overflow-x-auto rounded-[14px] border border-white/10">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+                      <th className="px-2 py-2 font-semibold">Tenant</th>
+                      <th className="px-2 py-2 text-right font-semibold">kW</th>
+                      <th className="px-2 py-2 text-right font-semibold">Term</th>
+                      <th className="px-2 py-2 text-right font-semibold">In-place</th>
+                      <th className="px-2 py-2 text-right font-semibold">Esc</th>
+                      <th className="px-2 py-2 text-right font-semibold">MTM gap</th>
+                      <th className="px-2 py-2 text-right font-semibold">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5 text-slate-200">
+                    {asset.leases.map((lease) => {
+                      const mtmGap =
+                        lease.markToMarketRatePerKwKrw && lease.baseRatePerKwKrw > 0
+                          ? ((lease.markToMarketRatePerKwKrw - lease.baseRatePerKwKrw) /
+                              lease.baseRatePerKwKrw) *
+                            100
+                          : null;
+                      return (
+                        <tr key={lease.id}>
+                          <td className="px-2 py-2 text-white">{lease.tenantName}</td>
+                          <td className="px-2 py-2 text-right font-mono">
+                            {formatNumber(lease.leasedKw, 0)}
+                          </td>
+                          <td className="px-2 py-2 text-right font-mono text-slate-400">
+                            Y{lease.startYear}–{lease.startYear + lease.termYears - 1}
+                          </td>
+                          <td className="px-2 py-2 text-right font-mono">
+                            {formatNumber(lease.baseRatePerKwKrw, 0)}
+                          </td>
+                          <td className="px-2 py-2 text-right font-mono text-slate-400">
+                            {lease.annualEscalationPct !== null
+                              ? `${lease.annualEscalationPct.toFixed(1)}%`
+                              : '—'}
+                          </td>
+                          <td className="px-2 py-2 text-right font-mono">
+                            {mtmGap !== null
+                              ? `${mtmGap >= 0 ? '+' : ''}${mtmGap.toFixed(1)}%`
+                              : '—'}
+                          </td>
+                          <td className="px-2 py-2 text-right text-[10px] text-slate-400">
+                            {lease.status}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                <p className="border-t border-white/5 bg-white/[0.02] px-2 py-2 text-[10px] text-slate-500">
+                  WALT formula: Σ(termYears × leasedKw) / Σ(leasedKw). Weighted in-place rent uses
+                  baseRatePerKwKrw weighted the same way. MTM gap = blended MTM rate / blended
+                  in-place rate − 1.
+                </p>
+              </div>
+            ) : null}
           </Card>
         </div>
+      </section>
+
+      <section className="app-shell py-4">
+        <Card>
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <div className="eyebrow">Underwriting assumptions (base case)</div>
+              <p className="mt-2 max-w-3xl text-sm text-slate-400">
+                The exact inputs the engine fed into the base scenario stored on this run. Cap rate
+                and discount rate are the primary value drivers; tax stack and SPV economics drive
+                the gap between unlevered and equity returns.
+              </p>
+            </div>
+            <Badge tone="good">{latestRun.engineVersion}</Badge>
+          </div>
+          <div className="mt-5 grid gap-4 md:grid-cols-3">
+            <div className="rounded-[18px] border border-white/10 bg-white/[0.02] p-4">
+              <div className="fine-print">Valuation rates</div>
+              <dl className="mt-3 space-y-2 text-sm">
+                <Row label="Cap rate">
+                  {underwriting.capRatePct !== null
+                    ? `${underwriting.capRatePct.toFixed(2)}%`
+                    : '—'}
+                </Row>
+                <Row label="Discount rate">
+                  {underwriting.discountRatePct !== null
+                    ? `${underwriting.discountRatePct.toFixed(2)}%`
+                    : '—'}
+                </Row>
+                <Row label="Going-in occupancy">
+                  {underwriting.occupancyPct !== null
+                    ? `${underwriting.occupancyPct.toFixed(1)}%`
+                    : '—'}
+                </Row>
+                <Row label="In-place rate">
+                  {underwriting.monthlyRatePerKwKrw !== null
+                    ? `${formatNumber(underwriting.monthlyRatePerKwKrw, 0)} KRW/kW/mo`
+                    : '—'}
+                </Row>
+                <Row label="Power price">
+                  {underwriting.powerPriceKrwPerKwh !== null
+                    ? `${underwriting.powerPriceKrwPerKwh.toFixed(0)} KRW/kWh`
+                    : '—'}
+                </Row>
+                <Row label="PUE target">
+                  {underwriting.pueTarget !== null ? underwriting.pueTarget.toFixed(2) : '—'}
+                </Row>
+              </dl>
+            </div>
+
+            <div className="rounded-[18px] border border-white/10 bg-white/[0.02] p-4">
+              <div className="fine-print">Tax stack</div>
+              <dl className="mt-3 space-y-2 text-sm">
+                <Row label="Corporate tax">
+                  {underwriting.corporateTaxPct !== null
+                    ? `${underwriting.corporateTaxPct.toFixed(1)}%`
+                    : '—'}
+                </Row>
+                <Row label="Property tax">
+                  {underwriting.propertyTaxPct !== null
+                    ? `${underwriting.propertyTaxPct.toFixed(2)}%`
+                    : '—'}
+                </Row>
+                <Row label="Acquisition tax">
+                  {underwriting.acquisitionTaxPct !== null
+                    ? `${underwriting.acquisitionTaxPct.toFixed(1)}%`
+                    : '—'}
+                </Row>
+                <Row label="Exit tax">
+                  {underwriting.exitTaxPct !== null
+                    ? `${underwriting.exitTaxPct.toFixed(1)}%`
+                    : '—'}
+                </Row>
+                <Row label="VAT recovery">
+                  {underwriting.vatRecoveryPct !== null
+                    ? `${underwriting.vatRecoveryPct.toFixed(0)}%`
+                    : '—'}
+                </Row>
+              </dl>
+            </div>
+
+            <div className="rounded-[18px] border border-white/10 bg-white/[0.02] p-4">
+              <div className="fine-print">SPV & promote</div>
+              <dl className="mt-3 space-y-2 text-sm">
+                <Row label="Mgmt fee">
+                  {underwriting.managementFeePct !== null
+                    ? `${underwriting.managementFeePct.toFixed(2)}%`
+                    : '—'}
+                </Row>
+                <Row label="Performance fee">
+                  {underwriting.performanceFeePct !== null
+                    ? `${underwriting.performanceFeePct.toFixed(1)}%`
+                    : '—'}
+                </Row>
+                <Row label="Promote hurdle">
+                  {underwriting.promoteThresholdPct !== null
+                    ? `${underwriting.promoteThresholdPct.toFixed(1)}%`
+                    : '—'}
+                </Row>
+                <Row label="Promote share">
+                  {underwriting.promoteSharePct !== null
+                    ? `${underwriting.promoteSharePct.toFixed(1)}%`
+                    : '—'}
+                </Row>
+                <Row label="Reserve target">
+                  {underwriting.reserveTargetMonths !== null
+                    ? `${underwriting.reserveTargetMonths.toFixed(0)} mo`
+                    : '—'}
+                </Row>
+              </dl>
+            </div>
+          </div>
+          <p className="mt-4 text-[11px] text-slate-500">
+            Stage / location / permit / flood / wildfire multipliers applied during scenario
+            generation:&nbsp;
+            stage {underwriting.stageFactor !== null ? underwriting.stageFactor.toFixed(2) : '—'} ·
+            location ×{underwriting.locationPremium !== null ? underwriting.locationPremium.toFixed(2) : '—'} ·
+            permit ×{underwriting.permitPenalty !== null ? underwriting.permitPenalty.toFixed(2) : '—'} ·
+            flood ×{underwriting.floodPenalty !== null ? underwriting.floodPenalty.toFixed(3) : '—'} ·
+            wildfire ×{underwriting.wildfirePenalty !== null ? underwriting.wildfirePenalty.toFixed(3) : '—'}.
+          </p>
+        </Card>
       </section>
 
       {proForma ? (
@@ -496,6 +734,58 @@ export default async function SampleReportPage() {
                   )}
                 </Row>
               </dl>
+
+              {capexBreakdown.totalCapexKrw !== null ? (
+                <div className="mt-5 overflow-x-auto rounded-[14px] border border-white/10">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+                        <th className="px-2 py-2 font-semibold">Uses · line item</th>
+                        <th className="px-2 py-2 text-right font-semibold">Amount</th>
+                        <th className="px-2 py-2 text-right font-semibold">% of total</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5 text-slate-200">
+                      {([
+                        ['Land', capexBreakdown.landValueKrw],
+                        ['Shell & core', capexBreakdown.shellCoreKrw],
+                        ['Mechanical', capexBreakdown.mechanicalKrw],
+                        ['Electrical', capexBreakdown.electricalKrw],
+                        ['IT fit-out', capexBreakdown.itFitOutKrw],
+                        ['Soft cost', capexBreakdown.softCostKrw],
+                        ['Contingency', capexBreakdown.contingencyKrw]
+                      ] as const)
+                        .filter(([, v]) => typeof v === 'number' && v > 0)
+                        .map(([label, value]) => (
+                          <tr key={label}>
+                            <td className="px-2 py-2 text-slate-300">{label}</td>
+                            <td className="px-2 py-2 text-right font-mono">
+                              {formatCurrencyFromKrwAtRate(
+                                value as number,
+                                displayCurrency,
+                                fxRateToKrw
+                              )}
+                            </td>
+                            <td className="px-2 py-2 text-right font-mono text-slate-400">
+                              {(((value as number) / (capexBreakdown.totalCapexKrw ?? 1)) * 100).toFixed(1)}%
+                            </td>
+                          </tr>
+                        ))}
+                      <tr className="bg-white/[0.03] font-semibold">
+                        <td className="px-2 py-2 text-white">Total</td>
+                        <td className="px-2 py-2 text-right font-mono text-white">
+                          {formatCurrencyFromKrwAtRate(
+                            capexBreakdown.totalCapexKrw,
+                            displayCurrency,
+                            fxRateToKrw
+                          )}
+                        </td>
+                        <td className="px-2 py-2 text-right font-mono text-slate-400">100.0%</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              ) : null}
             </Card>
 
             <Card>
