@@ -23,6 +23,9 @@ import {
 } from '@/lib/services/im/sections';
 import { getSponsorTrackByName } from '@/lib/services/im/sponsor';
 import { readCapexBreakdown, readUnderwritingAssumptions } from '@/lib/services/im/assumptions';
+import { buildScenarioDiff } from '@/lib/services/im/scenario-diff';
+import { pickMatrixRuns } from '@/lib/services/im/sensitivity';
+import { pickProvenanceForCard, summarizeProvenance } from '@/lib/services/im/provenance-map';
 import { readStoredBaseCaseProForma } from '@/lib/services/valuation/pro-forma';
 import { formatDate, formatNumber, formatPercent } from '@/lib/utils';
 
@@ -128,6 +131,26 @@ export default async function SampleReportPage() {
   // Asset.sponsorName so creating a Sponsor row immediately surfaces in
   // the IM without an FK migration on the asset.
   const sponsorTrack = await getSponsorTrackByName(asset.sponsorName ?? null);
+
+  // Per-card provenance: filter the persisted provenance entries to
+  // each card's relevant fields so the LP sees the source pill inline.
+  const provenanceByCard = {
+    valuationRates: pickProvenanceForCard(latestRun.provenance, 'valuationRates'),
+    capitalStructure: pickProvenanceForCard(latestRun.provenance, 'capitalStructure'),
+    tenancy: pickProvenanceForCard(latestRun.provenance, 'tenancy'),
+    capex: pickProvenanceForCard(latestRun.provenance, 'capex'),
+    macro: pickProvenanceForCard(latestRun.provenance, 'macro'),
+    scenarioEngine: pickProvenanceForCard(latestRun.provenance, 'scenarioEngine')
+  };
+
+  // Scenario diff: Bull/Bear shifts vs base — implied yield bps,
+  // exit cap bps, DSCR delta. Lets the LP see WHAT moved between
+  // scenarios, not just the value spread.
+  const scenarioDiff = buildScenarioDiff(scenarios);
+
+  // Two-way sensitivity matrices the engine persisted with this run.
+  // Typical: occupancy x exit cap (value), NOI x debt cost (DSCR).
+  const sensitivityGrids = pickMatrixRuns(latestRun.sensitivityRuns ?? []);
 
   return (
     <main className="pb-24">
@@ -334,6 +357,7 @@ export default async function SampleReportPage() {
                 </div>
               ))}
             </div>
+            <ProvenancePill entries={provenanceByCard.macro} />
           </Card>
         </section>
       ) : null}
@@ -373,6 +397,7 @@ export default async function SampleReportPage() {
                   : '—'}
               </Row>
             </dl>
+            <ProvenancePill entries={provenanceByCard.valuationRates} />
           </Card>
 
           <Card>
@@ -462,6 +487,7 @@ export default async function SampleReportPage() {
                 </table>
               </div>
             ) : null}
+            <ProvenancePill entries={provenanceByCard.capitalStructure} />
           </Card>
 
           <Card>
@@ -555,6 +581,7 @@ export default async function SampleReportPage() {
                 </p>
               </div>
             ) : null}
+            <ProvenancePill entries={provenanceByCard.tenancy} />
           </Card>
         </div>
       </section>
@@ -678,6 +705,7 @@ export default async function SampleReportPage() {
             flood ×{underwriting.floodPenalty !== null ? underwriting.floodPenalty.toFixed(3) : '—'} ·
             wildfire ×{underwriting.wildfirePenalty !== null ? underwriting.wildfirePenalty.toFixed(3) : '—'}.
           </p>
+          <ProvenancePill entries={provenanceByCard.scenarioEngine} />
         </Card>
       </section>
 
@@ -786,6 +814,7 @@ export default async function SampleReportPage() {
                   </table>
                 </div>
               ) : null}
+              <ProvenancePill entries={provenanceByCard.capex} />
             </Card>
 
             <Card>
@@ -889,6 +918,194 @@ export default async function SampleReportPage() {
                   })}
                 </tbody>
               </table>
+            </div>
+          </Card>
+        </section>
+      ) : null}
+
+      {scenarioDiff.length > 0 ? (
+        <section className="app-shell py-4">
+          <Card>
+            <div className="eyebrow">Scenario diff (vs base case)</div>
+            <p className="mt-2 max-w-3xl text-sm text-slate-400">
+              Bull and bear cases are not just "+X% / -Y%" — each one moves a specific lever
+              relative to base. The columns show the delta in implied yield, exit cap, and DSCR
+              between each scenario and the base case.
+            </p>
+            <div className="mt-5 overflow-x-auto rounded-[18px] border border-white/10">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-white/[0.04] text-left text-xs uppercase tracking-wide text-slate-500">
+                    <th className="px-3 py-2 font-semibold">Case</th>
+                    <th className="px-3 py-2 text-right font-semibold">Value</th>
+                    <th className="px-3 py-2 text-right font-semibold">Δ value</th>
+                    <th className="px-3 py-2 text-right font-semibold">Implied yield</th>
+                    <th className="px-3 py-2 text-right font-semibold">Δ yield</th>
+                    <th className="px-3 py-2 text-right font-semibold">Exit cap</th>
+                    <th className="px-3 py-2 text-right font-semibold">Δ exit cap</th>
+                    <th className="px-3 py-2 text-right font-semibold">DSCR</th>
+                    <th className="px-3 py-2 text-right font-semibold">Δ DSCR</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5 text-slate-200">
+                  {scenarioDiff.map((row) => {
+                    const isBase = row.name === 'Base';
+                    const fmtBps = (v: number | null) =>
+                      v === null ? '—' : `${v >= 0 ? '+' : ''}${v} bps`;
+                    return (
+                      <tr key={row.name} className={isBase ? 'bg-white/[0.03]' : ''}>
+                        <td className="px-3 py-2 font-semibold text-white">{row.name}</td>
+                        <td className="px-3 py-2 text-right font-mono text-xs">
+                          {formatCurrencyFromKrwAtRate(
+                            row.valuationKrw,
+                            displayCurrency,
+                            fxRateToKrw
+                          )}
+                        </td>
+                        <td className="px-3 py-2 text-right font-mono text-xs text-slate-400">
+                          {isBase
+                            ? '—'
+                            : `${row.valueDeltaPct >= 0 ? '+' : ''}${row.valueDeltaPct.toFixed(1)}%`}
+                        </td>
+                        <td className="px-3 py-2 text-right font-mono text-xs">
+                          {row.impliedYieldPct !== null
+                            ? `${row.impliedYieldPct.toFixed(2)}%`
+                            : '—'}
+                        </td>
+                        <td className="px-3 py-2 text-right font-mono text-xs text-slate-400">
+                          {isBase ? '—' : fmtBps(row.impliedYieldDeltaBps)}
+                        </td>
+                        <td className="px-3 py-2 text-right font-mono text-xs">
+                          {row.exitCapRatePct !== null
+                            ? `${row.exitCapRatePct.toFixed(2)}%`
+                            : '—'}
+                        </td>
+                        <td className="px-3 py-2 text-right font-mono text-xs text-slate-400">
+                          {isBase ? '—' : fmtBps(row.exitCapDeltaBps)}
+                        </td>
+                        <td className="px-3 py-2 text-right font-mono text-xs">
+                          {row.debtServiceCoverage !== null
+                            ? `${row.debtServiceCoverage.toFixed(2)}x`
+                            : '—'}
+                        </td>
+                        <td className="px-3 py-2 text-right font-mono text-xs text-slate-400">
+                          {isBase
+                            ? '—'
+                            : row.dscrDelta !== null
+                              ? `${row.dscrDelta >= 0 ? '+' : ''}${row.dscrDelta.toFixed(2)}x`
+                              : '—'}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <div className="mt-4 grid gap-3 text-xs text-slate-400 md:grid-cols-3">
+              {scenarioDiff.map((row) => (
+                <div
+                  key={`${row.name}-note`}
+                  className="rounded-[14px] border border-white/5 bg-white/[0.02] px-3 py-2"
+                >
+                  <div className="text-[10px] uppercase tracking-wide text-slate-500">
+                    {row.name} narrative
+                  </div>
+                  <p className="mt-1 leading-5 text-slate-300">{row.notes || '—'}</p>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </section>
+      ) : null}
+
+      {sensitivityGrids.length > 0 ? (
+        <section className="app-shell py-4">
+          <Card>
+            <div className="eyebrow">Sensitivity matrices</div>
+            <p className="mt-2 max-w-3xl text-sm text-slate-400">
+              Two-way shock grids the engine ran against the base case. Each cell shows the
+              resulting metric and its delta vs the base. Use to size the bid against committee
+              underwriting bands rather than a single point estimate.
+            </p>
+            <div className="mt-5 grid gap-5 lg:grid-cols-2">
+              {sensitivityGrids.map((grid) => {
+                const isCurrency = /value/i.test(grid.metricName);
+                const isDscr = /dscr/i.test(grid.metricName);
+                const fmt = (v: number) =>
+                  isCurrency
+                    ? formatCurrencyFromKrwAtRate(v, displayCurrency, fxRateToKrw)
+                    : isDscr
+                      ? `${v.toFixed(2)}x`
+                      : v.toFixed(2);
+                return (
+                  <div
+                    key={grid.runId}
+                    className="rounded-[18px] border border-white/10 bg-white/[0.02] p-4"
+                  >
+                    <div className="flex items-end justify-between gap-3">
+                      <div>
+                        <div className="text-sm font-semibold text-white">{grid.title}</div>
+                        <div className="text-xs text-slate-500">
+                          Rows: {grid.rowAxisLabel} · Columns: {grid.columnAxisLabel}
+                        </div>
+                      </div>
+                      <div className="text-right text-xs text-slate-400">
+                        Base = <span className="font-mono">{fmt(grid.baselineValue)}</span>
+                      </div>
+                    </div>
+                    <div className="mt-4 overflow-x-auto rounded-[14px] border border-white/10">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+                            <th className="px-2 py-1.5 font-semibold">{grid.rowAxisLabel}</th>
+                            {grid.columnLabels.map((c) => (
+                              <th key={c} className="px-2 py-1.5 text-right font-semibold">
+                                {c}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/5 text-slate-200">
+                          {grid.rowLabels.map((rowLabel, r) => (
+                            <tr key={rowLabel}>
+                              <td className="px-2 py-1.5 text-slate-400">{rowLabel}</td>
+                              {grid.columnLabels.map((colLabel, c) => {
+                                const cell = grid.cells[r * grid.columnLabels.length + c];
+                                if (!cell) {
+                                  return (
+                                    <td
+                                      key={colLabel}
+                                      className="px-2 py-1.5 text-right text-slate-600"
+                                    >
+                                      —
+                                    </td>
+                                  );
+                                }
+                                const sign = cell.deltaPct === 0 ? '' : cell.deltaPct > 0 ? '+' : '';
+                                const tone =
+                                  cell.deltaPct === 0
+                                    ? 'text-white'
+                                    : cell.deltaPct > 0
+                                      ? 'text-emerald-300'
+                                      : 'text-rose-300';
+                                return (
+                                  <td key={colLabel} className="px-2 py-1.5 text-right">
+                                    <div className={`font-mono ${tone}`}>{fmt(cell.value)}</div>
+                                    <div className="text-[10px] text-slate-500">
+                                      {sign}
+                                      {cell.deltaPct.toFixed(1)}%
+                                    </div>
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </Card>
         </section>
@@ -1184,6 +1401,22 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
     <div className="flex items-center justify-between gap-4 rounded-[14px] border border-white/5 bg-white/[0.02] px-3 py-2 text-sm">
       <dt className="text-xs uppercase tracking-wide text-slate-500">{label}</dt>
       <dd className="font-mono text-sm text-white">{children}</dd>
+    </div>
+  );
+}
+
+function ProvenancePill({
+  entries
+}: {
+  entries: Array<{ field: string; sourceSystem: string; mode: string; freshnessLabel: string }>;
+}) {
+  if (!entries || entries.length === 0) return null;
+  const text = summarizeProvenance(entries);
+  if (!text) return null;
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-2 rounded-[12px] border border-white/5 bg-white/[0.015] px-3 py-1.5 text-[11px] text-slate-400">
+      <span className="uppercase tracking-wide text-slate-500">Source</span>
+      <span className="font-mono text-slate-300">{text}</span>
     </div>
   );
 }

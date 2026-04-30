@@ -230,6 +230,18 @@ export const assetBundleInclude = {
         orderBy: {
           scenarioOrder: 'asc' as const
         }
+      },
+      sensitivityRuns: {
+        include: {
+          points: {
+            orderBy: {
+              sortOrder: 'asc' as const
+            }
+          }
+        },
+        orderBy: {
+          createdAt: 'desc' as const
+        }
       }
     },
     orderBy: {
