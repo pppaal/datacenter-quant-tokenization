@@ -160,3 +160,98 @@ export function buildEsgSummary(
     composite
   };
 }
+
+/**
+ * Scope 1 / 2 / 3 emissions estimate for the asset, derived from
+ * existing power and capex inputs. We do not store actual carbon
+ * accounting yet — these are sector-default factors so the IM
+ * carries a directional ESG figure rather than a blank field.
+ *
+ * Scope 1 — direct emissions from on-site fuel combustion
+ *   ≈ backupFuelHours × generator load × diesel emission factor
+ *     (assumes test-runs only, ~12 hours/yr equivalent operation)
+ *
+ * Scope 2 — purchased electricity
+ *   = annual_kWh × KR grid factor (~0.459 kgCO2e/kWh) × (1 − renewable share)
+ *
+ * Scope 3 — embodied carbon (one-time, amortized over hold)
+ *   ≈ totalCapexKrw × 1.2 tCO2e per ₩100M (≈ 12 tCO2e/USD M sector
+ *   estimate from RICS / WBCSD CRREM curves)
+ */
+export type EmissionsBreakdown = {
+  scope1tCO2e: number | null;
+  scope2tCO2e: number | null;
+  scope3tCO2e: number | null;
+  totalAnnualtCO2e: number | null;
+  carbonIntensitykgPerKwh: number | null;
+  notes: string[];
+};
+
+const KR_GRID_EMISSION_FACTOR = 0.459; // kgCO2e/kWh, KEPCO 2024 grid mix
+const DIESEL_EMISSION_FACTOR = 2.68; // kgCO2e/L
+const GENERATOR_KW = 8000; // typical 32MW DC generator bank
+const ASSUMED_TEST_HOURS_PER_YEAR = 12;
+const SCOPE3_T_CO2E_PER_100M_KRW = 1.2;
+
+export function buildEmissionsBreakdown(
+  options: {
+    powerCapacityMw: number | null;
+    pueTarget: number | null;
+    renewableSharePct: number | null;
+    backupFuelHours: number | null;
+    totalCapexKrw: number | null;
+    holdYears?: number;
+  }
+): EmissionsBreakdown {
+  const notes: string[] = [];
+  let scope1 = null as number | null;
+  let scope2 = null as number | null;
+  let scope3 = null as number | null;
+  let intensity = null as number | null;
+
+  // Scope 2: purchased grid electricity net of renewable share
+  if (options.powerCapacityMw !== null && options.pueTarget !== null) {
+    const annualKwh =
+      options.powerCapacityMw * 1000 * (options.pueTarget) * 8760 * 0.7; // 70% utilization proxy
+    const renewableFraction = (options.renewableSharePct ?? 0) / 100;
+    const gridKwh = annualKwh * (1 - renewableFraction);
+    scope2 = (gridKwh * KR_GRID_EMISSION_FACTOR) / 1000;
+    intensity = KR_GRID_EMISSION_FACTOR * (1 - renewableFraction);
+    notes.push(
+      `Scope 2: ${(annualKwh / 1_000_000).toFixed(1)} GWh × KR grid 0.459 kgCO2e/kWh × (1 − ${(renewableFraction * 100).toFixed(0)}% renewable).`
+    );
+  }
+  // Scope 1: backup generator test runs
+  if (options.backupFuelHours !== null && options.backupFuelHours > 0) {
+    const litersPerHour = GENERATOR_KW * 0.25; // ~0.25 L/kWh diesel rate
+    const annualLiters = litersPerHour * ASSUMED_TEST_HOURS_PER_YEAR;
+    scope1 = (annualLiters * DIESEL_EMISSION_FACTOR) / 1000;
+    notes.push(
+      `Scope 1: ${ASSUMED_TEST_HOURS_PER_YEAR}h/yr generator test × ${GENERATOR_KW} kW × ${DIESEL_EMISSION_FACTOR} kgCO2e/L diesel.`
+    );
+  }
+  // Scope 3: embodied carbon, amortized over hold
+  if (options.totalCapexKrw !== null && options.totalCapexKrw > 0) {
+    const totalEmbodied =
+      (options.totalCapexKrw / 100_000_000) * SCOPE3_T_CO2E_PER_100M_KRW;
+    const holdYears = options.holdYears ?? 10;
+    scope3 = totalEmbodied / holdYears;
+    notes.push(
+      `Scope 3: ${SCOPE3_T_CO2E_PER_100M_KRW} tCO2e/₩100M sector default amortized over ${holdYears}-year hold.`
+    );
+  }
+
+  const totalAnnual =
+    [scope1, scope2, scope3].some((v) => v !== null)
+      ? (scope1 ?? 0) + (scope2 ?? 0) + (scope3 ?? 0)
+      : null;
+
+  return {
+    scope1tCO2e: scope1,
+    scope2tCO2e: scope2,
+    scope3tCO2e: scope3,
+    totalAnnualtCO2e: totalAnnual,
+    carbonIntensitykgPerKwh: intensity,
+    notes
+  };
+}

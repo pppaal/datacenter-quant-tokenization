@@ -73,10 +73,11 @@ export const assetBundleInclude = {
     },
     include: {
       financialStatements: {
-        orderBy: {
-          createdAt: 'desc' as const
-        },
-        take: 2,
+        orderBy: [
+          { fiscalYear: 'desc' as const },
+          { createdAt: 'desc' as const }
+        ],
+        take: 5,
         include: {
           creditAssessments: {
             orderBy: {
@@ -219,6 +220,12 @@ export const assetBundleInclude = {
     take: 4
   },
   tokenization: true,
+  insurancePolicies: {
+    orderBy: [
+      { status: 'asc' as const },
+      { policyType: 'asc' as const }
+    ]
+  },
   transactionComps: {
     orderBy: {
       transactionDate: 'desc' as const

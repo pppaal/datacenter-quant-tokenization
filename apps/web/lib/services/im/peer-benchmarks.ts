@@ -30,14 +30,41 @@ const BENCHMARKS: Record<string, PeerBenchmark[]> = {
   ],
   KR_OFFICE: [
     { ratioKey: 'leverage', median: 4.5, pct25: 5.5, pct75: 3.8, preferred: 'lower' },
+    { ratioKey: 'netLeverage', median: 4.2, pct25: 5.0, pct75: 3.4, preferred: 'lower' },
     { ratioKey: 'interestCoverage', median: 2.2, pct25: 1.7, pct75: 2.8, preferred: 'higher' },
-    { ratioKey: 'ebitdaMargin', median: 45, pct25: 38, pct75: 52, preferred: 'higher' }
+    { ratioKey: 'debtToEquity', median: 1.6, pct25: 2.0, pct75: 1.2, preferred: 'lower' },
+    { ratioKey: 'cashToDebt', median: 0.08, pct25: 0.04, pct75: 0.14, preferred: 'higher' },
+    { ratioKey: 'ebitdaMargin', median: 45, pct25: 38, pct75: 52, preferred: 'higher' },
+    { ratioKey: 'roeProxy', median: 0.18, pct25: 0.13, pct75: 0.25, preferred: 'higher' },
+    { ratioKey: 'roaProxy', median: 0.08, pct25: 0.05, pct75: 0.12, preferred: 'higher' }
+  ],
+  KR_INDUSTRIAL: [
+    { ratioKey: 'leverage', median: 3.8, pct25: 4.6, pct75: 3.2, preferred: 'lower' },
+    { ratioKey: 'netLeverage', median: 3.4, pct25: 4.1, pct75: 2.8, preferred: 'lower' },
+    { ratioKey: 'interestCoverage', median: 3.2, pct25: 2.4, pct75: 4.0, preferred: 'higher' },
+    { ratioKey: 'debtToEquity', median: 1.2, pct25: 1.6, pct75: 0.9, preferred: 'lower' },
+    { ratioKey: 'cashToDebt', median: 0.15, pct25: 0.08, pct75: 0.22, preferred: 'higher' },
+    { ratioKey: 'ebitdaMargin', median: 38, pct25: 32, pct75: 44, preferred: 'higher' },
+    { ratioKey: 'roeProxy', median: 0.24, pct25: 0.18, pct75: 0.32, preferred: 'higher' },
+    { ratioKey: 'roaProxy', median: 0.11, pct25: 0.08, pct75: 0.15, preferred: 'higher' }
+  ],
+  KR_RETAIL: [
+    { ratioKey: 'leverage', median: 4.8, pct25: 5.8, pct75: 4.0, preferred: 'lower' },
+    { ratioKey: 'netLeverage', median: 4.5, pct25: 5.4, pct75: 3.7, preferred: 'lower' },
+    { ratioKey: 'interestCoverage', median: 1.9, pct25: 1.4, pct75: 2.5, preferred: 'higher' },
+    { ratioKey: 'debtToEquity', median: 1.8, pct25: 2.3, pct75: 1.4, preferred: 'lower' },
+    { ratioKey: 'cashToDebt', median: 0.06, pct25: 0.03, pct75: 0.12, preferred: 'higher' },
+    { ratioKey: 'ebitdaMargin', median: 42, pct25: 35, pct75: 48, preferred: 'higher' },
+    { ratioKey: 'roeProxy', median: 0.16, pct25: 0.11, pct75: 0.22, preferred: 'higher' },
+    { ratioKey: 'roaProxy', median: 0.07, pct25: 0.04, pct75: 0.10, preferred: 'higher' }
   ]
 };
 
 const SECTOR_LABEL: Record<string, string> = {
   KR_DATA_CENTER: 'KR data-center sponsor peer set',
-  KR_OFFICE: 'KR office sponsor peer set'
+  KR_OFFICE: 'KR office sponsor peer set',
+  KR_INDUSTRIAL: 'KR industrial / logistics sponsor peer set',
+  KR_RETAIL: 'KR retail sponsor peer set'
 };
 
 const SOURCE_CAVEAT =
@@ -115,5 +142,7 @@ export function pickSectorKey(
     // KR analog as a directional reference.
   }
   if (assetClass === 'OFFICE') return 'KR_OFFICE';
+  if (assetClass === 'INDUSTRIAL') return 'KR_INDUSTRIAL';
+  if (assetClass === 'RETAIL') return 'KR_RETAIL';
   return 'KR_DATA_CENTER';
 }

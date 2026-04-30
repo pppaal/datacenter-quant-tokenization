@@ -40,9 +40,11 @@ import {
   DEFAULT_CASH_FLOW_ASSUMPTIONS,
   projectCfadsDscr
 } from '@/lib/services/im/cash-flow';
+import { buildAuditTrail } from '@/lib/services/im/audit-trail';
 import { buildCounterpartyRollup } from '@/lib/services/im/counterparty-rollup';
 import { buildCovenantHeadroom } from '@/lib/services/im/covenant';
-import { buildEsgSummary } from '@/lib/services/im/esg';
+import { buildEmissionsBreakdown, buildEsgSummary } from '@/lib/services/im/esg';
+import { buildInsuranceSummary } from '@/lib/services/im/insurance';
 import { buildFxExposure } from '@/lib/services/im/fx-exposure';
 import { buildLiquidityLadder } from '@/lib/services/im/liquidity';
 import { buildPeerComparison, pickSectorKey } from '@/lib/services/im/peer-benchmarks';
@@ -245,6 +247,25 @@ export default async function SampleReportPage({
     lpBaseCurrency: displayCurrency === 'KRW' ? 'USD' : displayCurrency
   });
 
+  // Tier 4 derivations:
+  // - Scope 1/2/3 emissions estimate from existing power + capex
+  // - Insurance summary from policy register
+  // - Audit trail from AuditEvent table
+  const emissionsBreakdown = buildEmissionsBreakdown({
+    powerCapacityMw: asset.powerCapacityMw ?? null,
+    pueTarget: asset.energySnapshot?.pueTarget ?? null,
+    renewableSharePct: asset.energySnapshot?.renewableAvailabilityPct ?? null,
+    backupFuelHours: asset.energySnapshot?.backupFuelHours ?? null,
+    totalCapexKrw: investmentBasisKrw,
+    holdYears: proForma?.years.length ?? 10
+  });
+  const insuranceSummary = buildInsuranceSummary(asset.insurancePolicies ?? []);
+  const auditTrail = await buildAuditTrail(prisma, {
+    assetId: asset.id,
+    additionalEntityIds: [latestRun.id, ...asset.counterparties.map((c) => c.id)],
+    limit: 12
+  });
+
   // Submarket comps. Asset-attached comps live on the bundle; we
   // also pull market-wide comps (assetId NULL) for the same market
   // so the IM has CBRE-style submarket evidence even when the asset
@@ -294,6 +315,7 @@ export default async function SampleReportPage({
     { id: 'im-underwriting', label: 'Underwriting assumptions', show: true },
     { id: 'im-hazard', label: 'Site hazard', show: !!asset.siteProfile },
     { id: 'im-esg', label: 'ESG & sustainability', show: !!esgSummary },
+    { id: 'im-insurance', label: 'Insurance', show: !!insuranceSummary },
     { id: 'im-tax-walk', label: 'Tax leakage', show: taxWalk.rows.length > 0 },
     { id: 'im-fx', label: 'FX exposure', show: !!fxExposure },
     {
@@ -355,6 +377,7 @@ export default async function SampleReportPage({
       show: (asset.featureSnapshots?.length ?? 0) > 0
     },
     { id: 'im-tokenization', label: 'Tokenization', show: !!asset.tokenization },
+    { id: 'im-audit', label: 'Audit trail', show: auditTrail.events.length > 0 },
     { id: 'im-memo', label: 'Investment memo', show: true }
   ];
   const visibleTocItems = tocItems.filter((t) => t.show).map(({ id, label }) => ({ id, label }));
@@ -1289,6 +1312,186 @@ export default async function SampleReportPage({
                   </div>
                 );
               })}
+            </div>
+
+            {emissionsBreakdown.totalAnnualtCO2e !== null ? (
+              <div className="mt-5 rounded-[14px] border border-white/10 bg-white/[0.02] p-4">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <div className="fine-print">Scope 1 / 2 / 3 emissions estimate</div>
+                  <div className="text-[10px] text-slate-500">
+                    Total ≈{' '}
+                    <span className="font-mono text-slate-300">
+                      {emissionsBreakdown.totalAnnualtCO2e.toLocaleString(undefined, {
+                        maximumFractionDigits: 0
+                      })}{' '}
+                      tCO2e/yr
+                    </span>
+                    {emissionsBreakdown.carbonIntensitykgPerKwh !== null
+                      ? ` · grid intensity ${emissionsBreakdown.carbonIntensitykgPerKwh.toFixed(3)} kgCO2e/kWh`
+                      : ''}
+                  </div>
+                </div>
+                <div className="mt-3 grid gap-3 md:grid-cols-3">
+                  {[
+                    {
+                      label: 'Scope 1 — direct',
+                      value: emissionsBreakdown.scope1tCO2e,
+                      sub: 'Backup generator combustion'
+                    },
+                    {
+                      label: 'Scope 2 — purchased power',
+                      value: emissionsBreakdown.scope2tCO2e,
+                      sub: 'Grid kWh × KR factor × (1 − renewable)'
+                    },
+                    {
+                      label: 'Scope 3 — embodied (amortized)',
+                      value: emissionsBreakdown.scope3tCO2e,
+                      sub: 'Construction carbon over hold'
+                    }
+                  ].map((s) => (
+                    <div
+                      key={s.label}
+                      className="rounded-[12px] border border-white/5 bg-white/[0.02] px-3 py-2"
+                    >
+                      <div className="text-[10px] uppercase tracking-wide text-slate-500">
+                        {s.label}
+                      </div>
+                      <div className="mt-1 font-mono text-sm font-semibold text-white">
+                        {s.value !== null
+                          ? `${s.value.toLocaleString(undefined, { maximumFractionDigits: 0 })} tCO2e/yr`
+                          : '—'}
+                      </div>
+                      <div className="mt-1 text-[10px] text-slate-500">{s.sub}</div>
+                    </div>
+                  ))}
+                </div>
+                <ul className="mt-3 space-y-1 text-[10px] text-slate-500">
+                  {emissionsBreakdown.notes.map((n) => (
+                    <li key={n}>· {n}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </Card>
+        </section>
+      ) : null}
+
+      {insuranceSummary ? (
+        <section id="im-insurance" className="app-shell py-4">
+          <Card>
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <div className="eyebrow">Insurance register</div>
+                <p className="mt-2 max-w-3xl text-sm text-slate-400">
+                  Active policies covering property, business interruption, liability,
+                  construction, and cyber. Renewals expiring within 90 days are flagged for
+                  pre-IC review; coverage limits anchor the LP-side underwriting of catastrophic
+                  loss exposure.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                {insuranceSummary.expiringSoonCount > 0 ? (
+                  <Badge tone="warn">
+                    {insuranceSummary.expiringSoonCount} expiring &lt; 90d
+                  </Badge>
+                ) : null}
+                <Badge>
+                  {insuranceSummary.policies.length} polic
+                  {insuranceSummary.policies.length === 1 ? 'y' : 'ies'}
+                </Badge>
+              </div>
+            </div>
+            <div className="mt-5 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+              {insuranceSummary.tilesByType.map((tile) => {
+                const tone =
+                  tile.status === 'EXPIRING'
+                    ? 'border-amber-300/30 bg-amber-300/[0.04]'
+                    : tile.status === 'EXPIRED'
+                      ? 'border-rose-300/30 bg-rose-300/[0.04]'
+                      : 'border-white/10 bg-white/[0.02]';
+                const dot =
+                  tile.status === 'EXPIRING'
+                    ? 'bg-amber-300'
+                    : tile.status === 'EXPIRED'
+                      ? 'bg-rose-300'
+                      : 'bg-emerald-300';
+                return (
+                  <div
+                    key={`${tile.policyType}-${tile.insurer ?? ''}-${tile.expiresOn ?? ''}`}
+                    className={`rounded-[16px] border ${tone} p-3`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="text-[11px] uppercase tracking-wide text-slate-500">
+                        {tile.label}
+                      </div>
+                      <span className="flex items-center gap-1.5 text-[10px] text-slate-400">
+                        <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />
+                        {tile.status}
+                      </span>
+                    </div>
+                    <div className="mt-2 font-mono text-sm font-semibold text-white">
+                      {tile.coverageKrw !== null
+                        ? formatCurrencyFromKrwAtRate(
+                            tile.coverageKrw,
+                            displayCurrency,
+                            fxRateToKrw
+                          )
+                        : '—'}
+                    </div>
+                    <div className="mt-1 text-[10px] text-slate-500">
+                      {tile.insurer ?? '—'}
+                      {tile.premiumKrw !== null
+                        ? ` · premium ${formatCurrencyFromKrwAtRate(tile.premiumKrw, displayCurrency, fxRateToKrw)}`
+                        : ''}
+                    </div>
+                    {tile.expiresOn ? (
+                      <div className="mt-1 text-[10px] text-slate-500">
+                        Expires {formatDate(tile.expiresOn)}
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+            <div className="mt-4 grid gap-3 text-[11px] md:grid-cols-3">
+              <div className="rounded-[12px] border border-white/5 bg-white/[0.015] px-3 py-2">
+                <div className="text-[10px] uppercase tracking-wide text-slate-500">
+                  Total coverage
+                </div>
+                <div className="mt-1 font-mono text-sm text-white">
+                  {formatCurrencyFromKrwAtRate(
+                    insuranceSummary.totalCoverageKrw,
+                    displayCurrency,
+                    fxRateToKrw
+                  )}
+                </div>
+              </div>
+              <div className="rounded-[12px] border border-white/5 bg-white/[0.015] px-3 py-2">
+                <div className="text-[10px] uppercase tracking-wide text-slate-500">
+                  Total annual premium
+                </div>
+                <div className="mt-1 font-mono text-sm text-white">
+                  {formatCurrencyFromKrwAtRate(
+                    insuranceSummary.totalPremiumKrw,
+                    displayCurrency,
+                    fxRateToKrw
+                  )}
+                </div>
+              </div>
+              <div className="rounded-[12px] border border-white/5 bg-white/[0.015] px-3 py-2">
+                <div className="text-[10px] uppercase tracking-wide text-slate-500">
+                  Avg deductible
+                </div>
+                <div className="mt-1 font-mono text-sm text-white">
+                  {insuranceSummary.averageDeductibleKrw !== null
+                    ? formatCurrencyFromKrwAtRate(
+                        insuranceSummary.averageDeductibleKrw,
+                        displayCurrency,
+                        fxRateToKrw
+                      )
+                    : '—'}
+                </div>
+              </div>
             </div>
           </Card>
         </section>
@@ -2932,6 +3135,112 @@ export default async function SampleReportPage({
                       ) : null}
                     </div>
 
+                    {/* Multi-year YoY trend (top three periods on file) */}
+                    {(cp.financialStatements?.length ?? 0) >= 2 ? (
+                      <div className="mt-5 rounded-[14px] border border-white/10 bg-white/[0.02] p-4">
+                        <div className="fine-print">Multi-year trend</div>
+                        <div className="mt-3 overflow-x-auto rounded-[12px] border border-white/10">
+                          <table className="w-full text-xs">
+                            <thead>
+                              <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+                                <th className="px-2 py-2 font-semibold">Period</th>
+                                <th className="px-2 py-2 text-right font-semibold">Revenue</th>
+                                <th className="px-2 py-2 text-right font-semibold">EBITDA</th>
+                                <th className="px-2 py-2 text-right font-semibold">EBITDA margin</th>
+                                <th className="px-2 py-2 text-right font-semibold">Total debt</th>
+                                <th className="px-2 py-2 text-right font-semibold">Equity</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-white/5 text-slate-200">
+                              {cp.financialStatements!.slice(0, 5).map((row, idx, arr) => {
+                                const next = arr[idx + 1] ?? null;
+                                const num = (
+                                  d: { toNumber: () => number } | null | undefined
+                                ) => (d ? d.toNumber() : null);
+                                const rev = num(row.revenueKrw);
+                                const ebd = num(row.ebitdaKrw);
+                                const debt = num(row.totalDebtKrw);
+                                const eq = num(row.totalEquityKrw);
+                                const margin = rev && ebd ? (ebd / rev) * 100 : null;
+                                const yoyRev =
+                                  next && rev !== null && num(next.revenueKrw)
+                                    ? ((rev - num(next.revenueKrw)!) /
+                                        num(next.revenueKrw)!) *
+                                      100
+                                    : null;
+                                const yoyEbd =
+                                  next && ebd !== null && num(next.ebitdaKrw)
+                                    ? ((ebd - num(next.ebitdaKrw)!) /
+                                        num(next.ebitdaKrw)!) *
+                                      100
+                                    : null;
+                                const arrow = (delta: number | null) => {
+                                  if (delta === null) return null;
+                                  const tone =
+                                    delta > 0 ? 'text-emerald-300' : 'text-rose-300';
+                                  const sign = delta > 0 ? '▲' : '▼';
+                                  return (
+                                    <div className={`text-[9px] ${tone}`}>
+                                      {sign} {Math.abs(delta).toFixed(1)}% YoY
+                                    </div>
+                                  );
+                                };
+                                return (
+                                  <tr key={`${row.fiscalYear ?? idx}`}>
+                                    <td className="px-2 py-2 font-mono text-slate-400">
+                                      {row.fiscalPeriod ?? 'FY'}{' '}
+                                      {row.fiscalYear ?? ''}
+                                    </td>
+                                    <td className="px-2 py-2 text-right font-mono">
+                                      {rev !== null
+                                        ? formatCurrencyFromKrwAtRate(
+                                            rev,
+                                            displayCurrency,
+                                            fxRateToKrw
+                                          )
+                                        : '—'}
+                                      {arrow(yoyRev)}
+                                    </td>
+                                    <td className="px-2 py-2 text-right font-mono">
+                                      {ebd !== null
+                                        ? formatCurrencyFromKrwAtRate(
+                                            ebd,
+                                            displayCurrency,
+                                            fxRateToKrw
+                                          )
+                                        : '—'}
+                                      {arrow(yoyEbd)}
+                                    </td>
+                                    <td className="px-2 py-2 text-right font-mono text-slate-400">
+                                      {margin !== null ? `${margin.toFixed(1)}%` : '—'}
+                                    </td>
+                                    <td className="px-2 py-2 text-right font-mono text-slate-400">
+                                      {debt !== null
+                                        ? formatCurrencyFromKrwAtRate(
+                                            debt,
+                                            displayCurrency,
+                                            fxRateToKrw
+                                          )
+                                        : '—'}
+                                    </td>
+                                    <td className="px-2 py-2 text-right font-mono text-slate-400">
+                                      {eq !== null
+                                        ? formatCurrencyFromKrwAtRate(
+                                            eq,
+                                            displayCurrency,
+                                            fxRateToKrw
+                                          )
+                                        : '—'}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    ) : null}
+
                     {/* Income statement + Balance sheet side-by-side */}
                     <div className="mt-5 grid gap-4 lg:grid-cols-2">
                       <div className="rounded-[14px] border border-white/10 bg-white/[0.02] p-4">
@@ -3830,6 +4139,79 @@ export default async function SampleReportPage({
                 <span className="font-mono">{asset.tokenization.deploymentBlock}</span>
               </Row>
             </dl>
+          </Card>
+        </section>
+      ) : null}
+
+      {auditTrail.events.length > 0 ? (
+        <section id="im-audit" className="app-shell py-4">
+          <Card>
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <div className="eyebrow">Audit trail</div>
+                <p className="mt-2 max-w-3xl text-sm text-slate-400">
+                  Recent system events on the asset, valuation run, and counterparties.
+                  Establishes who touched the underwriting most recently — required for
+                  committee review of data lineage and for SOC-2 / fund-administrator review.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge>{auditTrail.totalCount} events total</Badge>
+                {auditTrail.failureCount > 0 ? (
+                  <Badge tone="warn">{auditTrail.failureCount} non-success</Badge>
+                ) : null}
+              </div>
+            </div>
+            <div className="mt-3 text-[11px] text-slate-500">
+              Last event:{' '}
+              {auditTrail.lastEventAt ? formatDate(auditTrail.lastEventAt) : '—'} ·
+              Distinct actors:{' '}
+              <span className="font-mono text-slate-300">
+                {auditTrail.uniqueActors.join(', ')}
+              </span>
+            </div>
+            <div className="mt-4 overflow-x-auto rounded-[14px] border border-white/10">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+                    <th className="px-2 py-2 font-semibold">When</th>
+                    <th className="px-2 py-2 font-semibold">Actor</th>
+                    <th className="px-2 py-2 font-semibold">Action</th>
+                    <th className="px-2 py-2 font-semibold">Entity</th>
+                    <th className="px-2 py-2 text-right font-semibold">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5 text-slate-200">
+                  {auditTrail.events.map((e) => {
+                    const ok = /SUCCESS|OK/i.test(e.statusLabel);
+                    return (
+                      <tr key={e.id}>
+                        <td className="px-2 py-2 font-mono text-[10px] text-slate-400">
+                          {formatDate(e.createdAt)}
+                        </td>
+                        <td className="px-2 py-2">
+                          <div className="text-white">{e.actorIdentifier}</div>
+                          <div className="text-[10px] text-slate-500">{e.actorRole}</div>
+                        </td>
+                        <td className="px-2 py-2 font-mono text-[11px] text-slate-300">
+                          {e.action}
+                        </td>
+                        <td className="px-2 py-2 text-[11px] text-slate-400">
+                          {e.entityType}
+                        </td>
+                        <td
+                          className={`px-2 py-2 text-right font-mono text-[10px] ${
+                            ok ? 'text-emerald-300' : 'text-rose-300'
+                          }`}
+                        >
+                          {e.statusLabel}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </Card>
         </section>
       ) : null}

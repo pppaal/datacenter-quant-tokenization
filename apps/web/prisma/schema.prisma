@@ -530,6 +530,7 @@ model Asset {
   committeePackets      InvestmentCommitteePacket[]
   tokenization          TokenizedAsset?
   media                 AssetMedia[]
+  insurancePolicies     InsurancePolicy[]
 }
 
 model Address {
@@ -2347,6 +2348,33 @@ model AssetMedia {
   updatedAt   DateTime @updatedAt
 
   @@index([assetId, sortOrder])
+}
+
+// Insurance policy register. Real REPE IMs carry an insurance
+// summary covering property / business interruption / liability /
+// builder's risk / cyber where applicable. policyType + status
+// kept as TEXT so the taxonomy expands without a schema migration.
+// Premiums and coverage held in KRW with a flag for non-KRW
+// carriers via `currency`. See 20260430090000_add_insurance_policy.
+model InsurancePolicy {
+  id              String   @id @default(cuid())
+  assetId         String
+  asset           Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  policyType      String   // PROPERTY / BI / LIABILITY / CYBER / CONSTRUCTION / D&O
+  insurer         String
+  brokerName      String?
+  coverageKrw     Float?   // limit
+  deductibleKrw   Float?
+  premiumKrw      Float?
+  currency        String   @default("KRW")
+  effectiveFrom   DateTime?
+  expiresOn       DateTime?
+  status          String   @default("ACTIVE") // ACTIVE / EXPIRED / PENDING_RENEWAL
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([assetId, policyType, status])
 }
 
 // Proprietary deal flow log. The Deal table tracks our own pipeline;
