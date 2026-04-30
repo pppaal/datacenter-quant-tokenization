@@ -366,3 +366,22 @@ a {
     display: none !important;
   }
 }
+
+/* Hash deep links: when the URL points at #im-X, the browser would
+   scroll to the top of the section behind the sticky TOC. Adding
+   scroll-margin-top compensates so the eyebrow lands below the nav.
+   Smooth scroll for in-page anchor jumps. */
+html {
+  scroll-behavior: smooth;
+}
+section[id^='im-'] {
+  scroll-margin-top: 1.5rem;
+}
+
+/* Print mode: when ?print=1 is set, the page renders without the
+   sticky TOC and triggers window.print() on load. The :root.im-print
+   class is added by the ImPrintMode client component. */
+:root.im-print nav[aria-label="IM table of contents"],
+:root.im-print [data-im-print-hidden] {
+  display: none !important;
+}

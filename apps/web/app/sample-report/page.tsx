@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { AssetClass } from '@prisma/client';
 import { formatCurrencyFromKrwAtRate, resolveDisplayCurrency } from '@/lib/finance/currency';
+import { ImPrintMode } from '@/components/marketing/im-print-mode';
 import { ImToc } from '@/components/marketing/im-toc';
 import { PrintImButton } from '@/components/marketing/print-im-button';
 import { SiteNav } from '@/components/marketing/site-nav';
@@ -13,6 +14,7 @@ import { ValuationBreakdown } from '@/components/valuation/valuation-breakdown';
 import { ValuationProvenance } from '@/components/valuation/valuation-provenance';
 import { ValuationSignals } from '@/components/valuation/valuation-signals';
 import { prisma } from '@/lib/db/prisma';
+import { getAssetBySlug } from '@/lib/services/assets';
 import { getSampleReport } from '@/lib/services/dashboard';
 import { getFxRateMap } from '@/lib/services/fx';
 import {
@@ -26,6 +28,7 @@ import {
 import { getSponsorTrackByName } from '@/lib/services/im/sponsor';
 import { readCapexBreakdown, readUnderwritingAssumptions } from '@/lib/services/im/assumptions';
 import { buildConfidenceBreakdown } from '@/lib/services/im/confidence';
+import { classifyFreshness } from '@/lib/services/im/freshness';
 import { describeHazard } from '@/lib/services/im/hazard';
 import { readMacroGuidance } from '@/lib/services/im/macro-guidance';
 import { buildScenarioDiff } from '@/lib/services/im/scenario-diff';
@@ -93,12 +96,32 @@ const glossary = [
   }
 ];
 
-export default async function SampleReportPage() {
+export default async function SampleReportPage({
+  searchParams
+}: {
+  searchParams?: Promise<{ compare?: string }>;
+}) {
   const asset = await getSampleReport();
   if (!asset) notFound();
 
   const latestRun = asset.valuations[0];
   if (!latestRun) notFound();
+
+  // Optional compare asset: ?compare=<slug> renders a side-by-side
+  // strip below the cover with the other asset's headline KPIs.
+  const compareSlug = (await searchParams)?.compare?.trim();
+  const compareAsset =
+    compareSlug && compareSlug !== asset.slug ? await getAssetBySlug(compareSlug) : null;
+  const compareLatestRun = compareAsset?.valuations[0] ?? null;
+  const compareProForma = compareLatestRun
+    ? readStoredBaseCaseProForma(compareLatestRun.assumptions)
+    : null;
+  const compareReturnsSnapshot = compareLatestRun
+    ? computeReturnsSnapshot(compareLatestRun.scenarios ?? [])
+    : null;
+  const compareLeaseRoll = compareAsset
+    ? computeLeaseRollSummary(compareAsset.leases ?? [])
+    : null;
 
   const scenarios = latestRun.scenarios ?? [];
   const provenance = Array.isArray(latestRun.provenance)
@@ -279,7 +302,8 @@ export default async function SampleReportPage() {
 
   return (
     <main className="pb-24">
-      <div className="print-hidden">
+      <ImPrintMode />
+      <div className="print-hidden" data-im-print-hidden>
         <SiteNav />
       </div>
 
@@ -347,6 +371,178 @@ export default async function SampleReportPage() {
                   </p>
                 </div>
               </div>
+
+              {/* Dense KPI strip — the "above-the-fold" numbers an LP
+                  scans before reading the memo. Each cell links to the
+                  card that explains it. */}
+              <div className="grid gap-px overflow-hidden rounded-[18px] border border-white/10 bg-white/10 sm:grid-cols-3 lg:grid-cols-6">
+                {[
+                  {
+                    label: 'Equity IRR',
+                    value:
+                      proForma?.summary.equityIrr !== undefined &&
+                      proForma?.summary.equityIrr !== null
+                        ? formatPercent(proForma.summary.equityIrr)
+                        : '—',
+                    href: '#im-sources-uses'
+                  },
+                  {
+                    label: 'Multiple',
+                    value:
+                      proForma?.summary.equityMultiple && proForma.summary.equityMultiple > 0
+                        ? `${proForma.summary.equityMultiple.toFixed(2)}x`
+                        : '—',
+                    href: '#im-sources-uses'
+                  },
+                  {
+                    label: 'Going-in yield',
+                    value:
+                      returnsSnapshot.goingInYieldPct !== null
+                        ? formatPercent(returnsSnapshot.goingInYieldPct)
+                        : '—',
+                    href: '#im-returns'
+                  },
+                  {
+                    label: 'Exit cap',
+                    value:
+                      returnsSnapshot.exitCapPct !== null
+                        ? formatPercent(returnsSnapshot.exitCapPct)
+                        : '—',
+                    href: '#im-returns'
+                  },
+                  {
+                    label: 'Min DSCR',
+                    value:
+                      returnsSnapshot.minDscr !== null
+                        ? `${returnsSnapshot.minDscr.toFixed(2)}x`
+                        : '—',
+                    href: '#im-returns'
+                  },
+                  {
+                    label: 'WALT',
+                    value:
+                      leaseRoll.weightedAvgTermYears > 0
+                        ? `${leaseRoll.weightedAvgTermYears.toFixed(1)}y`
+                        : '—',
+                    href: '#im-returns'
+                  }
+                ].map((kpi) => (
+                  <a
+                    key={kpi.label}
+                    href={kpi.href}
+                    className="group bg-slate-950/80 px-3 py-2.5 transition hover:bg-slate-900"
+                  >
+                    <div className="text-[10px] uppercase tracking-wide text-slate-500">
+                      {kpi.label}
+                    </div>
+                    <div className="mt-1 font-mono text-sm font-semibold text-white">
+                      {kpi.value}
+                    </div>
+                  </a>
+                ))}
+              </div>
+
+              {compareAsset && compareLatestRun ? (
+                <div className="mt-5 rounded-[18px] border border-white/15 bg-white/[0.02] p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="text-[11px] uppercase tracking-wide text-slate-400">
+                      Compare vs.{' '}
+                      <span className="font-mono text-slate-200">{compareAsset.assetCode}</span>
+                      {' — '}
+                      <span className="text-slate-300">{compareAsset.name}</span>
+                    </div>
+                    <a
+                      href={`/sample-report`}
+                      className="text-[10px] text-slate-500 hover:text-slate-300"
+                    >
+                      clear ✕
+                    </a>
+                  </div>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
+                    {[
+                      {
+                        label: 'Equity IRR',
+                        thisVal: proForma?.summary.equityIrr ?? null,
+                        otherVal: compareProForma?.summary.equityIrr ?? null,
+                        fmt: (v: number) => formatPercent(v)
+                      },
+                      {
+                        label: 'Multiple',
+                        thisVal: proForma?.summary.equityMultiple ?? null,
+                        otherVal: compareProForma?.summary.equityMultiple ?? null,
+                        fmt: (v: number) => `${v.toFixed(2)}x`
+                      },
+                      {
+                        label: 'Going-in yield',
+                        thisVal: returnsSnapshot.goingInYieldPct,
+                        otherVal: compareReturnsSnapshot?.goingInYieldPct ?? null,
+                        fmt: (v: number) => formatPercent(v)
+                      },
+                      {
+                        label: 'Exit cap',
+                        thisVal: returnsSnapshot.exitCapPct,
+                        otherVal: compareReturnsSnapshot?.exitCapPct ?? null,
+                        fmt: (v: number) => formatPercent(v)
+                      },
+                      {
+                        label: 'Min DSCR',
+                        thisVal: returnsSnapshot.minDscr,
+                        otherVal: compareReturnsSnapshot?.minDscr ?? null,
+                        fmt: (v: number) => `${v.toFixed(2)}x`
+                      },
+                      {
+                        label: 'WALT',
+                        thisVal:
+                          leaseRoll.weightedAvgTermYears > 0
+                            ? leaseRoll.weightedAvgTermYears
+                            : null,
+                        otherVal:
+                          (compareLeaseRoll?.weightedAvgTermYears ?? 0) > 0
+                            ? compareLeaseRoll!.weightedAvgTermYears
+                            : null,
+                        fmt: (v: number) => `${v.toFixed(1)}y`
+                      }
+                    ].map((kpi) => {
+                      const delta =
+                        kpi.thisVal !== null && kpi.otherVal !== null
+                          ? kpi.thisVal - kpi.otherVal
+                          : null;
+                      return (
+                        <div
+                          key={kpi.label}
+                          className="rounded-[14px] border border-white/5 bg-white/[0.015] px-3 py-2"
+                        >
+                          <div className="text-[10px] uppercase tracking-wide text-slate-500">
+                            {kpi.label}
+                          </div>
+                          <div className="mt-1 flex items-baseline justify-between gap-2 font-mono text-xs">
+                            <span className="font-semibold text-white">
+                              {kpi.thisVal !== null ? kpi.fmt(kpi.thisVal) : '—'}
+                            </span>
+                            <span className="text-slate-500">
+                              {kpi.otherVal !== null ? kpi.fmt(kpi.otherVal) : '—'}
+                            </span>
+                          </div>
+                          {delta !== null ? (
+                            <div
+                              className={`mt-1 text-[10px] font-mono ${
+                                delta > 0
+                                  ? 'text-emerald-300'
+                                  : delta < 0
+                                    ? 'text-rose-300'
+                                    : 'text-slate-400'
+                              }`}
+                            >
+                              Δ {delta > 0 ? '+' : ''}
+                              {kpi.fmt(delta).replace(/[+\-]/g, (s) => s)}
+                            </div>
+                          ) : null}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
             </div>
 
             <Card className="grid gap-4">
@@ -916,9 +1112,10 @@ export default async function SampleReportPage() {
                   insurance pricing and reserve requirements should track these too.
                 </p>
               </div>
-              <Badge>
-                {asset.siteProfile.sourceStatus}
-              </Badge>
+              <div className="flex items-center gap-3">
+                <FreshnessDot observedAt={asset.siteProfile.sourceUpdatedAt} />
+                <Badge>{asset.siteProfile.sourceStatus}</Badge>
+              </div>
             </div>
             <div className="mt-5 grid gap-4 md:grid-cols-3">
               {(
@@ -1664,9 +1861,12 @@ export default async function SampleReportPage() {
                     >
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <span className="font-semibold text-white">{s.title}</span>
-                        <span className="text-[10px] uppercase tracking-wide text-slate-500">
-                          {s.freshnessStatus ?? 'n/a'}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <FreshnessDot observedAt={s.snapshotDate} />
+                          <span className="text-[10px] uppercase tracking-wide text-slate-500">
+                            {s.freshnessStatus ?? 'n/a'}
+                          </span>
+                        </div>
                       </div>
                       <div className="mt-1 text-[11px] text-slate-500">
                         {formatDate(s.snapshotDate)} · {s.snapshotType}
@@ -2340,8 +2540,13 @@ export default async function SampleReportPage() {
                         {doc.documentType.replace(/_/g, ' ').toLowerCase()}
                       </td>
                       <td className="px-2 py-2 text-right font-mono">v{doc.currentVersion}</td>
-                      <td className="px-2 py-2 text-right font-mono text-slate-400">
-                        {formatDate(doc.updatedAt)}
+                      <td className="px-2 py-2 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <span className="font-mono text-slate-400">
+                            {formatDate(doc.updatedAt)}
+                          </span>
+                          <FreshnessDot observedAt={doc.updatedAt} />
+                        </div>
                       </td>
                       <td className="px-2 py-2 text-right text-[10px]">
                         {doc.sourceLink ? (
@@ -2396,7 +2601,10 @@ export default async function SampleReportPage() {
                   >
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
-                        <div className="font-semibold text-white">{p.title}</div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-white">{p.title}</span>
+                          <FreshnessDot observedAt={p.scheduledFor ?? p.updatedAt} />
+                        </div>
                         <div className="mt-1 text-[11px] text-slate-500">
                           <span className="font-mono">{p.packetCode}</span>
                           {p.scheduledFor ? ` · scheduled ${formatDate(p.scheduledFor)}` : ''}
@@ -2738,5 +2946,37 @@ function ProvenancePill({
       <span className="uppercase tracking-wide text-slate-500">Source</span>
       <span className="font-mono text-slate-300">{text}</span>
     </div>
+  );
+}
+
+function FreshnessDot({
+  observedAt,
+  label
+}: {
+  observedAt: Date | string | null | undefined;
+  label?: string;
+}) {
+  const f = classifyFreshness(observedAt);
+  if (!f.band) return null;
+  const dotTone =
+    f.band === 'fresh'
+      ? 'bg-emerald-300'
+      : f.band === 'recent'
+        ? 'bg-amber-300'
+        : 'bg-rose-300';
+  const textTone =
+    f.band === 'fresh'
+      ? 'text-emerald-300'
+      : f.band === 'recent'
+        ? 'text-amber-300'
+        : 'text-rose-300';
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 text-[10px]"
+      title={`Observed ${f.label}`}
+    >
+      <span className={`inline-block h-1.5 w-1.5 rounded-full ${dotTone}`} />
+      <span className={textTone}>{label ?? f.label}</span>
+    </span>
   );
 }
