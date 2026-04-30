@@ -134,7 +134,7 @@ test('buildTaxWalk builds 6 lines and sums total cash outflow', () => {
   // 6 categories that have data
   assert.equal(w.rows.length, 6);
   assert.ok(w.totalCashOutflowKrw > 0);
-  assert.ok(w.effectiveTaxRatePct! > 0);
+  assert.ok(w.effectiveDragOnGrossPct! > 0);
   // Acquisition tax: 100B × 4.6% = 4.6B
   const acq = w.rows.find((r) => r.category === 'acquisition');
   assert.equal(acq?.totalCashOutflowKrw, 4_600_000_000);

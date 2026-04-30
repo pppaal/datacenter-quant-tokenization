@@ -17,6 +17,11 @@ type TaxAssumptionLike = {
   insurancePct?: number | null;
 };
 
+export type InvestmentBasisSource =
+  | 'purchase_price'
+  | 'capex_total'
+  | 'unknown';
+
 export type TaxWalkRow = {
   category:
     | 'acquisition'
@@ -38,8 +43,20 @@ export type TaxWalkRow = {
 export type TaxWalkSummary = {
   rows: TaxWalkRow[];
   totalCashOutflowKrw: number;
-  /** Total tax as a fraction of (purchase + cumulative NOI + exit). */
-  effectiveTaxRatePct: number | null;
+  /**
+   * Total cash tax outflow as a fraction of pre-tax cumulative
+   * gross profit (cumulative NOI + exit gain). Captures the drag
+   * the LP actually feels on equity returns. null when inputs
+   * insufficient.
+   */
+  effectiveDragOnGrossPct: number | null;
+  /**
+   * Source of the investment basis used for transfer-tax bases.
+   * 'purchase_price' is the lender-grade value; 'capex_total' is
+   * a development-asset proxy (transfer tax base may differ).
+   */
+  basisSource: InvestmentBasisSource;
+  basisCaveat: string | null;
 };
 
 export function buildTaxWalk(
@@ -49,10 +66,17 @@ export function buildTaxWalk(
     cumulativeNoiKrw: number;
     exitValueKrw: number;
     holdYears: number;
+    basisSource?: InvestmentBasisSource;
   }
 ): TaxWalkSummary {
   if (!taxes || inputs.purchasePriceKrw <= 0) {
-    return { rows: [], totalCashOutflowKrw: 0, effectiveTaxRatePct: null };
+    return {
+      rows: [],
+      totalCashOutflowKrw: 0,
+      effectiveDragOnGrossPct: null,
+      basisSource: inputs.basisSource ?? 'unknown',
+      basisCaveat: null
+    };
   }
 
   const rows: TaxWalkRow[] = [];
@@ -64,7 +88,10 @@ export function buildTaxWalk(
       label: 'Acquisition transfer tax',
       ratePct: taxes.acquisitionTaxPct,
       baseKrw: inputs.purchasePriceKrw,
-      baseLabel: 'Purchase price',
+      baseLabel:
+        (inputs.basisSource ?? 'purchase_price') === 'capex_total'
+          ? 'Investment basis (capex)'
+          : 'Purchase price',
       totalCashOutflowKrw: cash,
       notes: 'One-time at close.'
     });
@@ -77,7 +104,10 @@ export function buildTaxWalk(
       label: `Property tax (${inputs.holdYears}y hold)`,
       ratePct: taxes.propertyTaxPct,
       baseKrw: inputs.purchasePriceKrw,
-      baseLabel: 'Purchase price × yrs',
+      baseLabel:
+        (inputs.basisSource ?? 'purchase_price') === 'capex_total'
+          ? 'Investment basis × yrs'
+          : 'Purchase price × yrs',
       totalCashOutflowKrw: cash,
       notes: `Annualized; ${taxes.propertyTaxPct.toFixed(2)}% × ${inputs.holdYears}y on basis.`
     });
@@ -90,7 +120,10 @@ export function buildTaxWalk(
       label: `Insurance premium (${inputs.holdYears}y hold)`,
       ratePct: taxes.insurancePct,
       baseKrw: inputs.purchasePriceKrw,
-      baseLabel: 'Purchase price × yrs',
+      baseLabel:
+        (inputs.basisSource ?? 'purchase_price') === 'capex_total'
+          ? 'Investment basis × yrs'
+          : 'Purchase price × yrs',
       totalCashOutflowKrw: cash,
       notes: 'Operating expense; not strictly tax but tracked alongside.'
     });
@@ -136,13 +169,24 @@ export function buildTaxWalk(
   }
 
   const total = rows.reduce((s, r) => s + r.totalCashOutflowKrw, 0);
-  const totalBase =
-    inputs.purchasePriceKrw + inputs.cumulativeNoiKrw + inputs.exitValueKrw;
-  const effectiveTaxRatePct = totalBase > 0 ? (total / totalBase) * 100 : null;
+  // Effective drag on pre-tax gross profit (NOI + exit gain over basis).
+  // This is what an LP feels on equity returns, not a flow+stock blend.
+  const grossProfitKrw =
+    inputs.cumulativeNoiKrw + Math.max(0, inputs.exitValueKrw - inputs.purchasePriceKrw);
+  const effectiveDragOnGrossPct =
+    grossProfitKrw > 0 ? (total / grossProfitKrw) * 100 : null;
+
+  const basisSource = inputs.basisSource ?? 'purchase_price';
+  const basisCaveat =
+    basisSource === 'capex_total'
+      ? 'Transfer-tax bases use the development all-in capex as a proxy when the share-purchase price is not yet committed; actual KR transfer tax is assessed on the executed share-purchase amount and may differ.'
+      : null;
 
   return {
     rows,
     totalCashOutflowKrw: total,
-    effectiveTaxRatePct
+    effectiveDragOnGrossPct,
+    basisSource,
+    basisCaveat
   };
 }

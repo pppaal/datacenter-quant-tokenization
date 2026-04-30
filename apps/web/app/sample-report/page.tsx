@@ -225,7 +225,13 @@ export default async function SampleReportPage({
   // - ESG summary from EnergySnapshot
   // - Tax leakage walk over hold
   // - FX exposure for foreign LPs
-  const counterpartyRollup = buildCounterpartyRollup(asset.counterparties ?? []);
+  // Split rollup by role — sponsor and tenant credits are different
+  // risk types (sponsor underwrites the deal, tenants pay rent), so an
+  // aggregate that mixes both is misleading. The IM renders two strips.
+  const sponsorCps = (asset.counterparties ?? []).filter((c) => c.role === 'SPONSOR');
+  const tenantCps = (asset.counterparties ?? []).filter((c) => c.role === 'TENANT');
+  const sponsorRollup = buildCounterpartyRollup(sponsorCps);
+  const tenantRollup = buildCounterpartyRollup(tenantCps);
   const esgSummary = buildEsgSummary(asset.energySnapshot ?? null);
   // Use the underwriting all-in basis (purchase + capex) as the
   // investment basis when purchasePriceKrw is not set on the asset
@@ -244,7 +250,9 @@ export default async function SampleReportPage({
       ? proForma.years.reduce((sum, y) => sum + y.noiKrw, 0)
       : 0,
     exitValueKrw: proForma?.summary.grossExitValueKrw ?? 0,
-    holdYears: proForma?.years.length ?? 10
+    holdYears: proForma?.years.length ?? 10,
+    basisSource:
+      (asset.purchasePriceKrw ?? 0) > 0 ? 'purchase_price' : 'capex_total'
   });
   const fxExposure = buildFxExposure(latestRun.baseCaseValueKrw, {
     assetCurrency: 'KRW',
@@ -1339,60 +1347,119 @@ export default async function SampleReportPage({
               })}
             </div>
 
-            {asset.carbonRecords && asset.carbonRecords.length > 0 ? (
-              <div className="mt-5 rounded-[14px] border border-white/10 bg-white/[0.02] p-4">
-                <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <div className="fine-print">Carbon emissions register (verified)</div>
-                  <Badge tone="good">
-                    {asset.carbonRecords.length} measurement
-                    {asset.carbonRecords.length === 1 ? '' : 's'}
-                  </Badge>
-                </div>
-                <div className="mt-3 overflow-x-auto rounded-[12px] border border-white/10">
-                  <table className="w-full text-xs">
-                    <thead>
-                      <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
-                        <th className="px-2 py-2 font-semibold">Scope</th>
-                        <th className="px-2 py-2 font-semibold">Category</th>
-                        <th className="px-2 py-2 text-right font-semibold">Vintage</th>
-                        <th className="px-2 py-2 text-right font-semibold">tCO2e</th>
-                        <th className="px-2 py-2 font-semibold">Methodology</th>
-                        <th className="px-2 py-2 font-semibold">Verifier</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/5 text-slate-200">
-                      {asset.carbonRecords.map((rec) => (
-                        <tr key={rec.id}>
-                          <td className="px-2 py-2 font-mono text-slate-300">
-                            Scope {rec.scope}
-                          </td>
-                          <td className="px-2 py-2 text-[11px] text-slate-300">
-                            {rec.category.replace(/_/g, ' ').toLowerCase()}
-                          </td>
-                          <td className="px-2 py-2 text-right font-mono text-slate-400">
-                            {rec.vintageYear}
-                          </td>
-                          <td className="px-2 py-2 text-right font-mono">
-                            {rec.tco2e.toLocaleString(undefined, {
+            {asset.carbonRecords && asset.carbonRecords.length > 0
+              ? (() => {
+                  // Pick a single primary line per (scope, category, vintage)
+                  // to avoid LBs and MBs being added together by readers.
+                  // Market-based wins where present (matches GHG Protocol
+                  // primary disclosure for purchased electricity).
+                  type R = (typeof asset.carbonRecords)[number];
+                  const buckets = new Map<string, R[]>();
+                  for (const r of asset.carbonRecords) {
+                    const k = `${r.scope}-${r.category}-${r.vintageYear}`;
+                    if (!buckets.has(k)) buckets.set(k, []);
+                    buckets.get(k)!.push(r);
+                  }
+                  const primary: R[] = [];
+                  const alternates: R[] = [];
+                  for (const arr of buckets.values()) {
+                    if (arr.length === 1) {
+                      primary.push(arr[0]!);
+                      continue;
+                    }
+                    const mb = arr.find((r) => r.methodology === 'GHG_PROTOCOL_MB');
+                    const lb = arr.find((r) => r.methodology === 'GHG_PROTOCOL_LB');
+                    if (mb) {
+                      primary.push(mb);
+                      for (const a of arr) if (a !== mb) alternates.push(a);
+                    } else if (lb) {
+                      primary.push(lb);
+                      for (const a of arr) if (a !== lb) alternates.push(a);
+                    } else {
+                      primary.push(arr[0]!);
+                      for (const a of arr.slice(1)) alternates.push(a);
+                    }
+                  }
+                  const totalPrimary = primary.reduce((s, r) => s + r.tco2e, 0);
+                  return (
+                    <div className="mt-5 rounded-[14px] border border-white/10 bg-white/[0.02] p-4">
+                      <div className="flex flex-wrap items-baseline justify-between gap-2">
+                        <div className="fine-print">Carbon emissions register (verified)</div>
+                        <div className="flex flex-wrap gap-2">
+                          <Badge tone="good">{primary.length} primary</Badge>
+                          <Badge>
+                            Total {totalPrimary.toLocaleString(undefined, {
                               maximumFractionDigits: 0
-                            })}
-                          </td>
-                          <td className="px-2 py-2 text-[10px] text-slate-400">
-                            {rec.methodology ?? '—'}
-                          </td>
-                          <td className="px-2 py-2 text-[10px] text-slate-400">
-                            {rec.verifiedBy ?? '—'}
-                            {rec.notes ? (
-                              <div className="text-[9px] text-slate-500">{rec.notes}</div>
-                            ) : null}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            ) : null}
+                            })} tCO2e
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="mt-3 overflow-x-auto rounded-[12px] border border-white/10">
+                        <table className="w-full text-xs">
+                          <thead>
+                            <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+                              <th className="px-2 py-2 font-semibold">Scope</th>
+                              <th className="px-2 py-2 font-semibold">Category</th>
+                              <th className="px-2 py-2 text-right font-semibold">Vintage</th>
+                              <th className="px-2 py-2 text-right font-semibold">tCO2e</th>
+                              <th className="px-2 py-2 font-semibold">Methodology</th>
+                              <th className="px-2 py-2 font-semibold">Verifier</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-white/5 text-slate-200">
+                            {primary.map((rec) => (
+                              <tr key={rec.id}>
+                                <td className="px-2 py-2 font-mono text-slate-300">
+                                  Scope {rec.scope}
+                                </td>
+                                <td className="px-2 py-2 text-[11px] text-slate-300">
+                                  {rec.category.replace(/_/g, ' ').toLowerCase()}
+                                </td>
+                                <td className="px-2 py-2 text-right font-mono text-slate-400">
+                                  {rec.vintageYear}
+                                </td>
+                                <td className="px-2 py-2 text-right font-mono">
+                                  {rec.tco2e.toLocaleString(undefined, {
+                                    maximumFractionDigits: 0
+                                  })}
+                                </td>
+                                <td className="px-2 py-2 text-[10px] text-slate-400">
+                                  {rec.methodology ?? '—'}
+                                </td>
+                                <td className="px-2 py-2 text-[10px] text-slate-400">
+                                  {rec.verifiedBy ?? '—'}
+                                  {rec.notes ? (
+                                    <div className="text-[9px] text-slate-500">{rec.notes}</div>
+                                  ) : null}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      {alternates.length > 0 ? (
+                        <p className="mt-3 text-[10px] leading-5 text-slate-500">
+                          <span className="font-semibold uppercase tracking-wide text-slate-400">
+                            Alternate methodologies on file:{' '}
+                          </span>
+                          {alternates
+                            .map(
+                              (a) =>
+                                `Scope ${a.scope} ${a.methodology ?? 'method n/a'} = ${a.tco2e.toLocaleString(
+                                  undefined,
+                                  { maximumFractionDigits: 0 }
+                                )} tCO2e`
+                            )
+                            .join(' · ')}
+                          . Per GHG Protocol Scope 2 dual-reporting, the market-based reading is
+                          shown as primary (reflects executed PPAs / I-REC retirements);
+                          location-based is the alternate. The figures should not be summed.
+                        </p>
+                      ) : null}
+                    </div>
+                  );
+                })()
+              : null}
 
             {emissionsBreakdown.totalAnnualtCO2e !== null ? (
               <div className="mt-5 rounded-[14px] border border-white/10 bg-white/[0.02] p-4">
@@ -1646,14 +1713,20 @@ export default async function SampleReportPage({
                       )}
                     </td>
                     <td className="px-2 py-2 text-[10px] text-slate-500">
-                      {taxWalk.effectiveTaxRatePct !== null
-                        ? `Effective ≈ ${taxWalk.effectiveTaxRatePct.toFixed(1)}% of (purchase + cumulative NOI + exit)`
+                      {taxWalk.effectiveDragOnGrossPct !== null
+                        ? `≈ ${taxWalk.effectiveDragOnGrossPct.toFixed(1)}% drag on pre-tax gross profit (cumulative NOI + exit gain)`
                         : ''}
                     </td>
                   </tr>
                 </tbody>
               </table>
             </div>
+            {taxWalk.basisCaveat ? (
+              <p className="mt-3 rounded-[12px] border border-amber-300/20 bg-amber-300/[0.04] px-3 py-2 text-[10px] leading-5 text-amber-200">
+                <span className="font-semibold uppercase tracking-wide text-amber-300">Basis caveat ·{' '}</span>
+                {taxWalk.basisCaveat}
+              </p>
+            ) : null}
           </Card>
         </section>
       ) : null}
@@ -2074,12 +2147,17 @@ export default async function SampleReportPage({
           <Card>
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
-                <div className="eyebrow">Capital call schedule</div>
+                <div className="flex items-center gap-2">
+                  <div className="eyebrow">Capital call schedule</div>
+                  <span className="rounded-[6px] border border-amber-300/30 bg-amber-300/[0.04] px-1.5 py-0.5 text-[9px] font-mono uppercase tracking-wide text-amber-200">
+                    INDICATIVE
+                  </span>
+                </div>
                 <p className="mt-2 max-w-3xl text-sm text-slate-400">
-                  Indicative LP capital-call sequence inferred from the year-by-year proforma
-                  outflows. Real fund vehicles publish a per-LP per-tranche schedule under the
-                  LPA; this view sizes the upfront, build-out, and reserve top-up calls so the
-                  LP can stage commitment cash.
+                  Default 60 / 30 / reserve top-up split applied as a placeholder. The actual
+                  schedule is set by the LPA and varies materially by fund-vehicle structure
+                  (closed-end vs evergreen), draw-down period, and per-LP commitment size.
+                  Treat this as cash-staging guidance, not a covenant.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -3070,63 +3148,93 @@ export default async function SampleReportPage({
               waterfall, liquidity ladder, and 4×4 sensitivity grid.
             </p>
 
-            {counterpartyRollup && counterpartyRollup.counterpartyCount > 1 ? (
-              <div className="mt-5 grid gap-3 rounded-[14px] border border-white/10 bg-white/[0.02] p-4 md:grid-cols-4">
-                <div>
-                  <div className="text-[10px] uppercase tracking-wide text-slate-500">
-                    Avg score · {counterpartyRollup.weightingBasis}-weighted
-                  </div>
-                  <div className="mt-1 font-mono text-sm font-semibold text-white">
-                    {counterpartyRollup.averageScore !== null
-                      ? counterpartyRollup.averageScore.toFixed(0)
-                      : '—'}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-[10px] uppercase tracking-wide text-slate-500">
-                    Wtd leverage
-                  </div>
-                  <div className="mt-1 font-mono text-sm font-semibold text-white">
-                    {counterpartyRollup.weightedLeverage !== null
-                      ? `${counterpartyRollup.weightedLeverage.toFixed(2)}x`
-                      : '—'}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-[10px] uppercase tracking-wide text-slate-500">
-                    Wtd interest coverage
-                  </div>
-                  <div className="mt-1 font-mono text-sm font-semibold text-white">
-                    {counterpartyRollup.weightedInterestCoverage !== null
-                      ? `${counterpartyRollup.weightedInterestCoverage.toFixed(2)}x`
-                      : '—'}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-[10px] uppercase tracking-wide text-slate-500">
-                    Risk mix
-                  </div>
-                  <div className="mt-1 font-mono text-[11px]">
-                    <span className="text-emerald-300">
-                      {counterpartyRollup.riskMix.LOW} LOW
-                    </span>
-                    {' · '}
-                    <span className="text-amber-300">
-                      {counterpartyRollup.riskMix.MODERATE} MOD
-                    </span>
-                    {' · '}
-                    <span className="text-rose-300">
-                      {counterpartyRollup.riskMix.HIGH} HIGH
-                    </span>
-                  </div>
-                  {counterpartyRollup.weakestCounterpartyName ? (
-                    <div className="mt-1 text-[10px] text-slate-500">
-                      Weakest: {counterpartyRollup.weakestCounterpartyName}
+            {(() => {
+              const strips: Array<{ label: string; rollup: typeof sponsorRollup }> = [];
+              if (sponsorRollup && sponsorRollup.counterpartyCount > 0) {
+                strips.push({
+                  label: `Sponsor rollup · ${sponsorRollup.counterpartyCount} CP`,
+                  rollup: sponsorRollup
+                });
+              }
+              if (tenantRollup && tenantRollup.counterpartyCount > 0) {
+                strips.push({
+                  label: `Tenant rollup · ${tenantRollup.counterpartyCount} CP`,
+                  rollup: tenantRollup
+                });
+              }
+              if (strips.length < 2 && (sponsorRollup?.counterpartyCount ?? 0) <= 1) {
+                return null;
+              }
+              return (
+                <div className="mt-5 space-y-3">
+                  {strips.map(({ label, rollup }) => (
+                    <div
+                      key={label}
+                      className="rounded-[14px] border border-white/10 bg-white/[0.02] p-4"
+                    >
+                      <div className="text-[10px] uppercase tracking-wide text-slate-400">
+                        {label} · {rollup!.weightingBasis}-weighted
+                      </div>
+                      <div className="mt-3 grid gap-3 md:grid-cols-4">
+                        <div>
+                          <div className="text-[10px] uppercase tracking-wide text-slate-500">
+                            Avg score
+                          </div>
+                          <div className="mt-1 font-mono text-sm font-semibold text-white">
+                            {rollup!.averageScore !== null
+                              ? rollup!.averageScore.toFixed(0)
+                              : '—'}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] uppercase tracking-wide text-slate-500">
+                            Wtd leverage
+                          </div>
+                          <div className="mt-1 font-mono text-sm font-semibold text-white">
+                            {rollup!.weightedLeverage !== null
+                              ? `${rollup!.weightedLeverage.toFixed(2)}x`
+                              : '—'}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] uppercase tracking-wide text-slate-500">
+                            Wtd interest coverage
+                          </div>
+                          <div className="mt-1 font-mono text-sm font-semibold text-white">
+                            {rollup!.weightedInterestCoverage !== null
+                              ? `${rollup!.weightedInterestCoverage.toFixed(2)}x`
+                              : '—'}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] uppercase tracking-wide text-slate-500">
+                            Risk mix
+                          </div>
+                          <div className="mt-1 font-mono text-[11px]">
+                            <span className="text-emerald-300">
+                              {rollup!.riskMix.LOW} LOW
+                            </span>
+                            {' · '}
+                            <span className="text-amber-300">
+                              {rollup!.riskMix.MODERATE} MOD
+                            </span>
+                            {' · '}
+                            <span className="text-rose-300">
+                              {rollup!.riskMix.HIGH} HIGH
+                            </span>
+                          </div>
+                          {rollup!.weakestCounterpartyName ? (
+                            <div className="mt-1 text-[10px] text-slate-500">
+                              Weakest: {rollup!.weakestCounterpartyName}
+                            </div>
+                          ) : null}
+                        </div>
+                      </div>
                     </div>
-                  ) : null}
+                  ))}
                 </div>
-              </div>
-            ) : null}
+              );
+            })()}
 
             <div className="mt-5 space-y-8">
               {asset.counterparties.map((cp) => {
@@ -3687,10 +3795,10 @@ export default async function SampleReportPage({
                     ) : null}
 
                     {/* Liquidity ladder */}
-                    {liquidity.rows.length > 0 ? (
+                    {liquidity.rows.length > 0 && cp.role === 'SPONSOR' ? (
                       <div className="mt-5 rounded-[14px] border border-white/10 bg-white/[0.02] p-4">
                         <div className="flex flex-wrap items-baseline justify-between gap-2">
-                          <div className="fine-print">Liquidity ladder — facility maturity vs liquid resources</div>
+                          <div className="fine-print">Liquidity ladder — asset facility vs sponsor liquid resources</div>
                           <div className="text-[10px] text-slate-500">
                             12mo coverage:{' '}
                             <span
