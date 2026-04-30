@@ -378,6 +378,7 @@ model User {
   reviewedInvestorReports         InvestorReport[]       @relation("InvestorReportReviewedBy")
   releasedInvestorReports         InvestorReport[]       @relation("InvestorReportReleasedBy")
   approvedResearchSnapshots       ResearchSnapshot[]     @relation("ResearchSnapshotApprovedBy")
+  recordedTenantDemand            TenantDemand[]         @relation("TenantDemandRecordedBy")
 }
 
 model AdminIdentityBinding {
@@ -2278,6 +2279,33 @@ model AiResponseCache {
 
   @@unique([promptHash, model])
   @@index([expiresAt])
+}
+
+// Tenant in the Market tracker. CBRE / JLL leasing brokerages maintain a
+// private list of named tenants actively requirementing space; this is
+// the operator's analog. Status taxonomy lives in code rather than enum
+// so it can grow ('ACTIVE' / 'SIGNED' / 'WITHDRAWN' / 'STALLED' / ...)
+// without a schema migration.
+model TenantDemand {
+  id               String      @id @default(cuid())
+  tenantName       String
+  market           String
+  region           String?
+  assetClass       AssetClass?
+  assetTier        String?
+  targetSizeSqm    Float?
+  targetMoveInDate DateTime?
+  status           String      @default("ACTIVE")
+  notes            String?
+  source           String?
+  observedAt       DateTime    @default(now())
+  recordedById     String?
+  recordedBy       User?       @relation("TenantDemandRecordedBy", fields: [recordedById], references: [id], onDelete: SetNull)
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  @@index([market, assetClass, status, observedAt])
+  @@index([region, observedAt])
 }
 
 model OnchainEventCursor {

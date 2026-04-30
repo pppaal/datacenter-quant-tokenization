@@ -95,6 +95,9 @@ export default async function AdminResearchPage({ searchParams }: Props) {
           <Link href="/admin/research/quarterly">
             <Button variant="ghost">Quarterly publication</Button>
           </Link>
+          <Link href="/admin/research/tenant-demand">
+            <Button variant="ghost">Tenant in the market</Button>
+          </Link>
         </div>
       </section>
 
