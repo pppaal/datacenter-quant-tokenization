@@ -101,6 +101,9 @@ export default async function AdminResearchPage({ searchParams }: Props) {
           <Link href="/admin/research/timeseries-import">
             <Button variant="ghost">Time-series import</Button>
           </Link>
+          <Link href="/admin/research/deal-flow">
+            <Button variant="ghost">Deal flow</Button>
+          </Link>
         </div>
       </section>
 

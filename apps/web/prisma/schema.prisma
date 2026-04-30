@@ -379,6 +379,7 @@ model User {
   releasedInvestorReports         InvestorReport[]       @relation("InvestorReportReleasedBy")
   approvedResearchSnapshots       ResearchSnapshot[]     @relation("ResearchSnapshotApprovedBy")
   recordedTenantDemand            TenantDemand[]         @relation("TenantDemandRecordedBy")
+  recordedDealFlow                DealFlowEntry[]        @relation("DealFlowRecordedBy")
 }
 
 model AdminIdentityBinding {
@@ -2279,6 +2280,35 @@ model AiResponseCache {
 
   @@unique([promptHash, model])
   @@index([expiresAt])
+}
+
+// Proprietary deal flow log. The Deal table tracks our own pipeline;
+// DealFlowEntry captures deals we SAW in the market — the proprietary
+// intel a brokerage relationship surfaces that REB / MOLIT can't.
+// dealType/status as TEXT so the taxonomy expands without a schema
+// migration. See 20260430060000_add_deal_flow_entry.
+model DealFlowEntry {
+  id               String      @id @default(cuid())
+  market           String
+  region           String?
+  assetClass       AssetClass?
+  assetTier        String?
+  dealType         String
+  status           String      @default("LIVE")
+  assetName        String?
+  estimatedSizeKrw Float?
+  estimatedCapPct  Float?
+  sponsor          String?
+  brokerSource     String?
+  observedAt       DateTime    @default(now())
+  notes            String?
+  recordedById     String?
+  recordedBy       User?       @relation("DealFlowRecordedBy", fields: [recordedById], references: [id], onDelete: SetNull)
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  @@index([market, dealType, status, observedAt])
+  @@index([assetClass, observedAt])
 }
 
 // Tenant in the Market tracker. CBRE / JLL leasing brokerages maintain a
