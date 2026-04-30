@@ -1,3 +1,4 @@
+import { classifyAssetTier } from '@/lib/services/research/tier-classifier';
 import {
   AssetClass,
   AssetStatus,
@@ -781,6 +782,15 @@ export async function enrichAssetFromSources(assetId: string, db: PrismaClient =
         assetId,
         market: asset.market,
         region: comp.region,
+        // Tier classifier runs at intake so the cap-rate aggregator's
+        // submarket × tier matrix can group on real values from day one
+        // instead of waiting for a separate backfill pass.
+        assetClass: asset.assetClass,
+        assetTier: classifyAssetTier({
+          comparableType: comp.comparableType,
+          assetClass: asset.assetClass,
+          grossFloorAreaSqm: asset.grossFloorAreaSqm
+        }),
         comparableType: comp.comparableType,
         transactionDate: comp.transactionDate ? new Date(comp.transactionDate) : null,
         priceKrw: comp.priceKrw ?? null,
