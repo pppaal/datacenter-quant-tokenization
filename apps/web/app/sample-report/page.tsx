@@ -37,15 +37,21 @@ import {
 } from '@/lib/services/im/credit-analysis';
 import {
   buildCashFlowSlice,
-  DEFAULT_CASH_FLOW_ASSUMPTIONS
+  DEFAULT_CASH_FLOW_ASSUMPTIONS,
+  projectCfadsDscr
 } from '@/lib/services/im/cash-flow';
+import { buildCounterpartyRollup } from '@/lib/services/im/counterparty-rollup';
 import { buildCovenantHeadroom } from '@/lib/services/im/covenant';
+import { buildEsgSummary } from '@/lib/services/im/esg';
+import { buildFxExposure } from '@/lib/services/im/fx-exposure';
 import { buildLiquidityLadder } from '@/lib/services/im/liquidity';
+import { buildPeerComparison, pickSectorKey } from '@/lib/services/im/peer-benchmarks';
 import {
   pickDebtAmortizationPct,
   pickInterestRatePct,
   pickRevenueGrowthPct
 } from '@/lib/services/im/projection-inputs';
+import { buildTaxWalk } from '@/lib/services/im/tax-walk';
 import { buildWaterfall, readSpvFromAssumptions } from '@/lib/services/im/waterfall';
 import { classifyFreshness } from '@/lib/services/im/freshness';
 import { describeHazard } from '@/lib/services/im/hazard';
@@ -208,6 +214,37 @@ export default async function SampleReportPage({
   // replacement cost) plus its narrative summary.
   const macroGuidance = readMacroGuidance(latestRun.provenance);
 
+  // Tier 3 page-level derivations:
+  // - Counterparty portfolio rollup
+  // - ESG summary from EnergySnapshot
+  // - Tax leakage walk over hold
+  // - FX exposure for foreign LPs
+  const counterpartyRollup = buildCounterpartyRollup(asset.counterparties ?? []);
+  const esgSummary = buildEsgSummary(asset.energySnapshot ?? null);
+  // Use the underwriting all-in basis (purchase + capex) as the
+  // investment basis when purchasePriceKrw is not set on the asset
+  // — for development assets the engine carries the basis as the
+  // capex assumption / proForma initial outflow.
+  const investmentBasisKrw =
+    (asset.purchasePriceKrw ?? 0) > 0
+      ? asset.purchasePriceKrw!
+      : proForma
+        ? (proForma.summary.initialDebtFundingKrw ?? 0) +
+          (proForma.summary.initialEquityKrw ?? 0)
+        : (asset.capexAssumptionKrw ?? 0);
+  const taxWalk = buildTaxWalk(asset.taxAssumption ?? null, {
+    purchasePriceKrw: investmentBasisKrw,
+    cumulativeNoiKrw: proForma
+      ? proForma.years.reduce((sum, y) => sum + y.noiKrw, 0)
+      : 0,
+    exitValueKrw: proForma?.summary.grossExitValueKrw ?? 0,
+    holdYears: proForma?.years.length ?? 10
+  });
+  const fxExposure = buildFxExposure(latestRun.baseCaseValueKrw, {
+    assetCurrency: 'KRW',
+    lpBaseCurrency: displayCurrency === 'KRW' ? 'USD' : displayCurrency
+  });
+
   // Submarket comps. Asset-attached comps live on the bundle; we
   // also pull market-wide comps (assetId NULL) for the same market
   // so the IM has CBRE-style submarket evidence even when the asset
@@ -256,6 +293,9 @@ export default async function SampleReportPage({
     { id: 'im-returns', label: 'Returns / cap stack / tenancy', show: true },
     { id: 'im-underwriting', label: 'Underwriting assumptions', show: true },
     { id: 'im-hazard', label: 'Site hazard', show: !!asset.siteProfile },
+    { id: 'im-esg', label: 'ESG & sustainability', show: !!esgSummary },
+    { id: 'im-tax-walk', label: 'Tax leakage', show: taxWalk.rows.length > 0 },
+    { id: 'im-fx', label: 'FX exposure', show: !!fxExposure },
     {
       id: 'im-title',
       label: 'Title & planning',
@@ -1175,6 +1215,253 @@ export default async function SampleReportPage({
                 {asset.siteProfile.siteNotes}
               </p>
             ) : null}
+          </Card>
+        </section>
+      ) : null}
+
+      {esgSummary ? (
+        <section id="im-esg" className="app-shell py-4">
+          <Card>
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <div className="eyebrow">ESG &amp; sustainability</div>
+                <p className="mt-2 max-w-3xl text-sm text-slate-400">
+                  Operational sustainability metrics anchoring LP-side ESG disclosure. PUE
+                  governs Scope-2 carbon intensity; renewable share governs Scope-2 reduction
+                  path; backup autonomy governs Tier-rated uptime and outage exposure.
+                </p>
+              </div>
+              {esgSummary.composite ? (
+                <Badge tone={esgSummary.composite === 'good' ? 'good' : 'warn'}>
+                  Composite:{' '}
+                  {esgSummary.composite === 'good'
+                    ? 'Strong'
+                    : esgSummary.composite === 'warn'
+                      ? 'Moderate'
+                      : 'Weak'}
+                </Badge>
+              ) : null}
+            </div>
+            {esgSummary.utility ? (
+              <div className="mt-3 text-[11px] text-slate-500">
+                Utility: <span className="text-slate-300">{esgSummary.utility}</span>
+              </div>
+            ) : null}
+            <div className="mt-5 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+              {esgSummary.rows.map((row) => {
+                const tone =
+                  row.tone === 'good'
+                    ? 'border-emerald-300/30 bg-emerald-300/[0.03]'
+                    : row.tone === 'warn'
+                      ? 'border-amber-300/30 bg-amber-300/[0.03]'
+                      : row.tone === 'risk'
+                        ? 'border-rose-300/30 bg-rose-300/[0.03]'
+                        : 'border-white/10 bg-white/[0.02]';
+                const dot =
+                  row.tone === 'good'
+                    ? 'bg-emerald-300'
+                    : row.tone === 'warn'
+                      ? 'bg-amber-300'
+                      : row.tone === 'risk'
+                        ? 'bg-rose-300'
+                        : 'bg-slate-600';
+                return (
+                  <div key={row.key} className={`rounded-[16px] border ${tone} p-3`}>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="text-[11px] uppercase tracking-wide text-slate-500">
+                        {row.label}
+                      </div>
+                      {row.band ? (
+                        <span className="flex items-center gap-1.5 text-[10px] text-slate-400">
+                          <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />
+                          {row.band}
+                        </span>
+                      ) : null}
+                    </div>
+                    <div className="mt-2 font-mono text-lg font-semibold text-white">
+                      {row.value !== null
+                        ? `${row.value.toFixed(row.unit === '%' ? 0 : 2)}${row.unit ? ` ${row.unit}` : ''}`
+                        : '—'}
+                    </div>
+                    <p className="mt-1 text-[11px] leading-5 text-slate-400">
+                      {row.interpretation}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+        </section>
+      ) : null}
+
+      {taxWalk.rows.length > 0 ? (
+        <section id="im-tax-walk" className="app-shell py-4">
+          <Card>
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <div className="eyebrow">Tax leakage walk</div>
+                <p className="mt-2 max-w-3xl text-sm text-slate-400">
+                  Cash-tax outflow over the hold — acquisition transfer, annual property tax,
+                  corporate income tax on operating earnings, exit transfer tax, and cross-
+                  border withholding. Lets the LP size the gross-to-net tax drag separately
+                  from the operating model.
+                </p>
+              </div>
+              <Badge tone="warn">
+                Total{' '}
+                {formatCurrencyFromKrwAtRate(
+                  taxWalk.totalCashOutflowKrw,
+                  displayCurrency,
+                  fxRateToKrw
+                )}
+              </Badge>
+            </div>
+            <div className="mt-5 overflow-x-auto rounded-[14px] border border-white/10">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+                    <th className="px-2 py-2 font-semibold">Tax line</th>
+                    <th className="px-2 py-2 text-right font-semibold">Rate</th>
+                    <th className="px-2 py-2 text-right font-semibold">Base</th>
+                    <th className="px-2 py-2 text-right font-semibold">Cash outflow</th>
+                    <th className="px-2 py-2 font-semibold">Notes</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5 text-slate-200">
+                  {taxWalk.rows.map((row) => (
+                    <tr key={row.category}>
+                      <td className="px-2 py-2 text-white">{row.label}</td>
+                      <td className="px-2 py-2 text-right font-mono">
+                        {row.ratePct.toFixed(2)}%
+                      </td>
+                      <td className="px-2 py-2 text-right font-mono text-slate-400">
+                        {formatCurrencyFromKrwAtRate(row.baseKrw, displayCurrency, fxRateToKrw)}
+                        <div className="text-[9px] text-slate-500">{row.baseLabel}</div>
+                      </td>
+                      <td className="px-2 py-2 text-right font-mono">
+                        {formatCurrencyFromKrwAtRate(
+                          row.totalCashOutflowKrw,
+                          displayCurrency,
+                          fxRateToKrw
+                        )}
+                      </td>
+                      <td className="px-2 py-2 text-[10px] text-slate-400">{row.notes}</td>
+                    </tr>
+                  ))}
+                  <tr className="bg-white/[0.03]">
+                    <td className="px-2 py-2 font-semibold text-white" colSpan={3}>
+                      Total
+                    </td>
+                    <td className="px-2 py-2 text-right font-mono font-semibold text-white">
+                      {formatCurrencyFromKrwAtRate(
+                        taxWalk.totalCashOutflowKrw,
+                        displayCurrency,
+                        fxRateToKrw
+                      )}
+                    </td>
+                    <td className="px-2 py-2 text-[10px] text-slate-500">
+                      {taxWalk.effectiveTaxRatePct !== null
+                        ? `Effective ≈ ${taxWalk.effectiveTaxRatePct.toFixed(1)}% of (purchase + cumulative NOI + exit)`
+                        : ''}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </section>
+      ) : null}
+
+      {fxExposure ? (
+        <section id="im-fx" className="app-shell py-4">
+          <Card>
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <div className="eyebrow">FX exposure</div>
+                <p className="mt-2 max-w-3xl text-sm text-slate-400">
+                  {fxExposure.notes}
+                </p>
+              </div>
+              <Badge
+                tone={
+                  fxExposure.exposureBand === 'high'
+                    ? 'warn'
+                    : fxExposure.exposureBand === 'low'
+                      ? 'good'
+                      : undefined
+                }
+              >
+                {fxExposure.exposureBand.toUpperCase()} exposure
+              </Badge>
+            </div>
+            <div className="mt-5 grid gap-3 md:grid-cols-3">
+              <div className="rounded-[16px] border border-white/10 bg-white/[0.02] p-3">
+                <div className="text-[10px] uppercase tracking-wide text-slate-500">
+                  Asset currency
+                </div>
+                <div className="mt-2 font-mono text-lg font-semibold text-white">
+                  {fxExposure.assetCurrency}
+                </div>
+              </div>
+              <div className="rounded-[16px] border border-white/10 bg-white/[0.02] p-3">
+                <div className="text-[10px] uppercase tracking-wide text-slate-500">
+                  LP base currency
+                </div>
+                <div className="mt-2 font-mono text-lg font-semibold text-white">
+                  {fxExposure.lpBaseCurrency}
+                </div>
+              </div>
+              <div className="rounded-[16px] border border-white/10 bg-white/[0.02] p-3">
+                <div className="text-[10px] uppercase tracking-wide text-slate-500">
+                  Spot
+                </div>
+                <div className="mt-2 font-mono text-sm text-white">{fxExposure.spotRateLabel}</div>
+              </div>
+            </div>
+            <div className="mt-5 overflow-x-auto rounded-[14px] border border-white/10">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+                    <th className="px-2 py-2 font-semibold">FX shock</th>
+                    {fxExposure.sensitivity.map((s) => (
+                      <th key={s.shockPct} className="px-2 py-2 text-right font-semibold">
+                        {s.shockPct >= 0 ? '+' : ''}{s.shockPct}%
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="px-2 py-2 text-slate-400">
+                      Asset value in {fxExposure.lpBaseCurrency}
+                    </td>
+                    {fxExposure.sensitivity.map((s) => {
+                      const tone =
+                        s.shockPct < 0
+                          ? 'text-emerald-300'
+                          : s.shockPct > 0
+                            ? 'text-rose-300'
+                            : 'text-white';
+                      return (
+                        <td
+                          key={s.shockPct}
+                          className={`px-2 py-2 text-right font-mono ${tone}`}
+                        >
+                          {(s.baseCurrencyValue / 1_000_000).toLocaleString(undefined, {
+                            maximumFractionDigits: 1
+                          })}M {fxExposure.lpBaseCurrency}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p className="mt-3 text-[10px] leading-4 text-slate-500">
+              Negative shock = KRW strengthens vs {fxExposure.lpBaseCurrency} (translation
+              gain). Positive shock = KRW weakens (translation loss). No deal-level NDF /
+              forward hedge is modeled.
+            </p>
           </Card>
         </section>
       ) : null}
@@ -2404,10 +2691,68 @@ export default async function SampleReportPage({
               </Badge>
             </div>
             <p className="mt-2 max-w-3xl text-sm text-slate-400">
-              Filed financials, derived credit ratios benchmarked against typical PE-sponsor
-              thresholds, three-year projection at stated growth, and stress-test against
-              EBITDA and rate shocks.
+              Filed financials, derived credit ratios benchmarked against KR sponsor peer
+              medians, 10-year projection, CFADS-based DSCR forward path, distribution
+              waterfall, liquidity ladder, and 4×4 sensitivity grid.
             </p>
+
+            {counterpartyRollup && counterpartyRollup.counterpartyCount > 1 ? (
+              <div className="mt-5 grid gap-3 rounded-[14px] border border-white/10 bg-white/[0.02] p-4 md:grid-cols-4">
+                <div>
+                  <div className="text-[10px] uppercase tracking-wide text-slate-500">
+                    Avg score · {counterpartyRollup.weightingBasis}-weighted
+                  </div>
+                  <div className="mt-1 font-mono text-sm font-semibold text-white">
+                    {counterpartyRollup.averageScore !== null
+                      ? counterpartyRollup.averageScore.toFixed(0)
+                      : '—'}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[10px] uppercase tracking-wide text-slate-500">
+                    Wtd leverage
+                  </div>
+                  <div className="mt-1 font-mono text-sm font-semibold text-white">
+                    {counterpartyRollup.weightedLeverage !== null
+                      ? `${counterpartyRollup.weightedLeverage.toFixed(2)}x`
+                      : '—'}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[10px] uppercase tracking-wide text-slate-500">
+                    Wtd interest coverage
+                  </div>
+                  <div className="mt-1 font-mono text-sm font-semibold text-white">
+                    {counterpartyRollup.weightedInterestCoverage !== null
+                      ? `${counterpartyRollup.weightedInterestCoverage.toFixed(2)}x`
+                      : '—'}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[10px] uppercase tracking-wide text-slate-500">
+                    Risk mix
+                  </div>
+                  <div className="mt-1 font-mono text-[11px]">
+                    <span className="text-emerald-300">
+                      {counterpartyRollup.riskMix.LOW} LOW
+                    </span>
+                    {' · '}
+                    <span className="text-amber-300">
+                      {counterpartyRollup.riskMix.MODERATE} MOD
+                    </span>
+                    {' · '}
+                    <span className="text-rose-300">
+                      {counterpartyRollup.riskMix.HIGH} HIGH
+                    </span>
+                  </div>
+                  {counterpartyRollup.weakestCounterpartyName ? (
+                    <div className="mt-1 text-[10px] text-slate-500">
+                      Weakest: {counterpartyRollup.weakestCounterpartyName}
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
 
             <div className="mt-5 space-y-8">
               {asset.counterparties.map((cp) => {
@@ -2496,6 +2841,30 @@ export default async function SampleReportPage({
                     estimatedAnnualCashFlowKrw: cashFlow.operatingCashFlowKrw
                   },
                   new Date().getFullYear()
+                );
+                // Tier 3 forward-path CFADS DSCR + peer benchmarks.
+                const cfadsProjection =
+                  inc.revenueKrw !== null &&
+                  inc.ebitdaMarginPct !== null &&
+                  bs.totalDebtKrw !== null
+                    ? projectCfadsDscr(
+                        {
+                          revenueKrw: inc.revenueKrw,
+                          ebitdaMarginPct: inc.ebitdaMarginPct,
+                          interestRatePct: rateInput.value,
+                          totalDebtKrw: bs.totalDebtKrw
+                        },
+                        {
+                          revenueGrowthPct: growthInput.value,
+                          debtAmortizationPct: amortInput.value,
+                          horizonYears: 10,
+                          taxRate: taxRateDecimal
+                        }
+                      )
+                    : [];
+                const peerComparison = buildPeerComparison(
+                  Object.fromEntries(ratios.map((r) => [r.key, r.value])),
+                  pickSectorKey(asset.assetClass, asset.market)
                 );
                 const riskTone =
                   latestCa?.riskLevel === 'LOW'
@@ -3012,6 +3381,82 @@ export default async function SampleReportPage({
                       </div>
                     </div>
 
+                    {/* Peer benchmark comparison */}
+                    <div className="mt-5 rounded-[14px] border border-white/10 bg-white/[0.02] p-4">
+                      <div className="flex flex-wrap items-baseline justify-between gap-2">
+                        <div className="fine-print">
+                          Peer benchmarks — {peerComparison.sectorLabel}
+                        </div>
+                        <div className="text-[9px] text-slate-500">
+                          {peerComparison.sourceCaveat}
+                        </div>
+                      </div>
+                      <div className="mt-3 overflow-x-auto rounded-[12px] border border-white/10">
+                        <table className="w-full text-xs">
+                          <thead>
+                            <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+                              <th className="px-2 py-2 font-semibold">Ratio</th>
+                              <th className="px-2 py-2 text-right font-semibold">This sponsor</th>
+                              <th className="px-2 py-2 text-right font-semibold">P25</th>
+                              <th className="px-2 py-2 text-right font-semibold">Median</th>
+                              <th className="px-2 py-2 text-right font-semibold">P75</th>
+                              <th className="px-2 py-2 text-right font-semibold">Band</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-white/5 text-slate-200">
+                            {peerComparison.comparisons.map((c) => {
+                              const ratioLabel =
+                                ratios.find((r) => r.key === c.ratioKey)?.label ?? c.ratioKey;
+                              const ratioUnit =
+                                ratios.find((r) => r.key === c.ratioKey)?.unit ?? 'x';
+                              const fmtVal = (v: number | null) => {
+                                if (v === null) return '—';
+                                if (ratioUnit === 'pct') return `${v.toFixed(1)}%`;
+                                if (ratioUnit === 'x') return `${v.toFixed(2)}x`;
+                                return v.toFixed(2);
+                              };
+                              const bandTone =
+                                c.band === 'top'
+                                  ? 'text-emerald-300'
+                                  : c.band === 'mid'
+                                    ? 'text-amber-300'
+                                    : c.band === 'bottom'
+                                      ? 'text-rose-300'
+                                      : 'text-slate-500';
+                              const bandLabel =
+                                c.band === 'top'
+                                  ? 'Top quartile'
+                                  : c.band === 'mid'
+                                    ? 'Median band'
+                                    : c.band === 'bottom'
+                                      ? 'Bottom quartile'
+                                      : 'n/a';
+                              return (
+                                <tr key={c.ratioKey}>
+                                  <td className="px-2 py-2 text-slate-300">{ratioLabel}</td>
+                                  <td className="px-2 py-2 text-right font-mono text-white">
+                                    {fmtVal(c.observedValue)}
+                                  </td>
+                                  <td className="px-2 py-2 text-right font-mono text-slate-400">
+                                    {fmtVal(c.pct25)}
+                                  </td>
+                                  <td className="px-2 py-2 text-right font-mono text-slate-400">
+                                    {fmtVal(c.median)}
+                                  </td>
+                                  <td className="px-2 py-2 text-right font-mono text-slate-400">
+                                    {fmtVal(c.pct75)}
+                                  </td>
+                                  <td className={`px-2 py-2 text-right text-[10px] font-mono ${bandTone}`}>
+                                    {bandLabel}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
                     {/* 10-year projection — assumptions sourced from bundle data */}
                     {projection.length > 0 ? (
                       <div className="mt-5">
@@ -3033,11 +3478,14 @@ export default async function SampleReportPage({
                                 <th className="px-2 py-2 text-right font-semibold">Margin</th>
                                 <th className="px-2 py-2 text-right font-semibold">Total debt</th>
                                 <th className="px-2 py-2 text-right font-semibold">Leverage</th>
-                                <th className="px-2 py-2 text-right font-semibold">Coverage</th>
+                                <th className="px-2 py-2 text-right font-semibold">EBITDA cov</th>
+                                <th className="px-2 py-2 text-right font-semibold">CFADS DSCR</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5 text-slate-200">
-                              {projection.map((row) => (
+                              {projection.map((row, idx) => {
+                                const cfadsRow = cfadsProjection[idx] ?? null;
+                                return (
                                 <tr key={row.year}>
                                   <td className="px-2 py-2 font-mono text-slate-400">{row.year}</td>
                                   <td className="px-2 py-2 text-right font-mono">{fmt(row.revenueKrw)}</td>
@@ -3056,8 +3504,18 @@ export default async function SampleReportPage({
                                       ? `${row.interestCoverage.toFixed(2)}x`
                                       : '—'}
                                   </td>
+                                  <td className="px-2 py-2 text-right font-mono">
+                                    {cfadsRow?.cfadsDscr !== null && cfadsRow?.cfadsDscr !== undefined
+                                      ? (
+                                        <span className={cfadsRow.cfadsDscr >= 2.0 ? 'text-emerald-300' : 'text-rose-300'}>
+                                          {cfadsRow.cfadsDscr.toFixed(2)}x
+                                        </span>
+                                      )
+                                      : '—'}
+                                  </td>
                                 </tr>
-                              ))}
+                                );
+                              })}
                             </tbody>
                           </table>
                         </div>

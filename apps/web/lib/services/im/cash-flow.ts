@@ -138,3 +138,71 @@ export const DEFAULT_CASH_FLOW_ASSUMPTIONS = {
   wcChangeRate: -0.005, // 0.5% revenue tied up as WC build per period
   taxRate: 0.242 // KR corporate tax, can be overridden from taxAssumption
 };
+
+export type CFADSProjectionRow = {
+  year: string;
+  ebitdaKrw: number;
+  cashFlowOperatingKrw: number;
+  freeCashFlowKrw: number;
+  cfadsKrw: number;
+  debtServiceKrw: number;
+  cfadsDscr: number | null;
+};
+
+/**
+ * Project CFADS DSCR forward across the same horizon used by
+ * projectFinancials(). Holds the cash-flow assumption rates
+ * constant; debt amortizes at the supplied annualized rate.
+ */
+export function projectCfadsDscr(
+  base: {
+    revenueKrw: number;
+    ebitdaMarginPct: number;
+    interestRatePct: number;
+    totalDebtKrw: number;
+  },
+  options: {
+    revenueGrowthPct: number;
+    debtAmortizationPct: number;
+    horizonYears: number;
+    taxRate: number;
+    daRateOfRevenue?: number;
+    maintCapexRateOfRevenue?: number;
+    wcChangeRate?: number;
+  },
+  baseYear: number = new Date().getFullYear()
+): CFADSProjectionRow[] {
+  const da = options.daRateOfRevenue ?? DEFAULT_CASH_FLOW_ASSUMPTIONS.daRateOfRevenue;
+  const capex =
+    options.maintCapexRateOfRevenue ?? DEFAULT_CASH_FLOW_ASSUMPTIONS.maintCapexRateOfRevenue;
+  const wc = options.wcChangeRate ?? DEFAULT_CASH_FLOW_ASSUMPTIONS.wcChangeRate;
+  const rows: CFADSProjectionRow[] = [];
+  for (let i = 0; i <= options.horizonYears; i += 1) {
+    const growth = Math.pow(1 + options.revenueGrowthPct / 100, i);
+    const revenue = base.revenueKrw * growth;
+    const ebitda = revenue * (base.ebitdaMarginPct / 100);
+    const daKrw = revenue * da;
+    const ebit = ebitda - daKrw;
+    const cashTax = Math.max(0, ebit) * options.taxRate;
+    const maintCapex = revenue * capex;
+    const wcDrag = revenue * wc;
+    const operatingCashFlow = ebitda - cashTax + wcDrag;
+    const fcf = operatingCashFlow - maintCapex;
+    const debt = base.totalDebtKrw * Math.pow(1 - options.debtAmortizationPct / 100, i);
+    const interest = debt * (base.interestRatePct / 100);
+    const principal = debt * (options.debtAmortizationPct / 100);
+    const cfads = fcf + interest;
+    const debtService = interest + principal;
+    const cfadsDscr = debtService > 0 ? cfads / debtService : null;
+    rows.push({
+      year: i === 0 ? `${baseYear}A` : `${baseYear + i}E`,
+      ebitdaKrw: ebitda,
+      cashFlowOperatingKrw: operatingCashFlow,
+      freeCashFlowKrw: fcf,
+      cfadsKrw: cfads,
+      debtServiceKrw: debtService,
+      cfadsDscr
+    });
+  }
+  return rows;
+}
