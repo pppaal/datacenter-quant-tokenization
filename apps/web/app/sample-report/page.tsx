@@ -895,6 +895,174 @@ export default async function SampleReportPage() {
         </section>
       ) : null}
 
+      {(asset.ownershipRecords && asset.ownershipRecords.length > 0) ||
+      (asset.parcels && asset.parcels.length > 0) ||
+      (asset.buildingRecords && asset.buildingRecords.length > 0) ||
+      (asset.planningConstraints && asset.planningConstraints.length > 0) ||
+      (asset.encumbranceRecords && asset.encumbranceRecords.length > 0) ? (
+        <section className="app-shell py-4">
+          <Card>
+            <div className="eyebrow">Title, parcel &amp; planning diligence</div>
+            <p className="mt-2 max-w-3xl text-sm text-slate-400">
+              Legal diligence anchors. Ownership records establish title; parcels carry zoning
+              and official land valuation; encumbrances flag liens and pledges; planning
+              constraints flag zoning overlays or height restrictions that bound the use case.
+            </p>
+
+            <div className="mt-5 grid gap-4 lg:grid-cols-2">
+              {asset.ownershipRecords && asset.ownershipRecords.length > 0 ? (
+                <div>
+                  <div className="fine-print">Ownership chain</div>
+                  <ul className="mt-3 space-y-2">
+                    {asset.ownershipRecords.map((o) => (
+                      <li
+                        key={o.id}
+                        className="rounded-[14px] border border-white/5 bg-white/[0.02] px-3 py-2 text-sm"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-semibold text-white">{o.ownerName}</span>
+                          <span className="font-mono text-xs text-slate-400">
+                            {typeof o.ownershipPct === 'number' ? `${o.ownershipPct.toFixed(0)}%` : '—'}
+                          </span>
+                        </div>
+                        <div className="mt-1 text-[11px] text-slate-500">
+                          {o.entityType ?? 'entity'} ·
+                          {o.effectiveDate ? ` from ${formatDate(o.effectiveDate)}` : ' open-ended'}
+                          {' · '}
+                          {o.sourceSystem}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+
+              {asset.encumbranceRecords && asset.encumbranceRecords.length > 0 ? (
+                <div>
+                  <div className="fine-print">Encumbrances</div>
+                  <ul className="mt-3 space-y-2">
+                    {asset.encumbranceRecords.map((e) => (
+                      <li
+                        key={e.id}
+                        className="rounded-[14px] border border-rose-300/15 bg-rose-300/[0.04] px-3 py-2 text-sm"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-semibold text-white">
+                            {e.encumbranceType}
+                            {e.holderName ? ` · ${e.holderName}` : ''}
+                          </span>
+                          <span className="font-mono text-xs text-slate-300">
+                            {typeof e.securedAmountKrw === 'number'
+                              ? formatCurrencyFromKrwAtRate(
+                                  e.securedAmountKrw,
+                                  displayCurrency,
+                                  fxRateToKrw
+                                )
+                              : '—'}
+                          </span>
+                        </div>
+                        <div className="mt-1 text-[11px] text-slate-500">
+                          rank {e.priorityRank ?? '—'}
+                          {e.statusLabel ? ` · ${e.statusLabel}` : ''}
+                          {e.effectiveDate ? ` · from ${formatDate(e.effectiveDate)}` : ''}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+
+              {asset.parcels && asset.parcels.length > 0 ? (
+                <div>
+                  <div className="fine-print">Parcels</div>
+                  <ul className="mt-3 space-y-2">
+                    {asset.parcels.map((p) => (
+                      <li
+                        key={p.id}
+                        className="rounded-[14px] border border-white/5 bg-white/[0.02] px-3 py-2 text-sm"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-mono text-white">{p.parcelId}</span>
+                          <span className="text-[11px] text-slate-400">
+                            {typeof p.landAreaSqm === 'number'
+                              ? `${formatNumber(p.landAreaSqm, 0)} sqm`
+                              : '—'}
+                          </span>
+                        </div>
+                        <div className="mt-1 text-[11px] text-slate-500">
+                          {p.zoningCode ?? p.landUseType ?? 'zoning n/a'} ·
+                          {typeof p.officialLandValueKrw === 'number'
+                            ? ` ${formatCurrencyFromKrwAtRate(p.officialLandValueKrw, displayCurrency, fxRateToKrw)} official`
+                            : ' no land value'}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+
+              {asset.planningConstraints && asset.planningConstraints.length > 0 ? (
+                <div>
+                  <div className="fine-print">Planning constraints</div>
+                  <ul className="mt-3 space-y-2">
+                    {asset.planningConstraints.map((c) => (
+                      <li
+                        key={c.id}
+                        className="rounded-[14px] border border-amber-300/15 bg-amber-300/[0.04] px-3 py-2 text-sm"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-semibold text-white">{c.title}</span>
+                          {c.severity ? (
+                            <span className="text-[10px] uppercase tracking-wide text-amber-300">
+                              {c.severity}
+                            </span>
+                          ) : null}
+                        </div>
+                        <div className="mt-1 text-[11px] text-slate-400">
+                          {c.constraintType}
+                          {c.description ? ` · ${c.description}` : ''}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+
+              {asset.buildingRecords && asset.buildingRecords.length > 0 ? (
+                <div>
+                  <div className="fine-print">Building records</div>
+                  <ul className="mt-3 space-y-2">
+                    {asset.buildingRecords.map((b) => (
+                      <li
+                        key={b.id}
+                        className="rounded-[14px] border border-white/5 bg-white/[0.02] px-3 py-2 text-sm"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-semibold text-white">
+                            {b.buildingName ?? b.buildingIdentifier ?? 'Unnamed building'}
+                          </span>
+                          <span className="text-[11px] text-slate-400">
+                            {b.completionDate ? formatDate(b.completionDate) : '—'}
+                          </span>
+                        </div>
+                        <div className="mt-1 text-[11px] text-slate-500">
+                          {b.useType ?? 'use n/a'} · {b.floorCount ?? '?'}F /
+                          {b.basementCount ?? '?'}B ·
+                          {typeof b.grossFloorAreaSqm === 'number'
+                            ? ` ${formatNumber(b.grossFloorAreaSqm, 0)} sqm GFA`
+                            : ' GFA n/a'}
+                          {b.structureType ? ` · ${b.structureType}` : ''}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+            </div>
+          </Card>
+        </section>
+      ) : null}
+
       {proForma ? (
         <section className="app-shell py-4">
           <div className="grid gap-4 lg:grid-cols-2">
@@ -1046,6 +1214,79 @@ export default async function SampleReportPage() {
               </dl>
             </Card>
           </div>
+        </section>
+      ) : null}
+
+      {asset.capexLineItems && asset.capexLineItems.length > 0 ? (
+        <section className="app-shell py-4">
+          <Card>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <div className="eyebrow">Capex schedule (line items)</div>
+                <p className="mt-2 max-w-3xl text-sm text-slate-400">
+                  Operator-curated capex schedule. The Sources &amp; Uses card above shows the
+                  engine's category aggregates; this card shows the underlying budget line items
+                  the operator entered, with spend year and the embedded-vs-additive flag — so the
+                  LP can see what's already in purchase price vs what's additional capex.
+                </p>
+              </div>
+              <Badge>
+                {asset.capexLineItems.length} line item{asset.capexLineItems.length === 1 ? '' : 's'}
+              </Badge>
+            </div>
+            <div className="mt-5 overflow-x-auto rounded-[14px] border border-white/10">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+                    <th className="px-2 py-2 font-semibold">Category</th>
+                    <th className="px-2 py-2 font-semibold">Label</th>
+                    <th className="px-2 py-2 text-right font-semibold">Year</th>
+                    <th className="px-2 py-2 text-right font-semibold">Embedded</th>
+                    <th className="px-2 py-2 text-right font-semibold">Amount</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5 text-slate-200">
+                  {asset.capexLineItems.map((item) => (
+                    <tr key={item.id}>
+                      <td className="px-2 py-2 text-[10px] uppercase tracking-wide text-slate-400">
+                        {item.category.replace(/_/g, ' ').toLowerCase()}
+                      </td>
+                      <td className="px-2 py-2 text-slate-200">{item.label}</td>
+                      <td className="px-2 py-2 text-right font-mono text-slate-400">
+                        Y{item.spendYear}
+                      </td>
+                      <td className="px-2 py-2 text-right text-[10px]">
+                        {item.isEmbedded ? (
+                          <span className="text-amber-300">in price</span>
+                        ) : (
+                          <span className="text-slate-500">additional</span>
+                        )}
+                      </td>
+                      <td className="px-2 py-2 text-right font-mono">
+                        {formatCurrencyFromKrwAtRate(
+                          item.amountKrw,
+                          displayCurrency,
+                          fxRateToKrw
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                  <tr className="bg-white/[0.03] font-semibold">
+                    <td className="px-2 py-2 text-white" colSpan={4}>
+                      Total
+                    </td>
+                    <td className="px-2 py-2 text-right font-mono text-white">
+                      {formatCurrencyFromKrwAtRate(
+                        asset.capexLineItems.reduce((sum, i) => sum + i.amountKrw, 0),
+                        displayCurrency,
+                        fxRateToKrw
+                      )}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </Card>
         </section>
       ) : null}
 
@@ -1320,6 +1561,141 @@ export default async function SampleReportPage() {
               </div>
             ) : null}
           </Card>
+        </section>
+      ) : null}
+
+      {(asset.researchSnapshots && asset.researchSnapshots.length > 0) ||
+      (asset.coverageTasks && asset.coverageTasks.length > 0) ||
+      (asset.aiInsights && asset.aiInsights.length > 0) ? (
+        <section className="app-shell py-4">
+          <div className="grid gap-4 lg:grid-cols-2">
+            {asset.researchSnapshots && asset.researchSnapshots.length > 0 ? (
+              <Card>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="eyebrow">Research desk publications</div>
+                  <Badge>{asset.researchSnapshots.length}</Badge>
+                </div>
+                <p className="mt-2 text-sm text-slate-400">
+                  Approved snapshots from the research workspace anchoring this asset's macro
+                  context. Each snapshot's freshnessStatus governs whether the underwriting can
+                  rely on it without a re-run.
+                </p>
+                <ul className="mt-5 space-y-2">
+                  {asset.researchSnapshots.slice(0, 6).map((s) => (
+                    <li
+                      key={s.id}
+                      className="rounded-[14px] border border-white/5 bg-white/[0.02] px-3 py-2 text-sm"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="font-semibold text-white">{s.title}</span>
+                        <span className="text-[10px] uppercase tracking-wide text-slate-500">
+                          {s.freshnessStatus ?? 'n/a'}
+                        </span>
+                      </div>
+                      <div className="mt-1 text-[11px] text-slate-500">
+                        {formatDate(s.snapshotDate)} · {s.snapshotType}
+                        {s.sourceSystem ? ` · ${s.sourceSystem}` : ''}
+                      </div>
+                      {s.summary ? (
+                        <p className="mt-2 text-xs leading-5 text-slate-300">{s.summary}</p>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            ) : null}
+
+            {asset.coverageTasks && asset.coverageTasks.length > 0 ? (
+              <Card>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="eyebrow">Research coverage queue</div>
+                  <Badge>
+                    {asset.coverageTasks.filter((t) => t.status === 'OPEN').length} open
+                  </Badge>
+                </div>
+                <p className="mt-2 text-sm text-slate-400">
+                  Tasks the research desk has flagged as outstanding for this asset.
+                  HIGH-priority OPEN items reduce confidence and should be cleared before IC.
+                </p>
+                <ul className="mt-5 space-y-2">
+                  {asset.coverageTasks.slice(0, 8).map((t) => {
+                    const priorityTone =
+                      t.priority === 'HIGH'
+                        ? 'border-rose-300/20 bg-rose-300/[0.04]'
+                        : t.priority === 'LOW'
+                          ? 'border-white/5 bg-white/[0.02]'
+                          : 'border-amber-300/15 bg-amber-300/[0.03]';
+                    return (
+                      <li
+                        key={t.id}
+                        className={`rounded-[14px] border px-3 py-2 text-sm ${priorityTone}`}
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <span className="font-semibold text-white">{t.title}</span>
+                          <div className="flex items-center gap-2 text-[10px] uppercase tracking-wide">
+                            <span className="text-slate-500">{t.taskType}</span>
+                            <span className="text-slate-300">{t.priority}</span>
+                            <span
+                              className={
+                                t.status === 'OPEN'
+                                  ? 'text-rose-300'
+                                  : 'text-emerald-300'
+                              }
+                            >
+                              {t.status}
+                            </span>
+                          </div>
+                        </div>
+                        {t.notes ? (
+                          <p className="mt-1 text-[11px] leading-5 text-slate-400">{t.notes}</p>
+                        ) : null}
+                        {t.dueDate ? (
+                          <div className="mt-1 text-[10px] text-slate-500">
+                            due {formatDate(t.dueDate)}
+                          </div>
+                        ) : null}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </Card>
+            ) : null}
+
+            {asset.aiInsights && asset.aiInsights.length > 0 ? (
+              <Card className="lg:col-span-2">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="eyebrow">AI insights</div>
+                  <Badge>{asset.aiInsights.length}</Badge>
+                </div>
+                <p className="mt-2 text-sm text-slate-400">
+                  Model-generated commentary on this asset and its valuation runs. Each insight
+                  carries the model name and an evidence reference so the committee can validate
+                  rather than treat the commentary as ground truth.
+                </p>
+                <ul className="mt-5 space-y-2">
+                  {asset.aiInsights.slice(0, 6).map((insight) => (
+                    <li
+                      key={insight.id}
+                      className="rounded-[14px] border border-white/5 bg-white/[0.02] px-3 py-2 text-sm"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="font-semibold text-white">
+                          {insight.title ?? insight.insightType}
+                        </span>
+                        <span className="text-[10px] uppercase tracking-wide text-slate-500">
+                          {insight.modelName} · {insight.status}
+                        </span>
+                      </div>
+                      <p className="mt-2 text-xs leading-5 text-slate-300">{insight.content}</p>
+                      <div className="mt-1 text-[10px] text-slate-500">
+                        {formatDate(insight.createdAt)} · {insight.insightType}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            ) : null}
+          </div>
         </section>
       ) : null}
 

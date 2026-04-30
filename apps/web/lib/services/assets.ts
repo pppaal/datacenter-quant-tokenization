@@ -194,6 +194,24 @@ export const assetBundleInclude = {
     },
     take: 12
   },
+  aiInsights: {
+    orderBy: {
+      createdAt: 'desc' as const
+    },
+    take: 6
+  },
+  buildingRecords: {
+    orderBy: {
+      completionDate: 'desc' as const
+    },
+    take: 4
+  },
+  parcels: {
+    orderBy: {
+      createdAt: 'desc' as const
+    },
+    take: 6
+  },
   transactionComps: {
     orderBy: {
       transactionDate: 'desc' as const
