@@ -93,6 +93,8 @@ Investment Memo (IM) deep-dive — start here for system / IM card walkthrough:
 - [`apps/web/docs/seed-data.md`](./apps/web/docs/seed-data.md) — seed counterparts / financial statements / insurance / carbon / side letters etc. (every IM number sourced)
 - [`apps/web/docs/system-flow.md`](./apps/web/docs/system-flow.md) — end-to-end workflow (intake → enrichment → review → valuation → IM → IC)
 - [`apps/web/docs/troubleshooting.md`](./apps/web/docs/troubleshooting.md) — common issues (postgres / dev server / IM render / tests / auth / migrations)
+- [`apps/web/docs/rwa-roadmap.md`](./apps/web/docs/rwa-roadmap.md) — RWA / on-chain 4-direction strategy + tech investments
+- [`apps/web/docs/rwa-architecture.md`](./apps/web/docs/rwa-architecture.md) — current contract stack + attestation pipeline + waterfall flow + testnet deploy guide
 
 Valuation variable reference:
 
