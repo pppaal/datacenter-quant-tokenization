@@ -95,6 +95,7 @@ Investment Memo (IM) deep-dive — start here for system / IM card walkthrough:
 - [`apps/web/docs/troubleshooting.md`](./apps/web/docs/troubleshooting.md) — common issues (postgres / dev server / IM render / tests / auth / migrations)
 - [`apps/web/docs/rwa-roadmap.md`](./apps/web/docs/rwa-roadmap.md) — RWA / on-chain 4-direction strategy + tech investments
 - [`apps/web/docs/rwa-architecture.md`](./apps/web/docs/rwa-architecture.md) — current contract stack + attestation pipeline + waterfall flow + testnet deploy guide
+- [`apps/web/docs/audit-prep.md`](./apps/web/docs/audit-prep.md) — automated static / formal verification stack + audit firm recommendations + per-contract threat surface + trust assumptions
 
 Valuation variable reference:
 
