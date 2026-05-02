@@ -41,7 +41,7 @@ function getBarGlow(tone: 'good' | 'warn' | 'danger') {
 export function PortfolioKpiChart({ title, subtitle, rows, maxValue }: Props) {
   const chartMax =
     rows.length > 0
-      ? maxValue ?? Math.max(...rows.map((r) => Math.max(r.value, r.target)), 1) * 1.15
+      ? (maxValue ?? Math.max(...rows.map((r) => Math.max(r.value, r.target)), 1) * 1.15)
       : 1;
 
   return (

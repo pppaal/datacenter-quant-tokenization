@@ -1,9 +1,16 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { deprovisionAdminUser, getAdminScimConfig, upsertProvisionedAdminUser } from '@/lib/security/admin-scim';
+import {
+  deprovisionAdminUser,
+  getAdminScimConfig,
+  upsertProvisionedAdminUser
+} from '@/lib/security/admin-scim';
 
 test('admin scim config is enabled only when token exists', () => {
-  assert.equal(getAdminScimConfig({ ADMIN_SCIM_TOKEN: 'token' } as unknown as NodeJS.ProcessEnv).enabled, true);
+  assert.equal(
+    getAdminScimConfig({ ADMIN_SCIM_TOKEN: 'token' } as unknown as NodeJS.ProcessEnv).enabled,
+    true
+  );
   assert.equal(getAdminScimConfig({} as unknown as NodeJS.ProcessEnv).enabled, false);
 });
 

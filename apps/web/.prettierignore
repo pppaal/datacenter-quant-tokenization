@@ -1,0 +1,9 @@
+build/
+.next/
+node_modules/
+prisma/migrations/
+package-lock.json
+*.tsbuildinfo
+next-env.d.ts
+lib/blockchain/abi.json
+lib/blockchain/tokenization-abi.json

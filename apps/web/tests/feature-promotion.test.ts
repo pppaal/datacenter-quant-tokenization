@@ -61,5 +61,7 @@ test('feature promotion creates a document_facts snapshot from extracted facts',
   assert.equal(result?.valueCount, 3);
   assert.equal(createdSnapshot.data.featureNamespace, 'document_facts');
   assert.equal(createdSnapshot.data.sourceVersion, 'document:document_1:v1');
-  assert.ok(createdSnapshot.data.values.create.some((value: any) => value.key === 'document.contracted_kw'));
+  assert.ok(
+    createdSnapshot.data.values.create.some((value: any) => value.key === 'document.contracted_kw')
+  );
 });

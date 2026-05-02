@@ -30,8 +30,16 @@ test('one-way sensitivity engine creates value and dscr shocks', () => {
 
   assert.equal(result.runType, 'ONE_WAY');
   assert.equal(result.points.length, 8);
-  assert.ok(result.points.some((point) => point.variableKey === 'cap_rate_pct' && point.metricName === 'Value'));
-  assert.ok(result.points.some((point) => point.variableKey === 'debt_cost_pct' && point.metricName === 'DSCR'));
+  assert.ok(
+    result.points.some(
+      (point) => point.variableKey === 'cap_rate_pct' && point.metricName === 'Value'
+    )
+  );
+  assert.ok(
+    result.points.some(
+      (point) => point.variableKey === 'debt_cost_pct' && point.metricName === 'DSCR'
+    )
+  );
   assert.ok(result.summary.strongestDownsideDriver);
 });
 
@@ -145,8 +153,16 @@ test('forecast sensitivity engine creates five-year value and dscr path', () => 
 
   assert.equal(result.runType, 'FORECAST');
   assert.equal(result.points.length, 10);
-  assert.ok(result.points.some((point) => point.variableKey === 'forecast_value_path' && point.shockLabel === 'Year 5'));
-  assert.ok(result.points.some((point) => point.variableKey === 'forecast_dscr_path' && point.shockLabel === 'Year 5'));
+  assert.ok(
+    result.points.some(
+      (point) => point.variableKey === 'forecast_value_path' && point.shockLabel === 'Year 5'
+    )
+  );
+  assert.ok(
+    result.points.some(
+      (point) => point.variableKey === 'forecast_dscr_path' && point.shockLabel === 'Year 5'
+    )
+  );
 });
 
 test('monte carlo sensitivity engine creates deterministic percentile envelope', () => {
@@ -176,8 +192,16 @@ test('monte carlo sensitivity engine creates deterministic percentile envelope',
 
   assert.equal(result.runType, 'MONTE_CARLO');
   assert.equal(result.points.length, 10);
-  assert.ok(result.points.some((point) => point.variableKey === 'monte_carlo_value' && point.shockLabel === 'P10'));
-  assert.ok(result.points.some((point) => point.variableKey === 'monte_carlo_dscr' && point.shockLabel === 'P90'));
+  assert.ok(
+    result.points.some(
+      (point) => point.variableKey === 'monte_carlo_value' && point.shockLabel === 'P10'
+    )
+  );
+  assert.ok(
+    result.points.some(
+      (point) => point.variableKey === 'monte_carlo_dscr' && point.shockLabel === 'P90'
+    )
+  );
   assert.equal((result.summary as { simulations?: number }).simulations, 250);
 });
 

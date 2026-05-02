@@ -80,7 +80,9 @@ type ScimDb = {
         role: true;
         isActive: true;
       };
-    }): Promise<Array<{ id: string; name: string; email: string; role: UserRole; isActive: boolean }>>;
+    }): Promise<
+      Array<{ id: string; name: string; email: string; role: UserRole; isActive: boolean }>
+    >;
   };
   adminProvisioningBinding: {
     findUnique(args: {
@@ -189,7 +191,11 @@ export function authorizeAdminScimRequest(request: Request, env: NodeJS.ProcessE
     return false;
   }
 
-  const bearer = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '').trim() ?? '';
+  const bearer =
+    request.headers
+      .get('authorization')
+      ?.replace(/^Bearer\s+/i, '')
+      .trim() ?? '';
   return bearer === config.token;
 }
 

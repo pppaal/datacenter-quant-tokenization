@@ -83,10 +83,7 @@ function tenantRenewsDeterministic(tenantId: string, expiryYear: number, probPct
   return normalized < probPct;
 }
 
-export function projectRentRoll(
-  tenants: RentRollTenant[],
-  holdYears: number
-): RentRollProjection {
+export function projectRentRoll(tenants: RentRollTenant[], holdYears: number): RentRollProjection {
   const totalGfa = tenants.reduce((s, t) => s + t.gfaSqm, 0);
   const years: RentRollYearRow[] = [];
   let totalTiLc = 0;
@@ -171,7 +168,10 @@ export function projectRentRoll(
         s.freeRentRemainingMonths -= consume;
       }
 
-      const tenantRent = Math.max(0, Math.round(s.currentRentPerSqmMonthly * t.gfaSqm * paidMonths));
+      const tenantRent = Math.max(
+        0,
+        Math.round(s.currentRentPerSqmMonthly * t.gfaSqm * paidMonths)
+      );
       const effectiveRent =
         paidMonths > 0 ? Math.round((tenantRent / t.gfaSqm / paidMonths) * (paidMonths / 12)) : 0;
 
@@ -240,8 +240,7 @@ export function synthesizeRentRoll(params: {
 }): RentRollTenant[] {
   const revenue = params.year1NoiKrw / (1 - params.opexRatio);
   const impliedRentPerSqmMonthly =
-    params.averageRentPerSqmMonthly ??
-    Math.round(revenue / params.totalGfaSqm / 12);
+    params.averageRentPerSqmMonthly ?? Math.round(revenue / params.totalGfaSqm / 12);
 
   // Split: 50% anchor (long lease), 30% mid (medium), 20% small (short)
   return [

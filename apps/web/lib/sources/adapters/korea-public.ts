@@ -16,6 +16,20 @@ export type KoreaPublicDatasetKey =
   | 'gis_building_integration'
   | 'korea_building_energy';
 
+/**
+ * Recommended cron cadence for a dataset.
+ *
+ *  macro  — KOSIS, BOK ECOS. CPI, rates, unemployment update monthly /
+ *           per central-bank policy decision; weekly is conservative.
+ *  market — REB, MOLIT property statistics, transaction prices, building
+ *           ledger / permits. Daily because new transactions and permits
+ *           land throughout the day during business hours.
+ *
+ * The orchestrator filters listKoreaPublicDatasetDefinitions by this
+ * field so the macro and market crons can run on different schedules.
+ */
+export type KoreaPublicDatasetCadence = 'macro' | 'market';
+
 export type KoreaPublicDatasetDefinition = {
   key: KoreaPublicDatasetKey;
   label: string;
@@ -24,6 +38,7 @@ export type KoreaPublicDatasetDefinition = {
   envApiKeyKey?: string;
   coverage: string[];
   fallbackNote: string;
+  cadence: KoreaPublicDatasetCadence;
   normalizedMetrics?: KoreaPublicDatasetMetricDefinition[];
 };
 
@@ -105,6 +120,7 @@ const datasetDefinitions: Record<KoreaPublicDatasetKey, KoreaPublicDatasetDefini
     envApiKeyKey: 'KOREA_KOSIS_API_KEY',
     coverage: ['macro', 'rates', 'construction cost', 'transaction volume'],
     fallbackNote: 'Configured through existing KOSIS series env values or fallback macro data.',
+    cadence: 'macro',
     normalizedMetrics: [
       {
         normalizedKey: 'kr.cpi_yoy_pct',
@@ -142,7 +158,9 @@ const datasetDefinitions: Record<KoreaPublicDatasetKey, KoreaPublicDatasetDefini
     envBaseUrlKey: 'KOREA_BOK_ECOS_API_URL',
     envApiKeyKey: 'KOREA_BOK_ECOS_API_KEY',
     coverage: ['rates', 'financial conditions', 'macro'],
-    fallbackNote: 'Falls back to cached or manually staged macro observations when ECOS is not configured.',
+    fallbackNote:
+      'Falls back to cached or manually staged macro observations when ECOS is not configured.',
+    cadence: 'macro',
     normalizedMetrics: [
       {
         normalizedKey: 'kr.base_rate_pct',
@@ -182,6 +200,7 @@ const datasetDefinitions: Record<KoreaPublicDatasetKey, KoreaPublicDatasetDefini
     envApiKeyKey: 'KOREA_REB_API_KEY',
     coverage: ['property market', 'office benchmarks', 'industrial benchmarks'],
     fallbackNote: 'Falls back to market snapshot and existing comp tables when REB is unavailable.',
+    cadence: 'market',
     normalizedMetrics: officeIndustrialMetricPack
   },
   molit_real_transaction: {
@@ -192,6 +211,7 @@ const datasetDefinitions: Record<KoreaPublicDatasetKey, KoreaPublicDatasetDefini
     envApiKeyKey: 'KOREA_MOLIT_REAL_TRANSACTION_API_KEY',
     coverage: ['transactions', 'price evidence'],
     fallbackNote: 'Falls back to stored transaction comps when MOLIT transactions are unavailable.',
+    cadence: 'market',
     normalizedMetrics: [
       {
         normalizedKey: 'office.transaction_count',
@@ -247,7 +267,9 @@ const datasetDefinitions: Record<KoreaPublicDatasetKey, KoreaPublicDatasetDefini
     envBaseUrlKey: 'KOREA_MOLIT_BUILDING_LEDGER_API_URL',
     envApiKeyKey: 'KOREA_MOLIT_BUILDING_LEDGER_API_KEY',
     coverage: ['building', 'physical'],
-    fallbackNote: 'Falls back to building snapshot and manual intake when the ledger API is unavailable.',
+    fallbackNote:
+      'Falls back to building snapshot and manual intake when the ledger API is unavailable.',
+    cadence: 'market',
     normalizedMetrics: [
       {
         normalizedKey: 'kr.building_count',
@@ -271,7 +293,9 @@ const datasetDefinitions: Record<KoreaPublicDatasetKey, KoreaPublicDatasetDefini
     envBaseUrlKey: 'KOREA_MOLIT_BUILDING_PERMIT_API_URL',
     envApiKeyKey: 'KOREA_MOLIT_BUILDING_PERMIT_API_KEY',
     coverage: ['permit', 'entitlement'],
-    fallbackNote: 'Falls back to permit snapshot and analyst review notes when the permit API is unavailable.',
+    fallbackNote:
+      'Falls back to permit snapshot and analyst review notes when the permit API is unavailable.',
+    cadence: 'market',
     normalizedMetrics: [
       {
         normalizedKey: 'kr.permit_count',
@@ -304,7 +328,9 @@ const datasetDefinitions: Record<KoreaPublicDatasetKey, KoreaPublicDatasetDefini
     envBaseUrlKey: 'KOREA_MOLIT_LAND_USE_API_URL',
     envApiKeyKey: 'KOREA_MOLIT_LAND_USE_API_KEY',
     coverage: ['planning', 'zoning'],
-    fallbackNote: 'Falls back to planning constraints and manual legal review when planning API is unavailable.',
+    fallbackNote:
+      'Falls back to planning constraints and manual legal review when planning API is unavailable.',
+    cadence: 'market',
     normalizedMetrics: [
       {
         normalizedKey: 'kr.planning_restriction_count',
@@ -329,6 +355,7 @@ const datasetDefinitions: Record<KoreaPublicDatasetKey, KoreaPublicDatasetDefini
     envApiKeyKey: 'KOREA_MOLIT_LAND_CHARACTERISTICS_API_KEY',
     coverage: ['parcel', 'land'],
     fallbackNote: 'Falls back to parcel intake and geospatial overlays when unavailable.',
+    cadence: 'market',
     normalizedMetrics: [
       {
         normalizedKey: 'land.avg_site_area_sqm',
@@ -355,7 +382,9 @@ const datasetDefinitions: Record<KoreaPublicDatasetKey, KoreaPublicDatasetDefini
     envBaseUrlKey: 'KOREA_MOLIT_LAND_PRICE_API_URL',
     envApiKeyKey: 'KOREA_MOLIT_LAND_PRICE_API_KEY',
     coverage: ['land value', 'benchmarking'],
-    fallbackNote: 'Falls back to transaction comps and market snapshot when official land price API is unavailable.',
+    fallbackNote:
+      'Falls back to transaction comps and market snapshot when official land price API is unavailable.',
+    cadence: 'market',
     normalizedMetrics: [
       {
         normalizedKey: 'land.official_land_price_per_sqm_krw',
@@ -390,7 +419,9 @@ const datasetDefinitions: Record<KoreaPublicDatasetKey, KoreaPublicDatasetDefini
     envBaseUrlKey: 'KOREA_CADASTRAL_API_URL',
     envApiKeyKey: 'KOREA_CADASTRAL_API_KEY',
     coverage: ['parcel geometry', 'site'],
-    fallbackNote: 'Falls back to normalized address and site profile when cadastral geometry is unavailable.',
+    fallbackNote:
+      'Falls back to normalized address and site profile when cadastral geometry is unavailable.',
+    cadence: 'market',
     normalizedMetrics: [
       {
         normalizedKey: 'kr.parcel_count',
@@ -414,7 +445,9 @@ const datasetDefinitions: Record<KoreaPublicDatasetKey, KoreaPublicDatasetDefini
     envBaseUrlKey: 'KOREA_GIS_BUILDING_API_URL',
     envApiKeyKey: 'KOREA_GIS_BUILDING_API_KEY',
     coverage: ['building geometry', 'parcel overlays', 'site context'],
-    fallbackNote: 'Falls back to building snapshot, address normalization, and geospatial overlays when GIS building integration is unavailable.',
+    fallbackNote:
+      'Falls back to building snapshot, address normalization, and geospatial overlays when GIS building integration is unavailable.',
+    cadence: 'market',
     normalizedMetrics: [
       {
         normalizedKey: 'kr.gis_building_count',
@@ -438,7 +471,9 @@ const datasetDefinitions: Record<KoreaPublicDatasetKey, KoreaPublicDatasetDefini
     envBaseUrlKey: 'KOREA_BUILDING_ENERGY_API_URL',
     envApiKeyKey: 'KOREA_BUILDING_ENERGY_API_KEY',
     coverage: ['energy', 'physical operations'],
-    fallbackNote: 'Falls back to energy snapshot and analyst review notes when energy registry is unavailable.',
+    fallbackNote:
+      'Falls back to energy snapshot and analyst review notes when energy registry is unavailable.',
+    cadence: 'market',
     normalizedMetrics: [
       {
         normalizedKey: 'kr.energy_use_intensity_kwh_sqm',
@@ -514,11 +549,19 @@ export function extractKoreaPublicDatasetMetrics(
 
 export function createKoreaPublicDatasetAdapter(store: SourceCacheStore, fetcher?: Fetcher) {
   return {
-    async fetch(datasetKey: KoreaPublicDatasetKey, cacheKey: string, params?: Record<string, string | number | null | undefined>): Promise<SourceEnvelope<Record<string, unknown>>> {
+    async fetch(
+      datasetKey: KoreaPublicDatasetKey,
+      cacheKey: string,
+      params?: Record<string, string | number | null | undefined>
+    ): Promise<SourceEnvelope<Record<string, unknown>>> {
       const definition = datasetDefinitions[datasetKey];
       const sourceSystem = definition.sourceSystem;
       const now = new Date();
-      const cached = await store.getFreshCache<Record<string, unknown>>(sourceSystem, cacheKey, now);
+      const cached = await store.getFreshCache<Record<string, unknown>>(
+        sourceSystem,
+        cacheKey,
+        now
+      );
       if (cached) {
         return {
           sourceSystem,
@@ -586,7 +629,10 @@ export function createKoreaPublicDatasetAdapter(store: SourceCacheStore, fetcher
           data: payload,
           provenance: Object.keys(payload).map((field) => ({
             field,
-            value: typeof payload[field] === 'number' || typeof payload[field] === 'string' ? (payload[field] as string | number) : null,
+            value:
+              typeof payload[field] === 'number' || typeof payload[field] === 'string'
+                ? (payload[field] as string | number)
+                : null,
             sourceSystem,
             mode: 'api',
             fetchedAt: entry.fetchedAt.toISOString(),

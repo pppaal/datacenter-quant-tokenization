@@ -74,8 +74,12 @@ test('macro decomposition compares current and previous regime shifts', () => {
 
   assert.ok(decomposition);
   assert.equal(decomposition.previousRunLabel, 'Previous');
-  assert.ok(decomposition.guidanceChanges.some((item) => item.delta !== null && Math.abs(item.delta) > 0));
-  assert.ok(decomposition.impactChanges.some((item) => item.delta !== null && Math.abs(item.delta) > 0));
+  assert.ok(
+    decomposition.guidanceChanges.some((item) => item.delta !== null && Math.abs(item.delta) > 0)
+  );
+  assert.ok(
+    decomposition.impactChanges.some((item) => item.delta !== null && Math.abs(item.delta) > 0)
+  );
   assert.ok(decomposition.factorDrivers.length > 0);
 });
 
@@ -121,6 +125,9 @@ test('macro decomposition tolerates legacy macro regime payloads without guidanc
   ]);
 
   assert.ok(decomposition);
-  assert.equal(decomposition.guidanceChanges.every((item) => item.currentValue === null), true);
+  assert.equal(
+    decomposition.guidanceChanges.every((item) => item.currentValue === null),
+    true
+  );
   assert.equal(decomposition.summary[0], 'No prior guidance baseline available yet.');
 });

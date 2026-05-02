@@ -103,7 +103,8 @@ const macroConnectorDefinitions: MacroConnectorDefinition[] = [
     id: 'global_fx_api',
     label: 'Global FX API',
     priority: 2,
-    description: 'Live FX connector for non-KRW asset intake, micro data, and display normalization.',
+    description:
+      'Live FX connector for non-KRW asset intake, micro data, and display normalization.',
     fields: ['fx rates', 'currency normalization'],
     requiredGroups: [['GLOBAL_FX_API_URL']],
     optionalKeys: ['GLOBAL_FX_API_KEY']
@@ -112,7 +113,8 @@ const macroConnectorDefinitions: MacroConnectorDefinition[] = [
     id: 'global_market_api',
     label: 'Global Market API',
     priority: 3,
-    description: 'Market-layer connector for vacancy, cap rates, transaction comps, rent comps, and indicator history.',
+    description:
+      'Market-layer connector for vacancy, cap rates, transaction comps, rent comps, and indicator history.',
     fields: ['vacancy', 'cap rate', 'transaction comps', 'rent comps', 'market indicators'],
     requiredGroups: [['GLOBAL_MARKET_API_URL'], ['US_MARKET_API_URL']],
     optionalKeys: ['GLOBAL_MARKET_API_KEY', 'US_MARKET_API_KEY']
@@ -121,7 +123,8 @@ const macroConnectorDefinitions: MacroConnectorDefinition[] = [
     id: 'us_fred_inflation',
     label: 'US FRED Inflation',
     priority: 4,
-    description: 'US CPI or inflation series for the macro regime engine in the first global launch market.',
+    description:
+      'US CPI or inflation series for the macro regime engine in the first global launch market.',
     fields: ['inflation'],
     requiredGroups: [['US_FRED_API_KEY', 'US_FRED_INFLATION_SERIES_ID']],
     optionalKeys: ['US_FRED_BASE_URL']
@@ -130,7 +133,8 @@ const macroConnectorDefinitions: MacroConnectorDefinition[] = [
     id: 'us_fred_policy_rate',
     label: 'US FRED Policy Rate',
     priority: 5,
-    description: 'Fed funds or policy-rate series for capital-market and refinancing interpretation.',
+    description:
+      'Fed funds or policy-rate series for capital-market and refinancing interpretation.',
     fields: ['policy rate'],
     requiredGroups: [['US_FRED_API_KEY', 'US_FRED_POLICY_RATE_SERIES_ID']],
     optionalKeys: ['US_FRED_BASE_URL']
@@ -166,7 +170,8 @@ const macroConnectorDefinitions: MacroConnectorDefinition[] = [
     id: 'us_fred_construction_cost_index',
     label: 'US FRED Construction Cost Index',
     priority: 9,
-    description: 'US construction-cost pressure series for replacement-cost and contingency overlays.',
+    description:
+      'US construction-cost pressure series for replacement-cost and contingency overlays.',
     fields: ['construction cost index'],
     requiredGroups: [['US_FRED_API_KEY', 'US_FRED_CONSTRUCTION_COST_INDEX_SERIES_ID']],
     optionalKeys: ['US_FRED_BASE_URL']
@@ -283,11 +288,16 @@ const macroConnectorDefinitions: MacroConnectorDefinition[] = [
     id: 'kosis_inflation',
     label: 'KOSIS Inflation',
     priority: 22,
-    description: 'Monthly inflation benchmark for growth, construction pressure, and discount-rate framing.',
+    description:
+      'Monthly inflation benchmark for growth, construction pressure, and discount-rate framing.',
     fields: ['inflation'],
     requiredGroups: [
       ['KOREA_KOSIS_INFLATION_USER_STATS_ID'],
-      ['KOREA_KOSIS_INFLATION_ORG_ID', 'KOREA_KOSIS_INFLATION_TBL_ID', 'KOREA_KOSIS_INFLATION_ITM_ID']
+      [
+        'KOREA_KOSIS_INFLATION_ORG_ID',
+        'KOREA_KOSIS_INFLATION_TBL_ID',
+        'KOREA_KOSIS_INFLATION_ITM_ID'
+      ]
     ]
   },
   {
@@ -313,7 +323,11 @@ const macroConnectorDefinitions: MacroConnectorDefinition[] = [
     fields: ['policy rate'],
     requiredGroups: [
       ['KOREA_KOSIS_POLICY_RATE_USER_STATS_ID'],
-      ['KOREA_KOSIS_POLICY_RATE_ORG_ID', 'KOREA_KOSIS_POLICY_RATE_TBL_ID', 'KOREA_KOSIS_POLICY_RATE_ITM_ID']
+      [
+        'KOREA_KOSIS_POLICY_RATE_ORG_ID',
+        'KOREA_KOSIS_POLICY_RATE_TBL_ID',
+        'KOREA_KOSIS_POLICY_RATE_ITM_ID'
+      ]
     ]
   },
   {
@@ -324,7 +338,11 @@ const macroConnectorDefinitions: MacroConnectorDefinition[] = [
     fields: ['credit spread'],
     requiredGroups: [
       ['KOREA_KOSIS_CREDIT_SPREAD_USER_STATS_ID'],
-      ['KOREA_KOSIS_CREDIT_SPREAD_ORG_ID', 'KOREA_KOSIS_CREDIT_SPREAD_TBL_ID', 'KOREA_KOSIS_CREDIT_SPREAD_ITM_ID']
+      [
+        'KOREA_KOSIS_CREDIT_SPREAD_ORG_ID',
+        'KOREA_KOSIS_CREDIT_SPREAD_TBL_ID',
+        'KOREA_KOSIS_CREDIT_SPREAD_ITM_ID'
+      ]
     ]
   },
   {
@@ -335,7 +353,11 @@ const macroConnectorDefinitions: MacroConnectorDefinition[] = [
     fields: ['rent growth'],
     requiredGroups: [
       ['KOREA_KOSIS_RENT_GROWTH_USER_STATS_ID'],
-      ['KOREA_KOSIS_RENT_GROWTH_ORG_ID', 'KOREA_KOSIS_RENT_GROWTH_TBL_ID', 'KOREA_KOSIS_RENT_GROWTH_ITM_ID']
+      [
+        'KOREA_KOSIS_RENT_GROWTH_ORG_ID',
+        'KOREA_KOSIS_RENT_GROWTH_TBL_ID',
+        'KOREA_KOSIS_RENT_GROWTH_ITM_ID'
+      ]
     ]
   },
   {
@@ -379,7 +401,9 @@ function getConfiguredKeys(groups: string[][], env: NodeJS.ProcessEnv) {
 }
 
 function resolveConnectorStatus(definition: MacroConnectorDefinition, env: NodeJS.ProcessEnv) {
-  const groupSatisfied = definition.requiredGroups.some((group) => group.every((key) => hasValue(env[key])));
+  const groupSatisfied = definition.requiredGroups.some((group) =>
+    group.every((key) => hasValue(env[key]))
+  );
   const configuredKeys = [
     ...getConfiguredKeys(definition.requiredGroups, env),
     ...(definition.optionalKeys ?? []).filter((key) => hasValue(env[key]))
@@ -390,7 +414,9 @@ function resolveConnectorStatus(definition: MacroConnectorDefinition, env: NodeJ
   return { status: 'MISSING' as const, configuredKeys };
 }
 
-export function listMacroConnectorReadiness(env: NodeJS.ProcessEnv = process.env): MacroConnectorReadiness[] {
+export function listMacroConnectorReadiness(
+  env: NodeJS.ProcessEnv = process.env
+): MacroConnectorReadiness[] {
   return macroConnectorDefinitions.map((definition) => {
     const { status, configuredKeys } = resolveConnectorStatus(definition, env);
 
@@ -401,7 +427,9 @@ export function listMacroConnectorReadiness(env: NodeJS.ProcessEnv = process.env
       status,
       description: definition.description,
       fields: definition.fields,
-      envKeys: [...new Set([...definition.requiredGroups.flat(), ...(definition.optionalKeys ?? [])])],
+      envKeys: [
+        ...new Set([...definition.requiredGroups.flat(), ...(definition.optionalKeys ?? [])])
+      ],
       configuredKeys
     };
   });
@@ -413,7 +441,8 @@ export function listGlobalMarketLaunchPlan(): GlobalMarketLaunchPlan[] {
       region: 'United States',
       phase: 1,
       status: 'NOW',
-      thesis: 'Deepest transaction market and richest public macro stack. Best first global market for underwriting credibility.',
+      thesis:
+        'Deepest transaction market and richest public macro stack. Best first global market for underwriting credibility.',
       assetClasses: ['Office', 'Industrial', 'Multifamily', 'Retail', 'Data Center'],
       macroSources: ['FRED', 'BLS', 'Treasury yields', 'CMBS spread proxies'],
       marketSources: ['CoStar', 'MSCI/RCA', 'broker reports', 'internal comp ingestion'],
@@ -423,11 +452,16 @@ export function listGlobalMarketLaunchPlan(): GlobalMarketLaunchPlan[] {
       region: 'United Kingdom / Europe',
       phase: 2,
       status: 'NEXT',
-      thesis: 'High institutional relevance and cross-border capital flows. Strong fit for office, logistics, and living sectors.',
+      thesis:
+        'High institutional relevance and cross-border capital flows. Strong fit for office, logistics, and living sectors.',
       assetClasses: ['Office', 'Industrial', 'Multifamily', 'Retail', 'Data Center'],
       macroSources: ['ECB', 'Bank of England', 'Eurostat', 'ONS'],
       marketSources: ['MSCI', 'broker reports', 'local transaction comp feeds'],
-      blockers: ['country-by-country rent index mapping', 'currency normalization', 'permit/zoning fragmentation']
+      blockers: [
+        'country-by-country rent index mapping',
+        'currency normalization',
+        'permit/zoning fragmentation'
+      ]
     },
     {
       region: 'Japan / Singapore',
@@ -437,13 +471,18 @@ export function listGlobalMarketLaunchPlan(): GlobalMarketLaunchPlan[] {
       assetClasses: ['Industrial', 'Office', 'Data Center', 'Multifamily'],
       macroSources: ['BoJ', 'MAS', 'government statistics', 'local bond curves'],
       marketSources: ['JLL/CBRE reports', 'local comps', 'power and infra sources'],
-      blockers: ['localized market terms', 'power and utility data access', 'language-specific document extraction']
+      blockers: [
+        'localized market terms',
+        'power and utility data access',
+        'language-specific document extraction'
+      ]
     },
     {
       region: 'Middle East / Rest of APAC',
       phase: 4,
       status: 'LATER',
-      thesis: 'Attractive for infra and data center growth, but source reliability and standardization are less mature.',
+      thesis:
+        'Attractive for infra and data center growth, but source reliability and standardization are less mature.',
       assetClasses: ['Industrial', 'Hospitality', 'Data Center', 'Specialty'],
       macroSources: ['central bank releases', 'World Bank', 'IMF', 'local statistics agencies'],
       marketSources: ['broker reports', 'partner data rooms', 'manual comp curation'],
@@ -495,7 +534,12 @@ export function listFreeMacroSourceCatalog(): FreeMacroSourceCatalogItem[] {
       label: 'U.S. Treasury Fiscal Data API',
       region: 'United States',
       providerType: 'fiscal',
-      coverage: ['yield proxies', 'debt issuance', 'government cash flows', 'fiscal balance context'],
+      coverage: [
+        'yield proxies',
+        'debt issuance',
+        'government cash flows',
+        'fiscal balance context'
+      ],
       cadence: 'daily',
       realtimeClass: 'NEAR_REALTIME',
       auth: 'none',
@@ -519,11 +563,18 @@ export function listFreeMacroSourceCatalog(): FreeMacroSourceCatalogItem[] {
       label: 'World Bank Indicators API',
       region: 'Global',
       providerType: 'multilateral',
-      coverage: ['population', 'GDP per capita', 'debt', 'development indicators', 'long-run structural data'],
+      coverage: [
+        'population',
+        'GDP per capita',
+        'debt',
+        'development indicators',
+        'long-run structural data'
+      ],
       cadence: 'annual',
       realtimeClass: 'LOW_FREQUENCY',
       auth: 'none',
-      docsUrl: 'https://datahelpdesk.worldbank.org/knowledgebase/articles/889392-about-the-indicators-api-documentation',
+      docsUrl:
+        'https://datahelpdesk.worldbank.org/knowledgebase/articles/889392-about-the-indicators-api-documentation',
       note: 'Good global cross-country baseline, but not suitable for high-frequency macro regime updates.'
     },
     {

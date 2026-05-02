@@ -16,6 +16,8 @@ import type { Address, Hex } from 'viem';
 import { stringToHex, encodeEventTopics, decodeEventLog } from 'viem';
 import { transferAgentAbi } from '@/lib/blockchain/tokenization-abi';
 import { getRegistryChainClients } from '@/lib/blockchain/client';
+import { buildMockTxHash, isTokenizationMockMode } from '@/lib/blockchain/mock-mode';
+import { awaitTxReceipt } from '@/lib/blockchain/tx';
 import { prisma } from '@/lib/db/prisma';
 import { ensureAddress, ensureBytes32 } from './tokenization-client';
 
@@ -71,49 +73,61 @@ export async function openTicket(
   });
   if (!tokenizedAsset) throw new Error(`TokenizedAsset ${input.tokenizedAssetId} not found`);
 
-  const clients = getRegistryChainClients();
-  if (clients.config.chainId !== tokenizedAsset.chainId) {
-    throw new Error(
-      `Chain mismatch: BLOCKCHAIN_CHAIN_ID=${clients.config.chainId} but deployment is on ${tokenizedAsset.chainId}`
-    );
-  }
-
-  const txHash = await clients.walletClient.writeContract({
-    address: agent,
-    abi: transferAgentAbi,
-    functionName: 'openTicket',
-    args: [
-      token,
-      seller,
-      buyer,
-      shareAmount,
-      quotePrice,
-      coerceQuoteSymbol(input.quoteAssetSymbol),
-      coerceExpiry(input.expiresAt),
-      rfqRef as Hex
-    ]
-  });
-  const receipt = await clients.publicClient.waitForTransactionReceipt({ hash: txHash });
-
-  const topic = encodeEventTopics({
-    abi: transferAgentAbi,
-    eventName: 'TicketOpened'
-  })[0];
-  let chainTicketId: number | null = null;
-  for (const log of receipt.logs) {
-    if (log.address.toLowerCase() !== agent.toLowerCase()) continue;
-    if (log.topics[0] !== topic) continue;
-    const decoded = decodeEventLog({
-      abi: transferAgentAbi,
-      data: log.data,
-      topics: log.topics,
-      eventName: 'TicketOpened'
+  let txHash: Hex;
+  let chainTicketId: number;
+  if (isTokenizationMockMode()) {
+    txHash = buildMockTxHash('openTicket', agent, token, seller, buyer, shareAmount.toString());
+    const existingMax = await db.transferTicket.aggregate({
+      where: { transferAgentAddress: agent },
+      _max: { ticketId: true }
     });
-    chainTicketId = Number((decoded.args as { ticketId: bigint }).ticketId);
-    break;
-  }
-  if (chainTicketId === null) {
-    throw new Error('openTicket tx succeeded but TicketOpened log was not found');
+    chainTicketId = (existingMax._max.ticketId ?? 0) + 1;
+  } else {
+    const clients = getRegistryChainClients();
+    if (clients.config.chainId !== tokenizedAsset.chainId) {
+      throw new Error(
+        `Chain mismatch: BLOCKCHAIN_CHAIN_ID=${clients.config.chainId} but deployment is on ${tokenizedAsset.chainId}`
+      );
+    }
+
+    txHash = await clients.walletClient.writeContract({
+      address: agent,
+      abi: transferAgentAbi,
+      functionName: 'openTicket',
+      args: [
+        token,
+        seller,
+        buyer,
+        shareAmount,
+        quotePrice,
+        coerceQuoteSymbol(input.quoteAssetSymbol),
+        coerceExpiry(input.expiresAt),
+        rfqRef as Hex
+      ]
+    });
+    const receipt = await awaitTxReceipt(clients.publicClient, txHash, { label: 'openTicket' });
+
+    const topic = encodeEventTopics({
+      abi: transferAgentAbi,
+      eventName: 'TicketOpened'
+    })[0];
+    let parsedChainTicketId: number | null = null;
+    for (const log of receipt.logs) {
+      if (log.address.toLowerCase() !== agent.toLowerCase()) continue;
+      if (log.topics[0] !== topic) continue;
+      const decoded = decodeEventLog({
+        abi: transferAgentAbi,
+        data: log.data,
+        topics: log.topics,
+        eventName: 'TicketOpened'
+      });
+      parsedChainTicketId = Number((decoded.args as { ticketId: bigint }).ticketId);
+      break;
+    }
+    if (parsedChainTicketId === null) {
+      throw new Error('openTicket tx succeeded but TicketOpened log was not found');
+    }
+    chainTicketId = parsedChainTicketId;
   }
 
   return db.transferTicket.create({
@@ -147,7 +161,15 @@ async function mutateTicketStatus(params: {
   allowFromStatuses: Array<TransferTicket['status']>;
   db: PrismaClient;
 }) {
-  const { ticketDbId, targetStatus, functionName, extraArgs = [], decidedBy, allowFromStatuses, db } = params;
+  const {
+    ticketDbId,
+    targetStatus,
+    functionName,
+    extraArgs = [],
+    decidedBy,
+    allowFromStatuses,
+    db
+  } = params;
   const ticket = await db.transferTicket.findUnique({ where: { id: ticketDbId } });
   if (!ticket) throw new Error(`TransferTicket ${ticketDbId} not found`);
   if (!allowFromStatuses.includes(ticket.status)) {
@@ -156,19 +178,24 @@ async function mutateTicketStatus(params: {
     );
   }
 
-  const clients = getRegistryChainClients();
-  if (clients.config.chainId !== ticket.chainId) {
-    throw new Error(
-      `Chain mismatch: BLOCKCHAIN_CHAIN_ID=${clients.config.chainId} but ticket is on ${ticket.chainId}`
-    );
+  let txHash: Hex;
+  if (isTokenizationMockMode()) {
+    txHash = buildMockTxHash(functionName, ticket.transferAgentAddress, ticket.ticketId);
+  } else {
+    const clients = getRegistryChainClients();
+    if (clients.config.chainId !== ticket.chainId) {
+      throw new Error(
+        `Chain mismatch: BLOCKCHAIN_CHAIN_ID=${clients.config.chainId} but ticket is on ${ticket.chainId}`
+      );
+    }
+    txHash = await clients.walletClient.writeContract({
+      address: ticket.transferAgentAddress as Address,
+      abi: transferAgentAbi,
+      functionName,
+      args: [BigInt(ticket.ticketId), ...extraArgs] as readonly unknown[]
+    });
+    await awaitTxReceipt(clients.publicClient, txHash, { label: functionName });
   }
-  const txHash = await clients.walletClient.writeContract({
-    address: ticket.transferAgentAddress as Address,
-    abi: transferAgentAbi,
-    functionName,
-    args: [BigInt(ticket.ticketId), ...extraArgs] as readonly unknown[]
-  });
-  await clients.publicClient.waitForTransactionReceipt({ hash: txHash });
 
   const updates: Partial<TransferTicket> = { status: targetStatus };
   if (functionName === 'approveTicket' || functionName === 'rejectTicket') {
@@ -212,11 +239,7 @@ export function rejectTicket(
   });
 }
 
-export function cancelTicket(
-  ticketDbId: string,
-  reason: string,
-  db: PrismaClient = prisma
-) {
+export function cancelTicket(ticketDbId: string, reason: string, db: PrismaClient = prisma) {
   const reasonBytes = ensureBytes32(reason, 'reason');
   return mutateTicketStatus({
     ticketDbId,

@@ -205,7 +205,10 @@ export const dealTaskUpdateSchema = z.object({
 });
 
 export const dealDocumentRequestCreateSchema = z.object({
-  title: z.preprocess(emptyStringToUndefined, z.string().trim().min(1, 'Request title is required')),
+  title: z.preprocess(
+    emptyStringToUndefined,
+    z.string().trim().min(1, 'Request title is required')
+  ),
   category: optionalStringField,
   counterpartyId: optionalStringField,
   documentId: optionalStringField,
@@ -260,30 +263,42 @@ export const dealDiligenceWorkstreamUpdateSchema = z.object({
 });
 
 export const dealDiligenceDeliverableCreateSchema = z.object({
-  documentId: z.preprocess(emptyStringToUndefined, z.string().trim().min(1, 'Document id is required')),
+  documentId: z.preprocess(
+    emptyStringToUndefined,
+    z.string().trim().min(1, 'Document id is required')
+  ),
   note: optionalStringField
 });
 
-export const dealBidRevisionCreateSchema = z.object({
-  label: z.preprocess(emptyStringToUndefined, z.string().trim().min(1, 'Bid label is required')),
-  counterpartyId: optionalStringField,
-  status: z.nativeEnum(DealBidStatus).default(DealBidStatus.DRAFT),
-  bidPriceKrw: positiveNumberField,
-  depositKrw: optionalNumberField,
-  exclusivityDays: optionalIntField,
-  diligenceDays: optionalIntField,
-  closeTimelineDays: optionalIntField,
-  submittedAt: optionalDateField,
-  notes: optionalStringField
-}).refine(
-  (data) => {
-    if (data.closeTimelineDays != null && data.exclusivityDays != null && data.diligenceDays != null) {
-      return data.closeTimelineDays >= data.exclusivityDays + data.diligenceDays;
+export const dealBidRevisionCreateSchema = z
+  .object({
+    label: z.preprocess(emptyStringToUndefined, z.string().trim().min(1, 'Bid label is required')),
+    counterpartyId: optionalStringField,
+    status: z.nativeEnum(DealBidStatus).default(DealBidStatus.DRAFT),
+    bidPriceKrw: positiveNumberField,
+    depositKrw: optionalNumberField,
+    exclusivityDays: optionalIntField,
+    diligenceDays: optionalIntField,
+    closeTimelineDays: optionalIntField,
+    submittedAt: optionalDateField,
+    notes: optionalStringField
+  })
+  .refine(
+    (data) => {
+      if (
+        data.closeTimelineDays != null &&
+        data.exclusivityDays != null &&
+        data.diligenceDays != null
+      ) {
+        return data.closeTimelineDays >= data.exclusivityDays + data.diligenceDays;
+      }
+      return true;
+    },
+    {
+      message: 'Close timeline must be at least exclusivity + diligence days',
+      path: ['closeTimelineDays']
     }
-    return true;
-  },
-  { message: 'Close timeline must be at least exclusivity + diligence days', path: ['closeTimelineDays'] }
-);
+  );
 
 export const dealBidRevisionUpdateSchema = z.object({
   label: optionalStringField,
@@ -299,7 +314,10 @@ export const dealBidRevisionUpdateSchema = z.object({
 });
 
 export const dealLenderQuoteCreateSchema = z.object({
-  facilityLabel: z.preprocess(emptyStringToUndefined, z.string().trim().min(1, 'Facility label is required')),
+  facilityLabel: z.preprocess(
+    emptyStringToUndefined,
+    z.string().trim().min(1, 'Facility label is required')
+  ),
   counterpartyId: optionalStringField,
   status: z.nativeEnum(DealLenderQuoteStatus).default(DealLenderQuoteStatus.INDICATED),
   amountKrw: positiveNumberField,
@@ -380,7 +398,10 @@ export const dealRestoreSchema = z.object({
 
 export const dealCloseOutSchema = z.object({
   outcome: z.enum(['CLOSED_WON', 'CLOSED_LOST']),
-  summary: z.preprocess(emptyStringToUndefined, z.string().trim().min(1, 'Close-out summary is required')),
+  summary: z.preprocess(
+    emptyStringToUndefined,
+    z.string().trim().min(1, 'Close-out summary is required')
+  ),
   lossReason: dealLossReasonSchema.optional()
 });
 
@@ -393,9 +414,15 @@ export type DealTaskCreateInput = z.infer<typeof dealTaskCreateSchema>;
 export type DealTaskUpdateInput = z.infer<typeof dealTaskUpdateSchema>;
 export type DealDocumentRequestCreateInput = z.infer<typeof dealDocumentRequestCreateSchema>;
 export type DealDocumentRequestUpdateInput = z.infer<typeof dealDocumentRequestUpdateSchema>;
-export type DealDiligenceWorkstreamCreateInput = z.infer<typeof dealDiligenceWorkstreamCreateSchema>;
-export type DealDiligenceWorkstreamUpdateInput = z.infer<typeof dealDiligenceWorkstreamUpdateSchema>;
-export type DealDiligenceDeliverableCreateInput = z.infer<typeof dealDiligenceDeliverableCreateSchema>;
+export type DealDiligenceWorkstreamCreateInput = z.infer<
+  typeof dealDiligenceWorkstreamCreateSchema
+>;
+export type DealDiligenceWorkstreamUpdateInput = z.infer<
+  typeof dealDiligenceWorkstreamUpdateSchema
+>;
+export type DealDiligenceDeliverableCreateInput = z.infer<
+  typeof dealDiligenceDeliverableCreateSchema
+>;
 export type DealBidRevisionCreateInput = z.infer<typeof dealBidRevisionCreateSchema>;
 export type DealBidRevisionUpdateInput = z.infer<typeof dealBidRevisionUpdateSchema>;
 export type DealLenderQuoteCreateInput = z.infer<typeof dealLenderQuoteCreateSchema>;

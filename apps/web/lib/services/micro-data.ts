@@ -1,20 +1,22 @@
-import { AssetClass, LeaseStatus, ReviewStatus, SourceStatus, type PrismaClient } from '@prisma/client';
+import {
+  AssetClass,
+  LeaseStatus,
+  ReviewStatus,
+  SourceStatus,
+  type PrismaClient
+} from '@prisma/client';
 import { convertToKrw, resolveInputCurrency } from '@/lib/finance/currency';
 import { assetBundleInclude } from '@/lib/services/assets';
 import { promoteAssetSnapshotsToFeatures } from '@/lib/services/feature-promotion';
 import { prisma } from '@/lib/db/prisma';
-import { microDataSchema, type MicroDataInput } from '@/lib/validations/micro-data';
+import { microDataSchema } from '@/lib/validations/micro-data';
 
 type MicroDataDeps = {
   db?: PrismaClient;
   promoter?: typeof promoteAssetSnapshotsToFeatures;
 };
 
-export async function updateAssetMicroData(
-  assetId: string,
-  input: unknown,
-  deps?: MicroDataDeps
-) {
+export async function updateAssetMicroData(assetId: string, input: unknown, deps?: MicroDataDeps) {
   const db = deps?.db ?? prisma;
   const promoter = deps?.promoter ?? promoteAssetSnapshotsToFeatures;
   const parsed = microDataSchema.parse(input);
@@ -54,17 +56,28 @@ export async function updateAssetMicroData(
 
   if (!asset) throw new Error('Asset not found');
 
-  const inputCurrency = resolveInputCurrency(asset.address?.country ?? asset.market, parsed.inputCurrency);
+  const inputCurrency = resolveInputCurrency(
+    asset.address?.country ?? asset.market,
+    parsed.inputCurrency
+  );
   const normalized = {
     ...parsed,
     tariffKrwPerKwh:
-      typeof parsed.tariffKrwPerKwh === 'number' ? convertToKrw(parsed.tariffKrwPerKwh, inputCurrency) : undefined,
+      typeof parsed.tariffKrwPerKwh === 'number'
+        ? convertToKrw(parsed.tariffKrwPerKwh, inputCurrency)
+        : undefined,
     baseRatePerKwKrw:
-      typeof parsed.baseRatePerKwKrw === 'number' ? convertToKrw(parsed.baseRatePerKwKrw, inputCurrency) : undefined,
+      typeof parsed.baseRatePerKwKrw === 'number'
+        ? convertToKrw(parsed.baseRatePerKwKrw, inputCurrency)
+        : undefined,
     fitOutCostKrw:
-      typeof parsed.fitOutCostKrw === 'number' ? convertToKrw(parsed.fitOutCostKrw, inputCurrency) : undefined,
+      typeof parsed.fitOutCostKrw === 'number'
+        ? convertToKrw(parsed.fitOutCostKrw, inputCurrency)
+        : undefined,
     securedAmountKrw:
-      typeof parsed.securedAmountKrw === 'number' ? convertToKrw(parsed.securedAmountKrw, inputCurrency) : undefined
+      typeof parsed.securedAmountKrw === 'number'
+        ? convertToKrw(parsed.securedAmountKrw, inputCurrency)
+        : undefined
   };
 
   const hasEnergySignal =
@@ -152,14 +165,23 @@ export async function updateAssetMicroData(
         ? {
             upsert: {
               update: {
-                utilityName: normalized.utilityName ?? asset.energySnapshot?.utilityName ?? 'Pending manual review',
+                utilityName:
+                  normalized.utilityName ??
+                  asset.energySnapshot?.utilityName ??
+                  'Pending manual review',
                 substationDistanceKm:
-                  normalized.substationDistanceKm ?? asset.energySnapshot?.substationDistanceKm ?? null,
-                tariffKrwPerKwh: normalized.tariffKrwPerKwh ?? asset.energySnapshot?.tariffKrwPerKwh ?? null,
+                  normalized.substationDistanceKm ??
+                  asset.energySnapshot?.substationDistanceKm ??
+                  null,
+                tariffKrwPerKwh:
+                  normalized.tariffKrwPerKwh ?? asset.energySnapshot?.tariffKrwPerKwh ?? null,
                 renewableAvailabilityPct:
-                  normalized.renewableAvailabilityPct ?? asset.energySnapshot?.renewableAvailabilityPct ?? null,
+                  normalized.renewableAvailabilityPct ??
+                  asset.energySnapshot?.renewableAvailabilityPct ??
+                  null,
                 pueTarget: normalized.pueTarget ?? asset.energySnapshot?.pueTarget ?? null,
-                backupFuelHours: normalized.backupFuelHours ?? asset.energySnapshot?.backupFuelHours ?? null,
+                backupFuelHours:
+                  normalized.backupFuelHours ?? asset.energySnapshot?.backupFuelHours ?? null,
                 reviewStatus: ReviewStatus.PENDING,
                 reviewedAt: null,
                 reviewedById: null,
@@ -185,16 +207,26 @@ export async function updateAssetMicroData(
         ? {
             upsert: {
               update: {
-                permitStage: normalized.permitStage ?? asset.permitSnapshot?.permitStage ?? 'Pending manual review',
+                permitStage:
+                  normalized.permitStage ??
+                  asset.permitSnapshot?.permitStage ??
+                  'Pending manual review',
                 zoningApprovalStatus:
-                  normalized.zoningApprovalStatus ?? asset.permitSnapshot?.zoningApprovalStatus ?? 'Pending review',
+                  normalized.zoningApprovalStatus ??
+                  asset.permitSnapshot?.zoningApprovalStatus ??
+                  'Pending review',
                 environmentalReviewStatus:
                   normalized.environmentalReviewStatus ??
                   asset.permitSnapshot?.environmentalReviewStatus ??
                   'Pending review',
                 powerApprovalStatus:
-                  normalized.powerApprovalStatus ?? asset.permitSnapshot?.powerApprovalStatus ?? 'Pending review',
-                timelineNotes: normalized.timelineNotes ?? asset.permitSnapshot?.timelineNotes ?? 'Pending review',
+                  normalized.powerApprovalStatus ??
+                  asset.permitSnapshot?.powerApprovalStatus ??
+                  'Pending review',
+                timelineNotes:
+                  normalized.timelineNotes ??
+                  asset.permitSnapshot?.timelineNotes ??
+                  'Pending review',
                 reviewStatus: ReviewStatus.PENDING,
                 reviewedAt: null,
                 reviewedById: null,
@@ -254,7 +286,8 @@ export async function updateAssetMicroData(
                 data: {
                   encumbranceType: normalized.encumbranceType ?? encumbranceRecord.encumbranceType,
                   holderName: normalized.encumbranceHolderName ?? encumbranceRecord.holderName,
-                  securedAmountKrw: normalized.securedAmountKrw ?? encumbranceRecord.securedAmountKrw,
+                  securedAmountKrw:
+                    normalized.securedAmountKrw ?? encumbranceRecord.securedAmountKrw,
                   priorityRank: normalized.priorityRank ?? encumbranceRecord.priorityRank,
                   statusLabel: normalized.encumbranceStatus ?? encumbranceRecord.statusLabel,
                   reviewStatus: ReviewStatus.PENDING,
@@ -287,10 +320,12 @@ export async function updateAssetMicroData(
               update: {
                 where: { id: planningConstraint.id },
                 data: {
-                  constraintType: normalized.planningConstraintType ?? planningConstraint.constraintType,
+                  constraintType:
+                    normalized.planningConstraintType ?? planningConstraint.constraintType,
                   title: normalized.planningConstraintTitle ?? planningConstraint.title,
                   severity: normalized.planningConstraintSeverity ?? planningConstraint.severity,
-                  description: normalized.planningConstraintDescription ?? planningConstraint.description,
+                  description:
+                    normalized.planningConstraintDescription ?? planningConstraint.description,
                   reviewStatus: ReviewStatus.PENDING,
                   reviewedAt: null,
                   reviewedById: null,
@@ -326,9 +361,11 @@ export async function updateAssetMicroData(
                   startYear: normalized.startYear ?? primaryLease.startYear,
                   termYears: normalized.termYears ?? primaryLease.termYears,
                   baseRatePerKwKrw: normalized.baseRatePerKwKrw ?? primaryLease.baseRatePerKwKrw,
-                  annualEscalationPct: normalized.annualEscalationPct ?? primaryLease.annualEscalationPct,
+                  annualEscalationPct:
+                    normalized.annualEscalationPct ?? primaryLease.annualEscalationPct,
                   probabilityPct: normalized.probabilityPct ?? primaryLease.probabilityPct,
-                  renewProbabilityPct: normalized.renewProbabilityPct ?? primaryLease.renewProbabilityPct,
+                  renewProbabilityPct:
+                    normalized.renewProbabilityPct ?? primaryLease.renewProbabilityPct,
                   downtimeMonths: normalized.downtimeMonths ?? primaryLease.downtimeMonths,
                   fitOutCostKrw: normalized.fitOutCostKrw ?? primaryLease.fitOutCostKrw,
                   notes: normalized.leaseNotes ?? primaryLease.notes,

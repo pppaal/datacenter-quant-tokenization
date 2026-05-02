@@ -63,7 +63,9 @@ function canSafelyResetE2EDatabase() {
   }
 
   const databaseName = parsed.pathname.replace(/^\//, '');
-  return ['127.0.0.1', 'localhost'].includes(parsed.hostname) && databaseName === 'korea_dc_underwriting';
+  return (
+    ['127.0.0.1', 'localhost'].includes(parsed.hostname) && databaseName === 'korea_dc_underwriting'
+  );
 }
 
 async function assertDatabaseReachable() {
@@ -151,7 +153,14 @@ async function prepareE2EDatabaseSchema() {
     console.warn(
       'Prisma migrate deploy failed against the local E2E database. Resetting the dedicated scratch database and replaying the checked-in migration chain.'
     );
-    await runCommand('npx', ['prisma', 'migrate', 'reset', '--force', '--skip-seed', '--skip-generate']);
+    await runCommand('npx', [
+      'prisma',
+      'migrate',
+      'reset',
+      '--force',
+      '--skip-seed',
+      '--skip-generate'
+    ]);
   }
 
   console.log('Reconciling remaining schema drift on the dedicated E2E database...');

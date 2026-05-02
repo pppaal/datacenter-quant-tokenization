@@ -1,4 +1,11 @@
-import { CovenantStatus, PortfolioAssetStatus, TaskPriority, TaskStatus, type Prisma, type PrismaClient } from '@prisma/client';
+import {
+  CovenantStatus,
+  PortfolioAssetStatus,
+  TaskPriority,
+  TaskStatus,
+  type Prisma,
+  type PrismaClient
+} from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { buildAssetResearchDossier } from '@/lib/services/research/dossier';
 
@@ -114,7 +121,11 @@ export const portfolioInclude = {
         take: 1
       },
       initiatives: {
-        orderBy: [{ priority: 'desc' as const }, { targetDate: 'asc' as const }, { updatedAt: 'desc' as const }],
+        orderBy: [
+          { priority: 'desc' as const },
+          { targetDate: 'asc' as const },
+          { updatedAt: 'desc' as const }
+        ],
         take: 8
       },
       monthlyKpis: {
@@ -209,7 +220,9 @@ function latestBudget(portfolioAsset: PortfolioAssetBundle) {
   return portfolioAsset.budgets[0] ?? null;
 }
 
-function buildInitiativeSummary(initiatives: PortfolioAssetBundle['initiatives'] | undefined | null) {
+function buildInitiativeSummary(
+  initiatives: PortfolioAssetBundle['initiatives'] | undefined | null
+) {
   const rows = initiatives ?? [];
   const openItems = rows.filter((item) => item.status !== TaskStatus.DONE);
   const blockedCount = openItems.filter((item) => item.status === TaskStatus.BLOCKED).length;
@@ -217,7 +230,11 @@ function buildInitiativeSummary(initiatives: PortfolioAssetBundle['initiatives']
   const nextDueItem =
     [...openItems]
       .filter((item) => item.targetDate)
-      .sort((left, right) => (left.targetDate?.getTime() ?? Number.MAX_SAFE_INTEGER) - (right.targetDate?.getTime() ?? Number.MAX_SAFE_INTEGER))[0] ??
+      .sort(
+        (left, right) =>
+          (left.targetDate?.getTime() ?? Number.MAX_SAFE_INTEGER) -
+          (right.targetDate?.getTime() ?? Number.MAX_SAFE_INTEGER)
+      )[0] ??
     openItems[0] ??
     null;
 
@@ -241,10 +258,14 @@ function latestAnchorReference(portfolioAsset: PortfolioAssetBundle) {
   return portfolioAsset.asset.readinessProject?.onchainRecords[0]?.txHash ?? null;
 }
 
-function resolveDebtMaturityDate(facility: PortfolioAssetBundle['asset']['debtFacilities'][number]) {
+function resolveDebtMaturityDate(
+  facility: PortfolioAssetBundle['asset']['debtFacilities'][number]
+) {
   if (!facility.amortizationTermMonths) return null;
   const start = facility.createdAt;
-  return new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + facility.amortizationTermMonths, 1));
+  return new Date(
+    Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + facility.amortizationTermMonths, 1)
+  );
 }
 
 export function buildCovenantStatusSummary(tests: PortfolioAssetBundle['covenantTests']) {
@@ -278,7 +299,9 @@ export function buildPortfolioDashboard(portfolio: PortfolioBundle) {
     const annualBudget = sum(budget?.lineItems.map((item) => item.annualBudgetKrw) ?? []);
     const actualBudget = sum(budget?.lineItems.map((item) => item.ytdActualKrw) ?? []);
     const varianceBudget = sum(budget?.lineItems.map((item) => item.varianceKrw) ?? []);
-    const capexBudget = sum(portfolioAsset.capexProjects.map((project) => project.approvedBudgetKrw ?? project.budgetKrw));
+    const capexBudget = sum(
+      portfolioAsset.capexProjects.map((project) => project.approvedBudgetKrw ?? project.budgetKrw)
+    );
     const capexSpent = sum(portfolioAsset.capexProjects.map((project) => project.spentToDateKrw));
     const initiativeSummary = buildInitiativeSummary(portfolioAsset.initiatives);
 
@@ -311,9 +334,13 @@ export function buildPortfolioDashboard(portfolio: PortfolioBundle) {
     grossHoldValueKrw: sum(assetRows.map((row) => row.holdValueKrw)),
     averageOccupancyPct: average(assetRows.map((row) => row.latest?.occupancyPct)),
     annualizedNoiKrw: sum(assetRows.map((row) => row.latest?.noiKrw)),
-    annualizedRevenueKrw: sum(assetRows.map((row) => row.latest?.effectiveRentKrwPerSqmMonth != null && row.latest?.leasedAreaSqm != null
-      ? row.latest.effectiveRentKrwPerSqmMonth * row.latest.leasedAreaSqm * 12
-      : row.latest?.noiKrw ?? 0)),
+    annualizedRevenueKrw: sum(
+      assetRows.map((row) =>
+        row.latest?.effectiveRentKrwPerSqmMonth != null && row.latest?.leasedAreaSqm != null
+          ? row.latest.effectiveRentKrwPerSqmMonth * row.latest.leasedAreaSqm * 12
+          : (row.latest?.noiKrw ?? 0)
+      )
+    ),
     watchlistCount: assetRows.filter(
       (row) =>
         row.portfolioAsset.status === PortfolioAssetStatus.WATCHLIST ||
@@ -326,8 +353,10 @@ export function buildPortfolioDashboard(portfolio: PortfolioBundle) {
     .filter((row) => row.leaseRoll)
     .sort(
       (left, right) =>
-        (right.leaseRoll?.next12MonthsExpiringPct ?? 0) - (left.leaseRoll?.next12MonthsExpiringPct ?? 0) ||
-        (right.leaseRoll?.next24MonthsExpiringPct ?? 0) - (left.leaseRoll?.next24MonthsExpiringPct ?? 0)
+        (right.leaseRoll?.next12MonthsExpiringPct ?? 0) -
+          (left.leaseRoll?.next12MonthsExpiringPct ?? 0) ||
+        (right.leaseRoll?.next24MonthsExpiringPct ?? 0) -
+          (left.leaseRoll?.next24MonthsExpiringPct ?? 0)
     )
     .slice(0, 8);
 
@@ -371,7 +400,8 @@ export function buildPortfolioDashboard(portfolio: PortfolioBundle) {
 
   const capexBudgetTracker = [...assetRows].sort(
     (left, right) =>
-      ((right.capexSpent ?? 0) - (right.capexBudget ?? 0)) -
+      (right.capexSpent ?? 0) -
+      (right.capexBudget ?? 0) -
       ((left.capexSpent ?? 0) - (left.capexBudget ?? 0))
   );
 
@@ -435,7 +465,8 @@ export function buildPortfolioOperatorBriefs(
 
   const researchBrief = [
     `${portfolio.name} is operating with ${dashboard.summary.assetCount} held asset${dashboard.summary.assetCount === 1 ? '' : 's'} across ${portfolio.market}.`,
-    dashboard.researchSummary || 'Research coverage is still being expanded across the current hold set.',
+    dashboard.researchSummary ||
+      'Research coverage is still being expanded across the current hold set.',
     topExit
       ? `${topExit.asset.name} is the nearest modeled exit case with ${topExit.exitCase.targetExitDate ? `a target date of ${topExit.exitCase.targetExitDate.toISOString().slice(0, 10)}` : 'timing still under review'}.`
       : 'No active exit case has been staged yet.'

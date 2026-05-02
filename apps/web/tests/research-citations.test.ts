@@ -36,7 +36,8 @@ function makeReport(overrides: Partial<ResearchReport> = {}): ResearchReport {
       { text: '강남 cap rate가 5.3%로 하락했다.', sourceIds: ['S1'] },
       { text: '테헤란로 거래가 회복세다.', sourceIds: ['S2'] }
     ],
-    synthesis: '2026 Q2 기준 강남 A급 오피스 cap rate는 5.3%로 소폭 하락 [S1]. 테헤란로 대형 거래 3건이 성사됐다 [S2].',
+    synthesis:
+      '2026 Q2 기준 강남 A급 오피스 cap rate는 5.3%로 소폭 하락 [S1]. 테헤란로 대형 거래 3건이 성사됐다 [S2].',
     toolCalls: [{ name: 'search_news', input: { query: '강남' }, resultSummary: '2 sources' }],
     generatedBy: 'claude-opus-4-7',
     promptTokens: 1200,

@@ -33,8 +33,8 @@ export default async function FundWaterfallPage({ params }: Props) {
           <div className="eyebrow">Restricted</div>
           <h2 className="mt-3 text-2xl font-semibold text-white">Insufficient permissions</h2>
           <p className="mt-3 text-sm leading-7 text-slate-400">
-            The distribution waterfall view requires ADMIN role access. Contact your workspace administrator to
-            request elevation.
+            The distribution waterfall view requires ADMIN role access. Contact your workspace
+            administrator to request elevation.
           </p>
         </Card>
       </div>
@@ -54,9 +54,10 @@ export default async function FundWaterfallPage({ params }: Props) {
           Distribution waterfall, hurdles, and LP-by-LP commitment ledger in a single operator view.
         </h1>
         <p className="mt-4 max-w-4xl text-base leading-8 text-slate-200">
-          The waterfall view reconciles total commitments against called and distributed capital, then projects a
-          four-tier split across return of capital, preferred return, GP catch-up, and carried interest on residual
-          proceeds. Use it to brief LPs, align GP economics, and stage the next capital call.
+          The waterfall view reconciles total commitments against called and distributed capital,
+          then projects a four-tier split across return of capital, preferred return, GP catch-up,
+          and carried interest on residual proceeds. Use it to brief LPs, align GP economics, and
+          stage the next capital call.
         </p>
       </section>
 

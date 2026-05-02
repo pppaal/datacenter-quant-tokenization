@@ -33,9 +33,12 @@ export type RunHealthFlag = {
 };
 
 export function getRunSpreadRatio(scenarios?: ScenarioEntry[] | null) {
-  const bull = scenarios?.find((scenario) => scenario.name.toLowerCase() === 'bull')?.valuationKrw ?? null;
-  const bear = scenarios?.find((scenario) => scenario.name.toLowerCase() === 'bear')?.valuationKrw ?? null;
-  const base = scenarios?.find((scenario) => scenario.name.toLowerCase() === 'base')?.valuationKrw ?? null;
+  const bull =
+    scenarios?.find((scenario) => scenario.name.toLowerCase() === 'bull')?.valuationKrw ?? null;
+  const bear =
+    scenarios?.find((scenario) => scenario.name.toLowerCase() === 'bear')?.valuationKrw ?? null;
+  const base =
+    scenarios?.find((scenario) => scenario.name.toLowerCase() === 'base')?.valuationKrw ?? null;
   if (!bull || !bear || !base) return null;
   return (bull - bear) / base;
 }
@@ -45,14 +48,18 @@ export function getRunHealthFlags(input: RunHealthInput): RunHealthFlag[] {
   const createdAt = input.createdAt ? new Date(input.createdAt) : null;
   const ageDays = createdAt ? (Date.now() - createdAt.getTime()) / (1000 * 60 * 60 * 24) : null;
   const provenance = input.provenance ?? [];
-  const fallbackCount = provenance.filter((entry) => entry.mode.toLowerCase() === 'fallback').length;
+  const fallbackCount = provenance.filter(
+    (entry) => entry.mode.toLowerCase() === 'fallback'
+  ).length;
   const staleSourceEntry = provenance.find((entry) => {
     const fetchedAtValue =
       'fetchedAt' in (entry as Record<string, unknown>) && typeof entry.fetchedAt === 'string'
         ? entry.fetchedAt
         : null;
     const fetchedAt = fetchedAtValue ? new Date(fetchedAtValue) : null;
-    const fetchedAgeDays = fetchedAt ? (Date.now() - fetchedAt.getTime()) / (1000 * 60 * 60 * 24) : 0;
+    const fetchedAgeDays = fetchedAt
+      ? (Date.now() - fetchedAt.getTime()) / (1000 * 60 * 60 * 24)
+      : 0;
     return entry.freshnessLabel.toLowerCase().includes('stale') || fetchedAgeDays > 14;
   });
   const spreadRatio = getRunSpreadRatio(input.scenarios);
@@ -77,7 +84,11 @@ export function getRunHealthFlags(input: RunHealthInput): RunHealthFlag[] {
     flags.push({ key: 'compressed_spread', label: 'Tight spread', tone: 'neutral' });
   }
 
-  if (flags.some((flag) => ['stale_age', 'stale_source', 'fallback_heavy', 'low_confidence'].includes(flag.key))) {
+  if (
+    flags.some((flag) =>
+      ['stale_age', 'stale_source', 'fallback_heavy', 'low_confidence'].includes(flag.key)
+    )
+  ) {
     flags.push({ key: 'rerun_recommended', label: 'Re-run recommended', tone: 'danger' });
   }
 

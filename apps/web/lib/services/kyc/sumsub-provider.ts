@@ -51,9 +51,7 @@ export class SumsubProvider implements KycProvider {
     const wallet = payload.externalUserId;
     const countryCode = ALPHA3_TO_NUMERIC[payload.reviewResult.countryCodeAlpha3.toUpperCase()];
     if (!countryCode) {
-      throw new Error(
-        `sumsub kyc: unknown country code ${payload.reviewResult.countryCodeAlpha3}`
-      );
+      throw new Error(`sumsub kyc: unknown country code ${payload.reviewResult.countryCodeAlpha3}`);
     }
     const status = mapSumsubStatus(
       payload.reviewResult.reviewAnswer,

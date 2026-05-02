@@ -65,7 +65,9 @@ function buildInflationMock(): KoreaIngestRow[] {
   const values = [3.1, 2.9, 2.8, 2.6, 2.5];
   return values.map((value, index) => {
     const offset = values.length - 1 - index;
-    const observation = new Date(Date.UTC(baseMonth.getUTCFullYear(), baseMonth.getUTCMonth() - offset, 1));
+    const observation = new Date(
+      Date.UTC(baseMonth.getUTCFullYear(), baseMonth.getUTCMonth() - offset, 1)
+    );
     return {
       observationDate: observation,
       value,
@@ -80,7 +82,9 @@ function buildConstructionCostMock(): KoreaIngestRow[] {
   const values = [148.2, 149.4, 150.1, 151.3, 152.0];
   return values.map((value, index) => {
     const offset = values.length - 1 - index;
-    const observation = new Date(Date.UTC(baseMonth.getUTCFullYear(), baseMonth.getUTCMonth() - offset, 1));
+    const observation = new Date(
+      Date.UTC(baseMonth.getUTCFullYear(), baseMonth.getUTCMonth() - offset, 1)
+    );
     return {
       observationDate: observation,
       value,
@@ -148,7 +152,8 @@ function buildKosisUrl(
 
 async function runKosisSeries(config: KosisSeriesConfig): Promise<KoreaIngestResult> {
   const apiKey = process.env.KOREA_KOSIS_API_KEY?.trim();
-  const baseUrl = process.env.KOREA_KOSIS_BASE_URL?.trim() || 'https://kosis.kr/openapi/statisticsData.do';
+  const baseUrl =
+    process.env.KOREA_KOSIS_BASE_URL?.trim() || 'https://kosis.kr/openapi/statisticsData.do';
   const newestCount = process.env.KOREA_KOSIS_NEWEST_COUNT?.trim() || '12';
 
   if (!apiKey) {

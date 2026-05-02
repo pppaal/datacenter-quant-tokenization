@@ -27,7 +27,12 @@ export function buildStoredBaseCaseProForma({
   const debtYearsByYear = buildYearMap(debtSchedule.years);
   const equityYearsByYear = buildYearMap(equityWaterfall.years);
 
-  const returnMetrics = computeReturnMetrics({ leaseDcf, debtSchedule, equityWaterfall, totalCapexKrw });
+  const returnMetrics = computeReturnMetrics({
+    leaseDcf,
+    debtSchedule,
+    equityWaterfall,
+    totalCapexKrw
+  });
 
   return {
     summary: {
@@ -87,7 +92,8 @@ export function buildStoredBaseCaseProForma({
         cfadsBeforeDebtKrw: roundKrw(year.cfadsBeforeDebtKrw),
         activeRenewalLeaseCount: year.activeRenewalLeaseCount,
         weightedRenewalRatePerKwKrw:
-          year.weightedRenewalRatePerKwKrw !== null && year.weightedRenewalRatePerKwKrw !== undefined
+          year.weightedRenewalRatePerKwKrw !== null &&
+          year.weightedRenewalRatePerKwKrw !== undefined
             ? roundKrw(year.weightedRenewalRatePerKwKrw)
             : null,
         drawAmountKrw: roundKrw(debtYear?.drawAmountKrw ?? 0),
@@ -95,7 +101,10 @@ export function buildStoredBaseCaseProForma({
         principalKrw: roundKrw(debtYear?.principalKrw ?? 0),
         debtServiceKrw: roundKrw(debtYear?.debtServiceKrw ?? 0),
         endingDebtBalanceKrw: roundKrw(debtYear?.endingBalanceKrw ?? 0),
-        dscr: debtYear?.dscr !== null && debtYear?.dscr !== undefined ? Number(debtYear.dscr.toFixed(2)) : null,
+        dscr:
+          debtYear?.dscr !== null && debtYear?.dscr !== undefined
+            ? Number(debtYear.dscr.toFixed(2))
+            : null,
         propertyTaxKrw: roundKrw(equityYear?.propertyTaxKrw ?? 0),
         insuranceKrw: roundKrw(equityYear?.insuranceKrw ?? 0),
         managementFeeKrw: roundKrw(equityYear?.managementFeeKrw ?? 0),

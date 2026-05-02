@@ -9,9 +9,17 @@ import {
   STRESS_SCENARIOS
 } from '@/lib/services/macro/deal-risk';
 
-function makeFactors(market: string, overrides?: Partial<Record<string, { value: number; direction: string; trendMomentum: number | null }>>): MacroFactor[] {
+function makeFactors(
+  market: string,
+  overrides?: Partial<
+    Record<string, { value: number; direction: string; trendMomentum: number | null }>
+  >
+): MacroFactor[] {
   const now = new Date();
-  const defaults: Record<string, { value: number; direction: string; trendMomentum: number | null }> = {
+  const defaults: Record<
+    string,
+    { value: number; direction: string; trendMomentum: number | null }
+  > = {
     rate_level: { value: 5.5, direction: 'NEUTRAL', trendMomentum: null },
     rate_momentum_bps: { value: 30, direction: 'NEGATIVE', trendMomentum: 0.1 },
     credit_stress: { value: 200, direction: 'NEUTRAL', trendMomentum: null },

@@ -2,7 +2,11 @@
 
 `apps/web` is the only active product root.
 
-The legacy root Next.js app and the `/web` demo were archived under [`legacy/`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/legacy). New product code should only be built inside [`apps/web`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web).
+The legacy root Next.js app and the `/web` demo have been removed from
+the default branch. Their final state is preserved on the
+`legacy-archive-2026-04-28` git tag (commit `bb6e9cd`); fetch with
+`git fetch origin tag legacy-archive-2026-04-28` if you need to inspect
+it. New product code only lives in [`apps/web`](./apps/web).
 
 This platform is an AI-native operating system for a Korean real-estate investment firm. It now spans research, underwriting, deal execution, portfolio operations, and a capital-formation shell, while keeping documents, valuations, extracted text, and underwriting logic offchain. It remains registry-only onchain and it is not a retail token-sale app or investment-advice product.
 
@@ -51,6 +55,8 @@ npm run dev
 - `npm run ops:worker` drains the persisted ops queue and can enqueue an `OPS_CYCLE` job first with `--enqueue-cycle`
 - `npm run ops:worker:daemon` runs an always-on poll loop against the persisted ops queue
 - `npm run env:preflight -- <target>` validates required environment variables for hosted smoke, hosted mutations, SCIM, or ops worker runs
+- `npm run prod:preflight` (run with the production env loaded) hard-fails when secrets, S3 storage, real RPC + signer, or escape-hatch lockdowns are missing — see [`apps/web/docs/production-runbook.md`](./apps/web/docs/production-runbook.md)
+- `npm run audit:prune` (or `audit:prune:dry`) prunes `AuditEvent`, `OpsAlertDelivery`, and resolved `Notification` rows past the configured retention window
 - `npm run ops:cycle` can also emit failure alerts, and optional retry-recovery alerts, to a generic webhook for scheduled operator monitoring
 - `npm run ops:preflight` runs prisma generate, typecheck, unit tests, build, and browser suite registration in one command
 - `npm run prisma:generate` generates the Prisma client for `apps/web`
@@ -76,6 +82,20 @@ Official adapter paths currently supported in code:
 - NASA POWER climatology plus daily near-real-time API as a free climate overlay source
 - Optional NASA GPM IMERG precipitation and NASA FIRMS hotspot overlays for satellite risk screening
 - Python valuation engine under [`apps/web/services/valuation_python`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/services/valuation_python) with TypeScript fallback
+
+Investment Memo (IM) deep-dive — start here for system / IM card walkthrough:
+
+- [`apps/web/docs/im-architecture.md`](./apps/web/docs/im-architecture.md) — 3-layer architecture, 33-section structure, data trace example, recommended reading order
+- [`apps/web/docs/financial-helpers.md`](./apps/web/docs/financial-helpers.md) — `lib/services/im/*` helper reference (input / output / tests per file)
+- [`apps/web/docs/financial-glossary.md`](./apps/web/docs/financial-glossary.md) — financial / investment term dictionary (Korean) covering DSCR / WALT / CFADS / promote / catch-up / Scope 1-3 etc.
+- [`apps/web/docs/data-model-cheatsheet.md`](./apps/web/docs/data-model-cheatsheet.md) — Asset-centric schema graph + ValuationRun JSON blob shape + bundle include reference
+- [`apps/web/docs/im-section-cookbook.md`](./apps/web/docs/im-section-cookbook.md) — 7-step pattern for adding a new IM card with worked example
+- [`apps/web/docs/seed-data.md`](./apps/web/docs/seed-data.md) — seed counterparts / financial statements / insurance / carbon / side letters etc. (every IM number sourced)
+- [`apps/web/docs/system-flow.md`](./apps/web/docs/system-flow.md) — end-to-end workflow (intake → enrichment → review → valuation → IM → IC)
+- [`apps/web/docs/troubleshooting.md`](./apps/web/docs/troubleshooting.md) — common issues (postgres / dev server / IM render / tests / auth / migrations)
+- [`apps/web/docs/rwa-roadmap.md`](./apps/web/docs/rwa-roadmap.md) — RWA / on-chain 4-direction strategy + tech investments
+- [`apps/web/docs/rwa-architecture.md`](./apps/web/docs/rwa-architecture.md) — current contract stack + attestation pipeline + waterfall flow + testnet deploy guide
+- [`apps/web/docs/audit-prep.md`](./apps/web/docs/audit-prep.md) — automated static / formal verification stack + audit firm recommendations + per-contract threat surface + trust assumptions
 
 Valuation variable reference:
 
@@ -134,4 +154,4 @@ The current product stance is:
 
 - Active product: [`apps/web`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web)
 - Architecture notes: [`architecture.md`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/architecture.md)
-- Legacy archive: [`legacy`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/legacy)
+- Legacy archive: see git tag `legacy-archive-2026-04-28`

@@ -24,13 +24,19 @@ export function ResearchRefreshButton() {
             });
 
             if (!response.ok) {
-              const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+              const payload = (await response.json().catch(() => null)) as {
+                error?: string;
+              } | null;
               throw new Error(payload?.error ?? 'Failed to refresh research workspace');
             }
 
             router.refresh();
           } catch (caughtError) {
-            setError(caughtError instanceof Error ? caughtError.message : 'Failed to refresh research workspace');
+            setError(
+              caughtError instanceof Error
+                ? caughtError.message
+                : 'Failed to refresh research workspace'
+            );
           } finally {
             setSubmitting(false);
           }

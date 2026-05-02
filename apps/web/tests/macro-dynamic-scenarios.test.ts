@@ -45,11 +45,56 @@ function makeFactors(market: string): MacroFactor[] {
 
 function makeTrends(): TrendAnalysis[] {
   return [
-    { seriesKey: 'policy_rate_pct', label: 'Policy Rate', direction: 'RISING', momentum: 0.15, acceleration: 0.02, movingAverages: { 3: 5.0, 6: 4.8, 12: 4.5 }, anomaly: null, observationCount: 12 },
-    { seriesKey: 'credit_spread_bps', label: 'Credit Spread', direction: 'RISING', momentum: 8.0, acceleration: 1.0, movingAverages: { 3: 200, 6: 190, 12: 180 }, anomaly: null, observationCount: 12 },
-    { seriesKey: 'vacancy_pct', label: 'Vacancy', direction: 'RISING', momentum: 0.2, acceleration: 0.05, movingAverages: { 3: 5.0, 6: 4.5, 12: 4.0 }, anomaly: null, observationCount: 12 },
-    { seriesKey: 'rent_growth_pct', label: 'Rent Growth', direction: 'DECLINING', momentum: -0.1, acceleration: -0.02, movingAverages: { 3: 2.0, 6: 2.2, 12: 2.5 }, anomaly: null, observationCount: 12 },
-    { seriesKey: 'construction_cost_index', label: 'Construction Cost', direction: 'RISING', momentum: 1.5, acceleration: 0.3, movingAverages: { 3: 110, 6: 108, 12: 105 }, anomaly: null, observationCount: 12 }
+    {
+      seriesKey: 'policy_rate_pct',
+      label: 'Policy Rate',
+      direction: 'RISING',
+      momentum: 0.15,
+      acceleration: 0.02,
+      movingAverages: { 3: 5.0, 6: 4.8, 12: 4.5 },
+      anomaly: null,
+      observationCount: 12
+    },
+    {
+      seriesKey: 'credit_spread_bps',
+      label: 'Credit Spread',
+      direction: 'RISING',
+      momentum: 8.0,
+      acceleration: 1.0,
+      movingAverages: { 3: 200, 6: 190, 12: 180 },
+      anomaly: null,
+      observationCount: 12
+    },
+    {
+      seriesKey: 'vacancy_pct',
+      label: 'Vacancy',
+      direction: 'RISING',
+      momentum: 0.2,
+      acceleration: 0.05,
+      movingAverages: { 3: 5.0, 6: 4.5, 12: 4.0 },
+      anomaly: null,
+      observationCount: 12
+    },
+    {
+      seriesKey: 'rent_growth_pct',
+      label: 'Rent Growth',
+      direction: 'DECLINING',
+      momentum: -0.1,
+      acceleration: -0.02,
+      movingAverages: { 3: 2.0, 6: 2.2, 12: 2.5 },
+      anomaly: null,
+      observationCount: 12
+    },
+    {
+      seriesKey: 'construction_cost_index',
+      label: 'Construction Cost',
+      direction: 'RISING',
+      momentum: 1.5,
+      acceleration: 0.3,
+      movingAverages: { 3: 110, 6: 108, 12: 105 },
+      anomaly: null,
+      observationCount: 12
+    }
   ];
 }
 
@@ -70,8 +115,26 @@ test('generateTrendContinuationScenario produces valid shocks from rising trends
 
 test('generateTrendContinuationScenario produces minimal shocks for flat trends', () => {
   const flatTrends: TrendAnalysis[] = [
-    { seriesKey: 'policy_rate_pct', label: 'Policy Rate', direction: 'FLAT', momentum: 0.01, acceleration: 0, movingAverages: { 3: 3.5, 6: 3.5, 12: 3.5 }, anomaly: null, observationCount: 12 },
-    { seriesKey: 'credit_spread_bps', label: 'Credit Spread', direction: 'FLAT', momentum: 0.5, acceleration: 0, movingAverages: { 3: 150, 6: 150, 12: 150 }, anomaly: null, observationCount: 12 }
+    {
+      seriesKey: 'policy_rate_pct',
+      label: 'Policy Rate',
+      direction: 'FLAT',
+      momentum: 0.01,
+      acceleration: 0,
+      movingAverages: { 3: 3.5, 6: 3.5, 12: 3.5 },
+      anomaly: null,
+      observationCount: 12
+    },
+    {
+      seriesKey: 'credit_spread_bps',
+      label: 'Credit Spread',
+      direction: 'FLAT',
+      momentum: 0.5,
+      acceleration: 0,
+      movingAverages: { 3: 150, 6: 150, 12: 150 },
+      anomaly: null,
+      observationCount: 12
+    }
   ];
 
   const scenario = generateTrendContinuationScenario({

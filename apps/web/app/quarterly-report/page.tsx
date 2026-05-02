@@ -2,7 +2,16 @@
 
 import { useState } from 'react';
 
-const DEFAULT_SUBMARKETS = ['강남구', '서초구', '송파구', '영등포구', '중구', '성동구', '평택시', '성남시'];
+const DEFAULT_SUBMARKETS = [
+  '강남구',
+  '서초구',
+  '송파구',
+  '영등포구',
+  '중구',
+  '성동구',
+  '평택시',
+  '성남시'
+];
 
 function currentQuarter(): string {
   const d = new Date();
@@ -33,7 +42,9 @@ export default function QuarterlyReportPage() {
     setError(null);
     setReport(null);
     try {
-      const res = await fetch(`/api/quarterly-report?quarter=${quarter}&submarket=${encodeURIComponent(submarket)}`);
+      const res = await fetch(
+        `/api/quarterly-report?quarter=${quarter}&submarket=${encodeURIComponent(submarket)}`
+      );
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? 'Load failed');
       setReport(body);
@@ -77,7 +88,8 @@ export default function QuarterlyReportPage() {
       <div className="mx-auto max-w-5xl px-6 py-10">
         <h1 className="mb-2 text-3xl font-bold">CBRE-Style Quarterly Market Report</h1>
         <p className="mb-6 text-sm text-zinc-400">
-          ECOS (BOK macro) + MOLIT 실거래가 + DART 전자공시 → Claude narrative. Fully rebuilds a quarter on demand.
+          ECOS (BOK macro) + MOLIT 실거래가 + DART 전자공시 → Claude narrative. Fully rebuilds a
+          quarter on demand.
         </p>
 
         <div className="mb-6 flex flex-wrap gap-3">
@@ -139,7 +151,11 @@ export default function QuarterlyReportPage() {
               <div>DART REIT filings: {genSummary.dartSummary.reitDisclosures}</div>
               <div>DART RE transactions: {genSummary.dartSummary.realEstateTransactions}</div>
               <div>QoQ/YoY rows backfilled: {genSummary.deltasUpdated}</div>
-              <div>Submarkets with MOLIT data: {genSummary.submarkets.filter((x: any) => x.hadMolitData).length} / {genSummary.submarkets.length}</div>
+              <div>
+                Submarkets with MOLIT data:{' '}
+                {genSummary.submarkets.filter((x: any) => x.hadMolitData).length} /{' '}
+                {genSummary.submarkets.length}
+              </div>
             </div>
           </div>
         )}
@@ -217,11 +233,19 @@ export default function QuarterlyReportPage() {
                 <Row k="Transactions" v={s.transactionCount ?? 'n/a'} />
                 <Row
                   k="Volume KRW"
-                  v={s.transactionVolumeKrw ? `${(Number(s.transactionVolumeKrw) / 1e9).toFixed(2)}B` : 'n/a'}
+                  v={
+                    s.transactionVolumeKrw
+                      ? `${(Number(s.transactionVolumeKrw) / 1e9).toFixed(2)}B`
+                      : 'n/a'
+                  }
                 />
                 <Row
                   k="Median price/sqm"
-                  v={s.medianPriceKrwPerSqm ? `${(Number(s.medianPriceKrwPerSqm) / 1e6).toFixed(2)}M` : 'n/a'}
+                  v={
+                    s.medianPriceKrwPerSqm
+                      ? `${(Number(s.medianPriceKrwPerSqm) / 1e6).toFixed(2)}M`
+                      : 'n/a'
+                  }
                 />
                 <Row k="QoQ %" v={s.priceChangeQoQPct ? `${s.priceChangeQoQPct}%` : 'n/a'} />
                 <Row k="YoY %" v={s.priceChangeYoYPct ? `${s.priceChangeYoYPct}%` : 'n/a'} />
@@ -254,7 +278,9 @@ function Row({ k, v }: { k: string; v: React.ReactNode }) {
 function NarrativeBlock({ title, body }: { title: string; body: string }) {
   return (
     <div className="mb-4">
-      <h3 className="mb-1 text-sm font-semibold uppercase tracking-wide text-emerald-300">{title}</h3>
+      <h3 className="mb-1 text-sm font-semibold uppercase tracking-wide text-emerald-300">
+        {title}
+      </h3>
       <p className="text-sm leading-relaxed text-zinc-200">{body}</p>
     </div>
   );

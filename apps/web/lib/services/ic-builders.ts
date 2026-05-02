@@ -59,7 +59,9 @@ export function buildCommitteeActionItems(
     (meeting) => meeting.status === CommitteeMeetingStatus.SCHEDULED && meeting.scheduledFor
   );
   const lockedPackets = packets.filter((packet) => packet.status === CommitteePacketStatus.LOCKED);
-  const conditionalPackets = packets.filter((packet) => packet.status === CommitteePacketStatus.CONDITIONAL);
+  const conditionalPackets = packets.filter(
+    (packet) => packet.status === CommitteePacketStatus.CONDITIONAL
+  );
 
   if (nextMeeting) {
     items.push({
@@ -164,15 +166,22 @@ export function buildCommitteeDashboard(
   ]);
   const decisions = packets.flatMap((packet) => packet.decisions);
   const latestDecision =
-    decisions.sort((left, right) => right.decidedAt.getTime() - left.decidedAt.getTime())[0] ?? null;
+    decisions.sort((left, right) => right.decidedAt.getTime() - left.decidedAt.getTime())[0] ??
+    null;
 
   return {
     summary: {
       meetingCount: meetings.length,
-      scheduledCount: meetings.filter((meeting) => meeting.status === CommitteeMeetingStatus.SCHEDULED).length,
-      activePacketCount: packets.filter((packet) => activeStatuses.has(packet.status as CommitteePacketStatus)).length,
-      lockedCount: packets.filter((packet) => packet.status === CommitteePacketStatus.LOCKED).length,
-      releasedCount: packets.filter((packet) => packet.status === CommitteePacketStatus.RELEASED).length,
+      scheduledCount: meetings.filter(
+        (meeting) => meeting.status === CommitteeMeetingStatus.SCHEDULED
+      ).length,
+      activePacketCount: packets.filter((packet) =>
+        activeStatuses.has(packet.status as CommitteePacketStatus)
+      ).length,
+      lockedCount: packets.filter((packet) => packet.status === CommitteePacketStatus.LOCKED)
+        .length,
+      releasedCount: packets.filter((packet) => packet.status === CommitteePacketStatus.RELEASED)
+        .length,
       candidateCount: candidates.length
     },
     latestDecision,

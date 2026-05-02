@@ -78,7 +78,12 @@ type ReviewableAsset = {
   encumbranceRecords?: any[];
   planningConstraints?: any[];
   leases?: any[];
-  featureSnapshots?: Array<{ id: string; featureNamespace: string; snapshotDate: Date; sourceVersion: string | null }>;
+  featureSnapshots?: Array<{
+    id: string;
+    featureNamespace: string;
+    snapshotDate: Date;
+    sourceVersion: string | null;
+  }>;
   documents?: Array<{
     id: string;
     currentVersion: number;
@@ -104,7 +109,10 @@ type ReviewableAsset = {
   } | null;
 };
 
-function createReviewItem(asset: ReviewableAsset, item: Omit<ReviewQueueItem, 'assetId' | 'assetCode' | 'assetName'>) {
+function createReviewItem(
+  asset: ReviewableAsset,
+  item: Omit<ReviewQueueItem, 'assetId' | 'assetCode' | 'assetName'>
+) {
   return {
     assetId: asset.id,
     assetCode: asset.assetCode,
@@ -128,7 +136,9 @@ function sortReviewItems(items: ReviewQueueItem[]) {
   });
 }
 
-export function buildAssetEvidenceReviewSummary(asset: ReviewableAsset): AssetEvidenceReviewSummary {
+export function buildAssetEvidenceReviewSummary(
+  asset: ReviewableAsset
+): AssetEvidenceReviewSummary {
   const playbook = getAssetClassPlaybook(asset.assetClass);
   const disciplineLabels: Record<ReviewDiscipline, string> = {
     power_permit: playbook.checklistLabels.technical,
@@ -144,17 +154,18 @@ export function buildAssetEvidenceReviewSummary(asset: ReviewableAsset): AssetEv
         recordId: asset.energySnapshot.id,
         discipline: 'power_permit',
         title: asset.energySnapshot.utilityName || 'Energy Snapshot',
-        detail: [
-          asset.energySnapshot.substationDistanceKm != null
-            ? `${asset.energySnapshot.substationDistanceKm} km to substation`
-            : null,
-          asset.energySnapshot.tariffKrwPerKwh != null
-            ? `tariff ${asset.energySnapshot.tariffKrwPerKwh} KRW/kWh`
-            : null,
-          asset.energySnapshot.pueTarget != null ? `PUE ${asset.energySnapshot.pueTarget}` : null
-        ]
-          .filter(Boolean)
-          .join(' / ') || 'Utility, tariff, and resilience evidence',
+        detail:
+          [
+            asset.energySnapshot.substationDistanceKm != null
+              ? `${asset.energySnapshot.substationDistanceKm} km to substation`
+              : null,
+            asset.energySnapshot.tariffKrwPerKwh != null
+              ? `tariff ${asset.energySnapshot.tariffKrwPerKwh} KRW/kWh`
+              : null,
+            asset.energySnapshot.pueTarget != null ? `PUE ${asset.energySnapshot.pueTarget}` : null
+          ]
+            .filter(Boolean)
+            .join(' / ') || 'Utility, tariff, and resilience evidence',
         reviewStatus: asset.energySnapshot.reviewStatus,
         reviewNotes: asset.energySnapshot.reviewNotes ?? null,
         reviewedAt: asset.energySnapshot.reviewedAt ?? null,
@@ -173,13 +184,14 @@ export function buildAssetEvidenceReviewSummary(asset: ReviewableAsset): AssetEv
         recordId: asset.permitSnapshot.id,
         discipline: 'power_permit',
         title: asset.permitSnapshot.permitStage || 'Permit Snapshot',
-        detail: [
-          asset.permitSnapshot.powerApprovalStatus,
-          asset.permitSnapshot.zoningApprovalStatus,
-          asset.permitSnapshot.environmentalReviewStatus
-        ]
-          .filter(Boolean)
-          .join(' / ') || 'Permit and approval evidence',
+        detail:
+          [
+            asset.permitSnapshot.powerApprovalStatus,
+            asset.permitSnapshot.zoningApprovalStatus,
+            asset.permitSnapshot.environmentalReviewStatus
+          ]
+            .filter(Boolean)
+            .join(' / ') || 'Permit and approval evidence',
         reviewStatus: asset.permitSnapshot.reviewStatus,
         reviewNotes: asset.permitSnapshot.reviewNotes ?? null,
         reviewedAt: asset.permitSnapshot.reviewedAt ?? null,
@@ -198,9 +210,13 @@ export function buildAssetEvidenceReviewSummary(asset: ReviewableAsset): AssetEv
         recordId: record.id,
         discipline: 'legal_title',
         title: record.ownerName || 'Ownership Record',
-        detail: [record.entityType, record.ownershipPct != null ? `${record.ownershipPct}% ownership` : null]
-          .filter(Boolean)
-          .join(' / ') || 'Ownership chain evidence',
+        detail:
+          [
+            record.entityType,
+            record.ownershipPct != null ? `${record.ownershipPct}% ownership` : null
+          ]
+            .filter(Boolean)
+            .join(' / ') || 'Ownership chain evidence',
         reviewStatus: record.reviewStatus,
         reviewNotes: record.reviewNotes ?? null,
         reviewedAt: record.reviewedAt ?? null,
@@ -219,13 +235,14 @@ export function buildAssetEvidenceReviewSummary(asset: ReviewableAsset): AssetEv
         recordId: record.id,
         discipline: 'legal_title',
         title: record.encumbranceType || 'Encumbrance Record',
-        detail: [
-          record.holderName,
-          record.securedAmountKrw != null ? `${record.securedAmountKrw} KRW secured` : null,
-          record.statusLabel
-        ]
-          .filter(Boolean)
-          .join(' / ') || 'Lien and mortgage evidence',
+        detail:
+          [
+            record.holderName,
+            record.securedAmountKrw != null ? `${record.securedAmountKrw} KRW secured` : null,
+            record.statusLabel
+          ]
+            .filter(Boolean)
+            .join(' / ') || 'Lien and mortgage evidence',
         reviewStatus: record.reviewStatus,
         reviewNotes: record.reviewNotes ?? null,
         reviewedAt: record.reviewedAt ?? null,
@@ -244,7 +261,10 @@ export function buildAssetEvidenceReviewSummary(asset: ReviewableAsset): AssetEv
         recordId: record.id,
         discipline: 'legal_title',
         title: record.title || record.constraintType || 'Planning Constraint',
-        detail: [record.constraintType, record.severity, record.description].filter(Boolean).join(' / ') || 'Planning restriction evidence',
+        detail:
+          [record.constraintType, record.severity, record.description]
+            .filter(Boolean)
+            .join(' / ') || 'Planning restriction evidence',
         reviewStatus: record.reviewStatus,
         reviewNotes: record.reviewNotes ?? null,
         reviewedAt: record.reviewedAt ?? null,
@@ -297,14 +317,19 @@ export function buildAssetEvidenceReviewSummary(asset: ReviewableAsset): AssetEv
     return {
       key,
       label: disciplineLabels[key],
-      approvedCount: disciplineItems.filter((item) => item.reviewStatus === ReviewStatus.APPROVED).length,
-      pendingCount: disciplineItems.filter((item) => item.reviewStatus === ReviewStatus.PENDING).length,
-      rejectedCount: disciplineItems.filter((item) => item.reviewStatus === ReviewStatus.REJECTED).length,
+      approvedCount: disciplineItems.filter((item) => item.reviewStatus === ReviewStatus.APPROVED)
+        .length,
+      pendingCount: disciplineItems.filter((item) => item.reviewStatus === ReviewStatus.PENDING)
+        .length,
+      rejectedCount: disciplineItems.filter((item) => item.reviewStatus === ReviewStatus.REJECTED)
+        .length,
       items: disciplineItems
     };
   });
 
-  const approvedCoverageCount = disciplines.filter((discipline) => discipline.approvedCount > 0).length;
+  const approvedCoverageCount = disciplines.filter(
+    (discipline) => discipline.approvedCount > 0
+  ).length;
   const pendingBlockers = items
     .filter((item) => item.reviewStatus === ReviewStatus.PENDING)
     .map((item) => `${disciplineLabels[item.discipline]}: ${item.title}`);
@@ -321,7 +346,8 @@ export function buildAssetEvidenceReviewSummary(asset: ReviewableAsset): AssetEv
     },
     approvedCoverageCount,
     pendingEvidenceCount: items.filter((item) => item.reviewStatus === ReviewStatus.PENDING).length,
-    rejectedEvidenceCount: items.filter((item) => item.reviewStatus === ReviewStatus.REJECTED).length,
+    rejectedEvidenceCount: items.filter((item) => item.reviewStatus === ReviewStatus.REJECTED)
+      .length,
     pendingBlockers,
     disciplines
   };
@@ -485,13 +511,15 @@ export function getLatestReviewPacketRecord(
     | null
     | undefined
 ) {
-  return [...(records ?? [])]
-    .filter((record) => record.recordType === 'REVIEW_PACKET')
-    .sort((left, right) => {
-      const leftTimestamp = (left.anchoredAt ?? left.createdAt ?? new Date(0)).getTime();
-      const rightTimestamp = (right.anchoredAt ?? right.createdAt ?? new Date(0)).getTime();
-      return rightTimestamp - leftTimestamp;
-    })[0] ?? null;
+  return (
+    [...(records ?? [])]
+      .filter((record) => record.recordType === 'REVIEW_PACKET')
+      .sort((left, right) => {
+        const leftTimestamp = (left.anchoredAt ?? left.createdAt ?? new Date(0)).getTime();
+        const rightTimestamp = (right.anchoredAt ?? right.createdAt ?? new Date(0)).getTime();
+        return rightTimestamp - leftTimestamp;
+      })[0] ?? null
+  );
 }
 
 export function extractReviewPacketSummary(
@@ -512,10 +540,14 @@ export function extractReviewPacketSummary(
   return {
     fingerprint: typeof payload.packetFingerprint === 'string' ? payload.packetFingerprint : null,
     stagedAt: record.anchoredAt ?? record.createdAt ?? null,
-    latestValuationId: typeof payload.latestValuationId === 'string' ? payload.latestValuationId : null,
-    latestDocumentHash: typeof payload.latestDocumentHash === 'string' ? payload.latestDocumentHash : null,
-    approvedEvidenceCount: typeof payload.approvedEvidenceCount === 'number' ? payload.approvedEvidenceCount : null,
-    pendingEvidenceCount: typeof payload.pendingEvidenceCount === 'number' ? payload.pendingEvidenceCount : null,
+    latestValuationId:
+      typeof payload.latestValuationId === 'string' ? payload.latestValuationId : null,
+    latestDocumentHash:
+      typeof payload.latestDocumentHash === 'string' ? payload.latestDocumentHash : null,
+    approvedEvidenceCount:
+      typeof payload.approvedEvidenceCount === 'number' ? payload.approvedEvidenceCount : null,
+    pendingEvidenceCount:
+      typeof payload.pendingEvidenceCount === 'number' ? payload.pendingEvidenceCount : null,
     anchorReference: record.txHash ?? null
   };
 }
@@ -556,7 +588,9 @@ export function buildReviewPacketManifest(asset: ReviewableAsset) {
       reviewedAt: item.reviewedAt?.toISOString() ?? null,
       reviewedById: item.reviewedById
     }))
-    .sort((left, right) => `${left.recordType}:${left.recordId}`.localeCompare(`${right.recordType}:${right.recordId}`));
+    .sort((left, right) =>
+      `${left.recordType}:${left.recordId}`.localeCompare(`${right.recordType}:${right.recordId}`)
+    );
   const promotedFeatureSnapshots = [...(asset.featureSnapshots ?? [])]
     .map((snapshot) => ({
       id: snapshot.id,
@@ -584,10 +618,7 @@ export function buildReviewPacketManifest(asset: ReviewableAsset) {
     promotedFeatureSnapshots
   });
 
-  const fingerprint = crypto
-    .createHash('sha256')
-    .update(JSON.stringify(manifest))
-    .digest('hex');
+  const fingerprint = crypto.createHash('sha256').update(JSON.stringify(manifest)).digest('hex');
 
   return {
     manifest,

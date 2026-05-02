@@ -3,6 +3,8 @@ import type { Address, Hex } from 'viem';
 import { erc20Abi } from 'viem';
 import { dividendDistributorAbi } from '@/lib/blockchain/tokenization-abi';
 import { getRegistryChainClients } from '@/lib/blockchain/client';
+import { buildMockTxHash, isTokenizationMockMode } from '@/lib/blockchain/mock-mode';
+import { awaitTxReceipt } from '@/lib/blockchain/tx';
 import { prisma } from '@/lib/db/prisma';
 import { ensureAddress } from './tokenization-client';
 import { buildAllocationTree, type AllocationLeaf } from './distribution-merkle';
@@ -92,44 +94,58 @@ export async function fundDistribution(
     throw new Error(`Distribution ${distributionId} is ${dist.status}; only DRAFT can be funded`);
   }
 
-  const clients = getRegistryChainClients();
-  if (clients.config.chainId !== dist.chainId) {
-    throw new Error(
-      `Chain mismatch: BLOCKCHAIN_CHAIN_ID=${clients.config.chainId} but distribution is on ${dist.chainId}`
-    );
-  }
   const distributorAddress = dist.distributorAddress as Address;
   const quoteAddress = dist.quoteAssetAddress as Address;
   const total = BigInt(dist.totalAmount);
 
-  const allowance = (await clients.publicClient.readContract({
-    address: quoteAddress,
-    abi: erc20Abi,
-    functionName: 'allowance',
-    args: [clients.account.address, distributorAddress]
-  })) as bigint;
+  let txHash: Hex;
+  if (isTokenizationMockMode()) {
+    txHash = buildMockTxHash(
+      'createDistribution',
+      distributorAddress,
+      dist.merkleRoot,
+      total.toString()
+    );
+  } else {
+    const clients = getRegistryChainClients();
+    if (clients.config.chainId !== dist.chainId) {
+      throw new Error(
+        `Chain mismatch: BLOCKCHAIN_CHAIN_ID=${clients.config.chainId} but distribution is on ${dist.chainId}`
+      );
+    }
 
-  if (allowance < total) {
-    const approveHash = await clients.walletClient.writeContract({
+    const allowance = (await clients.publicClient.readContract({
       address: quoteAddress,
       abi: erc20Abi,
-      functionName: 'approve',
-      args: [distributorAddress, total]
-    });
-    await clients.publicClient.waitForTransactionReceipt({ hash: approveHash });
-  }
+      functionName: 'allowance',
+      args: [clients.account.address, distributorAddress]
+    })) as bigint;
 
-  const txHash = await clients.walletClient.writeContract({
-    address: distributorAddress,
-    abi: dividendDistributorAbi,
-    functionName: 'createDistribution',
-    args: [
-      dist.merkleRoot as Hex,
-      total,
-      BigInt(Math.floor(dist.recordDate.getTime() / 1000)),
-      BigInt(Math.floor(dist.reclaimAfter.getTime() / 1000))
-    ]
-  });
+    if (allowance < total) {
+      const approveHash = await clients.walletClient.writeContract({
+        address: quoteAddress,
+        abi: erc20Abi,
+        functionName: 'approve',
+        args: [distributorAddress, total]
+      });
+      await awaitTxReceipt(clients.publicClient, approveHash, {
+        label: 'distribution-token-approve'
+      });
+    }
+
+    txHash = await clients.walletClient.writeContract({
+      address: distributorAddress,
+      abi: dividendDistributorAbi,
+      functionName: 'createDistribution',
+      args: [
+        dist.merkleRoot as Hex,
+        total,
+        BigInt(Math.floor(dist.recordDate.getTime() / 1000)),
+        BigInt(Math.floor(dist.reclaimAfter.getTime() / 1000))
+      ]
+    });
+    await awaitTxReceipt(clients.publicClient, txHash, { label: 'createDistribution' });
+  }
 
   const updated = await db.tokenDistribution.update({
     where: { id: dist.id },
@@ -146,6 +162,8 @@ export async function getAllocationProof(input: {
   const db = input.db ?? prisma;
   const holder = ensureAddress(input.holder, 'holder').toLowerCase();
   return db.tokenDistributionAllocation.findUnique({
-    where: { distributionId_holderAddress: { distributionId: input.distributionId, holderAddress: holder } }
+    where: {
+      distributionId_holderAddress: { distributionId: input.distributionId, holderAddress: holder }
+    }
   });
 }

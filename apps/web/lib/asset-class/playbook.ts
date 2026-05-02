@@ -47,7 +47,8 @@ const playbooks: Record<AssetClass, AssetClassPlaybook> = {
     assetClass: AssetClass.DATA_CENTER,
     label: 'Data Center',
     shortLabel: 'DC',
-    verticalDescription: 'Institutional underwriting for Korean hyperscale, colocation, and edge opportunities.',
+    verticalDescription:
+      'Institutional underwriting for Korean hyperscale, colocation, and edge opportunities.',
     sizeLabel: 'Power Capacity',
     sizeUnitLabel: 'MW',
     intakeHeading: 'Power, permit, and lease certainty',
@@ -68,15 +69,28 @@ const playbooks: Record<AssetClass, AssetClassPlaybook> = {
       'lease ramp and contracted capacity'
     ],
     researchDisciplineLabels: universalDisciplineLabels,
-    marketIndicators: ['vacancy', 'colocation rate', 'cap rate', 'discount rate', 'debt cost', 'construction cost'],
+    marketIndicators: [
+      'vacancy',
+      'colocation rate',
+      'cap rate',
+      'discount rate',
+      'debt cost',
+      'construction cost'
+    ],
     compCoverageLabels: ['transaction comps', 'rent comps', 'pipeline projects'],
-    operatorFocusPoints: ['utility allocation', 'permit certainty', 'lease-up quality', 'replacement cost']
+    operatorFocusPoints: [
+      'utility allocation',
+      'permit certainty',
+      'lease-up quality',
+      'replacement cost'
+    ]
   },
   OFFICE: {
     assetClass: AssetClass.OFFICE,
     label: 'Office',
     shortLabel: 'Office',
-    verticalDescription: 'Institutional underwriting for Korean CBD and decentralized office investments.',
+    verticalDescription:
+      'Institutional underwriting for Korean CBD and decentralized office investments.',
     sizeLabel: 'Rentable Area',
     sizeUnitLabel: 'sqm',
     intakeHeading: 'Rent roll, occupancy, and rollover certainty',
@@ -97,7 +111,14 @@ const playbooks: Record<AssetClass, AssetClassPlaybook> = {
       'rent comp, cap-rate, and vacancy benchmarks'
     ],
     researchDisciplineLabels: universalDisciplineLabels,
-    marketIndicators: ['market rent', 'vacancy', 'cap rate', 'discount rate', 'rent growth', 'transaction volume'],
+    marketIndicators: [
+      'market rent',
+      'vacancy',
+      'cap rate',
+      'discount rate',
+      'rent growth',
+      'transaction volume'
+    ],
     compCoverageLabels: ['transaction comps', 'rent comps', 'submarket indicators'],
     operatorFocusPoints: ['rollover durability', 'market rent gap', 'TI / LC drag', 'leasing depth']
   },
@@ -105,7 +126,8 @@ const playbooks: Record<AssetClass, AssetClassPlaybook> = {
     assetClass: AssetClass.INDUSTRIAL,
     label: 'Industrial / Logistics',
     shortLabel: 'Industrial',
-    verticalDescription: 'Institutional underwriting for Korean logistics, urban infill, and light-industrial assets.',
+    verticalDescription:
+      'Institutional underwriting for Korean logistics, urban infill, and light-industrial assets.',
     sizeLabel: 'Rentable Area',
     sizeUnitLabel: 'sqm',
     intakeHeading: 'Fit, access, and tenant durability',
@@ -126,15 +148,28 @@ const playbooks: Record<AssetClass, AssetClassPlaybook> = {
       'land access and permit readiness'
     ],
     researchDisciplineLabels: universalDisciplineLabels,
-    marketIndicators: ['market rent', 'vacancy', 'cap rate', 'discount rate', 'transaction volume', 'pipeline supply'],
+    marketIndicators: [
+      'market rent',
+      'vacancy',
+      'cap rate',
+      'discount rate',
+      'transaction volume',
+      'pipeline supply'
+    ],
     compCoverageLabels: ['transaction comps', 'rent comps', 'pipeline projects'],
-    operatorFocusPoints: ['access and yard fit', 'tenant covenant', 'dock / loading fit', 'rent durability']
+    operatorFocusPoints: [
+      'access and yard fit',
+      'tenant covenant',
+      'dock / loading fit',
+      'rent durability'
+    ]
   },
   RETAIL: {
     assetClass: AssetClass.RETAIL,
     label: 'Retail',
     shortLabel: 'Retail',
-    verticalDescription: 'Institutional underwriting for Korean retail and mixed merchandising assets.',
+    verticalDescription:
+      'Institutional underwriting for Korean retail and mixed merchandising assets.',
     sizeLabel: 'Rentable Area',
     sizeUnitLabel: 'sqm',
     intakeHeading: 'Occupancy, tenant mix, and site durability',
@@ -147,7 +182,12 @@ const playbooks: Record<AssetClass, AssetClassPlaybook> = {
       technical: 'Site, Physical, And Entitlement',
       legal: 'Legal, Title, And Financing'
     },
-    valuationVariableFamilies: ['market rent', 'occupancy', 'tenant durability', 'cap rate benchmarks'],
+    valuationVariableFamilies: [
+      'market rent',
+      'occupancy',
+      'tenant durability',
+      'cap rate benchmarks'
+    ],
     researchDisciplineLabels: universalDisciplineLabels,
     marketIndicators: ['market rent', 'vacancy', 'cap rate', 'consumer demand'],
     compCoverageLabels: ['transaction comps', 'rent comps'],
@@ -170,7 +210,13 @@ const playbooks: Record<AssetClass, AssetClassPlaybook> = {
       technical: 'Physical, Site, And Entitlement',
       legal: 'Legal, Title, And Financing'
     },
-    valuationVariableFamilies: ['rent roll', 'occupancy', 'turnover', 'market rent', 'vacancy benchmarks'],
+    valuationVariableFamilies: [
+      'rent roll',
+      'occupancy',
+      'turnover',
+      'market rent',
+      'vacancy benchmarks'
+    ],
     researchDisciplineLabels: universalDisciplineLabels,
     marketIndicators: ['market rent', 'vacancy', 'cap rate', 'household demand'],
     compCoverageLabels: ['transaction comps', 'rent comps'],
@@ -203,7 +249,8 @@ const playbooks: Record<AssetClass, AssetClassPlaybook> = {
     assetClass: AssetClass.LAND,
     label: 'Land / Development',
     shortLabel: 'Land',
-    verticalDescription: 'Institutional underwriting for Korean land, entitlement, and development opportunities.',
+    verticalDescription:
+      'Institutional underwriting for Korean land, entitlement, and development opportunities.',
     sizeLabel: 'Land Area',
     sizeUnitLabel: 'sqm',
     intakeHeading: 'Parcel, entitlement, and development-path certainty',

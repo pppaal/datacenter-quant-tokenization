@@ -70,8 +70,12 @@ export function buildMacroResearchSummary(asset: MacroResearchAsset): MacroResea
     );
   }
 
-  const headwinds = observedFactors.filter((factor) => factor.direction === 'NEGATIVE').map((factor) => factor.label);
-  const tailwinds = observedFactors.filter((factor) => factor.direction === 'POSITIVE').map((factor) => factor.label);
+  const headwinds = observedFactors
+    .filter((factor) => factor.direction === 'NEGATIVE')
+    .map((factor) => factor.label);
+  const tailwinds = observedFactors
+    .filter((factor) => factor.direction === 'POSITIVE')
+    .map((factor) => factor.label);
 
   const thesis =
     headwinds.length > 0

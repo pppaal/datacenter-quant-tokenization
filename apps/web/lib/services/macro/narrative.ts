@@ -1,10 +1,5 @@
-import {
-  OPENAI_MODEL,
-  OpenAIConfigurationError,
-  getOpenAIClient,
-  isOpenAIConfigured
-} from '@/lib/ai/openai-client';
-import type { MacroFactorPoint, MacroFactorSnapshot } from '@/lib/services/macro/factors';
+import { OPENAI_MODEL, getOpenAIClient, isOpenAIConfigured } from '@/lib/ai/openai-client';
+import type { MacroFactorPoint } from '@/lib/services/macro/factors';
 import type { MacroInterpretation } from '@/lib/services/macro/regime';
 import type { TrendAnalysis } from '@/lib/services/macro/trend';
 
@@ -43,10 +38,6 @@ const narrativeCache = new Map<string, CacheEntry>();
 // Template-based fallback (no LLM required)
 // ---------------------------------------------------------------------------
 
-function dirLabel(d: string) {
-  return d === 'POSITIVE' ? 'tailwind' : d === 'NEGATIVE' ? 'headwind' : 'neutral';
-}
-
 function trendLabel(d: string) {
   return d === 'ACCELERATING_UP'
     ? 'accelerating higher'
@@ -73,7 +64,9 @@ export function buildTemplateNarrative(input: MacroNarrativeInput): MacroNarrati
   const headwinds = pickTopFactors(factors, 'NEGATIVE', 3);
   const tailwinds = pickTopFactors(factors, 'POSITIVE', 3);
   const anomalies = trends.filter((t) => t.anomaly?.isAnomaly);
-  const accelerating = trends.filter((t) => t.direction === 'ACCELERATING_UP' || t.direction === 'ACCELERATING_DOWN');
+  const accelerating = trends.filter(
+    (t) => t.direction === 'ACCELERATING_UP' || t.direction === 'ACCELERATING_DOWN'
+  );
 
   const overallStance =
     headwinds.length > tailwinds.length
@@ -92,16 +85,18 @@ export function buildTemplateNarrative(input: MacroNarrativeInput): MacroNarrati
     const resolvedHeadwinds = prevHeadwinds.filter((h) => !headwinds.includes(h));
     const parts: string[] = [];
     if (newHeadwinds.length > 0) parts.push(`New headwinds emerged in ${newHeadwinds.join(', ')}.`);
-    if (resolvedHeadwinds.length > 0) parts.push(`Prior pressure from ${resolvedHeadwinds.join(', ')} has eased.`);
+    if (resolvedHeadwinds.length > 0)
+      parts.push(`Prior pressure from ${resolvedHeadwinds.join(', ')} has eased.`);
     if (accelerating.length > 0)
       parts.push(
         `${accelerating.map((t) => `${t.label} is ${trendLabel(t.direction)}`).join('; ')}.`
       );
     whatChanged = parts.length > 0 ? parts.join(' ') : 'No material change from the prior reading.';
   } else {
-    whatChanged = headwinds.length > 0
-      ? `Primary headwinds come from ${headwinds.join(', ')}.`
-      : 'No significant headwinds are present.';
+    whatChanged =
+      headwinds.length > 0
+        ? `Primary headwinds come from ${headwinds.join(', ')}.`
+        : 'No significant headwinds are present.';
     if (tailwinds.length > 0) whatChanged += ` Tailwinds include ${tailwinds.join(', ')}.`;
   }
 
@@ -109,26 +104,35 @@ export function buildTemplateNarrative(input: MacroNarrativeInput): MacroNarrati
   const guidance = regime.guidance;
   const shifts: string[] = [];
   if (Math.abs(guidance.discountRateShiftPct) >= 0.1)
-    shifts.push(`discount rate ${guidance.discountRateShiftPct > 0 ? '+' : ''}${guidance.discountRateShiftPct.toFixed(1)}%`);
+    shifts.push(
+      `discount rate ${guidance.discountRateShiftPct > 0 ? '+' : ''}${guidance.discountRateShiftPct.toFixed(1)}%`
+    );
   if (Math.abs(guidance.exitCapRateShiftPct) >= 0.1)
-    shifts.push(`exit cap rate ${guidance.exitCapRateShiftPct > 0 ? '+' : ''}${guidance.exitCapRateShiftPct.toFixed(1)}%`);
+    shifts.push(
+      `exit cap rate ${guidance.exitCapRateShiftPct > 0 ? '+' : ''}${guidance.exitCapRateShiftPct.toFixed(1)}%`
+    );
   if (Math.abs(guidance.occupancyShiftPct) >= 0.3)
-    shifts.push(`occupancy ${guidance.occupancyShiftPct > 0 ? '+' : ''}${guidance.occupancyShiftPct.toFixed(1)}%`);
-  const portfolioImplication = shifts.length > 0
-    ? `The regime analysis adjusts ${shifts.join(', ')} for ${regime.assetClass} assets in this market. ${
-        overallStance === 'defensive'
-          ? 'Underwriting should stress-test downside scenarios.'
-          : overallStance === 'constructive'
-            ? 'Current conditions support growth-oriented positioning.'
-            : 'A balanced stance is appropriate with selective conviction.'
-      }`
-    : `No material valuation adjustments are triggered by the current macro regime for ${regime.assetClass} assets.`;
+    shifts.push(
+      `occupancy ${guidance.occupancyShiftPct > 0 ? '+' : ''}${guidance.occupancyShiftPct.toFixed(1)}%`
+    );
+  const portfolioImplication =
+    shifts.length > 0
+      ? `The regime analysis adjusts ${shifts.join(', ')} for ${regime.assetClass} assets in this market. ${
+          overallStance === 'defensive'
+            ? 'Underwriting should stress-test downside scenarios.'
+            : overallStance === 'constructive'
+              ? 'Current conditions support growth-oriented positioning.'
+              : 'A balanced stance is appropriate with selective conviction.'
+        }`
+      : `No material valuation adjustments are triggered by the current macro regime for ${regime.assetClass} assets.`;
 
   // Watch items
   const watchItems: string[] = [];
   for (const f of factors) {
     if (f.direction === 'NEGATIVE' && f.isObserved) {
-      const trend = trends.find((t) => t.seriesKey === f.key || t.label.toLowerCase().includes(f.label.toLowerCase()));
+      const trend = trends.find(
+        (t) => t.seriesKey === f.key || t.label.toLowerCase().includes(f.label.toLowerCase())
+      );
       watchItems.push(
         `${f.label}: ${f.commentary}${trend ? ` Trend is ${trendLabel(trend.direction)}.` : ''}`
       );
@@ -142,7 +146,14 @@ export function buildTemplateNarrative(input: MacroNarrativeInput): MacroNarrati
       ? `Anomaly detected: ${anomalies.map((a) => `${a.label} z-score ${a.anomaly!.zScore.toFixed(1)}`).join(', ')}. Investigate for regime-change signal.`
       : null;
 
-  return { headline, whatChanged, portfolioImplication, watchItems: watchItems.slice(0, 5), riskCallout, cached: false };
+  return {
+    headline,
+    whatChanged,
+    portfolioImplication,
+    watchItems: watchItems.slice(0, 5),
+    riskCallout,
+    cached: false
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -180,9 +191,7 @@ function buildLlmPayload(input: MacroNarrativeInput) {
       seriesKey: t.seriesKey,
       direction: t.direction,
       momentum: t.momentum,
-      anomaly: t.anomaly
-        ? { zScore: t.anomaly.zScore, severity: t.anomaly.severity }
-        : null
+      anomaly: t.anomaly ? { zScore: t.anomaly.zScore, severity: t.anomaly.severity } : null
     })),
     previousGuidance: input.previousRegime
       ? {
@@ -232,9 +241,11 @@ export async function generateMacroNarrative(input: MacroNarrativeInput): Promis
 
       const parsed = JSON.parse(raw) as Record<string, unknown>;
       const result: Omit<MacroNarrative, 'cached'> = {
-        headline: typeof parsed.headline === 'string' ? parsed.headline : 'Macro narrative unavailable.',
+        headline:
+          typeof parsed.headline === 'string' ? parsed.headline : 'Macro narrative unavailable.',
         whatChanged: typeof parsed.whatChanged === 'string' ? parsed.whatChanged : '',
-        portfolioImplication: typeof parsed.portfolioImplication === 'string' ? parsed.portfolioImplication : '',
+        portfolioImplication:
+          typeof parsed.portfolioImplication === 'string' ? parsed.portfolioImplication : '',
         watchItems: Array.isArray(parsed.watchItems)
           ? parsed.watchItems.filter((w): w is string => typeof w === 'string').slice(0, 5)
           : [],

@@ -25,7 +25,10 @@ export function ValuationProvenance({ entries }: { entries: ProvenanceEntry[] })
       </div>
       <div className="space-y-3">
         {entries.map((entry) => (
-          <div key={`${entry.field}-${entry.sourceSystem}`} className="rounded-2xl border border-border bg-slate-950/40 p-4">
+          <div
+            key={`${entry.field}-${entry.sourceSystem}`}
+            className="rounded-2xl border border-border bg-slate-950/40 p-4"
+          >
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="text-sm font-semibold text-white">{entry.field}</div>
               <div className="flex flex-wrap items-center gap-2">
@@ -36,7 +39,9 @@ export function ValuationProvenance({ entries }: { entries: ProvenanceEntry[] })
               </div>
             </div>
             <div className="mt-3 text-sm text-slate-300">{String(entry.value ?? 'N/A')}</div>
-            <div className="mt-2 text-xs uppercase tracking-[0.18em] text-slate-500">{entry.freshnessLabel}</div>
+            <div className="mt-2 text-xs uppercase tracking-[0.18em] text-slate-500">
+              {entry.freshnessLabel}
+            </div>
           </div>
         ))}
       </div>

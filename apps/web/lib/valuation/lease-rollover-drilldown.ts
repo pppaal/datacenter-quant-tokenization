@@ -52,18 +52,22 @@ export function buildLeaseRolloverDrilldown(
   }
 ): LeaseRolloverDrilldown {
   const windowMonths = options?.windowMonths ?? 24;
-  const eventMap = new Map<number, LeaseRolloverMonthRow & { mtmWeighted: number; mtmWeightKw: number }>();
+  const eventMap = new Map<
+    number,
+    LeaseRolloverMonthRow & { mtmWeighted: number; mtmWeightKw: number }
+  >();
 
   const modeledStarts = leases
     .map((lease) => {
       const lastStep = resolveLastEffectiveStep(lease.steps);
       const renewProbabilityPct = lastStep?.renewProbabilityPct ?? lease.renewProbabilityPct ?? 0;
-      return renewProbabilityPct > 0 ? toMonthIndex((lease.startYear ?? 1) + (lease.termYears ?? 1), 1) : null;
+      return renewProbabilityPct > 0
+        ? toMonthIndex((lease.startYear ?? 1) + (lease.termYears ?? 1), 1)
+        : null;
     })
     .filter((value): value is number => value !== null);
 
-  const firstModeledMonthIndex =
-    modeledStarts.length > 0 ? Math.min(...modeledStarts) : null;
+  const firstModeledMonthIndex = modeledStarts.length > 0 ? Math.min(...modeledStarts) : null;
   const lastModeledMonthIndex =
     firstModeledMonthIndex !== null ? firstModeledMonthIndex + windowMonths - 1 : null;
 
@@ -85,10 +89,7 @@ export function buildLeaseRolloverDrilldown(
       1,
       Math.trunc(lastStep?.renewalTermYears ?? lease.renewalTermYears ?? lease.termYears ?? 1)
     );
-    const renewalCount = Math.max(
-      0,
-      Math.trunc(lastStep?.renewalCount ?? lease.renewalCount ?? 1)
-    );
+    const renewalCount = Math.max(0, Math.trunc(lastStep?.renewalCount ?? lease.renewalCount ?? 1));
     const markToMarketRatePerKwKrw =
       lastStep?.markToMarketRatePerKwKrw ?? lease.markToMarketRatePerKwKrw ?? null;
     const renewalTenantCapitalCostKrw =
@@ -167,7 +168,8 @@ export function buildLeaseRolloverDrilldown(
         eventMap.set(monthIndex, current);
       }
 
-      const returningMonthIndex = cycleStartMonthIndex + rolloverDowntimeMonths + renewalRentFreeMonths;
+      const returningMonthIndex =
+        cycleStartMonthIndex + rolloverDowntimeMonths + renewalRentFreeMonths;
       if (
         firstModeledMonthIndex !== null &&
         lastModeledMonthIndex !== null &&

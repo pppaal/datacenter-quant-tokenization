@@ -18,8 +18,10 @@ function krw(v: number | null | undefined): string {
 
 async function main() {
   console.log('\n' + '═'.repeat(118));
-  console.log('  CLICK-ANY-BUILDING · Differentiation Proof — 8 Korean addresses, ' +
-    'one pipeline, 8 distinct classifications');
+  console.log(
+    '  CLICK-ANY-BUILDING · Differentiation Proof — 8 Korean addresses, ' +
+      'one pipeline, 8 distinct classifications'
+  );
   console.log('═'.repeat(118));
   console.log(
     '  ' +
@@ -77,7 +79,9 @@ async function main() {
     try {
       const r = await autoAnalyzeProperty({ address: a.roadAddress });
       primaries.add(r.classification.primary.assetClass);
-    } catch { /* skip */ }
+    } catch {
+      /* skip */
+    }
   }
   console.log(
     `  Distinct primary asset classes across ${KNOWN_ADDRESSES.length} sites: ` +

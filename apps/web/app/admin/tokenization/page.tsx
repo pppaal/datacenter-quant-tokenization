@@ -1,4 +1,6 @@
+import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { listTokenizedAssets } from '@/lib/services/onchain/tokenization-repo';
 import { shortenHash } from '@/lib/blockchain/registry';
@@ -16,8 +18,8 @@ export default async function TokenizationPage() {
         <h2 className="mt-2 text-3xl font-semibold text-white">AssetToken deployments</h2>
         <p className="mt-2 text-sm text-slate-400">
           Institutional RWA layer: per-asset ERC-3643 style deployments with identity registry,
-          modular compliance, and attached policy modules. Ops actions (mint, forced transfer,
-          block country) are audited via the API routes under
+          modular compliance, and attached policy modules. Ops actions (mint, forced transfer, block
+          country) are audited via the API routes under
           <code className="ml-1 rounded bg-white/5 px-1.5 py-0.5">/api/tokenization</code>.
         </p>
       </div>
@@ -30,7 +32,10 @@ export default async function TokenizationPage() {
               npm --workspace @dcqt/contracts run deploy:tokenization:local
             </code>
             and POST the resulting manifest to
-            <code className="ml-1 rounded bg-white/5 px-1.5 py-0.5">/api/tokenization/deployments</code>.
+            <code className="ml-1 rounded bg-white/5 px-1.5 py-0.5">
+              /api/tokenization/deployments
+            </code>
+            .
           </div>
         </Card>
       ) : (
@@ -49,7 +54,12 @@ export default async function TokenizationPage() {
                     chain {d.chainId} / registryAssetId {shortenHash(d.registryAssetId, 8)}
                   </div>
                 </div>
-                <Badge tone={d.paused ? 'warn' : 'good'}>{d.paused ? 'PAUSED' : 'LIVE'}</Badge>
+                <div className="flex items-center gap-3">
+                  <Badge tone={d.paused ? 'warn' : 'good'}>{d.paused ? 'PAUSED' : 'LIVE'}</Badge>
+                  <Link href={`/admin/tokenization/${d.assetId}/compliance`}>
+                    <Button variant="ghost">Manage compliance</Button>
+                  </Link>
+                </div>
               </div>
 
               <dl className="mt-5 grid gap-3 text-sm text-slate-300 md:grid-cols-2">

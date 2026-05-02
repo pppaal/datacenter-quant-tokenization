@@ -1,7 +1,11 @@
 import crypto from 'node:crypto';
 import { AssetClass, type ReadinessStatus } from '@prisma/client';
 import { getAssetClassPlaybook } from '@/lib/asset-class/playbook';
-import { formatCurrencyFromKrwAtRate, resolveDisplayCurrency, type SupportedCurrency } from '@/lib/finance/currency';
+import {
+  formatCurrencyFromKrwAtRate,
+  resolveDisplayCurrency,
+  type SupportedCurrency
+} from '@/lib/finance/currency';
 import { getAssetById } from '@/lib/services/assets';
 import { getFxRateMap } from '@/lib/services/fx';
 import { readStoredBaseCaseProForma } from '@/lib/services/valuation/pro-forma';
@@ -14,7 +18,10 @@ import {
 import { buildAssetResearchDossier } from '@/lib/services/research/dossier';
 import type { ProFormaBaseCase } from '@/lib/services/valuation/types';
 import { formatDate, formatNumber, formatPercent, slugify, toSentenceCase } from '@/lib/utils';
-import { buildValuationQualitySummary, type ValuationQualitySummary } from '@/lib/valuation-quality';
+import {
+  buildValuationQualitySummary,
+  type ValuationQualitySummary
+} from '@/lib/valuation-quality';
 
 export const reportKinds = ['teaser', 'ic-memo', 'dd-checklist', 'risk-memo'] as const;
 
@@ -211,27 +218,33 @@ const reportTemplateMeta: Record<ReportKind, ReportTemplateMeta> = {
     title: 'One-Page Teaser',
     shortLabel: 'Teaser',
     audience: 'investor',
-    description: 'A one-page external summary for an institutional real estate underwriting process.',
+    description:
+      'A one-page external summary for an institutional real estate underwriting process.',
     status: 'production-ready',
-    notes: 'Ready for operator-led outreach and PDF export; narrative stays deterministic and data-backed.'
+    notes:
+      'Ready for operator-led outreach and PDF export; narrative stays deterministic and data-backed.'
   },
   'ic-memo': {
     kind: 'ic-memo',
     title: 'IC Memo',
     shortLabel: 'IC Memo',
     audience: 'operator',
-    description: 'Internal investment committee package using the current valuation, research, and diligence set.',
+    description:
+      'Internal investment committee package using the current valuation, research, and diligence set.',
     status: 'production-ready',
-    notes: 'Ready as an internal draft memo; final committee sign-off should still include human edits.'
+    notes:
+      'Ready as an internal draft memo; final committee sign-off should still include human edits.'
   },
   'dd-checklist': {
     kind: 'dd-checklist',
     title: 'DD Checklist',
     shortLabel: 'DD Checklist',
     audience: 'operator',
-    description: 'Operator-facing diligence coverage summary with open, partial, and complete items.',
+    description:
+      'Operator-facing diligence coverage summary with open, partial, and complete items.',
     status: 'partial',
-    notes: 'Checklist grouping is practical and exportable, but status inference is still heuristic.'
+    notes:
+      'Checklist grouping is practical and exportable, but status inference is still heuristic.'
   },
   'risk-memo': {
     kind: 'risk-memo',
@@ -240,7 +253,8 @@ const reportTemplateMeta: Record<ReportKind, ReportTemplateMeta> = {
     audience: 'operator',
     description: 'Internal risk note focused on downside drivers, mitigants, and document support.',
     status: 'partial',
-    notes: 'Useful for deal review; severity and mitigation language remains template-derived from current data.'
+    notes:
+      'Useful for deal review; severity and mitigation language remains template-derived from current data.'
   }
 };
 
@@ -270,7 +284,11 @@ function takeSentences(value: string | null | undefined, count = 2) {
 
 function resolveBaseScenario(run: AssetBundle['valuations'][number] | undefined) {
   if (!run) return null;
-  return run.scenarios.find((scenario) => scenario.name.toLowerCase() === 'base') ?? run.scenarios[1] ?? null;
+  return (
+    run.scenarios.find((scenario) => scenario.name.toLowerCase() === 'base') ??
+    run.scenarios[1] ??
+    null
+  );
 }
 
 function inferSeverityTone(risk: string): ReportFactTone {
@@ -286,27 +304,54 @@ function inferSeverityTone(risk: string): ReportFactTone {
   ) {
     return 'danger';
   }
-  if (lower.includes('rollover') || lower.includes('vacancy') || lower.includes('comparable') || lower.includes('debt')) {
+  if (
+    lower.includes('rollover') ||
+    lower.includes('vacancy') ||
+    lower.includes('comparable') ||
+    lower.includes('debt')
+  ) {
     return 'warn';
   }
   return 'neutral';
 }
 
-function inferDocumentTopic(document: Pick<ReportDocumentTrace, 'title' | 'documentType' | 'summary'>): DocumentTopic {
+function inferDocumentTopic(
+  document: Pick<ReportDocumentTrace, 'title' | 'documentType' | 'summary'>
+): DocumentTopic {
   const explicitType = document.documentType.toUpperCase().replace(/\s+/g, '_');
-  if (['POWER_STUDY', 'PERMIT', 'GRID_NOTICE', 'SITE_PHOTO'].includes(explicitType)) return 'technical';
+  if (['POWER_STUDY', 'PERMIT', 'GRID_NOTICE', 'SITE_PHOTO'].includes(explicitType))
+    return 'technical';
   if (['LEASE', 'MODEL'].includes(explicitType)) return 'financial';
   if (explicitType === 'IM') return 'market';
 
-  const label = `${document.documentType} ${document.title} ${document.summary ?? ''}`.toLowerCase();
-  if (/(title|deed|mortgage|encumbr|ownership|register|legal|lien|release)/.test(label)) return 'legal';
-  if (/(permit|power|utility|survey|phase|engineering|environment|technical|condition|grid)/.test(label)) return 'technical';
-  if (/(rent roll|lease|financial|operating|cash flow|budget|capex|debt|term sheet|model|underwriting)/.test(label)) return 'financial';
-  if (/(market|valuation|appraisal|comparable|broker|teaser|im|investment memo)/.test(label)) return 'market';
+  const label =
+    `${document.documentType} ${document.title} ${document.summary ?? ''}`.toLowerCase();
+  if (/(title|deed|mortgage|encumbr|ownership|register|legal|lien|release)/.test(label))
+    return 'legal';
+  if (
+    /(permit|power|utility|survey|phase|engineering|environment|technical|condition|grid)/.test(
+      label
+    )
+  )
+    return 'technical';
+  if (
+    /(rent roll|lease|financial|operating|cash flow|budget|capex|debt|term sheet|model|underwriting)/.test(
+      label
+    )
+  )
+    return 'financial';
+  if (/(market|valuation|appraisal|comparable|broker|teaser|im|investment memo)/.test(label))
+    return 'market';
   return 'general';
 }
 
-function buildChecklistStatus({ ready, partial }: { ready: boolean; partial?: boolean }): ChecklistStatus {
+function buildChecklistStatus({
+  ready,
+  partial
+}: {
+  ready: boolean;
+  partial?: boolean;
+}): ChecklistStatus {
   if (ready) return 'complete';
   if (partial) return 'partial';
   return 'open';
@@ -327,10 +372,22 @@ function buildReportFingerprint(asset: AssetBundle) {
     review: {
       energy: asset.energySnapshot?.reviewStatus ?? null,
       permit: asset.permitSnapshot?.reviewStatus ?? null,
-      ownership: asset.ownershipRecords.map((record) => ({ id: record.id, status: (record as { reviewStatus?: string | null }).reviewStatus ?? null })),
-      encumbrance: asset.encumbranceRecords.map((record) => ({ id: record.id, status: (record as { reviewStatus?: string | null }).reviewStatus ?? null })),
-      planning: asset.planningConstraints.map((record) => ({ id: record.id, status: (record as { reviewStatus?: string | null }).reviewStatus ?? null })),
-      leases: asset.leases.map((lease) => ({ id: lease.id, status: (lease as { reviewStatus?: string | null }).reviewStatus ?? null }))
+      ownership: asset.ownershipRecords.map((record) => ({
+        id: record.id,
+        status: (record as { reviewStatus?: string | null }).reviewStatus ?? null
+      })),
+      encumbrance: asset.encumbranceRecords.map((record) => ({
+        id: record.id,
+        status: (record as { reviewStatus?: string | null }).reviewStatus ?? null
+      })),
+      planning: asset.planningConstraints.map((record) => ({
+        id: record.id,
+        status: (record as { reviewStatus?: string | null }).reviewStatus ?? null
+      })),
+      leases: asset.leases.map((lease) => ({
+        id: lease.id,
+        status: (lease as { reviewStatus?: string | null }).reviewStatus ?? null
+      }))
     },
     onchain: asset.readinessProject?.onchainRecords.map((record) => ({
       id: record.id,
@@ -338,7 +395,12 @@ function buildReportFingerprint(asset: AssetBundle) {
       anchoredAt: record.anchoredAt?.toISOString() ?? null
     }))
   });
-  return crypto.createHash('sha256').update(fingerprintPayload).digest('hex').slice(0, 10).toUpperCase();
+  return crypto
+    .createHash('sha256')
+    .update(fingerprintPayload)
+    .digest('hex')
+    .slice(0, 10)
+    .toUpperCase();
 }
 
 function buildDocumentTrace(asset: AssetBundle): ReportDocumentTrace[] {
@@ -381,12 +443,18 @@ function buildTraceabilityFacts(bundle: DealReportBundle, kind: ReportKind): Rep
     },
     {
       label: 'Valuation Source',
-      value: latestRun ? `${latestRun.runLabel} / ${formatDate(latestRun.createdAt)}` : 'No valuation run',
-      detail: latestRun ? `Run ${latestRun.id} / Engine ${latestRun.engineVersion}` : 'Generate a valuation run to tighten the memo package.'
+      value: latestRun
+        ? `${latestRun.runLabel} / ${formatDate(latestRun.createdAt)}`
+        : 'No valuation run',
+      detail: latestRun
+        ? `Run ${latestRun.id} / Engine ${latestRun.engineVersion}`
+        : 'Generate a valuation run to tighten the memo package.'
     },
     {
       label: 'Latest Document',
-      value: latestDoc ? `${latestDoc.title} v${latestDoc.currentVersion}` : 'No documents uploaded',
+      value: latestDoc
+        ? `${latestDoc.title} v${latestDoc.currentVersion}`
+        : 'No documents uploaded',
       detail: latestDoc ? `Hash ${shortHash(latestDoc.hash)}` : 'Document schedule is empty.'
     },
     {
@@ -415,14 +483,18 @@ function buildTraceabilityFacts(bundle: DealReportBundle, kind: ReportKind): Rep
     },
     {
       label: 'Review Packet',
-      value: bundle.latestReviewPacket?.fingerprint ? shortHash(bundle.latestReviewPacket.fingerprint, 16) : 'Not staged',
+      value: bundle.latestReviewPacket?.fingerprint
+        ? shortHash(bundle.latestReviewPacket.fingerprint, 16)
+        : 'Not staged',
       detail: bundle.latestReviewPacket?.stagedAt
         ? `Staged ${formatDate(bundle.latestReviewPacket.stagedAt)} / valuation ${bundle.latestReviewPacket.latestValuationId ?? 'none'}`
         : 'Stage readiness to lock the current approved evidence set into a deterministic packet.'
     },
     {
       label: 'On-Chain Integrity',
-      value: bundle.latestOnchainRecord?.txHash ? shortHash(bundle.latestOnchainRecord.txHash) : 'Not anchored',
+      value: bundle.latestOnchainRecord?.txHash
+        ? shortHash(bundle.latestOnchainRecord.txHash)
+        : 'Not anchored',
       detail: bundle.latestOnchainRecord?.txHash
         ? `${bundle.latestOnchainRecord.chainId ?? 'Unknown chain'} / ${formatDate(bundle.latestOnchainRecord.anchoredAt)}`
         : 'No blockchain anchor linked to the current document set.'
@@ -437,8 +509,12 @@ function formatSourceTag(document: ReportDocumentTrace) {
 function pickSupportingDocuments(documents: ReportDocumentTrace[], text: string, limit = 2) {
   const lower = text.toLowerCase();
   const legalPatterns = [/(title|mortgage|encumbr|legal|lien|ownership|release)/];
-  const technicalPatterns = [/(permit|power|utility|engineering|survey|environment|interconnection)/];
-  const financialPatterns = [/(lease|rent|revenue|occupancy|noi|cash flow|debt|dscr|term sheet|refi)/];
+  const technicalPatterns = [
+    /(permit|power|utility|engineering|survey|environment|interconnection)/
+  ];
+  const financialPatterns = [
+    /(lease|rent|revenue|occupancy|noi|cash flow|debt|dscr|term sheet|refi)/
+  ];
   const marketPatterns = [/(market|comparable|pricing|broker|cap rate|yield)/];
 
   let requestedTopic: DocumentTopic = 'general';
@@ -450,7 +526,8 @@ function pickSupportingDocuments(documents: ReportDocumentTrace[], text: string,
   const scored = documents
     .map((document) => {
       const topic = inferDocumentTopic(document);
-      const textBlob = `${document.title} ${document.documentType} ${document.summary ?? ''}`.toLowerCase();
+      const textBlob =
+        `${document.title} ${document.documentType} ${document.summary ?? ''}`.toLowerCase();
       let score = 0;
 
       if (topic === requestedTopic) score += 10;
@@ -458,11 +535,18 @@ function pickSupportingDocuments(documents: ReportDocumentTrace[], text: string,
       if (textBlob.includes(lower)) score += 6;
       if (requestedTopic === 'legal' && document.anchoredTxHash) score += 2;
       if (document.sourceLink) score += 1;
-      score += Math.max(0, 5 - Math.floor((Date.now() - document.updatedAt.getTime()) / (1000 * 60 * 60 * 24 * 30)));
+      score += Math.max(
+        0,
+        5 - Math.floor((Date.now() - document.updatedAt.getTime()) / (1000 * 60 * 60 * 24 * 30))
+      );
 
       return { document, score };
     })
-    .sort((left, right) => right.score - left.score || right.document.updatedAt.getTime() - left.document.updatedAt.getTime());
+    .sort(
+      (left, right) =>
+        right.score - left.score ||
+        right.document.updatedAt.getTime() - left.document.updatedAt.getTime()
+    );
 
   return scored.slice(0, limit).map((entry) => formatSourceTag(entry.document));
 }
@@ -482,7 +566,9 @@ function buildControlSheet(bundle: DealReportBundle, reportVersion: string): Rep
     {
       label: 'Valuation Run Id',
       value: latestRun?.id ?? 'N/A',
-      detail: latestRun ? `${latestRun.runLabel} / ${formatDate(latestRun.createdAt)}` : 'No valuation run linked'
+      detail: latestRun
+        ? `${latestRun.runLabel} / ${formatDate(latestRun.createdAt)}`
+        : 'No valuation run linked'
     },
     {
       label: 'Approved / Pending Evidence',
@@ -505,12 +591,16 @@ function buildControlSheet(bundle: DealReportBundle, reportVersion: string): Rep
     },
     {
       label: 'Anchor Reference',
-      value: bundle.latestOnchainRecord?.txHash ? shortHash(bundle.latestOnchainRecord.txHash, 16) : 'Not anchored',
+      value: bundle.latestOnchainRecord?.txHash
+        ? shortHash(bundle.latestOnchainRecord.txHash, 16)
+        : 'Not anchored',
       detail: bundle.latestOnchainRecord?.chainId ?? 'No linked chain'
     },
     {
       label: 'Review Packet Fingerprint',
-      value: bundle.latestReviewPacket?.fingerprint ? shortHash(bundle.latestReviewPacket.fingerprint, 16) : 'Not staged',
+      value: bundle.latestReviewPacket?.fingerprint
+        ? shortHash(bundle.latestReviewPacket.fingerprint, 16)
+        : 'Not staged',
       detail: bundle.latestReviewPacket?.stagedAt
         ? `Staged ${formatDate(bundle.latestReviewPacket.stagedAt)}`
         : 'No deterministic review packet has been staged yet.'
@@ -557,7 +647,9 @@ function buildHeroFacts(bundle: DealReportBundle, kind: ReportKind): ReportFact[
     facts.push(
       {
         label: 'Base DSCR',
-        value: baseScenario?.debtServiceCoverage ? `${formatNumber(baseScenario.debtServiceCoverage, 2)}x` : 'N/A',
+        value: baseScenario?.debtServiceCoverage
+          ? `${formatNumber(baseScenario.debtServiceCoverage, 2)}x`
+          : 'N/A',
         tone: (baseScenario?.debtServiceCoverage ?? 0) < 1.15 ? 'danger' : 'neutral'
       },
       {
@@ -623,10 +715,14 @@ function buildDistressContext(bundle: DealReportBundle) {
     );
   }
   if (bundle.counts.encumbrances > 0) {
-    facts.push(`${bundle.counts.encumbrances} recorded encumbrance item(s) are attached to the asset legal pack.`);
+    facts.push(
+      `${bundle.counts.encumbrances} recorded encumbrance item(s) are attached to the asset legal pack.`
+    );
   }
   if ((bundle.counts.debtFacilities ?? 0) > 0) {
-    facts.push(`${bundle.counts.debtFacilities} debt facility record(s) are loaded into the current capital stack.`);
+    facts.push(
+      `${bundle.counts.debtFacilities} debt facility record(s) are loaded into the current capital stack.`
+    );
   }
   return facts;
 }
@@ -650,7 +746,9 @@ function buildTeaserSections(bundle: DealReportBundle): ReportSection[] {
       ].filter(Boolean),
       bullets: distressContext.length
         ? distressContext
-        : ['Current leverage, legal, and permit data do not yet point to a single critical distress trigger.']
+        : [
+            'Current leverage, legal, and permit data do not yet point to a single critical distress trigger.'
+          ]
     },
     {
       id: 'snapshot',
@@ -659,8 +757,14 @@ function buildTeaserSections(bundle: DealReportBundle): ReportSection[] {
       facts: [
         { label: 'Location', value: bundle.locationLabel },
         { label: bundle.sizeLabel, value: bundle.sizeValue },
-        { label: 'Current Value', value: latestRun ? formatKrw(bundle, latestRun.baseCaseValueKrw) : 'N/A' },
-        { label: 'Bull / Bear', value: `${formatKrw(bundle, latestRun?.bullScenarioValueKrw)} / ${formatKrw(bundle, latestRun?.bearScenarioValueKrw)}` },
+        {
+          label: 'Current Value',
+          value: latestRun ? formatKrw(bundle, latestRun.baseCaseValueKrw) : 'N/A'
+        },
+        {
+          label: 'Bull / Bear',
+          value: `${formatKrw(bundle, latestRun?.bullScenarioValueKrw)} / ${formatKrw(bundle, latestRun?.bearScenarioValueKrw)}`
+        },
         {
           label: 'Year 1 Revenue',
           value: yearOne ? formatKrw(bundle, yearOne.totalOperatingRevenueKrw) : 'N/A'
@@ -677,7 +781,9 @@ function buildTeaserSections(bundle: DealReportBundle): ReportSection[] {
       title: 'Data Room Excerpt',
       bullets:
         bundle.documents.slice(0, 5).map((document) => {
-          const anchor = document.anchoredTxHash ? ` / anchored ${shortHash(document.anchoredTxHash)}` : '';
+          const anchor = document.anchoredTxHash
+            ? ` / anchored ${shortHash(document.anchoredTxHash)}`
+            : '';
           return `${document.title} (${document.documentType}, v${document.currentVersion}, ${formatDate(document.updatedAt)}${anchor})`;
         }) || []
     },
@@ -699,10 +805,9 @@ function buildTeaserSections(bundle: DealReportBundle): ReportSection[] {
       id: 'risks',
       kicker: 'Key Flags',
       title: 'Primary Risks',
-      bullets:
-        latestRun?.keyRisks.slice(0, 5) ?? [
-          'No risk memo has been generated yet. Run valuation and upload core diligence documents first.'
-        ]
+      bullets: latestRun?.keyRisks.slice(0, 5) ?? [
+        'No risk memo has been generated yet. Run valuation and upload core diligence documents first.'
+      ]
     }
   ];
 }
@@ -719,7 +824,8 @@ function buildIcMemoSections(bundle: DealReportBundle): ReportSection[] {
       kicker: 'Transaction Context',
       title: 'Why This Deal Is On The Table',
       body: [
-        takeSentences(latestRun?.underwritingMemo, 3) || 'No current underwriting memo is available.',
+        takeSentences(latestRun?.underwritingMemo, 3) ||
+          'No current underwriting memo is available.',
         bundle.ownerName || bundle.sponsorName
           ? `Current counterparties in the package are ${[bundle.ownerName, bundle.sponsorName].filter(Boolean).join(' / ')}.`
           : 'Named owner and sponsor parties are still sparse in the current package.'
@@ -731,16 +837,23 @@ function buildIcMemoSections(bundle: DealReportBundle): ReportSection[] {
       kicker: 'Valuation',
       title: 'Underwriting And Downside Frame',
       facts: [
-        { label: 'Base Case', value: latestRun ? formatKrw(bundle, latestRun.baseCaseValueKrw) : 'N/A' },
+        {
+          label: 'Base Case',
+          value: latestRun ? formatKrw(bundle, latestRun.baseCaseValueKrw) : 'N/A'
+        },
         { label: 'Bull Case', value: formatKrw(bundle, latestRun?.bullScenarioValueKrw) },
         { label: 'Bear Case', value: formatKrw(bundle, latestRun?.bearScenarioValueKrw) },
         {
           label: 'Implied Yield',
-          value: latestRun?.baseScenario?.impliedYieldPct ? formatPercent(latestRun.baseScenario.impliedYieldPct) : 'N/A'
+          value: latestRun?.baseScenario?.impliedYieldPct
+            ? formatPercent(latestRun.baseScenario.impliedYieldPct)
+            : 'N/A'
         },
         {
           label: 'Exit Cap',
-          value: latestRun?.baseScenario?.exitCapRatePct ? formatPercent(latestRun.baseScenario.exitCapRatePct) : 'N/A'
+          value: latestRun?.baseScenario?.exitCapRatePct
+            ? formatPercent(latestRun.baseScenario.exitCapRatePct)
+            : 'N/A'
         },
         {
           label: 'Levered Equity Value',
@@ -753,13 +866,19 @@ function buildIcMemoSections(bundle: DealReportBundle): ReportSection[] {
       kicker: 'Cash Flow',
       title: 'Opening-Year Cash Flow And Capital Stack',
       facts: [
-        { label: 'Year 1 Total Op. Rev.', value: yearOne ? formatKrw(bundle, yearOne.totalOperatingRevenueKrw) : 'N/A' },
+        {
+          label: 'Year 1 Total Op. Rev.',
+          value: yearOne ? formatKrw(bundle, yearOne.totalOperatingRevenueKrw) : 'N/A'
+        },
         { label: 'Year 1 NOI', value: yearOne ? formatKrw(bundle, yearOne.noiKrw) : 'N/A' },
         {
           label: 'Year 1 Debt Service',
           value: yearOne ? formatKrw(bundle, yearOne.debtServiceKrw) : 'N/A'
         },
-        { label: 'Year 1 DSCR', value: yearOne?.dscr ? `${formatNumber(yearOne.dscr, 2)}x` : 'N/A' },
+        {
+          label: 'Year 1 DSCR',
+          value: yearOne?.dscr ? `${formatNumber(yearOne.dscr, 2)}x` : 'N/A'
+        },
         {
           label: 'Reserve Requirement',
           value: summary ? formatKrw(bundle, summary.reserveRequirementKrw) : 'N/A'
@@ -808,12 +927,19 @@ function buildDdChecklistSections(bundle: DealReportBundle): ReportSection[] {
   const playbook = getAssetClassPlaybook(bundle.assetClass);
   const docsByDiscipline = {
     legal: bundle.documents.filter((document) => inferDocumentTopic(document) === 'legal').length,
-    technical: bundle.documents.filter((document) => inferDocumentTopic(document) === 'technical').length
+    technical: bundle.documents.filter((document) => inferDocumentTopic(document) === 'technical')
+      .length
   };
   const yearOne = bundle.proForma?.years[0];
-  const technicalReview = bundle.reviewSummary.disciplines.find((discipline) => discipline.key === 'power_permit');
-  const legalReview = bundle.reviewSummary.disciplines.find((discipline) => discipline.key === 'legal_title');
-  const leaseReview = bundle.reviewSummary.disciplines.find((discipline) => discipline.key === 'lease_revenue');
+  const technicalReview = bundle.reviewSummary.disciplines.find(
+    (discipline) => discipline.key === 'power_permit'
+  );
+  const legalReview = bundle.reviewSummary.disciplines.find(
+    (discipline) => discipline.key === 'legal_title'
+  );
+  const leaseReview = bundle.reviewSummary.disciplines.find(
+    (discipline) => discipline.key === 'lease_revenue'
+  );
 
   return [
     {
@@ -854,7 +980,10 @@ function buildDdChecklistSections(bundle: DealReportBundle): ReportSection[] {
           detail: yearOne
             ? `Opening-year total operating revenue is ${formatKrw(bundle, yearOne.totalOperatingRevenueKrw)}.`
             : 'No opening-year pro forma is stored yet.',
-          status: buildChecklistStatus({ ready: Boolean(yearOne), partial: Boolean(bundle.latestValuation) }),
+          status: buildChecklistStatus({
+            ready: Boolean(yearOne),
+            partial: Boolean(bundle.latestValuation)
+          }),
           sources: pickSupportingDocuments(bundle.documents, 'revenue noi cash flow lease')
         },
         {
@@ -897,7 +1026,9 @@ function buildDdChecklistSections(bundle: DealReportBundle): ReportSection[] {
             bundle.valuationQuality?.coverage.find((item) => item.key === 'power')?.detail ??
             'Approved technical evidence has not been evaluated.',
           status: buildChecklistStatus({
-            ready: bundle.valuationQuality?.coverage.find((item) => item.key === 'power')?.status === 'good'
+            ready:
+              bundle.valuationQuality?.coverage.find((item) => item.key === 'power')?.status ===
+              'good'
           }),
           sources: pickSupportingDocuments(bundle.documents, 'power utility interconnection')
         },
@@ -907,7 +1038,9 @@ function buildDdChecklistSections(bundle: DealReportBundle): ReportSection[] {
             bundle.valuationQuality?.coverage.find((item) => item.key === 'permit')?.detail ??
             'Permit visibility has not been evaluated.',
           status: buildChecklistStatus({
-            ready: bundle.valuationQuality?.coverage.find((item) => item.key === 'permit')?.status === 'good'
+            ready:
+              bundle.valuationQuality?.coverage.find((item) => item.key === 'permit')?.status ===
+              'good'
           }),
           sources: pickSupportingDocuments(bundle.documents, 'permit zoning environmental')
         },
@@ -939,7 +1072,10 @@ function buildDdChecklistSections(bundle: DealReportBundle): ReportSection[] {
             docsByDiscipline.legal > 0
               ? `${docsByDiscipline.legal} legal / title document(s) are present.`
               : 'No title, deed, mortgage, or legal pack document is present.',
-          status: buildChecklistStatus({ ready: docsByDiscipline.legal >= 2, partial: docsByDiscipline.legal > 0 }),
+          status: buildChecklistStatus({
+            ready: docsByDiscipline.legal >= 2,
+            partial: docsByDiscipline.legal > 0
+          }),
           sources: pickSupportingDocuments(bundle.documents, 'title mortgage legal ownership')
         },
         {
@@ -978,7 +1114,10 @@ function buildDdChecklistSections(bundle: DealReportBundle): ReportSection[] {
             ready: (legalReview?.pendingCount ?? 0) === 0,
             partial: (legalReview?.approvedCount ?? 0) > 0
           }),
-          sources: pickSupportingDocuments(bundle.documents, 'title mortgage legal diligence pending')
+          sources: pickSupportingDocuments(
+            bundle.documents,
+            'title mortgage legal diligence pending'
+          )
         }
       ]
     }
@@ -990,22 +1129,21 @@ function buildRiskMemoSections(bundle: DealReportBundle): ReportSection[] {
   const latestRun = bundle.latestValuation;
   const quality = bundle.valuationQuality;
   const reviewSummary = bundle.reviewSummary;
-  const riskChecklist =
-    latestRun?.keyRisks.length
-      ? latestRun.keyRisks.map((risk) => ({
-          label: `${toSentenceCase(inferSeverityTone(risk))} risk`,
-          detail: risk,
-          status: inferSeverityTone(risk) === 'danger' ? ('open' as const) : ('partial' as const),
-          sources: pickSupportingDocuments(bundle.documents, risk)
-        }))
-      : [
-          {
-            label: 'Risk list missing',
-            detail: 'No valuation risk list is available yet.',
-            status: 'open' as const,
-            sources: pickSupportingDocuments(bundle.documents, 'general risk')
-          }
-        ];
+  const riskChecklist = latestRun?.keyRisks.length
+    ? latestRun.keyRisks.map((risk) => ({
+        label: `${toSentenceCase(inferSeverityTone(risk))} risk`,
+        detail: risk,
+        status: inferSeverityTone(risk) === 'danger' ? ('open' as const) : ('partial' as const),
+        sources: pickSupportingDocuments(bundle.documents, risk)
+      }))
+    : [
+        {
+          label: 'Risk list missing',
+          detail: 'No valuation risk list is available yet.',
+          status: 'open' as const,
+          sources: pickSupportingDocuments(bundle.documents, 'general risk')
+        }
+      ];
 
   const mitigationChecklist = [
     ...(latestRun?.ddChecklist.slice(0, 4).map((item) => ({
@@ -1043,9 +1181,15 @@ function buildRiskMemoSections(bundle: DealReportBundle): ReportSection[] {
         {
           label: `${playbook.checklistLabels.legal} Coverage`,
           value:
-            bundle.valuationQuality?.coverage.find((item) => item.key === 'legal')?.status === 'good' ? 'Covered' : 'Thin',
+            bundle.valuationQuality?.coverage.find((item) => item.key === 'legal')?.status ===
+            'good'
+              ? 'Covered'
+              : 'Thin',
           tone:
-            bundle.valuationQuality?.coverage.find((item) => item.key === 'legal')?.status === 'good' ? 'good' : 'warn'
+            bundle.valuationQuality?.coverage.find((item) => item.key === 'legal')?.status ===
+            'good'
+              ? 'good'
+              : 'warn'
         },
         {
           label: 'Anchored Docs',
@@ -1059,7 +1203,8 @@ function buildRiskMemoSections(bundle: DealReportBundle): ReportSection[] {
       ],
       body: [
         `This note isolates the current downside drivers for the ${playbook.label.toLowerCase()} case before committee or lender circulation.`,
-        takeSentences(bundle.latestValuation?.underwritingMemo, 2) || 'No current underwriting memo is available.',
+        takeSentences(bundle.latestValuation?.underwritingMemo, 2) ||
+          'No current underwriting memo is available.',
         reviewSummary.pendingBlockers.length > 0
           ? `Open approval blockers: ${reviewSummary.pendingBlockers.slice(0, 3).join('; ')}.`
           : 'No normalized evidence rows are currently pending review.'
@@ -1139,17 +1284,25 @@ export async function buildReportBundleFromAsset(
   const playbook = getAssetClassPlaybook(asset.assetClass);
   const latestValuation = asset.valuations[0];
   const displayCurrency = resolveDisplayCurrency(asset.address?.country ?? asset.market);
-  const fxRateToKrw =
+  const fxRateToKrw: number | null =
     (options?.fxRateToKrw ?? null) ??
     (await getFxRateMap([displayCurrency]).then((rates) => rates[displayCurrency] ?? null));
-  const provenance = Array.isArray(latestValuation?.provenance) ? (latestValuation.provenance as ProvenanceEntry[]) : [];
-  const quality = latestValuation ? buildValuationQualitySummary(asset, latestValuation.assumptions, provenance) : null;
-  const reviewSummary = buildAssetEvidenceReviewSummary(asset as unknown as Parameters<typeof buildAssetEvidenceReviewSummary>[0]);
+  const provenance = Array.isArray(latestValuation?.provenance)
+    ? (latestValuation.provenance as ProvenanceEntry[])
+    : [];
+  const quality = latestValuation
+    ? buildValuationQualitySummary(asset, latestValuation.assumptions, provenance)
+    : null;
+  const reviewSummary = buildAssetEvidenceReviewSummary(
+    asset as unknown as Parameters<typeof buildAssetEvidenceReviewSummary>[0]
+  );
   const researchDossier = buildAssetResearchDossier(asset as never);
   const baseScenario = resolveBaseScenario(latestValuation);
   const proForma = latestValuation ? readStoredBaseCaseProForma(latestValuation.assumptions) : null;
   const documents = buildDocumentTrace(asset);
-  const latestReviewPacketRecord = getLatestReviewPacketRecord(asset.readinessProject?.onchainRecords);
+  const latestReviewPacketRecord = getLatestReviewPacketRecord(
+    asset.readinessProject?.onchainRecords
+  );
   const latestAnchoredRecord =
     asset.readinessProject?.onchainRecords.find((record) => Boolean(record.txHash)) ?? null;
   const latestOnchainRecord = latestAnchoredRecord
@@ -1162,7 +1315,10 @@ export async function buildReportBundleFromAsset(
       }
     : null;
   const latestReviewPacket = extractReviewPacketSummary(latestReviewPacketRecord);
-  const locationLabel = [asset.address?.city, asset.address?.province, asset.address?.country].filter(Boolean).join(', ') || asset.market;
+  const locationLabel =
+    [asset.address?.city, asset.address?.province, asset.address?.country]
+      .filter(Boolean)
+      .join(', ') || asset.market;
   const sizeLabel = playbook.sizeLabel;
   const sizeValue =
     asset.assetClass === AssetClass.DATA_CENTER
@@ -1197,7 +1353,9 @@ export async function buildReportBundleFromAsset(
       ownershipRecords: asset.ownershipRecords.length,
       encumbrances: asset.encumbranceRecords.length,
       planningConstraints: asset.planningConstraints.length,
-      anchoredDocuments: asset.readinessProject?.onchainRecords.filter((record) => Boolean(record.documentId)).length ?? 0
+      anchoredDocuments:
+        asset.readinessProject?.onchainRecords.filter((record) => Boolean(record.documentId))
+          .length ?? 0
     },
     latestValuation: latestValuation
       ? {
@@ -1277,7 +1435,10 @@ export function buildDealReport(bundle: DealReportBundle, kind: ReportKind): Dea
   };
 }
 
-export function buildDealReportPacket(bundle: DealReportBundle, audience: ReportPacketAudience): DealReportPacket {
+export function buildDealReportPacket(
+  bundle: DealReportBundle,
+  audience: ReportPacketAudience
+): DealReportPacket {
   const kinds: ReportKind[] =
     audience === 'investor' ? ['teaser'] : ['ic-memo', 'dd-checklist', 'risk-memo'];
   const reports = kinds.map((kind) => buildDealReport(bundle, kind));
@@ -1354,7 +1515,9 @@ export function serializeReportToMarkdown(report: DealReport) {
     lines.push('## Document Schedule');
     lines.push('');
     report.documents.forEach((document) => {
-      const anchor = document.anchoredTxHash ? ` / anchor ${shortHash(document.anchoredTxHash)}` : '';
+      const anchor = document.anchoredTxHash
+        ? ` / anchor ${shortHash(document.anchoredTxHash)}`
+        : '';
       lines.push(
         `- ${document.title} (${document.documentType}, v${document.currentVersion}, ${formatDate(document.updatedAt)}, hash ${shortHash(document.hash)}${anchor})`
       );

@@ -14,7 +14,8 @@ export default function AssetDossierError({
       <div className="eyebrow">Asset Dossier</div>
       <h2 className="text-2xl font-semibold text-white">Could not load the underwriting dossier</h2>
       <p className="text-sm leading-7 text-slate-400">
-        {error.message || 'The asset record failed to load. Retry the page and confirm the asset still exists in the active underwriting dataset.'}
+        {error.message ||
+          'The asset record failed to load. Retry the page and confirm the asset still exists in the active underwriting dataset.'}
       </p>
       <button
         type="button"

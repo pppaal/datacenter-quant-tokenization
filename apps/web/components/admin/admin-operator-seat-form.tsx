@@ -64,14 +64,18 @@ export function AdminOperatorSeatForm({
       setFeedback('Operator seat updated.');
       router.refresh();
     } catch (caughtError) {
-      setError(caughtError instanceof Error ? caughtError.message : 'Failed to update operator seat.');
+      setError(
+        caughtError instanceof Error ? caughtError.message : 'Failed to update operator seat.'
+      );
     } finally {
       setSubmitting(false);
     }
   }
 
   async function revokeSessions() {
-    const confirmed = window.confirm('Invalidate all current browser sessions for this operator seat?');
+    const confirmed = window.confirm(
+      'Invalidate all current browser sessions for this operator seat?'
+    );
     if (!confirmed) {
       return;
     }
@@ -100,16 +104,25 @@ export function AdminOperatorSeatForm({
       setFeedback('Operator sessions revoked.');
       router.refresh();
     } catch (caughtError) {
-      setError(caughtError instanceof Error ? caughtError.message : 'Failed to revoke operator sessions.');
+      setError(
+        caughtError instanceof Error ? caughtError.message : 'Failed to revoke operator sessions.'
+      );
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <div className="mt-4 space-y-3 rounded-[20px] border border-white/10 bg-slate-950/40 p-4" data-testid="operator-seat-form">
+    <div
+      className="mt-4 space-y-3 rounded-[20px] border border-white/10 bg-slate-950/40 p-4"
+      data-testid="operator-seat-form"
+    >
       <div className="grid gap-3 md:grid-cols-2">
-        <Select value={role} onChange={(event) => setRole(event.target.value as typeof currentRole)} data-testid="operator-seat-role">
+        <Select
+          value={role}
+          onChange={(event) => setRole(event.target.value as typeof currentRole)}
+          data-testid="operator-seat-role"
+        >
           <option value="VIEWER">VIEWER</option>
           <option value="ANALYST">ANALYST</option>
           <option value="ADMIN">ADMIN</option>
@@ -124,20 +137,35 @@ export function AdminOperatorSeatForm({
         </Select>
       </div>
       <div className="rounded-[18px] border border-amber-400/20 bg-amber-500/10 p-3 text-xs leading-6 text-amber-100">
-        Deactivating a seat or removing ADMIN role is a controlled action. Keep at least one other active ADMIN seat
-        assigned before saving.
+        Deactivating a seat or removing ADMIN role is a controlled action. Keep at least one other
+        active ADMIN seat assigned before saving.
       </div>
       <div className="flex flex-wrap items-center gap-3">
-        <Button type="button" onClick={submit} disabled={submitting} data-testid="operator-seat-save">
+        <Button
+          type="button"
+          onClick={submit}
+          disabled={submitting}
+          data-testid="operator-seat-save"
+        >
           {submitting ? 'Saving...' : 'Save Seat'}
         </Button>
-        <Button type="button" variant="secondary" onClick={revokeSessions} disabled={submitting} data-testid="operator-seat-revoke">
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={revokeSessions}
+          disabled={submitting}
+          data-testid="operator-seat-revoke"
+        >
           Revoke Sessions
         </Button>
         <div className="text-xs text-slate-500">session version {sessionVersion ?? 1}</div>
       </div>
       {feedback ? (
-        <div className="text-sm text-emerald-300" data-testid="operator-seat-feedback" role="status">
+        <div
+          className="text-sm text-emerald-300"
+          data-testid="operator-seat-feedback"
+          role="status"
+        >
           {feedback}
         </div>
       ) : null}

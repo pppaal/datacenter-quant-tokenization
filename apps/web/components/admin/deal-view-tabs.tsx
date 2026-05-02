@@ -28,7 +28,9 @@ export function DealViewTabs({ initialView }: Props) {
       } else {
         params.set('view', stored);
       }
-      router.replace(params.size > 0 ? `${resolvedPathname}?${params.toString()}` : resolvedPathname);
+      router.replace(
+        params.size > 0 ? `${resolvedPathname}?${params.toString()}` : resolvedPathname
+      );
     }
   }, [initialView, resolvedPathname, router, searchParams]);
 
@@ -46,7 +48,11 @@ export function DealViewTabs({ initialView }: Props) {
 
   return (
     <div className="mt-5 flex flex-wrap gap-3">
-      <Button variant={view === 'active' ? 'primary' : 'secondary'} type="button" onClick={() => applyView('active')}>
+      <Button
+        variant={view === 'active' ? 'primary' : 'secondary'}
+        type="button"
+        onClick={() => applyView('active')}
+      >
         Active
       </Button>
       <Button

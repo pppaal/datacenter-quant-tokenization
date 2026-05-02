@@ -21,7 +21,10 @@ export async function POST(request: Request) {
     });
 
     if (!payload.recordType || !payload.recordId || !payload.decision) {
-      return NextResponse.json({ error: 'recordType, recordId, and decision are required.' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'recordType, recordId, and decision are required.' },
+        { status: 400 }
+      );
     }
 
     if (!actor) {

@@ -1,7 +1,11 @@
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import type { AuditEventFilters, AuditEventListResult, AuditEventRow } from '@/lib/services/audit-review';
+import type {
+  AuditEventFilters,
+  AuditEventListResult,
+  AuditEventRow
+} from '@/lib/services/audit-review';
 
 type Props = {
   data: AuditEventListResult;
@@ -23,7 +27,8 @@ function formatDateValue(value: Date | undefined): string | null {
 function buildChips(filters: AuditEventFilters): ChipDescriptor[] {
   const chips: ChipDescriptor[] = [];
   if (filters.actor) chips.push({ key: 'actor', label: 'Actor', value: filters.actor });
-  if (filters.entityType) chips.push({ key: 'entityType', label: 'Type', value: filters.entityType });
+  if (filters.entityType)
+    chips.push({ key: 'entityType', label: 'Type', value: filters.entityType });
   if (filters.entityId) chips.push({ key: 'entityId', label: 'Entity', value: filters.entityId });
   if (filters.severity) chips.push({ key: 'severity', label: 'Severity', value: filters.severity });
   const startLabel = formatDateValue(filters.startDate);
@@ -33,12 +38,15 @@ function buildChips(filters: AuditEventFilters): ChipDescriptor[] {
   return chips;
 }
 
-function buildQueryString(filters: AuditEventFilters, overrides: Partial<Record<keyof AuditEventFilters, string | null>> = {}) {
+function buildQueryString(
+  filters: AuditEventFilters,
+  overrides: Partial<Record<keyof AuditEventFilters, string | null>> = {}
+) {
   const params = new URLSearchParams();
   const apply = (key: keyof AuditEventFilters, value: string | undefined | null) => {
     if (overrides[key] === null) return;
     const overrideValue = overrides[key];
-    const finalValue = overrideValue !== undefined ? overrideValue : value ?? '';
+    const finalValue = overrideValue !== undefined ? overrideValue : (value ?? '');
     if (finalValue && finalValue.length > 0) {
       params.set(key, finalValue);
     }
@@ -113,7 +121,8 @@ export function AuditLogPanel({ data, filters }: Props) {
           <div className="eyebrow">Audit Trail</div>
           <h2 className="mt-2 text-2xl font-semibold text-white">Admin event ledger</h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
-            Inspect operator actions, system mutations, and security events captured by the audit pipeline.
+            Inspect operator actions, system mutations, and security events captured by the audit
+            pipeline.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -156,7 +165,9 @@ export function AuditLogPanel({ data, filters }: Props) {
       {events.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] p-8 text-center">
           <div className="eyebrow">No Events</div>
-          <h3 className="mt-2 text-xl font-semibold text-white">No audit events match the current filters</h3>
+          <h3 className="mt-2 text-xl font-semibold text-white">
+            No audit events match the current filters
+          </h3>
           <p className="mt-2 text-sm text-slate-400">
             Adjust the filter form above or clear filters to widen the search.
           </p>
@@ -177,7 +188,9 @@ export function AuditLogPanel({ data, filters }: Props) {
             <tbody className="divide-y divide-white/5">
               {events.map((event) => (
                 <tr key={event.id} className="align-top text-slate-200">
-                  <td className="px-4 py-4 font-mono text-[11px] text-slate-300">{formatTimestamp(event.createdAt)}</td>
+                  <td className="px-4 py-4 font-mono text-[11px] text-slate-300">
+                    {formatTimestamp(event.createdAt)}
+                  </td>
                   <td className="px-4 py-4">
                     <div className="text-sm text-white">{event.actorIdentifier}</div>
                     <div className="fine-print mt-1">{event.actorRole}</div>
@@ -187,8 +200,12 @@ export function AuditLogPanel({ data, filters }: Props) {
                     <div className="fine-print mt-1">{event.action}</div>
                   </td>
                   <td className="px-4 py-4">
-                    <div className="truncate font-mono text-[11px] text-slate-300">{event.entityId ?? 'n/a'}</div>
-                    {event.assetId ? <div className="fine-print mt-1">asset {event.assetId}</div> : null}
+                    <div className="truncate font-mono text-[11px] text-slate-300">
+                      {event.entityId ?? 'n/a'}
+                    </div>
+                    {event.assetId ? (
+                      <div className="fine-print mt-1">asset {event.assetId}</div>
+                    ) : null}
                   </td>
                   <td className="px-4 py-4">
                     <Badge tone={severityTone(event.statusLabel)}>{event.statusLabel}</Badge>

@@ -74,12 +74,9 @@ export function analyzeCovenants(
   let firstBreach: number | null = null;
 
   for (const y of years) {
-    const impliedValue =
-      cfg.capRatePct > 0 ? Math.round(y.noiKrw / (cfg.capRatePct / 100)) : 0;
+    const impliedValue = cfg.capRatePct > 0 ? Math.round(y.noiKrw / (cfg.capRatePct / 100)) : 0;
     const ltv =
-      impliedValue > 0
-        ? Number(((y.endingDebtBalanceKrw / impliedValue) * 100).toFixed(2))
-        : null;
+      impliedValue > 0 ? Number(((y.endingDebtBalanceKrw / impliedValue) * 100).toFixed(2)) : null;
     const debtYield =
       y.endingDebtBalanceKrw > 0
         ? Number(((y.noiKrw / y.endingDebtBalanceKrw) * 100).toFixed(2))
@@ -146,9 +143,7 @@ function buildSummary(
   }
   const parts: string[] = [];
   if (breachCount > 0) {
-    parts.push(
-      `${breachCount} covenant breach year(s), first in Y${firstBreach}.`
-    );
+    parts.push(`${breachCount} covenant breach year(s), first in Y${firstBreach}.`);
   }
   if (totalSwept > 0) {
     parts.push(

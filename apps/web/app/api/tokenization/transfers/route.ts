@@ -167,7 +167,10 @@ export async function POST(request: Request) {
 
     if (parsed.action === 'reject') {
       if (!parsed.reason) {
-        return NextResponse.json({ error: 'reason (bytes32 hex) required for reject' }, { status: 400 });
+        return NextResponse.json(
+          { error: 'reason (bytes32 hex) required for reject' },
+          { status: 400 }
+        );
       }
       const ticket = await rejectTicket(parsed.ticketDbId, actor.identifier, parsed.reason);
       await recordAuditEvent({

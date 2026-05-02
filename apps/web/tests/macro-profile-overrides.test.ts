@@ -26,7 +26,9 @@ function createMockDb(seed: MacroProfileOverrideRecord[] = []) {
       async findUnique(args: { where: { id: string } }) {
         return rows.find((row) => row.id === args.where.id) ?? null;
       },
-      async create(args: { data: Omit<MacroProfileOverrideRecord, 'id' | 'createdAt' | 'updatedAt'> }) {
+      async create(args: {
+        data: Omit<MacroProfileOverrideRecord, 'id' | 'createdAt' | 'updatedAt'>;
+      }) {
         const now = new Date('2026-03-25T00:00:00.000Z');
         const record: MacroProfileOverrideRecord = {
           id: `override_${rows.length + 1}`,

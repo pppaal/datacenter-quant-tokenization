@@ -24,7 +24,10 @@ const optionalNumberField = z.preprocess((value) => {
 
 const assetIntakeBaseSchema = z.object({
   assetClass: z.nativeEnum(AssetClass).default(AssetClass.OFFICE),
-  assetCode: z.preprocess(emptyStringToUndefined, z.string().trim().min(1, 'Asset code is required')),
+  assetCode: z.preprocess(
+    emptyStringToUndefined,
+    z.string().trim().min(1, 'Asset code is required')
+  ),
   name: z.preprocess(emptyStringToUndefined, z.string().trim().min(1, 'Asset name is required')),
   assetType: optionalStringField,
   assetSubtype: optionalStringField,
@@ -85,12 +88,10 @@ export const assetIntakeSchema = assetIntakeBaseSchema.superRefine((value, ctx) 
   }
 
   if (
-    (
-      value.assetClass === AssetClass.OFFICE ||
+    (value.assetClass === AssetClass.OFFICE ||
       value.assetClass === AssetClass.INDUSTRIAL ||
       value.assetClass === AssetClass.RETAIL ||
-      value.assetClass === AssetClass.MULTIFAMILY
-    ) &&
+      value.assetClass === AssetClass.MULTIFAMILY) &&
     value.rentableAreaSqm === undefined &&
     value.grossFloorAreaSqm === undefined
   ) {
@@ -206,7 +207,8 @@ export function buildAssetCreateInput(
     normalizeMoney?: boolean;
   }
 ): Prisma.AssetCreateInput {
-  const normalizedInput = options?.normalizeMoney === false ? input : normalizeMoneyFieldsToKrw(input);
+  const normalizedInput =
+    options?.normalizeMoney === false ? input : normalizeMoneyFieldsToKrw(input);
   const assetCode = normalizedInput.assetCode.trim().toUpperCase();
   const assetName = normalizedInput.name.trim();
   const assetType = normalizedInput.assetType ?? getDefaultAssetType(normalizedInput.assetClass);

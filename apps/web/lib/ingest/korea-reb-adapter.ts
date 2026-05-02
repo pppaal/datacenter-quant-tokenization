@@ -25,9 +25,7 @@ function buildOfficeVacancyMock(): KoreaIngestRow[] {
     );
     const stepsFromStart = 11 - monthOffset;
     for (const submarket of REB_SUBMARKETS) {
-      const value = Number(
-        (submarket.baseVacancy + submarket.trend * stepsFromStart).toFixed(2)
-      );
+      const value = Number((submarket.baseVacancy + submarket.trend * stepsFromStart).toFixed(2));
       rows.push({
         observationDate: observation,
         value,

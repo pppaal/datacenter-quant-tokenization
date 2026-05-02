@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { projectRentRoll, synthesizeRentRoll, type RentRollTenant } from '@/lib/services/valuation/rent-roll';
+import {
+  projectRentRoll,
+  synthesizeRentRoll,
+  type RentRollTenant
+} from '@/lib/services/valuation/rent-roll';
 
 const baseTenant: RentRollTenant = {
   tenantId: 't1',

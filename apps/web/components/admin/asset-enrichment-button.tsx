@@ -37,13 +37,19 @@ export function AssetEnrichmentButton({
             const response = await fetch(`/api/assets/${assetId}/enrich`, { method: 'POST' });
 
             if (!response.ok) {
-              const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+              const payload = (await response.json().catch(() => null)) as {
+                error?: string;
+              } | null;
               throw new Error(payload?.error ?? 'Failed to refresh source enrichment');
             }
 
             router.refresh();
           } catch (caughtError) {
-            setError(caughtError instanceof Error ? caughtError.message : 'Failed to refresh source enrichment');
+            setError(
+              caughtError instanceof Error
+                ? caughtError.message
+                : 'Failed to refresh source enrichment'
+            );
           } finally {
             setSubmitting(false);
           }

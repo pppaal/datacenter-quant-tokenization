@@ -2,7 +2,10 @@ import type { PrismaClient } from '@prisma/client';
 import { AssetClass } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { buildMacroRegimeAnalysis } from '@/lib/services/macro/regime';
-import { detectRegimeTransitions, type RegimeTransitionSummary } from '@/lib/services/macro/regime-transition';
+import {
+  detectRegimeTransitions,
+  type RegimeTransitionSummary
+} from '@/lib/services/macro/regime-transition';
 import { buildFullTrendAnalysis } from '@/lib/services/macro/trend';
 import { buildTemplateNarrative, type MacroNarrative } from '@/lib/services/macro/narrative';
 import { getConfiguredProviders } from '@/lib/services/macro/data-providers';
@@ -78,7 +81,7 @@ function buildTrendSeries(
     .slice(-24)
     .map((p) => ({
       date: p.observationDate.toISOString().slice(0, 10),
-      value: p.value!,
+      value: p.value!
     }));
 
   const latestValue = points[points.length - 1]?.value ?? 0;
@@ -91,7 +94,7 @@ function buildTrendSeries(
     points,
     latestValue,
     changeDirection: direction,
-    changePct,
+    changePct
   };
 }
 
@@ -102,13 +105,13 @@ export async function buildMacroDashboard(
   const macroSeries = await db.macroSeries.findMany({
     where: assetId ? { assetId } : {},
     orderBy: { observationDate: 'asc' },
-    take: 500,
+    take: 500
   });
 
   const marketIndicators = await db.marketIndicatorSeries.findMany({
     where: assetId ? { assetId } : {},
     orderBy: { observationDate: 'asc' },
-    take: 500,
+    take: 500
   });
 
   // Group macro series by seriesKey
@@ -134,9 +137,7 @@ export async function buildMacroDashboard(
 
   for (const [key, records] of macroByKey) {
     const label = records[0]?.label ?? key;
-    const unit =
-      records[0]?.unit ??
-      (key.includes('rate') || key.includes('pct') ? '%' : '');
+    const unit = records[0]?.unit ?? (key.includes('rate') || key.includes('pct') ? '%' : '');
     const series = buildTrendSeries(label, key, unit, records);
     const category = classifySeriesKey(key);
 
@@ -150,9 +151,7 @@ export async function buildMacroDashboard(
     const label = key;
     const unit =
       records[0]?.unit ??
-      (key.includes('rate') || key.includes('pct') || key.includes('vacancy')
-        ? '%'
-        : '');
+      (key.includes('rate') || key.includes('pct') || key.includes('vacancy') ? '%' : '');
     const series = buildTrendSeries(label, key, unit, records);
     const category = classifySeriesKey(key);
 
@@ -162,19 +161,10 @@ export async function buildMacroDashboard(
     else otherIndicators.push(series);
   }
 
-  const allSeries = [
-    ...interestRateSeries,
-    ...vacancySeries,
-    ...capRateSeries,
-    ...otherIndicators,
-  ];
-  const allDates = allSeries
-    .flatMap((s) => s.points.map((p) => p.date))
-    .sort();
+  const allSeries = [...interestRateSeries, ...vacancySeries, ...capRateSeries, ...otherIndicators];
+  const allDates = allSeries.flatMap((s) => s.points.map((p) => p.date)).sort();
   const latestDate = allDates[allDates.length - 1] ?? null;
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-    .toISOString()
-    .slice(0, 10);
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
   const staleCount = allSeries.filter((s) => {
     const lastDate = s.points[s.points.length - 1]?.date;
     return !lastDate || lastDate < thirtyDaysAgo;
@@ -184,7 +174,11 @@ export async function buildMacroDashboard(
   let narrative: MacroNarrative | null = null;
   let regimeTransition: RegimeTransitionSummary | null = null;
   try {
-    const regime = buildMacroRegimeAnalysis({ assetClass: AssetClass.DATA_CENTER, market: 'KR', series: macroSeries });
+    const regime = buildMacroRegimeAnalysis({
+      assetClass: AssetClass.DATA_CENTER,
+      market: 'KR',
+      series: macroSeries
+    });
     const trends = buildFullTrendAnalysis(macroSeries);
     narrative = buildTemplateNarrative({
       market: 'KR',
@@ -194,10 +188,15 @@ export async function buildMacroDashboard(
     });
 
     // Build a "previous" regime from older data (drop most recent 3 months) for transition detection
-    const olderSeries = macroSeries
-      .filter((s) => s.observationDate.getTime() < Date.now() - 90 * 24 * 60 * 60 * 1000);
+    const olderSeries = macroSeries.filter(
+      (s) => s.observationDate.getTime() < Date.now() - 90 * 24 * 60 * 60 * 1000
+    );
     if (olderSeries.length > 0) {
-      const previousRegime = buildMacroRegimeAnalysis({ assetClass: AssetClass.DATA_CENTER, market: 'KR', series: olderSeries });
+      const previousRegime = buildMacroRegimeAnalysis({
+        assetClass: AssetClass.DATA_CENTER,
+        market: 'KR',
+        series: olderSeries
+      });
       regimeTransition = detectRegimeTransitions(regime, previousRegime);
     }
   } catch {
@@ -212,10 +211,10 @@ export async function buildMacroDashboard(
     summary: {
       totalSeriesCount: allSeries.length,
       latestObservationDate: latestDate,
-      staleSeriesCount: staleCount,
+      staleSeriesCount: staleCount
     },
     narrative,
     regimeTransition,
-    dataProviders: getConfiguredProviders(),
+    dataProviders: getConfiguredProviders()
   };
 }

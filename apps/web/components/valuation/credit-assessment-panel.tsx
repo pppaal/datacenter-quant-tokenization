@@ -52,7 +52,9 @@ export function CreditAssessmentPanel({
           <div className="eyebrow">Credit View</div>
           <h3 className="mt-2 text-xl font-semibold text-white">Counterparty financial strength</h3>
         </div>
-        <div className="text-xs uppercase tracking-[0.18em] text-slate-500">Derived from uploaded financials</div>
+        <div className="text-xs uppercase tracking-[0.18em] text-slate-500">
+          Derived from uploaded financials
+        </div>
       </div>
 
       <div className="mt-5 grid gap-4">
@@ -63,10 +65,15 @@ export function CreditAssessmentPanel({
               : {};
 
           return (
-            <div key={assessment.id} className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+            <div
+              key={assessment.id}
+              className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+            >
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  <div className="text-lg font-semibold text-white">{assessment.counterparty.name}</div>
+                  <div className="text-lg font-semibold text-white">
+                    {assessment.counterparty.name}
+                  </div>
                   <div className="mt-1 text-sm text-slate-400">
                     {assessment.counterparty.role} / {assessment.assessmentType}
                   </div>
@@ -123,7 +130,8 @@ export function CreditAssessmentPanel({
                 <div className="rounded-[18px] border border-white/10 bg-slate-950/40 p-3">
                   <div className="fine-print">OCF / Debt</div>
                   <div className="mt-2 text-white">
-                    {metrics.operatingCashFlowToDebtRatio !== undefined && metrics.operatingCashFlowToDebtRatio !== null
+                    {metrics.operatingCashFlowToDebtRatio !== undefined &&
+                    metrics.operatingCashFlowToDebtRatio !== null
                       ? `${formatNumber(metrics.operatingCashFlowToDebtRatio, 2)}x`
                       : 'N/A'}
                   </div>
@@ -131,7 +139,8 @@ export function CreditAssessmentPanel({
                 <div className="rounded-[18px] border border-white/10 bg-slate-950/40 p-3">
                   <div className="fine-print">Maturity Coverage</div>
                   <div className="mt-2 text-white">
-                    {metrics.currentMaturityCoverage !== undefined && metrics.currentMaturityCoverage !== null
+                    {metrics.currentMaturityCoverage !== undefined &&
+                    metrics.currentMaturityCoverage !== null
                       ? `${formatNumber(metrics.currentMaturityCoverage, 2)}x`
                       : 'N/A'}
                   </div>
@@ -140,7 +149,11 @@ export function CreditAssessmentPanel({
                   <div className="fine-print">Working Capital</div>
                   <div className="mt-2 text-white">
                     {metrics.workingCapitalKrw !== undefined && metrics.workingCapitalKrw !== null
-                      ? formatCurrencyFromKrwAtRate(metrics.workingCapitalKrw, displayCurrency, fxRateToKrw)
+                      ? formatCurrencyFromKrwAtRate(
+                          metrics.workingCapitalKrw,
+                          displayCurrency,
+                          fxRateToKrw
+                        )
                       : 'N/A'}
                   </div>
                 </div>

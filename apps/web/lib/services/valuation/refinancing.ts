@@ -119,14 +119,14 @@ function buildRefinanceScenario(
 
   // Current annual debt service (average of remaining years after refi)
   const remainingYears = years.filter((y) => y.year >= refiYear);
-  const avgCurrentDebtService = remainingYears.length > 0
-    ? remainingYears.reduce((sum, y) => sum + y.debtServiceKrw, 0) / remainingYears.length
-    : 0;
+  const avgCurrentDebtService =
+    remainingYears.length > 0
+      ? remainingYears.reduce((sum, y) => sum + y.debtServiceKrw, 0) / remainingYears.length
+      : 0;
 
   const annualSaving = avgCurrentDebtService - newAnnualDebtService;
-  const breakEvenYears = annualSaving > 0
-    ? Number((prepaymentCostKrw / annualSaving).toFixed(1))
-    : null;
+  const breakEvenYears =
+    annualSaving > 0 ? Number((prepaymentCostKrw / annualSaving).toFixed(1)) : null;
 
   return {
     refiYear,
@@ -184,10 +184,15 @@ export function analyzeRefinancing(
     recommendation = `Critical refinancing signals detected in year(s) ${criticalTriggers.map((t) => t.year).join(', ')}. Immediate refi analysis recommended.`;
   } else if (warningTriggers.length > 0 && bestScenario) {
     recommendation = `Warning triggers present. Best refi scenario at year ${bestScenario.refiYear} (${bestScenario.newRatePct.toFixed(1)}%) saves ${formatKrwShort(bestScenario.annualDebtServiceSavingKrw)}/yr with ${bestScenario.breakEvenYears ?? '∞'}-year breakeven.`;
-  } else if (bestScenario && bestScenario.breakEvenYears !== null && bestScenario.breakEvenYears < 3) {
+  } else if (
+    bestScenario &&
+    bestScenario.breakEvenYears !== null &&
+    bestScenario.breakEvenYears < 3
+  ) {
     recommendation = `Favorable refi opportunity at year ${bestScenario.refiYear}: ${formatKrwShort(bestScenario.annualDebtServiceSavingKrw)}/yr saving, ${bestScenario.breakEvenYears}-year breakeven.`;
   } else {
-    recommendation = 'No immediate refinancing action required. Current debt structure is serviceable.';
+    recommendation =
+      'No immediate refinancing action required. Current debt structure is serviceable.';
   }
 
   return { triggers, scenarios, recommendation };

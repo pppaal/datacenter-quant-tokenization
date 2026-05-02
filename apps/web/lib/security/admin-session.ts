@@ -158,11 +158,18 @@ export function getAdminSessionCookieOptions(env: NodeJS.ProcessEnv = process.en
   };
 }
 
-export function clearAdminSessionCookie(response: {
-  cookies: {
-    set(name: string, value: string, options: ReturnType<typeof getAdminSessionCookieOptions> & { maxAge: number }): void;
-  };
-}, env: NodeJS.ProcessEnv = process.env) {
+export function clearAdminSessionCookie(
+  response: {
+    cookies: {
+      set(
+        name: string,
+        value: string,
+        options: ReturnType<typeof getAdminSessionCookieOptions> & { maxAge: number }
+      ): void;
+    };
+  },
+  env: NodeJS.ProcessEnv = process.env
+) {
   response.cookies.set(ADMIN_SESSION_COOKIE, '', {
     ...getAdminSessionCookieOptions(env),
     maxAge: 0
@@ -226,10 +233,7 @@ type PersistedAdminSessionDb = {
   };
 };
 
-export function getAdminSessionExpiryDate(
-  env: NodeJS.ProcessEnv = process.env,
-  now = new Date()
-) {
+export function getAdminSessionExpiryDate(env: NodeJS.ProcessEnv = process.env, now = new Date()) {
   return new Date(now.getTime() + getSessionTtlMs(env));
 }
 

@@ -79,15 +79,18 @@ export function DealCreateForm({ assets }: Props) {
         <div className="eyebrow">New Deal</div>
         <h2 className="mt-3 text-2xl font-semibold text-white">Open a live execution record</h2>
         <p className="mt-3 text-sm leading-7 text-slate-400">
-          Start from a teaser, link an existing asset if one already exists, and keep the next action visible from day
-          one.
+          Start from a teaser, link an existing asset if one already exists, and keep the next
+          action visible from day one.
         </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
         <label className="space-y-2 md:col-span-2">
           <span className="fine-print">Deal Title</span>
-          <Input placeholder="Distressed core office recap in Seoul CBD" {...form.register('title')} />
+          <Input
+            placeholder="Distressed core office recap in Seoul CBD"
+            {...form.register('title')}
+          />
         </label>
 
         <label className="space-y-2">
@@ -196,7 +199,11 @@ export function DealCreateForm({ assets }: Props) {
                   ? 'Bid Guidance (KRW)'
                   : 'Purchase Price (KRW)'}
             </span>
-            <Input type="number" step="any" {...form.register(field, { valueAsNumber: numericFields.has(field) })} />
+            <Input
+              type="number"
+              step="any"
+              {...form.register(field, { valueAsNumber: numericFields.has(field) })}
+            />
           </label>
         ))}
       </div>
@@ -208,16 +215,16 @@ export function DealCreateForm({ assets }: Props) {
             {selectedAsset.assetCode} / {selectedAsset.name}
           </div>
           <div className="mt-2 text-slate-400">
-            {selectedAsset.assetClass.replaceAll('_', ' ')} / {selectedAsset.city ?? selectedAsset.market} /{' '}
-            {selectedAsset.country ?? 'N/A'}
+            {selectedAsset.assetClass.replaceAll('_', ' ')} /{' '}
+            {selectedAsset.city ?? selectedAsset.market} / {selectedAsset.country ?? 'N/A'}
           </div>
         </div>
       ) : null}
 
       <div className="flex items-center justify-between gap-4 border-t border-white/10 pt-5">
         <p className="max-w-2xl text-sm text-slate-400">
-          This creates the execution record only. Detailed diligence tasks, counterparties, notes, and risks are added
-          on the deal page.
+          This creates the execution record only. Detailed diligence tasks, counterparties, notes,
+          and risks are added on the deal page.
         </p>
         <Button type="submit" disabled={submitting}>
           {submitting ? 'Opening...' : 'Open Deal'}

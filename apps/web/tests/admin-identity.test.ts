@@ -240,23 +240,21 @@ test('identity binding can be manually mapped to a canonical user', async () => 
 });
 
 test('operator seats list canonical users with active flags', async () => {
-  const seats = await listAdminOperatorSeats(
-    {
-      user: {
-        async findMany() {
-          return [
-            {
-              id: 'user_1',
-              name: 'Kim',
-              email: 'kim@example.com',
-              role: 'ANALYST',
-              isActive: true
-            }
-          ];
-        }
+  const seats = await listAdminOperatorSeats({
+    user: {
+      async findMany() {
+        return [
+          {
+            id: 'user_1',
+            name: 'Kim',
+            email: 'kim@example.com',
+            role: 'ANALYST',
+            isActive: true
+          }
+        ];
       }
-    } as any
-  );
+    }
+  } as any);
 
   assert.equal(seats.length, 1);
   assert.equal(seats[0]?.isActive, true);

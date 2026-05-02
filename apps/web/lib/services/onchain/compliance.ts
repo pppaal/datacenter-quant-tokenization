@@ -1,4 +1,5 @@
 import type { Hex } from 'viem';
+import { buildMockTxHash, isTokenizationMockMode } from '@/lib/blockchain/mock-mode';
 import {
   ensureAddress,
   ensureCountryCode,
@@ -22,8 +23,7 @@ export async function canTransferPreflight(
   const clients = getTokenizationClients(deployment);
   const from = ensureAddress(input.from, 'from');
   const to = ensureAddress(input.to, 'to');
-  const amount =
-    typeof input.amount === 'bigint' ? input.amount : BigInt(input.amount as string);
+  const amount = typeof input.amount === 'bigint' ? input.amount : BigInt(input.amount as string);
   return (await clients.publicClient.readContract({
     ...clients.compliance,
     functionName: 'canTransfer',
@@ -35,11 +35,14 @@ export async function blockCountry(
   deployment: TokenizationDeploymentRow,
   countryCode: number
 ): Promise<Hex> {
+  const c = ensureCountryCode(countryCode, 'countryCode');
+  if (isTokenizationMockMode()) {
+    return buildMockTxHash('blockCountry', deployment.complianceAddress, c);
+  }
   const clients = getTokenizationClients(deployment);
   if (!clients.countryRestrict) {
     throw new Error('CountryRestrictModule is not attached to this deployment.');
   }
-  const c = ensureCountryCode(countryCode, 'countryCode');
   return clients.walletClient.writeContract({
     ...clients.countryRestrict,
     functionName: 'blockCountry',
@@ -51,11 +54,14 @@ export async function unblockCountry(
   deployment: TokenizationDeploymentRow,
   countryCode: number
 ): Promise<Hex> {
+  const c = ensureCountryCode(countryCode, 'countryCode');
+  if (isTokenizationMockMode()) {
+    return buildMockTxHash('unblockCountry', deployment.complianceAddress, c);
+  }
   const clients = getTokenizationClients(deployment);
   if (!clients.countryRestrict) {
     throw new Error('CountryRestrictModule is not attached to this deployment.');
   }
-  const c = ensureCountryCode(countryCode, 'countryCode');
   return clients.walletClient.writeContract({
     ...clients.countryRestrict,
     functionName: 'unblockCountry',
@@ -81,8 +87,11 @@ export async function addModule(
   deployment: TokenizationDeploymentRow,
   moduleAddress: string
 ): Promise<Hex> {
-  const clients = getTokenizationClients(deployment);
   const module = ensureAddress(moduleAddress, 'moduleAddress');
+  if (isTokenizationMockMode()) {
+    return buildMockTxHash('addModule', deployment.complianceAddress, module);
+  }
+  const clients = getTokenizationClients(deployment);
   return clients.walletClient.writeContract({
     ...clients.compliance,
     functionName: 'addModule',
@@ -94,8 +103,11 @@ export async function removeModule(
   deployment: TokenizationDeploymentRow,
   moduleAddress: string
 ): Promise<Hex> {
-  const clients = getTokenizationClients(deployment);
   const module = ensureAddress(moduleAddress, 'moduleAddress');
+  if (isTokenizationMockMode()) {
+    return buildMockTxHash('removeModule', deployment.complianceAddress, module);
+  }
+  const clients = getTokenizationClients(deployment);
   return clients.walletClient.writeContract({
     ...clients.compliance,
     functionName: 'removeModule',

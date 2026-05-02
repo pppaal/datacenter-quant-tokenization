@@ -39,7 +39,13 @@ export function CommitteePacketReleaseButton({ packetId }: { packetId: string })
 
   return (
     <div className="mt-3 space-y-2">
-      <Button type="button" variant="ghost" onClick={onClick} disabled={busy} data-testid="ic-packet-release-button">
+      <Button
+        type="button"
+        variant="ghost"
+        onClick={onClick}
+        disabled={busy}
+        data-testid="ic-packet-release-button"
+      >
         {busy ? 'Releasing...' : 'Release Packet'}
       </Button>
       {error ? <div className="text-xs text-rose-300">{error}</div> : null}

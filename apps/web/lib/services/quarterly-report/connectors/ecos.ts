@@ -22,8 +22,8 @@ type EcosRow = {
   ITEM_CODE1: string;
   ITEM_NAME1: string;
   UNIT_NAME: string;
-  TIME: string;        // "202601" for monthly, "2026Q1" for quarterly
-  DATA_VALUE: string;  // "3.25"
+  TIME: string; // "202601" for monthly, "2026Q1" for quarterly
+  DATA_VALUE: string; // "3.25"
 };
 
 type EcosResponse = {
@@ -99,7 +99,8 @@ function yoyChange(rows: EcosRow[]): { value: number | null; time: string | null
   const prior = rows[rows.length - 13]!;
   const lv = Number(last.DATA_VALUE);
   const pv = Number(prior.DATA_VALUE);
-  if (!Number.isFinite(lv) || !Number.isFinite(pv) || pv === 0) return { value: null, time: last.TIME };
+  if (!Number.isFinite(lv) || !Number.isFinite(pv) || pv === 0)
+    return { value: null, time: last.TIME };
   return { value: ((lv - pv) / pv) * 100, time: last.TIME };
 }
 
@@ -134,7 +135,8 @@ export async function fetchEcosSnapshot(): Promise<EcosMacroSnapshot> {
 
   const [baseRate, krwUsd, cpi, gdp] = results;
 
-  const br = baseRate.status === 'fulfilled' ? parseValue(baseRate.value) : { value: null, time: null };
+  const br =
+    baseRate.status === 'fulfilled' ? parseValue(baseRate.value) : { value: null, time: null };
   const fx = krwUsd.status === 'fulfilled' ? parseValue(krwUsd.value) : { value: null, time: null };
   const ci = cpi.status === 'fulfilled' ? yoyChange(cpi.value) : { value: null, time: null };
   const gd = gdp.status === 'fulfilled' ? parseValue(gdp.value) : { value: null, time: null };
@@ -142,22 +144,38 @@ export async function fetchEcosSnapshot(): Promise<EcosMacroSnapshot> {
   if (baseRate.status === 'fulfilled') {
     manifest.baseRate = { endpoint: 'ECOS 722Y001', fetchedAt: ts(), rows: baseRate.value.length };
   } else {
-    manifest.baseRate = { endpoint: `ECOS 722Y001 FAILED: ${(baseRate.reason as Error).message}`, fetchedAt: ts(), rows: 0 };
+    manifest.baseRate = {
+      endpoint: `ECOS 722Y001 FAILED: ${(baseRate.reason as Error).message}`,
+      fetchedAt: ts(),
+      rows: 0
+    };
   }
   if (krwUsd.status === 'fulfilled') {
     manifest.krwUsd = { endpoint: 'ECOS 731Y003', fetchedAt: ts(), rows: krwUsd.value.length };
   } else {
-    manifest.krwUsd = { endpoint: `ECOS 731Y003 FAILED: ${(krwUsd.reason as Error).message}`, fetchedAt: ts(), rows: 0 };
+    manifest.krwUsd = {
+      endpoint: `ECOS 731Y003 FAILED: ${(krwUsd.reason as Error).message}`,
+      fetchedAt: ts(),
+      rows: 0
+    };
   }
   if (cpi.status === 'fulfilled') {
     manifest.cpi = { endpoint: 'ECOS 901Y009', fetchedAt: ts(), rows: cpi.value.length };
   } else {
-    manifest.cpi = { endpoint: `ECOS 901Y009 FAILED: ${(cpi.reason as Error).message}`, fetchedAt: ts(), rows: 0 };
+    manifest.cpi = {
+      endpoint: `ECOS 901Y009 FAILED: ${(cpi.reason as Error).message}`,
+      fetchedAt: ts(),
+      rows: 0
+    };
   }
   if (gdp.status === 'fulfilled') {
     manifest.gdp = { endpoint: 'ECOS 200Y001', fetchedAt: ts(), rows: gdp.value.length };
   } else {
-    manifest.gdp = { endpoint: `ECOS 200Y001 FAILED: ${(gdp.reason as Error).message}`, fetchedAt: ts(), rows: 0 };
+    manifest.gdp = {
+      endpoint: `ECOS 200Y001 FAILED: ${(gdp.reason as Error).message}`,
+      fetchedAt: ts(),
+      rows: 0
+    };
   }
 
   return {

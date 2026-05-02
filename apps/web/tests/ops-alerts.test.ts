@@ -110,7 +110,10 @@ test('getOpsWebhookTargets returns primary and distinct fallback destinations', 
     OPS_ALERT_FALLBACK_WEBHOOK_URL: 'https://hooks.example.com/secondary'
   } as unknown as NodeJS.ProcessEnv);
 
-  assert.deepEqual(targets.map((target) => target.channel), ['webhook_primary', 'webhook_secondary']);
+  assert.deepEqual(
+    targets.map((target) => target.channel),
+    ['webhook_primary', 'webhook_secondary']
+  );
 });
 
 test('sendOpsWebhookAlerts falls back to secondary webhook after primary failure', async () => {
@@ -140,7 +143,10 @@ test('sendOpsWebhookAlerts falls back to secondary webhook after primary failure
   assert.equal(result.attempts[0]?.delivered, false);
   assert.equal(result.attempts[1]?.channel, 'webhook_secondary');
   assert.equal(result.attempts[1]?.delivered, true);
-  assert.deepEqual(calls, ['https://hooks.example.com/primary', 'https://hooks.example.com/secondary']);
+  assert.deepEqual(calls, [
+    'https://hooks.example.com/primary',
+    'https://hooks.example.com/secondary'
+  ]);
 });
 
 test('recordOpsAlertDelivery persists delivery metadata', async () => {

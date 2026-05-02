@@ -51,7 +51,9 @@ export function DealCloseProbabilityPanel({ summary }: Props) {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="eyebrow">Close Probability</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">Which live deals are most likely to break</h2>
+          <h2 className="mt-2 text-2xl font-semibold text-white">
+            Which live deals are most likely to break
+          </h2>
         </div>
         <Link href="/admin/deals?view=actionable">
           <Button variant="ghost">Open Execution Queue</Button>
@@ -61,15 +63,21 @@ export function DealCloseProbabilityPanel({ summary }: Props) {
       <div className="mt-5 grid gap-4 md:grid-cols-3">
         <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
           <div className="fine-print">High Probability</div>
-          <div className="mt-3 text-3xl font-semibold text-white">{formatNumber(summary.highProbabilityCount, 0)}</div>
+          <div className="mt-3 text-3xl font-semibold text-white">
+            {formatNumber(summary.highProbabilityCount, 0)}
+          </div>
         </div>
         <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
           <div className="fine-print">Medium Probability</div>
-          <div className="mt-3 text-3xl font-semibold text-white">{formatNumber(summary.mediumProbabilityCount, 0)}</div>
+          <div className="mt-3 text-3xl font-semibold text-white">
+            {formatNumber(summary.mediumProbabilityCount, 0)}
+          </div>
         </div>
         <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
           <div className="fine-print">Low Probability</div>
-          <div className="mt-3 text-3xl font-semibold text-white">{formatNumber(summary.lowProbabilityCount, 0)}</div>
+          <div className="mt-3 text-3xl font-semibold text-white">
+            {formatNumber(summary.lowProbabilityCount, 0)}
+          </div>
         </div>
       </div>
 
@@ -87,7 +95,8 @@ export function DealCloseProbabilityPanel({ summary }: Props) {
                   <Badge>{deal.dealCode}</Badge>
                   <Badge tone={getDealStageTone(deal.stage)}>{formatDealStage(deal.stage)}</Badge>
                   <Badge tone={getProbabilityTone(deal.probability.band)}>
-                    {formatNumber(deal.probability.scorePct, 0)}% {deal.probability.band.toLowerCase()}
+                    {formatNumber(deal.probability.scorePct, 0)}%{' '}
+                    {deal.probability.band.toLowerCase()}
                   </Badge>
                 </div>
                 <p className="mt-3 text-sm leading-7 text-slate-300">{deal.probability.headline}</p>
@@ -105,7 +114,8 @@ export function DealCloseProbabilityPanel({ summary }: Props) {
                 <div>
                   <div className="fine-print">Readiness</div>
                   <div className="mt-1">
-                    {formatNumber(deal.readiness.scorePct, 0)}% / {formatNumber(deal.readiness.blockerCount, 0)} blockers
+                    {formatNumber(deal.readiness.scorePct, 0)}% /{' '}
+                    {formatNumber(deal.readiness.blockerCount, 0)} blockers
                   </div>
                 </div>
                 <div>

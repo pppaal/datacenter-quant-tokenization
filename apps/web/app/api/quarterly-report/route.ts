@@ -22,7 +22,10 @@ export async function GET(request: Request) {
   });
 
   if (!snap) {
-    return NextResponse.json({ error: `No snapshot for ${market}/${submarket}/${quarter}` }, { status: 404 });
+    return NextResponse.json(
+      { error: `No snapshot for ${market}/${submarket}/${quarter}` },
+      { status: 404 }
+    );
   }
 
   const narrative = snap.narratives[0] ?? null;

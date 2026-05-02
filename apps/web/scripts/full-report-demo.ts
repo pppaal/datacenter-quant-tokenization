@@ -17,9 +17,15 @@ function pct(v: number | null | undefined, d = 2): string {
   if (v === null || v === undefined) return 'N/A';
   return `${v.toFixed(d)}%`;
 }
-function hr(char = '─', w = 92) { return char.repeat(w); }
-function section(t: string) { console.log('\n' + hr('═') + '\n  ' + t + '\n' + hr('═')); }
-function sub(t: string) { console.log('\n' + hr('─') + '\n  ' + t + '\n' + hr('─')); }
+function hr(char = '─', w = 92) {
+  return char.repeat(w);
+}
+function section(t: string) {
+  console.log('\n' + hr('═') + '\n  ' + t + '\n' + hr('═'));
+}
+function sub(t: string) {
+  console.log('\n' + hr('─') + '\n  ' + t + '\n' + hr('─'));
+}
 
 async function main() {
   const address = process.argv[2] ?? '경기도 평택시 고덕면 삼성로 114';
@@ -101,7 +107,7 @@ async function main() {
     }
   ];
   const idiosyncraticRiskInputs = {
-    deferredCapexKrw: 800_000_000,    // ~0.8% of building value
+    deferredCapexKrw: 800_000_000, // ~0.8% of building value
     buildingAgeYears: 12,
     soilContaminationFlag: false,
     asbestosFlag: false,
@@ -115,9 +121,13 @@ async function main() {
   const a = report.autoAnalyze.primaryAnalysis;
 
   section(`${auto.resolvedAddress.roadAddress} · ${auto.resolvedAddress.districtName}`);
-  console.log(`  Primary class       : ${a.asset.assetClass} (${report.autoAnalyze.classification.primary.feasibility})`);
+  console.log(
+    `  Primary class       : ${a.asset.assetClass} (${report.autoAnalyze.classification.primary.feasibility})`
+  );
   console.log(`  Base valuation      : ${krw(a.baseCaseValueKrw)} KRW`);
-  console.log(`  Scenario range      : ${krw(a.scenarios.find(s=>s.name==='Bear')?.valuationKrw)} — ${krw(a.scenarios.find(s=>s.name==='Bull')?.valuationKrw)}`);
+  console.log(
+    `  Scenario range      : ${krw(a.scenarios.find((s) => s.name === 'Bear')?.valuationKrw)} — ${krw(a.scenarios.find((s) => s.name === 'Bull')?.valuationKrw)}`
+  );
 
   sub('1. Macro Regime Interpretation');
   console.log(`  Label   : ${report.macro.regime.label ?? '(n/a)'}`);
@@ -138,7 +148,9 @@ async function main() {
 
   sub('3. Macro Stress Tests');
   for (const s of report.macro.stressTests) {
-    console.log(`  ${s.scenario.name.padEnd(15)} · ${s.verdict.padEnd(11)} · ΔCap ${pct(s.stressedCapRate && s.baselineCapRate ? s.stressedCapRate - s.baselineCapRate : null)} · Value impact ${pct(s.valuationImpactPct)}`);
+    console.log(
+      `  ${s.scenario.name.padEnd(15)} · ${s.verdict.padEnd(11)} · ΔCap ${pct(s.stressedCapRate && s.baselineCapRate ? s.stressedCapRate - s.baselineCapRate : null)} · Value impact ${pct(s.valuationImpactPct)}`
+    );
     console.log(`    → ${s.commentary}`);
   }
 
@@ -166,37 +178,49 @@ async function main() {
   const dc = report.debtCovenant;
   console.log(`  Covenant floor   : ${dc.covenantFloor.toFixed(2)}x`);
   console.log(`  Year-1 DSCR      : ${dc.baseYear1Dscr?.toFixed(2) ?? 'N/A'}x`);
-  console.log(`  Years < ${dc.covenantFloor} : ${dc.yearsBelowFloor.length > 0 ? dc.yearsBelowFloor.join(',') : 'none'}`);
-  console.log(`  Years < 1.00x    : ${dc.yearsBelowOne.length > 0 ? dc.yearsBelowOne.join(',') : 'none'}`);
+  console.log(
+    `  Years < ${dc.covenantFloor} : ${dc.yearsBelowFloor.length > 0 ? dc.yearsBelowFloor.join(',') : 'none'}`
+  );
+  console.log(
+    `  Years < 1.00x    : ${dc.yearsBelowOne.length > 0 ? dc.yearsBelowOne.join(',') : 'none'}`
+  );
   console.log(`  Base breaches    : ${dc.breachesInBase ? 'YES ⚠' : 'NO'}`);
 
   sub('7. Sensitivity — Cap Rate × Exit Cap Rate (equity IRR)');
   const m = report.sensitivities.capRateExit;
-  const header = '         Exit:  ' + m.colAxis.values.map((v) => `${v.toFixed(1)}%`.padStart(8)).join('');
+  const header =
+    '         Exit:  ' + m.colAxis.values.map((v) => `${v.toFixed(1)}%`.padStart(8)).join('');
   console.log(header);
   for (let r = 0; r < m.cells.length; r++) {
     const row = m.cells[r]!;
     const rowLabel = `Cap ${m.rowAxis.values[r]!.toFixed(1)}%`.padStart(10);
-    const cells = row.map((c) => (c.equityIrr === null ? '   N/A  ' : `${c.equityIrr.toFixed(1)}%`.padStart(8))).join('');
+    const cells = row
+      .map((c) => (c.equityIrr === null ? '   N/A  ' : `${c.equityIrr.toFixed(1)}%`.padStart(8)))
+      .join('');
     console.log(rowLabel + '  ' + cells + (r === m.baseRowIndex ? '  ← base' : ''));
   }
 
   sub('8. Sensitivity — Interest Rate Shift');
   console.log('     ΔRate    Equity IRR  MOIC    Y1 DSCR');
   for (const row of report.sensitivities.interestRate) {
-    console.log(`    ${String(row.shiftBps).padStart(5)}bps  ${row.equityIrr === null ? '   N/A' : pct(row.equityIrr).padStart(8)}  ${row.equityMultiple.toFixed(2)}x   ${row.dscrYear1?.toFixed(2) ?? 'N/A'}x`);
+    console.log(
+      `    ${String(row.shiftBps).padStart(5)}bps  ${row.equityIrr === null ? '   N/A' : pct(row.equityIrr).padStart(8)}  ${row.equityMultiple.toFixed(2)}x   ${row.dscrYear1?.toFixed(2) ?? 'N/A'}x`
+    );
   }
 
   sub('9. Macro-Driven Sensitivity (axes from stress scenarios)');
   const md = report.sensitivities.macroDriven;
   console.log(`  Rate axis source     : ${md.rateAxisSourceScenario}`);
   console.log(`  Occupancy axis source: ${md.occupancyAxisSourceScenario}`);
-  const hdr2 = '       Vacancy:  ' + md.colAxis.values.map((v) => `+${v.toFixed(1)}%`.padStart(8)).join('');
+  const hdr2 =
+    '       Vacancy:  ' + md.colAxis.values.map((v) => `+${v.toFixed(1)}%`.padStart(8)).join('');
   console.log(hdr2);
   for (let r = 0; r < md.cells.length; r++) {
     const row = md.cells[r]!;
     const rowLabel = `+${md.rowAxis.values[r]!}bps`.padStart(10);
-    const cells = row.map((c) => c.equityIrr === null ? '   N/A  ' : `${c.equityIrr.toFixed(1)}%`.padStart(8)).join('');
+    const cells = row
+      .map((c) => (c.equityIrr === null ? '   N/A  ' : `${c.equityIrr.toFixed(1)}%`.padStart(8)))
+      .join('');
     console.log(rowLabel + '  ' + cells);
   }
 
@@ -208,7 +232,9 @@ async function main() {
   }
   console.log(`  Refi scenarios   :`);
   for (const s of refi.scenarios.slice(0, 4)) {
-    console.log(`    refi Y${s.refiYear} @ ${s.newRatePct.toFixed(2)}% · DS savings ${krw(s.annualDebtServiceSavingKrw)}/yr · break-even ${s.breakEvenYears?.toFixed(1) ?? 'never'}y`);
+    console.log(
+      `    refi Y${s.refiYear} @ ${s.newRatePct.toFixed(2)}% · DS savings ${krw(s.annualDebtServiceSavingKrw)}/yr · break-even ${s.breakEvenYears?.toFixed(1) ?? 'never'}y`
+    );
   }
   console.log(`  ⇒ ${refi.recommendation}`);
 
@@ -216,18 +242,30 @@ async function main() {
   const mc = report.monteCarlo;
   const t = mc.leveredIrr.tail;
   console.log(`  Iterations valid : ${mc.validIterations}/${mc.iterations}`);
-  console.log(`  Levered IRR     P50 ${pct(mc.leveredIrr.p50)}  mean ${pct(mc.leveredIrr.mean)}  σ ${pct(mc.leveredIrr.stdDev)}`);
-  console.log(`  Lower tail      P10 ${pct(mc.leveredIrr.p10)}  P5 ${pct(t.p5)}  P1 ${pct(t.p1)}  worst ${pct(t.worstObserved)}`);
-  console.log(`  Expected Shortfall (CVaR)  ES95 ${pct(t.expectedShortfall95)}  ES99 ${pct(t.expectedShortfall99)}`);
-  console.log(`  Upside          P90 ${pct(mc.leveredIrr.p90)}  P95 ${pct(t.p95)}  P99 ${pct(t.p99)}`);
+  console.log(
+    `  Levered IRR     P50 ${pct(mc.leveredIrr.p50)}  mean ${pct(mc.leveredIrr.mean)}  σ ${pct(mc.leveredIrr.stdDev)}`
+  );
+  console.log(
+    `  Lower tail      P10 ${pct(mc.leveredIrr.p10)}  P5 ${pct(t.p5)}  P1 ${pct(t.p1)}  worst ${pct(t.worstObserved)}`
+  );
+  console.log(
+    `  Expected Shortfall (CVaR)  ES95 ${pct(t.expectedShortfall95)}  ES99 ${pct(t.expectedShortfall99)}`
+  );
+  console.log(
+    `  Upside          P90 ${pct(mc.leveredIrr.p90)}  P95 ${pct(t.p95)}  P99 ${pct(t.p99)}`
+  );
   console.log(`  Semi-deviation (vs ${t.downsideTarget}%) : ${pct(t.downsideDeviation)}`);
-  console.log(`  Prob(IRR < target) : ${mc.probLeveredIrrBelow.map((b) => `<${b.targetPct}%: ${(b.probability * 100).toFixed(1)}%`).join(' · ')}`);
+  console.log(
+    `  Prob(IRR < target) : ${mc.probLeveredIrrBelow.map((b) => `<${b.targetPct}%: ${(b.probability * 100).toFixed(1)}%`).join(' · ')}`
+  );
 
   sub('12. Idiosyncratic (Asset-Specific) Risk');
   const ir = report.idiosyncraticRisk;
   console.log(`  Overall : ${ir.overallScore}/100  [${ir.band}]  — ${ir.summary}`);
   for (const f of ir.factors) {
-    console.log(`    ${f.label.padEnd(28)} ${String(f.score).padStart(5)}  [${f.severity.padEnd(8)}]  ${f.evidence}`);
+    console.log(
+      `    ${f.label.padEnd(28)} ${String(f.score).padStart(5)}  [${f.severity.padEnd(8)}]  ${f.evidence}`
+    );
     if (f.recommendation) console.log(`      → ${f.recommendation}`);
   }
 
@@ -236,22 +274,32 @@ async function main() {
   if (!tc) {
     console.log('  (no tenant exposures supplied)');
   } else {
-    console.log(`  Weighted grade   : ${tc.weightedGrade}  (1y PD ${tc.weightedPd1yrPct.toFixed(2)}%)`);
-    console.log(`  Annual rent      : ${krw(tc.totalAnnualRentKrw)}  →  expected loss ${krw(tc.expectedAnnualRentLossKrw)}/yr`);
+    console.log(
+      `  Weighted grade   : ${tc.weightedGrade}  (1y PD ${tc.weightedPd1yrPct.toFixed(2)}%)`
+    );
+    console.log(
+      `  Annual rent      : ${krw(tc.totalAnnualRentKrw)}  →  expected loss ${krw(tc.expectedAnnualRentLossKrw)}/yr`
+    );
     console.log(`  Effective reserve: ${tc.effectiveCreditReservePct.toFixed(2)}%`);
     for (const b of tc.breakdown) {
-      console.log(`    ${b.companyName.padEnd(24)} ${b.grade.padEnd(4)} rent ${krw(b.annualRentKrw).padStart(8)}  PD ${b.pd1yrPct.toFixed(2)}%  loss ${krw(b.expectedAnnualLossKrw)}`);
+      console.log(
+        `    ${b.companyName.padEnd(24)} ${b.grade.padEnd(4)} rent ${krw(b.annualRentKrw).padStart(8)}  PD ${b.pd1yrPct.toFixed(2)}%  loss ${krw(b.expectedAnnualLossKrw)}`
+      );
     }
   }
 
   sub('14. Investment Verdict');
   const v = report.verdict;
   console.log(`  Tier        : ${v.tier}  — ${v.headline}`);
-  console.log(`  Score       : ${v.totalScore.toFixed(2)}/${v.maxPossibleScore}  (normalized ${v.normalizedScore.toFixed(3)})`);
+  console.log(
+    `  Score       : ${v.totalScore.toFixed(2)}/${v.maxPossibleScore}  (normalized ${v.normalizedScore.toFixed(3)})`
+  );
   console.log('  Dimensions  :');
   for (const d of v.dimensions) {
     const sign = d.score >= 0 ? '+' : '';
-    console.log(`    ${d.dimension.padEnd(22)} ${d.observed.padEnd(20)} score ${(sign + d.score.toFixed(2)).padStart(6)} × w${d.weight} = ${(d.contribution >= 0 ? '+' : '') + d.contribution.toFixed(2)}`);
+    console.log(
+      `    ${d.dimension.padEnd(22)} ${d.observed.padEnd(20)} score ${(sign + d.score.toFixed(2)).padStart(6)} × w${d.weight} = ${(d.contribution >= 0 ? '+' : '') + d.contribution.toFixed(2)}`
+    );
   }
   if (v.redFlags.length > 0) {
     console.log('  Red flags   :');
@@ -272,14 +320,24 @@ async function main() {
 
   sub('16. Implied Bid');
   const ib = report.impliedBid;
-  console.log(`  Target IRR ${pct(ib.targetIrrPct)} → max bid ${krw(ib.targetIrrBidKrw)}  (${pct(ib.targetIrrAchievedIrrPct)} achieved)`);
-  console.log(`  Floor  IRR ${pct(ib.floorIrrPct)}  → max bid ${krw(ib.floorIrrBidKrw)}   (${pct(ib.floorIrrAchievedIrrPct)} achieved)`);
-  console.log(`  Δ vs underwriting price (${krw(ib.underwritingPriceKrw)}): target ${pct(ib.targetIrrBidVsUnderwritingPct)}, floor ${pct(ib.floorIrrBidVsUnderwritingPct)}`);
+  console.log(
+    `  Target IRR ${pct(ib.targetIrrPct)} → max bid ${krw(ib.atTargetIrr.bidPriceKrw)}  (${pct(ib.atTargetIrr.achievedIrrPct)} achieved)`
+  );
+  console.log(
+    `  Floor  IRR ${pct(ib.floorIrrPct)}  → max bid ${krw(ib.atP10FloorIrr.bidPriceKrw)}   (${pct(ib.atP10FloorIrr.achievedIrrPct)} achieved)`
+  );
+  console.log(
+    `  Δ vs base price (${krw(ib.basePriceKrw)}): target ${pct(ib.atTargetIrr.discountPct)}, floor ${pct(ib.atP10FloorIrr.discountPct)}`
+  );
 
   sub('17. GP/LP Waterfall');
   const wf = report.gpLpWaterfall;
-  console.log(`  LP IRR ${pct(wf.lpIrrPct)}  ·  GP IRR ${pct(wf.gpIrrPct)}  ·  LP MOIC ${wf.lpMoic.toFixed(2)}x  ·  GP MOIC ${wf.gpMoic.toFixed(2)}x`);
-  console.log(`  GP promote earned: ${krw(wf.gpPromoteEarnedKrw)} (vs pro-rata GP ${krw(wf.proRataGpKrw)})`);
+  console.log(
+    `  LP IRR ${pct(wf.lpIrrPct)}  ·  GP IRR ${pct(wf.gpIrrPct)}  ·  LP MOIC ${wf.lpMoic.toFixed(2)}x  ·  GP MOIC ${wf.gpMoic.toFixed(2)}x`
+  );
+  console.log(
+    `  GP promote earned: ${krw(wf.gpPromoteEarnedKrw)} (vs pro-rata GP ${krw(wf.proRataGpKrw)})`
+  );
   const activeTiers = wf.tiers.filter((tt) => tt.gpKrw > 0 || tt.lpKrw > 0).map((tt) => tt.name);
   console.log(`  Tiers paid: ${activeTiers.length > 0 ? activeTiers.join(' · ') : 'none'}`);
 

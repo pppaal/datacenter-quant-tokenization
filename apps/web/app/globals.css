@@ -13,8 +13,8 @@
   --success: 150 58% 54%;
   --warning: 38 96% 63%;
   --danger: 8 88% 66%;
-  --font-sans: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-  --font-mono: "IBM Plex Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  --font-sans: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
 }
 
 * {
@@ -75,7 +75,9 @@ a {
   background-image:
     radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.8) 1px, transparent 0),
     linear-gradient(135deg, rgba(255, 255, 255, 0.04), transparent 45%);
-  background-size: 22px 22px, 100% 100%;
+  background-size:
+    22px 22px,
+    100% 100%;
   mix-blend-mode: screen;
 }
 
@@ -221,6 +223,36 @@ a {
     break-before: page;
   }
 
+  /* IM print polish: keep each section card on one page when possible
+     and avoid orphaned table headers. The .panel/.surface card frames
+     get a thin border for legibility on white. Tables shrink the
+     monospace font so wide grids still fit landscape A4. */
+  main section {
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+  main section > .panel,
+  main section > .surface {
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+  main table {
+    font-size: 10px !important;
+  }
+  main table thead {
+    display: table-header-group;
+  }
+  main table tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  /* Hide interactive chrome inside the IM during print. */
+  main nav[aria-label="IM table of contents"],
+  main button,
+  main a[href^="/admin"] {
+    display: none !important;
+  }
+
   .report-cover-page {
     break-after: page;
     page-break-after: always;
@@ -333,4 +365,23 @@ a {
   .report-export-doc-summary {
     display: none !important;
   }
+}
+
+/* Hash deep links: when the URL points at #im-X, the browser would
+   scroll to the top of the section behind the sticky TOC. Adding
+   scroll-margin-top compensates so the eyebrow lands below the nav.
+   Smooth scroll for in-page anchor jumps. */
+html {
+  scroll-behavior: smooth;
+}
+section[id^='im-'] {
+  scroll-margin-top: 1.5rem;
+}
+
+/* Print mode: when ?print=1 is set, the page renders without the
+   sticky TOC and triggers window.print() on load. The :root.im-print
+   class is added by the ImPrintMode client component. */
+:root.im-print nav[aria-label="IM table of contents"],
+:root.im-print [data-im-print-hidden] {
+  display: none !important;
 }

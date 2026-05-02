@@ -117,7 +117,11 @@ export async function runQuarterlyAggregate(
         ecos: ecos.sourceManifest,
         molit: molit
           ? { endpoint: molit.sourceUrl, fetchedAt: molit.fetchedAt, rows: molit.transactionCount }
-          : { endpoint: 'MOLIT (no data / key missing)', fetchedAt: new Date().toISOString(), rows: 0 }
+          : {
+              endpoint: 'MOLIT (no data / key missing)',
+              fetchedAt: new Date().toISOString(),
+              rows: 0
+            }
       }
     });
     submarketResults.push({ submarket: sm, molit, snapshotId: snap.id });

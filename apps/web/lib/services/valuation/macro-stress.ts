@@ -4,10 +4,7 @@ import { computeLeaseDcf } from '@/lib/services/valuation/lease-dcf';
 import { buildDebtSchedule } from '@/lib/services/valuation/project-finance';
 import { computeReturnMetrics, type ReturnMetrics } from '@/lib/services/valuation/return-metrics';
 import { dataCenterScenarioInputs } from '@/lib/services/valuation/data-center-config';
-import type {
-  PreparedUnderwritingInputs,
-  ScenarioInput
-} from '@/lib/services/valuation/types';
+import type { PreparedUnderwritingInputs, ScenarioInput } from '@/lib/services/valuation/types';
 import type { MacroStressScenario } from '@/lib/services/macro/deal-risk';
 import type { CorrelationPenalty } from '@/lib/services/macro/correlation-stress';
 
@@ -80,8 +77,14 @@ function applyShocks(
 
   const shockedOccupancyPct = Math.max(20, prepared.occupancyPct - vacancyShiftPct);
   const shockedDebtCostPct = Math.max(2, prepared.baseDebtCostPct + rateShiftPct + spreadShiftPct);
-  const shockedDiscountRatePct = Math.max(4, prepared.baseDiscountRatePct + rateShiftPct + spreadShiftPct * 0.5);
-  const shockedCapRatePct = Math.max(3.5, prepared.baseCapRatePct + rateShiftPct * 0.5 + spreadShiftPct * 0.3);
+  const shockedDiscountRatePct = Math.max(
+    4,
+    prepared.baseDiscountRatePct + rateShiftPct + spreadShiftPct * 0.5
+  );
+  const shockedCapRatePct = Math.max(
+    3.5,
+    prepared.baseCapRatePct + rateShiftPct * 0.5 + spreadShiftPct * 0.3
+  );
   const shockedGrowthPct = Math.max(-5, prepared.annualGrowthPct + growthShiftPct);
   const shockedReplacementCost =
     prepared.baseReplacementCostPerMwKrw * (1 + constructionShiftPct / 100);
@@ -150,8 +153,10 @@ function buildCommentary(
   worstDscr: number | null,
   correlationAmp: number
 ): string {
-  const ampSuffix = correlationAmp > 0 ? ` (with +${correlationAmp.toFixed(0)}% correlation amplification)` : '';
-  const deltaFmt = irrDeltaPct === null ? 'n/a' : `${irrDeltaPct >= 0 ? '+' : ''}${irrDeltaPct.toFixed(1)}pp`;
+  const ampSuffix =
+    correlationAmp > 0 ? ` (with +${correlationAmp.toFixed(0)}% correlation amplification)` : '';
+  const deltaFmt =
+    irrDeltaPct === null ? 'n/a' : `${irrDeltaPct >= 0 ? '+' : ''}${irrDeltaPct.toFixed(1)}pp`;
   const dscrFmt = worstDscr === null ? 'n/a' : worstDscr.toFixed(2);
 
   switch (verdict) {
@@ -205,9 +210,10 @@ function buildLineItemImpacts(
   ];
 
   for (const item of items) {
-    item.deltaPct = item.baselineKrw > 0
-      ? Number((((item.stressedKrw - item.baselineKrw) / item.baselineKrw) * 100).toFixed(2))
-      : 0;
+    item.deltaPct =
+      item.baselineKrw > 0
+        ? Number((((item.stressedKrw - item.baselineKrw) / item.baselineKrw) * 100).toFixed(2))
+        : 0;
   }
 
   return items;
@@ -256,7 +262,13 @@ export function runMacroProFormaStress(
 
   const dscrStats = computeDscrStats(stressedRun.debtSchedule.years.map((y) => y.dscr));
   const verdict = verdictFromMetrics(equityIrrDeltaPct, dscrStats.worst);
-  const commentary = buildCommentary(scenario.name, verdict, equityIrrDeltaPct, dscrStats.worst, correlationAmp);
+  const commentary = buildCommentary(
+    scenario.name,
+    verdict,
+    equityIrrDeltaPct,
+    dscrStats.worst,
+    correlationAmp
+  );
   const lineItemImpacts = buildLineItemImpacts(
     baselineRun.leaseDcf,
     stressedRun.leaseDcf,
@@ -279,7 +291,8 @@ export function runMacroProFormaStress(
     verdict,
     commentary,
     lineItemImpacts,
-    correlationPenaltyApplied: correlationPenalty && correlationPenalty.appliedPenaltyPct > 0 ? correlationPenalty : null
+    correlationPenaltyApplied:
+      correlationPenalty && correlationPenalty.appliedPenaltyPct > 0 ? correlationPenalty : null
   };
 }
 
@@ -308,7 +321,8 @@ function isolateFactorShocks(
     spreadShiftBps: factor === 'spreadShiftBps' ? full.spreadShiftBps : 0,
     vacancyShiftPct: factor === 'vacancyShiftPct' ? full.vacancyShiftPct : 0,
     growthShiftPct: factor === 'growthShiftPct' ? full.growthShiftPct : 0,
-    constructionCostShiftPct: factor === 'constructionCostShiftPct' ? full.constructionCostShiftPct : 0
+    constructionCostShiftPct:
+      factor === 'constructionCostShiftPct' ? full.constructionCostShiftPct : 0
   };
 }
 
@@ -367,7 +381,9 @@ export function runFactorAttribution(
       baselineMetrics.equityIrr !== null && metrics.equityIrr !== null
         ? Number((metrics.equityIrr - baselineMetrics.equityIrr).toFixed(2))
         : null;
-    const multipleDelta = Number((metrics.equityMultiple - baselineMetrics.equityMultiple).toFixed(2));
+    const multipleDelta = Number(
+      (metrics.equityMultiple - baselineMetrics.equityMultiple).toFixed(2)
+    );
     const lineItems = buildLineItemImpacts(
       baselineRun.leaseDcf,
       run.leaseDcf,
@@ -378,10 +394,7 @@ export function runFactorAttribution(
     return { factor, irrDelta, multipleDelta, lineItems };
   });
 
-  const totalAbsIrrDelta = rawAttributions.reduce(
-    (sum, a) => sum + Math.abs(a.irrDelta ?? 0),
-    0
-  );
+  const totalAbsIrrDelta = rawAttributions.reduce((sum, a) => sum + Math.abs(a.irrDelta ?? 0), 0);
 
   const factors: MacroFactorAttribution[] = rawAttributions.map((a) => ({
     factor: a.factor,

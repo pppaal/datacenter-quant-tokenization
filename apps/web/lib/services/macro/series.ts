@@ -112,7 +112,9 @@ export function buildMacroSeriesCreateInputs(input: {
   sourceUpdatedAt: Date;
   observationDate?: Date;
 }) {
-  const observationDate = normalizeMacroObservationDate(input.observationDate ?? input.sourceUpdatedAt);
+  const observationDate = normalizeMacroObservationDate(
+    input.observationDate ?? input.sourceUpdatedAt
+  );
 
   return macroSeriesDefinitions
     .map((definition) => {
@@ -174,7 +176,9 @@ export function buildMacroRegimeSnapshotFromMarketSnapshot(
 ): MacroRegimeSnapshot | null {
   if (!marketSnapshot) return null;
 
-  const observationTimestamp = (marketSnapshot.sourceUpdatedAt ?? marketSnapshot.updatedAt).toISOString();
+  const observationTimestamp = (
+    marketSnapshot.sourceUpdatedAt ?? marketSnapshot.updatedAt
+  ).toISOString();
   const points: MacroSeriesSnapshotPoint[] = [
     ['inflation_pct', 'Inflation', marketSnapshot.inflationPct, '%'],
     ['debt_cost_pct', 'Debt Cost', marketSnapshot.debtCostPct, '%'],

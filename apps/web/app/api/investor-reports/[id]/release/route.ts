@@ -2,7 +2,10 @@ import { NextResponse } from 'next/server';
 import { AdminAccessScopeType } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { assertActorScopeAccess } from '@/lib/security/admin-access';
-import { getRequestIpAddress, resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
+import {
+  getRequestIpAddress,
+  resolveVerifiedAdminActorFromHeaders
+} from '@/lib/security/admin-request';
 import { recordAuditEvent } from '@/lib/services/audit';
 import { updateInvestorReportRelease } from '@/lib/services/fund-reporting';
 
@@ -80,7 +83,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     });
 
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to update investor report release' },
+      {
+        error: error instanceof Error ? error.message : 'Failed to update investor report release'
+      },
       { status: 400 }
     );
   }

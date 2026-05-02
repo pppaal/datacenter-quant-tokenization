@@ -54,7 +54,9 @@ export async function runValuationAnalysis(
   };
 }
 
-function buildValuationAnalysisProvenance(bundle: UnderwritingBundle): UnderwritingAnalysis['provenance'] {
+function buildValuationAnalysisProvenance(
+  bundle: UnderwritingBundle
+): UnderwritingAnalysis['provenance'] {
   return [
     {
       field: 'address',

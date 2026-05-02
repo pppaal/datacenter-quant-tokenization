@@ -89,7 +89,10 @@ function buildPlaybook(
     });
   }
 
-  if (competitive.supplyOutlook.supplyShockRisk === 'HIGH' || competitive.supplyOutlook.supplyShockRisk === 'EXTREME') {
+  if (
+    competitive.supplyOutlook.supplyShockRisk === 'HIGH' ||
+    competitive.supplyOutlook.supplyShockRisk === 'EXTREME'
+  ) {
     actions.push({
       priority: 'THIS_WEEK',
       category: 'MARKET_INTEL',

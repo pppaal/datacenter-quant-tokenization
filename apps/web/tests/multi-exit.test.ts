@@ -1,9 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {
-  compareExitScenarios,
-  type MultiExitInput
-} from '@/lib/services/valuation/multi-exit';
+import { compareExitScenarios, type MultiExitInput } from '@/lib/services/valuation/multi-exit';
 
 const baseInput: MultiExitInput = {
   stabilizedNoiKrw: 8_000_000_000, // 8bn KRW NOI
@@ -21,10 +18,7 @@ test('compareExitScenarios: all 4 scenarios produced when all paths eligible', (
   const result = compareExitScenarios(baseInput);
   assert.equal(result.scenarios.length, 4);
   const keys = result.scenarios.map((s) => s.scenario);
-  assert.deepEqual(
-    [...keys].sort(),
-    ['BULK_SALE', 'REFI_HOLD', 'REIT_SEED', 'STRATA_SALE']
-  );
+  assert.deepEqual([...keys].sort(), ['BULK_SALE', 'REFI_HOLD', 'REIT_SEED', 'STRATA_SALE']);
 });
 
 test('STRATA_SALE flagged infeasible when not strata-eligible', () => {

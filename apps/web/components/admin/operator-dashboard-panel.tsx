@@ -43,9 +43,12 @@ export function OperatorDashboardPanel({ data }: Props) {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="metric-card">
           <div className="fine-print">Total AUM</div>
-          <div className="mt-3 text-4xl font-semibold text-white">{formatCurrency(portfolio.totalAumKrw)}</div>
+          <div className="mt-3 text-4xl font-semibold text-white">
+            {formatCurrency(portfolio.totalAumKrw)}
+          </div>
           <p className="mt-2 text-sm text-slate-400">
-            Avg NOI yield {portfolio.avgNoiYieldPct > 0 ? `${portfolio.avgNoiYieldPct.toFixed(1)}%` : 'N/A'}
+            Avg NOI yield{' '}
+            {portfolio.avgNoiYieldPct > 0 ? `${portfolio.avgNoiYieldPct.toFixed(1)}%` : 'N/A'}
           </p>
         </div>
         <div className="metric-card">
@@ -63,7 +66,8 @@ export function OperatorDashboardPanel({ data }: Props) {
             {formatNumber(portfolio.totalAssets, 0)}
           </div>
           <p className="mt-2 text-sm text-slate-400">
-            Avg occupancy {portfolio.avgOccupancyPct > 0 ? formatPercent(portfolio.avgOccupancyPct) : 'N/A'}
+            Avg occupancy{' '}
+            {portfolio.avgOccupancyPct > 0 ? formatPercent(portfolio.avgOccupancyPct) : 'N/A'}
           </p>
         </div>
         <div className="metric-card">
@@ -72,7 +76,8 @@ export function OperatorDashboardPanel({ data }: Props) {
             {formatCurrency(capital.totalCommittedKrw)}
           </div>
           <p className="mt-2 text-sm text-slate-400">
-            Called {formatCurrency(capital.totalCalledKrw)} / Distributed {formatCurrency(capital.totalDistributedKrw)}
+            Called {formatCurrency(capital.totalCalledKrw)} / Distributed{' '}
+            {formatCurrency(capital.totalDistributedKrw)}
           </p>
         </div>
       </div>
@@ -91,16 +96,25 @@ export function OperatorDashboardPanel({ data }: Props) {
           <div className="mt-5 space-y-3">
             {pipeline.totalActive === 0 ? (
               <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5 text-sm text-slate-400">
-                No live deals in the pipeline yet. Seed a sourced opportunity to populate the funnel.
+                No live deals in the pipeline yet. Seed a sourced opportunity to populate the
+                funnel.
               </div>
             ) : (
               pipeline.stages.map((stage) => {
-                const widthPct = stage.count === 0 ? 0 : Math.max(6, (stage.count / maxStageCount) * 100);
+                const widthPct =
+                  stage.count === 0 ? 0 : Math.max(6, (stage.count / maxStageCount) * 100);
                 return (
-                  <div key={stage.stage} className="rounded-[20px] border border-white/10 bg-slate-950/35 p-4">
+                  <div
+                    key={stage.stage}
+                    className="rounded-[20px] border border-white/10 bg-slate-950/35 p-4"
+                  >
                     <div className="flex items-center justify-between gap-3">
-                      <div className="text-sm font-semibold text-white">{stageLabel(stage.stage)}</div>
-                      <div className="font-mono text-sm text-slate-300">{formatNumber(stage.count, 0)}</div>
+                      <div className="text-sm font-semibold text-white">
+                        {stageLabel(stage.stage)}
+                      </div>
+                      <div className="font-mono text-sm text-slate-300">
+                        {formatNumber(stage.count, 0)}
+                      </div>
                     </div>
                     <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/[0.05]">
                       <div
@@ -119,7 +133,9 @@ export function OperatorDashboardPanel({ data }: Props) {
           <div className="flex items-center justify-between gap-4">
             <div>
               <div className="eyebrow">Action Items</div>
-              <h2 className="mt-2 text-2xl font-semibold text-white">Queues needing operator attention</h2>
+              <h2 className="mt-2 text-2xl font-semibold text-white">
+                Queues needing operator attention
+              </h2>
             </div>
             <Badge
               tone={
@@ -136,7 +152,8 @@ export function OperatorDashboardPanel({ data }: Props) {
           <div className="mt-5 grid gap-3">
             {actionItems.every((item) => item.count === 0) ? (
               <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5 text-sm text-slate-400">
-                All queues are clear. Committee, research, task, and diligence workflows are up to date.
+                All queues are clear. Committee, research, task, and diligence workflows are up to
+                date.
               </div>
             ) : (
               actionItems.map((item) => (

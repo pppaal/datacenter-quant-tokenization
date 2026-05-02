@@ -60,7 +60,10 @@ export async function POST(request: Request) {
     parsedBody = bodySchema.parse(raw);
   } catch (err) {
     if (err instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Invalid request body', details: err.issues }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Invalid request body', details: err.issues },
+        { status: 400 }
+      );
     }
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
@@ -119,6 +122,9 @@ export async function POST(request: Request) {
         errorMessage: error instanceof Error ? error.message.slice(0, 200) : 'unknown'
       }
     }).catch(() => {});
-    return NextResponse.json({ error: 'Analysis failed. Please try again later.' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Analysis failed. Please try again later.' },
+      { status: 500 }
+    );
   }
 }

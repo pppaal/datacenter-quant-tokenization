@@ -1,6 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { AssetClass, CovenantStatus, PortfolioAssetStatus, SourceStatus, TaskPriority, TaskStatus } from '@prisma/client';
+import {
+  AssetClass,
+  CovenantStatus,
+  PortfolioAssetStatus,
+  SourceStatus,
+  TaskPriority,
+  TaskStatus
+} from '@prisma/client';
 import {
   buildCovenantStatusSummary,
   buildPortfolioDashboard,
@@ -129,13 +136,21 @@ test('buildPortfolioDashboard aggregates hold KPIs, rollover watchlist, debt wal
         budgets: [
           {
             lineItems: [
-              { annualBudgetKrw: 22_000_000_000, ytdActualKrw: 1_800_000_000, varianceKrw: -100_000_000 }
+              {
+                annualBudgetKrw: 22_000_000_000,
+                ytdActualKrw: 1_800_000_000,
+                varianceKrw: -100_000_000
+              }
             ]
           }
         ],
         capexProjects: [{ approvedBudgetKrw: 1_500_000_000, spentToDateKrw: 500_000_000 }],
-        covenantTests: [{ testName: 'DSCR', status: CovenantStatus.PASS, asOfDate: new Date('2026-01-31') }],
-        exitCases: [{ id: 'exit-office', targetExitDate: new Date('2027-09-30'), statusLabel: 'ACTIVE' }]
+        covenantTests: [
+          { testName: 'DSCR', status: CovenantStatus.PASS, asOfDate: new Date('2026-01-31') }
+        ],
+        exitCases: [
+          { id: 'exit-office', targetExitDate: new Date('2027-09-30'), statusLabel: 'ACTIVE' }
+        ]
       },
       {
         id: 'pa-dc',
@@ -213,13 +228,21 @@ test('buildPortfolioDashboard aggregates hold KPIs, rollover watchlist, debt wal
         budgets: [
           {
             lineItems: [
-              { annualBudgetKrw: 31_500_000_000, ytdActualKrw: 2_610_000_000, varianceKrw: -140_000_000 }
+              {
+                annualBudgetKrw: 31_500_000_000,
+                ytdActualKrw: 2_610_000_000,
+                varianceKrw: -140_000_000
+              }
             ]
           }
         ],
         capexProjects: [{ approvedBudgetKrw: 2_600_000_000, spentToDateKrw: 1_440_000_000 }],
-        covenantTests: [{ testName: 'DSCR', status: CovenantStatus.WATCH, asOfDate: new Date('2026-01-31') }],
-        exitCases: [{ id: 'exit-dc', targetExitDate: new Date('2028-06-30'), statusLabel: 'ACTIVE' }]
+        covenantTests: [
+          { testName: 'DSCR', status: CovenantStatus.WATCH, asOfDate: new Date('2026-01-31') }
+        ],
+        exitCases: [
+          { id: 'exit-dc', targetExitDate: new Date('2028-06-30'), statusLabel: 'ACTIVE' }
+        ]
       }
     ]
   } as any);
@@ -228,10 +251,16 @@ test('buildPortfolioDashboard aggregates hold KPIs, rollover watchlist, debt wal
   assert.equal(dashboard.summary.watchlistCount, 1);
   assert.equal(dashboard.summary.grossHoldValueKrw, 615_000_000_000);
   assert.ok((dashboard.summary.averageOccupancyPct ?? 0) > 80);
-  assert.equal(dashboard.leaseRolloverWatchlist[0].portfolioAsset.asset.name, 'Seoul Hyperscale Campus I');
+  assert.equal(
+    dashboard.leaseRolloverWatchlist[0].portfolioAsset.asset.name,
+    'Seoul Hyperscale Campus I'
+  );
   assert.equal(dashboard.debtMaturityWall.length, 2);
   assert.equal(dashboard.exitCaseTracker.length, 2);
-  assert.equal(dashboard.initiativeTracker[0].portfolioAsset.asset.name, 'Seoul Hyperscale Campus I');
+  assert.equal(
+    dashboard.initiativeTracker[0].portfolioAsset.asset.name,
+    'Seoul Hyperscale Campus I'
+  );
   assert.ok(dashboard.operatorSummary.includes('Korea Income Portfolio'));
 });
 
@@ -320,10 +349,20 @@ test('buildPortfolioOperatorBriefs produces operator-facing research and watchli
             watchlistSummary: 'Rollover concentration in the next 12 months'
           }
         ],
-        budgets: [{ lineItems: [{ annualBudgetKrw: 1_000_000_000, ytdActualKrw: 600_000_000, varianceKrw: 50_000_000 }] }],
+        budgets: [
+          {
+            lineItems: [
+              { annualBudgetKrw: 1_000_000_000, ytdActualKrw: 600_000_000, varianceKrw: 50_000_000 }
+            ]
+          }
+        ],
         capexProjects: [{ approvedBudgetKrw: 800_000_000, spentToDateKrw: 550_000_000 }],
-        covenantTests: [{ testName: 'DSCR', status: CovenantStatus.WATCH, asOfDate: new Date('2026-01-31') }],
-        exitCases: [{ id: 'exit-office', targetExitDate: new Date('2027-09-30'), statusLabel: 'ACTIVE' }]
+        covenantTests: [
+          { testName: 'DSCR', status: CovenantStatus.WATCH, asOfDate: new Date('2026-01-31') }
+        ],
+        exitCases: [
+          { id: 'exit-office', targetExitDate: new Date('2027-09-30'), statusLabel: 'ACTIVE' }
+        ]
       }
     ]
   } as any;
@@ -411,7 +450,9 @@ test('buildPortfolioOptimizationLab creates deterministic allocation and scenari
             next24MonthsExpiringPct: 26
           }
         ],
-        covenantTests: [{ testName: 'DSCR', status: CovenantStatus.PASS, asOfDate: new Date('2026-01-31') }],
+        covenantTests: [
+          { testName: 'DSCR', status: CovenantStatus.PASS, asOfDate: new Date('2026-01-31') }
+        ],
         exitCases: []
       },
       {
@@ -488,7 +529,9 @@ test('buildPortfolioOptimizationLab creates deterministic allocation and scenari
             next24MonthsExpiringPct: 41
           }
         ],
-        covenantTests: [{ testName: 'DSCR', status: CovenantStatus.WATCH, asOfDate: new Date('2026-01-31') }],
+        covenantTests: [
+          { testName: 'DSCR', status: CovenantStatus.WATCH, asOfDate: new Date('2026-01-31') }
+        ],
         exitCases: []
       }
     ]
@@ -497,7 +540,10 @@ test('buildPortfolioOptimizationLab creates deterministic allocation and scenari
   const lab = buildPortfolioOptimizationLab(portfolio);
 
   assert.equal(lab.assetRows.length, 2);
-  assert.equal(lab.assetRows.reduce((total, row) => total + row.targetWeightPct, 0), 100);
+  assert.equal(
+    lab.assetRows.reduce((total, row) => total + row.targetWeightPct, 0),
+    100
+  );
   assert.ok(lab.assetRows.some((row) => row.recommendation === 'ADD'));
   assert.ok(lab.assetRows.some((row) => row.recommendation === 'TRIM'));
   assert.ok(lab.scenarioRows.some((row) => row.label === 'Worst Feasible Search'));

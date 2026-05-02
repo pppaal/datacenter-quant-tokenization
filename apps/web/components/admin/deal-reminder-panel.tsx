@@ -33,7 +33,9 @@ export function DealReminderPanel({ summary }: Props) {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="eyebrow">Deal Reminders</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">What needs operator attention now</h2>
+          <h2 className="mt-2 text-2xl font-semibold text-white">
+            What needs operator attention now
+          </h2>
         </div>
         <Link href="/admin/deals?view=actionable">
           <Button variant="ghost">Open Actionable Deals</Button>
@@ -43,23 +45,33 @@ export function DealReminderPanel({ summary }: Props) {
       <div className="mt-5 grid gap-4 md:grid-cols-5">
         <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
           <div className="fine-print">Overdue Deals</div>
-          <div className="mt-3 text-3xl font-semibold text-white">{formatNumber(summary.overdueDeals, 0)}</div>
+          <div className="mt-3 text-3xl font-semibold text-white">
+            {formatNumber(summary.overdueDeals, 0)}
+          </div>
         </div>
         <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
           <div className="fine-print">Due Soon</div>
-          <div className="mt-3 text-3xl font-semibold text-white">{formatNumber(summary.dueSoonDeals, 0)}</div>
+          <div className="mt-3 text-3xl font-semibold text-white">
+            {formatNumber(summary.dueSoonDeals, 0)}
+          </div>
         </div>
         <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
           <div className="fine-print">Missing Next Action</div>
-          <div className="mt-3 text-3xl font-semibold text-white">{formatNumber(summary.missingNextActionDeals, 0)}</div>
+          <div className="mt-3 text-3xl font-semibold text-white">
+            {formatNumber(summary.missingNextActionDeals, 0)}
+          </div>
         </div>
         <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
           <div className="fine-print">Stale</div>
-          <div className="mt-3 text-3xl font-semibold text-white">{formatNumber(summary.staleDeals, 0)}</div>
+          <div className="mt-3 text-3xl font-semibold text-white">
+            {formatNumber(summary.staleDeals, 0)}
+          </div>
         </div>
         <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
           <div className="fine-print">Archived</div>
-          <div className="mt-3 text-3xl font-semibold text-white">{formatNumber(summary.archivedDeals, 0)}</div>
+          <div className="mt-3 text-3xl font-semibold text-white">
+            {formatNumber(summary.archivedDeals, 0)}
+          </div>
         </div>
       </div>
 
@@ -75,7 +87,15 @@ export function DealReminderPanel({ summary }: Props) {
                 <div className="flex flex-wrap items-center gap-3">
                   <div className="text-sm font-semibold text-white">{deal.title}</div>
                   <Badge>{deal.dealCode}</Badge>
-                  <Badge tone={deal.overdueTaskCount > 0 ? 'danger' : deal.dueSoonTaskCount > 0 ? 'warn' : 'neutral'}>
+                  <Badge
+                    tone={
+                      deal.overdueTaskCount > 0
+                        ? 'danger'
+                        : deal.dueSoonTaskCount > 0
+                          ? 'warn'
+                          : 'neutral'
+                    }
+                  >
                     {deal.stage.toLowerCase().replaceAll('_', ' ')}
                   </Badge>
                   {deal.isStale ? <Badge tone="warn">stale</Badge> : null}

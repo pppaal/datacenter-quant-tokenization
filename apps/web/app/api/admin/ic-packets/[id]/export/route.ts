@@ -2,7 +2,10 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { recordAuditEvent } from '@/lib/services/audit';
 import { committeePacketInclude } from '@/lib/services/ic';
-import { getRequestIpAddress, resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
+import {
+  getRequestIpAddress,
+  resolveVerifiedAdminActorFromHeaders
+} from '@/lib/security/admin-request';
 import { hasRequiredAdminRole } from '@/lib/security/admin-auth';
 
 export const dynamic = 'force-dynamic';
@@ -54,11 +57,15 @@ function buildPacketCsv(packet: Awaited<ReturnType<typeof loadPacket>>): string 
   rows.push(['Asset Class', packet.asset?.assetClass ?? ''].map(csvEscape).join(','));
   rows.push(['Asset Status', packet.asset?.status ?? ''].map(csvEscape).join(','));
   rows.push(['Valuation Run', packet.valuationRun?.runLabel ?? ''].map(csvEscape).join(','));
-  rows.push(['Valuation Approval', packet.valuationRun?.approvalStatus ?? ''].map(csvEscape).join(','));
+  rows.push(
+    ['Valuation Approval', packet.valuationRun?.approvalStatus ?? ''].map(csvEscape).join(',')
+  );
   rows.push(
     [
       'Valuation Confidence',
-      packet.valuationRun?.confidenceScore != null ? String(packet.valuationRun.confidenceScore) : ''
+      packet.valuationRun?.confidenceScore != null
+        ? String(packet.valuationRun.confidenceScore)
+        : ''
     ]
       .map(csvEscape)
       .join(',')

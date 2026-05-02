@@ -116,8 +116,7 @@ export function buildMacroImpactHistory(runs: MacroHistoryRun[], take = 6): Macr
       key,
       label,
       latestScore: latest?.score ?? null,
-      deltaVsPrevious:
-        latest && previous ? round(latest.score - previous.score) : null,
+      deltaVsPrevious: latest && previous ? round(latest.score - previous.score) : null,
       latestDirection: latest?.direction ?? null,
       points: dimensionPoints
     } satisfies MacroImpactHistorySeries;

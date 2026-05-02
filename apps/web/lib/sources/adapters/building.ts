@@ -66,14 +66,20 @@ export function createBuildingPermitAdapter(store: SourceCacheStore, fetcher?: F
         const data: BuildingPermitData = {
           zoning: String(payload.zoning ?? fallback.zoning),
           permitStage: String(payload.permitStage ?? fallback.permitStage),
-          zoningApprovalStatus: String(payload.zoningApprovalStatus ?? fallback.zoningApprovalStatus),
-          environmentalReviewStatus: String(payload.environmentalReviewStatus ?? fallback.environmentalReviewStatus),
+          zoningApprovalStatus: String(
+            payload.zoningApprovalStatus ?? fallback.zoningApprovalStatus
+          ),
+          environmentalReviewStatus: String(
+            payload.environmentalReviewStatus ?? fallback.environmentalReviewStatus
+          ),
           powerApprovalStatus: String(payload.powerApprovalStatus ?? fallback.powerApprovalStatus),
           buildingCoveragePct: Number(payload.buildingCoveragePct ?? fallback.buildingCoveragePct),
           floorAreaRatioPct: Number(payload.floorAreaRatioPct ?? fallback.floorAreaRatioPct),
           redundancyTier: String(payload.redundancyTier ?? fallback.redundancyTier),
           coolingType: String(payload.coolingType ?? fallback.coolingType),
-          structureDescription: String(payload.structureDescription ?? fallback.structureDescription)
+          structureDescription: String(
+            payload.structureDescription ?? fallback.structureDescription
+          )
         };
 
         const entry = {

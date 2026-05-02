@@ -1,7 +1,17 @@
-import { AssetClass, AssetStatus, ReviewStatus, type Prisma, type PrismaClient } from '@prisma/client';
+import { classifyAssetTier } from '@/lib/services/research/tier-classifier';
+import {
+  AssetClass,
+  AssetStatus,
+  ReviewStatus,
+  type Prisma,
+  type PrismaClient
+} from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { buildMacroFactorCreateInputs } from '@/lib/services/macro/factors';
-import { buildMacroSeriesCreateInputs, normalizeMacroObservationDate } from '@/lib/services/macro/series';
+import {
+  buildMacroSeriesCreateInputs,
+  normalizeMacroObservationDate
+} from '@/lib/services/macro/series';
 import { promoteAssetSnapshotsToFeatures } from '@/lib/services/feature-promotion';
 import { createMemorySourceCacheStore, createPrismaSourceCacheStore } from '@/lib/sources/cache';
 import { createBuildingPermitAdapter } from '@/lib/sources/adapters/building';
@@ -63,10 +73,11 @@ export const assetBundleInclude = {
     },
     include: {
       financialStatements: {
-        orderBy: {
-          createdAt: 'desc' as const
-        },
-        take: 2,
+        orderBy: [
+          { fiscalYear: 'desc' as const },
+          { createdAt: 'desc' as const }
+        ],
+        take: 5,
         include: {
           creditAssessments: {
             orderBy: {
@@ -184,6 +195,49 @@ export const assetBundleInclude = {
     },
     take: 12
   },
+  aiInsights: {
+    orderBy: {
+      createdAt: 'desc' as const
+    },
+    take: 6
+  },
+  buildingRecords: {
+    orderBy: {
+      completionDate: 'desc' as const
+    },
+    take: 4
+  },
+  parcels: {
+    orderBy: {
+      createdAt: 'desc' as const
+    },
+    take: 6
+  },
+  committeePackets: {
+    orderBy: {
+      createdAt: 'desc' as const
+    },
+    take: 4
+  },
+  tokenization: true,
+  insurancePolicies: {
+    orderBy: [
+      { status: 'asc' as const },
+      { policyType: 'asc' as const }
+    ]
+  },
+  carbonRecords: {
+    orderBy: [
+      { vintageYear: 'desc' as const },
+      { scope: 'asc' as const }
+    ]
+  },
+  sideLetters: {
+    orderBy: [
+      { lpName: 'asc' as const },
+      { termCategory: 'asc' as const }
+    ]
+  },
   transactionComps: {
     orderBy: {
       transactionDate: 'desc' as const
@@ -220,6 +274,18 @@ export const assetBundleInclude = {
         orderBy: {
           scenarioOrder: 'asc' as const
         }
+      },
+      sensitivityRuns: {
+        include: {
+          points: {
+            orderBy: {
+              sortOrder: 'asc' as const
+            }
+          }
+        },
+        orderBy: {
+          createdAt: 'desc' as const
+        }
       }
     },
     orderBy: {
@@ -235,6 +301,12 @@ export const assetBundleInclude = {
         }
       }
     }
+  },
+  media: {
+    orderBy: [
+      { sortOrder: 'asc' as const },
+      { createdAt: 'asc' as const }
+    ]
   }
 } satisfies Prisma.AssetInclude;
 
@@ -250,12 +322,7 @@ const assetMoneyFields = [
 ] as const;
 
 function resolveSourceCacheStore(db: unknown): SourceCacheStore {
-  if (
-    db &&
-    typeof db === 'object' &&
-    'sourceCache' in db &&
-    'sourceOverride' in db
-  ) {
+  if (db && typeof db === 'object' && 'sourceCache' in db && 'sourceOverride' in db) {
     return createPrismaSourceCacheStore(db as PrismaClient);
   }
 
@@ -284,11 +351,16 @@ async function normalizeAssetMoneyFieldsToKrw<T extends AssetIntakeInput | Asset
 
 export async function createAsset(
   input: unknown,
-  db: Pick<PrismaClient, 'asset'> & Partial<Pick<PrismaClient, 'sourceCache' | 'sourceOverride'>> = prisma
+  db: Pick<PrismaClient, 'asset'> &
+    Partial<Pick<PrismaClient, 'sourceCache' | 'sourceOverride'>> = prisma
 ) {
   const parsed = assetIntakeSchema.parse(input);
   const inputCurrency = resolveInputCurrency(parsed.country, parsed.inputCurrency);
-  const normalized = await normalizeAssetMoneyFieldsToKrw(parsed, inputCurrency, resolveSourceCacheStore(db));
+  const normalized = await normalizeAssetMoneyFieldsToKrw(
+    parsed,
+    inputCurrency,
+    resolveSourceCacheStore(db)
+  );
   return db.asset.create({
     data: buildAssetCreateInput(normalized, { normalizeMoney: false }),
     include: assetBundleInclude
@@ -308,8 +380,15 @@ export async function updateAsset(
   if (!existing) throw new Error('Asset not found');
 
   const parsed = assetIntakeUpdateSchema.parse(input);
-  const inputCurrency = resolveInputCurrency(parsed.country ?? existing.address?.country, parsed.inputCurrency);
-  const normalized = await normalizeAssetMoneyFieldsToKrw(parsed, inputCurrency, resolveSourceCacheStore(db));
+  const inputCurrency = resolveInputCurrency(
+    parsed.country ?? existing.address?.country,
+    parsed.inputCurrency
+  );
+  const normalized = await normalizeAssetMoneyFieldsToKrw(
+    parsed,
+    inputCurrency,
+    resolveSourceCacheStore(db)
+  );
 
   return db.asset.update({
     where: { id },
@@ -340,16 +419,14 @@ export async function updateAsset(
       exitCapRatePct: parsed.exitCapRatePct,
       officeDetail:
         parsed.assetClass === AssetClass.OFFICE &&
-        (
-          parsed.stabilizedRentPerSqmMonthKrw !== undefined ||
+        (parsed.stabilizedRentPerSqmMonthKrw !== undefined ||
           parsed.otherIncomeKrw !== undefined ||
           parsed.vacancyAllowancePct !== undefined ||
           parsed.creditLossPct !== undefined ||
           parsed.tenantImprovementReserveKrw !== undefined ||
           parsed.leasingCommissionReserveKrw !== undefined ||
           parsed.annualCapexReserveKrw !== undefined ||
-          parsed.weightedAverageLeaseTermYears !== undefined
-        )
+          parsed.weightedAverageLeaseTermYears !== undefined)
           ? {
               upsert: {
                 update: {
@@ -702,7 +779,9 @@ export async function enrichAssetFromSources(assetId: string, db: PrismaClient =
             inflationPct: macro.data.inflationPct,
             constructionCostPerMwKrw: macro.data.constructionCostPerMwKrw,
             discountRatePct: macro.data.discountRatePct,
-            marketNotes: [macro.data.marketNotes, marketData.data.marketNotes].filter(Boolean).join(' '),
+            marketNotes: [macro.data.marketNotes, marketData.data.marketNotes]
+              .filter(Boolean)
+              .join(' '),
             sourceStatus: marketData.status === 'FRESH' ? marketData.status : macro.status,
             sourceUpdatedAt
           },
@@ -715,7 +794,9 @@ export async function enrichAssetFromSources(assetId: string, db: PrismaClient =
             inflationPct: macro.data.inflationPct,
             constructionCostPerMwKrw: macro.data.constructionCostPerMwKrw,
             discountRatePct: macro.data.discountRatePct,
-            marketNotes: [macro.data.marketNotes, marketData.data.marketNotes].filter(Boolean).join(' '),
+            marketNotes: [macro.data.marketNotes, marketData.data.marketNotes]
+              .filter(Boolean)
+              .join(' '),
             sourceStatus: marketData.status === 'FRESH' ? marketData.status : macro.status,
             sourceUpdatedAt
           }
@@ -763,6 +844,15 @@ export async function enrichAssetFromSources(assetId: string, db: PrismaClient =
         assetId,
         market: asset.market,
         region: comp.region,
+        // Tier classifier runs at intake so the cap-rate aggregator's
+        // submarket × tier matrix can group on real values from day one
+        // instead of waiting for a separate backfill pass.
+        assetClass: asset.assetClass,
+        assetTier: classifyAssetTier({
+          comparableType: comp.comparableType,
+          assetClass: asset.assetClass,
+          grossFloorAreaSqm: asset.grossFloorAreaSqm
+        }),
         comparableType: comp.comparableType,
         transactionDate: comp.transactionDate ? new Date(comp.transactionDate) : null,
         priceKrw: comp.priceKrw ?? null,
@@ -804,7 +894,9 @@ export async function enrichAssetFromSources(assetId: string, db: PrismaClient =
         market: asset.market,
         region: indicator.region ?? marketData.data.metroRegion ?? macro.data.metroRegion,
         indicatorKey: indicator.indicatorKey,
-        observationDate: indicator.observationDate ? new Date(indicator.observationDate) : sourceUpdatedAt,
+        observationDate: indicator.observationDate
+          ? new Date(indicator.observationDate)
+          : sourceUpdatedAt,
         value: indicator.value,
         unit: indicator.unit ?? null,
         sourceSystem: marketData.sourceSystem,
@@ -813,7 +905,10 @@ export async function enrichAssetFromSources(assetId: string, db: PrismaClient =
     });
   }
 
-  if ((asset.comparableSet?.entries.length ?? 0) === 0 && marketData.data.transactionComps.length > 0) {
+  if (
+    (asset.comparableSet?.entries.length ?? 0) === 0 &&
+    marketData.data.transactionComps.length > 0
+  ) {
     const comparableSet = await db.comparableSet.upsert({
       where: {
         assetId

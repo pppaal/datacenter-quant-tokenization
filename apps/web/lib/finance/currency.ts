@@ -29,7 +29,9 @@ const defaultFxRatesToKrw: Record<SupportedCurrency, number> = {
 function normalizeCurrencyCode(value?: string | null): SupportedCurrency | null {
   if (!value) return null;
   const upper = value.trim().toUpperCase();
-  return supportedCurrencies.includes(upper as SupportedCurrency) ? (upper as SupportedCurrency) : null;
+  return supportedCurrencies.includes(upper as SupportedCurrency)
+    ? (upper as SupportedCurrency)
+    : null;
 }
 
 export function resolveCurrencyFromCountry(country?: string | null): SupportedCurrency {
@@ -42,7 +44,10 @@ export function resolveDisplayCurrency(countryOrMarket?: string | null) {
   return resolveCurrencyFromCountry(countryOrMarket);
 }
 
-export function resolveInputCurrency(country?: string | null, inputCurrency?: string | null): SupportedCurrency {
+export function resolveInputCurrency(
+  country?: string | null,
+  inputCurrency?: string | null
+): SupportedCurrency {
   return normalizeCurrencyCode(inputCurrency) ?? resolveCurrencyFromCountry(country);
 }
 
@@ -88,7 +93,10 @@ export function convertFromKrwAtRate(
 ) {
   if (amountKrw === null || amountKrw === undefined || !Number.isFinite(amountKrw)) return null;
   if (currency === 'KRW') return amountKrw;
-  const effectiveRate = rateToKrw && Number.isFinite(rateToKrw) && rateToKrw > 0 ? rateToKrw : getFxRateToKrw(currency, env);
+  const effectiveRate =
+    rateToKrw && Number.isFinite(rateToKrw) && rateToKrw > 0
+      ? rateToKrw
+      : getFxRateToKrw(currency, env);
   return amountKrw / effectiveRate;
 }
 

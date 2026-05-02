@@ -69,7 +69,11 @@ export function AdminLoginForm() {
           required
         />
       </div>
-      {error ? <div className="rounded-[18px] border border-rose-400/30 bg-rose-500/10 p-3 text-sm text-rose-200">{error}</div> : null}
+      {error ? (
+        <div className="rounded-[18px] border border-rose-400/30 bg-rose-500/10 p-3 text-sm text-rose-200">
+          {error}
+        </div>
+      ) : null}
       <Button type="submit" disabled={isSubmitting}>
         {isSubmitting ? 'Signing In...' : 'Start Operator Session'}
       </Button>

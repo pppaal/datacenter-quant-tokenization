@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server';
 import { hasRequiredAdminRole } from '@/lib/security/admin-auth';
 import { prisma } from '@/lib/db/prisma';
-import { getRequestIpAddress, resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
+import {
+  getRequestIpAddress,
+  resolveVerifiedAdminActorFromHeaders
+} from '@/lib/security/admin-request';
 import { recordAuditEvent } from '@/lib/services/audit';
 import { runOpsCycle } from '@/lib/services/ops-worker';
 

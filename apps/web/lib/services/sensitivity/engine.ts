@@ -122,7 +122,10 @@ function getMacroImpactScore(assumptions: Record<string, unknown>, key: string) 
   return toNumber(point?.score) ?? 0;
 }
 
-function getMacroGuidanceShift(assumptions: Record<string, unknown>, key: keyof NonNullable<MacroRegimeLike['guidance']>) {
+function getMacroGuidanceShift(
+  assumptions: Record<string, unknown>,
+  key: keyof NonNullable<MacroRegimeLike['guidance']>
+) {
   const macroRegime = getMacroRegime(assumptions);
   return toNumber(macroRegime?.guidance?.[key]) ?? 0;
 }
@@ -201,7 +204,9 @@ function buildDscrPoint(args: {
     shockValue: args.shockValue,
     metricName: 'DSCR',
     metricValue: roundMetric(args.metricValue),
-    deltaPct: roundDelta(((args.metricValue - args.baselineValue) / Math.max(args.baselineValue, 0.01)) * 100),
+    deltaPct: roundDelta(
+      ((args.metricValue - args.baselineValue) / Math.max(args.baselineValue, 0.01)) * 100
+    ),
     sortOrder: args.sortOrder
   };
 }
@@ -238,7 +243,8 @@ export function buildOneWaySensitivityRun(analysis: AnalysisLike): SensitivityRu
       variableLabel: 'Occupancy',
       shockLabel: '-5 pts',
       shockValue: -5,
-      metricValue: baselineValue * (Math.max(baseOccupancyPct - 5, 35) / Math.max(baseOccupancyPct, 1)),
+      metricValue:
+        baselineValue * (Math.max(baseOccupancyPct - 5, 35) / Math.max(baseOccupancyPct, 1)),
       baselineValue,
       sortOrder: 2
     }),
@@ -247,7 +253,8 @@ export function buildOneWaySensitivityRun(analysis: AnalysisLike): SensitivityRu
       variableLabel: 'Occupancy',
       shockLabel: '+5 pts',
       shockValue: 5,
-      metricValue: baselineValue * (Math.min(baseOccupancyPct + 5, 100) / Math.max(baseOccupancyPct, 1)),
+      metricValue:
+        baselineValue * (Math.min(baseOccupancyPct + 5, 100) / Math.max(baseOccupancyPct, 1)),
       baselineValue,
       sortOrder: 3
     }),
@@ -319,9 +326,14 @@ export function buildBreachPointSensitivityRun(analysis: AnalysisLike): Sensitiv
   const hasHighRisk = (credit?.riskMix?.high ?? 0) > 0;
   const liquiditySignals = credit?.liquiditySignals ?? null;
 
-  const breakevenOccupancyPct = Math.max(35, Math.min(100, (baseOccupancyPct / Math.max(baselineDscr, 0.01)) * 1));
+  const breakevenOccupancyPct = Math.max(
+    35,
+    Math.min(100, (baseOccupancyPct / Math.max(baselineDscr, 0.01)) * 1)
+  );
   const breakevenDebtCostPct = Math.max(0.5, baseDebtCostPct * Math.max(baselineDscr, 1));
-  const noiDeclineToDscrOnePct = Number((Math.max(0, 1 - 1 / Math.max(baselineDscr, 0.01)) * 100).toFixed(2));
+  const noiDeclineToDscrOnePct = Number(
+    (Math.max(0, 1 - 1 / Math.max(baselineDscr, 0.01)) * 100).toFixed(2)
+  );
   const creditNoiHaircutPct = hasHighRisk ? 12 : weakest?.riskLevel === 'MODERATE' ? 7 : 4;
   const stressedDscr = roundMetric(baselineDscr * (1 - creditNoiHaircutPct / 100));
   const refinanceHaircutPct = Math.max(liquiditySignals?.downsideDscrHaircutPct ?? 0, 0);
@@ -335,7 +347,9 @@ export function buildBreachPointSensitivityRun(analysis: AnalysisLike): Sensitiv
       shockValue: roundMetric(breakevenOccupancyPct),
       metricName: 'DSCR',
       metricValue: 1,
-      deltaPct: roundDelta(((breakevenOccupancyPct - baseOccupancyPct) / Math.max(baseOccupancyPct, 1)) * 100),
+      deltaPct: roundDelta(
+        ((breakevenOccupancyPct - baseOccupancyPct) / Math.max(baseOccupancyPct, 1)) * 100
+      ),
       sortOrder: 0
     },
     {
@@ -345,7 +359,9 @@ export function buildBreachPointSensitivityRun(analysis: AnalysisLike): Sensitiv
       shockValue: roundMetric(breakevenDebtCostPct),
       metricName: 'DSCR',
       metricValue: 1,
-      deltaPct: roundDelta(((breakevenDebtCostPct - baseDebtCostPct) / Math.max(baseDebtCostPct, 0.1)) * 100),
+      deltaPct: roundDelta(
+        ((breakevenDebtCostPct - baseDebtCostPct) / Math.max(baseDebtCostPct, 0.1)) * 100
+      ),
       sortOrder: 1
     },
     {
@@ -377,7 +393,9 @@ export function buildBreachPointSensitivityRun(analysis: AnalysisLike): Sensitiv
             shockValue: -roundMetric(refinanceHaircutPct),
             metricName: 'DSCR' as const,
             metricValue: refinanceStressedDscr,
-            deltaPct: roundDelta(((refinanceStressedDscr - baselineDscr) / Math.max(baselineDscr, 0.01)) * 100),
+            deltaPct: roundDelta(
+              ((refinanceStressedDscr - baselineDscr) / Math.max(baselineDscr, 0.01)) * 100
+            ),
             sortOrder: 4
           }
         ]
@@ -424,7 +442,10 @@ export function buildTwoWayMatrixSensitivityRun(analysis: AnalysisLike): Sensiti
   const points: SensitivityPointResult[] = [];
 
   for (const [rowIndex, occupancyShock] of occupancyShocks.entries()) {
-    const shockedOccupancyPct = Math.min(100, Math.max(35, baseOccupancyPct + occupancyShock.value));
+    const shockedOccupancyPct = Math.min(
+      100,
+      Math.max(35, baseOccupancyPct + occupancyShock.value)
+    );
 
     for (const [columnIndex, capRateShock] of capRateShocks.entries()) {
       const shockedCapRatePct = Math.max(0.25, baseCapRatePct + capRateShock.value);
@@ -453,7 +474,9 @@ export function buildTwoWayMatrixSensitivityRun(analysis: AnalysisLike): Sensiti
 
   return {
     runType: 'MATRIX',
-    title: isDataCenter ? 'Two-way matrix: utilization x exit cap' : 'Two-way matrix: occupancy x exit cap',
+    title: isDataCenter
+      ? 'Two-way matrix: utilization x exit cap'
+      : 'Two-way matrix: occupancy x exit cap',
     baselineMetricName: 'Value',
     baselineMetricValue: roundMetric(baselineValue),
     summary: {
@@ -497,7 +520,9 @@ export function buildDebtNoiMatrixSensitivityRun(analysis: AnalysisLike): Sensit
   const points: SensitivityPointResult[] = [];
 
   for (const [rowIndex, rowShock] of rowShocks.entries()) {
-    const rowFactor = isDataCenter ? basePowerPriceKrwPerKwh / Math.max(basePowerPriceKrwPerKwh * (1 + rowShock.value), 1) : 1 + rowShock.value;
+    const rowFactor = isDataCenter
+      ? basePowerPriceKrwPerKwh / Math.max(basePowerPriceKrwPerKwh * (1 + rowShock.value), 1)
+      : 1 + rowShock.value;
 
     for (const [columnIndex, debtShock] of debtCostShocks.entries()) {
       const shockedDebtCostPct = Math.max(0.5, baseDebtCostPct + debtShock.value);
@@ -523,7 +548,9 @@ export function buildDebtNoiMatrixSensitivityRun(analysis: AnalysisLike): Sensit
 
   return {
     runType: 'MATRIX',
-    title: isDataCenter ? 'Two-way matrix: power price x debt cost' : 'Two-way matrix: NOI x debt cost',
+    title: isDataCenter
+      ? 'Two-way matrix: power price x debt cost'
+      : 'Two-way matrix: NOI x debt cost',
     baselineMetricName: 'DSCR',
     baselineMetricValue: roundMetric(baselineDscr),
     summary: {
@@ -597,8 +624,12 @@ export function buildForecastSensitivityRun(analysis: AnalysisLike): Sensitivity
     );
   }
 
-  const yearFiveValue = points.find((point) => point.variableKey === 'forecast_value_path' && point.shockValue === 5);
-  const yearFiveDscr = points.find((point) => point.variableKey === 'forecast_dscr_path' && point.shockValue === 5);
+  const yearFiveValue = points.find(
+    (point) => point.variableKey === 'forecast_value_path' && point.shockValue === 5
+  );
+  const yearFiveDscr = points.find(
+    (point) => point.variableKey === 'forecast_dscr_path' && point.shockValue === 5
+  );
 
   return {
     runType: 'FORECAST',
@@ -607,7 +638,9 @@ export function buildForecastSensitivityRun(analysis: AnalysisLike): Sensitivity
     baselineMetricValue: roundMetric(baselineValue),
     summary: {
       strongestDownsideDriver:
-        yearFiveValue && yearFiveValue.deltaPct < 0 ? `Year 5 value ${yearFiveValue.deltaPct}%` : null,
+        yearFiveValue && yearFiveValue.deltaPct < 0
+          ? `Year 5 value ${yearFiveValue.deltaPct}%`
+          : null,
       strongestDownsideDeltaPct: yearFiveValue?.deltaPct ?? null,
       pointCount: points.length,
       forecastYears: 5,
@@ -643,7 +676,8 @@ export function buildMonteCarloSensitivityRun(analysis: AnalysisLike): Sensitivi
   const iterations = 250;
 
   for (let i = 0; i < iterations; i += 1) {
-    const occupancyShockPts = drawCentered(random) * (8 + Math.abs(leasingScore) * 3) + leasingScore * 2;
+    const occupancyShockPts =
+      drawCentered(random) * (8 + Math.abs(leasingScore) * 3) + leasingScore * 2;
     const exitCapShockPct = drawCentered(random) * 0.75 + (refinancingScore - pricingScore) * 0.08;
     const debtShockPct = drawCentered(random) * 1.1 + (financingScore - allocationScore) * 0.12;
     const growthShockPct = drawCentered(random) * 1.4 + growthShiftPct * 0.6 + leasingScore * 0.35;
@@ -657,7 +691,9 @@ export function buildMonteCarloSensitivityRun(analysis: AnalysisLike): Sensitivi
     const growthFactor = clamp(1 + growthShockPct / 100, 0.85, 1.2);
     const debtDrag = clamp(baseDebtCostPct / shockedDebtCostPct, 0.7, 1.25);
 
-    valueOutcomes.push(baselineValue * occupancyFactor * capFactor * growthFactor * (0.9 + debtDrag * 0.1));
+    valueOutcomes.push(
+      baselineValue * occupancyFactor * capFactor * growthFactor * (0.9 + debtDrag * 0.1)
+    );
     dscrOutcomes.push(baselineDscr * occupancyFactor * debtDrag);
   }
 

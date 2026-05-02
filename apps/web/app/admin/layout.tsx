@@ -23,6 +23,8 @@ const navItems: Array<AdminNavItem & { minimumRole: AdminAccessRole }> = [
   { href: '/admin/sources', label: 'Sources', minimumRole: 'ANALYST' },
   { href: '/admin/macro-profiles', label: 'Macro Profiles', minimumRole: 'ANALYST' },
   { href: '/admin/readiness', label: 'Readiness', minimumRole: 'ANALYST' },
+  { href: '/admin/sponsors', label: 'Sponsors', minimumRole: 'ANALYST' },
+  { href: '/admin/ops/ai-cache', label: 'AI Ops', minimumRole: 'ADMIN' },
   { href: '/admin/security', label: 'Security', minimumRole: 'ADMIN' }
 ];
 
@@ -52,8 +54,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               Investment Firm Operating Console
             </h1>
             <p className="mt-3 text-sm leading-7 text-slate-400">
-              Run shared research, review-gated underwriting, deal execution, portfolio operations, and capital reporting
-              inside one controlled operator surface.
+              Run shared research, review-gated underwriting, deal execution, portfolio operations,
+              and capital reporting inside one controlled operator surface.
             </p>
           </div>
           <div className="grid gap-2 text-sm text-slate-300 sm:grid-cols-3">
@@ -74,7 +76,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
         <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-5">
           <div className="text-sm text-slate-400">
-            Active operator: <span className="font-semibold text-white">{actor?.identifier ?? 'basic-auth operator'}</span>
+            Active operator:{' '}
+            <span className="font-semibold text-white">
+              {actor?.identifier ?? 'basic-auth operator'}
+            </span>
           </div>
           <div className="flex items-center gap-3">
             <NotificationBell />

@@ -2,7 +2,10 @@ import { NextResponse } from 'next/server';
 import { AdminAccessScopeType } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { assertActorScopeAccess } from '@/lib/security/admin-access';
-import { getRequestIpAddress, resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
+import {
+  getRequestIpAddress,
+  resolveVerifiedAdminActorFromHeaders
+} from '@/lib/security/admin-request';
 import { recordAuditEvent } from '@/lib/services/audit';
 import { anchorLatestDocumentOnchain } from '@/lib/services/readiness';
 
@@ -51,7 +54,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       }
     });
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to anchor review evidence onchain' },
+      {
+        error: error instanceof Error ? error.message : 'Failed to anchor review evidence onchain'
+      },
       { status: 400 }
     );
   }

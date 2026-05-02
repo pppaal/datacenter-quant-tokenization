@@ -45,7 +45,13 @@ export function CommitteePacketLockButton({
 
   return (
     <div className="space-y-2">
-      <Button type="button" variant="ghost" disabled={disabled || busy} onClick={onClick} data-testid="ic-packet-lock-button">
+      <Button
+        type="button"
+        variant="ghost"
+        disabled={disabled || busy}
+        onClick={onClick}
+        data-testid="ic-packet-lock-button"
+      >
         {busy ? 'Locking...' : 'Lock Packet'}
       </Button>
       {disabledReason ? <div className="text-xs text-slate-500">{disabledReason}</div> : null}

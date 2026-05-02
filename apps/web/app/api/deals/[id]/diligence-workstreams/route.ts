@@ -2,7 +2,10 @@ import { NextResponse } from 'next/server';
 import { AdminAccessScopeType } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { assertActorScopeAccess } from '@/lib/security/admin-access';
-import { getRequestIpAddress, resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
+import {
+  getRequestIpAddress,
+  resolveVerifiedAdminActorFromHeaders
+} from '@/lib/security/admin-request';
 import { recordAuditEvent } from '@/lib/services/audit';
 import { upsertDealDiligenceWorkstream } from '@/lib/services/deals';
 
@@ -45,7 +48,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         requestMethod: request.method,
         ipAddress: getRequestIpAddress(request.headers),
         statusLabel: 'FAILED',
-        metadata: { error: error instanceof Error ? error.message : 'Failed to save diligence workstream' }
+        metadata: {
+          error: error instanceof Error ? error.message : 'Failed to save diligence workstream'
+        }
       });
     }
     return NextResponse.json(

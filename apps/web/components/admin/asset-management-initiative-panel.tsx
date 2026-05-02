@@ -68,20 +68,23 @@ function InitiativeRow({
     setError(null);
 
     try {
-      const response = await fetch(`/api/portfolio-assets/${portfolioAssetId}/initiatives/${initiative.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          status,
-          priority,
-          ownerName,
-          targetDate: targetDate || null,
-          blockerSummary,
-          nextStep
-        })
-      });
+      const response = await fetch(
+        `/api/portfolio-assets/${portfolioAssetId}/initiatives/${initiative.id}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            status,
+            priority,
+            ownerName,
+            targetDate: targetDate || null,
+            blockerSummary,
+            nextStep
+          })
+        }
+      );
 
       const payload = (await response.json().catch(() => null)) as { error?: string } | null;
       if (!response.ok) {
@@ -98,34 +101,54 @@ function InitiativeRow({
   }
 
   return (
-    <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4" data-testid="initiative-row">
+    <div
+      className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+      data-testid="initiative-row"
+    >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <div className="text-sm font-semibold text-white">{initiative.title}</div>
             <Badge tone={toneForStatus(status)}>{status.toLowerCase().replaceAll('_', ' ')}</Badge>
-            <Badge tone={priority === 'URGENT' ? 'danger' : priority === 'HIGH' ? 'warn' : 'neutral'}>
+            <Badge
+              tone={priority === 'URGENT' ? 'danger' : priority === 'HIGH' ? 'warn' : 'neutral'}
+            >
               {priority.toLowerCase()}
             </Badge>
           </div>
           <div className="mt-1 text-xs text-slate-400">
-            {(initiative.category ?? 'general').replaceAll('_', ' ')} / {initiative.summary ?? 'Execution workflow item'}
+            {(initiative.category ?? 'general').replaceAll('_', ' ')} /{' '}
+            {initiative.summary ?? 'Execution workflow item'}
           </div>
         </div>
-        <Button type="button" variant="secondary" onClick={save} disabled={submitting} data-testid="initiative-save">
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={save}
+          disabled={submitting}
+          data-testid="initiative-save"
+        >
           {submitting ? 'Saving...' : 'Save'}
         </Button>
       </div>
 
       <div className="mt-4 grid gap-3 md:grid-cols-4">
-        <Select value={status} onChange={(event) => setStatus(event.target.value as TaskStatus)} data-testid="initiative-status">
+        <Select
+          value={status}
+          onChange={(event) => setStatus(event.target.value as TaskStatus)}
+          data-testid="initiative-status"
+        >
           {statusOptions.map((option) => (
             <option key={option} value={option}>
               {option.replaceAll('_', ' ')}
             </option>
           ))}
         </Select>
-        <Select value={priority} onChange={(event) => setPriority(event.target.value as TaskPriority)} data-testid="initiative-priority">
+        <Select
+          value={priority}
+          onChange={(event) => setPriority(event.target.value as TaskPriority)}
+          data-testid="initiative-priority"
+        >
           {priorityOptions.map((option) => (
             <option key={option} value={option}>
               {option}
@@ -230,26 +253,56 @@ export function AssetManagementInitiativePanel({
     <Card>
       <div className="eyebrow">Asset Management Initiatives</div>
       <p className="mt-3 text-sm leading-7 text-slate-400">
-        Track leasing, capex, refinance, and disposition initiatives for {assetName}. Blocked items should move into the
-        firm-wide action center before the next committee or investor-reporting cycle.
+        Track leasing, capex, refinance, and disposition initiatives for {assetName}. Blocked items
+        should move into the firm-wide action center before the next committee or investor-reporting
+        cycle.
       </p>
 
       <div className="mt-5 grid gap-3 md:grid-cols-4">
-        <Input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Initiative title" data-testid="initiative-create-title" />
-        <Input value={category} onChange={(event) => setCategory(event.target.value)} placeholder="Category" />
-        <Select value={priority} onChange={(event) => setPriority(event.target.value as TaskPriority)}>
+        <Input
+          value={title}
+          onChange={(event) => setTitle(event.target.value)}
+          placeholder="Initiative title"
+          data-testid="initiative-create-title"
+        />
+        <Input
+          value={category}
+          onChange={(event) => setCategory(event.target.value)}
+          placeholder="Category"
+        />
+        <Select
+          value={priority}
+          onChange={(event) => setPriority(event.target.value as TaskPriority)}
+        >
           {priorityOptions.map((option) => (
             <option key={option} value={option}>
               {option}
             </option>
           ))}
         </Select>
-        <Input value={ownerName} onChange={(event) => setOwnerName(event.target.value)} placeholder="Owner" />
+        <Input
+          value={ownerName}
+          onChange={(event) => setOwnerName(event.target.value)}
+          placeholder="Owner"
+        />
       </div>
       <div className="mt-3 grid gap-3 md:grid-cols-[1fr_1fr_auto]">
-        <Input type="date" value={targetDate} onChange={(event) => setTargetDate(event.target.value)} />
-        <Input value={summary} onChange={(event) => setSummary(event.target.value)} placeholder="Summary" />
-        <Button type="button" onClick={createInitiative} disabled={submitting} data-testid="initiative-create-submit">
+        <Input
+          type="date"
+          value={targetDate}
+          onChange={(event) => setTargetDate(event.target.value)}
+        />
+        <Input
+          value={summary}
+          onChange={(event) => setSummary(event.target.value)}
+          placeholder="Summary"
+        />
+        <Button
+          type="button"
+          onClick={createInitiative}
+          disabled={submitting}
+          data-testid="initiative-create-submit"
+        >
           {submitting ? 'Adding...' : 'Add Initiative'}
         </Button>
       </div>
@@ -270,7 +323,11 @@ export function AssetManagementInitiativePanel({
           </div>
         ) : (
           initiatives.map((initiative) => (
-            <InitiativeRow key={initiative.id} portfolioAssetId={portfolioAssetId} initiative={initiative} />
+            <InitiativeRow
+              key={initiative.id}
+              portfolioAssetId={portfolioAssetId}
+              initiative={initiative}
+            />
           ))
         )}
       </div>

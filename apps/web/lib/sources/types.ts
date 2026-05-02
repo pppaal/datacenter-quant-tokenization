@@ -34,10 +34,10 @@ export type CacheEntry<T> = {
 
 export interface SourceCacheStore {
   getOverride<T>(sourceSystem: string, cacheKey: string): Promise<T | null>;
-  getFreshCache<T>(sourceSystem: string, cacheKey: string, now: Date): Promise<CacheEntry<T> | null>;
-  upsertCache<T>(
+  getFreshCache<T>(
     sourceSystem: string,
     cacheKey: string,
-    entry: CacheEntry<T>
-  ): Promise<void>;
+    now: Date
+  ): Promise<CacheEntry<T> | null>;
+  upsertCache<T>(sourceSystem: string, cacheKey: string, entry: CacheEntry<T>): Promise<void>;
 }

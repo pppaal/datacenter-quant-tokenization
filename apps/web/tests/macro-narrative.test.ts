@@ -10,12 +10,47 @@ function makeRegime(overrides?: Partial<MacroInterpretation>): MacroInterpretati
     asOf: '2026-03-01',
     series: [],
     assetClass: 'DATA_CENTER',
-    profile: { assetClass: 'DATA_CENTER', label: 'Data Center', market: 'KR', country: 'KR', submarket: null, adjustmentSummary: [], capitalRateSensitivity: 1.2, liquiditySensitivity: 0.9, leasingSensitivity: 0.8, constructionSensitivity: 1.3 },
+    profile: {
+      assetClass: 'DATA_CENTER',
+      label: 'Data Center',
+      market: 'KR',
+      country: 'KR',
+      submarket: null,
+      adjustmentSummary: [],
+      capitalRateSensitivity: 1.2,
+      liquiditySensitivity: 0.9,
+      leasingSensitivity: 0.8,
+      constructionSensitivity: 1.3
+    },
     regimes: {
-      capitalMarkets: { key: 'capitalMarkets', label: 'Restrictive', state: 'TIGHT', commentary: 'Rates are high.', signals: ['Rate hike'] },
-      leasing: { key: 'leasing', label: 'Stable', state: 'BALANCED', commentary: 'Leasing is stable.', signals: [] },
-      construction: { key: 'construction', label: 'Moderate', state: 'ELEVATED', commentary: 'Construction costs rising.', signals: [] },
-      refinance: { key: 'refinance', label: 'Cooling', state: 'TIGHT', commentary: 'Refinancing is tight.', signals: ['Spread widening'] }
+      capitalMarkets: {
+        key: 'capitalMarkets',
+        label: 'Restrictive',
+        state: 'TIGHT',
+        commentary: 'Rates are high.',
+        signals: ['Rate hike']
+      },
+      leasing: {
+        key: 'leasing',
+        label: 'Stable',
+        state: 'BALANCED',
+        commentary: 'Leasing is stable.',
+        signals: []
+      },
+      construction: {
+        key: 'construction',
+        label: 'Moderate',
+        state: 'ELEVATED',
+        commentary: 'Construction costs rising.',
+        signals: []
+      },
+      refinance: {
+        key: 'refinance',
+        label: 'Cooling',
+        state: 'TIGHT',
+        commentary: 'Refinancing is tight.',
+        signals: ['Spread widening']
+      }
     },
     guidance: {
       discountRateShiftPct: 0.5,
@@ -27,11 +62,56 @@ function makeRegime(overrides?: Partial<MacroInterpretation>): MacroInterpretati
       summary: ['Discount rate +0.5%', 'Exit cap rate +0.3%']
     },
     factors: [
-      { key: 'rate_level', label: 'Rate Level', value: 6.5, unit: '%', isObserved: true, direction: 'NEGATIVE', commentary: 'Rates are high.', inputs: [] },
-      { key: 'credit_stress', label: 'Credit Stress', value: 200, unit: 'bps', isObserved: true, direction: 'NEUTRAL', commentary: 'Credit is okay.', inputs: [] },
-      { key: 'property_demand', label: 'Property Demand', value: 5, unit: 'score', isObserved: true, direction: 'NEGATIVE', commentary: 'Demand weakening.', inputs: [] },
-      { key: 'liquidity', label: 'Liquidity', value: 95, unit: 'idx', isObserved: true, direction: 'NEUTRAL', commentary: 'Liquidity is fine.', inputs: [] },
-      { key: 'growth_momentum', label: 'Growth Momentum', value: 1.5, unit: '%', isObserved: true, direction: 'POSITIVE', commentary: 'Growth is supportive.', inputs: [] }
+      {
+        key: 'rate_level',
+        label: 'Rate Level',
+        value: 6.5,
+        unit: '%',
+        isObserved: true,
+        direction: 'NEGATIVE',
+        commentary: 'Rates are high.',
+        inputs: []
+      },
+      {
+        key: 'credit_stress',
+        label: 'Credit Stress',
+        value: 200,
+        unit: 'bps',
+        isObserved: true,
+        direction: 'NEUTRAL',
+        commentary: 'Credit is okay.',
+        inputs: []
+      },
+      {
+        key: 'property_demand',
+        label: 'Property Demand',
+        value: 5,
+        unit: 'score',
+        isObserved: true,
+        direction: 'NEGATIVE',
+        commentary: 'Demand weakening.',
+        inputs: []
+      },
+      {
+        key: 'liquidity',
+        label: 'Liquidity',
+        value: 95,
+        unit: 'idx',
+        isObserved: true,
+        direction: 'NEUTRAL',
+        commentary: 'Liquidity is fine.',
+        inputs: []
+      },
+      {
+        key: 'growth_momentum',
+        label: 'Growth Momentum',
+        value: 1.5,
+        unit: '%',
+        isObserved: true,
+        direction: 'POSITIVE',
+        commentary: 'Growth is supportive.',
+        inputs: []
+      }
     ],
     impacts: { dimensions: [], paths: [], summary: [] },
     ...overrides
@@ -57,7 +137,15 @@ function makeTrends(): TrendAnalysis[] {
       momentum: 0.3,
       acceleration: 0.05,
       movingAverages: { 3: 5.5, 6: 5.0, 12: 4.5 },
-      anomaly: { seriesKey: 'vacancy_pct', zScore: 2.5, rollingMean: 4.5, rollingStdDev: 0.4, currentValue: 5.5, isAnomaly: true, severity: 'MODERATE' },
+      anomaly: {
+        seriesKey: 'vacancy_pct',
+        zScore: 2.5,
+        rollingMean: 4.5,
+        rollingStdDev: 0.4,
+        currentValue: 5.5,
+        isAnomaly: true,
+        severity: 'MODERATE'
+      },
       observationCount: 12
     }
   ];
@@ -84,9 +172,36 @@ test('buildTemplateNarrative generates a complete narrative', () => {
 test('buildTemplateNarrative identifies constructive stance when tailwinds dominate', () => {
   const regime = makeRegime({
     factors: [
-      { key: 'rate_level', label: 'Rate Level', value: 3.5, unit: '%', isObserved: true, direction: 'POSITIVE', commentary: 'Rates supportive.', inputs: [] },
-      { key: 'liquidity', label: 'Liquidity', value: 110, unit: 'idx', isObserved: true, direction: 'POSITIVE', commentary: 'Healthy liquidity.', inputs: [] },
-      { key: 'growth_momentum', label: 'Growth', value: 3.0, unit: '%', isObserved: true, direction: 'POSITIVE', commentary: 'Growth strong.', inputs: [] }
+      {
+        key: 'rate_level',
+        label: 'Rate Level',
+        value: 3.5,
+        unit: '%',
+        isObserved: true,
+        direction: 'POSITIVE',
+        commentary: 'Rates supportive.',
+        inputs: []
+      },
+      {
+        key: 'liquidity',
+        label: 'Liquidity',
+        value: 110,
+        unit: 'idx',
+        isObserved: true,
+        direction: 'POSITIVE',
+        commentary: 'Healthy liquidity.',
+        inputs: []
+      },
+      {
+        key: 'growth_momentum',
+        label: 'Growth',
+        value: 3.0,
+        unit: '%',
+        isObserved: true,
+        direction: 'POSITIVE',
+        commentary: 'Growth strong.',
+        inputs: []
+      }
     ]
   });
 
@@ -103,8 +218,26 @@ test('buildTemplateNarrative identifies constructive stance when tailwinds domin
 test('buildTemplateNarrative captures period-over-period changes', () => {
   const previousRegime = makeRegime({
     factors: [
-      { key: 'rate_level', label: 'Rate Level', value: 5.5, unit: '%', isObserved: true, direction: 'NEUTRAL', commentary: 'Rates workable.', inputs: [] },
-      { key: 'credit_stress', label: 'Credit Stress', value: 250, unit: 'bps', isObserved: true, direction: 'NEGATIVE', commentary: 'Credit stressed.', inputs: [] }
+      {
+        key: 'rate_level',
+        label: 'Rate Level',
+        value: 5.5,
+        unit: '%',
+        isObserved: true,
+        direction: 'NEUTRAL',
+        commentary: 'Rates workable.',
+        inputs: []
+      },
+      {
+        key: 'credit_stress',
+        label: 'Credit Stress',
+        value: 250,
+        unit: 'bps',
+        isObserved: true,
+        direction: 'NEGATIVE',
+        commentary: 'Credit stressed.',
+        inputs: []
+      }
     ]
   });
 

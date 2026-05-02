@@ -25,8 +25,7 @@ const config: Config = {
         glow: '0 0 0 1px rgba(124, 156, 194, 0.12), 0 24px 80px rgba(4, 11, 24, 0.45)'
       },
       backgroundImage: {
-        grid:
-          'linear-gradient(to right, rgba(124, 156, 194, 0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(124, 156, 194, 0.08) 1px, transparent 1px)'
+        grid: 'linear-gradient(to right, rgba(124, 156, 194, 0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(124, 156, 194, 0.08) 1px, transparent 1px)'
       }
     }
   },

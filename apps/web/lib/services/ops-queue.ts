@@ -35,7 +35,7 @@ export async function enqueueOpsWorkItem(
     data: {
       workType: input.workType,
       actorIdentifier: input.actorIdentifier ?? null,
-        payload: (input.payload as Prisma.InputJsonValue | undefined) ?? undefined,
+      payload: (input.payload as Prisma.InputJsonValue | undefined) ?? undefined,
       maxAttempts: input.maxAttempts ?? getOpsQueueMaxAttempts()
     }
   });
@@ -136,7 +136,8 @@ export async function drainOpsWorkQueue(
   const now = new Date();
   const backoffMs = getOpsQueueBackoffMs();
   const processed: Array<{ id: string; status: OpsWorkStatus }> = [];
-  const environmentLabel = process.env.VERCEL_ENV?.trim() || process.env.NODE_ENV?.trim() || 'unknown';
+  const environmentLabel =
+    process.env.VERCEL_ENV?.trim() || process.env.NODE_ENV?.trim() || 'unknown';
 
   for (let index = 0; index < limit; index += 1) {
     const nextItem = await db.opsWorkItem.findFirst({
@@ -183,34 +184,35 @@ export async function drainOpsWorkQueue(
     try {
       const result = await runOpsWorkItem(runningItem, db);
       if (runningItem.workType === OpsWorkType.OPS_CYCLE) {
-        const alert = await sendOpsWebhookAlerts(
-          {
-            status: 'SUCCESS',
-            actorIdentifier: runningItem.actorIdentifier?.trim() || 'ops-queue',
-            alertSummary:
-              'alertSummary' in result && typeof result.alertSummary === 'string'
-                ? result.alertSummary
-                : 'Queued ops cycle completed successfully.',
-            attemptSummary:
-              'attemptSummary' in result && typeof result.attemptSummary === 'object'
-                ? (result.attemptSummary as { sourceAttemptCount: number; researchAttemptCount: number })
-                : undefined,
-            sourceRun:
-              'sourceRun' in result && result.sourceRun && typeof result.sourceRun === 'object'
-                ? {
-                    id: (result.sourceRun as { id?: string }).id,
-                    statusLabel: (result.sourceRun as { statusLabel?: string }).statusLabel
-                  }
-                : undefined,
-            researchRun:
-              'researchRun' in result && result.researchRun && typeof result.researchRun === 'object'
-                ? {
-                    id: (result.researchRun as { id?: string }).id,
-                    statusLabel: (result.researchRun as { statusLabel?: string }).statusLabel
-                  }
-                : undefined
-          }
-        );
+        const alert = await sendOpsWebhookAlerts({
+          status: 'SUCCESS',
+          actorIdentifier: runningItem.actorIdentifier?.trim() || 'ops-queue',
+          alertSummary:
+            'alertSummary' in result && typeof result.alertSummary === 'string'
+              ? result.alertSummary
+              : 'Queued ops cycle completed successfully.',
+          attemptSummary:
+            'attemptSummary' in result && typeof result.attemptSummary === 'object'
+              ? (result.attemptSummary as {
+                  sourceAttemptCount: number;
+                  researchAttemptCount: number;
+                })
+              : undefined,
+          sourceRun:
+            'sourceRun' in result && result.sourceRun && typeof result.sourceRun === 'object'
+              ? {
+                  id: (result.sourceRun as { id?: string }).id,
+                  statusLabel: (result.sourceRun as { statusLabel?: string }).statusLabel
+                }
+              : undefined,
+          researchRun:
+            'researchRun' in result && result.researchRun && typeof result.researchRun === 'object'
+              ? {
+                  id: (result.researchRun as { id?: string }).id,
+                  statusLabel: (result.researchRun as { statusLabel?: string }).statusLabel
+                }
+              : undefined
+        });
 
         await persistOpsAlertAttempts(
           alert.attempts,
@@ -265,7 +267,8 @@ export async function drainOpsWorkQueue(
         const alert = await sendOpsWebhookAlerts({
           status: 'FAILED',
           actorIdentifier: runningItem.actorIdentifier?.trim() || 'ops-queue',
-          alertSummary: 'Queued ops cycle failed before completing source refresh and research sync.',
+          alertSummary:
+            'Queued ops cycle failed before completing source refresh and research sync.',
           errorMessage
         });
 
@@ -278,7 +281,8 @@ export async function drainOpsWorkQueue(
               status: 'FAILED',
               actorIdentifier: runningItem.actorIdentifier?.trim() || 'ops-queue',
               workItemId: runningItem.id,
-              alertSummary: 'Queued ops cycle failed before completing source refresh and research sync.',
+              alertSummary:
+                'Queued ops cycle failed before completing source refresh and research sync.',
               errorMessage
             }
           },
@@ -307,7 +311,9 @@ export async function drainOpsWorkQueue(
           lastError: errorMessage,
           finishedAt: deadLetter ? new Date() : null,
           lockedAt: null,
-          scheduledFor: deadLetter ? runningItem.scheduledFor : new Date(Date.now() + backoffMs * attemptNumber),
+          scheduledFor: deadLetter
+            ? runningItem.scheduledFor
+            : new Date(Date.now() + backoffMs * attemptNumber),
           deadLetteredAt: deadLetter ? new Date() : null
         }
       });

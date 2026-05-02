@@ -1,6 +1,11 @@
 import OpenAI from 'openai';
+import { openaiModel } from './models';
 
-export const OPENAI_MODEL = process.env.OPENAI_MODEL ?? 'gpt-4o-mini';
+/**
+ * @deprecated Read at module load — does not honor runtime env changes.
+ * Prefer `openaiModel()` from `@/lib/ai/models`.
+ */
+export const OPENAI_MODEL = openaiModel();
 
 export class OpenAIConfigurationError extends Error {
   constructor(message = 'AI assistant is not configured. Set OPENAI_API_KEY to enable.') {

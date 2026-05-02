@@ -5,7 +5,10 @@ import { buildGradientBoostingRealizedBacktest } from '@/lib/services/forecast/r
 import { buildMacroBacktest } from '@/lib/services/macro/backtest';
 import { buildMacroForecastBacktest } from '@/lib/services/macro/forecast-backtest';
 
-type DecisionModelKey = 'macro-regime-nowcast' | 'monte-carlo-envelope' | 'gradient-boosting-forecast';
+type DecisionModelKey =
+  | 'macro-regime-nowcast'
+  | 'monte-carlo-envelope'
+  | 'gradient-boosting-forecast';
 type DecisionUseCaseKey = 'market-nowcast' | 'committee-downside' | 'asset-drift';
 
 type ScenarioLike = {
@@ -86,7 +89,9 @@ function toneFromScore(score: number): 'HIGH' | 'MEDIUM' | 'LOW' {
   return 'LOW';
 }
 
-export function buildForecastDecisionNarrative(guide: ForecastDecisionGuide | null): ForecastDecisionNarrative | null {
+export function buildForecastDecisionNarrative(
+  guide: ForecastDecisionGuide | null
+): ForecastDecisionNarrative | null {
   const assetDrift = guide?.useCases.find((useCase) => useCase.key === 'asset-drift');
   const marketNowcast = guide?.useCases.find((useCase) => useCase.key === 'market-nowcast');
   const committeeDownside = guide?.useCases.find((useCase) => useCase.key === 'committee-downside');
@@ -160,10 +165,7 @@ function buildMacroModelScore(params: {
   return clamp(params.hasMacroRegime ? score : score * 0.55);
 }
 
-function buildMonteCarloScore(params: {
-  hasMonteCarlo: boolean;
-  confidenceScore: number;
-}) {
+function buildMonteCarloScore(params: { hasMonteCarlo: boolean; confidenceScore: number }) {
   if (!params.hasMonteCarlo) return 25;
   return clamp(58 + params.confidenceScore * 0.25);
 }
@@ -303,14 +305,16 @@ export function buildForecastDecisionGuide(input: {
           label: 'Macro Regime Nowcast',
           baseWeight: 30,
           confidenceScore: macroScore,
-          rationale: 'Macro interpretation should still anchor downside posture and stress assumptions.'
+          rationale:
+            'Macro interpretation should still anchor downside posture and stress assumptions.'
         },
         {
           modelKey: 'gradient-boosting-forecast',
           label: 'Gradient Boosting Forecast',
           baseWeight: 15,
           confidenceScore: gradientScore,
-          rationale: 'Useful as a challenger on short-term drift, but not the core IC downside engine.'
+          rationale:
+            'Useful as a challenger on short-term drift, but not the core IC downside engine.'
         }
       ]),
       recommendedModelKey: 'monte-carlo-envelope',
@@ -320,7 +324,8 @@ export function buildForecastDecisionGuide(input: {
     {
       key: 'asset-drift',
       label: 'Near-Term Asset Drift',
-      summary: 'Use this when asking where value and DSCR are likely to move over the next 6-12 months.',
+      summary:
+        'Use this when asking where value and DSCR are likely to move over the next 6-12 months.',
       weights: normalizeWeights([
         {
           modelKey: 'gradient-boosting-forecast',
@@ -337,7 +342,8 @@ export function buildForecastDecisionGuide(input: {
           label: 'Macro Regime Nowcast',
           baseWeight: 30,
           confidenceScore: macroScore,
-          rationale: 'Macro regime remains the fallback constraint when learned drift signal is weak.'
+          rationale:
+            'Macro regime remains the fallback constraint when learned drift signal is weak.'
         },
         {
           modelKey: 'monte-carlo-envelope',
@@ -367,18 +373,19 @@ export function buildForecastDecisionGuide(input: {
     };
   });
 
-  const primaryModelKey =
-    [...useCases.flatMap((useCase) => useCase.weights)].reduce<Record<DecisionModelKey, number>>(
-      (acc, weight) => {
-        acc[weight.modelKey] = (acc[weight.modelKey] ?? 0) + weight.weightPct;
-        return acc;
-      },
-      {
-        'macro-regime-nowcast': 0,
-        'monte-carlo-envelope': 0,
-        'gradient-boosting-forecast': 0
-      }
-    );
+  const primaryModelKey = [...useCases.flatMap((useCase) => useCase.weights)].reduce<
+    Record<DecisionModelKey, number>
+  >(
+    (acc, weight) => {
+      acc[weight.modelKey] = (acc[weight.modelKey] ?? 0) + weight.weightPct;
+      return acc;
+    },
+    {
+      'macro-regime-nowcast': 0,
+      'monte-carlo-envelope': 0,
+      'gradient-boosting-forecast': 0
+    }
+  );
 
   const rankedPrimary = (Object.entries(primaryModelKey) as Array<[DecisionModelKey, number]>).sort(
     (left, right) => right[1] - left[1]

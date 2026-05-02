@@ -68,7 +68,8 @@ function buildDrivers(input: AssetConfidenceInput): Driver[] {
   const floodRiskScore = input.siteProfile?.floodRiskScore ?? 0;
   const fallbackCount =
     input.provenance?.filter((entry) => entry.mode.toLowerCase() === 'fallback').length ?? 0;
-  const apiCount = input.provenance?.filter((entry) => entry.mode.toLowerCase() === 'api').length ?? 0;
+  const apiCount =
+    input.provenance?.filter((entry) => entry.mode.toLowerCase() === 'api').length ?? 0;
 
   const uncappedScore =
     weights.base +
@@ -147,14 +148,16 @@ function rerunRecommendation(input: AssetConfidenceInput) {
     return {
       tone: 'warn' as const,
       label: 'Re-run Recommended',
-      detail: 'Refresh live sources after enrichment or manual overrides before presenting this run as a tighter committee view.'
+      detail:
+        'Refresh live sources after enrichment or manual overrides before presenting this run as a tighter committee view.'
     };
   }
 
   return {
     tone: 'good' as const,
     label: 'Current Run Stable',
-    detail: 'Coverage is sufficient for ongoing review, though normal source refresh cadence should still apply.'
+    detail:
+      'Coverage is sufficient for ongoing review, though normal source refresh cadence should still apply.'
   };
 }
 
@@ -190,4 +193,3 @@ export function ConfidenceBreakdown(input: AssetConfidenceInput) {
     </Card>
   );
 }
-

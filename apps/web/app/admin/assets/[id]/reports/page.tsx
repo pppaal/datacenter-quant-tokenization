@@ -36,8 +36,9 @@ export default async function AssetReportsPage({ params }: { params: Promise<{ i
               </h1>
             </div>
             <p className="max-w-4xl text-base leading-8 text-slate-200">
-              Generate committee-ready memos, diligence checklists, risk notes, and controlled teaser material from the
-              current valuation, approved evidence layer, document set, and registry traceability record.
+              Generate committee-ready memos, diligence checklists, risk notes, and controlled
+              teaser material from the current valuation, approved evidence layer, document set, and
+              registry traceability record.
             </p>
           </div>
 
@@ -46,7 +47,9 @@ export default async function AssetReportsPage({ params }: { params: Promise<{ i
             <div className="grid gap-3 text-sm text-slate-300">
               <div className="flex items-center justify-between rounded-[20px] border border-white/10 bg-white/[0.03] px-4 py-3">
                 <span>Latest Valuation</span>
-                <span>{bundle.latestValuation ? bundle.latestValuation.runLabel : 'Not generated'}</span>
+                <span>
+                  {bundle.latestValuation ? bundle.latestValuation.runLabel : 'Not generated'}
+                </span>
               </div>
               <div className="flex items-center justify-between rounded-[20px] border border-white/10 bg-white/[0.03] px-4 py-3">
                 <span>Version Fingerprint</span>
@@ -87,7 +90,9 @@ export default async function AssetReportsPage({ params }: { params: Promise<{ i
         {templates.map((template) => (
           <Card key={template.kind} className="space-y-5">
             <div className="flex flex-wrap items-center gap-2">
-              <Badge tone={template.status === 'production-ready' ? 'good' : 'warn'}>{template.status}</Badge>
+              <Badge tone={template.status === 'production-ready' ? 'good' : 'warn'}>
+                {template.status}
+              </Badge>
               <Badge>{template.audience === 'investor' ? 'Investor' : 'Operator / IC'}</Badge>
             </div>
 
@@ -137,8 +142,8 @@ export default async function AssetReportsPage({ params }: { params: Promise<{ i
             <div className="eyebrow">Investor Packet</div>
             <h2 className="mt-2 text-2xl font-semibold text-white">Institutional Teaser Bundle</h2>
             <p className="mt-3 text-sm leading-7 text-slate-400">
-              One-click packet for limited institutional circulation. Best used with print or save-as-PDF from the
-              packet page.
+              One-click packet for limited institutional circulation. Best used with print or
+              save-as-PDF from the packet page.
             </p>
           </div>
 
@@ -174,7 +179,8 @@ export default async function AssetReportsPage({ params }: { params: Promise<{ i
             <div className="eyebrow">IC Packet</div>
             <h2 className="mt-2 text-2xl font-semibold text-white">Internal Committee Bundle</h2>
             <p className="mt-3 text-sm leading-7 text-slate-400">
-              Combined IC memo, DD checklist, and risk memo export for operator review and committee circulation.
+              Combined IC memo, DD checklist, and risk memo export for operator review and committee
+              circulation.
             </p>
           </div>
 
@@ -206,22 +212,27 @@ export default async function AssetReportsPage({ params }: { params: Promise<{ i
         <h2 className="mt-2 text-2xl font-semibold text-white">Operator And Investor Flow</h2>
         <ul className="mt-5 space-y-3 text-sm text-slate-300">
           <li className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-3">
-            Use <strong>One-Page Teaser</strong> for external institutional outreach. Open the page, review the
-            document schedule, then print or save as PDF.
+            Use <strong>One-Page Teaser</strong> for external institutional outreach. Open the page,
+            review the document schedule, then print or save as PDF.
           </li>
           <li className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-3">
-            Use <strong>IC Memo</strong>, <strong>DD Checklist</strong>, and <strong>Risk Memo</strong> as operator and
-            committee material. Export markdown if you need to mark up the draft outside the app.
+            Use <strong>IC Memo</strong>, <strong>DD Checklist</strong>, and{' '}
+            <strong>Risk Memo</strong> as operator and committee material. Export markdown if you
+            need to mark up the draft outside the app.
           </li>
           <li className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-3">
-            Every output carries a deterministic version fingerprint and a traceability panel showing the linked
-            valuation, approved evidence counts, latest document hash, and optional registry anchor reference.
+            Every output carries a deterministic version fingerprint and a traceability panel
+            showing the linked valuation, approved evidence counts, latest document hash, and
+            optional registry anchor reference.
           </li>
         </ul>
 
         <div className="mt-5 fine-print">Generated {formatDate(bundle.generatedAt)}</div>
         <div className="mt-3">
-          <Link href={`/admin/assets/${bundle.assetId}`} className="text-sm font-semibold text-accent">
+          <Link
+            href={`/admin/assets/${bundle.assetId}`}
+            className="text-sm font-semibold text-accent"
+          >
             Back to asset dossier
           </Link>
         </div>

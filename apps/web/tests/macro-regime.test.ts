@@ -337,6 +337,8 @@ test('macro regime engine applies country and submarket sensitivity overrides', 
   assert.ok(nycOffice.profile.adjustmentSummary.some((line) => /US liquidity/i.test(line)));
   assert.ok(nycOffice.profile.adjustmentSummary.some((line) => /NYC office/i.test(line)));
   assert.ok(nycOffice.profile.liquiditySensitivity > seoulOffice.profile.liquiditySensitivity);
-  assert.ok(novaDataCenter.profile.adjustmentSummary.some((line) => /Northern Virginia/i.test(line)));
+  assert.ok(
+    novaDataCenter.profile.adjustmentSummary.some((line) => /Northern Virginia/i.test(line))
+  );
   assert.ok(novaDataCenter.profile.constructionSensitivity > 1.4);
 });

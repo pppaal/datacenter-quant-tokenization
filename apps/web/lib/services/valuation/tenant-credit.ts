@@ -130,7 +130,7 @@ const GRADE_PD_CURVE: Record<CreditGrade, number> = {
   AAA: 0.01,
   AA: 0.08,
   A: 0.25,
-  BBB: 0.80,
+  BBB: 0.8,
   BB: 3.5,
   B: 10.0,
   CCC: 28.0
@@ -360,10 +360,7 @@ export function projectRentDefault(
       expectedAnnualLossKrw
     };
   });
-  const expectedAnnualRentLossKrw = breakdown.reduce(
-    (sum, b) => sum + b.expectedAnnualLossKrw,
-    0
-  );
+  const expectedAnnualRentLossKrw = breakdown.reduce((sum, b) => sum + b.expectedAnnualLossKrw, 0);
   const weightedPd1yrPct =
     totalAnnualRentKrw > 0
       ? breakdown.reduce((sum, b) => sum + b.pd1yrPct * b.annualRentKrw, 0) / totalAnnualRentKrw

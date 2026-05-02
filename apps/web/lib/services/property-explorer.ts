@@ -91,9 +91,12 @@ const explorerSeeds: ExplorerSeed[] = [
     grossFloorAreaSqm: 34_100,
     landAreaSqm: 4_200,
     stage: AssetStage.STABILIZED,
-    screenSummary: 'CBD office recap with approved underwriting evidence and live committee packaging history.',
-    investmentAngle: 'Core-plus office recap with visible rollover, lender engagement, and approved valuation support.',
-    diligenceAngle: 'Committee-ready legal and commercial lanes exist, but packet release still depends on current DD completeness.',
+    screenSummary:
+      'CBD office recap with approved underwriting evidence and live committee packaging history.',
+    investmentAngle:
+      'Core-plus office recap with visible rollover, lender engagement, and approved valuation support.',
+    diligenceAngle:
+      'Committee-ready legal and commercial lanes exist, but packet release still depends on current DD completeness.',
     officialSignals: [
       { label: 'Office vacancy', value: '6.2%' },
       { label: 'Recent cap rate', value: '4.8%' },
@@ -122,9 +125,12 @@ const explorerSeeds: ExplorerSeed[] = [
     powerCapacityMw: 22,
     targetItLoadMw: 18,
     stage: AssetStage.POWER_REVIEW,
-    screenSummary: 'West Seoul hyperscale parcel with power and registry-readiness shell already seeded in the operating model.',
-    investmentAngle: 'Infrastructure-style data-center underwriting with strong power thesis and readiness workflow support.',
-    diligenceAngle: 'Power, permit, and legal sequencing remain the main DD lanes before deeper IC packaging.',
+    screenSummary:
+      'West Seoul hyperscale parcel with power and registry-readiness shell already seeded in the operating model.',
+    investmentAngle:
+      'Infrastructure-style data-center underwriting with strong power thesis and readiness workflow support.',
+    diligenceAngle:
+      'Power, permit, and legal sequencing remain the main DD lanes before deeper IC packaging.',
     officialSignals: [
       { label: 'Power posture', value: '22 MW capacity screen' },
       { label: 'Fiber access', value: 'metro backbone corridor' },
@@ -152,9 +158,12 @@ const explorerSeeds: ExplorerSeed[] = [
     grossFloorAreaSqm: 29_600,
     landAreaSqm: 5_100,
     stage: AssetStage.SCREENING,
-    screenSummary: 'Tech-corridor office candidate not yet opened as a full dossier but ready for first-pass institutional screening.',
-    investmentAngle: 'Pangyo office demand and tenant quality create a strong first-pass committee candidate if rent comps validate.',
-    diligenceAngle: 'Parcel, rent-roll, and title package should be bootstrapped into the DD stack immediately after intake.',
+    screenSummary:
+      'Tech-corridor office candidate not yet opened as a full dossier but ready for first-pass institutional screening.',
+    investmentAngle:
+      'Pangyo office demand and tenant quality create a strong first-pass committee candidate if rent comps validate.',
+    diligenceAngle:
+      'Parcel, rent-roll, and title package should be bootstrapped into the DD stack immediately after intake.',
     officialSignals: [
       { label: 'Submarket rent trend', value: 'positive' },
       { label: 'Vacancy tone', value: 'tight innovation corridor' },
@@ -183,9 +192,12 @@ const explorerSeeds: ExplorerSeed[] = [
     powerCapacityMw: 12,
     targetItLoadMw: 9,
     stage: AssetStage.SCREENING,
-    screenSummary: 'Smaller edge compute parcel with promising municipal support but incomplete diligence packages.',
-    investmentAngle: 'Edge compute and AI inference demand may support a smaller institutional screen if power certainty improves.',
-    diligenceAngle: 'Needs permit path, utility diligence, and market absorption work before a real investment view is credible.',
+    screenSummary:
+      'Smaller edge compute parcel with promising municipal support but incomplete diligence packages.',
+    investmentAngle:
+      'Edge compute and AI inference demand may support a smaller institutional screen if power certainty improves.',
+    diligenceAngle:
+      'Needs permit path, utility diligence, and market absorption work before a real investment view is credible.',
     officialSignals: [
       { label: 'Land-use planning', value: 'light industrial compatible' },
       { label: 'Power screen', value: '12 MW preliminary' },
@@ -245,10 +257,8 @@ function buildBootstrapInput(seed: ExplorerSeed): AssetIntakeInput {
     purchasePriceKrw: seed.purchasePriceKrw,
     occupancyAssumptionPct: seed.assetClass === AssetClass.OFFICE ? 92 : undefined,
     stabilizedOccupancyPct: seed.assetClass === AssetClass.OFFICE ? 94 : undefined,
-    capexAssumptionKrw:
-      seed.assetClass === AssetClass.DATA_CENTER ? 22_000_000_000 : 7_500_000_000,
-    opexAssumptionKrw:
-      seed.assetClass === AssetClass.DATA_CENTER ? 18_000_000_000 : 11_000_000_000,
+    capexAssumptionKrw: seed.assetClass === AssetClass.DATA_CENTER ? 22_000_000_000 : 7_500_000_000,
+    opexAssumptionKrw: seed.assetClass === AssetClass.DATA_CENTER ? 18_000_000_000 : 11_000_000_000,
     financingLtvPct: seed.assetClass === AssetClass.DATA_CENTER ? 50 : 52,
     financingRatePct: seed.assetClass === AssetClass.DATA_CENTER ? 5.2 : 4.9,
     holdingPeriodYears: 5,
@@ -265,7 +275,9 @@ function buildBootstrapInput(seed: ExplorerSeed): AssetIntakeInput {
   };
 }
 
-export async function buildPropertyExplorerData(db: PrismaClient = prisma): Promise<PropertyExplorerData> {
+export async function buildPropertyExplorerData(
+  db: PrismaClient = prisma
+): Promise<PropertyExplorerData> {
   const assets = await listAssets(db);
   const mapPositions = buildMapPositions(explorerSeeds);
 
@@ -306,8 +318,11 @@ export async function buildPropertyExplorerData(db: PrismaClient = prisma): Prom
       candidateCount: candidates.length,
       linkedAssetCount: candidates.filter((candidate) => candidate.hasLiveDossier).length,
       untrackedCount: candidates.filter((candidate) => !candidate.hasLiveDossier).length,
-      officeCount: candidates.filter((candidate) => candidate.assetClass === AssetClass.OFFICE).length,
-      dataCenterCount: candidates.filter((candidate) => candidate.assetClass === AssetClass.DATA_CENTER).length
+      officeCount: candidates.filter((candidate) => candidate.assetClass === AssetClass.OFFICE)
+        .length,
+      dataCenterCount: candidates.filter(
+        (candidate) => candidate.assetClass === AssetClass.DATA_CENTER
+      ).length
     }
   };
 }
@@ -324,10 +339,7 @@ export async function bootstrapPropertyCandidate(candidateId: string, db: Prisma
 
   const existingAsset = await db.asset.findFirst({
     where: {
-      OR: [
-        { assetCode: seed.assetCode },
-        { address: { is: { parcelId: seed.parcelId } } }
-      ]
+      OR: [{ assetCode: seed.assetCode }, { address: { is: { parcelId: seed.parcelId } } }]
     },
     include: {
       address: true,

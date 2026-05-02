@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { ReviewStatus } from '@prisma/client';
 import {
-  buildAssetEvidenceReviewSummary,
   extractReviewPacketSummary,
   getLatestReviewPacketRecord,
   listPendingAssetReviewSummaries,
@@ -103,61 +102,69 @@ test('reviewUnderwritingRecord persists reviewer metadata, notes, and re-promote
 });
 
 test('listPendingAssetReviewSummaries returns pending evidence across asset classes grouped by discipline', async () => {
-  const summaries = await listPendingAssetReviewSummaries(
-    {
-      asset: {
-        async findMany() {
-          return [
-            {
-              id: 'asset_1',
-              assetCode: 'SEOUL-YEOUIDO-01',
-              name: 'Yeouido Core Office Tower',
-              assetClass: 'OFFICE',
-              energySnapshot: {
-                id: 'energy_1',
-                utilityName: 'KEPCO Seoul',
-                tariffKrwPerKwh: 132,
+  const summaries = await listPendingAssetReviewSummaries({
+    asset: {
+      async findMany() {
+        return [
+          {
+            id: 'asset_1',
+            assetCode: 'SEOUL-YEOUIDO-01',
+            name: 'Yeouido Core Office Tower',
+            assetClass: 'OFFICE',
+            energySnapshot: {
+              id: 'energy_1',
+              utilityName: 'KEPCO Seoul',
+              tariffKrwPerKwh: 132,
+              reviewStatus: ReviewStatus.PENDING,
+              reviewNotes: null,
+              reviewedAt: null,
+              reviewedById: null,
+              sourceStatus: 'MANUAL',
+              sourceUpdatedAt: new Date('2026-03-22T00:00:00.000Z'),
+              updatedAt: new Date('2026-03-22T00:00:00.000Z')
+            },
+            permitSnapshot: null,
+            ownershipRecords: [],
+            encumbranceRecords: [],
+            planningConstraints: [],
+            leases: [
+              {
+                id: 'lease_1',
+                tenantName: 'Domestic Securities House',
+                leasedKw: 0,
+                baseRatePerKwKrw: 0,
+                termYears: 5,
+                status: 'ACTIVE',
+                notes: 'Anchor office tenant',
                 reviewStatus: ReviewStatus.PENDING,
                 reviewNotes: null,
                 reviewedAt: null,
                 reviewedById: null,
-                sourceStatus: 'MANUAL',
-                sourceUpdatedAt: new Date('2026-03-22T00:00:00.000Z'),
-                updatedAt: new Date('2026-03-22T00:00:00.000Z')
-              },
-              permitSnapshot: null,
-              ownershipRecords: [],
-              encumbranceRecords: [],
-              planningConstraints: [],
-              leases: [
-                {
-                  id: 'lease_1',
-                  tenantName: 'Domestic Securities House',
-                  leasedKw: 0,
-                  baseRatePerKwKrw: 0,
-                  termYears: 5,
-                  status: 'ACTIVE',
-                  notes: 'Anchor office tenant',
-                  reviewStatus: ReviewStatus.PENDING,
-                  reviewNotes: null,
-                  reviewedAt: null,
-                  reviewedById: null,
-                  updatedAt: new Date('2026-03-22T01:00:00.000Z')
-                }
-              ]
-            }
-          ];
-        }
+                updatedAt: new Date('2026-03-22T01:00:00.000Z')
+              }
+            ]
+          }
+        ];
       }
-    } as any
-  );
+    }
+  } as any);
 
   assert.equal(summaries.length, 1);
   assert.equal(summaries[0]?.assetClassLabel, 'Office');
   assert.equal(summaries[0]?.pendingEvidenceCount, 2);
-  assert.equal(summaries[0]?.disciplines.find((item) => item.key === 'power_permit')?.pendingCount, 1);
-  assert.ok(summaries[0]?.disciplines.find((item) => item.key === 'power_permit')?.label.includes('Building'));
-  assert.equal(summaries[0]?.disciplines.find((item) => item.key === 'lease_revenue')?.pendingCount, 1);
+  assert.equal(
+    summaries[0]?.disciplines.find((item) => item.key === 'power_permit')?.pendingCount,
+    1
+  );
+  assert.ok(
+    summaries[0]?.disciplines
+      .find((item) => item.key === 'power_permit')
+      ?.label.includes('Building')
+  );
+  assert.equal(
+    summaries[0]?.disciplines.find((item) => item.key === 'lease_revenue')?.pendingCount,
+    1
+  );
 });
 
 test('review packet helpers pick the latest packet and normalize summary fields', () => {

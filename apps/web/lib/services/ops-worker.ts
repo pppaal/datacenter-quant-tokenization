@@ -1,4 +1,8 @@
-import { ResearchSyncTriggerType, SourceRefreshTriggerType, type PrismaClient } from '@prisma/client';
+import {
+  ResearchSyncTriggerType,
+  SourceRefreshTriggerType,
+  type PrismaClient
+} from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { runResearchWorkspaceSync } from '@/lib/services/research/workspace';
 import { runSourceRefreshJob } from '@/lib/services/source-refresh';
@@ -34,11 +38,16 @@ export async function runOpsCycle(
     runResearchWorkspaceSync
   }
 ) {
-  const actorIdentifier = input.actorIdentifier?.trim() || (input.scheduled ? 'ops-cron' : 'ops-manual');
+  const actorIdentifier =
+    input.actorIdentifier?.trim() || (input.scheduled ? 'ops-cron' : 'ops-manual');
   const retryAttempts = getRetryAttempts();
   const retryBackoffMs = getRetryBackoffMs();
-  const sourceTriggerType = input.scheduled ? SourceRefreshTriggerType.SCHEDULED : SourceRefreshTriggerType.MANUAL;
-  const researchTriggerType = input.scheduled ? ResearchSyncTriggerType.SCHEDULED : ResearchSyncTriggerType.MANUAL;
+  const sourceTriggerType = input.scheduled
+    ? SourceRefreshTriggerType.SCHEDULED
+    : SourceRefreshTriggerType.MANUAL;
+  const researchTriggerType = input.scheduled
+    ? ResearchSyncTriggerType.SCHEDULED
+    : ResearchSyncTriggerType.MANUAL;
 
   let sourceRun: Awaited<ReturnType<typeof runSourceRefreshJob>> | null = null;
   let sourceAttemptCount = 0;
@@ -65,7 +74,9 @@ export async function runOpsCycle(
   }
 
   if (!sourceRun) {
-    throw new Error(`Source refresh failed after ${sourceAttemptCount} attempt(s): ${sourceError ?? 'unknown error'}`);
+    throw new Error(
+      `Source refresh failed after ${sourceAttemptCount} attempt(s): ${sourceError ?? 'unknown error'}`
+    );
   }
 
   let researchRun: Awaited<ReturnType<typeof runResearchWorkspaceSync>> | null = null;
@@ -93,7 +104,9 @@ export async function runOpsCycle(
   }
 
   if (!researchRun) {
-    throw new Error(`Research sync failed after ${researchAttemptCount} attempt(s): ${researchError ?? 'unknown error'}`);
+    throw new Error(
+      `Research sync failed after ${researchAttemptCount} attempt(s): ${researchError ?? 'unknown error'}`
+    );
   }
 
   return {

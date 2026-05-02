@@ -22,10 +22,7 @@
  *   - Hedge ratio applies uniformly to every cash flow.
  */
 
-export type HedgeStrategy =
-  | 'NONE'
-  | 'ROLLING_FORWARDS'
-  | 'EXIT_ONLY_NDF';
+export type HedgeStrategy = 'NONE' | 'ROLLING_FORWARDS' | 'EXIT_ONLY_NDF';
 
 export type FxHedgeInput = {
   /** Per-year KRW distributions to equity. Year 0 = acquisition equity outlay (negative). */
@@ -123,11 +120,7 @@ function projectSpot(spot0: number, annualDepreciationPct: number, year: number)
   return spot0 * Math.pow(1 + annualDepreciationPct / 100, year);
 }
 
-function forwardRate(
-  spot0: number,
-  annualPremiumPct: number,
-  year: number
-): number {
+function forwardRate(spot0: number, annualPremiumPct: number, year: number): number {
   // Covered-interest-parity-style projection: F_t = S_0 × (1 + premium)^t
   // Interpreted as the rate to SELL KRW forward in year t.
   return spot0 * Math.pow(1 + annualPremiumPct / 100, year);
@@ -141,10 +134,7 @@ export function applyFxHedge(input: FxHedgeInput): FxHedgeResult {
   for (const cf of input.cashflowsKrw) {
     mergedByYear.set(cf.year, (mergedByYear.get(cf.year) ?? 0) + cf.krwAmount);
   }
-  mergedByYear.set(
-    input.exitYear,
-    (mergedByYear.get(input.exitYear) ?? 0) + input.exitProceedsKrw
-  );
+  mergedByYear.set(input.exitYear, (mergedByYear.get(input.exitYear) ?? 0) + input.exitProceedsKrw);
 
   const orderedYears = [...mergedByYear.keys()].sort((a, b) => a - b);
   const rows: FxHedgeYearRow[] = [];
@@ -197,7 +187,11 @@ export function applyFxHedge(input: FxHedgeInput): FxHedgeResult {
   const hedgedIrrUsd = input.hedgeStrategy === 'NONE' ? unhedgedIrrUsd : solveIrr(hedgedFlows);
 
   const totalHedgePnl = rows.reduce((s, r) => s + r.hedgePnlUsd, 0);
-  const terminalSpot = projectSpot(input.spotUsdKrw, input.annualKrwDepreciationPct, input.exitYear);
+  const terminalSpot = projectSpot(
+    input.spotUsdKrw,
+    input.annualKrwDepreciationPct,
+    input.exitYear
+  );
   const terminalDeprec = ((terminalSpot - input.spotUsdKrw) / input.spotUsdKrw) * 100;
 
   if (input.annualKrwDepreciationPct > 0 && input.hedgeStrategy === 'NONE') {
@@ -216,7 +210,9 @@ export function applyFxHedge(input: FxHedgeInput): FxHedgeResult {
     );
   }
   if (ratio < 1 && input.hedgeStrategy !== 'NONE') {
-    notes.push(`Partial hedge (${(ratio * 100).toFixed(0)}% ratio) — residual spot exposure retained.`);
+    notes.push(
+      `Partial hedge (${(ratio * 100).toFixed(0)}% ratio) — residual spot exposure retained.`
+    );
   }
 
   return {

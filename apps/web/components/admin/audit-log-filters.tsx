@@ -114,11 +114,19 @@ export function AuditLogFilters({ initial }: Props) {
           </label>
           <label className="space-y-2">
             <span className="fine-print">Start Date</span>
-            <Input type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} />
+            <Input
+              type="date"
+              value={startDate}
+              onChange={(event) => setStartDate(event.target.value)}
+            />
           </label>
           <label className="space-y-2">
             <span className="fine-print">End Date</span>
-            <Input type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} />
+            <Input
+              type="date"
+              value={endDate}
+              onChange={(event) => setEndDate(event.target.value)}
+            />
           </label>
         </div>
         <div className="flex flex-wrap items-center gap-3">

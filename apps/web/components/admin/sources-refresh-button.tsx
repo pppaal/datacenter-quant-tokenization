@@ -25,7 +25,9 @@ export function SourcesRefreshButton() {
 
       router.refresh();
     } catch (caughtError) {
-      setError(caughtError instanceof Error ? caughtError.message : 'Failed to refresh source adapters');
+      setError(
+        caughtError instanceof Error ? caughtError.message : 'Failed to refresh source adapters'
+      );
     } finally {
       setIsRefreshing(false);
     }

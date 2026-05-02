@@ -48,26 +48,42 @@ export function LeaseExpiryLadder({
             Expiry concentration, renewal assumptions, and modeled rollover window by lease year.
           </div>
         </div>
-        <div className="text-sm text-slate-400">{formatNumber(ladder.rows.length, 0)} expiry buckets</div>
+        <div className="text-sm text-slate-400">
+          {formatNumber(ladder.rows.length, 0)} expiry buckets
+        </div>
       </div>
 
       <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-2xl border border-border bg-slate-950/40 p-4">
-          <div className="text-xs uppercase tracking-[0.18em] text-slate-500">Total Contracted kW</div>
-          <div className="mt-2 text-lg font-semibold text-white">{formatNumber(ladder.totalContractedKw, 0)} kW</div>
+          <div className="text-xs uppercase tracking-[0.18em] text-slate-500">
+            Total Contracted kW
+          </div>
+          <div className="mt-2 text-lg font-semibold text-white">
+            {formatNumber(ladder.totalContractedKw, 0)} kW
+          </div>
         </div>
         <div className="rounded-2xl border border-border bg-slate-950/40 p-4">
           <div className="text-xs uppercase tracking-[0.18em] text-slate-500">Near-Term Expiry</div>
-          <div className="mt-2 text-lg font-semibold text-white">{formatNumber(ladder.nearTermExpiryKw, 0)} kW</div>
-        </div>
-        <div className="rounded-2xl border border-border bg-slate-950/40 p-4">
-          <div className="text-xs uppercase tracking-[0.18em] text-slate-500">Weighted Renewal Prob.</div>
-          <div className="mt-2 text-lg font-semibold text-white">{formatMaybe(ladder.weightedRenewProbabilityPct)}%</div>
-        </div>
-        <div className="rounded-2xl border border-border bg-slate-950/40 p-4">
-          <div className="text-xs uppercase tracking-[0.18em] text-slate-500">Latest Expiry Year</div>
           <div className="mt-2 text-lg font-semibold text-white">
-            {ladder.latestExpiryYear !== null ? `Year ${formatNumber(ladder.latestExpiryYear, 0)}` : 'N/A'}
+            {formatNumber(ladder.nearTermExpiryKw, 0)} kW
+          </div>
+        </div>
+        <div className="rounded-2xl border border-border bg-slate-950/40 p-4">
+          <div className="text-xs uppercase tracking-[0.18em] text-slate-500">
+            Weighted Renewal Prob.
+          </div>
+          <div className="mt-2 text-lg font-semibold text-white">
+            {formatMaybe(ladder.weightedRenewProbabilityPct)}%
+          </div>
+        </div>
+        <div className="rounded-2xl border border-border bg-slate-950/40 p-4">
+          <div className="text-xs uppercase tracking-[0.18em] text-slate-500">
+            Latest Expiry Year
+          </div>
+          <div className="mt-2 text-lg font-semibold text-white">
+            {ladder.latestExpiryYear !== null
+              ? `Year ${formatNumber(ladder.latestExpiryYear, 0)}`
+              : 'N/A'}
           </div>
         </div>
       </div>
@@ -89,7 +105,10 @@ export function LeaseExpiryLadder({
           </thead>
           <tbody>
             {ladder.rows.map((row) => (
-              <tr key={row.expiryYear} className="rounded-2xl border border-white/10 bg-white/[0.03] text-slate-200">
+              <tr
+                key={row.expiryYear}
+                className="rounded-2xl border border-white/10 bg-white/[0.03] text-slate-200"
+              >
                 <td className="px-3 py-3 font-medium text-white">
                   {rolloverBasePath ? (
                     <Link
@@ -108,9 +127,15 @@ export function LeaseExpiryLadder({
                 </td>
                 <td className="px-3 py-3 text-right">{formatNumber(row.expiringKw, 0)} kW</td>
                 <td className="px-3 py-3 text-right">{formatNumber(row.leaseCount, 0)}</td>
-                <td className="px-3 py-3 text-right">{formatMaybe(row.weightedRenewProbabilityPct)}%</td>
-                <td className="px-3 py-3 text-right">{formatMaybe(row.weightedRolloverDowntimeMonths, 1)} mo</td>
-                <td className="px-3 py-3 text-right">{formatMaybe(row.weightedRenewalTermYears, 1)} yr</td>
+                <td className="px-3 py-3 text-right">
+                  {formatMaybe(row.weightedRenewProbabilityPct)}%
+                </td>
+                <td className="px-3 py-3 text-right">
+                  {formatMaybe(row.weightedRolloverDowntimeMonths, 1)} mo
+                </td>
+                <td className="px-3 py-3 text-right">
+                  {formatMaybe(row.weightedRenewalTermYears, 1)} yr
+                </td>
                 <td className="px-3 py-3 text-right">{formatMaybe(row.weightedRenewalCount, 1)}</td>
                 <td className="px-3 py-3 text-right">
                   {row.weightedMarkToMarketRatePerKwKrw !== null
@@ -173,14 +198,17 @@ export function LeaseExpiryLadder({
                 <td className="px-3 py-3 text-right">Year {detail.expiryYear}</td>
                 <td className="px-3 py-3 text-right">{formatNumber(detail.expiringKw, 0)} kW</td>
                 <td className="px-3 py-3 text-right">{formatMaybe(detail.renewProbabilityPct)}%</td>
-                <td className="px-3 py-3 text-right">{formatMaybe(detail.rolloverDowntimeMonths, 1)} mo</td>
+                <td className="px-3 py-3 text-right">
+                  {formatMaybe(detail.rolloverDowntimeMonths, 1)} mo
+                </td>
                 <td className="px-3 py-3 text-right">
                   {detail.markToMarketRatePerKwKrw !== null
                     ? `${formatCurrencyFromKrwAtRate(detail.markToMarketRatePerKwKrw, displayCurrency, fxRateToKrw)} / kW`
                     : 'N/A'}
                 </td>
                 <td className="px-3 py-3 text-right">
-                  {detail.firstRenewalStartYear !== null && detail.lastModeledRenewalEndYear !== null
+                  {detail.firstRenewalStartYear !== null &&
+                  detail.lastModeledRenewalEndYear !== null
                     ? `Y${detail.firstRenewalStartYear} - Y${detail.lastModeledRenewalEndYear}`
                     : 'N/A'}
                 </td>

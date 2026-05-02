@@ -77,14 +77,18 @@ function resolveStatus(score: number): ForecastModelStatus {
   return 'DATA_GAP';
 }
 
-function resolveConfidenceBand(validationScore: number | null): ForecastModelCard['confidenceBand'] {
+function resolveConfidenceBand(
+  validationScore: number | null
+): ForecastModelCard['confidenceBand'] {
   if (validationScore === null) return 'UNVALIDATED';
   if (validationScore >= 75) return 'HIGH';
   if (validationScore >= 55) return 'MEDIUM';
   return 'LOW';
 }
 
-function buildRankingNote(model: Pick<ForecastModelCard, 'label' | 'confidenceBand' | 'validationScore' | 'readinessScore'>) {
+function buildRankingNote(
+  model: Pick<ForecastModelCard, 'label' | 'confidenceBand' | 'validationScore' | 'readinessScore'>
+) {
   if (model.validationScore === null) {
     return `${model.label} is ranked on data readiness only because realized backtest coverage is still thin.`;
   }
@@ -106,7 +110,7 @@ export function buildForecastModelStack(input: {
   featureSummary?: ForecastModelFeatureSummary;
   macroObservationCount: number;
   realizedBacktest?: GradientBoostingRealizedBacktest | null;
-}) : ForecastModelStack {
+}): ForecastModelStack {
   const featureSummary =
     input.featureSummary ??
     (() => {
@@ -121,13 +125,17 @@ export function buildForecastModelStack(input: {
             (asset.rentComps?.length ?? 0) > 0 ||
             (asset.marketIndicatorSeries?.length ?? 0) > 0
         ).length,
-        valuationHistoryCount: assets.reduce((sum, asset) => sum + (asset.valuations?.length ?? 0), 0),
+        valuationHistoryCount: assets.reduce(
+          (sum, asset) => sum + (asset.valuations?.length ?? 0),
+          0
+        ),
         documentCount: input.documents?.length ?? 0,
         financialStatementCount: assets.reduce(
           (sum, asset) =>
             sum +
             (asset.counterparties?.reduce(
-              (counterpartySum, counterparty) => counterpartySum + (counterparty.financialStatements?.length ?? 0),
+              (counterpartySum, counterparty) =>
+                counterpartySum + (counterparty.financialStatements?.length ?? 0),
               0
             ) ?? 0),
           0
@@ -150,9 +158,7 @@ export function buildForecastModelStack(input: {
       family: 'simulation',
       cadence: 'daily',
       readinessScore: clampScore(
-        55 +
-          Math.min(20, valuationHistoryCount * 2) +
-          Math.min(15, macroObservationCount / 12)
+        55 + Math.min(20, valuationHistoryCount * 2) + Math.min(15, macroObservationCount / 12)
       ),
       currentUse: 'Stress-distribution engine for value and DSCR under macro shocks.',
       requiredData: ['valuation paths', 'macro regime guidance', 'base-case assumptions'],
@@ -165,9 +171,7 @@ export function buildForecastModelStack(input: {
       family: 'rules',
       cadence: 'daily',
       readinessScore: clampScore(
-        60 +
-          Math.min(20, marketCount * 6) +
-          Math.min(15, macroObservationCount / 20)
+        60 + Math.min(20, marketCount * 6) + Math.min(15, macroObservationCount / 20)
       ),
       currentUse: 'Current macro interpretation and underwriting guidance overlay.',
       requiredData: ['macro series', 'market indicators', 'country/submarket profile rules'],
@@ -185,18 +189,18 @@ export function buildForecastModelStack(input: {
           Math.min(25, valuationHistoryCount * 1.2) +
           Math.min(15, documentCount / 2)
       ),
-      validationScore:
-        input.realizedBacktest?.summary.matchedForecastCount
-          ? clampScore(
-              (input.realizedBacktest.summary.directionalHitRatePct ?? 0) * 0.55 +
-                Math.max(
-                  0,
-                  35 - Math.min(input.realizedBacktest.summary.meanAbsoluteValueErrorPct ?? 35, 35)
-                ) +
-                Math.min(input.realizedBacktest.summary.matchedForecastCount * 3, 20)
-            )
-          : null,
-      currentUse: 'Short-horizon value / rent / occupancy prediction from structured underwriting features.',
+      validationScore: input.realizedBacktest?.summary.matchedForecastCount
+        ? clampScore(
+            (input.realizedBacktest.summary.directionalHitRatePct ?? 0) * 0.55 +
+              Math.max(
+                0,
+                35 - Math.min(input.realizedBacktest.summary.meanAbsoluteValueErrorPct ?? 35, 35)
+              ) +
+              Math.min(input.realizedBacktest.summary.matchedForecastCount * 3, 20)
+          )
+        : null,
+      currentUse:
+        'Short-horizon value / rent / occupancy prediction from structured underwriting features.',
       requiredData: ['50+ valuation runs', 'market evidence coverage', 'clean factor history'],
       unlockCriteria: ['more labeled outcomes', 'backtest actual realized values']
     },
@@ -206,12 +210,14 @@ export function buildForecastModelStack(input: {
       family: 'sequence',
       cadence: 'daily',
       readinessScore: clampScore(
-        macroObservationCount / 4 +
-          valuationHistoryCount * 0.8 +
-          marketCount * 5
+        macroObservationCount / 4 + valuationHistoryCount * 0.8 + marketCount * 5
       ),
       currentUse: 'Multi-period forecast path for rates, rents, occupancy, and value.',
-      requiredData: ['200+ macro observations', '60+ valuation histories', 'market time-series continuity'],
+      requiredData: [
+        '200+ macro observations',
+        '60+ valuation histories',
+        'market time-series continuity'
+      ],
       unlockCriteria: ['denser macro history', 'stable realized target series'],
       validationScore: null
     },
@@ -221,12 +227,15 @@ export function buildForecastModelStack(input: {
       family: 'deep',
       cadence: 'daily',
       readinessScore: clampScore(
-        macroObservationCount / 6 +
-          valuationHistoryCount * 0.6 +
-          financialStatementCount * 1.2
+        macroObservationCount / 6 + valuationHistoryCount * 0.6 + financialStatementCount * 1.2
       ),
-      currentUse: 'TFT/LSTM-style long-horizon probabilistic forecasting across macro and micro features.',
-      requiredData: ['500+ aligned sequences', 'financial statement histories', 'outcome backtest set'],
+      currentUse:
+        'TFT/LSTM-style long-horizon probabilistic forecasting across macro and micro features.',
+      requiredData: [
+        '500+ aligned sequences',
+        'financial statement histories',
+        'outcome backtest set'
+      ],
       unlockCriteria: ['more sequences', 'consistent tenant/operator histories'],
       validationScore: null
     },
@@ -236,19 +245,21 @@ export function buildForecastModelStack(input: {
       family: 'graph',
       cadence: 'weekly',
       readinessScore: clampScore(
-        marketCount * 8 +
-          assetClassCoverage * 10 +
-          marketEvidenceAssets * 2
+        marketCount * 8 + assetClassCoverage * 10 + marketEvidenceAssets * 2
       ),
-      currentUse: 'Cross-market spillover and relative value propagation across cities and sectors.',
+      currentUse:
+        'Cross-market spillover and relative value propagation across cities and sectors.',
       requiredData: ['5+ active markets', '4+ asset classes', 'dense comp network'],
       unlockCriteria: ['more global markets', 'market link graph and realized spread data'],
       validationScore: null
     }
-  ] satisfies Array<Omit<ForecastModelCard, 'status' | 'confidenceBand' | 'ranking' | 'rankingNote'>>;
+  ] satisfies Array<
+    Omit<ForecastModelCard, 'status' | 'confidenceBand' | 'ranking' | 'rankingNote'>
+  >;
 
   const scoredModels = models.map((model) => {
-    const validationBoost = model.validationScore === null ? 0 : (model.validationScore - 50) * 0.35;
+    const validationBoost =
+      model.validationScore === null ? 0 : (model.validationScore - 50) * 0.35;
     const compositeScore = clampScore(model.readinessScore + validationBoost);
     return {
       ...model,
@@ -273,9 +284,13 @@ export function buildForecastModelStack(input: {
   return {
     summary: {
       liveModels: resolvedModels.filter((model) => model.status === 'LIVE').length,
-      buildableModels: resolvedModels.filter((model) => model.status === 'READY' || model.status === 'BUILDING').length,
+      buildableModels: resolvedModels.filter(
+        (model) => model.status === 'READY' || model.status === 'BUILDING'
+      ).length,
       blockedModels: resolvedModels.filter((model) => model.status === 'DATA_GAP').length,
-      dailyCapableModels: resolvedModels.filter((model) => model.cadence === 'daily' || model.cadence === 'intraday').length
+      dailyCapableModels: resolvedModels.filter(
+        (model) => model.cadence === 'daily' || model.cadence === 'intraday'
+      ).length
     },
     features: {
       assetCount,

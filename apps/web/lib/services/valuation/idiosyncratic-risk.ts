@@ -145,7 +145,9 @@ const SUB_IG_GRADES: ReadonlySet<CreditGrade> = new Set(['BB', 'B', 'CCC']);
 // Per-factor scorers
 // ---------------------------------------------------------------------------
 
-function scoreTenantConcentration(rentRoll: RentRollEntry[] | undefined): IdiosyncraticFactor | null {
+function scoreTenantConcentration(
+  rentRoll: RentRollEntry[] | undefined
+): IdiosyncraticFactor | null {
   if (!rentRoll || rentRoll.length === 0) return null;
 
   const totalRent = rentRoll.reduce((s, r) => s + r.annualRentKrw, 0);
@@ -161,7 +163,13 @@ function scoreTenantConcentration(rentRoll: RentRollEntry[] | undefined): Idiosy
   // Anchors driven by HHI (the proper concentration metric). Single tenant
   // HHI=1.0 → 95; perfectly spread (10 tenants of 10%) HHI=0.1 → 15.
   let score = interpolate(hhi, [
-    [0.10, 15], [0.20, 25], [0.30, 35], [0.45, 50], [0.60, 65], [0.80, 82], [1.0, 95]
+    [0.1, 15],
+    [0.2, 25],
+    [0.3, 35],
+    [0.45, 50],
+    [0.6, 65],
+    [0.8, 82],
+    [1.0, 95]
   ]);
 
   // If the top tenant is sub-IG (or unrated), concentration risk is materially
@@ -217,13 +225,19 @@ function scoreLeaseRollover(
   // 3y window is the most informative — that's the typical business-plan
   // horizon. >50% rolling in 3y is a real risk; >30% is meaningful.
   let score = interpolate(exp3y, [
-    [0, 10], [0.15, 22], [0.30, 38], [0.45, 55], [0.60, 70], [0.80, 85], [1.0, 95]
+    [0, 10],
+    [0.15, 22],
+    [0.3, 38],
+    [0.45, 55],
+    [0.6, 70],
+    [0.8, 85],
+    [1.0, 95]
   ]);
 
   // Near-term concentration penalty: heavy 1y rollover is much worse than 3y
   // because there's no time to remarket.
-  if (exp1y >= 0.30) score += 10;
-  else if (exp1y >= 0.20) score += 5;
+  if (exp1y >= 0.3) score += 10;
+  else if (exp1y >= 0.2) score += 5;
 
   score = clamp(score, 0, 100);
 
@@ -233,9 +247,9 @@ function scoreLeaseRollover(
     `5y rollover ${(exp5y * 100).toFixed(0)}%`;
 
   const recommendation =
-    exp3y >= 0.50
+    exp3y >= 0.5
       ? 'Pre-lease major rollovers; underwrite mark-to-market on expiring rent at -10% to -15%.'
-      : exp3y >= 0.30
+      : exp3y >= 0.3
         ? 'Monitor renewal probability quarterly; prepare retention package for top expirers.'
         : null;
 
@@ -259,15 +273,20 @@ function scoreCapexBacklog(
   // 0% = fine, 1% = small backlog, 3% = noticeable, 5% = major, 10%+ = critical.
   const score = clamp(
     interpolate(ratio, [
-      [0.0, 5], [0.01, 18], [0.03, 38], [0.05, 55], [0.08, 75], [0.12, 90], [0.20, 98]
+      [0.0, 5],
+      [0.01, 18],
+      [0.03, 38],
+      [0.05, 55],
+      [0.08, 75],
+      [0.12, 90],
+      [0.2, 98]
     ]),
     0,
     100
   );
 
   const ratioPct = ratio * 100;
-  const evidence =
-    `Deferred CapEx ${(deferred / 1e8).toFixed(1)} 억원 = ${ratioPct.toFixed(2)}% of building value`;
+  const evidence = `Deferred CapEx ${(deferred / 1e8).toFixed(1)} 억원 = ${ratioPct.toFixed(2)}% of building value`;
 
   const recommendation =
     score >= 60
@@ -291,7 +310,13 @@ function scoreBuildingAge(ageYears: number | undefined): IdiosyncraticFactor | n
   // Modern KR office life: 30y is mid-life, 40y obsolescence pressure, 50y+ redevelopment candidate.
   const score = clamp(
     interpolate(ageYears, [
-      [0, 5], [10, 12], [20, 22], [30, 38], [40, 55], [50, 72], [60, 88]
+      [0, 5],
+      [10, 12],
+      [20, 22],
+      [30, 38],
+      [40, 55],
+      [50, 72],
+      [60, 88]
     ]),
     0,
     100
@@ -319,15 +344,28 @@ function scoreEnvironmental(
   inputs: Pick<IdiosyncraticRiskInputs, 'soilContaminationFlag' | 'asbestosFlag' | 'floodZoneFlag'>
 ): IdiosyncraticFactor | null {
   const { soilContaminationFlag, asbestosFlag, floodZoneFlag } = inputs;
-  if (soilContaminationFlag === undefined && asbestosFlag === undefined && floodZoneFlag === undefined) {
+  if (
+    soilContaminationFlag === undefined &&
+    asbestosFlag === undefined &&
+    floodZoneFlag === undefined
+  ) {
     return null;
   }
 
   let score = 5;
   const flagged: string[] = [];
-  if (soilContaminationFlag) { score += 55; flagged.push('soil contamination'); }
-  if (asbestosFlag) { score += 30; flagged.push('asbestos'); }
-  if (floodZoneFlag) { score += 25; flagged.push('flood zone'); }
+  if (soilContaminationFlag) {
+    score += 55;
+    flagged.push('soil contamination');
+  }
+  if (asbestosFlag) {
+    score += 30;
+    flagged.push('asbestos');
+  }
+  if (floodZoneFlag) {
+    score += 25;
+    flagged.push('flood zone');
+  }
   score = clamp(score, 0, 100);
 
   const evidence = flagged.length > 0 ? `Flagged: ${flagged.join(', ')}` : 'No environmental flags';
@@ -355,15 +393,20 @@ function scoreRegulatory(
   if (zoningChangeRisk === undefined && redevelopmentFreezeFlag === undefined) return null;
 
   const zoningPoints =
-    zoningChangeRisk === 'HIGH' ? 60 :
-    zoningChangeRisk === 'MED' ? 35 :
-    zoningChangeRisk === 'LOW' ? 15 : 5;
+    zoningChangeRisk === 'HIGH'
+      ? 60
+      : zoningChangeRisk === 'MED'
+        ? 35
+        : zoningChangeRisk === 'LOW'
+          ? 15
+          : 5;
   const freezePoints = redevelopmentFreezeFlag ? 30 : 0;
 
   const score = clamp(zoningPoints + freezePoints, 0, 100);
 
   const parts: string[] = [];
-  if (zoningChangeRisk && zoningChangeRisk !== 'NONE') parts.push(`Zoning change risk: ${zoningChangeRisk}`);
+  if (zoningChangeRisk && zoningChangeRisk !== 'NONE')
+    parts.push(`Zoning change risk: ${zoningChangeRisk}`);
   if (redevelopmentFreezeFlag) parts.push('Redevelopment freeze in effect');
   const evidence = parts.length > 0 ? parts.join('; ') : 'No regulatory flags';
 
@@ -392,8 +435,14 @@ function scoreTitleLegal(
 
   let score = 5;
   const flagged: string[] = [];
-  if (pendingLitigationFlag) { score += 50; flagged.push('pending litigation'); }
-  if (titleEncumbranceFlag) { score += 35; flagged.push('title encumbrance'); }
+  if (pendingLitigationFlag) {
+    score += 50;
+    flagged.push('pending litigation');
+  }
+  if (titleEncumbranceFlag) {
+    score += 35;
+    flagged.push('title encumbrance');
+  }
   score = clamp(score, 0, 100);
 
   const evidence = flagged.length > 0 ? `Flagged: ${flagged.join(', ')}` : 'No title/legal flags';
@@ -422,10 +471,10 @@ function scoreTitleLegal(
 // concentration and lease rollover dominate cash-flow risk; environmental
 // and title are binary-ish but high impact when flagged.
 const FACTOR_WEIGHTS: Record<IdiosyncraticFactorKey, number> = {
-  tenant_concentration: 0.20,
-  lease_rollover: 0.20,
+  tenant_concentration: 0.2,
+  lease_rollover: 0.2,
   capex_backlog: 0.15,
-  building_age: 0.10,
+  building_age: 0.1,
   environmental: 0.15,
   regulatory: 0.12,
   title_legal: 0.08

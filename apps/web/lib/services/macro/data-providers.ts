@@ -4,6 +4,8 @@
 // BOK (Bank of Korea) ECOS API and US FRED API.
 // These fetch real-time macro series data to replace seed/hardcoded values.
 
+import { safeFetch } from '@/lib/security/safe-fetch';
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -97,13 +99,10 @@ const BOK_SERIES_MAPPINGS: BokSeriesMapping[] = [
 ];
 
 async function fetchWithTimeout(url: string, timeoutMs: number): Promise<Response> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    return await fetch(url, { signal: controller.signal });
-  } finally {
-    clearTimeout(timeout);
-  }
+  // Routes through safeFetch so an attacker can't redirect a vendor URL to
+  // an internal target (BOK / FRED responses include redirects on auth
+  // failure that we previously followed unconditionally).
+  return safeFetch(url, { timeoutMs });
 }
 
 export async function fetchBokData(months = 12): Promise<DataProviderResult> {
@@ -137,7 +136,7 @@ export async function fetchBokData(months = 12): Promise<DataProviderResult> {
         continue;
       }
 
-      const data = await response.json() as {
+      const data = (await response.json()) as {
         StatisticSearch?: {
           row?: Array<{
             TIME: string;
@@ -164,7 +163,9 @@ export async function fetchBokData(months = 12): Promise<DataProviderResult> {
         });
       }
     } catch (err) {
-      errors.push(`BOK ${mapping.seriesKey}: ${err instanceof Error ? err.message : 'unknown error'}`);
+      errors.push(
+        `BOK ${mapping.seriesKey}: ${err instanceof Error ? err.message : 'unknown error'}`
+      );
     }
   }
 
@@ -248,7 +249,7 @@ export async function fetchFredData(months = 12): Promise<DataProviderResult> {
         continue;
       }
 
-      const data = await response.json() as {
+      const data = (await response.json()) as {
         observations?: Array<{
           date: string;
           value: string;
@@ -269,7 +270,9 @@ export async function fetchFredData(months = 12): Promise<DataProviderResult> {
         });
       }
     } catch (err) {
-      errors.push(`FRED ${mapping.fredId}: ${err instanceof Error ? err.message : 'unknown error'}`);
+      errors.push(
+        `FRED ${mapping.fredId}: ${err instanceof Error ? err.message : 'unknown error'}`
+      );
     }
   }
 

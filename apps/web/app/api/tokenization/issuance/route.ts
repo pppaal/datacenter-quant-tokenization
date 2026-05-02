@@ -3,7 +3,10 @@ import { z } from 'zod';
 import { AdminAccessScopeType } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { assertActorScopeAccess } from '@/lib/security/admin-access';
-import { getRequestIpAddress, resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
+import {
+  getRequestIpAddress,
+  resolveVerifiedAdminActorFromHeaders
+} from '@/lib/security/admin-request';
 import { recordAuditEvent } from '@/lib/services/audit';
 import {
   burnTokens,
@@ -106,7 +109,7 @@ export async function POST(request: Request) {
     const deployment = toDeploymentRow(row);
 
     let txHash: string;
-    const metadata: Record<string, unknown> = {};
+    const metadata: Record<string, string> = {};
     switch (parsed.action) {
       case 'mint':
         txHash = await mintTokens(deployment, { to: parsed.to, amount: parsed.amount });

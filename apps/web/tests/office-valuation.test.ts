@@ -213,10 +213,14 @@ test('office valuation uses office detail assumptions and produces scenarios', a
   assert.equal(analysis.scenarios.length, 3);
   assert.ok(analysis.baseCaseValueKrw > 0);
   assert.equal((analysis.assumptions as Record<string, unknown>).assetClass, 'OFFICE');
-  assert.equal((analysis.assumptions as Record<string, unknown>).weightedAverageLeaseTermYears, 4.4);
+  assert.equal(
+    (analysis.assumptions as Record<string, unknown>).weightedAverageLeaseTermYears,
+    4.4
+  );
   assert.ok(((analysis.assumptions as Record<string, unknown>).monthlyRentPerSqmKrw as number) > 0);
   assert.equal(
-    typeof ((analysis.assumptions as Record<string, unknown>).macroRegime as { regimes?: object }).regimes,
+    typeof ((analysis.assumptions as Record<string, unknown>).macroRegime as { regimes?: object })
+      .regimes,
     'object'
   );
   assert.ok(analysis.keyRisks.some((risk) => risk.toLowerCase().includes('lease')));

@@ -1,4 +1,11 @@
-import { DealStage, InvestorReportReleaseStatus, RiskSeverity, TaskPriority, TaskStatus, type PrismaClient } from '@prisma/client';
+import {
+  DealStage,
+  InvestorReportReleaseStatus,
+  RiskSeverity,
+  TaskPriority,
+  TaskStatus,
+  type PrismaClient
+} from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { dealStageOrder } from '@/lib/validations/deal';
 import { buildForecastModelStack } from '@/lib/services/forecast/model-stack';
@@ -111,8 +118,12 @@ export function buildPortfolioRiskSummary(runs: PortfolioRiskSourceRun[]) {
     };
   });
 
-  const refinanceWatch = normalized.filter((item) => getRiskLevelWeight(item.refinanceRiskLevel) > 0);
-  const covenantWatch = normalized.filter((item) => getRiskLevelWeight(item.covenantPressureLevel) > 0);
+  const refinanceWatch = normalized.filter(
+    (item) => getRiskLevelWeight(item.refinanceRiskLevel) > 0
+  );
+  const covenantWatch = normalized.filter(
+    (item) => getRiskLevelWeight(item.covenantPressureLevel) > 0
+  );
   const highRiskCount = normalized.filter(
     (item) => item.refinanceRiskLevel === 'HIGH' || item.covenantPressureLevel === 'HIGH'
   ).length;
@@ -166,12 +177,19 @@ export function buildCounterpartyRiskSummary(assessments: CounterpartyRiskSource
   const normalized = [...latestAssessments.values()];
   const roles = ['SPONSOR', 'TENANT', 'OPERATOR'] as const;
   const roleSummary = roles.map((role) => {
-    const roleAssessments = normalized.filter((assessment) => assessment.counterparty.role === role);
-    const highRiskCount = roleAssessments.filter((assessment) => assessment.riskLevel === 'HIGH').length;
-    const moderateRiskCount = roleAssessments.filter((assessment) => assessment.riskLevel === 'MODERATE').length;
+    const roleAssessments = normalized.filter(
+      (assessment) => assessment.counterparty.role === role
+    );
+    const highRiskCount = roleAssessments.filter(
+      (assessment) => assessment.riskLevel === 'HIGH'
+    ).length;
+    const moderateRiskCount = roleAssessments.filter(
+      (assessment) => assessment.riskLevel === 'MODERATE'
+    ).length;
     const averageScore =
       roleAssessments.length > 0
-        ? roleAssessments.reduce((sum, assessment) => sum + assessment.score, 0) / roleAssessments.length
+        ? roleAssessments.reduce((sum, assessment) => sum + assessment.score, 0) /
+          roleAssessments.length
         : null;
 
     return {
@@ -184,7 +202,10 @@ export function buildCounterpartyRiskSummary(assessments: CounterpartyRiskSource
   });
 
   const watchlist = [...normalized]
-    .sort((left, right) => left.score - right.score || right.createdAt.getTime() - left.createdAt.getTime())
+    .sort(
+      (left, right) =>
+        left.score - right.score || right.createdAt.getTime() - left.createdAt.getTime()
+    )
     .slice(0, 5)
     .map((assessment) => ({
       assessmentId: assessment.id,
@@ -269,36 +290,37 @@ export function buildDealPipelineSummary(
     count: deals.filter((deal) => deal.stage === stage).length
   }));
 
-  const normalized = deals
-    .map((deal) => {
-      const snapshot =
-        'activityLogs' in deal && Array.isArray((deal as Record<string, unknown>).activityLogs)
-          ? buildDealExecutionSnapshot(deal as any)
-          : null;
-      const readiness = buildDealClosingReadiness(deal as any, snapshot);
-      const urgentTaskCount = deal.tasks.filter(
-        (task) =>
-          task.status !== 'DONE' &&
-          (task.priority === TaskPriority.URGENT || task.priority === TaskPriority.HIGH)
-      ).length;
-      const openRiskCount = deal.riskFlags.filter((risk) => !risk.isResolved).length;
-      const criticalRiskCount = deal.riskFlags.filter(
-        (risk) => !risk.isResolved && risk.severity === RiskSeverity.CRITICAL
-      ).length;
-      const origination = buildDealOriginationProfile(deal as any, snapshot);
+  const normalized = deals.map((deal) => {
+    const snapshot =
+      'activityLogs' in deal && Array.isArray((deal as Record<string, unknown>).activityLogs)
+        ? buildDealExecutionSnapshot(deal as any)
+        : null;
+    const readiness = buildDealClosingReadiness(deal as any, snapshot);
+    const urgentTaskCount = deal.tasks.filter(
+      (task) =>
+        task.status !== 'DONE' &&
+        (task.priority === TaskPriority.URGENT || task.priority === TaskPriority.HIGH)
+    ).length;
+    const openRiskCount = deal.riskFlags.filter((risk) => !risk.isResolved).length;
+    const criticalRiskCount = deal.riskFlags.filter(
+      (risk) => !risk.isResolved && risk.severity === RiskSeverity.CRITICAL
+    ).length;
+    const origination = buildDealOriginationProfile(deal as any, snapshot);
 
-      return {
-        ...deal,
-        urgentTaskCount,
-        openRiskCount,
-        criticalRiskCount,
-        readiness,
-        origination,
-        closeProbability: buildDealCloseProbability(deal as any, snapshot, readiness),
-        latestCounterpartyRoles: [...new Set(deal.counterparties.map((counterparty) => counterparty.role))].slice(0, 3),
-        latestValuation: deal.asset?.valuations[0] ?? null
-      };
-    })
+    return {
+      ...deal,
+      urgentTaskCount,
+      openRiskCount,
+      criticalRiskCount,
+      readiness,
+      origination,
+      closeProbability: buildDealCloseProbability(deal as any, snapshot, readiness),
+      latestCounterpartyRoles: [
+        ...new Set(deal.counterparties.map((counterparty) => counterparty.role))
+      ].slice(0, 3),
+      latestValuation: deal.asset?.valuations[0] ?? null
+    };
+  });
   const watchlist = [...normalized]
     .sort((left, right) => {
       const leftStageRank = getDealStageRank(left.stage);
@@ -308,13 +330,19 @@ export function buildDealPipelineSummary(
         left.openRiskCount * 2 +
         left.urgentTaskCount +
         (100 - left.origination.scorePct) / 15 +
-        (left.origination.exclusivityLabel === 'No live exclusivity' && leftStageRank >= getDealStageRank(DealStage.LOI) ? 2 : 0);
+        (left.origination.exclusivityLabel === 'No live exclusivity' &&
+        leftStageRank >= getDealStageRank(DealStage.LOI)
+          ? 2
+          : 0);
       const rightScore =
         right.criticalRiskCount * 5 +
         right.openRiskCount * 2 +
         right.urgentTaskCount +
         (100 - right.origination.scorePct) / 15 +
-        (right.origination.exclusivityLabel === 'No live exclusivity' && rightStageRank >= getDealStageRank(DealStage.LOI) ? 2 : 0);
+        (right.origination.exclusivityLabel === 'No live exclusivity' &&
+        rightStageRank >= getDealStageRank(DealStage.LOI)
+          ? 2
+          : 0);
       return (
         rightScore - leftScore ||
         left.origination.scorePct - right.origination.scorePct ||
@@ -330,23 +358,31 @@ export function buildDealPipelineSummary(
     urgentDeals: deals.filter((deal) =>
       deal.tasks.some(
         (task) =>
-          task.status !== 'DONE' && (task.priority === TaskPriority.URGENT || task.priority === TaskPriority.HIGH)
+          task.status !== 'DONE' &&
+          (task.priority === TaskPriority.URGENT || task.priority === TaskPriority.HIGH)
       )
     ).length,
     blockedDeals: deals.filter((deal) => deal.riskFlags.some((risk) => !risk.isResolved)).length,
     closingDeals: deals.filter((deal) => deal.stage === DealStage.CLOSING).length,
     directOrProprietaryDeals: deals.filter(
-      (deal) => deal.originationSource === 'DIRECT_OWNER' || deal.originationSource === 'PROPRIETARY'
+      (deal) =>
+        deal.originationSource === 'DIRECT_OWNER' || deal.originationSource === 'PROPRIETARY'
     ).length,
-    liveExclusivityDeals: normalized.filter((deal) => deal.origination.exclusivityLabel !== 'No live exclusivity').length,
-    lowOriginationCoverageDeals: normalized.filter((deal) => deal.origination.band === 'LOW').length,
+    liveExclusivityDeals: normalized.filter(
+      (deal) => deal.origination.exclusivityLabel !== 'No live exclusivity'
+    ).length,
+    lowOriginationCoverageDeals: normalized.filter((deal) => deal.origination.band === 'LOW')
+      .length,
     processProtectionGapDeals: normalized.filter(
-      (deal) => getDealStageRank(deal.stage) >= getDealStageRank(DealStage.LOI) && deal.origination.exclusivityLabel === 'No live exclusivity'
+      (deal) =>
+        getDealStageRank(deal.stage) >= getDealStageRank(DealStage.LOI) &&
+        deal.origination.exclusivityLabel === 'No live exclusivity'
     ).length,
     relationshipCoverageGapDeals: normalized.filter((deal) =>
       deal.origination.blockers.some(
         (blocker) =>
-          blocker.includes('No primary relationship owner') || blocker.includes('No recent counterparty touchpoint')
+          blocker.includes('No primary relationship owner') ||
+          blocker.includes('No recent counterparty touchpoint')
       )
     ).length,
     byStage,
@@ -497,21 +533,30 @@ export function buildDealReminderSummary(
     const openTasks = deal.tasks.filter((task) => task.status !== 'DONE');
     const datedOpenTasks = openTasks
       .filter((task) => task.dueDate != null)
-      .sort((left, right) => (left.dueDate?.getTime() ?? Number.MAX_SAFE_INTEGER) - (right.dueDate?.getTime() ?? Number.MAX_SAFE_INTEGER));
-    const overdueTaskCount = openTasks.filter((task) => task.dueDate && task.dueDate.getTime() < now).length;
+      .sort(
+        (left, right) =>
+          (left.dueDate?.getTime() ?? Number.MAX_SAFE_INTEGER) -
+          (right.dueDate?.getTime() ?? Number.MAX_SAFE_INTEGER)
+      );
+    const overdueTaskCount = openTasks.filter(
+      (task) => task.dueDate && task.dueDate.getTime() < now
+    ).length;
     const dueSoonTaskCount = openTasks.filter((task) => {
       if (!task.dueDate) return false;
       const due = task.dueDate.getTime();
       return due >= now && due <= now + 1000 * 60 * 60 * 24 * 3;
     }).length;
-    const requiredChecklistCount = deal.tasks.filter((task) => task.isRequired || task.checklistKey != null).length;
+    const requiredChecklistCount = deal.tasks.filter(
+      (task) => task.isRequired || task.checklistKey != null
+    ).length;
     const completedChecklistCount = deal.tasks.filter(
       (task) => (task.isRequired || task.checklistKey != null) && task.status === 'DONE'
     ).length;
     const checklistCompletionPct =
       requiredChecklistCount > 0 ? (completedChecklistCount / requiredChecklistCount) * 100 : 100;
     const nextDueAt = datedOpenTasks[0]?.dueDate ?? deal.nextActionAt ?? null;
-    const isStale = getDealMaterialUpdatedAt(deal as any).getTime() <= now - 1000 * 60 * 60 * 24 * 7;
+    const isStale =
+      getDealMaterialUpdatedAt(deal as any).getTime() <= now - 1000 * 60 * 60 * 24 * 7;
 
     const reminder =
       overdueTaskCount > 0
@@ -522,9 +567,9 @@ export function buildDealReminderSummary(
             ? 'No next action is set for this deal.'
             : isStale
               ? 'No material update logged in the last 7 days.'
-            : checklistCompletionPct < 100
-              ? 'Current stage checklist is incomplete.'
-              : 'Queue looks current.';
+              : checklistCompletionPct < 100
+                ? 'Current stage checklist is incomplete.'
+                : 'Queue looks current.';
 
     return {
       ...deal,
@@ -541,8 +586,12 @@ export function buildDealReminderSummary(
     overdueDeals: normalized.filter((deal) => deal.overdueTaskCount > 0).length,
     dueSoonDeals: normalized.filter((deal) => deal.dueSoonTaskCount > 0).length,
     staleDeals: normalized.filter((deal) => deal.isStale && deal.statusLabel !== 'ARCHIVED').length,
-    missingNextActionDeals: normalized.filter((deal) => !deal.nextAction && deal.statusLabel !== 'ARCHIVED').length,
-    archivedDeals: normalized.filter((deal) => deal.statusLabel === 'ARCHIVED' || deal.archivedAt != null).length,
+    missingNextActionDeals: normalized.filter(
+      (deal) => !deal.nextAction && deal.statusLabel !== 'ARCHIVED'
+    ).length,
+    archivedDeals: normalized.filter(
+      (deal) => deal.statusLabel === 'ARCHIVED' || deal.archivedAt != null
+    ).length,
     reminders: normalized
       .filter(
         (deal) =>
@@ -682,7 +731,8 @@ function buildFirmActionCenter({
             key: 'review-queue',
             area: 'REVIEW',
             title: `${reviewCount} normalized evidence item(s) are still pending review`,
-            detail: 'Approve or reject pending technical, legal, and lease evidence before downstream valuation and committee use.',
+            detail:
+              'Approve or reject pending technical, legal, and lease evidence before downstream valuation and committee use.',
             href: '/admin/review',
             priority: 'critical' as const
           }
@@ -694,7 +744,8 @@ function buildFirmActionCenter({
             key: 'deal-reminders',
             area: 'DEALS',
             title: `${dealReminderCount} deal(s) need an immediate execution action`,
-            detail: 'Clear missing next actions, overdue workstreams, and stale DD items before the close path slips.',
+            detail:
+              'Clear missing next actions, overdue workstreams, and stale DD items before the close path slips.',
             href: '/admin/deals',
             priority: 'critical' as const
           }
@@ -706,7 +757,8 @@ function buildFirmActionCenter({
             key: 'deal-origination-coverage',
             area: 'ORIGINATION',
             title: `${lowOriginationCoverageDeals} pursuit(s) still have thin origination coverage`,
-            detail: 'Tighten source tagging, relationship ownership, and market touchpoints before the process enters deeper bid or IC work.',
+            detail:
+              'Tighten source tagging, relationship ownership, and market touchpoints before the process enters deeper bid or IC work.',
             href: '/admin/deals',
             priority: 'high' as const
           }
@@ -718,7 +770,8 @@ function buildFirmActionCenter({
             key: 'deal-exclusivity-gap',
             area: 'ORIGINATION',
             title: `${processProtectionGapDeals} LOI-or-deeper pursuit(s) have no live exclusivity`,
-            detail: 'Push process protection or re-underwrite competitive risk before diligence and committee time compounds into a weak process position.',
+            detail:
+              'Push process protection or re-underwrite competitive risk before diligence and committee time compounds into a weak process position.',
             href: '/admin/deals',
             priority: 'high' as const
           }
@@ -730,7 +783,8 @@ function buildFirmActionCenter({
             key: 'deal-coverage-gap',
             area: 'ORIGINATION',
             title: `${relationshipCoverageGapDeals} pursuit(s) need relationship ownership or fresh touchpoints`,
-            detail: 'Assign a primary counterparty owner and log current contact activity so pursuit quality is not dependent on ad hoc notes.',
+            detail:
+              'Assign a primary counterparty owner and log current contact activity so pursuit quality is not dependent on ad hoc notes.',
             href: '/admin/deals',
             priority: 'medium' as const
           }
@@ -742,7 +796,8 @@ function buildFirmActionCenter({
             key: 'research-ops',
             area: 'RESEARCH',
             title: `${staleSourceCount} source-system issue(s) need research operations follow-up`,
-            detail: 'Resolve stale or failed source runs before the shared research fabric drifts out of date.',
+            detail:
+              'Resolve stale or failed source runs before the shared research fabric drifts out of date.',
             href: '/admin/sources',
             priority: 'high' as const
           }
@@ -754,7 +809,8 @@ function buildFirmActionCenter({
             key: 'portfolio-watch',
             area: 'PORTFOLIO',
             title: `${portfolioWatchCount} held-asset watch item(s) are active`,
-            detail: 'Refinance, covenant, rollover, or capex exceptions are surfacing in the hold set.',
+            detail:
+              'Refinance, covenant, rollover, or capex exceptions are surfacing in the hold set.',
             href: '/admin/portfolio',
             priority: 'high' as const
           }
@@ -766,7 +822,8 @@ function buildFirmActionCenter({
             key: 'portfolio-initiatives',
             area: 'PORTFOLIO',
             title: `${initiativeBacklog} asset-management initiative(s) remain open across the hold set`,
-            detail: 'Advance blocked leasing, refinance, capex, and disposition initiatives before KPI drift leaks into committee and LP reporting.',
+            detail:
+              'Advance blocked leasing, refinance, capex, and disposition initiatives before KPI drift leaks into committee and LP reporting.',
             href: '/admin/portfolio',
             priority: 'high' as const
           }
@@ -778,7 +835,8 @@ function buildFirmActionCenter({
             key: 'fund-reporting',
             area: 'FUNDS',
             title: `${fundReportingBacklog} controlled investor report item(s), ${readyReportCount} release-ready package(s), and ${capitalCallCount} near-term capital call(s) are open`,
-            detail: 'Clear release workflow items and call logistics before LP communication windows tighten.',
+            detail:
+              'Clear release workflow items and call logistics before LP communication windows tighten.',
             href: '/admin/funds',
             priority: 'medium' as const
           }
@@ -816,8 +874,7 @@ export async function getAdminData(db: PrismaClient = prisma) {
     fundReportingSummary,
     assetManagementInitiativeCount,
     committeeWorkspace
-  ] =
-    await Promise.all([
+  ] = await Promise.all([
     getDashboardSummary(db),
     db.asset.findMany({
       select: {
@@ -1191,7 +1248,10 @@ export async function getAdminData(db: PrismaClient = prisma) {
           asset._count.rentComps > 0 ||
           asset._count.marketIndicatorSeries > 0
       ).length,
-      valuationHistoryCount: forecastAssetFeatures.reduce((sum, asset) => sum + asset._count.valuations, 0),
+      valuationHistoryCount: forecastAssetFeatures.reduce(
+        (sum, asset) => sum + asset._count.valuations,
+        0
+      ),
       documentCount,
       financialStatementCount
     },
@@ -1224,11 +1284,19 @@ export async function getAdminData(db: PrismaClient = prisma) {
     outcomes: realizedOutcomes
   });
   const fundReportingBacklog = fundReportingSummary.reduce(
-    (total, fund) => total + fund.investorReports.filter((report) => report.releaseStatus !== InvestorReportReleaseStatus.RELEASED).length,
+    (total, fund) =>
+      total +
+      fund.investorReports.filter(
+        (report) => report.releaseStatus !== InvestorReportReleaseStatus.RELEASED
+      ).length,
     0
   );
   const readyReportCount = fundReportingSummary.reduce(
-    (total, fund) => total + fund.investorReports.filter((report) => report.releaseStatus === InvestorReportReleaseStatus.READY).length,
+    (total, fund) =>
+      total +
+      fund.investorReports.filter(
+        (report) => report.releaseStatus === InvestorReportReleaseStatus.READY
+      ).length,
     0
   );
   const capitalCallCount = fundReportingSummary.reduce(
@@ -1323,8 +1391,7 @@ export async function getAdminData(db: PrismaClient = prisma) {
     counterpartyRisk: buildCounterpartyRiskSummary(creditAssessments),
     quantSignals,
     quantAllocation,
-    quantAssetClassAllocation: buildQuantAssetClassAllocationView(quantSignals)
-      ,
+    quantAssetClassAllocation: buildQuantAssetClassAllocationView(quantSignals),
     macroMonitor: buildMacroMonitor(macroFactors, quantSignals, quantAllocation),
     forecastModelStack,
     macroBacktest,

@@ -12,7 +12,9 @@ export function getAdminActorFromHeaders(headers: HeaderCarrier): AuthorizedAdmi
   const role = headers.get('x-admin-role')?.trim() as AdminAccessRole | undefined;
   const sessionVersionValue = headers.get('x-admin-session-version')?.trim();
   const parsedSessionVersion =
-    sessionVersionValue && Number.isFinite(Number(sessionVersionValue)) ? Number(sessionVersionValue) : null;
+    sessionVersionValue && Number.isFinite(Number(sessionVersionValue))
+      ? Number(sessionVersionValue)
+      : null;
 
   if (!identifier || !role) {
     return null;
@@ -21,7 +23,10 @@ export function getAdminActorFromHeaders(headers: HeaderCarrier): AuthorizedAdmi
   return {
     identifier,
     role,
-    provider: (headers.get('x-admin-auth-provider')?.trim() as AuthorizedAdminActor['provider'] | undefined) ?? undefined,
+    provider:
+      (headers.get('x-admin-auth-provider')?.trim() as
+        | AuthorizedAdminActor['provider']
+        | undefined) ?? undefined,
     subject: headers.get('x-admin-subject')?.trim() || null,
     email: headers.get('x-admin-email')?.trim() || null,
     userId: headers.get('x-admin-user-id')?.trim() || null,
@@ -45,22 +50,22 @@ type AdminSeatLookupDb = {
       where: {
         OR: Array<{ email: string } | { name: string }>;
       };
-        select: {
-          id: true;
-          isActive: true;
-          sessionVersion?: true;
-        };
-      }): Promise<{ id: string; isActive: boolean; sessionVersion?: number } | null>;
+      select: {
+        id: true;
+        isActive: true;
+        sessionVersion?: true;
+      };
+    }): Promise<{ id: string; isActive: boolean; sessionVersion?: number } | null>;
     findUnique(args: {
       where: {
         id: string;
       };
-        select: {
-          id: true;
-          isActive: true;
-          sessionVersion?: true;
-        };
-      }): Promise<{ id: string; isActive: boolean; sessionVersion?: number } | null>;
+      select: {
+        id: true;
+        isActive: true;
+        sessionVersion?: true;
+      };
+    }): Promise<{ id: string; isActive: boolean; sessionVersion?: number } | null>;
   };
   adminIdentityBinding?: {
     findUnique(args: {

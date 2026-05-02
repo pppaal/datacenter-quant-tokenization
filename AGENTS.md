@@ -18,7 +18,9 @@ npm run e2e
 
 ## Guardrails
 
-- Do not touch legacy apps under `legacy/`.
+- The previous demo apps have been removed from the default branch and
+  archived on the `legacy-archive-2026-04-28` git tag. Do not restore
+  them into `apps/` or import from the tagged snapshot at runtime.
 - Preserve the institutional Korean real-estate investment-firm positioning.
 - Keep the blockchain design registry-only: anchor ids, hashes, and packet metadata only.
 - Do not add retail token sale flows, wallet onboarding, consumer trading UX, or investment advice.

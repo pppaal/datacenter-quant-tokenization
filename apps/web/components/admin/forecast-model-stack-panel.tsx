@@ -26,16 +26,29 @@ export function ForecastModelStackPanel({ stack }: { stack: ForecastModelStack }
           <h2 className="mt-2 text-2xl font-semibold text-white">Beyond Monte Carlo</h2>
         </div>
         <Badge tone={stack.summary.liveModels > 0 ? 'good' : 'neutral'}>
-          {formatNumber(stack.summary.liveModels, 0)} live / {formatNumber(stack.summary.buildableModels, 0)} building
+          {formatNumber(stack.summary.liveModels, 0)} live /{' '}
+          {formatNumber(stack.summary.buildableModels, 0)} building
         </Badge>
       </div>
 
       <div className="mt-5 grid gap-4 md:grid-cols-4">
         {[
           ['Markets', formatNumber(stack.features.marketCount, 0), 'Active macro markets'],
-          ['Valuation paths', formatNumber(stack.features.valuationHistoryCount, 0), 'Stored underwriting runs'],
-          ['Macro obs', formatNumber(stack.features.macroObservationCount, 0), 'Persisted factor rows'],
-          ['Financials', formatNumber(stack.features.financialStatementCount, 0), 'Counterparty statement histories']
+          [
+            'Valuation paths',
+            formatNumber(stack.features.valuationHistoryCount, 0),
+            'Stored underwriting runs'
+          ],
+          [
+            'Macro obs',
+            formatNumber(stack.features.macroObservationCount, 0),
+            'Persisted factor rows'
+          ],
+          [
+            'Financials',
+            formatNumber(stack.features.financialStatementCount, 0),
+            'Counterparty statement histories'
+          ]
         ].map(([label, value, subline]) => (
           <div key={label} className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
             <div className="fine-print">{label}</div>
@@ -47,7 +60,10 @@ export function ForecastModelStackPanel({ stack }: { stack: ForecastModelStack }
 
       <div className="mt-5 grid gap-4 xl:grid-cols-2">
         {stack.models.map((model) => (
-          <div key={model.key} className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+          <div
+            key={model.key}
+            className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+          >
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <div className="text-lg font-semibold text-white">{model.label}</div>
@@ -86,7 +102,9 @@ export function ForecastModelStackPanel({ stack }: { stack: ForecastModelStack }
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="fine-print">Validation</div>
                 <div className="text-xs uppercase tracking-[0.18em] text-slate-500">
-                  {model.validationScore === null ? 'not yet validated' : `${formatNumber(model.validationScore, 0)} / 100`}
+                  {model.validationScore === null
+                    ? 'not yet validated'
+                    : `${formatNumber(model.validationScore, 0)} / 100`}
                 </div>
               </div>
               <p className="mt-3 text-sm leading-7 text-slate-300">{model.rankingNote}</p>

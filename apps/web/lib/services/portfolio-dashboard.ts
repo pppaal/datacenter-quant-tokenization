@@ -41,7 +41,10 @@ function classifyOccupancyRisk(occupancyPct: number | null): 'LOW' | 'MEDIUM' | 
   return 'HIGH';
 }
 
-function classifyMarketRisk(capRatePct: number | null, vacancyPct: number | null): 'LOW' | 'MEDIUM' | 'HIGH' {
+function classifyMarketRisk(
+  capRatePct: number | null,
+  vacancyPct: number | null
+): 'LOW' | 'MEDIUM' | 'HIGH' {
   const capRisk = capRatePct != null && capRatePct > 7 ? 1 : 0;
   const vacRisk = vacancyPct != null && vacancyPct > 12 ? 1 : 0;
   const score = capRisk + vacRisk;
@@ -60,7 +63,8 @@ function classifyOverallHealth(
     (occupancyRisk === 'HIGH' ? 2 : occupancyRisk === 'MEDIUM' ? 1 : 0) +
     (marketRisk === 'HIGH' ? 2 : marketRisk === 'MEDIUM' ? 1 : 0);
   if (riskScore >= 3) return 'danger';
-  if (riskScore >= 2 || (noiYieldPct != null && noiYieldPct < targetNoiYieldPct * 0.8)) return 'warn';
+  if (riskScore >= 2 || (noiYieldPct != null && noiYieldPct < targetNoiYieldPct * 0.8))
+    return 'warn';
   return 'good';
 }
 
@@ -128,8 +132,9 @@ export async function buildPortfolioDashboardData(
 
     const occupancyPct = toNumber(latestKpi?.occupancyPct);
     const noiKrw = toNumber(latestKpi?.noiKrw);
-    const holdValue = toNumber(pa.currentHoldValueKrw) ?? toNumber(latestKpi?.navKrw) ?? purchasePrice;
-    const noiYieldPct = noiKrw != null && holdValue > 0 ? (noiKrw * 12 / holdValue) * 100 : null;
+    const holdValue =
+      toNumber(pa.currentHoldValueKrw) ?? toNumber(latestKpi?.navKrw) ?? purchasePrice;
+    const noiYieldPct = noiKrw != null && holdValue > 0 ? ((noiKrw * 12) / holdValue) * 100 : null;
 
     if (occupancyPct != null) {
       occupancySum += occupancyPct;
@@ -162,7 +167,12 @@ export async function buildPortfolioDashboardData(
 
     const occupancyRisk = classifyOccupancyRisk(occupancyPct);
     const marketRisk = classifyMarketRisk(capRatePct, vacancyPct);
-    const overallHealth = classifyOverallHealth(occupancyRisk, marketRisk, noiYieldPct, defaultTargetNoiYieldPct);
+    const overallHealth = classifyOverallHealth(
+      occupancyRisk,
+      marketRisk,
+      noiYieldPct,
+      defaultTargetNoiYieldPct
+    );
 
     if (overallHealth === 'good') goodCount += 1;
     else if (overallHealth === 'warn') warnCount += 1;

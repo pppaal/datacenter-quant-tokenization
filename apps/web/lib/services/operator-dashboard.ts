@@ -176,7 +176,8 @@ export async function buildOperatorDashboard(
     }
 
     const noiKrw = toNumber(latestKpi.noiKrw);
-    const holdValue = toNumber(pa.currentHoldValueKrw) || toNumber(latestKpi.navKrw) || purchasePrice;
+    const holdValue =
+      toNumber(pa.currentHoldValueKrw) || toNumber(latestKpi.navKrw) || purchasePrice;
     if (latestKpi.noiKrw != null && holdValue > 0) {
       const noiYieldPct = ((noiKrw * 12) / holdValue) * 100;
       noiYieldSum += noiYieldPct;

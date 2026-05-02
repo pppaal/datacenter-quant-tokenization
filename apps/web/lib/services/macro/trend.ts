@@ -188,7 +188,11 @@ export function detectTrend(
     direction: classifyDirection(momentum, acceleration),
     momentum: Number(momentum.toFixed(4)),
     acceleration: Number(acceleration.toFixed(4)),
-    movingAverages: { 3: ma3 != null ? Number(ma3.toFixed(4)) : null, 6: ma6 != null ? Number(ma6.toFixed(4)) : null, 12: ma12 != null ? Number(ma12.toFixed(4)) : null },
+    movingAverages: {
+      3: ma3 != null ? Number(ma3.toFixed(4)) : null,
+      6: ma6 != null ? Number(ma6.toFixed(4)) : null,
+      12: ma12 != null ? Number(ma12.toFixed(4)) : null
+    },
     anomaly,
     observationCount: values.length
   };
@@ -224,9 +228,7 @@ export type FactorTrendMetadata = {
   movingAvg12: number | null;
 };
 
-export function buildFactorTrendMap(
-  series: MacroSeries[]
-): Record<string, FactorTrendMetadata> {
+export function buildFactorTrendMap(series: MacroSeries[]): Record<string, FactorTrendMetadata> {
   const allTrends = buildFullTrendAnalysis(series);
   const trendByKey = Object.fromEntries(allTrends.map((t) => [t.seriesKey, t]));
   const result: Record<string, FactorTrendMetadata> = {};

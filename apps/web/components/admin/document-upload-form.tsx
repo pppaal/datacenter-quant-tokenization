@@ -75,7 +75,11 @@ export function DocumentUploadForm({ assetId, dealId }: { assetId?: string; deal
         ) : null}
         <label className="space-y-2">
           <span className="fine-print">Title</span>
-          <Input placeholder="Power approval memo" data-testid="document-title" {...form.register('title')} />
+          <Input
+            placeholder="Power approval memo"
+            data-testid="document-title"
+            {...form.register('title')}
+          />
         </label>
         <label className="space-y-2">
           <span className="fine-print">Document Type</span>
@@ -108,14 +112,19 @@ export function DocumentUploadForm({ assetId, dealId }: { assetId?: string; deal
 
       <div className="flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-4">
         <p className="max-w-xl text-sm text-slate-400">
-          Uploads are stored through the Next.js backend and immediately linked into document history, summaries, and future memo evidence.
+          Uploads are stored through the Next.js backend and immediately linked into document
+          history, summaries, and future memo evidence.
         </p>
         <Button type="submit" disabled={submitting} data-testid="document-upload-submit">
           {submitting ? 'Uploading...' : 'Upload Document'}
         </Button>
       </div>
       {success ? (
-        <div className="text-sm text-emerald-300" data-testid="document-upload-feedback" role="status">
+        <div
+          className="text-sm text-emerald-300"
+          data-testid="document-upload-feedback"
+          role="status"
+        >
           {success}
         </div>
       ) : null}

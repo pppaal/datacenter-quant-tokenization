@@ -41,7 +41,10 @@ type JusoResponse<T> = {
 };
 
 function sanitizeKeyword(value: string) {
-  return value.replace(/[%=><]/g, ' ').replace(/\s+/g, ' ').trim();
+  return value
+    .replace(/[%=><]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function parseKoreaLongitude(value: unknown) {
@@ -57,7 +60,9 @@ function parseKoreaLatitude(value: unknown) {
 export function createGeospatialAdapter(store: SourceCacheStore, fetcher?: Fetcher) {
   return {
     async fetch(input: Input): Promise<SourceEnvelope<GeospatialData>> {
-      const sourceSystem = process.env.KOREA_GEOSPATIAL_API_URL ? 'korea-geospatial' : 'juso-address';
+      const sourceSystem = process.env.KOREA_GEOSPATIAL_API_URL
+        ? 'korea-geospatial'
+        : 'juso-address';
       const cacheKey = input.assetCode;
       const now = new Date();
       const override = await store.getOverride<GeospatialData>(sourceSystem, cacheKey);
@@ -104,8 +109,9 @@ export function createGeospatialAdapter(store: SourceCacheStore, fetcher?: Fetch
       }
 
       const fallback =
-        FALLBACK_SOURCE_DATA.geospatial[input.assetCode as keyof typeof FALLBACK_SOURCE_DATA.geospatial] ??
-        DEFAULT_FALLBACK_SOURCE_DATA.geospatial;
+        FALLBACK_SOURCE_DATA.geospatial[
+          input.assetCode as keyof typeof FALLBACK_SOURCE_DATA.geospatial
+        ] ?? DEFAULT_FALLBACK_SOURCE_DATA.geospatial;
       const ttlHours = Number(process.env.SOURCE_CACHE_TTL_HOURS ?? 24);
 
       try {
@@ -141,12 +147,16 @@ export function createGeospatialAdapter(store: SourceCacheStore, fetcher?: Fetch
           if (!confmKey) throw new Error('missing_juso_key');
 
           const searchUrl = new URL(
-            process.env.KOREA_JUSO_SEARCH_API_URL || 'https://business.juso.go.kr/addrlink/addrLinkApi.do'
+            process.env.KOREA_JUSO_SEARCH_API_URL ||
+              'https://business.juso.go.kr/addrlink/addrLinkApi.do'
           );
           searchUrl.searchParams.set('confmKey', confmKey);
           searchUrl.searchParams.set('currentPage', '1');
           searchUrl.searchParams.set('countPerPage', '10');
-          searchUrl.searchParams.set('keyword', sanitizeKeyword(`${input.address} ${input.city} ${input.province}`));
+          searchUrl.searchParams.set(
+            'keyword',
+            sanitizeKeyword(`${input.address} ${input.city} ${input.province}`)
+          );
           searchUrl.searchParams.set('resultType', 'json');
 
           const searchPayload = (await fetchJsonWithRetry(
@@ -157,7 +167,9 @@ export function createGeospatialAdapter(store: SourceCacheStore, fetcher?: Fetch
 
           const searchCommon = searchPayload.results?.common;
           if (searchCommon?.errorCode && searchCommon.errorCode !== '0') {
-            throw new Error(`juso_search:${searchCommon.errorCode}:${searchCommon.errorMessage || 'unknown'}`);
+            throw new Error(
+              `juso_search:${searchCommon.errorCode}:${searchCommon.errorMessage || 'unknown'}`
+            );
           }
 
           const first = searchPayload.results?.juso?.[0];
@@ -166,7 +178,8 @@ export function createGeospatialAdapter(store: SourceCacheStore, fetcher?: Fetch
           }
 
           const coordUrl = new URL(
-            process.env.KOREA_JUSO_COORD_API_URL || 'https://business.juso.go.kr/addrlink/addrCoordApi.do'
+            process.env.KOREA_JUSO_COORD_API_URL ||
+              'https://business.juso.go.kr/addrlink/addrCoordApi.do'
           );
           coordUrl.searchParams.set('confmKey', confmKey);
           coordUrl.searchParams.set('admCd', first.admCd);
@@ -184,7 +197,9 @@ export function createGeospatialAdapter(store: SourceCacheStore, fetcher?: Fetch
 
           const coordCommon = coordPayload.results?.common;
           if (coordCommon?.errorCode && coordCommon.errorCode !== '0') {
-            throw new Error(`juso_coord:${coordCommon.errorCode}:${coordCommon.errorMessage || 'unknown'}`);
+            throw new Error(
+              `juso_coord:${coordCommon.errorCode}:${coordCommon.errorMessage || 'unknown'}`
+            );
           }
 
           const coord = coordPayload.results?.juso?.[0];

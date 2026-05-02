@@ -33,12 +33,28 @@ async function OperatorDashboardSection() {
 }
 
 const SECONDARY_NAV_LINKS: Array<{ href: string; label: string; description: string }> = [
-  { href: '/admin/deals', label: 'Deal Execution', description: 'Pipeline, diligence, and closing queues' },
-  { href: '/admin/ic', label: 'Investment Committee', description: 'Packets, meetings, and decisions' },
-  { href: '/admin/portfolio', label: 'Portfolio OS', description: 'Hold performance and watchlists' },
+  {
+    href: '/admin/deals',
+    label: 'Deal Execution',
+    description: 'Pipeline, diligence, and closing queues'
+  },
+  {
+    href: '/admin/ic',
+    label: 'Investment Committee',
+    description: 'Packets, meetings, and decisions'
+  },
+  {
+    href: '/admin/portfolio',
+    label: 'Portfolio OS',
+    description: 'Hold performance and watchlists'
+  },
   { href: '/admin/research', label: 'Research', description: 'Snapshots and coverage governance' },
   { href: '/admin/funds', label: 'Capital', description: 'Commitments, calls, and distributions' },
-  { href: '/admin/review', label: 'Review Queue', description: 'Evidence approvals before committee' }
+  {
+    href: '/admin/review',
+    label: 'Review Queue',
+    description: 'Evidence approvals before committee'
+  }
 ];
 
 export default async function AdminHomePage() {
@@ -52,8 +68,8 @@ export default async function AdminHomePage() {
           Unified operator dashboard for the real-estate investment OS.
         </h1>
         <p className="mt-4 max-w-4xl text-base leading-8 text-slate-200">
-          Pipeline, portfolio, capital, and governance queues in one surface. The legacy ops view remains
-          available below for deep monitoring across macro, valuation, and risk panels.
+          Pipeline, portfolio, capital, and governance queues in one surface. The legacy ops view
+          remains available below for deep monitoring across macro, valuation, and risk panels.
         </p>
         {actor ? (
           <div className="mt-6 flex flex-wrap items-center gap-3">
@@ -120,11 +136,12 @@ async function AdminOverviewLegacy() {
     forecastRealizedBacktest,
     forecastEnsemblePolicy,
     realizedOutcomeSummary
-  } =
-    await getAdminData();
+  } = await getAdminData();
   const fxRateMap = await getFxRateMap([
     ...assets.map((asset) => resolveDisplayCurrency(asset.address?.country ?? asset.market)),
-    ...valuations.map((run) => resolveDisplayCurrency(run.asset.address?.country ?? run.asset.market))
+    ...valuations.map((run) =>
+      resolveDisplayCurrency(run.asset.address?.country ?? run.asset.market)
+    )
   ]);
   const readyCount = readiness.filter((item) => item.readinessStatus === 'READY').length;
   const hasSourceAlert =
@@ -132,7 +149,8 @@ async function AdminOverviewLegacy() {
     sourceHealth.sourceFreshness.failed > 0 ||
     sourceHealth.assetFreshness.staleCandidates > 0;
   const hasPortfolioRiskAlert = portfolioRisk.highRiskCount > 0;
-  const hasCommitteeBacklog = committee.dashboard.actionItems.length > 0 || fundReportingBacklog > 0;
+  const hasCommitteeBacklog =
+    committee.dashboard.actionItems.length > 0 || fundReportingBacklog > 0;
   const dealExecutionAttentionCount =
     dealReminders.reminders.length +
     dealPipeline.lowOriginationCoverageDeals +
@@ -153,8 +171,8 @@ async function AdminOverviewLegacy() {
             Operator surface for a Korean AI-native real-estate investment firm.
           </h2>
           <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-400">
-            The console connects research, review-gated underwriting, deal execution, portfolio operations, and capital
-            reporting in one offchain operating environment.
+            The console connects research, review-gated underwriting, deal execution, portfolio
+            operations, and capital reporting in one offchain operating environment.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Link href="/admin/assets/new">
@@ -169,7 +187,11 @@ async function AdminOverviewLegacy() {
         <div className="grid gap-4 md:grid-cols-2">
           {[
             ['Tracked assets', formatNumber(summary.assetCount, 0), 'Live underwriting cases'],
-            ['Under review', formatNumber(summary.underReviewCount, 0), 'Currently enriched or modeled'],
+            [
+              'Under review',
+              formatNumber(summary.underReviewCount, 0),
+              'Currently enriched or modeled'
+            ],
             ['Documents', formatNumber(summary.documentCount, 0), 'Tracked files and versions'],
             ['Review ready', formatNumber(readyCount, 0), 'Projects fit for committee packaging']
           ].map(([label, value, subline]) => (
@@ -187,9 +209,12 @@ async function AdminOverviewLegacy() {
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <div className="eyebrow">Action Center</div>
-              <h2 className="mt-2 text-2xl font-semibold text-white">Today&apos;s operator priorities</h2>
+              <h2 className="mt-2 text-2xl font-semibold text-white">
+                Today&apos;s operator priorities
+              </h2>
               <p className="mt-2 text-sm text-slate-400">
-                Start from the controlled queues first, then move into broader quant and market monitoring.
+                Start from the controlled queues first, then move into broader quant and market
+                monitoring.
               </p>
             </div>
             <Badge tone={actionCenterNeedsAttention ? 'warn' : 'good'}>
@@ -197,31 +222,56 @@ async function AdminOverviewLegacy() {
             </Badge>
           </div>
           <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <Link href="/admin/review" className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+            <Link
+              href="/admin/review"
+              className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+            >
               <div className="fine-print">Review Queue</div>
-              <div className="mt-3 text-3xl font-semibold text-white">{formatNumber(summary.underReviewCount, 0)}</div>
-              <p className="mt-2 text-sm text-slate-400">Pending normalized evidence waiting for analyst approval.</p>
+              <div className="mt-3 text-3xl font-semibold text-white">
+                {formatNumber(summary.underReviewCount, 0)}
+              </div>
+              <p className="mt-2 text-sm text-slate-400">
+                Pending normalized evidence waiting for analyst approval.
+              </p>
             </Link>
-            <Link href="/admin/deals" className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+            <Link
+              href="/admin/deals"
+              className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+            >
               <div className="fine-print">Deal Execution</div>
-              <div className="mt-3 text-3xl font-semibold text-white">{formatNumber(dealExecutionAttentionCount, 0)}</div>
+              <div className="mt-3 text-3xl font-semibold text-white">
+                {formatNumber(dealExecutionAttentionCount, 0)}
+              </div>
               <p className="mt-2 text-sm text-slate-400">
                 Stale execution, thin sourcing coverage, and no-exclusivity pursuits to clear first.
               </p>
             </Link>
-            <Link href="/admin/sources" className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+            <Link
+              href="/admin/sources"
+              className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+            >
               <div className="fine-print">Research Ops</div>
               <div className="mt-3 text-3xl font-semibold text-white">
-                {formatNumber(sourceHealth.sourceFreshness.stale + sourceHealth.sourceFreshness.failed, 0)}
+                {formatNumber(
+                  sourceHealth.sourceFreshness.stale + sourceHealth.sourceFreshness.failed,
+                  0
+                )}
               </div>
-              <p className="mt-2 text-sm text-slate-400">Source systems that are stale or failed and may need intervention.</p>
+              <p className="mt-2 text-sm text-slate-400">
+                Source systems that are stale or failed and may need intervention.
+              </p>
             </Link>
-            <Link href="/admin/security" className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+            <Link
+              href="/admin/security"
+              className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+            >
               <div className="fine-print">Security Controls</div>
               <div className="mt-3 text-3xl font-semibold text-white">
                 {formatNumber((hasSourceAlert ? 1 : 0) + (hasPortfolioRiskAlert ? 1 : 0), 0)}
               </div>
-              <p className="mt-2 text-sm text-slate-400">Seat, identity, and ops-alert controls for controlled production use.</p>
+              <p className="mt-2 text-sm text-slate-400">
+                Seat, identity, and ops-alert controls for controlled production use.
+              </p>
             </Link>
           </div>
           <div className="mt-5 grid gap-3">
@@ -263,9 +313,12 @@ async function AdminOverviewLegacy() {
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <div className="eyebrow">IC Governance</div>
-              <h2 className="mt-2 text-2xl font-semibold text-white">Committee queue and release control</h2>
+              <h2 className="mt-2 text-2xl font-semibold text-white">
+                Committee queue and release control
+              </h2>
               <p className="mt-2 text-sm text-slate-400">
-                Move from review-ready underwriting into scheduled packets, locked committee materials, and released decision records.
+                Move from review-ready underwriting into scheduled packets, locked committee
+                materials, and released decision records.
               </p>
             </div>
             <Link href="/admin/ic">
@@ -275,15 +328,21 @@ async function AdminOverviewLegacy() {
           <div className="mt-5 grid gap-4 md:grid-cols-4">
             <div className="metric-card">
               <div className="fine-print">Scheduled Meetings</div>
-              <div className="mt-3 text-4xl font-semibold text-white">{formatNumber(committee.dashboard.summary.scheduledCount, 0)}</div>
+              <div className="mt-3 text-4xl font-semibold text-white">
+                {formatNumber(committee.dashboard.summary.scheduledCount, 0)}
+              </div>
             </div>
             <div className="metric-card">
               <div className="fine-print">Active Packets</div>
-              <div className="mt-3 text-4xl font-semibold text-white">{formatNumber(committee.dashboard.summary.activePacketCount, 0)}</div>
+              <div className="mt-3 text-4xl font-semibold text-white">
+                {formatNumber(committee.dashboard.summary.activePacketCount, 0)}
+              </div>
             </div>
             <div className="metric-card">
               <div className="fine-print">Locked Packets</div>
-              <div className="mt-3 text-4xl font-semibold text-white">{formatNumber(committee.dashboard.summary.lockedCount, 0)}</div>
+              <div className="mt-3 text-4xl font-semibold text-white">
+                {formatNumber(committee.dashboard.summary.lockedCount, 0)}
+              </div>
             </div>
             <div className="metric-card">
               <div className="fine-print">Fund Reporting Backlog</div>
@@ -347,7 +406,10 @@ async function AdminOverviewLegacy() {
           <div className="mt-5 grid gap-4">
             {quantSignals.length > 0 ? (
               quantSignals.map((market) => (
-                <div key={market.market} className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+                <div
+                  key={market.market}
+                  className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+                >
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <div className="text-lg font-semibold text-white">{market.market}</div>
@@ -358,7 +420,10 @@ async function AdminOverviewLegacy() {
                   </div>
                   <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                     {market.signals.map((signal) => (
-                      <div key={signal.key} className="rounded-[20px] border border-white/10 bg-slate-950/35 p-4">
+                      <div
+                        key={signal.key}
+                        className="rounded-[20px] border border-white/10 bg-slate-950/35 p-4"
+                      >
                         <div className="flex items-center justify-between gap-3">
                           <div className="fine-print">{signal.label}</div>
                           <Badge
@@ -377,7 +442,9 @@ async function AdminOverviewLegacy() {
                             {signal.stance.toLowerCase().replaceAll('_', ' ')}
                           </Badge>
                         </div>
-                        <div className="mt-3 text-2xl font-semibold text-white">{formatNumber(signal.score, 2)}</div>
+                        <div className="mt-3 text-2xl font-semibold text-white">
+                          {formatNumber(signal.score, 2)}
+                        </div>
                         <p className="mt-2 text-sm leading-7 text-slate-300">{signal.commentary}</p>
                         <div className="mt-3 space-y-1 text-xs text-slate-500">
                           {signal.drivers.map((driver) => (
@@ -391,7 +458,8 @@ async function AdminOverviewLegacy() {
               ))
             ) : (
               <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5 text-sm text-slate-400">
-                No persisted macro factors yet. Run source enrichment to populate the common macro core.
+                No persisted macro factors yet. Run source enrichment to populate the common macro
+                core.
               </div>
             )}
           </div>
@@ -403,14 +471,21 @@ async function AdminOverviewLegacy() {
               <div className="eyebrow">Allocation View</div>
               <h2 className="mt-2 text-2xl font-semibold text-white">Macro-driven market stance</h2>
             </div>
-            <Badge tone={quantAllocation.some((item) => item.stance !== 'NEUTRAL') ? 'good' : 'neutral'}>
-              {quantAllocation.some((item) => item.stance !== 'NEUTRAL') ? 'Active views' : 'Benchmark'}
+            <Badge
+              tone={quantAllocation.some((item) => item.stance !== 'NEUTRAL') ? 'good' : 'neutral'}
+            >
+              {quantAllocation.some((item) => item.stance !== 'NEUTRAL')
+                ? 'Active views'
+                : 'Benchmark'}
             </Badge>
           </div>
           <div className="mt-5 grid gap-4">
             {quantAllocation.length > 0 ? (
               quantAllocation.map((item) => (
-                <div key={item.market} className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+                <div
+                  key={item.market}
+                  className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+                >
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <div className="text-lg font-semibold text-white">{item.market}</div>
@@ -433,7 +508,9 @@ async function AdminOverviewLegacy() {
                   <div className="mt-4 grid gap-3 md:grid-cols-[160px_1fr]">
                     <div className="rounded-[20px] border border-white/10 bg-slate-950/35 p-4">
                       <div className="fine-print">Allocation Score</div>
-                      <div className="mt-3 text-3xl font-semibold text-white">{formatNumber(item.score, 2)}</div>
+                      <div className="mt-3 text-3xl font-semibold text-white">
+                        {formatNumber(item.score, 2)}
+                      </div>
                     </div>
                     <div className="rounded-[20px] border border-white/10 bg-slate-950/35 p-4">
                       <p className="text-sm leading-7 text-slate-300">{item.commentary}</p>
@@ -460,14 +537,25 @@ async function AdminOverviewLegacy() {
               <div className="eyebrow">Asset Class Allocation</div>
               <h2 className="mt-2 text-2xl font-semibold text-white">Market by sector stance</h2>
             </div>
-            <Badge tone={quantAssetClassAllocation.some((item) => item.stance !== 'NEUTRAL') ? 'good' : 'neutral'}>
-              {quantAssetClassAllocation.some((item) => item.stance !== 'NEUTRAL') ? 'Sector views active' : 'Benchmark'}
+            <Badge
+              tone={
+                quantAssetClassAllocation.some((item) => item.stance !== 'NEUTRAL')
+                  ? 'good'
+                  : 'neutral'
+              }
+            >
+              {quantAssetClassAllocation.some((item) => item.stance !== 'NEUTRAL')
+                ? 'Sector views active'
+                : 'Benchmark'}
             </Badge>
           </div>
           <div className="mt-5 grid gap-4">
             {quantAssetClassAllocation.length > 0 ? (
               quantAssetClassAllocation.slice(0, 8).map((item) => (
-                <div key={`${item.market}-${item.assetClass}`} className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+                <div
+                  key={`${item.market}-${item.assetClass}`}
+                  className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+                >
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <div className="text-lg font-semibold text-white">
@@ -492,7 +580,9 @@ async function AdminOverviewLegacy() {
                   <div className="mt-4 grid gap-3 md:grid-cols-[160px_1fr]">
                     <div className="rounded-[20px] border border-white/10 bg-slate-950/35 p-4">
                       <div className="fine-print">Sector Score</div>
-                      <div className="mt-3 text-3xl font-semibold text-white">{formatNumber(item.score, 2)}</div>
+                      <div className="mt-3 text-3xl font-semibold text-white">
+                        {formatNumber(item.score, 2)}
+                      </div>
                     </div>
                     <div className="rounded-[20px] border border-white/10 bg-slate-950/35 p-4">
                       <p className="text-sm leading-7 text-slate-300">{item.commentary}</p>
@@ -517,7 +607,9 @@ async function AdminOverviewLegacy() {
           <div className="flex items-center justify-between gap-4">
             <div>
               <div className="eyebrow">Portfolio Risk</div>
-              <h2 className="mt-2 text-2xl font-semibold text-white">Refinance and covenant watchlist</h2>
+              <h2 className="mt-2 text-2xl font-semibold text-white">
+                Refinance and covenant watchlist
+              </h2>
             </div>
             <Badge tone={hasPortfolioRiskAlert ? 'warn' : 'good'}>
               {hasPortfolioRiskAlert ? 'Risk flagged' : 'In range'}
@@ -538,7 +630,9 @@ async function AdminOverviewLegacy() {
               <div className="mt-3 text-3xl font-semibold text-white">
                 {formatNumber(portfolioRisk.covenantWatchCount, 0)}
               </div>
-              <p className="mt-2 text-sm text-slate-400">Liquidity or covenant headroom looks tight in downside.</p>
+              <p className="mt-2 text-sm text-slate-400">
+                Liquidity or covenant headroom looks tight in downside.
+              </p>
             </div>
             <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
               <div className="fine-print">High-risk deals</div>
@@ -580,7 +674,9 @@ async function AdminOverviewLegacy() {
                     <div>
                       <div className="fine-print">Current Ratio</div>
                       <div className="mt-1">
-                        {item.weakestCurrentRatio !== null ? `${formatNumber(item.weakestCurrentRatio, 2)}x` : 'N/A'}
+                        {item.weakestCurrentRatio !== null
+                          ? `${formatNumber(item.weakestCurrentRatio, 2)}x`
+                          : 'N/A'}
                       </div>
                     </div>
                   </div>
@@ -598,7 +694,9 @@ async function AdminOverviewLegacy() {
           <div className="flex items-center justify-between gap-4">
             <div>
               <div className="eyebrow">Source Freshness</div>
-              <h2 className="mt-2 text-2xl font-semibold text-white">NASA and adapter refresh queue</h2>
+              <h2 className="mt-2 text-2xl font-semibold text-white">
+                NASA and adapter refresh queue
+              </h2>
             </div>
             <div className="flex gap-2">
               <Badge tone={hasSourceAlert ? 'warn' : 'good'}>
@@ -613,7 +711,8 @@ async function AdminOverviewLegacy() {
             <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
               <div className="fine-print">Fresh adapters</div>
               <div className="mt-3 text-3xl font-semibold text-white">
-                {formatNumber(sourceHealth.sourceFreshness.fresh, 0)} / {formatNumber(sourceHealth.sourceFreshness.total, 0)}
+                {formatNumber(sourceHealth.sourceFreshness.fresh, 0)} /{' '}
+                {formatNumber(sourceHealth.sourceFreshness.total, 0)}
               </div>
               <p className="mt-2 text-sm text-slate-400">
                 Latest source fetch: {formatDate(sourceHealth.sourceFreshness.latestFetchAt)}
@@ -625,7 +724,8 @@ async function AdminOverviewLegacy() {
                 {formatNumber(sourceHealth.assetFreshness.staleCandidates, 0)}
               </div>
               <p className="mt-2 text-sm text-slate-400">
-                Re-enrichment target older than {formatNumber(sourceHealth.staleThresholdHours, 0)} hours.
+                Re-enrichment target older than {formatNumber(sourceHealth.staleThresholdHours, 0)}{' '}
+                hours.
               </p>
             </div>
             <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
@@ -637,7 +737,8 @@ async function AdminOverviewLegacy() {
                 )}
               </div>
               <p className="mt-2 text-sm text-slate-400">
-                {sourceHealth.sourceFreshness.staleSystems.slice(0, 3).join(', ') || 'No stale adapters detected.'}
+                {sourceHealth.sourceFreshness.staleSystems.slice(0, 3).join(', ') ||
+                  'No stale adapters detected.'}
               </p>
             </div>
           </div>
@@ -680,9 +781,11 @@ async function AdminOverviewLegacy() {
             </Link>
           </div>
           <div className="mt-5 space-y-4">
-            {assets.slice(0, 4).map((asset) => (
+            {assets.slice(0, 4).map((asset) =>
               (() => {
-                const displayCurrency = resolveDisplayCurrency(asset.address?.country ?? asset.market);
+                const displayCurrency = resolveDisplayCurrency(
+                  asset.address?.country ?? asset.market
+                );
                 const fxRateToKrw = fxRateMap[displayCurrency];
 
                 return (
@@ -729,7 +832,7 @@ async function AdminOverviewLegacy() {
                   </Link>
                 );
               })()
-            ))}
+            )}
           </div>
         </Card>
 
@@ -744,9 +847,11 @@ async function AdminOverviewLegacy() {
             </Link>
           </div>
           <div className="mt-5 space-y-4">
-            {valuations.slice(0, 3).map((run) => (
+            {valuations.slice(0, 3).map((run) =>
               (() => {
-                const displayCurrency = resolveDisplayCurrency(run.asset.address?.country ?? run.asset.market);
+                const displayCurrency = resolveDisplayCurrency(
+                  run.asset.address?.country ?? run.asset.market
+                );
                 const fxRateToKrw = fxRateMap[displayCurrency];
 
                 return (
@@ -765,7 +870,11 @@ async function AdminOverviewLegacy() {
                       <div className="text-right">
                         <div className="fine-print">Base Case</div>
                         <div className="mt-2 text-base font-semibold text-white">
-                          {formatCurrencyFromKrwAtRate(run.baseCaseValueKrw, displayCurrency, fxRateToKrw)}
+                          {formatCurrencyFromKrwAtRate(
+                            run.baseCaseValueKrw,
+                            displayCurrency,
+                            fxRateToKrw
+                          )}
                         </div>
                       </div>
                     </div>
@@ -780,7 +889,7 @@ async function AdminOverviewLegacy() {
                   </Link>
                 );
               })()
-            ))}
+            )}
           </div>
         </Card>
       </div>
@@ -798,14 +907,21 @@ async function AdminOverviewLegacy() {
           </div>
           <div className="mt-5 grid gap-4 md:grid-cols-3">
             {counterpartyRisk.roleSummary.map((item) => (
-              <div key={item.role} className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+              <div
+                key={item.role}
+                className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+              >
                 <div className="fine-print">{item.role}</div>
-                <div className="mt-3 text-3xl font-semibold text-white">{formatNumber(item.assessmentCount, 0)}</div>
+                <div className="mt-3 text-3xl font-semibold text-white">
+                  {formatNumber(item.assessmentCount, 0)}
+                </div>
                 <p className="mt-2 text-sm text-slate-400">
-                  High risk {formatNumber(item.highRiskCount, 0)} / Moderate {formatNumber(item.moderateRiskCount, 0)}
+                  High risk {formatNumber(item.highRiskCount, 0)} / Moderate{' '}
+                  {formatNumber(item.moderateRiskCount, 0)}
                 </p>
                 <div className="mt-3 text-xs uppercase tracking-[0.18em] text-slate-500">
-                  Avg score {item.averageScore !== null ? formatNumber(item.averageScore, 1) : 'N/A'}
+                  Avg score{' '}
+                  {item.averageScore !== null ? formatNumber(item.averageScore, 1) : 'N/A'}
                 </div>
               </div>
             ))}
@@ -846,17 +962,24 @@ async function AdminOverviewLegacy() {
           <div className="mt-5 grid gap-4">
             <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
               <div className="fine-print">Documents</div>
-              <div className="mt-3 text-3xl font-semibold text-white">{formatNumber(documents.totalCount, 0)}</div>
+              <div className="mt-3 text-3xl font-semibold text-white">
+                {formatNumber(documents.totalCount, 0)}
+              </div>
               <p className="mt-2 text-sm text-slate-400">
                 Latest upload:{' '}
-                {documents.latest ? `${documents.latest.title} on ${formatDate(documents.latest.updatedAt)}` : 'No documents yet'}
+                {documents.latest
+                  ? `${documents.latest.title} on ${formatDate(documents.latest.updatedAt)}`
+                  : 'No documents yet'}
               </p>
             </div>
             <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
               <div className="fine-print">Readiness Queue</div>
-              <div className="mt-3 text-3xl font-semibold text-white">{formatNumber(readiness.length, 0)}</div>
+              <div className="mt-3 text-3xl font-semibold text-white">
+                {formatNumber(readiness.length, 0)}
+              </div>
               <p className="mt-2 text-sm text-slate-400">
-                Ready now: {formatNumber(readyCount, 0)} projects with sufficient records for the next review step.
+                Ready now: {formatNumber(readyCount, 0)} projects with sufficient records for the
+                next review step.
               </p>
             </div>
           </div>
@@ -864,28 +987,34 @@ async function AdminOverviewLegacy() {
 
         <Card>
           <div className="eyebrow">Action Center</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">Move the operating queue forward</h2>
+          <h2 className="mt-2 text-2xl font-semibold text-white">
+            Move the operating queue forward
+          </h2>
           <div className="mt-5 grid gap-3">
             {[
               {
                 href: '/admin/review',
                 title: 'Clear pending evidence',
-                detail: 'Approve or reject normalized micro, legal, and lease evidence before it flows into reports and valuation.'
+                detail:
+                  'Approve or reject normalized micro, legal, and lease evidence before it flows into reports and valuation.'
               },
               {
                 href: '/admin/research',
                 title: 'Refresh research coverage',
-                detail: 'Run official-source sync and work the coverage queue before sourcing, underwriting, or investor reporting relies on stale research.'
+                detail:
+                  'Run official-source sync and work the coverage queue before sourcing, underwriting, or investor reporting relies on stale research.'
               },
               {
                 href: '/admin/deals?view=actionable',
                 title: 'Advance live deals',
-                detail: 'Work next actions, diligence requests, lender quotes, and bid revisions from the actionable execution queue.'
+                detail:
+                  'Work next actions, diligence requests, lender quotes, and bid revisions from the actionable execution queue.'
               },
               {
                 href: '/admin/portfolio',
                 title: 'Monitor held assets',
-                detail: 'Review covenant, rollover, capex, and optimization signals across current portfolio holdings.'
+                detail:
+                  'Review covenant, rollover, capex, and optimization signals across current portfolio holdings.'
               }
             ].map((item, index) => (
               <Link
@@ -893,7 +1022,9 @@ async function AdminOverviewLegacy() {
                 href={item.href}
                 className="flex gap-4 rounded-[24px] border border-white/10 bg-white/[0.03] p-5 transition hover:border-white/20 hover:bg-white/[0.05]"
               >
-                <div className="font-mono text-sm text-accent">{String(index + 1).padStart(2, '0')}</div>
+                <div className="font-mono text-sm text-accent">
+                  {String(index + 1).padStart(2, '0')}
+                </div>
                 <div>
                   <div className="text-sm font-semibold text-white">{item.title}</div>
                   <div className="mt-1 text-sm leading-7 text-slate-300">{item.detail}</div>

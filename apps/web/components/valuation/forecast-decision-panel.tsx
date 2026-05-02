@@ -9,11 +9,7 @@ function toneForConfidence(value: string) {
   return 'warn' as const;
 }
 
-export function ForecastDecisionPanel({
-  guide
-}: {
-  guide: ForecastDecisionGuide | null;
-}) {
+export function ForecastDecisionPanel({ guide }: { guide: ForecastDecisionGuide | null }) {
   if (!guide) return null;
 
   return (
@@ -21,7 +17,9 @@ export function ForecastDecisionPanel({
       <div className="flex items-center justify-between gap-4">
         <div>
           <div className="eyebrow">Forecast Decision Guide</div>
-          <h3 className="mt-2 text-xl font-semibold text-white">Which engine should lead this deal right now</h3>
+          <h3 className="mt-2 text-xl font-semibold text-white">
+            Which engine should lead this deal right now
+          </h3>
           <p className="mt-2 max-w-3xl text-sm leading-7 text-slate-400">{guide.summary.note}</p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -34,7 +32,10 @@ export function ForecastDecisionPanel({
 
       <div className="mt-5 grid gap-4 md:grid-cols-3">
         {guide.useCases.map((useCase) => (
-          <div key={useCase.key} className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+          <div
+            key={useCase.key}
+            className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+          >
             <div className="flex items-center justify-between gap-3">
               <div>
                 <div className="text-lg font-semibold text-white">{useCase.label}</div>
@@ -51,7 +52,10 @@ export function ForecastDecisionPanel({
 
             <div className="mt-4 space-y-3">
               {useCase.weights.map((weight) => (
-                <div key={weight.modelKey} className="rounded-[20px] border border-white/10 bg-slate-950/35 p-4">
+                <div
+                  key={weight.modelKey}
+                  className="rounded-[20px] border border-white/10 bg-slate-950/35 p-4"
+                >
                   <div className="flex items-center justify-between gap-3">
                     <div className="text-sm font-semibold text-white">{weight.label}</div>
                     <div className="flex gap-2">
