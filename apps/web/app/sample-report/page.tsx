@@ -65,6 +65,10 @@ import { readMacroGuidance } from '@/lib/services/im/macro-guidance';
 import { buildScenarioDiff } from '@/lib/services/im/scenario-diff';
 import { pickMatrixRuns } from '@/lib/services/im/sensitivity';
 import { pickProvenanceForCard, summarizeProvenance } from '@/lib/services/im/provenance-map';
+import {
+  decomposeCapRate,
+  estimateSubmarketSpread
+} from '@/lib/services/research/cap-rate-decomposition';
 import { readStoredBaseCaseProForma } from '@/lib/services/valuation/pro-forma';
 import { formatDate, formatNumber, formatPercent } from '@/lib/utils';
 
@@ -175,6 +179,49 @@ export default async function SampleReportPage({
   const capStack = computeCapitalStructure(asset.debtFacilities ?? []);
   const returnsSnapshot = computeReturnsSnapshot(scenarios);
   const tenantCredit = rollupTenantCredit(asset.creditAssessments ?? []);
+
+  // Cap rate decomposition — feeds Underwriting assumptions card.
+  // Inputs derived from the asset's own macro series + comp spread.
+  const macroByKey: Record<string, number> = {};
+  for (const point of asset.macroSeries ?? []) {
+    if (typeof point.value === 'number' && Number.isFinite(point.value)) {
+      macroByKey[point.seriesKey] = point.value;
+    }
+  }
+  const submarketSpread = estimateSubmarketSpread({
+    comps: (asset.transactionComps && asset.transactionComps.length > 0
+      ? asset.transactionComps
+      : []
+    ).map((c) => ({
+      submarket: c.region ?? null,
+      capRatePct: c.capRatePct ?? null
+    })),
+    targetSubmarket: asset.address?.district ?? asset.market ?? 'KR',
+    minComps: 3
+  });
+  const capRateDecomp =
+    typeof macroByKey.policy_rate_pct === 'number'
+      ? decomposeCapRate({
+          riskFreeRatePct: macroByKey.gov_yield_10y_pct ?? macroByKey.policy_rate_pct,
+          equityRiskPremiumPct: 5.0,
+          sectorBeta:
+            asset.assetClass === 'DATA_CENTER'
+              ? 0.45
+              : asset.assetClass === 'OFFICE'
+                ? 0.6
+                : 0.5,
+          submarketSpreadPct: submarketSpread.spreadPct,
+          growthExpectationPct:
+            (macroByKey.rent_growth_pct ?? 0) +
+            (macroByKey.inflation_pct ? macroByKey.inflation_pct * 0.5 : 0),
+          transactionVolumeIndex: macroByKey.transaction_volume_index ?? 100,
+          vintageYear:
+            asset.buildingRecords?.[0]?.completionDate
+              ? new Date(asset.buildingRecords[0].completionDate).getFullYear()
+              : new Date().getFullYear(),
+          referenceYear: new Date().getFullYear()
+        })
+      : null;
   // Year-by-year proForma comes off the stored ValuationRun.assumptions
   // blob; the engine writes it via buildStoredBaseCaseProForma at run
   // time so the IM doesn't need to re-execute the model. Null here just
@@ -1205,6 +1252,63 @@ export default async function SampleReportPage({
             flood ×{underwriting.floodPenalty !== null ? underwriting.floodPenalty.toFixed(3) : '—'} ·
             wildfire ×{underwriting.wildfirePenalty !== null ? underwriting.wildfirePenalty.toFixed(3) : '—'}.
           </p>
+
+          {capRateDecomp ? (
+            <div className="mt-5 rounded-[16px] border border-white/10 bg-white/[0.02] p-4">
+              <div className="flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <div className="fine-print">Cap rate decomposition</div>
+                  <p className="mt-1 max-w-3xl text-xs text-slate-400">
+                    Bridges the headline cap rate into 6 transparent components so the LP can see
+                    what is driving the price. RFR and growth from macro feed; submarket spread
+                    from comp regression; obsolescence from vintage age.
+                  </p>
+                </div>
+                <Badge>
+                  {capRateDecomp.capRatePct.toFixed(2)}% implied
+                </Badge>
+              </div>
+              <div className="mt-4 overflow-x-auto rounded-[12px] border border-white/10">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+                      <th className="px-2 py-2 font-semibold">Component</th>
+                      <th className="px-2 py-2 text-right font-semibold">Sign</th>
+                      <th className="px-2 py-2 text-right font-semibold">pct</th>
+                      <th className="px-2 py-2 font-semibold">Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5 text-slate-200">
+                    {capRateDecomp.components.map((c) => (
+                      <tr key={c.key}>
+                        <td className="px-2 py-2 text-slate-300">{c.label}</td>
+                        <td
+                          className={`px-2 py-2 text-right font-mono ${
+                            c.sign === '+' ? 'text-amber-300' : 'text-emerald-300'
+                          }`}
+                        >
+                          {c.sign}
+                        </td>
+                        <td className="px-2 py-2 text-right font-mono">
+                          {c.pct.toFixed(2)}%
+                        </td>
+                        <td className="px-2 py-2 text-[10px] text-slate-400">{c.notes}</td>
+                      </tr>
+                    ))}
+                    <tr className="bg-white/[0.03] font-semibold">
+                      <td className="px-2 py-2 text-white">Implied cap rate</td>
+                      <td className="px-2 py-2"></td>
+                      <td className="px-2 py-2 text-right font-mono text-white">
+                        {capRateDecomp.capRatePct.toFixed(2)}%
+                      </td>
+                      <td className="px-2 py-2"></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : null}
+
           <ProvenancePill entries={provenanceByCard.scenarioEngine} />
         </Card>
       </section>
