@@ -69,6 +69,7 @@ import {
   decomposeCapRate,
   estimateSubmarketSpread
 } from '@/lib/services/research/cap-rate-decomposition';
+import { fitHedonic, type CompRow as HedonicCompRow } from '@/lib/services/research/hedonic';
 import { readStoredBaseCaseProForma } from '@/lib/services/valuation/pro-forma';
 import { formatDate, formatNumber, formatPercent } from '@/lib/utils';
 
@@ -358,6 +359,39 @@ export default async function SampleReportPage({
         });
   const txCompsToShow = asset.transactionComps?.length ? asset.transactionComps : marketTxComps;
   const rentCompsToShow = asset.rentComps?.length ? asset.rentComps : marketRentComps;
+
+  // Hedonic regression on the comp set — fitted price for the
+  // target asset, controlling for size / vintage / submarket / tier.
+  // Returns null when n < p+1; the IM card shows the gap message.
+  const hedonicCompInputs: HedonicCompRow[] = (txCompsToShow ?? [])
+    .filter(
+      (c): c is typeof c & { pricePerSqmKrw: number } =>
+        typeof c.pricePerSqmKrw === 'number' && c.pricePerSqmKrw > 0
+    )
+    .map((c) => ({
+      pricePerSqmKrw: c.pricePerSqmKrw,
+      sizeSqm:
+        typeof c.priceKrw === 'number' && c.pricePerSqmKrw > 0
+          ? c.priceKrw / c.pricePerSqmKrw
+          : null,
+      vintageYear: null,
+      submarket: c.region ?? null,
+      tier: c.assetTier ?? null,
+      dealStructure: c.buyerType ?? null
+    }));
+  const hedonicTargetSize =
+    asset.grossFloorAreaSqm ?? asset.rentableAreaSqm ?? null;
+  const hedonicFit =
+    hedonicTargetSize && hedonicTargetSize > 0
+      ? fitHedonic(hedonicCompInputs, {
+          sizeSqm: hedonicTargetSize,
+          vintageYear: asset.buildingRecords?.[0]?.completionDate
+            ? new Date(asset.buildingRecords[0].completionDate).getFullYear()
+            : undefined,
+          submarket: asset.address?.district ?? asset.market,
+          tier: asset.assetSubtype ?? undefined
+        })
+      : null;
 
   // Pipeline projects — same fallback pattern as comps. Asset-direct
   // entries first, then submarket entries (assetId NULL, same market)
@@ -2572,6 +2606,60 @@ export default async function SampleReportPage({
                 ? ' Submarket-wide comparables shown for pre-stabilization assets without direct comps.'
                 : ''}
             </p>
+
+            <div className="mt-5 rounded-[14px] border border-white/10 bg-white/[0.02] p-4">
+              <div className="flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <div className="fine-print">Hedonic-fitted comparable price</div>
+                  <p className="mt-1 max-w-3xl text-xs text-slate-400">
+                    OLS log-linear regression of comp price/sqm on size, vintage, submarket,
+                    tier, and deal-structure dummies. Returns the fitted price/sqm for this
+                    asset controlled for those features — independent of the raw comp average.
+                  </p>
+                </div>
+                {hedonicFit ? (
+                  <Badge tone="good">
+                    {hedonicCompInputs.length} comps · R² {hedonicFit.rSquared.toFixed(2)}
+                  </Badge>
+                ) : (
+                  <Badge tone="warn">Insufficient comp data</Badge>
+                )}
+              </div>
+              {hedonicFit ? (
+                <div className="mt-4 grid gap-3 md:grid-cols-3">
+                  <div className="rounded-[12px] border border-white/5 bg-white/[0.015] px-3 py-2">
+                    <div className="text-[10px] uppercase tracking-wide text-slate-500">
+                      Fitted price / sqm
+                    </div>
+                    <div className="mt-1 font-mono text-sm font-semibold text-white">
+                      {formatNumber(hedonicFit.fittedPricePerSqmKrw, 0)} KRW
+                    </div>
+                  </div>
+                  <div className="rounded-[12px] border border-white/5 bg-white/[0.015] px-3 py-2">
+                    <div className="text-[10px] uppercase tracking-wide text-slate-500">
+                      Adjusted R²
+                    </div>
+                    <div className="mt-1 font-mono text-sm text-white">
+                      {hedonicFit.adjustedRSquared.toFixed(3)}
+                    </div>
+                  </div>
+                  <div className="rounded-[12px] border border-white/5 bg-white/[0.015] px-3 py-2">
+                    <div className="text-[10px] uppercase tracking-wide text-slate-500">
+                      Residual SE (log)
+                    </div>
+                    <div className="mt-1 font-mono text-sm text-white">
+                      {hedonicFit.residualStdErr.toFixed(3)}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <p className="mt-3 text-[11px] leading-5 text-slate-400">
+                  Need at least {Math.max(4 - hedonicCompInputs.length, 1)} more comparable
+                  transactions to identify the regression. Add MOLIT 실거래가 ingest for
+                  faster fill.
+                </p>
+              )}
+            </div>
 
             {txCompsToShow.length > 0 ? (
               <div className="mt-5 overflow-x-auto rounded-[14px] border border-white/10">
