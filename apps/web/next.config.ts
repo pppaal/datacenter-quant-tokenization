@@ -1,8 +1,10 @@
 import type { NextConfig } from 'next';
+import path from 'node:path';
 import { withSentryConfig } from '@sentry/nextjs';
 
 const nextConfig: NextConfig = {
   distDir: 'build',
+  outputFileTracingRoot: path.join(__dirname, '../..'),
   experimental: {
     serverActions: { bodySizeLimit: '5mb' }
   }
