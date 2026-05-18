@@ -3,13 +3,7 @@ import type { MacroSensitivityProfile, MacroFactorSnapshot } from '@/lib/service
 export type MacroImpactDirection = 'TAILWIND' | 'HEADWIND' | 'NEUTRAL';
 
 export type MacroImpactDimension = {
-  key:
-    | 'pricing'
-    | 'leasing'
-    | 'financing'
-    | 'construction'
-    | 'refinancing'
-    | 'allocation';
+  key: 'pricing' | 'leasing' | 'financing' | 'construction' | 'refinancing' | 'allocation';
   label: string;
   score: number;
   direction: MacroImpactDirection;
@@ -107,18 +101,24 @@ export function buildMacroImpactMatrix(input: BuildMacroImpactMatrixInput): Macr
     -(input.guidance.discountRateShiftPct * 0.8 + input.guidance.exitCapRateShiftPct * 1.1) +
     factorWeight(liquidity?.direction ?? 'NEUTRAL') * 0.6 * input.profile.liquiditySensitivity;
   const leasingScore =
-    (input.guidance.occupancyShiftPct / 4) +
-    (input.guidance.growthShiftPct * 1.5) +
+    input.guidance.occupancyShiftPct / 4 +
+    input.guidance.growthShiftPct * 1.5 +
     factorWeight(propertyDemand?.direction ?? 'NEUTRAL') * 0.9 * input.profile.leasingSensitivity;
   const financingScore =
     -(input.guidance.debtCostShiftPct * 2) -
-    (-factorWeight(rateLevel?.direction ?? 'NEUTRAL') * 0.8 * input.profile.capitalRateSensitivity) +
-    (factorWeight(creditStress?.direction ?? 'NEUTRAL') * 0.9 * input.profile.capitalRateSensitivity);
+    -factorWeight(rateLevel?.direction ?? 'NEUTRAL') * 0.8 * input.profile.capitalRateSensitivity +
+    factorWeight(creditStress?.direction ?? 'NEUTRAL') * 0.9 * input.profile.capitalRateSensitivity;
   const constructionScore =
     -(input.guidance.replacementCostShiftPct / 6) -
-    (-factorWeight(construction?.direction ?? 'NEUTRAL') * 0.8 * input.profile.constructionSensitivity);
+    -factorWeight(construction?.direction ?? 'NEUTRAL') *
+      0.8 *
+      input.profile.constructionSensitivity;
   const refinancingScore =
-    (input.regimes.refinance.state === 'LOW' ? 0.8 : input.regimes.refinance.state === 'HIGH' ? -1 : -0.3) +
+    (input.regimes.refinance.state === 'LOW'
+      ? 0.8
+      : input.regimes.refinance.state === 'HIGH'
+        ? -1
+        : -0.3) +
     factorWeight(liquidity?.direction ?? 'NEUTRAL') * 0.6 * input.profile.liquiditySensitivity +
     factorWeight(creditStress?.direction ?? 'NEUTRAL') * 0.7 * input.profile.capitalRateSensitivity;
   const allocationScore =
@@ -138,11 +138,7 @@ export function buildMacroImpactMatrix(input: BuildMacroImpactMatrixInput): Macr
           : pricingScore >= 0.4
             ? 'Macro conditions support tighter pricing and better exit liquidity.'
             : 'Pricing impact is mixed and near neutral.',
-      channels: [
-        'discount rate shift',
-        'exit cap shift',
-        'market liquidity'
-      ]
+      channels: ['discount rate shift', 'exit cap shift', 'market liquidity']
     },
     {
       key: 'leasing',
@@ -212,14 +208,62 @@ export function buildMacroImpactMatrix(input: BuildMacroImpactMatrixInput): Macr
   ];
 
   const paths = [
-    buildPath(rateLevel, 'pricing', 'Entry and Exit Pricing', input.profile.capitalRateSensitivity, 'Higher rate levels reprice valuation multiples.'),
-    buildPath(rateMomentum, 'financing', 'Financing Cost', input.profile.capitalRateSensitivity, 'Rate momentum transmits into debt pricing and hedge cost.'),
-    buildPath(creditStress, 'refinancing', 'Refinancing and Exit Liquidity', input.profile.capitalRateSensitivity, 'Credit stress narrows lender appetite and refinance flexibility.'),
-    buildPath(liquidity, 'pricing', 'Entry and Exit Pricing', input.profile.liquiditySensitivity, 'Liquidity shifts move bid depth and exit certainty.'),
-    buildPath(propertyDemand, 'leasing', 'Leasing and Revenue', input.profile.leasingSensitivity, 'Demand strength transmits into occupancy and rent capture.'),
-    buildPath(construction, 'construction', 'Construction and Replacement Cost', input.profile.constructionSensitivity, 'Construction pressure changes capex and replacement-cost assumptions.'),
-    buildPath(inflation, 'allocation', 'Cross-Asset Allocation', 0.8, 'Inflation shifts change the relative case for real assets.'),
-    buildPath(growth, 'allocation', 'Cross-Asset Allocation', 0.9, 'Growth momentum changes cross-asset relative attractiveness.')
+    buildPath(
+      rateLevel,
+      'pricing',
+      'Entry and Exit Pricing',
+      input.profile.capitalRateSensitivity,
+      'Higher rate levels reprice valuation multiples.'
+    ),
+    buildPath(
+      rateMomentum,
+      'financing',
+      'Financing Cost',
+      input.profile.capitalRateSensitivity,
+      'Rate momentum transmits into debt pricing and hedge cost.'
+    ),
+    buildPath(
+      creditStress,
+      'refinancing',
+      'Refinancing and Exit Liquidity',
+      input.profile.capitalRateSensitivity,
+      'Credit stress narrows lender appetite and refinance flexibility.'
+    ),
+    buildPath(
+      liquidity,
+      'pricing',
+      'Entry and Exit Pricing',
+      input.profile.liquiditySensitivity,
+      'Liquidity shifts move bid depth and exit certainty.'
+    ),
+    buildPath(
+      propertyDemand,
+      'leasing',
+      'Leasing and Revenue',
+      input.profile.leasingSensitivity,
+      'Demand strength transmits into occupancy and rent capture.'
+    ),
+    buildPath(
+      construction,
+      'construction',
+      'Construction and Replacement Cost',
+      input.profile.constructionSensitivity,
+      'Construction pressure changes capex and replacement-cost assumptions.'
+    ),
+    buildPath(
+      inflation,
+      'allocation',
+      'Cross-Asset Allocation',
+      0.8,
+      'Inflation shifts change the relative case for real assets.'
+    ),
+    buildPath(
+      growth,
+      'allocation',
+      'Cross-Asset Allocation',
+      0.9,
+      'Growth momentum changes cross-asset relative attractiveness.'
+    )
   ].filter((path): path is MacroTransmissionPath => path !== null);
 
   const strongestHeadwind = [...dimensions]

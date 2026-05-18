@@ -29,7 +29,11 @@ export function PortfolioOptimizationPanel({ lab }: Props) {
       <div className="eyebrow">Portfolio Optimization Lab</div>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <Badge tone="warn">{lab.methodologyLabel}</Badge>
-        <Badge tone={lab.objectiveScorePct >= 68 ? 'good' : lab.objectiveScorePct >= 52 ? 'warn' : 'danger'}>
+        <Badge
+          tone={
+            lab.objectiveScorePct >= 68 ? 'good' : lab.objectiveScorePct >= 52 ? 'warn' : 'danger'
+          }
+        >
           objective {formatPercent(lab.objectiveScorePct)}
         </Badge>
         {fragileScenario ? (
@@ -55,7 +59,10 @@ export function PortfolioOptimizationPanel({ lab }: Props) {
         <div className="space-y-3">
           <div className="fine-print">Target Weights</div>
           {lab.assetRows.map((row) => (
-            <div key={row.portfolioAssetId} className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
+            <div
+              key={row.portfolioAssetId}
+              className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4"
+            >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -66,7 +73,9 @@ export function PortfolioOptimizationPanel({ lab }: Props) {
                   <div className="mt-1 text-xs text-slate-500">{row.marketLabel}</div>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Badge tone={toneForRecommendation(row.recommendation)}>{row.recommendation.toLowerCase()}</Badge>
+                  <Badge tone={toneForRecommendation(row.recommendation)}>
+                    {row.recommendation.toLowerCase()}
+                  </Badge>
                   <Badge tone={toneForResearch(row.researchFreshnessStatus)}>
                     {row.researchFreshnessStatus.toLowerCase()}
                   </Badge>
@@ -81,11 +90,15 @@ export function PortfolioOptimizationPanel({ lab }: Props) {
               <div className="mt-3 grid gap-3 md:grid-cols-5">
                 <div>
                   <div className="fine-print">Current</div>
-                  <div className="mt-1 text-sm text-white">{formatPercent(row.currentWeightPct)}</div>
+                  <div className="mt-1 text-sm text-white">
+                    {formatPercent(row.currentWeightPct)}
+                  </div>
                 </div>
                 <div>
                   <div className="fine-print">Target</div>
-                  <div className="mt-1 text-sm text-white">{formatPercent(row.targetWeightPct)}</div>
+                  <div className="mt-1 text-sm text-white">
+                    {formatPercent(row.targetWeightPct)}
+                  </div>
                 </div>
                 <div>
                   <div className="fine-print">Delta</div>
@@ -100,7 +113,9 @@ export function PortfolioOptimizationPanel({ lab }: Props) {
                 </div>
                 <div>
                   <div className="fine-print">Stress Load</div>
-                  <div className="mt-1 text-sm text-white">{formatPercent(row.stressPenaltyPct)}</div>
+                  <div className="mt-1 text-sm text-white">
+                    {formatPercent(row.stressPenaltyPct)}
+                  </div>
                 </div>
               </div>
               <ul className="mt-3 space-y-1 text-xs leading-6 text-slate-400">
@@ -115,37 +130,60 @@ export function PortfolioOptimizationPanel({ lab }: Props) {
         <div className="space-y-3">
           <div className="fine-print">Scenario Exploration</div>
           {lab.scenarioRows.map((scenario) => (
-            <div key={scenario.label} className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
+            <div
+              key={scenario.label}
+              className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4"
+            >
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="text-sm font-semibold text-white">{scenario.label}</div>
-                <Badge tone={scenario.weightedStressScore >= 18 ? 'danger' : scenario.weightedStressScore >= 12 ? 'warn' : 'good'}>
+                <Badge
+                  tone={
+                    scenario.weightedStressScore >= 18
+                      ? 'danger'
+                      : scenario.weightedStressScore >= 12
+                        ? 'warn'
+                        : 'good'
+                  }
+                >
                   stress {formatNumber(scenario.weightedStressScore, 1)}
                 </Badge>
               </div>
               <div className="mt-3 grid gap-3 md:grid-cols-2">
                 <div>
                   <div className="fine-print">Cap Rate Shock</div>
-                  <div className="mt-1 text-sm text-white">{formatNumber(scenario.capRateShockBps, 0)} bps</div>
+                  <div className="mt-1 text-sm text-white">
+                    {formatNumber(scenario.capRateShockBps, 0)} bps
+                  </div>
                 </div>
                 <div>
                   <div className="fine-print">Occupancy Shock</div>
-                  <div className="mt-1 text-sm text-white">{formatPercent(scenario.occupancyShockPct)}</div>
+                  <div className="mt-1 text-sm text-white">
+                    {formatPercent(scenario.occupancyShockPct)}
+                  </div>
                 </div>
                 <div>
                   <div className="fine-print">Debt Spread</div>
-                  <div className="mt-1 text-sm text-white">{formatNumber(scenario.debtSpreadShockBps, 0)} bps</div>
+                  <div className="mt-1 text-sm text-white">
+                    {formatNumber(scenario.debtSpreadShockBps, 0)} bps
+                  </div>
                 </div>
                 <div>
                   <div className="fine-print">Lead Asset</div>
-                  <div className="mt-1 text-sm text-white">{scenario.leadAssetName ?? 'Portfolio-wide'}</div>
+                  <div className="mt-1 text-sm text-white">
+                    {scenario.leadAssetName ?? 'Portfolio-wide'}
+                  </div>
                 </div>
                 <div>
                   <div className="fine-print">Value Impact</div>
-                  <div className="mt-1 text-sm text-white">{formatPercent(scenario.weightedValueImpactPct)}</div>
+                  <div className="mt-1 text-sm text-white">
+                    {formatPercent(scenario.weightedValueImpactPct)}
+                  </div>
                 </div>
                 <div>
                   <div className="fine-print">DSCR Impact</div>
-                  <div className="mt-1 text-sm text-white">{formatPercent(scenario.weightedDscrImpactPct)}</div>
+                  <div className="mt-1 text-sm text-white">
+                    {formatPercent(scenario.weightedDscrImpactPct)}
+                  </div>
                 </div>
               </div>
               <p className="mt-3 text-xs leading-6 text-slate-400">{scenario.commentary}</p>

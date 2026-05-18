@@ -1,6 +1,11 @@
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import type { DealReport, ReportChecklistItem, ReportFact, ReportSection } from '@/lib/services/reports';
+import type {
+  DealReport,
+  ReportChecklistItem,
+  ReportFact,
+  ReportSection
+} from '@/lib/services/reports';
 
 function findSection(report: DealReport, id: string) {
   return report.sections.find((section) => section.id === id);
@@ -17,10 +22,15 @@ function renderFactGrid(facts: ReportFact[] | undefined, keyPrefix: string) {
   return (
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-2">
       {facts.map((fact) => (
-        <div key={`${keyPrefix}-${fact.label}`} className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+        <div
+          key={`${keyPrefix}-${fact.label}`}
+          className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+        >
           <div className="fine-print">{fact.label}</div>
           <div className="mt-3 text-lg font-semibold text-white">{fact.value}</div>
-          {fact.detail ? <p className="mt-2 text-sm leading-7 text-slate-400">{fact.detail}</p> : null}
+          {fact.detail ? (
+            <p className="mt-2 text-sm leading-7 text-slate-400">{fact.detail}</p>
+          ) : null}
         </div>
       ))}
     </div>
@@ -32,7 +42,10 @@ function renderChecklist(items: ReportChecklistItem[] | undefined, keyPrefix: st
   return (
     <div className="space-y-3">
       {items.map((item) => (
-        <div key={`${keyPrefix}-${item.label}`} className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-4">
+        <div
+          key={`${keyPrefix}-${item.label}`}
+          className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-4"
+        >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="text-sm font-semibold text-white">{item.label}</div>
             <Badge tone={checklistTone(item.status)}>{item.status}</Badge>
@@ -97,7 +110,9 @@ export function ReportDdChecklistSheet({
     <div className="report-dd-sheet space-y-6 pb-16">
       <section className="surface hero-mesh report-dd-hero">
         <div className="flex flex-wrap items-center gap-3">
-          <Badge tone={report.status === 'production-ready' ? 'good' : 'warn'}>{report.statusLabel}</Badge>
+          <Badge tone={report.status === 'production-ready' ? 'good' : 'warn'}>
+            {report.statusLabel}
+          </Badge>
           <Badge>{report.audienceLabel}</Badge>
           <Badge>{assetCode}</Badge>
           <Badge>{locationLabel}</Badge>
@@ -148,7 +163,9 @@ export function ReportDdChecklistSheet({
           <div key={fact.label} className="metric-card">
             <div className="fine-print">{fact.label}</div>
             <div className="mt-3 text-2xl font-semibold text-white">{fact.value}</div>
-            {fact.detail ? <p className="mt-2 text-sm leading-7 text-slate-400">{fact.detail}</p> : null}
+            {fact.detail ? (
+              <p className="mt-2 text-sm leading-7 text-slate-400">{fact.detail}</p>
+            ) : null}
           </div>
         ))}
       </section>
@@ -169,10 +186,15 @@ export function ReportDdChecklistSheet({
           <h2 className="mt-2 text-2xl font-semibold text-white">Control And Integrity</h2>
           <div className="mt-5 space-y-3">
             {traceability.map((fact) => (
-              <div key={fact.label} className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-4">
+              <div
+                key={fact.label}
+                className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-4"
+              >
                 <div className="fine-print">{fact.label}</div>
                 <div className="mt-2 text-lg font-semibold text-white">{fact.value}</div>
-                {fact.detail ? <p className="mt-2 text-sm leading-7 text-slate-400">{fact.detail}</p> : null}
+                {fact.detail ? (
+                  <p className="mt-2 text-sm leading-7 text-slate-400">{fact.detail}</p>
+                ) : null}
               </div>
             ))}
           </div>

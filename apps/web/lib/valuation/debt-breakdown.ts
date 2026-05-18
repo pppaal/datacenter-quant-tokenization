@@ -80,10 +80,15 @@ export function buildDebtBreakdown(
   debtFacilities: DebtFacilityLike[],
   scenarios: ScenarioLike[]
 ): DebtBreakdownSummary {
-  const totalCommitmentKrw = debtFacilities.reduce((sum, facility) => sum + facility.commitmentKrw, 0);
+  const totalCommitmentKrw = debtFacilities.reduce(
+    (sum, facility) => sum + facility.commitmentKrw,
+    0
+  );
   const totalDrawnAmountKrw = debtFacilities.reduce(
     (sum, facility) =>
-      sum + (facility.drawnAmountKrw ?? facility.draws.reduce((drawSum, draw) => drawSum + draw.amountKrw, 0)),
+      sum +
+      (facility.drawnAmountKrw ??
+        facility.draws.reduce((drawSum, draw) => drawSum + draw.amountKrw, 0)),
     0
   );
   const reserveRequirementKrw = pickNumber(assumptions, 'reserveRequirementKrw');
@@ -91,8 +96,10 @@ export function buildDebtBreakdown(
   const weightedInterestRatePct =
     pickNumber(assumptions, 'weightedInterestRatePct') ??
     (totalCommitmentKrw > 0
-      ? debtFacilities.reduce((sum, facility) => sum + facility.commitmentKrw * facility.interestRatePct, 0) /
-        totalCommitmentKrw
+      ? debtFacilities.reduce(
+          (sum, facility) => sum + facility.commitmentKrw * facility.interestRatePct,
+          0
+        ) / totalCommitmentKrw
       : null);
   const baseDscr = pickBaseDscr(scenarios);
 
@@ -123,7 +130,8 @@ export function buildDebtBreakdown(
   return {
     totalCommitmentKrw,
     totalDrawnAmountKrw,
-    weightedInterestRatePct: weightedInterestRatePct !== null ? Number(weightedInterestRatePct.toFixed(2)) : null,
+    weightedInterestRatePct:
+      weightedInterestRatePct !== null ? Number(weightedInterestRatePct.toFixed(2)) : null,
     reserveRequirementKrw,
     endingDebtBalanceKrw,
     baseDscr: typeof baseDscr === 'number' ? Number(baseDscr.toFixed(2)) : null,

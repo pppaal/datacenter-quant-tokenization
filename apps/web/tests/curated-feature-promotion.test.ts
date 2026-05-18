@@ -107,7 +107,7 @@ test('curated feature promotion creates market, satellite, permit, and readiness
             legalStructure: 'SPV review pending',
             nextAction: 'Ready for committee evidence packaging.',
             updatedAt: new Date('2026-03-22T04:00:00.000Z')
-          },
+          }
         };
       }
     },
@@ -138,12 +138,19 @@ test('curated feature promotion creates market, satellite, permit, and readiness
     'readiness_legal'
   ]);
   assert.equal(results.length, 8);
-  assert.ok(results.some((result) => result.namespace === 'market_inputs' && result.valueCount >= 5));
-  assert.equal(createdSnapshots.find((snapshot) => snapshot.featureNamespace === 'power_micro')?.approvedById, 'user_power');
+  assert.ok(
+    results.some((result) => result.namespace === 'market_inputs' && result.valueCount >= 5)
+  );
+  assert.equal(
+    createdSnapshots.find((snapshot) => snapshot.featureNamespace === 'power_micro')?.approvedById,
+    'user_power'
+  );
   assert.ok(
     createdSnapshots
       .find((snapshot) => snapshot.featureNamespace === 'legal_micro')
-      ?.values.create.some((value: any) => value.sourceRef === 'ownership_record:owner_1:owner_name')
+      ?.values.create.some(
+        (value: any) => value.sourceRef === 'ownership_record:owner_1:owner_name'
+      )
   );
 });
 

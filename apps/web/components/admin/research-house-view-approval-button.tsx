@@ -10,7 +10,11 @@ type Props = {
   compact?: boolean;
 };
 
-export function ResearchHouseViewApprovalButton({ snapshotId, disabled = false, compact = false }: Props) {
+export function ResearchHouseViewApprovalButton({
+  snapshotId,
+  disabled = false,
+  compact = false
+}: Props) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +52,12 @@ export function ResearchHouseViewApprovalButton({ snapshotId, disabled = false, 
 
   return (
     <div className={compact ? 'space-y-1' : 'space-y-2'}>
-      <Button type="button" variant={compact ? 'ghost' : 'secondary'} onClick={approve} disabled={disabled || submitting}>
+      <Button
+        type="button"
+        variant={compact ? 'ghost' : 'secondary'}
+        onClick={approve}
+        disabled={disabled || submitting}
+      >
         {submitting ? 'Approving...' : 'Approve House View'}
       </Button>
       {error ? <div className="text-xs text-rose-300">{error}</div> : null}

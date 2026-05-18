@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { computeCorrelationPenalty, applyCorrelationPenalty } from '@/lib/services/macro/correlation-stress';
+import {
+  computeCorrelationPenalty,
+  applyCorrelationPenalty
+} from '@/lib/services/macro/correlation-stress';
 import type { DealMacroExposureDimension } from '@/lib/services/macro/deal-risk';
 
 function makeDimensions(scores: Record<string, number>): DealMacroExposureDimension[] {
@@ -13,7 +16,14 @@ function makeDimensions(scores: Record<string, number>): DealMacroExposureDimens
 }
 
 test('computeCorrelationPenalty returns zero when no headwinds', () => {
-  const dims = makeDimensions({ rate: 20, credit: 30, demand: 25, construction: 15, leverage: 10, liquidity: 20 });
+  const dims = makeDimensions({
+    rate: 20,
+    credit: 30,
+    demand: 25,
+    construction: 15,
+    leverage: 10,
+    liquidity: 20
+  });
   const penalty = computeCorrelationPenalty(dims, {});
 
   assert.equal(penalty.appliedPenaltyPct, 0);
@@ -22,7 +32,14 @@ test('computeCorrelationPenalty returns zero when no headwinds', () => {
 });
 
 test('computeCorrelationPenalty detects rate-credit squeeze', () => {
-  const dims = makeDimensions({ rate: 65, credit: 55, demand: 25, construction: 15, leverage: 10, liquidity: 20 });
+  const dims = makeDimensions({
+    rate: 65,
+    credit: 55,
+    demand: 25,
+    construction: 15,
+    leverage: 10,
+    liquidity: 20
+  });
   const penalty = computeCorrelationPenalty(dims, {
     rate_level: 'NEGATIVE',
     credit_stress: 'NEGATIVE'
@@ -33,7 +50,14 @@ test('computeCorrelationPenalty detects rate-credit squeeze', () => {
 });
 
 test('computeCorrelationPenalty applies triple headwind cascade', () => {
-  const dims = makeDimensions({ rate: 65, credit: 55, liquidity: 60, demand: 25, construction: 15, leverage: 10 });
+  const dims = makeDimensions({
+    rate: 65,
+    credit: 55,
+    liquidity: 60,
+    demand: 25,
+    construction: 15,
+    leverage: 10
+  });
   const penalty = computeCorrelationPenalty(dims, {
     rate_level: 'NEGATIVE',
     credit_stress: 'NEGATIVE',
@@ -46,7 +70,14 @@ test('computeCorrelationPenalty applies triple headwind cascade', () => {
 });
 
 test('computeCorrelationPenalty caps at 40%', () => {
-  const dims = makeDimensions({ rate: 80, credit: 75, liquidity: 70, demand: 65, construction: 60, leverage: 85 });
+  const dims = makeDimensions({
+    rate: 80,
+    credit: 75,
+    liquidity: 70,
+    demand: 65,
+    construction: 60,
+    leverage: 85
+  });
   const penalty = computeCorrelationPenalty(dims, {
     rate_level: 'NEGATIVE',
     rate_momentum_bps: 'NEGATIVE',
@@ -60,7 +91,12 @@ test('computeCorrelationPenalty caps at 40%', () => {
 });
 
 test('applyCorrelationPenalty increases score proportional to headroom', () => {
-  const penalty = { appliedPenaltyPct: 20, headwindCount: 3, activePairs: ['test'], commentary: '' };
+  const penalty = {
+    appliedPenaltyPct: 20,
+    headwindCount: 3,
+    activePairs: ['test'],
+    commentary: ''
+  };
 
   const adjusted50 = applyCorrelationPenalty(50, penalty);
   const adjusted80 = applyCorrelationPenalty(80, penalty);
@@ -68,7 +104,7 @@ test('applyCorrelationPenalty increases score proportional to headroom', () => {
   assert.ok(adjusted50 > 50);
   assert.ok(adjusted80 > 80);
   // Higher base means less headroom, so smaller absolute boost
-  assert.ok((adjusted50 - 50) > (adjusted80 - 80));
+  assert.ok(adjusted50 - 50 > adjusted80 - 80);
 });
 
 test('applyCorrelationPenalty returns base score when no penalty', () => {
@@ -77,7 +113,12 @@ test('applyCorrelationPenalty returns base score when no penalty', () => {
 });
 
 test('applyCorrelationPenalty never exceeds 100', () => {
-  const penalty = { appliedPenaltyPct: 40, headwindCount: 6, activePairs: ['test'], commentary: '' };
+  const penalty = {
+    appliedPenaltyPct: 40,
+    headwindCount: 6,
+    activePairs: ['test'],
+    commentary: ''
+  };
   const result = applyCorrelationPenalty(95, penalty);
   assert.ok(result <= 100);
 });

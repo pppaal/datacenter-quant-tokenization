@@ -130,7 +130,11 @@ function scoreDebtFinanceability(result: DebtSourcingResult): {
     score += 5;
   }
 
-  if (result.recommendedTopN.some((m) => m.lender.category === 'INSURANCE' || m.lender.category === 'PENSION')) {
+  if (
+    result.recommendedTopN.some(
+      (m) => m.lender.category === 'INSURANCE' || m.lender.category === 'PENSION'
+    )
+  ) {
     score += 15;
   } else if (result.recommendedTopN.some((m) => m.lender.category === 'COMMERCIAL_BANK')) {
     score += 8;
@@ -138,9 +142,10 @@ function scoreDebtFinanceability(result: DebtSourcingResult): {
 
   score = Math.max(0, Math.min(100, score));
 
-  const rationale = result.recommendedTopN.length > 0
-    ? `${eligible} eligible lenders; top indicative spread ${topSpread ?? '—'}bps (${result.recommendedTopN[0]!.lender.displayName})`
-    : result.fallbackRationale ?? 'No lenders matched — restructure deal or shift asset class';
+  const rationale =
+    result.recommendedTopN.length > 0
+      ? `${eligible} eligible lenders; top indicative spread ${topSpread ?? '—'}bps (${result.recommendedTopN[0]!.lender.displayName})`
+      : (result.fallbackRationale ?? 'No lenders matched — restructure deal or shift asset class');
 
   return { score, rationale };
 }
@@ -207,9 +212,8 @@ export function scoreSubmarketConviction(
   now: Date = new Date()
 ): SubmarketConvictionScore {
   const debtSourcing = sourceDebt(input.archetypeDealProfile);
-  const tenantCredit = input.tenantExposures.length > 0
-    ? projectRentDefault(input.tenantExposures)
-    : null;
+  const tenantCredit =
+    input.tenantExposures.length > 0 ? projectRentDefault(input.tenantExposures) : null;
   const pipeline = screenPipeline(input.listings, input.sponsorCriteria, now);
 
   const debt = scoreDebtFinanceability(debtSourcing);
@@ -296,10 +300,13 @@ function buildHeadline(
   const top = [...components].sort((a, b) => b.score - a.score)[0]!;
   const bottom = [...components].sort((a, b) => a.score - b.score)[0]!;
   const verb =
-    band === 'HIGH' ? 'Deploy capital' :
-    band === 'MODERATE' ? 'Selectively engage' :
-    band === 'LOW' ? 'Require exceptional deal' :
-    'Avoid';
+    band === 'HIGH'
+      ? 'Deploy capital'
+      : band === 'MODERATE'
+        ? 'Selectively engage'
+        : band === 'LOW'
+          ? 'Require exceptional deal'
+          : 'Avoid';
   return `${label}: ${verb} (conviction ${overall}/100). Best axis: ${top.name.toLowerCase()} (${top.score}); weakest: ${bottom.name.toLowerCase()} (${bottom.score}).`;
 }
 
@@ -322,9 +329,7 @@ function computeMedian(values: number[]): number {
   if (values.length === 0) return 0;
   const sorted = [...values].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
-  return sorted.length % 2 === 0
-    ? (sorted[mid - 1]! + sorted[mid]!) / 2
-    : sorted[mid]!;
+  return sorted.length % 2 === 0 ? (sorted[mid - 1]! + sorted[mid]!) / 2 : sorted[mid]!;
 }
 
 export { WEIGHT_DEBT, WEIGHT_TENANT, WEIGHT_PIPELINE, bandFromScore };

@@ -73,15 +73,15 @@ export function getConnectorBundle(): ConnectorBundle {
   const mode = resolveConnectorMode();
   return {
     buildingRegistry:
-      mode.buildingRegistry === 'live' ? new LiveMolitBuildingRegistry() : new MockBuildingRegistry(),
+      mode.buildingRegistry === 'live'
+        ? new LiveMolitBuildingRegistry()
+        : new MockBuildingRegistry(),
     useZone: new MockUseZone(),
     landPricing: new MockLandPricing(),
     rentComps: new MockRentComps(),
     grid: mode.grid === 'live' ? new LiveKepcoGridAccess() : new MockGridAccess(),
     macroMicro: new MockMacroMicro(),
     transactionComps:
-      mode.transactionComps === 'live'
-        ? new LiveRtmsTransactionComps()
-        : new MockTransactionComps()
+      mode.transactionComps === 'live' ? new LiveRtmsTransactionComps() : new MockTransactionComps()
   };
 }

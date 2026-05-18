@@ -2,7 +2,10 @@ import { NextResponse } from 'next/server';
 import { AdminAccessScopeType } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { assertActorScopeAccess } from '@/lib/security/admin-access';
-import { getRequestIpAddress, resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
+import {
+  getRequestIpAddress,
+  resolveVerifiedAdminActorFromHeaders
+} from '@/lib/security/admin-request';
 import { recordAuditEvent } from '@/lib/services/audit';
 import { createAssetManagementInitiative } from '@/lib/services/asset-management';
 
@@ -32,7 +35,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: 'Portfolio asset not found.' }, { status: 404 });
     }
 
-    await assertActorScopeAccess(actor, AdminAccessScopeType.PORTFOLIO, portfolioAsset.portfolioId, prisma);
+    await assertActorScopeAccess(
+      actor,
+      AdminAccessScopeType.PORTFOLIO,
+      portfolioAsset.portfolioId,
+      prisma
+    );
     const payload = await request.json();
     const initiative = await createAssetManagementInitiative(portfolioAsset.id, payload, prisma);
 
@@ -68,12 +76,16 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       ipAddress,
       statusLabel: 'FAILED',
       metadata: {
-        error: error instanceof Error ? error.message : 'Failed to create asset-management initiative'
+        error:
+          error instanceof Error ? error.message : 'Failed to create asset-management initiative'
       }
     });
 
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to create asset-management initiative' },
+      {
+        error:
+          error instanceof Error ? error.message : 'Failed to create asset-management initiative'
+      },
       { status: 400 }
     );
   }

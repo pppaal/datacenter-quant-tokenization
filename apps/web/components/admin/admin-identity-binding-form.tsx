@@ -63,17 +63,24 @@ export function AdminIdentityBindingForm({
         throw new Error(payload?.error ?? 'Failed to update identity binding.');
       }
 
-      setFeedback(nextUserId ? 'Identity mapped to canonical operator.' : 'Identity mapping cleared.');
+      setFeedback(
+        nextUserId ? 'Identity mapped to canonical operator.' : 'Identity mapping cleared.'
+      );
       router.refresh();
     } catch (caughtError) {
-      setError(caughtError instanceof Error ? caughtError.message : 'Failed to update identity binding.');
+      setError(
+        caughtError instanceof Error ? caughtError.message : 'Failed to update identity binding.'
+      );
     } finally {
       setSubmitting(null);
     }
   }
 
   return (
-    <div className="mt-4 space-y-3 rounded-[20px] border border-white/10 bg-slate-950/40 p-4" data-testid="identity-binding-form">
+    <div
+      className="mt-4 space-y-3 rounded-[20px] border border-white/10 bg-slate-950/40 p-4"
+      data-testid="identity-binding-form"
+    >
       <div className="fine-print">Map to canonical operator</div>
       <Select
         value={selectedUserId}
@@ -107,11 +114,15 @@ export function AdminIdentityBindingForm({
         </Button>
       </div>
       <div className="text-xs leading-6 text-slate-500">
-        Snapshot: {emailSnapshot ?? identifierSnapshot}. Mapping this subject makes review attribution and operator
-        analytics user-bound.
+        Snapshot: {emailSnapshot ?? identifierSnapshot}. Mapping this subject makes review
+        attribution and operator analytics user-bound.
       </div>
       {feedback ? (
-        <div className="text-sm text-emerald-300" data-testid="identity-binding-feedback" role="status">
+        <div
+          className="text-sm text-emerald-300"
+          data-testid="identity-binding-feedback"
+          role="status"
+        >
           {feedback}
         </div>
       ) : null}

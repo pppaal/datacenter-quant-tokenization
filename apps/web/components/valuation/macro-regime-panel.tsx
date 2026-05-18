@@ -27,7 +27,8 @@ function toneForStatus(status: string) {
 }
 
 function toneForRegime(state: string) {
-  if (state === 'SUPPORTIVE' || state === 'STRONG' || state === 'LOW' || state === 'CONTAINED') return 'good' as const;
+  if (state === 'SUPPORTIVE' || state === 'STRONG' || state === 'LOW' || state === 'CONTAINED')
+    return 'good' as const;
   if (state === 'TIGHT' || state === 'SOFT' || state === 'HIGH') return 'warn' as const;
   return 'neutral' as const;
 }
@@ -48,7 +49,9 @@ export function MacroRegimePanel({ macroRegime }: { macroRegime: MacroInterpreta
   if (!macroRegime || macroRegime.series.length === 0) return null;
 
   const assetClassLabel =
-    typeof macroRegime.assetClass === 'string' ? macroRegime.assetClass.replaceAll('_', ' ') : 'legacy run';
+    typeof macroRegime.assetClass === 'string'
+      ? macroRegime.assetClass.replaceAll('_', ' ')
+      : 'legacy run';
   const profile = macroRegime.profile ?? {
     label: 'Legacy macro profile',
     adjustmentSummary: [],
@@ -70,9 +73,13 @@ export function MacroRegimePanel({ macroRegime }: { macroRegime: MacroInterpreta
   };
   const regimes = macroRegime.regimes ? Object.values(macroRegime.regimes) : [];
   const factors = Array.isArray(macroRegime.factors) ? macroRegime.factors : [];
-  const impactDimensions = Array.isArray(macroRegime.impacts?.dimensions) ? macroRegime.impacts.dimensions : [];
+  const impactDimensions = Array.isArray(macroRegime.impacts?.dimensions)
+    ? macroRegime.impacts.dimensions
+    : [];
   const impactPaths = Array.isArray(macroRegime.impacts?.paths) ? macroRegime.impacts.paths : [];
-  const impactSummary = Array.isArray(macroRegime.impacts?.summary) ? macroRegime.impacts.summary : [];
+  const impactSummary = Array.isArray(macroRegime.impacts?.summary)
+    ? macroRegime.impacts.summary
+    : [];
 
   return (
     <Card className="space-y-6">
@@ -99,7 +106,10 @@ export function MacroRegimePanel({ macroRegime }: { macroRegime: MacroInterpreta
       {regimes.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {regimes.map((regime) => (
-            <div key={regime.key} className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+            <div
+              key={regime.key}
+              className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+            >
               <div className="flex items-center justify-between gap-3">
                 <div className="fine-print">{regime.label}</div>
                 <Badge tone={toneForRegime(regime.state)}>{regime.state.toLowerCase()}</Badge>
@@ -126,7 +136,10 @@ export function MacroRegimePanel({ macroRegime }: { macroRegime: MacroInterpreta
             ['Leasing Beta', `${formatNumber(profile.leasingSensitivity, 2)}x`],
             ['Construction Beta', `${formatNumber(profile.constructionSensitivity, 2)}x`]
           ].map(([label, value]) => (
-            <div key={label} className="rounded-[18px] border border-white/10 bg-slate-950/35 px-4 py-3">
+            <div
+              key={label}
+              className="rounded-[18px] border border-white/10 bg-slate-950/35 px-4 py-3"
+            >
               <div className="fine-print">{label}</div>
               <div className="mt-2 text-lg font-semibold text-white">{value}</div>
             </div>
@@ -141,7 +154,10 @@ export function MacroRegimePanel({ macroRegime }: { macroRegime: MacroInterpreta
             ['Growth', `${formatNumber(guidance.growthShiftPct, 2)} pts`],
             ['Replacement Cost', `${formatNumber(guidance.replacementCostShiftPct, 2)}%`]
           ].map(([label, value]) => (
-            <div key={label} className="rounded-[18px] border border-white/10 bg-slate-950/35 px-4 py-3">
+            <div
+              key={label}
+              className="rounded-[18px] border border-white/10 bg-slate-950/35 px-4 py-3"
+            >
               <div className="fine-print">{label}</div>
               <div className="mt-2 text-lg font-semibold text-white">{value}</div>
             </div>
@@ -159,14 +175,19 @@ export function MacroRegimePanel({ macroRegime }: { macroRegime: MacroInterpreta
           <div className="eyebrow">Common Macro Factors</div>
           <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {factors.map((point) => (
-              <div key={point.key} className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+              <div
+                key={point.key}
+                className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+              >
                 <div className="flex items-center justify-between gap-3">
                   <div className="fine-print">{point.label}</div>
                   <Badge tone={toneForDirection(point.direction)}>
                     {point.isObserved ? point.direction.toLowerCase() : 'unknown'}
                   </Badge>
                 </div>
-                <div className="mt-3 text-2xl font-semibold text-white">{formatFactorValue(point)}</div>
+                <div className="mt-3 text-2xl font-semibold text-white">
+                  {formatFactorValue(point)}
+                </div>
                 <p className="mt-3 text-sm leading-7 text-slate-300">{point.commentary}</p>
                 <div className="mt-3 space-y-1 text-xs text-slate-500">
                   {point.inputs.map((item) => (
@@ -184,12 +205,19 @@ export function MacroRegimePanel({ macroRegime }: { macroRegime: MacroInterpreta
           <div className="eyebrow">Impact Transmission</div>
           <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {impactDimensions.map((dimension) => (
-              <div key={dimension.key} className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+              <div
+                key={dimension.key}
+                className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+              >
                 <div className="flex items-center justify-between gap-3">
                   <div className="fine-print">{dimension.label}</div>
-                  <Badge tone={toneForImpact(dimension.direction)}>{dimension.direction.toLowerCase()}</Badge>
+                  <Badge tone={toneForImpact(dimension.direction)}>
+                    {dimension.direction.toLowerCase()}
+                  </Badge>
                 </div>
-                <div className="mt-3 text-2xl font-semibold text-white">{formatNumber(dimension.score, 2)}</div>
+                <div className="mt-3 text-2xl font-semibold text-white">
+                  {formatNumber(dimension.score, 2)}
+                </div>
                 <p className="mt-3 text-sm leading-7 text-slate-300">{dimension.commentary}</p>
                 <div className="mt-3 space-y-1 text-xs text-slate-500">
                   {dimension.channels.map((item) => (
@@ -206,7 +234,10 @@ export function MacroRegimePanel({ macroRegime }: { macroRegime: MacroInterpreta
             <div className="fine-print">Transmission Paths</div>
             <div className="mt-4 grid gap-3">
               {impactPaths.map((path) => (
-                <div key={`${path.factorKey}-${path.targetKey}`} className="rounded-[18px] border border-white/10 bg-slate-950/35 p-4">
+                <div
+                  key={`${path.factorKey}-${path.targetKey}`}
+                  className="rounded-[18px] border border-white/10 bg-slate-950/35 p-4"
+                >
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="text-sm font-semibold text-white">
                       {path.factorLabel} {'->'} {path.targetLabel}
@@ -230,13 +261,20 @@ export function MacroRegimePanel({ macroRegime }: { macroRegime: MacroInterpreta
 
       <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         {macroRegime.series.map((point) => (
-          <div key={point.seriesKey} className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+          <div
+            key={point.seriesKey}
+            className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+          >
             <div className="flex items-center justify-between gap-3">
               <div className="fine-print">{point.label}</div>
-              <Badge tone={toneForStatus(point.sourceStatus)}>{point.sourceStatus.toLowerCase()}</Badge>
+              <Badge tone={toneForStatus(point.sourceStatus)}>
+                {point.sourceStatus.toLowerCase()}
+              </Badge>
             </div>
             <div className="mt-3 text-2xl font-semibold text-white">{formatMacroValue(point)}</div>
-            <div className="mt-2 text-xs uppercase tracking-[0.18em] text-slate-500">{point.sourceSystem}</div>
+            <div className="mt-2 text-xs uppercase tracking-[0.18em] text-slate-500">
+              {point.sourceSystem}
+            </div>
           </div>
         ))}
       </div>

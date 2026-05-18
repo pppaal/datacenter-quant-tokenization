@@ -53,7 +53,9 @@ function buildSignals({
   const floodPenalty = pickNumber(assumptions, 'floodPenalty');
 
   const apiCount = provenance.filter((entry) => entry.mode.toLowerCase() === 'api').length;
-  const fallbackCount = provenance.filter((entry) => entry.mode.toLowerCase() === 'fallback').length;
+  const fallbackCount = provenance.filter(
+    (entry) => entry.mode.toLowerCase() === 'fallback'
+  ).length;
   const floorGap = ratioDelta(weightedValue, replacementFloor);
 
   const valuationPosture: Signal =
@@ -62,27 +64,31 @@ function buildSignals({
           title: 'Valuation Posture',
           tone: 'warn',
           summary: 'Floor-constrained',
-          detail: 'Weighted output is still anchored close to the replacement floor, which is typical for early-stage cases.'
+          detail:
+            'Weighted output is still anchored close to the replacement floor, which is typical for early-stage cases.'
         }
       : incomeValue !== null && weightedValue !== null && incomeValue > weightedValue * 1.1
         ? {
             title: 'Valuation Posture',
             tone: 'good',
             summary: 'Income-led',
-            detail: 'Income approach is pulling ahead of the weighted result, suggesting commercial assumptions are now carrying more of the case.'
+            detail:
+              'Income approach is pulling ahead of the weighted result, suggesting commercial assumptions are now carrying more of the case.'
           }
         : dcfValue !== null && dcfValue < 0
           ? {
               title: 'Valuation Posture',
               tone: 'warn',
               summary: 'Back-end loaded',
-              detail: 'Near-term cash flows remain thin versus build cost, so the case still relies on later stabilization.'
+              detail:
+                'Near-term cash flows remain thin versus build cost, so the case still relies on later stabilization.'
             }
           : {
               title: 'Valuation Posture',
               tone: 'neutral',
               summary: 'Balanced',
-              detail: 'Replacement, income, and DCF components are contributing without one single driver dominating the case.'
+              detail:
+                'Replacement, income, and DCF components are contributing without one single driver dominating the case.'
             };
 
   const sourceCoverage: Signal =
@@ -91,13 +97,15 @@ function buildSignals({
           title: 'Source Coverage',
           tone: 'warn',
           summary: 'Fallback-heavy',
-          detail: 'The run still leans on fallback inputs, so field verification and live-source refresh should precede committee use.'
+          detail:
+            'The run still leans on fallback inputs, so field verification and live-source refresh should precede committee use.'
         }
       : {
           title: 'Source Coverage',
           tone: 'good',
           summary: 'API-backed',
-          detail: 'Most traced fields are arriving from live or cached external sources rather than fallback benchmarks.'
+          detail:
+            'Most traced fields are arriving from live or cached external sources rather than fallback benchmarks.'
         };
 
   const developmentReadiness: Signal =
@@ -128,26 +136,40 @@ function buildSignals({
           title: 'Diligence Pressure',
           tone: 'warn',
           summary: 'Permitting / resilience review open',
-          detail: 'Permit timing or site resilience penalties are still active, so this run should be treated as committee support rather than a final underwriting view.'
+          detail:
+            'Permit timing or site resilience penalties are still active, so this run should be treated as committee support rather than a final underwriting view.'
         }
       : {
           title: 'Diligence Pressure',
           tone: 'good',
           summary: 'No major penalty active',
-          detail: 'Permit and site penalties are moderate, so the model is not currently applying a severe de-risking haircut.'
+          detail:
+            'Permit and site penalties are moderate, so the model is not currently applying a severe de-risking haircut.'
         };
 
   const confidenceContext: Signal = {
     title: 'Confidence Context',
-    tone: confidenceScore !== null && confidenceScore !== undefined && confidenceScore >= 9 ? 'good' : 'neutral',
-    summary: confidenceScore !== null && confidenceScore !== undefined ? `${formatNumber(confidenceScore, 1)} / 10` : 'N/A',
+    tone:
+      confidenceScore !== null && confidenceScore !== undefined && confidenceScore >= 9
+        ? 'good'
+        : 'neutral',
+    summary:
+      confidenceScore !== null && confidenceScore !== undefined
+        ? `${formatNumber(confidenceScore, 1)} / 10`
+        : 'N/A',
     detail:
       confidenceScore !== null && confidenceScore !== undefined
         ? 'Confidence reflects coverage breadth, coordinate availability, permit visibility, and site-risk deductions.'
         : 'Confidence score is not available for this run.'
   };
 
-  return [valuationPosture, sourceCoverage, developmentReadiness, diligencePressure, confidenceContext];
+  return [
+    valuationPosture,
+    sourceCoverage,
+    developmentReadiness,
+    diligencePressure,
+    confidenceContext
+  ];
 }
 
 export function ValuationSignals({ confidenceScore, assumptions, provenance = [] }: Props) {
@@ -157,7 +179,9 @@ export function ValuationSignals({ confidenceScore, assumptions, provenance = []
     <Card className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="eyebrow">Driver Commentary</div>
-        <div className="text-xs uppercase tracking-[0.18em] text-slate-500">Interpretation layer</div>
+        <div className="text-xs uppercase tracking-[0.18em] text-slate-500">
+          Interpretation layer
+        </div>
       </div>
       <div className="grid gap-4 xl:grid-cols-2">
         {signals.map((signal) => (

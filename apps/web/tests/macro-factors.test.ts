@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { SourceStatus } from '@prisma/client';
-import { buildMacroFactorCreateInputs, buildMacroFactorSnapshot } from '@/lib/services/macro/factors';
+import {
+  buildMacroFactorCreateInputs,
+  buildMacroFactorSnapshot
+} from '@/lib/services/macro/factors';
 
 test('macro factor engine derives common factors from raw series history', () => {
   const olderDate = new Date('2026-01-01T00:00:00.000Z');

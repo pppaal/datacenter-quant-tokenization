@@ -40,7 +40,12 @@ export function computeEquityWaterfall(
     const reserveKrw = year.year <= 2 ? reserveContributionKrw : 0;
     const debtServiceKrw = debtYear?.debtServiceKrw ?? 0;
     const preTaxDistributionKrw =
-      year.cfadsBeforeDebtKrw - propertyTaxKrw - insuranceKrw - managementFeeKrw - reserveKrw - debtServiceKrw;
+      year.cfadsBeforeDebtKrw -
+      propertyTaxKrw -
+      insuranceKrw -
+      managementFeeKrw -
+      reserveKrw -
+      debtServiceKrw;
     const corporateTaxKrw =
       Math.max(preTaxDistributionKrw, 0) * (prepared.taxProfile.corporateTaxPct / 100) * 0.9;
     const afterTaxDistributionKrw = preTaxDistributionKrw - corporateTaxKrw;
@@ -73,11 +78,13 @@ export function computeEquityWaterfall(
     grossExitValueKrw - debtSchedule.endingDebtBalanceKrw - exitTaxKrw;
   const promoteApplies =
     prepared.spvProfile.promoteThresholdPct > 0 &&
-    prePromoteExitProceedsKrw > prepared.capexBreakdown.totalCapexKrw * (1 + prepared.spvProfile.promoteThresholdPct / 100);
+    prePromoteExitProceedsKrw >
+      prepared.capexBreakdown.totalCapexKrw * (1 + prepared.spvProfile.promoteThresholdPct / 100);
   const promoteFeeKrw = promoteApplies
     ? prePromoteExitProceedsKrw * (prepared.spvProfile.promoteSharePct / 100)
     : 0;
-  const performanceFeeKrw = Math.max(prePromoteExitProceedsKrw, 0) * (prepared.spvProfile.performanceFeePct / 100);
+  const performanceFeeKrw =
+    Math.max(prePromoteExitProceedsKrw, 0) * (prepared.spvProfile.performanceFeePct / 100);
   const withholdingKrw =
     Math.max(prePromoteExitProceedsKrw - promoteFeeKrw - performanceFeeKrw, 0) *
     (prepared.taxProfile.withholdingTaxPct / 100) *

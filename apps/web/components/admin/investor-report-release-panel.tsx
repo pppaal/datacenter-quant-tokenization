@@ -27,7 +27,12 @@ type InvestorReportReleasePanelProps = {
   reports: InvestorReportRecord[];
 };
 
-const releaseOptions: InvestorReportReleaseStatus[] = ['DRAFT', 'INTERNAL_REVIEW', 'READY', 'RELEASED'];
+const releaseOptions: InvestorReportReleaseStatus[] = [
+  'DRAFT',
+  'INTERNAL_REVIEW',
+  'READY',
+  'RELEASED'
+];
 
 function toneForRelease(status: InvestorReportReleaseStatus) {
   if (status === 'RELEASED') return 'good' as const;
@@ -41,7 +46,9 @@ function formatDateValue(value: Date | null) {
 
 function ReleaseRow({ report }: { report: InvestorReportRecord }) {
   const router = useRouter();
-  const [releaseStatus, setReleaseStatus] = useState<InvestorReportReleaseStatus>(report.releaseStatus);
+  const [releaseStatus, setReleaseStatus] = useState<InvestorReportReleaseStatus>(
+    report.releaseStatus
+  );
   const [draftSummary, setDraftSummary] = useState(report.draftSummary ?? '');
   const [reviewNotes, setReviewNotes] = useState(report.reviewNotes ?? '');
   const [submitting, setSubmitting] = useState(false);
@@ -72,29 +79,47 @@ function ReleaseRow({ report }: { report: InvestorReportRecord }) {
         throw new Error(payload?.error ?? 'Failed to update investor report release workflow');
       }
 
-      setFeedback(releaseStatus === 'RELEASED' ? 'Investor report released.' : 'Release workflow updated.');
+      setFeedback(
+        releaseStatus === 'RELEASED' ? 'Investor report released.' : 'Release workflow updated.'
+      );
       router.refresh();
     } catch (caughtError) {
-      setError(caughtError instanceof Error ? caughtError.message : 'Failed to update investor report release workflow');
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : 'Failed to update investor report release workflow'
+      );
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4" data-testid="investor-report-release-row">
+    <div
+      className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+      data-testid="investor-report-release-row"
+    >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <div className="text-sm font-semibold text-white">{report.title}</div>
-            <Badge tone={toneForRelease(report.releaseStatus)}>{report.releaseStatus.toLowerCase().replaceAll('_', ' ')}</Badge>
+            <Badge tone={toneForRelease(report.releaseStatus)}>
+              {report.releaseStatus.toLowerCase().replaceAll('_', ' ')}
+            </Badge>
           </div>
           <div className="mt-1 text-xs text-slate-400">
-            {report.reportType.toLowerCase().replaceAll('_', ' ')} / {formatDateValue(report.periodEnd)}
+            {report.reportType.toLowerCase().replaceAll('_', ' ')} /{' '}
+            {formatDateValue(report.periodEnd)}
             {report.investor ? ` / ${report.investor.name}` : ''}
           </div>
         </div>
-        <Button type="button" variant="secondary" onClick={save} disabled={submitting || isReleased} data-testid="investor-report-release-save">
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={save}
+          disabled={submitting || isReleased}
+          data-testid="investor-report-release-save"
+        >
           {submitting ? 'Saving...' : isReleased ? 'Released' : 'Save Workflow'}
         </Button>
       </div>
@@ -132,7 +157,9 @@ function ReleaseRow({ report }: { report: InvestorReportRecord }) {
       </div>
 
       {report.publishedAt ? (
-        <div className="mt-3 text-xs text-emerald-300">Released {formatDateValue(report.publishedAt)}</div>
+        <div className="mt-3 text-xs text-emerald-300">
+          Released {formatDateValue(report.publishedAt)}
+        </div>
       ) : null}
       {feedback ? <div className="mt-2 text-sm text-emerald-300">{feedback}</div> : null}
       {error ? <div className="mt-2 text-sm text-rose-300">{error}</div> : null}
@@ -148,8 +175,8 @@ export function InvestorReportReleasePanel({ reports }: InvestorReportReleasePan
     <Card>
       <div className="eyebrow">Investor Reporting Release Workflow</div>
       <p className="mt-3 text-sm leading-7 text-slate-400">
-        Keep LP communications in controlled draft, internal review, ready, and released states. Released reports stay
-        immutable in the workflow and preserve their publication timestamp.
+        Keep LP communications in controlled draft, internal review, ready, and released states.
+        Released reports stay immutable in the workflow and preserve their publication timestamp.
       </p>
 
       <div className="mt-6 space-y-3">

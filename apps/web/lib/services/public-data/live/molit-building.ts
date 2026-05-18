@@ -28,8 +28,7 @@ import type {
   ParcelIdentifier
 } from '@/lib/services/public-data/types';
 
-const ENDPOINT =
-  'http://apis.data.go.kr/1613000/BldRgstService_v2/getBrTitleInfo';
+const ENDPOINT = 'http://apis.data.go.kr/1613000/BldRgstService_v2/getBrTitleInfo';
 
 export class LiveMolitBuildingRegistry implements BuildingRegistryConnector {
   constructor(

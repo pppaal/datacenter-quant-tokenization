@@ -108,7 +108,7 @@ function scoreOrZero(map: Record<string, number>, key: string | null): number {
 }
 
 export type EsgScore = {
-  overall: number;        // 0-100
+  overall: number; // 0-100
   energyRatingScore: number;
   gSeedScore: number;
   zebScore: number;
@@ -137,14 +137,20 @@ export function scoreEsg(input: EsgInput): EsgScore {
 
   // Stranding risk: low grade + no certification + post-2028 tightening.
   let stranding: EsgScore['stranding'] = 'LOW';
-  const weakEnergy =
-    input.energyGrade === null ||
-    ['3', '4', '5'].includes(input.energyGrade);
+  const weakEnergy = input.energyGrade === null || ['3', '4', '5'].includes(input.energyGrade);
   const weakCert = !input.gSeedGrade && !input.zebLevel;
   if (weakEnergy && weakCert) stranding = 'HIGH';
   else if (weakEnergy || weakCert) stranding = 'MODERATE';
 
-  return { overall, energyRatingScore, gSeedScore, zebScore, renewableScore, tenantDemandScore, stranding };
+  return {
+    overall,
+    energyRatingScore,
+    gSeedScore,
+    zebScore,
+    renewableScore,
+    tenantDemandScore,
+    stranding
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -206,7 +212,7 @@ const RETROFIT_COST_PER_SQM: Record<string, number> = {
   '3_to_target': 350_000,
   '4_to_target': 500_000,
   '5_to_target': 650_000,
-  'null_to_target': 400_000
+  null_to_target: 400_000
 };
 
 export type RetrofitEconomics = {
@@ -233,23 +239,16 @@ export function estimateRetrofitEconomics(
 
   // Premium uplift — applies only if we actually improve to EXCELLENT-equivalent.
   // Conservative: capture full premium only if currently below EXCELLENT.
-  const premiumEligible =
-    input.gSeedGrade !== 'EXCELLENT' && input.gSeedGrade !== 'BEST';
+  const premiumEligible = input.gSeedGrade !== 'EXCELLENT' && input.gSeedGrade !== 'BEST';
   const annualPremium = premiumEligible
     ? Math.round(
-        input.gfaSqm *
-          input.monthlyRentKrwPerSqm *
-          12 *
-          (config.greenPremiumRentUpliftPct / 100)
+        input.gfaSqm * input.monthlyRentKrwPerSqm * 12 * (config.greenPremiumRentUpliftPct / 100)
       )
     : 0;
 
   // Carbon savings — post-retrofit, assume electricity intensity drops 40%
   // and renewable share lifts to 50% at target.
-  const baseline = projectCarbonCost(input, config).reduce(
-    (s, r) => s + r.carbonCostKrw,
-    0
-  );
+  const baseline = projectCarbonCost(input, config).reduce((s, r) => s + r.carbonCostKrw, 0);
   const postRetrofit = projectCarbonCost(
     {
       ...input,
@@ -274,15 +273,13 @@ export function estimateRetrofitEconomics(
   let npv = -capex;
   for (let y = 1; y <= config.holdYears; y++) {
     const thisYearCarbonSaving =
-      (carbonRows[y - 1]?.carbonCostKrw ?? 0) -
-      (carbonRowsPost[y - 1]?.carbonCostKrw ?? 0);
+      (carbonRows[y - 1]?.carbonCostKrw ?? 0) - (carbonRowsPost[y - 1]?.carbonCostKrw ?? 0);
     const cashflow = annualPremium + Math.max(0, thisYearCarbonSaving);
     npv += cashflow / Math.pow(1 + discountRatePct / 100, y);
   }
 
   const annualBenefit = annualPremium + carbonSaved / config.holdYears;
-  const simplePayback =
-    annualBenefit > 0 ? Number((capex / annualBenefit).toFixed(2)) : null;
+  const simplePayback = annualBenefit > 0 ? Number((capex / annualBenefit).toFixed(2)) : null;
 
   let verdict: RetrofitEconomics['verdict'] = 'SKIP';
   if (npv > capex * 0.2) verdict = 'STRONG_UPGRADE';
@@ -311,10 +308,7 @@ export type EsgReport = {
   notes: string[];
 };
 
-export function buildEsgReport(
-  input: EsgInput,
-  config: EsgConfig = DEFAULT_ESG_CONFIG
-): EsgReport {
+export function buildEsgReport(input: EsgInput, config: EsgConfig = DEFAULT_ESG_CONFIG): EsgReport {
   const score = scoreEsg(input);
   const carbon = projectCarbonCost(input, config);
   const retrofit = estimateRetrofitEconomics(input, config);
@@ -333,7 +327,11 @@ export function buildEsgReport(
       `Retrofit NPV ${Math.round(retrofit.npv10yrKrw / 1_000_000_000)}bn KRW > 0 — upgrade is value-accretive before strand penalty.`
     );
   }
-  if (input.energyGrade && ['1++', '1+', '1'].includes(input.energyGrade) && input.gSeedGrade === 'BEST') {
+  if (
+    input.energyGrade &&
+    ['1++', '1+', '1'].includes(input.energyGrade) &&
+    input.gSeedGrade === 'BEST'
+  ) {
     notes.push('Top-tier energy & certification profile — qualify for green-fund pricing.');
   }
 

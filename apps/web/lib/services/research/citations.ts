@@ -16,17 +16,21 @@
  *   Pure functions, no IO — test-friendly and cheap to run in lint steps.
  */
 
-import type { CitedClaim, ResearchReport, ResearchSource } from '@/lib/services/research/research-agent';
+import type {
+  CitedClaim,
+  ResearchReport,
+  ResearchSource
+} from '@/lib/services/research/research-agent';
 
 export type CitationIssue = {
   severity: 'ERROR' | 'WARNING' | 'INFO';
   code:
-    | 'ORPHAN_MARKER'          // synthesis references [S#] that has no source entry
-    | 'UNUSED_SOURCE'          // source exists but no claim/synthesis cites it
-    | 'UNCITED_CLAIM'          // claim has empty sourceIds array
-    | 'MISSING_PUBLISHER'      // source has no publisher attribution
-    | 'STALE_SOURCE'           // published date more than 18 months before asOf
-    | 'NO_SOURCES';            // report has zero sources (degenerate)
+    | 'ORPHAN_MARKER' // synthesis references [S#] that has no source entry
+    | 'UNUSED_SOURCE' // source exists but no claim/synthesis cites it
+    | 'UNCITED_CLAIM' // claim has empty sourceIds array
+    | 'MISSING_PUBLISHER' // source has no publisher attribution
+    | 'STALE_SOURCE' // published date more than 18 months before asOf
+    | 'NO_SOURCES'; // report has zero sources (degenerate)
   sourceId?: string;
   claimIndex?: number;
   detail: string;
@@ -176,7 +180,8 @@ export function renderReportAsMarkdown(report: ResearchReport): string {
   if (report.claims.length > 0) {
     lines.push('## Key claims');
     report.claims.forEach((c, i) => {
-      const markers = c.sourceIds.length > 0 ? c.sourceIds.map((s) => `[${s}]`).join('') : '(uncited)';
+      const markers =
+        c.sourceIds.length > 0 ? c.sourceIds.map((s) => `[${s}]`).join('') : '(uncited)';
       lines.push(`${i + 1}. ${c.text} ${markers}`);
     });
     lines.push('');

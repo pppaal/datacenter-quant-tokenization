@@ -394,21 +394,19 @@ export async function upsertAdminIdentityBindingForActor(
   });
 }
 
-export async function getAdminIdentityBindingSummary(
-  db: {
-    adminIdentityBinding?: {
-      count(args?: { where?: { userId?: { not: null } } }): Promise<number>;
-      findFirst(args: {
-        orderBy: {
-          lastSeenAt: 'desc';
-        };
-        select: {
-          lastSeenAt: true;
-        };
-      }): Promise<{ lastSeenAt: Date } | null>;
-    };
-  }
-): Promise<AdminIdentityBindingSummary> {
+export async function getAdminIdentityBindingSummary(db: {
+  adminIdentityBinding?: {
+    count(args?: { where?: { userId?: { not: null } } }): Promise<number>;
+    findFirst(args: {
+      orderBy: {
+        lastSeenAt: 'desc';
+      };
+      select: {
+        lastSeenAt: true;
+      };
+    }): Promise<{ lastSeenAt: Date } | null>;
+  };
+}): Promise<AdminIdentityBindingSummary> {
   if (!db.adminIdentityBinding) {
     return {
       totalBindings: 0,
@@ -542,7 +540,9 @@ export async function listAdminOperatorSeats(
     user: {
       findMany(args: {
         take: number;
-        orderBy: Array<{ isActive: 'asc' | 'desc' } | { role: 'asc' | 'desc' } | { name: 'asc' | 'desc' }>;
+        orderBy: Array<
+          { isActive: 'asc' | 'desc' } | { role: 'asc' | 'desc' } | { name: 'asc' | 'desc' }
+        >;
         select: {
           id: true;
           name: true;
@@ -601,7 +601,12 @@ export async function updateAdminOperatorSeat(
           isActive: true;
           sessionVersion?: true;
         };
-      }): Promise<{ id: string; role: 'ADMIN' | 'ANALYST' | 'VIEWER'; isActive: boolean; sessionVersion?: number } | null>;
+      }): Promise<{
+        id: string;
+        role: 'ADMIN' | 'ANALYST' | 'VIEWER';
+        isActive: boolean;
+        sessionVersion?: number;
+      } | null>;
       count(args: {
         where: {
           role: 'ADMIN';
@@ -655,7 +660,10 @@ export async function updateAdminOperatorSeat(
 
   const nextRole = input.role ?? currentSeat.role;
   const nextIsActive = typeof input.isActive === 'boolean' ? input.isActive : currentSeat.isActive;
-  const removingAdminCoverage = currentSeat.role === 'ADMIN' && currentSeat.isActive && (nextRole !== 'ADMIN' || nextIsActive === false);
+  const removingAdminCoverage =
+    currentSeat.role === 'ADMIN' &&
+    currentSeat.isActive &&
+    (nextRole !== 'ADMIN' || nextIsActive === false);
 
   if (removingAdminCoverage) {
     const otherActiveAdminCount = await db.user.count({
@@ -673,7 +681,11 @@ export async function updateAdminOperatorSeat(
     }
   }
 
-  if (input.actingUserId && input.actingUserId === currentSeat.id && (nextRole !== currentSeat.role || nextIsActive !== currentSeat.isActive)) {
+  if (
+    input.actingUserId &&
+    input.actingUserId === currentSeat.id &&
+    (nextRole !== currentSeat.role || nextIsActive !== currentSeat.isActive)
+  ) {
     throw new Error('Update another operator to change your own seat, role, or active status.');
   }
 

@@ -21,7 +21,10 @@ test('admin auth supports multiple credentials and returns actor role', () => {
     ADMIN_BASIC_AUTH_ADMIN_CREDENTIALS: 'admin:pw3'
   });
 
-  const actor = authorizeAdminHeader(`Basic ${Buffer.from('analyst:pw2').toString('base64')}`, config);
+  const actor = authorizeAdminHeader(
+    `Basic ${Buffer.from('analyst:pw2').toString('base64')}`,
+    config
+  );
 
   assert.equal(config.mode, 'configured');
   assert.equal(actor?.identifier, 'analyst');
@@ -72,7 +75,10 @@ test('recordAuditEvent persists normalized audit metadata', async () => {
 });
 
 test('document storage readiness surfaces local, partial, and external states', () => {
-  assert.equal(getDocumentStorageReadiness({ NODE_ENV: 'test' } as NodeJS.ProcessEnv).mode, 'local');
+  assert.equal(
+    getDocumentStorageReadiness({ NODE_ENV: 'test' } as NodeJS.ProcessEnv).mode,
+    'local'
+  );
   assert.equal(
     getDocumentStorageReadiness({
       NODE_ENV: 'test',

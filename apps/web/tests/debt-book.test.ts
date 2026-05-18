@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { AmortizationProfile, DebtFacilityType } from '@prisma/client';
-import { createDebtFacility, deleteDebtFacility, updateDebtFacility } from '@/lib/services/debt-book';
+import {
+  createDebtFacility,
+  deleteDebtFacility,
+  updateDebtFacility
+} from '@/lib/services/debt-book';
 
 test('debt book create normalizes currency and creates a facility with draws', async () => {
   let capturedCreate: any;

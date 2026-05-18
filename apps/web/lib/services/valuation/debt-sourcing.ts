@@ -28,15 +28,15 @@
 // ---------------------------------------------------------------------------
 
 export type LenderCategory =
-  | 'COMMERCIAL_BANK'    // 시중은행: KB, 신한, 우리, 하나, NH, IBK
-  | 'INSURANCE'          // 생보 / 손보: 삼성생명, 한화생명, 교보, 미래에셋
-  | 'PENSION'            // 국민연금, 사학연금, 공무원연금
-  | 'SECURITIES'         // 증권사 PF / 브릿지: 메리츠, NH, 하나증권
-  | 'MEZZ_FUND'          // 메자닌 전문 펀드
-  | 'CAPITAL'            // 캐피탈: 하나캐피탈, 신한캐피탈
-  | 'SAVINGS_BANK'       // 저축은행: SBI, OK
-  | 'FOREIGN'            // 외국계: 씨티, HSBC, 도이치, Aozora
-  | 'NPL_FUND';          // NPL 매입 펀드 (Oaktree, MBK, 한앤코 등)
+  | 'COMMERCIAL_BANK' // 시중은행: KB, 신한, 우리, 하나, NH, IBK
+  | 'INSURANCE' // 생보 / 손보: 삼성생명, 한화생명, 교보, 미래에셋
+  | 'PENSION' // 국민연금, 사학연금, 공무원연금
+  | 'SECURITIES' // 증권사 PF / 브릿지: 메리츠, NH, 하나증권
+  | 'MEZZ_FUND' // 메자닌 전문 펀드
+  | 'CAPITAL' // 캐피탈: 하나캐피탈, 신한캐피탈
+  | 'SAVINGS_BANK' // 저축은행: SBI, OK
+  | 'FOREIGN' // 외국계: 씨티, HSBC, 도이치, Aozora
+  | 'NPL_FUND'; // NPL 매입 펀드 (Oaktree, MBK, 한앤코 등)
 
 export type AssetClassFocus =
   | 'OFFICE'
@@ -232,7 +232,8 @@ export const DEFAULT_LENDER_CATALOG: LenderProfile[] = [
     underwritingWeeks: 3,
     geographicPreference: 'NATIONAL',
     acceptsSubInvestmentGrade: true,
-    notes: 'Fast but expensive. Take-out required within 2-3 years. Post-2022 tightening still in effect.'
+    notes:
+      'Fast but expensive. Take-out required within 2-3 years. Post-2022 tightening still in effect.'
   },
   {
     code: 'MEZZ_DOMESTIC',
@@ -320,7 +321,8 @@ export const DEFAULT_LENDER_CATALOG: LenderProfile[] = [
     underwritingWeeks: 10,
     geographicPreference: 'SEOUL_PRIME',
     acceptsSubInvestmentGrade: false,
-    notes: 'USD-linked pricing, requires NDF hedge program. Primarily institutional-grade Seoul offices + prime logistics.'
+    notes:
+      'USD-linked pricing, requires NDF hedge program. Primarily institutional-grade Seoul offices + prime logistics.'
   },
   {
     code: 'NPL_DISTRESS',
@@ -342,7 +344,8 @@ export const DEFAULT_LENDER_CATALOG: LenderProfile[] = [
     underwritingWeeks: 4,
     geographicPreference: 'NATIONAL',
     acceptsSubInvestmentGrade: true,
-    notes: 'Last-resort rescue capital. Ruthless on covenants. Appropriate only for workout situations.'
+    notes:
+      'Last-resort rescue capital. Ruthless on covenants. Appropriate only for workout situations.'
   },
   {
     code: 'INS_DC_INFRA',
@@ -364,7 +367,8 @@ export const DEFAULT_LENDER_CATALOG: LenderProfile[] = [
     underwritingWeeks: 12,
     geographicPreference: 'METRO',
     acceptsSubInvestmentGrade: false,
-    notes: 'Requires hyperscaler offtake LOI before drawing. DC-dedicated allocation growing 2025-2030.'
+    notes:
+      'Requires hyperscaler offtake LOI before drawing. DC-dedicated allocation growing 2025-2030.'
   },
   {
     code: 'PENSION_SATELLITE',
@@ -457,12 +461,24 @@ export type DebtDealProfile = {
 };
 
 const PRIME_SEOUL_DISTRICTS = new Set([
-  '강남구', '서초구', '송파구', '용산구', '영등포구', '중구', '종로구'
+  '강남구',
+  '서초구',
+  '송파구',
+  '용산구',
+  '영등포구',
+  '중구',
+  '종로구'
 ]);
 
 const METRO_PROVINCES = new Set([
-  '서울특별시', '경기도', '인천광역시',
-  '부산광역시', '대구광역시', '광주광역시', '대전광역시', '울산광역시'
+  '서울특별시',
+  '경기도',
+  '인천광역시',
+  '부산광역시',
+  '대구광역시',
+  '광주광역시',
+  '대전광역시',
+  '울산광역시'
 ]);
 
 function geoFit(profile: LenderProfile, deal: DebtDealProfile): number {
@@ -487,8 +503,7 @@ function stageMatchesInstrument(
   if (dealStage === 'BRIDGE') return profileInstruments.includes('BRIDGE');
   if (dealStage === 'LAND')
     return (
-      profileInstruments.includes('BRIDGE') ||
-      profileInstruments.includes('ACQUISITION_MORTGAGE')
+      profileInstruments.includes('BRIDGE') || profileInstruments.includes('ACQUISITION_MORTGAGE')
     );
   // Operating / stabilized: senior term or acquisition mortgage.
   return (
@@ -565,29 +580,39 @@ export function evaluateLender(
     deal.instrumentPreference.length === 0 ||
     deal.instrumentPreference.some((i) => profile.instrumentTypes.includes(i));
   if (!instrumentOk) reasons.push(`Instrument mismatch vs ${deal.stage} stage`);
-  else if (!prefAligned) reasons.push(`Lender instrument set outside sponsor preference (soft flag)`);
+  else if (!prefAligned)
+    reasons.push(`Lender instrument set outside sponsor preference (soft flag)`);
 
-  const dealSizeOk = deal.debtNeedKrw >= profile.minDealKrw && deal.debtNeedKrw <= profile.maxDealKrw;
+  const dealSizeOk =
+    deal.debtNeedKrw >= profile.minDealKrw && deal.debtNeedKrw <= profile.maxDealKrw;
   if (!dealSizeOk) {
     if (deal.debtNeedKrw < profile.minDealKrw) reasons.push('Below minimum deal size');
     else reasons.push('Above maximum deal size');
   }
 
   const ltvOk = deal.targetLtvPct <= profile.targetLtvMaxPct;
-  if (!ltvOk) reasons.push(`LTV ${deal.targetLtvPct}% exceeds lender cap ${profile.targetLtvMaxPct}%`);
+  if (!ltvOk)
+    reasons.push(`LTV ${deal.targetLtvPct}% exceeds lender cap ${profile.targetLtvMaxPct}%`);
 
   // DSCR / debt-yield checks only apply to stabilized-income instruments.
   const needsIncomeTest = deal.stage === 'STABILIZED' || deal.stage === 'LIVE';
   const dscrOk = !needsIncomeTest || deal.stabilizedDscr >= profile.minDscr;
-  if (!dscrOk) reasons.push(`DSCR ${deal.stabilizedDscr.toFixed(2)}× below floor ${profile.minDscr}×`);
+  if (!dscrOk)
+    reasons.push(`DSCR ${deal.stabilizedDscr.toFixed(2)}× below floor ${profile.minDscr}×`);
   const debtYieldOk = !needsIncomeTest || deal.stabilizedDebtYieldPct >= profile.minDebtYieldPct;
-  if (!debtYieldOk) reasons.push(`Debt yield ${deal.stabilizedDebtYieldPct}% below floor ${profile.minDebtYieldPct}%`);
+  if (!debtYieldOk)
+    reasons.push(
+      `Debt yield ${deal.stabilizedDebtYieldPct}% below floor ${profile.minDebtYieldPct}%`
+    );
 
   const creditOk = deal.tenantCreditIsInvestmentGrade || profile.acceptsSubInvestmentGrade;
   if (!creditOk) reasons.push('Lender requires investment-grade tenant/sponsor');
 
   const speedOk = profile.underwritingWeeks <= deal.maxUnderwritingWeeks;
-  if (!speedOk) reasons.push(`Underwriting ${profile.underwritingWeeks}w > runway ${deal.maxUnderwritingWeeks}w`);
+  if (!speedOk)
+    reasons.push(
+      `Underwriting ${profile.underwritingWeeks}w > runway ${deal.maxUnderwritingWeeks}w`
+    );
 
   const geoScore = geoFit(profile, deal);
   const geoOk = geoScore >= 0.3;

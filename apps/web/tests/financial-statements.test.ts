@@ -71,7 +71,8 @@ test('financial statement parser merges AI-enriched fields when heuristic covera
     {
       assetName: 'Maple Logistics Hub',
       title: 'Maple Sponsor FY2024 Accounts',
-      extractedText: 'Sponsor: Maple Sponsor. Revenue KRW 42000000000. EBITDA KRW 11800000000. Cash KRW 6400000000.'
+      extractedText:
+        'Sponsor: Maple Sponsor. Revenue KRW 42000000000. EBITDA KRW 11800000000. Cash KRW 6400000000.'
     },
     {
       aiExtractor: async () => ({

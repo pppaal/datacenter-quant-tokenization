@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
-import { getRequestIpAddress, resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
+import {
+  getRequestIpAddress,
+  resolveVerifiedAdminActorFromHeaders
+} from '@/lib/security/admin-request';
 import { recordAuditEvent } from '@/lib/services/audit';
 import { updateAdminIdentityBindingUser } from '@/lib/security/admin-identity';
 
@@ -38,7 +41,9 @@ export async function PATCH(request: Request) {
     await recordAuditEvent({
       actorIdentifier: actor?.identifier ?? null,
       actorRole: actor?.role ?? null,
-      action: payload.userId?.trim() ? 'admin_identity_binding.map' : 'admin_identity_binding.clear',
+      action: payload.userId?.trim()
+        ? 'admin_identity_binding.map'
+        : 'admin_identity_binding.clear',
       entityType: 'AdminIdentityBinding',
       entityId: payload.bindingId.trim(),
       requestPath: '/api/admin/identity-bindings',

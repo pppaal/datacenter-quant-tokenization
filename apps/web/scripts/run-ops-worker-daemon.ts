@@ -53,7 +53,10 @@ async function main() {
 }
 
 main().catch(async (error) => {
-  console.error('[ops-worker-daemon] failed:', error instanceof Error ? error.message : String(error));
+  console.error(
+    '[ops-worker-daemon] failed:',
+    error instanceof Error ? error.message : String(error)
+  );
   await prisma.$disconnect();
   process.exit(1);
 });

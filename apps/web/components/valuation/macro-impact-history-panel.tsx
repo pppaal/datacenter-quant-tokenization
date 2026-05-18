@@ -21,9 +21,12 @@ export function MacroImpactHistoryPanel({ history }: { history: MacroImpactHisto
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="eyebrow">Macro Impact History</div>
-          <h3 className="mt-2 text-xl font-semibold text-white">Transmission Trend Across Recent Runs</h3>
+          <h3 className="mt-2 text-xl font-semibold text-white">
+            Transmission Trend Across Recent Runs
+          </h3>
           <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-400">
-            Tracks how macro transmission scores moved as the market changed and the underwriting view was refreshed.
+            Tracks how macro transmission scores moved as the market changed and the underwriting
+            view was refreshed.
           </p>
         </div>
         <div className="text-xs uppercase tracking-[0.18em] text-slate-500">
@@ -33,11 +36,16 @@ export function MacroImpactHistoryPanel({ history }: { history: MacroImpactHisto
 
       <div className="grid gap-4 xl:grid-cols-2">
         {history.series.map((series) => (
-          <div key={series.key} className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+          <div
+            key={series.key}
+            className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+          >
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <div className="fine-print">{series.label}</div>
-                <div className="mt-2 text-2xl font-semibold text-white">{formatNumber(series.latestScore, 2)}</div>
+                <div className="mt-2 text-2xl font-semibold text-white">
+                  {formatNumber(series.latestScore, 2)}
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <Badge tone={toneForImpact(series.latestDirection)}>
@@ -53,7 +61,10 @@ export function MacroImpactHistoryPanel({ history }: { history: MacroImpactHisto
 
             <div className="mt-4 space-y-3">
               {series.points.map((point) => (
-                <div key={point.runId} className="grid gap-2 md:grid-cols-[140px_1fr_86px] md:items-center">
+                <div
+                  key={point.runId}
+                  className="grid gap-2 md:grid-cols-[140px_1fr_86px] md:items-center"
+                >
                   <div className="text-xs uppercase tracking-[0.12em] text-slate-500">
                     <div>{formatDate(point.createdAt)}</div>
                     <div className="mt-1 truncate text-[11px]">{point.runLabel}</div>
@@ -71,7 +82,9 @@ export function MacroImpactHistoryPanel({ history }: { history: MacroImpactHisto
                       style={{ width: widthForScore(point.score) }}
                     />
                   </div>
-                  <div className="text-right text-sm font-semibold text-white">{formatNumber(point.score, 2)}</div>
+                  <div className="text-right text-sm font-semibold text-white">
+                    {formatNumber(point.score, 2)}
+                  </div>
                 </div>
               ))}
             </div>

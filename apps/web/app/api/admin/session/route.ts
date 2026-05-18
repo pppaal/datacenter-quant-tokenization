@@ -15,19 +15,20 @@ import {
 } from '@/lib/security/admin-session';
 
 export async function POST(request: Request) {
-  const body = (await request.json().catch(() => null)) as
-    | {
-        user?: string;
-        password?: string;
-      }
-    | null;
+  const body = (await request.json().catch(() => null)) as {
+    user?: string;
+    password?: string;
+  } | null;
 
   const user = body?.user?.trim() ?? '';
   const password = body?.password ?? '';
   const config = getAdminAuthConfig();
 
   if (config.mode !== 'configured') {
-    return NextResponse.json({ error: 'Admin auth is not configured for operator sessions.' }, { status: 503 });
+    return NextResponse.json(
+      { error: 'Admin auth is not configured for operator sessions.' },
+      { status: 503 }
+    );
   }
 
   const actor = authorizeAdminCredentials(user, password, config);
@@ -105,7 +106,9 @@ export async function GET() {
             if (name === 'x-admin-user-id') return tokenActor.userId ?? null;
             if (name === 'x-admin-session-id') return tokenActor.sessionId ?? null;
             if (name === 'x-admin-session-version')
-              return typeof tokenActor.sessionVersion === 'number' ? String(tokenActor.sessionVersion) : null;
+              return typeof tokenActor.sessionVersion === 'number'
+                ? String(tokenActor.sessionVersion)
+                : null;
             return null;
           }
         },

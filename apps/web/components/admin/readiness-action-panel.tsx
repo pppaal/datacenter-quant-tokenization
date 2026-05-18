@@ -34,7 +34,9 @@ const actionCopy: Record<
 export function ReadinessActionPanel({ assetId }: { assetId: string }) {
   const router = useRouter();
   const [busy, setBusy] = useState<ReadinessAction | null>(null);
-  const [feedback, setFeedback] = useState<{ tone: 'good' | 'danger'; message: string } | null>(null);
+  const [feedback, setFeedback] = useState<{ tone: 'good' | 'danger'; message: string } | null>(
+    null
+  );
 
   async function run(action: ReadinessAction) {
     setBusy(action);
@@ -96,8 +98,9 @@ export function ReadinessActionPanel({ assetId }: { assetId: string }) {
         </div>
       ) : null}
       <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4 text-sm leading-7 text-slate-400 md:col-span-3">
-        Readiness remains registry-only. Valuations, files, and extracted text stay offchain while the workflow
-        stages a deterministic packet fingerprint and anchors document integrity hashes onchain.
+        Readiness remains registry-only. Valuations, files, and extracted text stay offchain while
+        the workflow stages a deterministic packet fingerprint and anchors document integrity hashes
+        onchain.
       </div>
     </div>
   );

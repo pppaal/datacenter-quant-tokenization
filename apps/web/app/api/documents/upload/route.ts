@@ -3,7 +3,10 @@ import { AdminAccessScopeType } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { assertActorScopeAccess } from '@/lib/security/admin-access';
 import { uploadDocumentVersion } from '@/lib/services/documents';
-import { getRequestIpAddress, resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
+import {
+  getRequestIpAddress,
+  resolveVerifiedAdminActorFromHeaders
+} from '@/lib/security/admin-request';
 import { UploadPolicyError, validateDocumentUpload } from '@/lib/security/upload-policy';
 import { recordAuditEvent } from '@/lib/services/audit';
 

@@ -60,7 +60,9 @@ export function InvestorReportPanel({ fundId, fundName, metrics }: Props) {
             Generate and download investor reports with current fund metrics.
           </p>
         </div>
-        <Badge tone={metrics.tvpiMultiple >= 1 ? 'good' : 'warn'}>TVPI {metrics.tvpiMultiple}x</Badge>
+        <Badge tone={metrics.tvpiMultiple >= 1 ? 'good' : 'warn'}>
+          TVPI {metrics.tvpiMultiple}x
+        </Badge>
       </div>
 
       <div className="grid gap-4 md:grid-cols-4 xl:grid-cols-8">
@@ -87,10 +89,18 @@ export function InvestorReportPanel({ fundId, fundName, metrics }: Props) {
         <Button onClick={() => download('md')} disabled={downloading === 'md'}>
           {downloading === 'md' ? 'Generating...' : 'Download Markdown Report'}
         </Button>
-        <Button variant="secondary" onClick={() => download('json')} disabled={downloading === 'json'}>
+        <Button
+          variant="secondary"
+          onClick={() => download('json')}
+          disabled={downloading === 'json'}
+        >
           {downloading === 'json' ? 'Generating...' : 'Download JSON Report'}
         </Button>
-        <Button variant="secondary" onClick={() => download('csv')} disabled={downloading === 'csv'}>
+        <Button
+          variant="secondary"
+          onClick={() => download('csv')}
+          disabled={downloading === 'csv'}
+        >
           {downloading === 'csv' ? 'Generating...' : 'Download CSV (Excel)'}
         </Button>
         <Button variant="ghost" onClick={openHtmlReport}>

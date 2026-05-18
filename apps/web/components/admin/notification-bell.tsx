@@ -202,9 +202,7 @@ export function NotificationBell() {
                   key={item.id}
                   className={cn(
                     'rounded-2xl border p-3 transition',
-                    isUnread
-                      ? 'border-white/12 bg-white/[0.05]'
-                      : 'border-white/5 bg-white/[0.02]'
+                    isUnread ? 'border-white/12 bg-white/[0.05]' : 'border-white/5 bg-white/[0.02]'
                   )}
                 >
                   <div className="flex items-start gap-3">

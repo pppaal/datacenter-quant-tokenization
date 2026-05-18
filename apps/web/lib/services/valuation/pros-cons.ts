@@ -205,7 +205,7 @@ function fromTenantCredit(tc: RentDefaultProjection | null): ProsConsItem[] {
   const total = tc.totalAnnualRentKrw;
   if (total > 0) {
     const top = [...tc.breakdown].sort((a, b) => b.annualRentKrw - a.annualRentKrw)[0];
-    if (top && top.annualRentKrw / total > 0.40) {
+    if (top && top.annualRentKrw / total > 0.4) {
       const sharePct = (top.annualRentKrw / total) * 100;
       items.push({
         category: 'tenant',
@@ -215,12 +215,12 @@ function fromTenantCredit(tc: RentDefaultProjection | null): ProsConsItem[] {
         source: 'tenant-credit',
         metric: sharePct
       });
-    } else if (top && tc.breakdown.length >= 3 && top.annualRentKrw / total < 0.30) {
+    } else if (top && tc.breakdown.length >= 3 && top.annualRentKrw / total < 0.3) {
       items.push({
         category: 'tenant',
         sentiment: 'pro',
         severity: 1,
-        fact: `Tenant base diversified across ${tc.breakdown.length} tenants (top ${(top.annualRentKrw / total * 100).toFixed(0)}%)`,
+        fact: `Tenant base diversified across ${tc.breakdown.length} tenants (top ${((top.annualRentKrw / total) * 100).toFixed(0)}%)`,
         source: 'tenant-credit'
       });
     }
@@ -328,7 +328,9 @@ function fromRefinancing(refi: RefinanceAnalysis): ProsConsItem[] {
 
   // Find any savings opportunity scenario
   const bestRefi = refi.scenarios
-    .filter((s) => s.annualDebtServiceSavingKrw > 0 && s.breakEvenYears !== null && s.breakEvenYears < 4)
+    .filter(
+      (s) => s.annualDebtServiceSavingKrw > 0 && s.breakEvenYears !== null && s.breakEvenYears < 4
+    )
     .sort((a, b) => b.annualDebtServiceSavingKrw - a.annualDebtServiceSavingKrw)[0];
   if (bestRefi) {
     items.push({

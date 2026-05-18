@@ -68,7 +68,9 @@ export function DealTimelinePanel({ events }: Props) {
                     ))}
                   </div>
                 </div>
-                {event.body ? <p className="mt-3 text-sm leading-7 text-slate-300">{event.body}</p> : null}
+                {event.body ? (
+                  <p className="mt-3 text-sm leading-7 text-slate-300">{event.body}</p>
+                ) : null}
               </div>
             );
 

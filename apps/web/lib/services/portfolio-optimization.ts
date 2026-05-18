@@ -113,8 +113,12 @@ function buildAssetSignal(input: PortfolioRecord['assets'][number]) {
   const rentGapPct = marketRent > 0 ? ((marketRent - passingRent) / marketRent) * 100 : 0;
   const blockerCount = dossier.pendingBlockers.length;
   const openTaskCount = dossier.coverage.openTaskCount;
-  const breachCount = input.covenantTests.filter((test) => test.status === CovenantStatus.BREACH).length;
-  const watchCount = input.covenantTests.filter((test) => test.status === CovenantStatus.WATCH).length;
+  const breachCount = input.covenantTests.filter(
+    (test) => test.status === CovenantStatus.BREACH
+  ).length;
+  const watchCount = input.covenantTests.filter(
+    (test) => test.status === CovenantStatus.WATCH
+  ).length;
   const rolloverPct = leaseRoll?.next12MonthsExpiringPct ?? 0;
 
   const freshnessBoost =
@@ -139,7 +143,10 @@ function buildAssetSignal(input: PortfolioRecord['assets'][number]) {
 
   const scorePct = clamp(rawScore, 15, 95);
   const stressPenaltyPct = clamp(
-    rolloverPct * 0.25 + Math.max(0, 60 - dscr * 40) + Math.max(0, ltvPct - 55) * 0.55 + blockerCount * 6,
+    rolloverPct * 0.25 +
+      Math.max(0, 60 - dscr * 40) +
+      Math.max(0, ltvPct - 55) * 0.55 +
+      blockerCount * 6,
     5,
     45
   );
@@ -152,14 +159,21 @@ function buildAssetSignal(input: PortfolioRecord['assets'][number]) {
   if (watchCount > 0 || breachCount > 0) {
     reasons.push(`${breachCount} breach and ${watchCount} watch covenant tests are open.`);
   }
-  if (blockerCount > 0) reasons.push(`${blockerCount} approved-evidence blocker${blockerCount === 1 ? '' : 's'} remain.`);
-  if (openTaskCount > 0) reasons.push(`${openTaskCount} research coverage task${openTaskCount === 1 ? '' : 's'} remain open.`);
+  if (blockerCount > 0)
+    reasons.push(
+      `${blockerCount} approved-evidence blocker${blockerCount === 1 ? '' : 's'} remain.`
+    );
+  if (openTaskCount > 0)
+    reasons.push(
+      `${openTaskCount} research coverage task${openTaskCount === 1 ? '' : 's'} remain open.`
+    );
   if (dossier.market.officialHighlights[0]) {
     reasons.push(
       `${dossier.market.officialHighlights[0].label} ${dossier.market.officialHighlights[0].value} anchors the current market signal.`
     );
   }
-  if (reasons.length === 0) reasons.push('Current operating and research signals are broadly stable.');
+  if (reasons.length === 0)
+    reasons.push('Current operating and research signals are broadly stable.');
 
   return {
     scorePct,
@@ -172,7 +186,9 @@ function buildAssetSignal(input: PortfolioRecord['assets'][number]) {
 }
 
 function buildInitialWeights(portfolio: PortfolioRecord) {
-  const rawWeights = portfolio.assets.map((asset) => asset.currentHoldValueKrw ?? asset.acquisitionCostKrw ?? 0);
+  const rawWeights = portfolio.assets.map(
+    (asset) => asset.currentHoldValueKrw ?? asset.acquisitionCostKrw ?? 0
+  );
   const normalized = normalizeWeightVector(rawWeights);
   if (normalized.some((weight) => weight > 0)) {
     return roundWeightVector(normalized);
@@ -180,9 +196,15 @@ function buildInitialWeights(portfolio: PortfolioRecord) {
   return roundWeightVector(portfolio.assets.map(() => 100 / Math.max(1, portfolio.assets.length)));
 }
 
-function buildObjective(weights: number[], signals: Array<{ scorePct: number; stressPenaltyPct: number }>) {
+function buildObjective(
+  weights: number[],
+  signals: Array<{ scorePct: number; stressPenaltyPct: number }>
+) {
   const weightedSignal = sum(
-    weights.map((weight, index) => (weight / 100) * (signals[index].scorePct - signals[index].stressPenaltyPct * 0.45))
+    weights.map(
+      (weight, index) =>
+        (weight / 100) * (signals[index].scorePct - signals[index].stressPenaltyPct * 0.45)
+    )
   );
   const hhiPenalty = sum(weights.map((weight) => Math.pow(weight / 100, 2))) * 25;
   return weightedSignal - hhiPenalty;
@@ -244,9 +266,19 @@ function buildScenarioRows(
   signalsByAssetId: Map<string, AssetSignal>
 ) {
   const namedScenarios = [
-    { label: 'Base Operating Case', capRateShockBps: 0, occupancyShockPct: 0, debtSpreadShockBps: 0 },
+    {
+      label: 'Base Operating Case',
+      capRateShockBps: 0,
+      occupancyShockPct: 0,
+      debtSpreadShockBps: 0
+    },
     { label: 'Leasing Stress', capRateShockBps: 25, occupancyShockPct: -6, debtSpreadShockBps: 25 },
-    { label: 'Refinancing Stress', capRateShockBps: 50, occupancyShockPct: -2, debtSpreadShockBps: 75 }
+    {
+      label: 'Refinancing Stress',
+      capRateShockBps: 50,
+      occupancyShockPct: -2,
+      debtSpreadShockBps: 75
+    }
   ];
 
   const searchedScenarios = [];
@@ -294,7 +326,9 @@ function buildScenarioRows(
         Math.max(0, rolloverPct - 15) * 0.08;
 
       const stressScore =
-        Math.abs(valueImpactPct) * 0.8 + Math.abs(dscrImpactPct) * 0.45 + signal.stressPenaltyPct * 0.25;
+        Math.abs(valueImpactPct) * 0.8 +
+        Math.abs(dscrImpactPct) * 0.45 +
+        signal.stressPenaltyPct * 0.25;
 
       weightedValueImpactPct += valueImpactPct * weight;
       weightedDscrImpactPct += dscrImpactPct * weight;
@@ -329,13 +363,20 @@ function buildScenarioRows(
   return [...evaluatedNamed, worstFeasible].filter(Boolean) as PortfolioScenarioExplorationRow[];
 }
 
-export function buildPortfolioOptimizationLab(portfolio: PortfolioRecord): PortfolioOptimizationLab {
+export function buildPortfolioOptimizationLab(
+  portfolio: PortfolioRecord
+): PortfolioOptimizationLab {
   const currentWeights = buildInitialWeights(portfolio);
   const signalRows = portfolio.assets.map((asset) => buildAssetSignal(asset));
-  const signalsByAssetId = new Map(portfolio.assets.map((asset, index) => [asset.asset.id, signalRows[index]]));
+  const signalsByAssetId = new Map(
+    portfolio.assets.map((asset, index) => [asset.asset.id, signalRows[index]])
+  );
   const targetWeights = runAnnealingAllocation(
     currentWeights,
-    signalRows.map((signal) => ({ scorePct: signal.scorePct, stressPenaltyPct: signal.stressPenaltyPct })),
+    signalRows.map((signal) => ({
+      scorePct: signal.scorePct,
+      stressPenaltyPct: signal.stressPenaltyPct
+    })),
     `${portfolio.id}:${portfolio.code}`
   );
 
@@ -382,8 +423,10 @@ export function buildPortfolioOptimizationLab(portfolio: PortfolioRecord): Portf
   const topMove = sortedRows[0]
     ? `${sortedRows[0].assetName} screens as the primary add candidate at ${sortedRows[0].targetWeightPct.toFixed(0)}% target weight.`
     : 'No reweighting candidate identified.';
-  const defensiveMove = [...assetRows]
-    .sort((left, right) => right.stressPenaltyPct - left.stressPenaltyPct || left.deltaPct - right.deltaPct)[0];
+  const defensiveMove = [...assetRows].sort(
+    (left, right) =>
+      right.stressPenaltyPct - left.stressPenaltyPct || left.deltaPct - right.deltaPct
+  )[0];
 
   const scenarioRows = buildScenarioRows(portfolio, assetRows, signalsByAssetId);
 
@@ -420,7 +463,9 @@ export function buildPortfolioOptimizationWorkspaceItem(portfolio: PortfolioReco
     watchCount: portfolio.assets.filter(
       (asset) =>
         asset.status === PortfolioAssetStatus.WATCHLIST ||
-        asset.covenantTests.some((test) => test.status === CovenantStatus.WATCH || test.status === CovenantStatus.BREACH)
+        asset.covenantTests.some(
+          (test) => test.status === CovenantStatus.WATCH || test.status === CovenantStatus.BREACH
+        )
     ).length
   };
 }

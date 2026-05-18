@@ -23,8 +23,11 @@ export async function getDeploymentByAssetId(
 export async function requireDeploymentByAssetId(
   assetId: string,
   db: PrismaClient = prisma
-): Promise<TokenizedAsset> {
-  const row = await getDeploymentByAssetId(assetId, db);
+): Promise<TokenizedAsset & { asset: { assetCode: string; name: string } }> {
+  const row = await db.tokenizedAsset.findUnique({
+    where: { assetId },
+    include: { asset: { select: { assetCode: true, name: true } } }
+  });
   if (!row) throw new Error(`No tokenization deployment recorded for assetId=${assetId}`);
   return row;
 }

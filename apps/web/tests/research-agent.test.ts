@@ -72,7 +72,9 @@ test('runResearchAgent: offline mode returns structured report with sources', as
   );
   assert.ok(report.claims.length > 0, 'offline mode should emit one claim per source');
   assert.ok(
-    report.claims.every((c) => c.sourceIds.every((sid) => report.sources.some((s) => s.id === sid))),
+    report.claims.every((c) =>
+      c.sourceIds.every((sid) => report.sources.some((s) => s.id === sid))
+    ),
     'every claim sourceId must resolve to a real source'
   );
   assert.ok(report.synthesis.length > 0);
@@ -97,10 +99,7 @@ test('runResearchAgent: offline mode emits fallback synthesis when no matches', 
 
 test('runResearchAgent: source id ordering is stable (S1, S2, ...)', async () => {
   const toolset = createMockToolset({ news: newsFixtures, pages: pageFixtures });
-  const report = await runResearchAgent(
-    { question: '강남 오피스', asOf },
-    toolset
-  );
+  const report = await runResearchAgent({ question: '강남 오피스', asOf }, toolset);
   for (let i = 0; i < report.sources.length; i++) {
     assert.equal(report.sources[i]!.id, `S${i + 1}`);
   }

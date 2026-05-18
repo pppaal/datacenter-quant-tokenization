@@ -145,7 +145,8 @@ export const FALLBACK_SOURCE_DATA = {
       rentGrowthPct: 1.7,
       transactionVolumeIndex: 84,
       constructionCostIndex: 109,
-      marketNotes: 'Regional demand is smaller but latency-sensitive edge deployments support underwriting.'
+      marketNotes:
+        'Regional demand is smaller but latency-sensitive edge deployments support underwriting.'
     }
   },
   climate: {
@@ -159,7 +160,8 @@ export const FALLBACK_SOURCE_DATA = {
       recentMaxFireRadiativePowerMw: 0
     },
     'INCHEON-CHEONGNA-02': {
-      climateRiskNote: 'Reclamation-area monitoring required for storm surge and groundwater management.',
+      climateRiskNote:
+        'Reclamation-area monitoring required for storm surge and groundwater management.',
       floodRiskScore: 2.3,
       wildfireRiskScore: 0.9,
       recentAverageTempC: 14.9,
@@ -168,7 +170,8 @@ export const FALLBACK_SOURCE_DATA = {
       recentMaxFireRadiativePowerMw: 0
     },
     'BUSAN-MYEONGJI-03': {
-      climateRiskNote: 'Typhoon resiliency and marine corrosion mitigation should stay in the diligence scope.',
+      climateRiskNote:
+        'Typhoon resiliency and marine corrosion mitigation should stay in the diligence scope.',
       floodRiskScore: 2.8,
       wildfireRiskScore: 1.5,
       recentAverageTempC: 16.8,

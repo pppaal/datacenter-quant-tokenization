@@ -62,8 +62,16 @@ const mappingDefinitions: Record<string, MappingDefinition> = {
   'document.monthly_rate_per_kw_krw': {
     label: 'Document Monthly Rate / kW',
     targets: [
-      { kind: 'assumption', path: 'documentFeatures.monthlyRatePerKwKrw', label: 'Document Override' },
-      { kind: 'assumption', path: 'metrics.monthlyRatePerKwKrw', label: 'Final Monthly Rate Metric' }
+      {
+        kind: 'assumption',
+        path: 'documentFeatures.monthlyRatePerKwKrw',
+        label: 'Document Override'
+      },
+      {
+        kind: 'assumption',
+        path: 'metrics.monthlyRatePerKwKrw',
+        label: 'Final Monthly Rate Metric'
+      }
     ]
   },
   'document.cap_rate_pct': {
@@ -106,19 +114,33 @@ const mappingDefinitions: Record<string, MappingDefinition> = {
   },
   'document.permit_status_note': {
     label: 'Document Permit Note',
-    targets: [{ kind: 'assumption', path: 'documentFeatures.permitStatusNote', label: 'Document Override' }]
+    targets: [
+      { kind: 'assumption', path: 'documentFeatures.permitStatusNote', label: 'Document Override' }
+    ]
   },
   'market.monthly_rate_per_kw_krw': {
     label: 'Market Monthly Rate / kW',
     targets: [
-      { kind: 'assumption', path: 'curatedFeatures.marketInputs.monthlyRatePerKwKrw', label: 'Curated Override' },
-      { kind: 'assumption', path: 'metrics.monthlyRatePerKwKrw', label: 'Final Monthly Rate Metric' }
+      {
+        kind: 'assumption',
+        path: 'curatedFeatures.marketInputs.monthlyRatePerKwKrw',
+        label: 'Curated Override'
+      },
+      {
+        kind: 'assumption',
+        path: 'metrics.monthlyRatePerKwKrw',
+        label: 'Final Monthly Rate Metric'
+      }
     ]
   },
   'market.cap_rate_pct': {
     label: 'Market Cap Rate',
     targets: [
-      { kind: 'assumption', path: 'curatedFeatures.marketInputs.capRatePct', label: 'Curated Override' },
+      {
+        kind: 'assumption',
+        path: 'curatedFeatures.marketInputs.capRatePct',
+        label: 'Curated Override'
+      },
       { kind: 'assumption', path: 'metrics.capRatePct', label: 'Final Cap Rate Metric' },
       { kind: 'provenance', path: 'capRatePct', label: 'Provenance Field' }
     ]
@@ -126,40 +148,70 @@ const mappingDefinitions: Record<string, MappingDefinition> = {
   'market.discount_rate_pct': {
     label: 'Market Discount Rate',
     targets: [
-      { kind: 'assumption', path: 'curatedFeatures.marketInputs.discountRatePct', label: 'Curated Override' },
+      {
+        kind: 'assumption',
+        path: 'curatedFeatures.marketInputs.discountRatePct',
+        label: 'Curated Override'
+      },
       { kind: 'assumption', path: 'metrics.discountRatePct', label: 'Final Discount Rate Metric' }
     ]
   },
   'market.debt_cost_pct': {
     label: 'Market Debt Cost',
     targets: [
-      { kind: 'assumption', path: 'curatedFeatures.marketInputs.debtCostPct', label: 'Curated Override' },
+      {
+        kind: 'assumption',
+        path: 'curatedFeatures.marketInputs.debtCostPct',
+        label: 'Curated Override'
+      },
       { kind: 'assumption', path: 'metrics.debtCostPct', label: 'Final Debt Cost Metric' }
     ]
   },
   'market.construction_cost_per_mw_krw': {
     label: 'Market Construction Cost / MW',
     targets: [
-      { kind: 'assumption', path: 'curatedFeatures.marketInputs.constructionCostPerMwKrw', label: 'Curated Override' }
+      {
+        kind: 'assumption',
+        path: 'curatedFeatures.marketInputs.constructionCostPerMwKrw',
+        label: 'Curated Override'
+      }
     ]
   },
   'market.note': {
     label: 'Market Note',
-    targets: [{ kind: 'assumption', path: 'curatedFeatures.marketInputs.note', label: 'Curated Override' }]
+    targets: [
+      { kind: 'assumption', path: 'curatedFeatures.marketInputs.note', label: 'Curated Override' }
+    ]
   },
   'satellite.flood_risk_score': {
     label: 'Flood Risk Score',
     targets: [
-      { kind: 'assumption', path: 'curatedFeatures.satelliteRisk.floodRiskScore', label: 'Curated Override' },
-      { kind: 'assumption', path: 'satelliteRisk.floodRiskScore', label: 'Applied Satellite Metric' },
+      {
+        kind: 'assumption',
+        path: 'curatedFeatures.satelliteRisk.floodRiskScore',
+        label: 'Curated Override'
+      },
+      {
+        kind: 'assumption',
+        path: 'satelliteRisk.floodRiskScore',
+        label: 'Applied Satellite Metric'
+      },
       { kind: 'assumption', path: 'metrics.floodPenalty', label: 'Flood Penalty Metric' }
     ]
   },
   'satellite.wildfire_risk_score': {
     label: 'Wildfire Risk Score',
     targets: [
-      { kind: 'assumption', path: 'curatedFeatures.satelliteRisk.wildfireRiskScore', label: 'Curated Override' },
-      { kind: 'assumption', path: 'satelliteRisk.wildfireRiskScore', label: 'Applied Satellite Metric' },
+      {
+        kind: 'assumption',
+        path: 'curatedFeatures.satelliteRisk.wildfireRiskScore',
+        label: 'Curated Override'
+      },
+      {
+        kind: 'assumption',
+        path: 'satelliteRisk.wildfireRiskScore',
+        label: 'Applied Satellite Metric'
+      },
       { kind: 'assumption', path: 'metrics.wildfirePenalty', label: 'Wildfire Penalty Metric' },
       { kind: 'provenance', path: 'wildfireRiskScore', label: 'Provenance Field' }
     ]
@@ -167,141 +219,311 @@ const mappingDefinitions: Record<string, MappingDefinition> = {
   'satellite.climate_note': {
     label: 'Climate Note',
     targets: [
-      { kind: 'assumption', path: 'curatedFeatures.satelliteRisk.climateNote', label: 'Curated Override' },
+      {
+        kind: 'assumption',
+        path: 'curatedFeatures.satelliteRisk.climateNote',
+        label: 'Curated Override'
+      },
       { kind: 'assumption', path: 'satelliteRisk.climateNote', label: 'Applied Satellite Metric' }
     ]
   },
   'permit.stage': {
     label: 'Permit Stage',
-    targets: [{ kind: 'assumption', path: 'curatedFeatures.permitInputs.permitStage', label: 'Curated Override' }]
+    targets: [
+      {
+        kind: 'assumption',
+        path: 'curatedFeatures.permitInputs.permitStage',
+        label: 'Curated Override'
+      }
+    ]
   },
   'permit.power_approval_status': {
     label: 'Power Approval Status',
     targets: [
-      { kind: 'assumption', path: 'curatedFeatures.permitInputs.powerApprovalStatus', label: 'Curated Override' },
+      {
+        kind: 'assumption',
+        path: 'curatedFeatures.permitInputs.powerApprovalStatus',
+        label: 'Curated Override'
+      },
       { kind: 'assumption', path: 'metrics.permitPenalty', label: 'Permit Penalty Metric' }
     ]
   },
   'permit.timeline_note': {
     label: 'Permit Timeline Note',
-    targets: [{ kind: 'assumption', path: 'curatedFeatures.permitInputs.timelineNote', label: 'Curated Override' }]
+    targets: [
+      {
+        kind: 'assumption',
+        path: 'curatedFeatures.permitInputs.timelineNote',
+        label: 'Curated Override'
+      }
+    ]
   },
   'power.utility_name': {
     label: 'Utility Name',
-    targets: [{ kind: 'assumption', path: 'curatedFeatures.powerMicro.utilityName', label: 'Curated Override' }]
+    targets: [
+      {
+        kind: 'assumption',
+        path: 'curatedFeatures.powerMicro.utilityName',
+        label: 'Curated Override'
+      }
+    ]
   },
   'power.substation_distance_km': {
     label: 'Substation Distance',
-    targets: [{ kind: 'assumption', path: 'curatedFeatures.powerMicro.substationDistanceKm', label: 'Curated Override' }]
+    targets: [
+      {
+        kind: 'assumption',
+        path: 'curatedFeatures.powerMicro.substationDistanceKm',
+        label: 'Curated Override'
+      }
+    ]
   },
   'power.tariff_krw_per_kwh': {
     label: 'Power Tariff',
     targets: [
-      { kind: 'assumption', path: 'curatedFeatures.powerMicro.tariffKrwPerKwh', label: 'Curated Override' },
+      {
+        kind: 'assumption',
+        path: 'curatedFeatures.powerMicro.tariffKrwPerKwh',
+        label: 'Curated Override'
+      },
       { kind: 'assumption', path: 'metrics.powerPriceKrwPerKwh', label: 'Final Power Price Metric' }
     ]
   },
   'power.renewable_availability_pct': {
     label: 'Renewable Availability',
     targets: [
-      { kind: 'assumption', path: 'curatedFeatures.powerMicro.renewableAvailabilityPct', label: 'Curated Override' }
+      {
+        kind: 'assumption',
+        path: 'curatedFeatures.powerMicro.renewableAvailabilityPct',
+        label: 'Curated Override'
+      }
     ]
   },
   'power.pue_target': {
     label: 'PUE Target',
     targets: [
-      { kind: 'assumption', path: 'curatedFeatures.powerMicro.pueTarget', label: 'Curated Override' },
+      {
+        kind: 'assumption',
+        path: 'curatedFeatures.powerMicro.pueTarget',
+        label: 'Curated Override'
+      },
       { kind: 'assumption', path: 'metrics.pueTarget', label: 'Final PUE Metric' }
     ]
   },
   'power.backup_fuel_hours': {
     label: 'Backup Fuel Coverage',
-    targets: [{ kind: 'assumption', path: 'curatedFeatures.powerMicro.backupFuelHours', label: 'Curated Override' }]
+    targets: [
+      {
+        kind: 'assumption',
+        path: 'curatedFeatures.powerMicro.backupFuelHours',
+        label: 'Curated Override'
+      }
+    ]
   },
   'revenue.primary_tenant': {
     label: 'Primary Tenant',
-    targets: [{ kind: 'assumption', path: 'curatedFeatures.revenueMicro.primaryTenant', label: 'Curated Override' }]
+    targets: [
+      {
+        kind: 'assumption',
+        path: 'curatedFeatures.revenueMicro.primaryTenant',
+        label: 'Curated Override'
+      }
+    ]
   },
   'revenue.leased_kw': {
     label: 'Leased kW',
-    targets: [{ kind: 'assumption', path: 'curatedFeatures.revenueMicro.leasedKw', label: 'Curated Override' }]
+    targets: [
+      {
+        kind: 'assumption',
+        path: 'curatedFeatures.revenueMicro.leasedKw',
+        label: 'Curated Override'
+      }
+    ]
   },
   'revenue.base_rate_per_kw_krw': {
     label: 'Revenue Base Rate / kW',
     targets: [
-      { kind: 'assumption', path: 'curatedFeatures.revenueMicro.baseRatePerKwKrw', label: 'Curated Override' },
-      { kind: 'assumption', path: 'metrics.monthlyRatePerKwKrw', label: 'Final Monthly Rate Metric' }
+      {
+        kind: 'assumption',
+        path: 'curatedFeatures.revenueMicro.baseRatePerKwKrw',
+        label: 'Curated Override'
+      },
+      {
+        kind: 'assumption',
+        path: 'metrics.monthlyRatePerKwKrw',
+        label: 'Final Monthly Rate Metric'
+      }
     ]
   },
   'revenue.term_years': {
     label: 'Revenue Term',
-    targets: [{ kind: 'assumption', path: 'curatedFeatures.revenueMicro.termYears', label: 'Curated Override' }]
+    targets: [
+      {
+        kind: 'assumption',
+        path: 'curatedFeatures.revenueMicro.termYears',
+        label: 'Curated Override'
+      }
+    ]
   },
   'revenue.probability_pct': {
     label: 'Lease Probability',
-    targets: [{ kind: 'assumption', path: 'curatedFeatures.revenueMicro.probabilityPct', label: 'Curated Override' }]
+    targets: [
+      {
+        kind: 'assumption',
+        path: 'curatedFeatures.revenueMicro.probabilityPct',
+        label: 'Curated Override'
+      }
+    ]
   },
   'revenue.annual_escalation_pct': {
     label: 'Annual Escalation',
     targets: [
-      { kind: 'assumption', path: 'curatedFeatures.revenueMicro.annualEscalationPct', label: 'Curated Override' }
+      {
+        kind: 'assumption',
+        path: 'curatedFeatures.revenueMicro.annualEscalationPct',
+        label: 'Curated Override'
+      }
     ]
   },
   'legal.owner_name': {
     label: 'Legal Owner',
-    targets: [{ kind: 'assumption', path: 'curatedFeatures.legalMicro.ownerName', label: 'Curated Override' }]
+    targets: [
+      {
+        kind: 'assumption',
+        path: 'curatedFeatures.legalMicro.ownerName',
+        label: 'Curated Override'
+      }
+    ]
   },
   'legal.owner_entity_type': {
     label: 'Owner Entity Type',
-    targets: [{ kind: 'assumption', path: 'curatedFeatures.legalMicro.ownerEntityType', label: 'Curated Override' }]
+    targets: [
+      {
+        kind: 'assumption',
+        path: 'curatedFeatures.legalMicro.ownerEntityType',
+        label: 'Curated Override'
+      }
+    ]
   },
   'legal.ownership_pct': {
     label: 'Ownership Percentage',
-    targets: [{ kind: 'assumption', path: 'curatedFeatures.legalMicro.ownershipPct', label: 'Curated Override' }]
+    targets: [
+      {
+        kind: 'assumption',
+        path: 'curatedFeatures.legalMicro.ownershipPct',
+        label: 'Curated Override'
+      }
+    ]
   },
   'legal.encumbrance_type': {
     label: 'Encumbrance Type',
-    targets: [{ kind: 'assumption', path: 'curatedFeatures.legalMicro.encumbranceType', label: 'Curated Override' }]
+    targets: [
+      {
+        kind: 'assumption',
+        path: 'curatedFeatures.legalMicro.encumbranceType',
+        label: 'Curated Override'
+      }
+    ]
   },
   'legal.encumbrance_holder': {
     label: 'Encumbrance Holder',
-    targets: [{ kind: 'assumption', path: 'curatedFeatures.legalMicro.encumbranceHolder', label: 'Curated Override' }]
+    targets: [
+      {
+        kind: 'assumption',
+        path: 'curatedFeatures.legalMicro.encumbranceHolder',
+        label: 'Curated Override'
+      }
+    ]
   },
   'legal.secured_amount_krw': {
     label: 'Secured Amount',
-    targets: [{ kind: 'assumption', path: 'curatedFeatures.legalMicro.securedAmountKrw', label: 'Curated Override' }]
+    targets: [
+      {
+        kind: 'assumption',
+        path: 'curatedFeatures.legalMicro.securedAmountKrw',
+        label: 'Curated Override'
+      }
+    ]
   },
   'legal.priority_rank': {
     label: 'Priority Rank',
-    targets: [{ kind: 'assumption', path: 'curatedFeatures.legalMicro.priorityRank', label: 'Curated Override' }]
+    targets: [
+      {
+        kind: 'assumption',
+        path: 'curatedFeatures.legalMicro.priorityRank',
+        label: 'Curated Override'
+      }
+    ]
   },
   'legal.constraint_type': {
     label: 'Constraint Type',
-    targets: [{ kind: 'assumption', path: 'curatedFeatures.legalMicro.constraintType', label: 'Curated Override' }]
+    targets: [
+      {
+        kind: 'assumption',
+        path: 'curatedFeatures.legalMicro.constraintType',
+        label: 'Curated Override'
+      }
+    ]
   },
   'legal.constraint_title': {
     label: 'Constraint Title',
-    targets: [{ kind: 'assumption', path: 'curatedFeatures.legalMicro.constraintTitle', label: 'Curated Override' }]
+    targets: [
+      {
+        kind: 'assumption',
+        path: 'curatedFeatures.legalMicro.constraintTitle',
+        label: 'Curated Override'
+      }
+    ]
   },
   'legal.constraint_severity': {
     label: 'Constraint Severity',
-    targets: [{ kind: 'assumption', path: 'curatedFeatures.legalMicro.constraintSeverity', label: 'Curated Override' }]
+    targets: [
+      {
+        kind: 'assumption',
+        path: 'curatedFeatures.legalMicro.constraintSeverity',
+        label: 'Curated Override'
+      }
+    ]
   },
   'readiness.status': {
     label: 'Readiness Status',
-    targets: [{ kind: 'assumption', path: 'curatedFeatures.reviewReadiness.readinessStatus', label: 'Curated Override' }]
+    targets: [
+      {
+        kind: 'assumption',
+        path: 'curatedFeatures.reviewReadiness.readinessStatus',
+        label: 'Curated Override'
+      }
+    ]
   },
   'readiness.review_phase': {
     label: 'Review Phase',
-    targets: [{ kind: 'assumption', path: 'curatedFeatures.reviewReadiness.reviewPhase', label: 'Curated Override' }]
+    targets: [
+      {
+        kind: 'assumption',
+        path: 'curatedFeatures.reviewReadiness.reviewPhase',
+        label: 'Curated Override'
+      }
+    ]
   },
   'readiness.legal_structure': {
     label: 'Legal Structure',
-    targets: [{ kind: 'assumption', path: 'curatedFeatures.reviewReadiness.legalStructure', label: 'Curated Override' }]
+    targets: [
+      {
+        kind: 'assumption',
+        path: 'curatedFeatures.reviewReadiness.legalStructure',
+        label: 'Curated Override'
+      }
+    ]
   },
   'readiness.next_action': {
     label: 'Next Action',
-    targets: [{ kind: 'assumption', path: 'curatedFeatures.reviewReadiness.nextAction', label: 'Curated Override' }]
+    targets: [
+      {
+        kind: 'assumption',
+        path: 'curatedFeatures.reviewReadiness.nextAction',
+        label: 'Curated Override'
+      }
+    ]
   }
 };
 
@@ -324,7 +546,12 @@ function formatUnknownValue(path: string, value: unknown, unit?: string | null) 
   if (typeof value !== 'number' || Number.isNaN(value)) return String(value);
 
   const lowerPath = path.toLowerCase();
-  if (lowerPath.includes('krw') || lowerPath.includes('value') || lowerPath.includes('revenue') || lowerPath.includes('capex')) {
+  if (
+    lowerPath.includes('krw') ||
+    lowerPath.includes('value') ||
+    lowerPath.includes('revenue') ||
+    lowerPath.includes('capex')
+  ) {
     return formatCurrency(value);
   }
   if (lowerPath.includes('pct')) {

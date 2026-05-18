@@ -14,17 +14,24 @@ import { computeEquityWaterfall } from '@/lib/services/valuation/equity-waterfal
 import { prepareValuationInputs } from '@/lib/services/valuation/inputs';
 import { computeLeaseDcf } from '@/lib/services/valuation/lease-dcf';
 import { buildDebtSchedule } from '@/lib/services/valuation/project-finance';
-import { buildScenarioOutput, pickBaseScenario, sortScenariosByOrder } from '@/lib/services/valuation/scenario-utils';
+import {
+  buildScenarioOutput,
+  pickBaseScenario,
+  sortScenariosByOrder
+} from '@/lib/services/valuation/scenario-utils';
 import type {
   PreparedUnderwritingInputs,
   UnderwritingAnalysis,
   UnderwritingBundle,
-  UnderwritingScenario,
   ValuationStrategyContext
 } from '@/lib/services/valuation/types';
 import { roundKrw, safeDivide } from '@/lib/services/valuation/utils';
 
-export type { UnderwritingAnalysis, UnderwritingBundle, UnderwritingScenario } from '@/lib/services/valuation/types';
+export type {
+  UnderwritingAnalysis,
+  UnderwritingBundle,
+  UnderwritingScenario
+} from '@/lib/services/valuation/types';
 
 function buildScenarioValue(evaluation: DataCenterScenarioEvaluation) {
   const approachValues = [
@@ -67,7 +74,9 @@ function buildScenarioValue(evaluation: DataCenterScenarioEvaluation) {
 
   return {
     weightedValueKrw: Math.max(weightedValueKrw, evaluation.costApproach.replacementCostFloorKrw),
-    approaches: Object.fromEntries(approachValues.map((entry) => [entry.label, roundKrw(entry.value)]))
+    approaches: Object.fromEntries(
+      approachValues.map((entry) => [entry.label, roundKrw(entry.value)])
+    )
   };
 }
 
@@ -82,7 +91,13 @@ function evaluateScenario(
     scenarioInput,
     leaseDcf.years.map((year) => year.cfadsBeforeDebtKrw)
   );
-  const equityWaterfall = computeEquityWaterfall(prepared, scenarioInput, costApproach, leaseDcf, debtSchedule);
+  const equityWaterfall = computeEquityWaterfall(
+    prepared,
+    scenarioInput,
+    costApproach,
+    leaseDcf,
+    debtSchedule
+  );
   const { weightedValueKrw } = buildScenarioValue({
     scenario: {
       name: scenarioInput.name,
@@ -134,7 +149,8 @@ export async function buildDataCenterValuationAnalysis(
   const scenarios = sortScenariosByOrder(evaluations.map((evaluation) => evaluation.scenario));
   const baseScenarioRef = pickBaseScenario(scenarios);
   const baseScenario =
-    evaluations.find((evaluation) => evaluation.scenario.name === baseScenarioRef?.name) ?? evaluations[0];
+    evaluations.find((evaluation) => evaluation.scenario.name === baseScenarioRef?.name) ??
+    evaluations[0];
 
   const analysis: UnderwritingAnalysis = {
     asset: {
@@ -149,7 +165,11 @@ export async function buildDataCenterValuationAnalysis(
     underwritingMemo: '',
     keyRisks: buildDataCenterKeyRisks(prepared, baseScenario),
     ddChecklist: buildDataCenterDdChecklist(prepared),
-    assumptions: buildDataCenterAssumptions(prepared, evaluations, (evaluation) => buildScenarioValue(evaluation).approaches),
+    assumptions: buildDataCenterAssumptions(
+      prepared,
+      evaluations,
+      (evaluation) => buildScenarioValue(evaluation).approaches
+    ),
     provenance: buildDataCenterProvenance(prepared),
     scenarios: sortScenariosByOrder(scenarios)
   };

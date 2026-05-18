@@ -1,4 +1,5 @@
 import type { Address, Hex } from 'viem';
+import { buildMockTxHash, isTokenizationMockMode } from '@/lib/blockchain/mock-mode';
 import {
   ensureAddress,
   ensureCountryCode,
@@ -47,9 +48,17 @@ export async function registerIdentity(
   deployment: TokenizationDeploymentRow,
   input: { wallet: string; countryCode: number }
 ): Promise<Hex> {
-  const clients = getTokenizationClients(deployment);
   const wallet = ensureAddress(input.wallet, 'wallet');
   const countryCode = ensureCountryCode(input.countryCode, 'countryCode');
+  if (isTokenizationMockMode()) {
+    return buildMockTxHash(
+      'registerIdentity',
+      deployment.identityRegistryAddress,
+      wallet,
+      countryCode
+    );
+  }
+  const clients = getTokenizationClients(deployment);
   return clients.walletClient.writeContract({
     ...clients.identity,
     functionName: 'registerIdentity',
@@ -61,9 +70,17 @@ export async function updateCountry(
   deployment: TokenizationDeploymentRow,
   input: { wallet: string; countryCode: number }
 ): Promise<Hex> {
-  const clients = getTokenizationClients(deployment);
   const wallet = ensureAddress(input.wallet, 'wallet');
   const countryCode = ensureCountryCode(input.countryCode, 'countryCode');
+  if (isTokenizationMockMode()) {
+    return buildMockTxHash(
+      'updateCountry',
+      deployment.identityRegistryAddress,
+      wallet,
+      countryCode
+    );
+  }
+  const clients = getTokenizationClients(deployment);
   return clients.walletClient.writeContract({
     ...clients.identity,
     functionName: 'updateCountry',
@@ -75,8 +92,11 @@ export async function removeIdentity(
   deployment: TokenizationDeploymentRow,
   wallet: string
 ): Promise<Hex> {
-  const clients = getTokenizationClients(deployment);
   const who: Address = ensureAddress(wallet, 'wallet');
+  if (isTokenizationMockMode()) {
+    return buildMockTxHash('removeIdentity', deployment.identityRegistryAddress, who);
+  }
+  const clients = getTokenizationClients(deployment);
   return clients.walletClient.writeContract({
     ...clients.identity,
     functionName: 'removeIdentity',

@@ -27,7 +27,8 @@ The blockchain boundary remains unchanged:
 ## Active Product Root
 
 - Active product: `apps/web`
-- Legacy apps remain archived under `legacy/`
+- Legacy demo apps were removed from the default branch on 2026-04-28
+  and snapshotted on git tag `legacy-archive-2026-04-28`
 
 ## Core Operating Routes
 

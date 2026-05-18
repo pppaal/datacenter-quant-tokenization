@@ -10,7 +10,9 @@ test('asset class playbook exposes office-native labels and variable families', 
   assert.equal(playbook.label, 'Office');
   assert.equal(playbook.sizeLabel, 'Rentable Area');
   assert.ok(playbook.checklistLabels.commercial.includes('Leasing'));
-  assert.ok(selectValuationVariableFamilies(AssetClass.OFFICE).some((item) => item.includes('WALE')));
+  assert.ok(
+    selectValuationVariableFamilies(AssetClass.OFFICE).some((item) => item.includes('WALE'))
+  );
 });
 
 test('industrial playbook scaffolds logistics-oriented focus points', () => {

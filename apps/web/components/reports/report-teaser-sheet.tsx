@@ -29,7 +29,10 @@ function renderBody(section: ReportSection | undefined) {
   );
 }
 
-function renderBulletList(section: ReportSection | undefined, tone: 'neutral' | 'danger' = 'neutral') {
+function renderBulletList(
+  section: ReportSection | undefined,
+  tone: 'neutral' | 'danger' = 'neutral'
+) {
   if (!section?.bullets?.length) return null;
   return (
     <ul className="space-y-3">
@@ -77,7 +80,9 @@ export function ReportTeaserSheet({
     <div className="report-teaser-sheet space-y-5 pb-16">
       <section className="surface hero-mesh report-teaser-hero">
         <div className="flex flex-wrap items-center gap-3">
-          <Badge tone={report.status === 'production-ready' ? 'good' : 'warn'}>{report.statusLabel}</Badge>
+          <Badge tone={report.status === 'production-ready' ? 'good' : 'warn'}>
+            {report.statusLabel}
+          </Badge>
           <Badge>{report.audienceLabel}</Badge>
           <Badge>{assetCode}</Badge>
           <Badge>{locationLabel}</Badge>
@@ -130,7 +135,9 @@ export function ReportTeaserSheet({
       <section className="report-teaser-block grid gap-5 xl:grid-cols-[1.04fr_0.96fr]">
         <Card>
           <div className="eyebrow">{situation?.kicker ?? 'Situation'}</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">{situation?.title ?? 'Opportunity Frame'}</h2>
+          <h2 className="mt-2 text-2xl font-semibold text-white">
+            {situation?.title ?? 'Opportunity Frame'}
+          </h2>
           <div className="mt-5">{renderBody(situation)}</div>
           {situation?.bullets?.length ? (
             <div className="mt-5">
@@ -142,21 +149,29 @@ export function ReportTeaserSheet({
 
         <Card>
           <div className="eyebrow">{snapshot?.kicker ?? 'Snapshot'}</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">{snapshot?.title ?? 'Asset And Pricing Snapshot'}</h2>
-          <div className="mt-5 grid gap-4 md:grid-cols-2">{pricingFacts.map((fact) => renderFactCard(fact, `snapshot-${fact.label}`))}</div>
+          <h2 className="mt-2 text-2xl font-semibold text-white">
+            {snapshot?.title ?? 'Asset And Pricing Snapshot'}
+          </h2>
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
+            {pricingFacts.map((fact) => renderFactCard(fact, `snapshot-${fact.label}`))}
+          </div>
         </Card>
       </section>
 
       <section className="report-teaser-block grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
         <Card>
           <div className="eyebrow">{process?.kicker ?? 'Process'}</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">{process?.title ?? 'Current Process Position'}</h2>
+          <h2 className="mt-2 text-2xl font-semibold text-white">
+            {process?.title ?? 'Current Process Position'}
+          </h2>
           <div className="mt-5">{renderBulletList(process)}</div>
         </Card>
 
         <Card>
           <div className="eyebrow">{risks?.kicker ?? 'Key Flags'}</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">{risks?.title ?? 'Primary Risks'}</h2>
+          <h2 className="mt-2 text-2xl font-semibold text-white">
+            {risks?.title ?? 'Primary Risks'}
+          </h2>
           <div className="mt-5">{renderBulletList(risks, 'danger')}</div>
         </Card>
       </section>
@@ -164,11 +179,16 @@ export function ReportTeaserSheet({
       <section className="report-teaser-block grid gap-5 xl:grid-cols-[1.04fr_0.96fr]">
         <Card>
           <div className="eyebrow">{materials?.kicker ?? 'Materials'}</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">{materials?.title ?? 'Data Room Excerpt'}</h2>
+          <h2 className="mt-2 text-2xl font-semibold text-white">
+            {materials?.title ?? 'Data Room Excerpt'}
+          </h2>
           <div className="mt-5 space-y-3">
             {materials?.bullets?.length ? (
               materials.bullets.map((bullet) => (
-                <div key={bullet} className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-3 text-sm leading-7 text-slate-300">
+                <div
+                  key={bullet}
+                  className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-3 text-sm leading-7 text-slate-300"
+                >
                   {bullet}
                 </div>
               ))
@@ -182,10 +202,15 @@ export function ReportTeaserSheet({
 
         <Card>
           <div className="eyebrow">Support Pack</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">Versioned Documents And Integrity</h2>
+          <h2 className="mt-2 text-2xl font-semibold text-white">
+            Versioned Documents And Integrity
+          </h2>
           <div className="mt-5 space-y-3">
             {supportPack.map((document) => (
-              <div key={document.id} className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-4">
+              <div
+                key={document.id}
+                className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-4"
+              >
                 <div className="text-sm font-semibold text-white">{document.title}</div>
                 <div className="mt-2 text-xs uppercase tracking-[0.16em] text-slate-500">
                   {document.documentType} / v{document.currentVersion}
@@ -205,10 +230,15 @@ export function ReportTeaserSheet({
           <h2 className="mt-2 text-2xl font-semibold text-white">Control And Audit Trail</h2>
           <div className="mt-5 space-y-3">
             {traceability.map((fact) => (
-              <div key={fact.label} className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-4">
+              <div
+                key={fact.label}
+                className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-4"
+              >
                 <div className="fine-print">{fact.label}</div>
                 <div className="mt-2 text-lg font-semibold text-white">{fact.value}</div>
-                {fact.detail ? <p className="mt-2 text-sm leading-7 text-slate-400">{fact.detail}</p> : null}
+                {fact.detail ? (
+                  <p className="mt-2 text-sm leading-7 text-slate-400">{fact.detail}</p>
+                ) : null}
               </div>
             ))}
           </div>

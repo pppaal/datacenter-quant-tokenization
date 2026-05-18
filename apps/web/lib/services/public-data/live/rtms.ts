@@ -21,10 +21,7 @@
  * while still allowing the live path to be enabled simply by setting the env var.
  */
 
-import type {
-  TransactionComp,
-  TransactionCompsConnector
-} from '@/lib/services/public-data/types';
+import type { TransactionComp, TransactionCompsConnector } from '@/lib/services/public-data/types';
 
 const RTMS_ENDPOINT =
   'http://openapi.molit.go.kr:8081/OpenAPI_ToolInstallPackage/service/rest/RTMSOBJSvc/getRTMSDataSvcNrgTrade';
@@ -55,10 +52,7 @@ export class LiveRtmsTransactionComps implements TransactionCompsConnector {
     return results;
   }
 
-  private async fetchMonth(
-    lawdCode: string,
-    yyyyMm: string
-  ): Promise<TransactionComp[]> {
+  private async fetchMonth(lawdCode: string, yyyyMm: string): Promise<TransactionComp[]> {
     const url = new URL(RTMS_ENDPOINT);
     url.searchParams.set('serviceKey', this.apiKey!);
     url.searchParams.set('LAWD_CD', lawdCode);
@@ -105,8 +99,7 @@ export function parseRtmsXml(xml: string, lawdCode: string): TransactionComp[] {
     const name = readField(block, '건물명');
 
     const gfaSqm = gfa ? Number(gfa) : null;
-    const pricePerSqm =
-      gfaSqm && gfaSqm > 0 ? Math.round((dealManWon * 10_000) / gfaSqm) : null;
+    const pricePerSqm = gfaSqm && gfaSqm > 0 ? Math.round((dealManWon * 10_000) / gfaSqm) : null;
 
     items.push({
       source: `RTMS ${year ?? '?'}-${month ?? '?'}`,

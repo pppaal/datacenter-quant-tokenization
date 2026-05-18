@@ -200,5 +200,9 @@ test('industrial valuation produces a logistics-style underwriting output', asyn
   assert.ok(analysis.baseCaseValueKrw > 0);
   assert.equal((analysis.assumptions as Record<string, unknown>).assetClass, 'INDUSTRIAL');
   assert.ok(((analysis.assumptions as Record<string, unknown>).monthlyRentPerSqmKrw as number) > 0);
-  assert.ok(analysis.keyRisks.some((risk) => risk.toLowerCase().includes('logistics') || risk.toLowerCase().includes('occupancy')));
+  assert.ok(
+    analysis.keyRisks.some(
+      (risk) => risk.toLowerCase().includes('logistics') || risk.toLowerCase().includes('occupancy')
+    )
+  );
 });

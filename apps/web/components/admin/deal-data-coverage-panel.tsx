@@ -15,7 +15,9 @@ export function DealDataCoveragePanel({ coverage }: Props) {
           <div className="eyebrow">Data Coverage</div>
           <h2 className="mt-2 text-2xl font-semibold text-white">Execution data readiness</h2>
         </div>
-        <Badge tone={coverage.scorePct >= 75 ? 'good' : coverage.scorePct >= 50 ? 'warn' : 'danger'}>
+        <Badge
+          tone={coverage.scorePct >= 75 ? 'good' : coverage.scorePct >= 50 ? 'warn' : 'danger'}
+        >
           {formatNumber(coverage.scorePct, 0)}%
         </Badge>
       </div>
@@ -29,46 +31,67 @@ export function DealDataCoveragePanel({ coverage }: Props) {
         </div>
         <div className="metric-card">
           <div className="fine-print">Documents</div>
-          <div className="mt-3 text-3xl font-semibold text-white">{coverage.evidence.documentCount}</div>
+          <div className="mt-3 text-3xl font-semibold text-white">
+            {coverage.evidence.documentCount}
+          </div>
         </div>
         <div className="metric-card">
           <div className="fine-print">Valuations</div>
-          <div className="mt-3 text-3xl font-semibold text-white">{coverage.evidence.valuationCount}</div>
+          <div className="mt-3 text-3xl font-semibold text-white">
+            {coverage.evidence.valuationCount}
+          </div>
         </div>
         <div className="metric-card">
           <div className="fine-print">Counterparties</div>
-          <div className="mt-3 text-3xl font-semibold text-white">{coverage.evidence.counterpartyCount}</div>
+          <div className="mt-3 text-3xl font-semibold text-white">
+            {coverage.evidence.counterpartyCount}
+          </div>
         </div>
         <div className="metric-card">
           <div className="fine-print">Bid Revisions</div>
-          <div className="mt-3 text-3xl font-semibold text-white">{coverage.evidence.bidRevisionCount}</div>
+          <div className="mt-3 text-3xl font-semibold text-white">
+            {coverage.evidence.bidRevisionCount}
+          </div>
         </div>
         <div className="metric-card">
           <div className="fine-print">Lender Quotes</div>
-          <div className="mt-3 text-3xl font-semibold text-white">{coverage.evidence.lenderQuoteCount}</div>
+          <div className="mt-3 text-3xl font-semibold text-white">
+            {coverage.evidence.lenderQuoteCount}
+          </div>
         </div>
         <div className="metric-card">
           <div className="fine-print">Negotiation Events</div>
-          <div className="mt-3 text-3xl font-semibold text-white">{coverage.evidence.negotiationEventCount}</div>
+          <div className="mt-3 text-3xl font-semibold text-white">
+            {coverage.evidence.negotiationEventCount}
+          </div>
         </div>
         <div className="metric-card">
           <div className="fine-print">DD Workstreams</div>
-          <div className="mt-3 text-3xl font-semibold text-white">{coverage.evidence.diligenceWorkstreamCount}</div>
+          <div className="mt-3 text-3xl font-semibold text-white">
+            {coverage.evidence.diligenceWorkstreamCount}
+          </div>
         </div>
         <div className="metric-card">
           <div className="fine-print">Signed Off</div>
-          <div className="mt-3 text-3xl font-semibold text-white">{coverage.evidence.signedOffWorkstreamCount}</div>
+          <div className="mt-3 text-3xl font-semibold text-white">
+            {coverage.evidence.signedOffWorkstreamCount}
+          </div>
         </div>
         <div className="metric-card">
           <div className="fine-print">Blocked</div>
-          <div className="mt-3 text-3xl font-semibold text-white">{coverage.evidence.blockedWorkstreamCount}</div>
+          <div className="mt-3 text-3xl font-semibold text-white">
+            {coverage.evidence.blockedWorkstreamCount}
+          </div>
         </div>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
         <div className="grid gap-3">
           {coverage.checks.map((check) => (
-            <div key={check.key} className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+            <div
+              key={check.key}
+              className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+            >
               <div className="flex items-center justify-between gap-4">
                 <div className="text-sm font-semibold text-white">{check.title}</div>
                 <Badge tone={check.status === 'done' ? 'good' : 'warn'}>{check.status}</Badge>
@@ -86,7 +109,10 @@ export function DealDataCoveragePanel({ coverage }: Props) {
           <div className="mt-4 grid gap-2">
             {coverage.gaps.length > 0 ? (
               coverage.gaps.map((gap) => (
-                <div key={gap} className="rounded-[18px] border border-white/10 bg-slate-950/35 px-4 py-3 text-sm text-slate-300">
+                <div
+                  key={gap}
+                  className="rounded-[18px] border border-white/10 bg-slate-950/35 px-4 py-3 text-sm text-slate-300"
+                >
                   {gap}
                 </div>
               ))

@@ -122,13 +122,17 @@ export function buildMacroDecomposition(
   });
 
   const impactChanges = getImpactDimensions(current).map((dimension) => {
-    const previousDimension = getImpactDimensions(previous).find((item) => item.key === dimension.key) ?? null;
+    const previousDimension =
+      getImpactDimensions(previous).find((item) => item.key === dimension.key) ?? null;
     return {
       key: dimension.key,
       label: dimension.label,
       currentScore: round(dimension.score),
       previousScore: previousDimension ? round(previousDimension.score) : null,
-      delta: compareNullable(round(dimension.score), previousDimension ? round(previousDimension.score) : null),
+      delta: compareNullable(
+        round(dimension.score),
+        previousDimension ? round(previousDimension.score) : null
+      ),
       currentDirection: dimension.direction,
       previousDirection: previousDimension?.direction ?? null
     };
@@ -136,7 +140,8 @@ export function buildMacroDecomposition(
 
   const factorDrivers = getFactorList(current)
     .map((factor) => {
-      const previousFactor = getFactorList(previous).find((item) => item.key === factor.key) ?? null;
+      const previousFactor =
+        getFactorList(previous).find((item) => item.key === factor.key) ?? null;
       const currentValue = factor.isObserved ? factor.value : null;
       const previousValue = previousFactor?.isObserved ? previousFactor.value : null;
       const delta = compareNullable(currentValue, previousValue);
@@ -161,19 +166,29 @@ export function buildMacroDecomposition(
     .filter((factor) => factor.changed)
     .sort((left, right) => {
       const leftScore =
-        left.delta !== null ? Math.abs(left.delta) : left.currentDirection === left.previousDirection ? 0 : 999;
+        left.delta !== null
+          ? Math.abs(left.delta)
+          : left.currentDirection === left.previousDirection
+            ? 0
+            : 999;
       const rightScore =
-        right.delta !== null ? Math.abs(right.delta) : right.currentDirection === right.previousDirection ? 0 : 999;
+        right.delta !== null
+          ? Math.abs(right.delta)
+          : right.currentDirection === right.previousDirection
+            ? 0
+            : 999;
       return rightScore - leftScore;
     })
     .slice(0, 6);
 
-  const widestMove = [...guidanceChanges]
-    .filter((item) => item.delta !== null)
-    .sort((left, right) => Math.abs(right.delta ?? 0) - Math.abs(left.delta ?? 0))[0] ?? null;
-  const biggestImpact = [...impactChanges]
-    .filter((item) => item.delta !== null)
-    .sort((left, right) => Math.abs(right.delta ?? 0) - Math.abs(left.delta ?? 0))[0] ?? null;
+  const widestMove =
+    [...guidanceChanges]
+      .filter((item) => item.delta !== null)
+      .sort((left, right) => Math.abs(right.delta ?? 0) - Math.abs(left.delta ?? 0))[0] ?? null;
+  const biggestImpact =
+    [...impactChanges]
+      .filter((item) => item.delta !== null)
+      .sort((left, right) => Math.abs(right.delta ?? 0) - Math.abs(left.delta ?? 0))[0] ?? null;
   const topDriver = factorDrivers[0] ?? null;
 
   const summary = [

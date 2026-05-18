@@ -11,11 +11,7 @@
  */
 
 import { AssetClass } from '@prisma/client';
-import type {
-  BuildingRecord,
-  KoreaZoningCode,
-  UseZone
-} from '@/lib/services/public-data/types';
+import type { BuildingRecord, KoreaZoningCode, UseZone } from '@/lib/services/public-data/types';
 
 export type AssetClassCandidate = {
   assetClass: AssetClass;
@@ -38,15 +34,15 @@ const ZONING_MATRIX: Record<
   COMMERCIAL_CENTRAL: [
     { cls: AssetClass.OFFICE, feasibility: 'PRIMARY', score: 0.95 },
     { cls: AssetClass.RETAIL, feasibility: 'VIABLE', score: 0.85 },
-    { cls: AssetClass.MIXED_USE, feasibility: 'VIABLE', score: 0.80 },
-    { cls: AssetClass.HOTEL, feasibility: 'VIABLE', score: 0.60 },
+    { cls: AssetClass.MIXED_USE, feasibility: 'VIABLE', score: 0.8 },
+    { cls: AssetClass.HOTEL, feasibility: 'VIABLE', score: 0.6 },
     { cls: AssetClass.DATA_CENTER, feasibility: 'EXCLUDED', score: 0.05 }
   ],
   COMMERCIAL_GENERAL: [
     { cls: AssetClass.OFFICE, feasibility: 'PRIMARY', score: 0.85 },
     { cls: AssetClass.RETAIL, feasibility: 'PRIMARY', score: 0.85 },
     { cls: AssetClass.MIXED_USE, feasibility: 'VIABLE', score: 0.75 },
-    { cls: AssetClass.MULTIFAMILY, feasibility: 'VIABLE', score: 0.50 },
+    { cls: AssetClass.MULTIFAMILY, feasibility: 'VIABLE', score: 0.5 },
     { cls: AssetClass.DATA_CENTER, feasibility: 'EXCLUDED', score: 0.05 }
   ],
   COMMERCIAL_NEIGHBORHOOD: [
@@ -56,53 +52,51 @@ const ZONING_MATRIX: Record<
     { cls: AssetClass.HOTEL, feasibility: 'VIABLE', score: 0.45 }
   ],
   COMMERCIAL_DISTRIBUTION: [
-    { cls: AssetClass.INDUSTRIAL, feasibility: 'PRIMARY', score: 0.80 },
-    { cls: AssetClass.RETAIL, feasibility: 'VIABLE', score: 0.50 }
+    { cls: AssetClass.INDUSTRIAL, feasibility: 'PRIMARY', score: 0.8 },
+    { cls: AssetClass.RETAIL, feasibility: 'VIABLE', score: 0.5 }
   ],
   INDUSTRIAL_EXCLUSIVE: [
-    { cls: AssetClass.INDUSTRIAL, feasibility: 'PRIMARY', score: 0.90 },
-    { cls: AssetClass.DATA_CENTER, feasibility: 'VIABLE', score: 0.70 }
+    { cls: AssetClass.INDUSTRIAL, feasibility: 'PRIMARY', score: 0.9 },
+    { cls: AssetClass.DATA_CENTER, feasibility: 'VIABLE', score: 0.7 }
   ],
   INDUSTRIAL_GENERAL: [
     { cls: AssetClass.INDUSTRIAL, feasibility: 'PRIMARY', score: 0.85 },
-    { cls: AssetClass.DATA_CENTER, feasibility: 'VIABLE', score: 0.80 }
+    { cls: AssetClass.DATA_CENTER, feasibility: 'VIABLE', score: 0.8 }
   ],
   INDUSTRIAL_QUASI: [
     { cls: AssetClass.OFFICE, feasibility: 'PRIMARY', score: 0.75 },
-    { cls: AssetClass.INDUSTRIAL, feasibility: 'VIABLE', score: 0.70 },
+    { cls: AssetClass.INDUSTRIAL, feasibility: 'VIABLE', score: 0.7 },
     { cls: AssetClass.DATA_CENTER, feasibility: 'VIABLE', score: 0.65 },
-    { cls: AssetClass.MIXED_USE, feasibility: 'VIABLE', score: 0.60 }
+    { cls: AssetClass.MIXED_USE, feasibility: 'VIABLE', score: 0.6 }
   ],
   RESIDENTIAL_1: [
-    { cls: AssetClass.MULTIFAMILY, feasibility: 'PRIMARY', score: 0.80 },
-    { cls: AssetClass.RETAIL, feasibility: 'EXCLUDED', score: 0.10 }
+    { cls: AssetClass.MULTIFAMILY, feasibility: 'PRIMARY', score: 0.8 },
+    { cls: AssetClass.RETAIL, feasibility: 'EXCLUDED', score: 0.1 }
   ],
   RESIDENTIAL_2: [
     { cls: AssetClass.MULTIFAMILY, feasibility: 'PRIMARY', score: 0.85 },
     { cls: AssetClass.RETAIL, feasibility: 'REQUIRES_REZONING', score: 0.15 }
   ],
   RESIDENTIAL_3: [
-    { cls: AssetClass.MULTIFAMILY, feasibility: 'PRIMARY', score: 0.90 },
-    { cls: AssetClass.OFFICE, feasibility: 'REQUIRES_REZONING', score: 0.20 }
+    { cls: AssetClass.MULTIFAMILY, feasibility: 'PRIMARY', score: 0.9 },
+    { cls: AssetClass.OFFICE, feasibility: 'REQUIRES_REZONING', score: 0.2 }
   ],
   MANAGEMENT_PLAN: [
     { cls: AssetClass.INDUSTRIAL, feasibility: 'PRIMARY', score: 0.75 },
     { cls: AssetClass.DATA_CENTER, feasibility: 'PRIMARY', score: 0.85 },
-    { cls: AssetClass.LAND, feasibility: 'VIABLE', score: 0.50 }
+    { cls: AssetClass.LAND, feasibility: 'VIABLE', score: 0.5 }
   ],
   MANAGEMENT_PRODUCTION: [
-    { cls: AssetClass.INDUSTRIAL, feasibility: 'VIABLE', score: 0.60 },
-    { cls: AssetClass.LAND, feasibility: 'VIABLE', score: 0.50 }
+    { cls: AssetClass.INDUSTRIAL, feasibility: 'VIABLE', score: 0.6 },
+    { cls: AssetClass.LAND, feasibility: 'VIABLE', score: 0.5 }
   ],
-  MANAGEMENT_CONSERVATION: [
-    { cls: AssetClass.LAND, feasibility: 'VIABLE', score: 0.40 }
-  ],
-  GREEN_PRESERVATION: [{ cls: AssetClass.LAND, feasibility: 'EXCLUDED', score: 0.10 }],
-  GREEN_PRODUCTION: [{ cls: AssetClass.LAND, feasibility: 'VIABLE', score: 0.30 }],
-  GREEN_NATURAL: [{ cls: AssetClass.LAND, feasibility: 'EXCLUDED', score: 0.10 }],
+  MANAGEMENT_CONSERVATION: [{ cls: AssetClass.LAND, feasibility: 'VIABLE', score: 0.4 }],
+  GREEN_PRESERVATION: [{ cls: AssetClass.LAND, feasibility: 'EXCLUDED', score: 0.1 }],
+  GREEN_PRODUCTION: [{ cls: AssetClass.LAND, feasibility: 'VIABLE', score: 0.3 }],
+  GREEN_NATURAL: [{ cls: AssetClass.LAND, feasibility: 'EXCLUDED', score: 0.1 }],
   AGRICULTURE: [{ cls: AssetClass.LAND, feasibility: 'VIABLE', score: 0.35 }],
   NATURE_RESERVE: [{ cls: AssetClass.LAND, feasibility: 'EXCLUDED', score: 0.05 }],
-  UNKNOWN: [{ cls: AssetClass.OFFICE, feasibility: 'VIABLE', score: 0.50 }]
+  UNKNOWN: [{ cls: AssetClass.OFFICE, feasibility: 'VIABLE', score: 0.5 }]
 };
 
 // Main-use string → strong signal for current asset class

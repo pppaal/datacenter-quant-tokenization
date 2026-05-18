@@ -39,7 +39,9 @@ export function discountValue(value: number, ratePct: number, year: number) {
   return value / (1 + ratePct / 100) ** year;
 }
 
-export function weightedAverage(values: Array<{ value: number | null | undefined; weight: number }>) {
+export function weightedAverage(
+  values: Array<{ value: number | null | undefined; weight: number }>
+) {
   const filtered = values.filter(
     (item) => Number.isFinite(item.value) && Number.isFinite(item.weight) && item.weight > 0
   ) as Array<{ value: number; weight: number }>;

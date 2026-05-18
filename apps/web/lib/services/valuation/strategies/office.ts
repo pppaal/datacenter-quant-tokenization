@@ -48,7 +48,11 @@ export async function buildOfficeValuationAnalysis(
       bundle.comparableSet?.entries.length ?? 0,
       buildOfficeAssumptionExtras(bundle, valuation)
     ),
-    provenance: buildStabilizedIncomeProvenance(bundle, valuation, buildOfficeProvenanceConfig(bundle, valuation)),
+    provenance: buildStabilizedIncomeProvenance(
+      bundle,
+      valuation,
+      buildOfficeProvenanceConfig(bundle, valuation)
+    ),
     scenarios: valuation.scenarios
   };
 

@@ -116,8 +116,12 @@ test('approveResearchHouseViewSnapshot throws when snapshot is not found', async
     researchSnapshot: {
       findUnique: async () => null,
       findFirst: async () => null,
-      update: async () => { throw new Error('should not update'); },
-      create: async () => { throw new Error('should not create'); }
+      update: async () => {
+        throw new Error('should not update');
+      },
+      create: async () => {
+        throw new Error('should not create');
+      }
     },
     $transaction: async (fn: any) => fn(db)
   };

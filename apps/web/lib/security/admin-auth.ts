@@ -152,11 +152,7 @@ export function authorizeAdminHeader(
   } satisfies AuthorizedAdminActor;
 }
 
-export function authorizeAdminCredentials(
-  user: string,
-  password: string,
-  config: AdminAuthConfig
-) {
+export function authorizeAdminCredentials(user: string, password: string, config: AdminAuthConfig) {
   if (config.mode !== 'configured') {
     return null;
   }

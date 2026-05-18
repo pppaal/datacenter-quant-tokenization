@@ -87,7 +87,9 @@ export function buildValuationQualitySummary(
   assumptions: unknown,
   provenance: ProvenanceEntry[] = []
 ): ValuationQualitySummary {
-  const leaseReview = countByReviewStatus(asset.leases as Array<{ reviewStatus?: string | null } | unknown>);
+  const leaseReview = countByReviewStatus(
+    asset.leases as Array<{ reviewStatus?: string | null } | unknown>
+  );
   const ownershipReview = countByReviewStatus(asset.ownershipRecords);
   const encumbranceReview = countByReviewStatus(asset.encumbranceRecords);
   const planningReview = countByReviewStatus(asset.planningConstraints);
@@ -97,7 +99,8 @@ export function buildValuationQualitySummary(
     asset.energySnapshot?.reviewStatus === 'APPROVED' &&
     Boolean(asset.energySnapshot?.tariffKrwPerKwh && asset.energySnapshot?.pueTarget);
   const hasPermitCoverage =
-    asset.permitSnapshot?.reviewStatus === 'APPROVED' && Boolean(asset.permitSnapshot?.powerApprovalStatus);
+    asset.permitSnapshot?.reviewStatus === 'APPROVED' &&
+    Boolean(asset.permitSnapshot?.powerApprovalStatus);
   const hasLegal = hasLegalCoverage(asset);
   const approvedEvidenceCount =
     leaseReview.approved +

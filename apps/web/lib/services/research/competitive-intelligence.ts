@@ -124,12 +124,7 @@ export type SubjectPositioning = {
   rentVsMedianPct: number | null;
   rentPercentile: number | null;
   occupancyVsMedianPct: number | null;
-  positioningVerdict:
-    | 'PREMIUM'
-    | 'IN_LINE'
-    | 'DISCOUNT'
-    | 'DISTRESSED'
-    | 'INSUFFICIENT_COMPS';
+  positioningVerdict: 'PREMIUM' | 'IN_LINE' | 'DISCOUNT' | 'DISTRESSED' | 'INSUFFICIENT_COMPS';
   rationale: string;
 };
 
@@ -193,10 +188,7 @@ function daysBetween(a: Date, b: Date): number {
 // Analyzers
 // ---------------------------------------------------------------------------
 
-function analyzeTransactionVelocity(
-  txns: CompTransaction[],
-  asOf: Date
-): TransactionVelocity {
+function analyzeTransactionVelocity(txns: CompTransaction[], asOf: Date): TransactionVelocity {
   const last90 = txns.filter((t) => daysBetween(t.dealDate, asOf) <= 90).length;
   const last180 = txns.filter((t) => daysBetween(t.dealDate, asOf) <= 180).length;
   const last365 = txns.filter((t) => daysBetween(t.dealDate, asOf) <= 365).length;
@@ -235,8 +227,7 @@ function analyzeSupply(
   );
   const next12m = next12mList.reduce((sum, p) => sum + p.expectedGfaSqm, 0);
   const next24m = next24mList.reduce((sum, p) => sum + p.expectedGfaSqm, 0);
-  const pctOfInventory =
-    inventorySqm && inventorySqm > 0 ? (next24m / inventorySqm) * 100 : null;
+  const pctOfInventory = inventorySqm && inventorySqm > 0 ? (next24m / inventorySqm) * 100 : null;
   let risk: SupplyOutlook['supplyShockRisk'];
   if (pctOfInventory === null) risk = 'MODERATE';
   else if (pctOfInventory >= 15) risk = 'EXTREME';
@@ -258,8 +249,12 @@ function analyzeSupply(
 
 function analyzeTenantSignals(moves: TenantMove[], asOf: Date): TenantSignals {
   const recent = moves.filter((m) => daysBetween(m.observationDate, asOf) <= 180);
-  const moveIn = recent.filter((m) => m.moveType === 'MOVED_IN' || m.moveType === 'EXPANSION').length;
-  const moveOut = recent.filter((m) => m.moveType === 'MOVED_OUT' || m.moveType === 'DOWNSIZE').length;
+  const moveIn = recent.filter(
+    (m) => m.moveType === 'MOVED_IN' || m.moveType === 'EXPANSION'
+  ).length;
+  const moveOut = recent.filter(
+    (m) => m.moveType === 'MOVED_OUT' || m.moveType === 'DOWNSIZE'
+  ).length;
   const netAbsorption = recent.reduce((sum, m) => {
     const area = m.areaSqm ?? 0;
     if (m.moveType === 'MOVED_IN' || m.moveType === 'EXPANSION') return sum + area;
@@ -309,7 +304,10 @@ function analyzeSubjectPositioning(
       : null;
   const capPct =
     subject.currentCapRatePct !== null && capValues.length > 0
-      ? valuePercentile(subject.currentCapRatePct, [...capValues].sort((a, b) => a - b))
+      ? valuePercentile(
+          subject.currentCapRatePct,
+          [...capValues].sort((a, b) => a - b)
+        )
       : null;
   const rentPct =
     subject.currentMonthlyRentKrwPerSqm !== null && rentValues.length > 0
@@ -372,9 +370,7 @@ function analyzeSubjectPositioning(
 // Public API
 // ---------------------------------------------------------------------------
 
-export function buildCompetitiveIntelligence(
-  input: CompetitiveIntelInput
-): CompetitiveIntelReport {
+export function buildCompetitiveIntelligence(input: CompetitiveIntelInput): CompetitiveIntelReport {
   const capValues = input.transactions
     .map((t) => t.capRatePct)
     .filter((v): v is number => v !== null);
@@ -434,16 +430,21 @@ function buildWatchList(
   positioning: SubjectPositioning
 ): string[] {
   const notes: string[] = [];
-  if (velocity.momentum === 'FROZEN') notes.push('Transaction market frozen — exit liquidity at risk');
-  if (velocity.momentum === 'SLOWING') notes.push('Transaction velocity slowing — negotiate discount');
+  if (velocity.momentum === 'FROZEN')
+    notes.push('Transaction market frozen — exit liquidity at risk');
+  if (velocity.momentum === 'SLOWING')
+    notes.push('Transaction velocity slowing — negotiate discount');
   if (supply.supplyShockRisk === 'HIGH' || supply.supplyShockRisk === 'EXTREME') {
     notes.push(
       `Supply shock risk ${supply.supplyShockRisk.toLowerCase()} — ${(supply.next24mDeliverySqm / 1000).toFixed(0)}k sqm in next 24mo`
     );
   }
-  if (tenants.signal === 'OUTFLOW') notes.push('Net tenant outflow in last 180 days — rent compression risk');
-  if (positioning.positioningVerdict === 'DISTRESSED') notes.push('Subject pricing implies distress — diligence cap');
-  if (positioning.positioningVerdict === 'PREMIUM') notes.push('Subject priced at submarket premium — justify vs comps');
+  if (tenants.signal === 'OUTFLOW')
+    notes.push('Net tenant outflow in last 180 days — rent compression risk');
+  if (positioning.positioningVerdict === 'DISTRESSED')
+    notes.push('Subject pricing implies distress — diligence cap');
+  if (positioning.positioningVerdict === 'PREMIUM')
+    notes.push('Subject priced at submarket premium — justify vs comps');
   return notes;
 }
 

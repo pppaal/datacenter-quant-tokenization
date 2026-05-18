@@ -14,21 +14,69 @@ function makeInterpretation(regimeStates: {
     asOf: '2026-03-01',
     series: [],
     assetClass: 'DATA_CENTER',
-    profile: { assetClass: 'DATA_CENTER', label: 'Data Center', market: 'KR', country: 'KR', submarket: null, adjustmentSummary: [], capitalRateSensitivity: 1.2, liquiditySensitivity: 0.9, leasingSensitivity: 0.8, constructionSensitivity: 1.3 },
-    regimes: {
-      capitalMarkets: { key: 'capitalMarkets', label: 'Capital Markets', state: regimeStates.capitalMarkets, commentary: '', signals: [] },
-      leasing: { key: 'leasing', label: 'Leasing', state: regimeStates.leasing, commentary: '', signals: [] },
-      construction: { key: 'construction', label: 'Construction', state: regimeStates.construction, commentary: '', signals: [] },
-      refinance: { key: 'refinance', label: 'Refinancing', state: regimeStates.refinance, commentary: '', signals: [] }
+    profile: {
+      assetClass: 'DATA_CENTER',
+      label: 'Data Center',
+      market: 'KR',
+      country: 'KR',
+      submarket: null,
+      adjustmentSummary: [],
+      capitalRateSensitivity: 1.2,
+      liquiditySensitivity: 0.9,
+      leasingSensitivity: 0.8,
+      constructionSensitivity: 1.3
     },
-    guidance: { discountRateShiftPct: 0, exitCapRateShiftPct: 0, debtCostShiftPct: 0, occupancyShiftPct: 0, growthShiftPct: 0, replacementCostShiftPct: 0, summary: [] },
+    regimes: {
+      capitalMarkets: {
+        key: 'capitalMarkets',
+        label: 'Capital Markets',
+        state: regimeStates.capitalMarkets,
+        commentary: '',
+        signals: []
+      },
+      leasing: {
+        key: 'leasing',
+        label: 'Leasing',
+        state: regimeStates.leasing,
+        commentary: '',
+        signals: []
+      },
+      construction: {
+        key: 'construction',
+        label: 'Construction',
+        state: regimeStates.construction,
+        commentary: '',
+        signals: []
+      },
+      refinance: {
+        key: 'refinance',
+        label: 'Refinancing',
+        state: regimeStates.refinance,
+        commentary: '',
+        signals: []
+      }
+    },
+    guidance: {
+      discountRateShiftPct: 0,
+      exitCapRateShiftPct: 0,
+      debtCostShiftPct: 0,
+      occupancyShiftPct: 0,
+      growthShiftPct: 0,
+      replacementCostShiftPct: 0,
+      summary: []
+    },
     factors: [],
     impacts: { dimensions: [], paths: [], summary: [] }
   };
 }
 
 test('detectRegimeTransitions returns STABLE when no prior regime', () => {
-  const current = makeInterpretation({ capitalMarkets: 'NEUTRAL', leasing: 'BALANCED', construction: 'CONTAINED', refinance: 'LOW' });
+  const current = makeInterpretation({
+    capitalMarkets: 'NEUTRAL',
+    leasing: 'BALANCED',
+    construction: 'CONTAINED',
+    refinance: 'LOW'
+  });
   const result = detectRegimeTransitions(current, null);
 
   assert.equal(result.hasTransition, false);
@@ -37,8 +85,18 @@ test('detectRegimeTransitions returns STABLE when no prior regime', () => {
 });
 
 test('detectRegimeTransitions returns STABLE when states unchanged', () => {
-  const current = makeInterpretation({ capitalMarkets: 'NEUTRAL', leasing: 'BALANCED', construction: 'CONTAINED', refinance: 'LOW' });
-  const previous = makeInterpretation({ capitalMarkets: 'NEUTRAL', leasing: 'BALANCED', construction: 'CONTAINED', refinance: 'LOW' });
+  const current = makeInterpretation({
+    capitalMarkets: 'NEUTRAL',
+    leasing: 'BALANCED',
+    construction: 'CONTAINED',
+    refinance: 'LOW'
+  });
+  const previous = makeInterpretation({
+    capitalMarkets: 'NEUTRAL',
+    leasing: 'BALANCED',
+    construction: 'CONTAINED',
+    refinance: 'LOW'
+  });
   const result = detectRegimeTransitions(current, previous);
 
   assert.equal(result.hasTransition, false);
@@ -47,8 +105,18 @@ test('detectRegimeTransitions returns STABLE when states unchanged', () => {
 });
 
 test('detectRegimeTransitions detects single TIGHTENING', () => {
-  const current = makeInterpretation({ capitalMarkets: 'TIGHT', leasing: 'BALANCED', construction: 'CONTAINED', refinance: 'LOW' });
-  const previous = makeInterpretation({ capitalMarkets: 'NEUTRAL', leasing: 'BALANCED', construction: 'CONTAINED', refinance: 'LOW' });
+  const current = makeInterpretation({
+    capitalMarkets: 'TIGHT',
+    leasing: 'BALANCED',
+    construction: 'CONTAINED',
+    refinance: 'LOW'
+  });
+  const previous = makeInterpretation({
+    capitalMarkets: 'NEUTRAL',
+    leasing: 'BALANCED',
+    construction: 'CONTAINED',
+    refinance: 'LOW'
+  });
   const result = detectRegimeTransitions(current, previous);
 
   assert.equal(result.hasTransition, true);
@@ -60,8 +128,18 @@ test('detectRegimeTransitions detects single TIGHTENING', () => {
 });
 
 test('detectRegimeTransitions detects EASING', () => {
-  const current = makeInterpretation({ capitalMarkets: 'SUPPORTIVE', leasing: 'BALANCED', construction: 'CONTAINED', refinance: 'LOW' });
-  const previous = makeInterpretation({ capitalMarkets: 'TIGHT', leasing: 'BALANCED', construction: 'CONTAINED', refinance: 'LOW' });
+  const current = makeInterpretation({
+    capitalMarkets: 'SUPPORTIVE',
+    leasing: 'BALANCED',
+    construction: 'CONTAINED',
+    refinance: 'LOW'
+  });
+  const previous = makeInterpretation({
+    capitalMarkets: 'TIGHT',
+    leasing: 'BALANCED',
+    construction: 'CONTAINED',
+    refinance: 'LOW'
+  });
   const result = detectRegimeTransitions(current, previous);
 
   assert.equal(result.hasTransition, true);
@@ -71,8 +149,18 @@ test('detectRegimeTransitions detects EASING', () => {
 });
 
 test('detectRegimeTransitions detects MIXED when both tightening and easing', () => {
-  const current = makeInterpretation({ capitalMarkets: 'TIGHT', leasing: 'STRONG', construction: 'CONTAINED', refinance: 'LOW' });
-  const previous = makeInterpretation({ capitalMarkets: 'NEUTRAL', leasing: 'BALANCED', construction: 'CONTAINED', refinance: 'LOW' });
+  const current = makeInterpretation({
+    capitalMarkets: 'TIGHT',
+    leasing: 'STRONG',
+    construction: 'CONTAINED',
+    refinance: 'LOW'
+  });
+  const previous = makeInterpretation({
+    capitalMarkets: 'NEUTRAL',
+    leasing: 'BALANCED',
+    construction: 'CONTAINED',
+    refinance: 'LOW'
+  });
   const result = detectRegimeTransitions(current, previous);
 
   assert.equal(result.hasTransition, true);
@@ -81,8 +169,18 @@ test('detectRegimeTransitions detects MIXED when both tightening and easing', ()
 });
 
 test('detectRegimeTransitions CRITICAL alert on multiple major shifts', () => {
-  const current = makeInterpretation({ capitalMarkets: 'TIGHT', leasing: 'SOFT', construction: 'HIGH', refinance: 'HIGH' });
-  const previous = makeInterpretation({ capitalMarkets: 'SUPPORTIVE', leasing: 'STRONG', construction: 'CONTAINED', refinance: 'LOW' });
+  const current = makeInterpretation({
+    capitalMarkets: 'TIGHT',
+    leasing: 'SOFT',
+    construction: 'HIGH',
+    refinance: 'HIGH'
+  });
+  const previous = makeInterpretation({
+    capitalMarkets: 'SUPPORTIVE',
+    leasing: 'STRONG',
+    construction: 'CONTAINED',
+    refinance: 'LOW'
+  });
   const result = detectRegimeTransitions(current, previous);
 
   assert.equal(result.hasTransition, true);

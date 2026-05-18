@@ -77,7 +77,8 @@ export default async function AdminAuditPage({ searchParams }: Props) {
           <div className="eyebrow">Restricted</div>
           <h1 className="mt-3 text-3xl font-semibold text-white">Insufficient permissions</h1>
           <p className="mt-3 text-sm leading-7 text-slate-400">
-            Audit log review requires an active ADMIN session. Contact a platform owner if you need access.
+            Audit log review requires an active ADMIN session. Contact a platform owner if you need
+            access.
           </p>
         </Card>
       </div>
@@ -106,8 +107,9 @@ export default async function AdminAuditPage({ searchParams }: Props) {
           Forensic ledger of every operator action across the platform.
         </h1>
         <p className="mt-4 max-w-4xl text-base leading-8 text-slate-200">
-          Filter by actor, entity, severity, or window to investigate incidents, validate change windows,
-          and confirm governance compliance across underwriting, deals, portfolio, and capital workflows.
+          Filter by actor, entity, severity, or window to investigate incidents, validate change
+          windows, and confirm governance compliance across underwriting, deals, portfolio, and
+          capital workflows.
         </p>
       </section>
 

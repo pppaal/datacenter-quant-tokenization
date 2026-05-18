@@ -6,10 +6,7 @@ import {
   type MacroSensitivityProfile
 } from '@/lib/services/macro/factors';
 import { buildMacroImpactMatrix, type MacroImpactMatrix } from '@/lib/services/macro/impact';
-import {
-  buildMacroSnapshot,
-  type MacroRegimeSnapshot,
-} from '@/lib/services/macro/series';
+import { buildMacroSnapshot, type MacroRegimeSnapshot } from '@/lib/services/macro/series';
 import {
   type MacroProfileRuntimeRules,
   macroSensitivityTemplateRegistry,
@@ -17,7 +14,18 @@ import {
   submarketProfileRegistry
 } from '@/lib/services/macro/profile-registry';
 
-export type RegimeState = 'SUPPORTIVE' | 'NEUTRAL' | 'TIGHT' | 'STRONG' | 'BALANCED' | 'SOFT' | 'CONTAINED' | 'ELEVATED' | 'LOW' | 'MODERATE' | 'HIGH';
+export type RegimeState =
+  | 'SUPPORTIVE'
+  | 'NEUTRAL'
+  | 'TIGHT'
+  | 'STRONG'
+  | 'BALANCED'
+  | 'SOFT'
+  | 'CONTAINED'
+  | 'ELEVATED'
+  | 'LOW'
+  | 'MODERATE'
+  | 'HIGH';
 
 export type MacroRegimeBlock = {
   key: 'capitalMarkets' | 'leasing' | 'construction' | 'refinance';
@@ -107,7 +115,12 @@ function normalizeSubmarket(submarket?: string | null) {
   return submarket?.trim().toLowerCase() ?? null;
 }
 
-function getBaseMacroSensitivityProfile(assetClass: AssetClass, market: string, country?: string | null, submarket?: string | null): MacroSensitivityProfile {
+function getBaseMacroSensitivityProfile(
+  assetClass: AssetClass,
+  market: string,
+  country?: string | null,
+  submarket?: string | null
+): MacroSensitivityProfile {
   const template = macroSensitivityTemplateRegistry[assetClass] ?? {
     label: 'Balanced generic real-asset profile',
     capitalRateSensitivity: 1,
@@ -139,10 +152,16 @@ function getMacroSensitivityProfile(
 ): MacroSensitivityProfile {
   const normalizedCountry = normalizeCountry(country);
   const normalizedSubmarket = normalizeSubmarket(submarket);
-  const profile = getBaseMacroSensitivityProfile(assetClass, market, normalizedCountry, submarket ?? null);
+  const profile = getBaseMacroSensitivityProfile(
+    assetClass,
+    market,
+    normalizedCountry,
+    submarket ?? null
+  );
 
   const countryRules = (profileRules?.countryRules ?? countryProfileRegistry).filter(
-    (rule) => rule.country === normalizedCountry && (!rule.assetClass || rule.assetClass === assetClass)
+    (rule) =>
+      rule.country === normalizedCountry && (!rule.assetClass || rule.assetClass === assetClass)
   );
   for (const rule of countryRules) {
     applyProfileModifier(profile, rule.label, rule.modifiers);
@@ -168,7 +187,15 @@ function getMacroSensitivityProfile(
 function applyProfileModifier(
   profile: MacroSensitivityProfile,
   label: string,
-  modifiers: Partial<Pick<MacroSensitivityProfile, 'capitalRateSensitivity' | 'liquiditySensitivity' | 'leasingSensitivity' | 'constructionSensitivity'>>
+  modifiers: Partial<
+    Pick<
+      MacroSensitivityProfile,
+      | 'capitalRateSensitivity'
+      | 'liquiditySensitivity'
+      | 'leasingSensitivity'
+      | 'constructionSensitivity'
+    >
+  >
 ) {
   if (modifiers.capitalRateSensitivity) {
     profile.capitalRateSensitivity = roundSensitivity(
@@ -205,17 +232,29 @@ function buildCapitalMarketsBlock(
 ): MacroRegimeBlock {
   const signals = [
     debtCostPct != null ? `Debt cost ${roundPct(debtCostPct)}%` : 'Debt cost unavailable',
-    discountRatePct != null ? `Discount rate ${roundPct(discountRatePct)}%` : 'Discount rate unavailable',
+    discountRatePct != null
+      ? `Discount rate ${roundPct(discountRatePct)}%`
+      : 'Discount rate unavailable',
     policyRatePct != null ? `Policy rate ${roundPct(policyRatePct)}%` : 'Policy rate unavailable',
-    creditStressScore != null ? `Credit stress ${roundPct(creditStressScore)} bps` : 'Credit stress unavailable',
+    creditStressScore != null
+      ? `Credit stress ${roundPct(creditStressScore)} bps`
+      : 'Credit stress unavailable',
     rateLevelScore != null ? `Rate level ${roundPct(rateLevelScore)}%` : 'Rate level unavailable',
-    rateMomentumBps != null ? `Rate momentum ${roundPct(rateMomentumBps)} bps` : 'Rate momentum unavailable',
+    rateMomentumBps != null
+      ? `Rate momentum ${roundPct(rateMomentumBps)} bps`
+      : 'Rate momentum unavailable',
     `Asset beta ${roundPct(profile.capitalRateSensitivity)}x`
   ];
-  const adjustedDebtCost = (rateLevelScore ?? debtCostPct) != null ? (rateLevelScore ?? debtCostPct ?? 0) * profile.capitalRateSensitivity : null;
+  const adjustedDebtCost =
+    (rateLevelScore ?? debtCostPct) != null
+      ? (rateLevelScore ?? debtCostPct ?? 0) * profile.capitalRateSensitivity
+      : null;
   const adjustedDiscountRate =
-    (discountRatePct ?? rateLevelScore) != null ? (discountRatePct ?? rateLevelScore ?? 0) * profile.capitalRateSensitivity : null;
-  const adjustedPolicyRate = policyRatePct != null ? policyRatePct * profile.capitalRateSensitivity : null;
+    (discountRatePct ?? rateLevelScore) != null
+      ? (discountRatePct ?? rateLevelScore ?? 0) * profile.capitalRateSensitivity
+      : null;
+  const adjustedPolicyRate =
+    policyRatePct != null ? policyRatePct * profile.capitalRateSensitivity : null;
   const adjustedCreditSpread =
     creditStressScore != null ? creditStressScore * profile.capitalRateSensitivity : null;
   const adjustedRateMomentum =
@@ -250,7 +289,8 @@ function buildCapitalMarketsBlock(
       key: 'capitalMarkets',
       label: 'Capital Markets',
       state: 'SUPPORTIVE',
-      commentary: 'Funding conditions are comparatively supportive and allow a tighter exit and discount-rate posture.',
+      commentary:
+        'Funding conditions are comparatively supportive and allow a tighter exit and discount-rate posture.',
       signals
     };
   }
@@ -259,7 +299,8 @@ function buildCapitalMarketsBlock(
     key: 'capitalMarkets',
     label: 'Capital Markets',
     state: 'NEUTRAL',
-    commentary: 'Capital markets are open but not especially forgiving, so the model should stay close to prevailing pricing.',
+    commentary:
+      'Capital markets are open but not especially forgiving, so the model should stay close to prevailing pricing.',
     signals
   };
 }
@@ -280,14 +321,17 @@ function buildLeasingBlock(
     transactionVolumeIndex != null
       ? `Transaction volume index ${roundPct(transactionVolumeIndex)}`
       : 'Transaction volume unavailable',
-    propertyDemandScore != null ? `Property demand ${roundPct(propertyDemandScore)}` : 'Property demand unavailable',
+    propertyDemandScore != null
+      ? `Property demand ${roundPct(propertyDemandScore)}`
+      : 'Property demand unavailable',
     liquidityScore != null ? `Liquidity ${roundPct(liquidityScore)}` : 'Liquidity unavailable',
     `Leasing beta ${roundPct(profile.leasingSensitivity)}x / liquidity beta ${roundPct(profile.liquiditySensitivity)}x`
   ];
   const adjustedVacancy = vacancyPct != null ? vacancyPct * profile.leasingSensitivity : null;
   const adjustedRentGrowth =
     (propertyDemandScore != null ? propertyDemandScore / 10 : rentGrowthPct) != null
-      ? (propertyDemandScore != null ? propertyDemandScore / 10 : rentGrowthPct ?? 0) / profile.leasingSensitivity
+      ? (propertyDemandScore != null ? propertyDemandScore / 10 : (rentGrowthPct ?? 0)) /
+        profile.leasingSensitivity
       : null;
   const adjustedTransactionVolume =
     (liquidityScore ?? transactionVolumeIndex) != null
@@ -320,7 +364,8 @@ function buildLeasingBlock(
       key: 'leasing',
       label: 'Leasing Market',
       state: 'STRONG',
-      commentary: 'Vacancy is tight for the asset class, supporting a firmer occupancy base and narrower downside stress.',
+      commentary:
+        'Vacancy is tight for the asset class, supporting a firmer occupancy base and narrower downside stress.',
       signals
     };
   }
@@ -329,7 +374,8 @@ function buildLeasingBlock(
     key: 'leasing',
     label: 'Leasing Market',
     state: 'BALANCED',
-    commentary: 'Leasing conditions look balanced, so the base case can stay close to observed occupancy and market rent.',
+    commentary:
+      'Leasing conditions look balanced, so the base case can stay close to observed occupancy and market rent.',
     signals
   };
 }
@@ -358,13 +404,15 @@ function buildConstructionBlock(
   ];
   const adjustedInflation =
     (constructionPressureScore != null ? constructionPressureScore / 8 : inflationPct) != null
-      ? (constructionPressureScore != null ? constructionPressureScore / 8 : inflationPct ?? 0) *
+      ? (constructionPressureScore != null ? constructionPressureScore / 8 : (inflationPct ?? 0)) *
         profile.constructionSensitivity
       : null;
   const adjustedConstructionCostIndex =
-    (constructionPressureScore != null ? 100 + constructionPressureScore : constructionCostIndex) != null
-      ? (constructionPressureScore != null ? 100 + constructionPressureScore : constructionCostIndex ?? 0) *
-        profile.constructionSensitivity
+    (constructionPressureScore != null ? 100 + constructionPressureScore : constructionCostIndex) !=
+    null
+      ? (constructionPressureScore != null
+          ? 100 + constructionPressureScore
+          : (constructionCostIndex ?? 0)) * profile.constructionSensitivity
       : null;
   const adjustedReplacementCost =
     assetClass === AssetClass.DATA_CENTER && constructionCost != null
@@ -383,7 +431,8 @@ function buildConstructionBlock(
       key: 'construction',
       label: 'Construction Costs',
       state: 'HIGH',
-      commentary: 'Input-cost pressure is elevated, so capex and contingency assumptions should be widened.',
+      commentary:
+        'Input-cost pressure is elevated, so capex and contingency assumptions should be widened.',
       signals
     };
   }
@@ -399,7 +448,8 @@ function buildConstructionBlock(
       key: 'construction',
       label: 'Construction Costs',
       state: 'ELEVATED',
-      commentary: 'Construction costs are not stressed but still warrant a modest contingency overlay.',
+      commentary:
+        'Construction costs are not stressed but still warrant a modest contingency overlay.',
       signals
     };
   }
@@ -408,7 +458,8 @@ function buildConstructionBlock(
     key: 'construction',
     label: 'Construction Costs',
     state: 'CONTAINED',
-    commentary: 'Construction cost pressure looks manageable relative to recent underwriting baselines.',
+    commentary:
+      'Construction cost pressure looks manageable relative to recent underwriting baselines.',
     signals
   };
 }
@@ -424,11 +475,14 @@ function buildRefinanceBlock(
   const signals = [
     debtCostPct != null ? `Debt cost ${roundPct(debtCostPct)}%` : 'Debt cost unavailable',
     capRatePct != null ? `Cap rate ${roundPct(capRatePct)}%` : 'Cap rate unavailable',
-    creditStressScore != null ? `Credit stress ${roundPct(creditStressScore)} bps` : 'Credit stress unavailable',
+    creditStressScore != null
+      ? `Credit stress ${roundPct(creditStressScore)} bps`
+      : 'Credit stress unavailable',
     liquidityScore != null ? `Liquidity ${roundPct(liquidityScore)}` : 'Liquidity unavailable',
-    `Refi beta ${roundPct(((profile.capitalRateSensitivity + profile.liquiditySensitivity) / 2))}x`
+    `Refi beta ${roundPct((profile.capitalRateSensitivity + profile.liquiditySensitivity) / 2)}x`
   ];
-  const adjustedDebtCost = debtCostPct != null ? debtCostPct * profile.capitalRateSensitivity : null;
+  const adjustedDebtCost =
+    debtCostPct != null ? debtCostPct * profile.capitalRateSensitivity : null;
   const adjustedCapRate = capRatePct != null ? capRatePct * profile.capitalRateSensitivity : null;
   const adjustedCreditSpread =
     creditStressScore != null ? creditStressScore * profile.capitalRateSensitivity : null;
@@ -445,7 +499,8 @@ function buildRefinanceBlock(
       key: 'refinance',
       label: 'Refinancing',
       state: 'HIGH',
-      commentary: 'Refinancing conditions look difficult, so debt sizing and exit pricing should be stressed harder.',
+      commentary:
+        'Refinancing conditions look difficult, so debt sizing and exit pricing should be stressed harder.',
       signals
     };
   }
@@ -460,7 +515,8 @@ function buildRefinanceBlock(
       key: 'refinance',
       label: 'Refinancing',
       state: 'MODERATE',
-      commentary: 'Refinancing markets are workable but still require a spread and covenant cushion in the downside case.',
+      commentary:
+        'Refinancing markets are workable but still require a spread and covenant cushion in the downside case.',
       signals
     };
   }
@@ -469,7 +525,8 @@ function buildRefinanceBlock(
     key: 'refinance',
     label: 'Refinancing',
     state: 'LOW',
-    commentary: 'Refinancing conditions look comparatively open, so the model does not need an extra punitive spread overlay.',
+    commentary:
+      'Refinancing conditions look comparatively open, so the model does not need an extra punitive spread overlay.',
     signals
   };
 }
@@ -497,40 +554,54 @@ function buildGuidance(
     discountRateShiftPct -= 0.15 * profile.capitalRateSensitivity;
     exitCapRateShiftPct -= 0.1 * profile.capitalRateSensitivity;
     debtCostShiftPct -= 0.1 * profile.capitalRateSensitivity;
-    summary.push('Capital markets are supportive, so the base case can stay slightly tighter than neutral.');
+    summary.push(
+      'Capital markets are supportive, so the base case can stay slightly tighter than neutral.'
+    );
   }
 
   if (regimes.leasing.state === 'SOFT') {
     occupancyShiftPct -= 5 * profile.leasingSensitivity;
     growthShiftPct -= 0.35 * profile.leasingSensitivity;
     exitCapRateShiftPct += 0.15 * profile.liquiditySensitivity;
-    summary.push('Leasing conditions are soft, so occupancy and growth are cut while exit pricing is widened.');
+    summary.push(
+      'Leasing conditions are soft, so occupancy and growth are cut while exit pricing is widened.'
+    );
   } else if (regimes.leasing.state === 'STRONG') {
     occupancyShiftPct += 2 * profile.leasingSensitivity;
     growthShiftPct += 0.2 * profile.leasingSensitivity;
     exitCapRateShiftPct -= 0.05 * profile.liquiditySensitivity;
-    summary.push('Leasing conditions are strong, so the model carries a modest occupancy and growth uplift.');
+    summary.push(
+      'Leasing conditions are strong, so the model carries a modest occupancy and growth uplift.'
+    );
   }
 
   if (regimes.construction.state === 'HIGH') {
     replacementCostShiftPct += 8 * profile.constructionSensitivity;
-    summary.push('Construction cost pressure is high, so replacement cost and contingency are stepped up materially.');
+    summary.push(
+      'Construction cost pressure is high, so replacement cost and contingency are stepped up materially.'
+    );
   } else if (regimes.construction.state === 'ELEVATED') {
     replacementCostShiftPct += 4 * profile.constructionSensitivity;
-    summary.push('Construction costs are elevated, so replacement cost carries a modest contingency uplift.');
+    summary.push(
+      'Construction costs are elevated, so replacement cost carries a modest contingency uplift.'
+    );
   }
 
   if (regimes.refinance.state === 'HIGH') {
     debtCostShiftPct += 0.2 * profile.capitalRateSensitivity;
     exitCapRateShiftPct += 0.1 * profile.liquiditySensitivity;
-    summary.push('Refinancing risk is high, so debt cost and exit cap take an additional downside cushion.');
+    summary.push(
+      'Refinancing risk is high, so debt cost and exit cap take an additional downside cushion.'
+    );
   } else if (regimes.refinance.state === 'MODERATE') {
     debtCostShiftPct += 0.1 * profile.capitalRateSensitivity;
     summary.push('Refinancing risk is moderate, so a smaller spread add-on is applied.');
   }
 
   if (summary.length === 0) {
-    summary.push('Macro conditions are close to neutral, so the underwriting stays near current market inputs.');
+    summary.push(
+      'Macro conditions are close to neutral, so the underwriting stays near current market inputs.'
+    );
   }
 
   summary.unshift(
@@ -552,7 +623,9 @@ function buildGuidance(
   };
 }
 
-export function buildMacroRegimeAnalysis(input: BuildMacroRegimeAnalysisInput): MacroInterpretation {
+export function buildMacroRegimeAnalysis(
+  input: BuildMacroRegimeAnalysisInput
+): MacroInterpretation {
   const snapshot = buildSnapshot(input);
   const submarket = input.submarket ?? input.marketSnapshot?.metroRegion ?? null;
   const profile = getMacroSensitivityProfile(
@@ -567,12 +640,16 @@ export function buildMacroRegimeAnalysis(input: BuildMacroRegimeAnalysisInput): 
     marketSnapshot: input.marketSnapshot,
     series: input.series
   });
-  const inflationPct = getSeriesValue(snapshot, 'inflation_pct') ?? input.marketSnapshot?.inflationPct ?? null;
-  const debtCostPct = getSeriesValue(snapshot, 'debt_cost_pct') ?? input.marketSnapshot?.debtCostPct ?? null;
-  const capRatePct = getSeriesValue(snapshot, 'cap_rate_pct') ?? input.marketSnapshot?.capRatePct ?? null;
+  const inflationPct =
+    getSeriesValue(snapshot, 'inflation_pct') ?? input.marketSnapshot?.inflationPct ?? null;
+  const debtCostPct =
+    getSeriesValue(snapshot, 'debt_cost_pct') ?? input.marketSnapshot?.debtCostPct ?? null;
+  const capRatePct =
+    getSeriesValue(snapshot, 'cap_rate_pct') ?? input.marketSnapshot?.capRatePct ?? null;
   const discountRatePct =
     getSeriesValue(snapshot, 'discount_rate_pct') ?? input.marketSnapshot?.discountRatePct ?? null;
-  const vacancyPct = getSeriesValue(snapshot, 'vacancy_pct') ?? input.marketSnapshot?.vacancyPct ?? null;
+  const vacancyPct =
+    getSeriesValue(snapshot, 'vacancy_pct') ?? input.marketSnapshot?.vacancyPct ?? null;
   const policyRatePct = getSeriesValue(snapshot, 'policy_rate_pct');
   const creditSpreadBps = getSeriesValue(snapshot, 'credit_spread_bps');
   const rentGrowthPct = getSeriesValue(snapshot, 'rent_growth_pct');

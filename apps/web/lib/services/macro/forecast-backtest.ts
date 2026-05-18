@@ -43,7 +43,9 @@ function sign(value: number) {
 }
 
 function buildFactorRow(rows: MacroFactor[]): MacroForecastBacktestFactorRow | null {
-  const ordered = [...rows].sort((left, right) => left.observationDate.getTime() - right.observationDate.getTime());
+  const ordered = [...rows].sort(
+    (left, right) => left.observationDate.getTime() - right.observationDate.getTime()
+  );
   if (ordered.length < 3) return null;
 
   let sampleCount = 0;
@@ -96,16 +98,22 @@ export function buildMacroForecastBacktest(factors: MacroFactor[]): MacroForecas
       const factorRows = [...factorMap.values()]
         .map((rows) => buildFactorRow(rows))
         .filter((row): row is MacroForecastBacktestFactorRow => row !== null)
-        .sort((left, right) => right.directionalHitRatePct - left.directionalHitRatePct || left.meanAbsoluteErrorPct - right.meanAbsoluteErrorPct);
+        .sort(
+          (left, right) =>
+            right.directionalHitRatePct - left.directionalHitRatePct ||
+            left.meanAbsoluteErrorPct - right.meanAbsoluteErrorPct
+        );
 
       const sampleCount = factorRows.reduce((sum, row) => sum + row.sampleCount, 0);
       const weightedHitRate =
         sampleCount > 0
-          ? factorRows.reduce((sum, row) => sum + row.directionalHitRatePct * row.sampleCount, 0) / sampleCount
+          ? factorRows.reduce((sum, row) => sum + row.directionalHitRatePct * row.sampleCount, 0) /
+            sampleCount
           : 0;
       const weightedMae =
         sampleCount > 0
-          ? factorRows.reduce((sum, row) => sum + row.meanAbsoluteErrorPct * row.sampleCount, 0) / sampleCount
+          ? factorRows.reduce((sum, row) => sum + row.meanAbsoluteErrorPct * row.sampleCount, 0) /
+            sampleCount
           : 0;
       const latestActualDate =
         factorRows
@@ -123,21 +131,32 @@ export function buildMacroForecastBacktest(factors: MacroFactor[]): MacroForecas
         latestActualDate,
         strongestFactor: factorRows[0] ?? null,
         weakestFactor:
-          [...factorRows].sort((left, right) => left.directionalHitRatePct - right.directionalHitRatePct || right.meanAbsoluteErrorPct - left.meanAbsoluteErrorPct)[0] ??
-          null,
+          [...factorRows].sort(
+            (left, right) =>
+              left.directionalHitRatePct - right.directionalHitRatePct ||
+              right.meanAbsoluteErrorPct - left.meanAbsoluteErrorPct
+          )[0] ?? null,
         factors: factorRows
       } satisfies MacroForecastBacktestMarketRow;
     })
-    .sort((left, right) => right.directionalHitRatePct - left.directionalHitRatePct || left.meanAbsoluteErrorPct - right.meanAbsoluteErrorPct);
+    .sort(
+      (left, right) =>
+        right.directionalHitRatePct - left.directionalHitRatePct ||
+        left.meanAbsoluteErrorPct - right.meanAbsoluteErrorPct
+    );
 
   const sampleCount = markets.reduce((sum, market) => sum + market.sampleCount, 0);
   const weightedHitRate =
     sampleCount > 0
-      ? markets.reduce((sum, market) => sum + market.directionalHitRatePct * market.sampleCount, 0) / sampleCount
+      ? markets.reduce(
+          (sum, market) => sum + market.directionalHitRatePct * market.sampleCount,
+          0
+        ) / sampleCount
       : 0;
   const weightedMae =
     sampleCount > 0
-      ? markets.reduce((sum, market) => sum + market.meanAbsoluteErrorPct * market.sampleCount, 0) / sampleCount
+      ? markets.reduce((sum, market) => sum + market.meanAbsoluteErrorPct * market.sampleCount, 0) /
+        sampleCount
       : 0;
 
   return {

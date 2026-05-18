@@ -34,4 +34,3 @@ export function ValuationRunBadges({ createdAt, confidenceScore, provenance, sce
     </div>
   );
 }
-

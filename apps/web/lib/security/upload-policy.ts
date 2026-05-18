@@ -27,8 +27,13 @@ function parsePositiveNumber(value: string | undefined, fallback: number) {
 }
 
 export function getDocumentUploadPolicy(env: NodeJS.ProcessEnv = process.env) {
-  const maxBytes = parsePositiveNumber(env.DOCUMENT_UPLOAD_MAX_BYTES, DEFAULT_DOCUMENT_UPLOAD_MAX_BYTES);
-  const allowedTypes = (env.DOCUMENT_UPLOAD_ALLOWED_TYPES ?? DEFAULT_ALLOWED_DOCUMENT_TYPES.join(','))
+  const maxBytes = parsePositiveNumber(
+    env.DOCUMENT_UPLOAD_MAX_BYTES,
+    DEFAULT_DOCUMENT_UPLOAD_MAX_BYTES
+  );
+  const allowedTypes = (
+    env.DOCUMENT_UPLOAD_ALLOWED_TYPES ?? DEFAULT_ALLOWED_DOCUMENT_TYPES.join(',')
+  )
     .split(',')
     .map((value) => value.trim())
     .filter(Boolean);

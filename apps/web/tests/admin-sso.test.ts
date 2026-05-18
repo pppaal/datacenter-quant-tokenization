@@ -88,7 +88,10 @@ test('admin sso builds authorization url with pkce and redirect params', async (
   assert.equal(url.origin, 'https://id.example.com');
   assert.equal(url.pathname, '/authorize');
   assert.equal(url.searchParams.get('client_id'), 'client-id');
-  assert.equal(url.searchParams.get('redirect_uri'), 'https://firm.example.com/api/admin/sso/callback');
+  assert.equal(
+    url.searchParams.get('redirect_uri'),
+    'https://firm.example.com/api/admin/sso/callback'
+  );
   assert.equal(url.searchParams.get('state'), 'state-token');
   assert.equal(url.searchParams.get('code_challenge_method'), 'S256');
 });

@@ -21,11 +21,17 @@ async function getAssetContext(assetId: string, db: PrismaClient) {
 
 function normalizeCapexInput(asset: Awaited<ReturnType<typeof getAssetContext>>, input: unknown) {
   const parsed = capexBookInputSchema.parse(input);
-  const inputCurrency = resolveInputCurrency(asset.address?.country ?? asset.market, parsed.inputCurrency);
+  const inputCurrency = resolveInputCurrency(
+    asset.address?.country ?? asset.market,
+    parsed.inputCurrency
+  );
 
   return {
     ...parsed,
-    amountKrw: typeof parsed.amountKrw === 'number' ? convertToKrw(parsed.amountKrw, inputCurrency) : undefined
+    amountKrw:
+      typeof parsed.amountKrw === 'number'
+        ? convertToKrw(parsed.amountKrw, inputCurrency)
+        : undefined
   };
 }
 
@@ -47,7 +53,12 @@ export async function createCapexLineItem(assetId: string, input: unknown, deps?
   });
 }
 
-export async function updateCapexLineItem(assetId: string, itemId: string, input: unknown, deps?: CapexBookDeps) {
+export async function updateCapexLineItem(
+  assetId: string,
+  itemId: string,
+  input: unknown,
+  deps?: CapexBookDeps
+) {
   const db = deps?.db ?? prisma;
   const asset = await getAssetContext(assetId, db);
   const normalized = normalizeCapexInput(asset, input);

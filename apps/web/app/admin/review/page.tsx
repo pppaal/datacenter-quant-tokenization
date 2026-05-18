@@ -14,8 +14,9 @@ export default async function AdminReviewPage() {
           Normalize, review, and approve evidence before committee use.
         </h1>
         <p className="mt-4 max-w-4xl text-base leading-8 text-slate-200">
-          This queue is the control point between raw diligence capture and the approved feature layer used by
-          valuation, IC outputs, and registry-ready packaging across all supported asset classes.
+          This queue is the control point between raw diligence capture and the approved feature
+          layer used by valuation, IC outputs, and registry-ready packaging across all supported
+          asset classes.
         </p>
       </section>
 

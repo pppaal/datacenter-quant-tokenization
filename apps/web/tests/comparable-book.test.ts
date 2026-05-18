@@ -75,7 +75,12 @@ test('comparable book update and delete enforce asset ownership', async () => {
           assetType: 'Data Center',
           market: 'KR',
           address: { country: 'KR' },
-          comparableSet: { id: 'comp_set_2', assetId: 'asset_comp_2', name: 'Existing set', notes: null }
+          comparableSet: {
+            id: 'comp_set_2',
+            assetId: 'asset_comp_2',
+            name: 'Existing set',
+            notes: null
+          }
         };
       }
     },

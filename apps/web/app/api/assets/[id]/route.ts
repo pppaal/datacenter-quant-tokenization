@@ -3,7 +3,10 @@ import { AdminAccessScopeType } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { assertActorScopeAccess } from '@/lib/security/admin-access';
 import { getAssetById, updateAsset } from '@/lib/services/assets';
-import { getRequestIpAddress, resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
+import {
+  getRequestIpAddress,
+  resolveVerifiedAdminActorFromHeaders
+} from '@/lib/security/admin-request';
 import { recordAuditEvent } from '@/lib/services/audit';
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -18,7 +21,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   try {
     await assertActorScopeAccess(actor, AdminAccessScopeType.ASSET, id, prisma);
   } catch {
-    return NextResponse.json({ error: 'Asset access is not granted for this operator.' }, { status: 403 });
+    return NextResponse.json(
+      { error: 'Asset access is not granted for this operator.' },
+      { status: 403 }
+    );
   }
   const asset = await getAssetById(id);
   if (!asset) {

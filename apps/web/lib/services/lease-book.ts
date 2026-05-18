@@ -23,12 +23,17 @@ async function getAssetContext(assetId: string, db: PrismaClient) {
 
 function normalizeLeaseInput(asset: Awaited<ReturnType<typeof getAssetContext>>, input: unknown) {
   const parsed = leaseBookInputSchema.parse(input);
-  const inputCurrency = resolveInputCurrency(asset.address?.country ?? asset.market, parsed.inputCurrency);
+  const inputCurrency = resolveInputCurrency(
+    asset.address?.country ?? asset.market,
+    parsed.inputCurrency
+  );
 
   return {
     ...parsed,
     baseRatePerKwKrw:
-      typeof parsed.baseRatePerKwKrw === 'number' ? convertToKrw(parsed.baseRatePerKwKrw, inputCurrency) : undefined,
+      typeof parsed.baseRatePerKwKrw === 'number'
+        ? convertToKrw(parsed.baseRatePerKwKrw, inputCurrency)
+        : undefined,
     markToMarketRatePerKwKrw:
       typeof parsed.markToMarketRatePerKwKrw === 'number'
         ? convertToKrw(parsed.markToMarketRatePerKwKrw, inputCurrency)
@@ -58,14 +63,18 @@ function normalizeLeaseInput(asset: Awaited<ReturnType<typeof getAssetContext>>,
         ? convertToKrw(parsed.expenseStopKrwPerKwMonth, inputCurrency)
         : undefined,
     fitOutCostKrw:
-      typeof parsed.fitOutCostKrw === 'number' ? convertToKrw(parsed.fitOutCostKrw, inputCurrency) : undefined,
+      typeof parsed.fitOutCostKrw === 'number'
+        ? convertToKrw(parsed.fitOutCostKrw, inputCurrency)
+        : undefined,
     steps:
       parsed.steps?.map((step, index) => ({
         stepOrder: index + 1,
         startYear: step.startYear ?? 1,
         endYear: step.endYear ?? step.startYear ?? 1,
         ratePerKwKrw:
-          typeof step.ratePerKwKrw === 'number' ? convertToKrw(step.ratePerKwKrw, inputCurrency) ?? 0 : 0,
+          typeof step.ratePerKwKrw === 'number'
+            ? (convertToKrw(step.ratePerKwKrw, inputCurrency) ?? 0)
+            : 0,
         leasedKw: step.leasedKw,
         annualEscalationPct: step.annualEscalationPct,
         occupancyPct: step.occupancyPct,
@@ -110,7 +119,11 @@ function normalizeLeaseInput(asset: Awaited<ReturnType<typeof getAssetContext>>,
   };
 }
 
-async function runPromotion(assetId: string, db: PrismaClient, promoter: typeof promoteAssetSnapshotsToFeatures) {
+async function runPromotion(
+  assetId: string,
+  db: PrismaClient,
+  promoter: typeof promoteAssetSnapshotsToFeatures
+) {
   try {
     await promoter(assetId, db);
   } catch {
@@ -201,7 +214,12 @@ export async function createAssetLease(assetId: string, input: unknown, deps?: L
   return lease;
 }
 
-export async function updateAssetLease(assetId: string, leaseId: string, input: unknown, deps?: LeaseBookDeps) {
+export async function updateAssetLease(
+  assetId: string,
+  leaseId: string,
+  input: unknown,
+  deps?: LeaseBookDeps
+) {
   const db = deps?.db ?? prisma;
   const promoter = deps?.promoter ?? promoteAssetSnapshotsToFeatures;
   const asset = await getAssetContext(assetId, db);
@@ -236,8 +254,7 @@ export async function updateAssetLease(assetId: string, leaseId: string, input: 
       probabilityPct: normalized.probabilityPct ?? existing.probabilityPct,
       renewProbabilityPct: normalized.renewProbabilityPct ?? existing.renewProbabilityPct,
       downtimeMonths: normalized.downtimeMonths ?? existing.downtimeMonths,
-      rolloverDowntimeMonths:
-        normalized.rolloverDowntimeMonths ?? existing.rolloverDowntimeMonths,
+      rolloverDowntimeMonths: normalized.rolloverDowntimeMonths ?? existing.rolloverDowntimeMonths,
       renewalRentFreeMonths:
         normalized.renewalRentFreeMonths ?? existingLease.renewalRentFreeMonths,
       renewalTermYears: normalized.renewalTermYears ?? existingLease.renewalTermYears,

@@ -31,31 +31,45 @@ export function applyCreditOverlay(
   if (assessments.length === 0) return analysis;
 
   const averageScore =
-    assessments.reduce((sum, assessment) => sum + assessment.score, 0) / Math.max(assessments.length, 1);
+    assessments.reduce((sum, assessment) => sum + assessment.score, 0) /
+    Math.max(assessments.length, 1);
   const highRiskAssessments = assessments.filter((assessment) => assessment.riskLevel === 'HIGH');
-  const moderateRiskAssessments = assessments.filter((assessment) => assessment.riskLevel === 'MODERATE');
+  const moderateRiskAssessments = assessments.filter(
+    (assessment) => assessment.riskLevel === 'MODERATE'
+  );
   const lowRiskAssessments = assessments.filter((assessment) => assessment.riskLevel === 'LOW');
   const weakestAssessment =
-    [...assessments].sort((left, right) => left.score - right.score || left.createdAt.getTime() - right.createdAt.getTime())[0] ??
-    null;
+    [...assessments].sort(
+      (left, right) =>
+        left.score - right.score || left.createdAt.getTime() - right.createdAt.getTime()
+    )[0] ?? null;
   const currentRatios = assessments
-    .map((assessment) => ((assessment.metrics as CreditMetrics | null)?.currentRatio ?? null))
+    .map((assessment) => (assessment.metrics as CreditMetrics | null)?.currentRatio ?? null)
     .filter((value): value is number => typeof value === 'number' && Number.isFinite(value));
   const maturityCoverageValues = assessments
-    .map((assessment) => ((assessment.metrics as CreditMetrics | null)?.currentMaturityCoverage ?? null))
+    .map(
+      (assessment) => (assessment.metrics as CreditMetrics | null)?.currentMaturityCoverage ?? null
+    )
     .filter((value): value is number => typeof value === 'number' && Number.isFinite(value));
   const cashToDebtValues = assessments
-    .map((assessment) => ((assessment.metrics as CreditMetrics | null)?.cashToDebtRatio ?? null))
+    .map((assessment) => (assessment.metrics as CreditMetrics | null)?.cashToDebtRatio ?? null)
     .filter((value): value is number => typeof value === 'number' && Number.isFinite(value));
   const operatingCashFlowToDebtValues = assessments
-    .map((assessment) => ((assessment.metrics as CreditMetrics | null)?.operatingCashFlowToDebtRatio ?? null))
+    .map(
+      (assessment) =>
+        (assessment.metrics as CreditMetrics | null)?.operatingCashFlowToDebtRatio ?? null
+    )
     .filter((value): value is number => typeof value === 'number' && Number.isFinite(value));
   const weakestCurrentRatio = currentRatios.length ? Math.min(...currentRatios) : null;
-  const weakestMaturityCoverage = maturityCoverageValues.length ? Math.min(...maturityCoverageValues) : null;
+  const weakestMaturityCoverage = maturityCoverageValues.length
+    ? Math.min(...maturityCoverageValues)
+    : null;
   const lowCurrentRatioCount = currentRatios.filter((value) => value < 1.1).length;
   const weakMaturityCoverageCount = maturityCoverageValues.filter((value) => value < 1.25).length;
   const lowCashToDebtCount = cashToDebtValues.filter((value) => value < 0.1).length;
-  const weakOperatingCashFlowCount = operatingCashFlowToDebtValues.filter((value) => value < 0.08).length;
+  const weakOperatingCashFlowCount = operatingCashFlowToDebtValues.filter(
+    (value) => value < 0.08
+  ).length;
   const refinanceRiskScore =
     weakMaturityCoverageCount * 2.5 +
     lowCurrentRatioCount * 2 +
@@ -68,8 +82,12 @@ export function applyCreditOverlay(
     moderateRiskAssessments.length * 0.5;
   const refinanceRiskLevel = riskLevelFromSignal(refinanceRiskScore);
   const covenantPressureLevel = riskLevelFromSignal(covenantPressureScore);
-  const downsideDscrHaircutPct = Number(clamp(refinanceRiskScore * 1.2 + covenantPressureScore * 0.9, 0, 18).toFixed(1));
-  const downsideValueHaircutPct = Number(clamp(refinanceRiskScore * 0.65 + covenantPressureScore * 0.45, 0, 8).toFixed(1));
+  const downsideDscrHaircutPct = Number(
+    clamp(refinanceRiskScore * 1.2 + covenantPressureScore * 0.9, 0, 18).toFixed(1)
+  );
+  const downsideValueHaircutPct = Number(
+    clamp(refinanceRiskScore * 0.65 + covenantPressureScore * 0.45, 0, 8).toFixed(1)
+  );
 
   const confidenceDelta = clamp(
     (averageScore - 65) / 25 +
@@ -80,7 +98,9 @@ export function applyCreditOverlay(
     -0.9,
     0.65
   );
-  const adjustedConfidence = Number(clamp(analysis.confidenceScore + confidenceDelta, 4.5, 9.9).toFixed(1));
+  const adjustedConfidence = Number(
+    clamp(analysis.confidenceScore + confidenceDelta, 4.5, 9.9).toFixed(1)
+  );
 
   const creditRiskNotes = [
     highRiskAssessments.length > 0
@@ -123,8 +143,12 @@ export function applyCreditOverlay(
     return {
       ...scenario,
       valuationKrw: Math.max(1, Math.round(scenario.valuationKrw * valuationFactor)),
-      impliedYieldPct: Number((scenario.impliedYieldPct / Math.max(valuationFactor, 0.5)).toFixed(2)),
-      debtServiceCoverage: Number((scenario.debtServiceCoverage * Math.max(dscrFactor, 0.5)).toFixed(2)),
+      impliedYieldPct: Number(
+        (scenario.impliedYieldPct / Math.max(valuationFactor, 0.5)).toFixed(2)
+      ),
+      debtServiceCoverage: Number(
+        (scenario.debtServiceCoverage * Math.max(dscrFactor, 0.5)).toFixed(2)
+      ),
       notes: `${scenario.notes} Credit overlay adds ${downsideValueHaircutPct.toFixed(1)}% valuation stress and ${downsideDscrHaircutPct.toFixed(1)}% DSCR stress for refinance and covenant pressure.`
     };
   });

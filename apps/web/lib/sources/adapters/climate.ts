@@ -84,7 +84,10 @@ async function syncSupplementalSourceCaches({
   const expiresAt = new Date(now.getTime() + ttlHours * 60 * 60 * 1000);
 
   await store.upsertCache('nasa-gpm-imerg', assetCode, {
-    status: recentSatellitePrecipMm !== null && recentSatellitePrecipMm !== undefined ? SourceStatus.FRESH : SourceStatus.STALE,
+    status:
+      recentSatellitePrecipMm !== null && recentSatellitePrecipMm !== undefined
+        ? SourceStatus.FRESH
+        : SourceStatus.STALE,
     payload: {
       recentSatellitePrecipMm: recentSatellitePrecipMm ?? null
     },
@@ -97,7 +100,10 @@ async function syncSupplementalSourceCaches({
   });
 
   await store.upsertCache('nasa-firms', assetCode, {
-    status: recentFireHotspots !== null && recentFireHotspots !== undefined ? SourceStatus.FRESH : SourceStatus.STALE,
+    status:
+      recentFireHotspots !== null && recentFireHotspots !== undefined
+        ? SourceStatus.FRESH
+        : SourceStatus.STALE,
     payload: {
       recentFireHotspots: recentFireHotspots ?? null,
       recentMaxFireRadiativePowerMw: recentMaxFireRadiativePowerMw ?? null
@@ -156,7 +162,9 @@ function pickNumericValue(properties?: Record<string, unknown>) {
 
   const preferredKeys = ['value', 'precip', 'precipitation', 'surface', 'rate', 'mean', 'max'];
   for (const key of preferredKeys) {
-    const match = Object.entries(properties).find(([candidate]) => candidate.toLowerCase().includes(key));
+    const match = Object.entries(properties).find(([candidate]) =>
+      candidate.toLowerCase().includes(key)
+    );
     if (match) {
       const parsed = Number(match[1]);
       if (Number.isFinite(parsed)) return parsed;
@@ -185,7 +193,13 @@ async function fetchRecentGpmPrecipMm(
   referenceDate: Date,
   fetcher?: Fetcher
 ) {
-  const endDate = new Date(Date.UTC(referenceDate.getUTCFullYear(), referenceDate.getUTCMonth(), referenceDate.getUTCDate()));
+  const endDate = new Date(
+    Date.UTC(
+      referenceDate.getUTCFullYear(),
+      referenceDate.getUTCMonth(),
+      referenceDate.getUTCDate()
+    )
+  );
   endDate.setUTCDate(endDate.getUTCDate() - 1);
   const startDate = new Date(endDate);
   startDate.setUTCDate(startDate.getUTCDate() - 1);
@@ -206,8 +220,9 @@ async function fetchRecentGpmPrecipMm(
       { fetcher }
     )) as GpmOpenSearchResponse;
     const actionUrl =
-      openSearch.items?.[0]?.action?.find((action) => action.url && action.type?.includes('geo+json'))?.url ??
-      openSearch.items?.[0]?.action?.find((action) => action.url)?.url;
+      openSearch.items?.[0]?.action?.find(
+        (action) => action.url && action.type?.includes('geo+json')
+      )?.url ?? openSearch.items?.[0]?.action?.find((action) => action.url)?.url;
 
     if (!actionUrl) return null;
 
@@ -245,22 +260,21 @@ function parseCsvRows(csv: string) {
   const headers = lines[0].split(',').map((column) => column.trim());
   return lines.slice(1).map((line) => {
     const values = line.split(',');
-    return Object.fromEntries(headers.map((header, index) => [header, values[index]?.trim() ?? '']));
+    return Object.fromEntries(
+      headers.map((header, index) => [header, values[index]?.trim() ?? ''])
+    );
   });
 }
 
-async function fetchRecentFirmsSummary(
-  latitude: number,
-  longitude: number,
-  fetcher?: Fetcher
-) {
+async function fetchRecentFirmsSummary(latitude: number, longitude: number, fetcher?: Fetcher) {
   const mapKey = process.env.NASA_FIRMS_MAP_KEY?.trim();
   if (!mapKey) return null;
 
   const bbox = buildBbox(latitude, longitude, Number(process.env.NASA_FIRMS_BBOX_DEGREES ?? 0.25));
   const days = Math.max(1, Number(process.env.NASA_FIRMS_LOOKBACK_DAYS ?? 7));
   const sensor = process.env.NASA_FIRMS_SENSOR || 'VIIRS_SNPP_NRT';
-  const baseUrl = process.env.NASA_FIRMS_API_URL || 'https://firms.modaps.eosdis.nasa.gov/api/area/csv';
+  const baseUrl =
+    process.env.NASA_FIRMS_API_URL || 'https://firms.modaps.eosdis.nasa.gov/api/area/csv';
   const url = `${baseUrl}/${mapKey}/${sensor}/${bbox}/${days}`;
 
   try {
@@ -301,19 +315,26 @@ function buildNasaClimateNote(values: {
   floodRiskScore: number;
   wildfireRiskScore: number;
 }) {
-  const heatFlag = values.averageTempC >= 18 ? 'elevated warm-season cooling load' : 'moderate annual cooling load';
+  const heatFlag =
+    values.averageTempC >= 18
+      ? 'elevated warm-season cooling load'
+      : 'moderate annual cooling load';
   const floodFlag =
-    values.floodRiskScore >= 3.2 ? 'heightened flood-resilience review' : 'standard flood-resilience review';
+    values.floodRiskScore >= 3.2
+      ? 'heightened flood-resilience review'
+      : 'standard flood-resilience review';
   const fireFlag =
-    values.wildfireRiskScore >= 2 ? 'satellite fire-screening follow-up' : 'routine wildfire screening';
+    values.wildfireRiskScore >= 2
+      ? 'satellite fire-screening follow-up'
+      : 'routine wildfire screening';
   const recentOverlay =
     values.recentAverageTempC === null || values.recentAverageTempC === undefined
       ? 'Near-real-time overlay was unavailable, so the note uses climatology only.'
       : `Recent NASA POWER daily NRT shows average temperature ${values.recentAverageTempC.toFixed(
           1
-        )}C, max temperature ${values.recentMaxTempC?.toFixed(1) ?? 'n/a'}C, cumulative precipitation ${values.recentPrecipMm?.toFixed(
-          1
-        ) ?? 'n/a'} mm, ${values.heavyRainDays ?? 0} heavy-rain days, and ${values.hotDaysCount ?? 0} hot days above 30C.`;
+        )}C, max temperature ${values.recentMaxTempC?.toFixed(1) ?? 'n/a'}C, cumulative precipitation ${
+          values.recentPrecipMm?.toFixed(1) ?? 'n/a'
+        } mm, ${values.heavyRainDays ?? 0} heavy-rain days, and ${values.hotDaysCount ?? 0} hot days above 30C.`;
   const gpmOverlay =
     values.recentSatellitePrecipMm === null || values.recentSatellitePrecipMm === undefined
       ? 'GPM IMERG precipitation overlay unavailable.'
@@ -323,9 +344,9 @@ function buildNasaClimateNote(values: {
   const firmsOverlay =
     values.recentFireHotspots === null || values.recentFireHotspots === undefined
       ? 'FIRMS hotspot overlay unavailable or not configured.'
-      : `FIRMS detected ${values.recentFireHotspots} recent hotspot(s) with max FRP ${values.recentMaxFireRadiativePowerMw?.toFixed(
-          1
-        ) ?? '0.0'} MW.`;
+      : `FIRMS detected ${values.recentFireHotspots} recent hotspot(s) with max FRP ${
+          values.recentMaxFireRadiativePowerMw?.toFixed(1) ?? '0.0'
+        } MW.`;
 
   return `NASA POWER climatology indicates average temperature ${values.averageTempC.toFixed(
     1
@@ -339,7 +360,11 @@ export function createClimateAdapter(store: SourceCacheStore, fetcher?: Fetcher)
     async fetch(input: Input): Promise<SourceEnvelope<ClimateOverlayData>> {
       const sourceSystem = process.env.CLIMATE_OVERLAY_API_URL ? 'climate-overlay' : 'nasa-power';
       const now = new Date();
-      const cached = await store.getFreshCache<ClimateOverlayData>(sourceSystem, input.assetCode, now);
+      const cached = await store.getFreshCache<ClimateOverlayData>(
+        sourceSystem,
+        input.assetCode,
+        now
+      );
       if (cached) {
         return {
           sourceSystem,
@@ -361,8 +386,9 @@ export function createClimateAdapter(store: SourceCacheStore, fetcher?: Fetcher)
       }
 
       const fallback =
-        FALLBACK_SOURCE_DATA.climate[input.assetCode as keyof typeof FALLBACK_SOURCE_DATA.climate] ??
-        DEFAULT_FALLBACK_SOURCE_DATA.climate;
+        FALLBACK_SOURCE_DATA.climate[
+          input.assetCode as keyof typeof FALLBACK_SOURCE_DATA.climate
+        ] ?? DEFAULT_FALLBACK_SOURCE_DATA.climate;
       const ttlHours = Number(process.env.SOURCE_CACHE_TTL_HOURS ?? 24);
 
       try {
@@ -401,7 +427,8 @@ export function createClimateAdapter(store: SourceCacheStore, fetcher?: Fetcher)
           const longitude = Number(input.longitude);
 
           const climatologyUrl = new URL(
-            process.env.NASA_POWER_API_URL || 'https://power.larc.nasa.gov/api/temporal/climatology/point'
+            process.env.NASA_POWER_API_URL ||
+              'https://power.larc.nasa.gov/api/temporal/climatology/point'
           );
           climatologyUrl.searchParams.set('parameters', 'T2M,PRECTOTCORR,ALLSKY_SFC_SW_DWN');
           climatologyUrl.searchParams.set('community', 'RE');
@@ -419,14 +446,23 @@ export function createClimateAdapter(store: SourceCacheStore, fetcher?: Fetcher)
           const averageTempC = Number(parameter?.T2M?.ANN);
           const precipMmPerDay = Number(parameter?.PRECTOTCORR?.ANN);
           const solarKwhPerM2PerDay = Number(parameter?.ALLSKY_SFC_SW_DWN?.ANN);
-          if ([averageTempC, precipMmPerDay, solarKwhPerM2PerDay].some((value) => Number.isNaN(value))) {
+          if (
+            [averageTempC, precipMmPerDay, solarKwhPerM2PerDay].some((value) => Number.isNaN(value))
+          ) {
             throw new Error('nasa_power_parse_error');
           }
 
-          const recentWindowDays = Math.max(7, Number(process.env.NASA_POWER_RECENT_WINDOW_DAYS ?? 30));
+          const recentWindowDays = Math.max(
+            7,
+            Number(process.env.NASA_POWER_RECENT_WINDOW_DAYS ?? 30)
+          );
           const referenceDate = resolveReferenceDate();
           const endDate = new Date(
-            Date.UTC(referenceDate.getUTCFullYear(), referenceDate.getUTCMonth(), referenceDate.getUTCDate())
+            Date.UTC(
+              referenceDate.getUTCFullYear(),
+              referenceDate.getUTCMonth(),
+              referenceDate.getUTCDate()
+            )
           );
           endDate.setUTCDate(endDate.getUTCDate() - 2);
           const startDate = new Date(endDate);
@@ -440,7 +476,8 @@ export function createClimateAdapter(store: SourceCacheStore, fetcher?: Fetcher)
 
           try {
             const dailyUrl = new URL(
-              process.env.NASA_POWER_DAILY_API_URL || 'https://power.larc.nasa.gov/api/temporal/daily/point'
+              process.env.NASA_POWER_DAILY_API_URL ||
+                'https://power.larc.nasa.gov/api/temporal/daily/point'
             );
             dailyUrl.searchParams.set('parameters', 'T2M,T2M_MAX,PRECTOTCORR');
             dailyUrl.searchParams.set('community', 'RE');
@@ -462,7 +499,8 @@ export function createClimateAdapter(store: SourceCacheStore, fetcher?: Fetcher)
 
             if (recentTemps && recentMaxTemps && recentPrecip) {
               recentAverageTempC =
-                recentTemps.reduce((sum, value) => sum + value, 0) / Math.max(recentTemps.length, 1);
+                recentTemps.reduce((sum, value) => sum + value, 0) /
+                Math.max(recentTemps.length, 1);
               recentMaxTempC = Math.max(...recentMaxTemps);
               recentPrecipMm = recentPrecip.reduce((sum, value) => sum + value, 0);
               heavyRainDays = recentPrecip.filter((value) => value >= 30).length;
@@ -495,9 +533,9 @@ export function createClimateAdapter(store: SourceCacheStore, fetcher?: Fetcher)
 
           const floodRiskScore = clamp(
             1 +
-              (precipMmPerDay / 2.4) +
-              ((recentPrecipMm ?? 0) / 60) +
-              ((recentSatellitePrecipMm ?? 0) / 35) +
+              precipMmPerDay / 2.4 +
+              (recentPrecipMm ?? 0) / 60 +
+              (recentSatellitePrecipMm ?? 0) / 35 +
               (heavyRainDays ?? 0) * 0.28,
             0.8,
             5
@@ -507,7 +545,7 @@ export function createClimateAdapter(store: SourceCacheStore, fetcher?: Fetcher)
               (hotDaysCount ?? 0) * 0.25 +
               (recentAverageTempC ? Math.max(recentAverageTempC - 18, 0) * 0.08 : 0) +
               (recentFireHotspots ?? 0) * 0.45 +
-              ((recentMaxFireRadiativePowerMw ?? 0) / 30),
+              (recentMaxFireRadiativePowerMw ?? 0) / 30,
             0.4,
             5
           );
@@ -546,8 +584,9 @@ export function createClimateAdapter(store: SourceCacheStore, fetcher?: Fetcher)
           payload: data,
           fetchedAt: now,
           expiresAt: new Date(now.getTime() + ttlHours * 60 * 60 * 1000),
-          freshnessLabel:
-            process.env.CLIMATE_OVERLAY_API_URL ? 'fresh api' : 'nasa power + gpm/firms nrt'
+          freshnessLabel: process.env.CLIMATE_OVERLAY_API_URL
+            ? 'fresh api'
+            : 'nasa power + gpm/firms nrt'
         };
         await store.upsertCache(sourceSystem, input.assetCode, entry);
 

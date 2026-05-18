@@ -22,7 +22,12 @@ type Props = {
     micro: {
       approvedCoverageCount: number;
       pendingBlockers: string[];
-      scorecards: Array<{ key: string; label: string; status: 'good' | 'partial' | 'open'; detail: string }>;
+      scorecards: Array<{
+        key: string;
+        label: string;
+        status: 'good' | 'partial' | 'open';
+        detail: string;
+      }>;
     };
     documents: {
       latestDocumentLabel: string;
@@ -130,7 +135,9 @@ export function ResearchDossierPanel({ dossier, canApproveHouseView = false }: P
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="eyebrow">Research Dossier</div>
-          <h3 className="mt-2 text-2xl font-semibold text-white">{dossier.playbook.researchHeadline}</h3>
+          <h3 className="mt-2 text-2xl font-semibold text-white">
+            {dossier.playbook.researchHeadline}
+          </h3>
           <p className="mt-3 max-w-4xl text-sm leading-7 text-slate-400">{dossier.marketThesis}</p>
         </div>
         <Badge>{dossier.playbook.label}</Badge>
@@ -141,10 +148,15 @@ export function ResearchDossierPanel({ dossier, canApproveHouseView = false }: P
           <div className="fine-print">Latest Macro Indicators</div>
           <div className="mt-3 grid gap-3">
             {dossier.macro.indicators.map((indicator) => (
-              <div key={indicator.label} className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-950/35 px-4 py-3">
+              <div
+                key={indicator.label}
+                className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-950/35 px-4 py-3"
+              >
                 <div>
                   <div className="text-sm font-semibold text-white">{indicator.label}</div>
-                  <div className="text-xs uppercase tracking-[0.18em] text-slate-500">{indicator.direction}</div>
+                  <div className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                    {indicator.direction}
+                  </div>
                 </div>
                 <div className="text-sm text-slate-300">{indicator.value}</div>
               </div>
@@ -156,7 +168,10 @@ export function ResearchDossierPanel({ dossier, canApproveHouseView = false }: P
           <div className="fine-print">Comp Coverage</div>
           <div className="mt-3 grid gap-3">
             {dossier.market.compCoverage.map((item) => (
-              <div key={item.label} className="rounded-2xl border border-white/10 bg-slate-950/35 px-4 py-3">
+              <div
+                key={item.label}
+                className="rounded-2xl border border-white/10 bg-slate-950/35 px-4 py-3"
+              >
                 <div className="flex items-center justify-between gap-4">
                   <div className="text-sm font-semibold text-white">{item.label}</div>
                   <div className="text-sm text-slate-200">{item.value}</div>
@@ -169,7 +184,9 @@ export function ResearchDossierPanel({ dossier, canApproveHouseView = false }: P
                 <div className="text-sm font-semibold text-white">Official Market Signals</div>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {dossier.market.officialHighlights.map((item) => (
-                    <Badge key={item.label}>{item.label}: {item.value}</Badge>
+                    <Badge key={item.label}>
+                      {item.label}: {item.value}
+                    </Badge>
                   ))}
                 </div>
               </div>
@@ -183,7 +200,10 @@ export function ResearchDossierPanel({ dossier, canApproveHouseView = false }: P
           <div className="fine-print">Approved Micro Evidence Coverage</div>
           <div className="mt-3 grid gap-3 md:grid-cols-2">
             {dossier.micro.scorecards.map((item) => (
-              <div key={item.key} className="rounded-2xl border border-white/10 bg-slate-950/35 p-4">
+              <div
+                key={item.key}
+                className="rounded-2xl border border-white/10 bg-slate-950/35 p-4"
+              >
                 <div className="flex items-center justify-between gap-3">
                   <div className="text-sm font-semibold text-white">{item.label}</div>
                   <Badge tone={toneForStatus(item.status)}>{item.status}</Badge>
@@ -200,7 +220,10 @@ export function ResearchDossierPanel({ dossier, canApproveHouseView = false }: P
             <div className="mt-3 space-y-2 text-sm text-slate-300">
               {dossier.micro.pendingBlockers.length > 0 ? (
                 dossier.micro.pendingBlockers.slice(0, 5).map((blocker) => (
-                  <div key={blocker} className="rounded-2xl border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-amber-100">
+                  <div
+                    key={blocker}
+                    className="rounded-2xl border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-amber-100"
+                  >
                     {blocker}
                   </div>
                 ))
@@ -219,10 +242,14 @@ export function ResearchDossierPanel({ dossier, canApproveHouseView = false }: P
                 <Badge key={point}>{point}</Badge>
               ))}
             </div>
-            <div className="mt-4 text-sm text-slate-400">{dossier.documents.documentRoomSummary}</div>
+            <div className="mt-4 text-sm text-slate-400">
+              {dossier.documents.documentRoomSummary}
+            </div>
             <div className="mt-3 text-xs text-slate-500">
               Latest doc: {dossier.documents.latestDocumentLabel}
-              {dossier.documents.latestDocumentHash ? ` / hash ${dossier.documents.latestDocumentHash.slice(0, 12)}` : ''}
+              {dossier.documents.latestDocumentHash
+                ? ` / hash ${dossier.documents.latestDocumentHash.slice(0, 12)}`
+                : ''}
             </div>
             <div className="mt-2 text-xs text-slate-500">
               Anchored docs: {dossier.documents.anchoredDocumentCount}
@@ -232,17 +259,26 @@ export function ResearchDossierPanel({ dossier, canApproveHouseView = false }: P
           <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
             <div className="fine-print">Freshness / Provenance</div>
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <Badge tone={toneForFreshness(dossier.freshness.status)}>{dossier.freshness.status.toLowerCase()}</Badge>
+              <Badge tone={toneForFreshness(dossier.freshness.status)}>
+                {dossier.freshness.status.toLowerCase()}
+              </Badge>
               <Badge>{dossier.freshness.label}</Badge>
               <Badge>{dossier.provenance.sourceCount} sources</Badge>
             </div>
-            <div className="mt-3 text-sm leading-7 text-slate-400">{dossier.freshness.headline}</div>
+            <div className="mt-3 text-sm leading-7 text-slate-400">
+              {dossier.freshness.headline}
+            </div>
             <div className="mt-3 space-y-2">
               {dossier.freshness.items.map((item) => (
-                <div key={`${item.title}-${item.sourceSystem}`} className="rounded-2xl border border-white/10 bg-slate-950/35 px-3 py-2">
+                <div
+                  key={`${item.title}-${item.sourceSystem}`}
+                  className="rounded-2xl border border-white/10 bg-slate-950/35 px-3 py-2"
+                >
                   <div className="flex items-center justify-between gap-3">
                     <div className="text-sm font-semibold text-white">{item.title}</div>
-                    <Badge tone={toneForFreshness(item.freshnessStatus)}>{item.freshnessLabel}</Badge>
+                    <Badge tone={toneForFreshness(item.freshnessStatus)}>
+                      {item.freshnessLabel}
+                    </Badge>
                   </div>
                   <div className="mt-1 text-xs text-slate-500">
                     {item.sourceSystem}
@@ -256,28 +292,42 @@ export function ResearchDossierPanel({ dossier, canApproveHouseView = false }: P
           <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
             <div className="fine-print">House View / Source View</div>
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <Badge tone={toneForApproval(dossier.houseView.approvalStatus)}>{dossier.houseView.approvalLabel}</Badge>
-              {dossier.houseView.thesisAgeDays != null ? <Badge>{dossier.houseView.thesisAgeDays}d thesis age</Badge> : null}
-              {dossier.sourceView.freshnessLabel ? <Badge>{dossier.sourceView.freshnessLabel}</Badge> : null}
+              <Badge tone={toneForApproval(dossier.houseView.approvalStatus)}>
+                {dossier.houseView.approvalLabel}
+              </Badge>
+              {dossier.houseView.thesisAgeDays != null ? (
+                <Badge>{dossier.houseView.thesisAgeDays}d thesis age</Badge>
+              ) : null}
+              {dossier.sourceView.freshnessLabel ? (
+                <Badge>{dossier.sourceView.freshnessLabel}</Badge>
+              ) : null}
             </div>
             {canApproveHouseView && dossier.houseView.draftSnapshotId ? (
               <div className="mt-3">
-                <ResearchHouseViewApprovalButton snapshotId={dossier.houseView.draftSnapshotId} compact />
+                <ResearchHouseViewApprovalButton
+                  snapshotId={dossier.houseView.draftSnapshotId}
+                  compact
+                />
               </div>
             ) : null}
             <div className="mt-3 rounded-2xl border border-white/10 bg-slate-950/35 px-3 py-3">
               <div className="text-sm font-semibold text-white">{dossier.houseView.title}</div>
-              <div className="mt-2 text-sm leading-7 text-slate-400">{dossier.houseView.summary}</div>
+              <div className="mt-2 text-sm leading-7 text-slate-400">
+                {dossier.houseView.summary}
+              </div>
               <div className="mt-2 text-xs text-slate-500">{dossier.houseView.lineage}</div>
             </div>
             <div className="mt-3 rounded-2xl border border-white/10 bg-slate-950/35 px-3 py-3">
               <div className="text-sm font-semibold text-white">{dossier.sourceView.title}</div>
               <div className="mt-2 text-sm leading-7 text-slate-400">
-                {dossier.sourceView.summary ?? 'No explicit source-view thesis has been staged for this asset yet.'}
+                {dossier.sourceView.summary ??
+                  'No explicit source-view thesis has been staged for this asset yet.'}
               </div>
               <div className="mt-2 text-xs text-slate-500">
                 {dossier.sourceView.sourceSystem ?? 'research source'}
-                {dossier.sourceView.snapshotDate ? ` / ${dossier.sourceView.snapshotDate.toISOString().slice(0, 10)}` : ''}
+                {dossier.sourceView.snapshotDate
+                  ? ` / ${dossier.sourceView.snapshotDate.toISOString().slice(0, 10)}`
+                  : ''}
               </div>
             </div>
           </div>
@@ -285,11 +335,17 @@ export function ResearchDossierPanel({ dossier, canApproveHouseView = false }: P
           <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
             <div className="fine-print">Confidence / Conflict</div>
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <Badge tone={toneForConfidence(dossier.confidence.level)}>{dossier.confidence.level}</Badge>
+              <Badge tone={toneForConfidence(dossier.confidence.level)}>
+                {dossier.confidence.level}
+              </Badge>
               <Badge>{dossier.confidence.score}% confidence</Badge>
-              {dossier.confidence.thesisAgeDays != null ? <Badge>{dossier.confidence.thesisAgeDays}d thesis age</Badge> : null}
+              {dossier.confidence.thesisAgeDays != null ? (
+                <Badge>{dossier.confidence.thesisAgeDays}d thesis age</Badge>
+              ) : null}
             </div>
-            <div className="mt-3 text-sm leading-7 text-slate-400">{dossier.confidence.headline}</div>
+            <div className="mt-3 text-sm leading-7 text-slate-400">
+              {dossier.confidence.headline}
+            </div>
             <div className="mt-3 space-y-2 text-sm text-slate-300">
               {dossier.confidence.conflicts.length > 0 ? (
                 dossier.confidence.conflicts.map((item) => (
@@ -318,7 +374,10 @@ export function ResearchDossierPanel({ dossier, canApproveHouseView = false }: P
             <div className="mt-3 space-y-2 text-sm text-slate-300">
               {dossier.officialSources.highlights.length > 0 ? (
                 dossier.officialSources.highlights.map((item) => (
-                  <div key={`${item.sourceSystem}-${item.label}`} className="rounded-2xl border border-white/10 bg-slate-950/35 px-3 py-2">
+                  <div
+                    key={`${item.sourceSystem}-${item.label}`}
+                    className="rounded-2xl border border-white/10 bg-slate-950/35 px-3 py-2"
+                  >
                     <div className="flex items-center justify-between gap-3">
                       <div className="font-semibold text-white">{item.label}</div>
                       <Badge>{item.value}</Badge>
@@ -340,22 +399,31 @@ export function ResearchDossierPanel({ dossier, canApproveHouseView = false }: P
             <div className="fine-print">Coverage Queue</div>
             <div className="mt-3 flex flex-wrap gap-2">
               <Badge tone={dossier.coverage.openTaskCount > 0 ? 'warn' : 'good'}>
-                {dossier.coverage.openTaskCount} open task{dossier.coverage.openTaskCount === 1 ? '' : 's'}
+                {dossier.coverage.openTaskCount} open task
+                {dossier.coverage.openTaskCount === 1 ? '' : 's'}
               </Badge>
               <Badge>{dossier.provenance.latestSnapshotTitle}</Badge>
             </div>
             <div className="mt-3 space-y-2 text-sm text-slate-300">
               {dossier.coverage.tasks.length > 0 ? (
                 dossier.coverage.tasks.map((task) => (
-                  <div key={task.id} className="rounded-2xl border border-white/10 bg-slate-950/35 px-3 py-2">
+                  <div
+                    key={task.id}
+                    className="rounded-2xl border border-white/10 bg-slate-950/35 px-3 py-2"
+                  >
                     <div className="flex items-center justify-between gap-3">
                       <div className="font-semibold text-white">{task.title}</div>
-                      <Badge tone={task.priority === 'HIGH' || task.priority === 'URGENT' ? 'danger' : 'warn'}>
+                      <Badge
+                        tone={
+                          task.priority === 'HIGH' || task.priority === 'URGENT' ? 'danger' : 'warn'
+                        }
+                      >
                         {task.priority.toLowerCase()}
                       </Badge>
                     </div>
                     <div className="mt-1 text-xs text-slate-500">
-                      {task.freshnessLabel ?? 'research coverage'}{task.notes ? ` / ${task.notes}` : ''}
+                      {task.freshnessLabel ?? 'research coverage'}
+                      {task.notes ? ` / ${task.notes}` : ''}
                     </div>
                   </div>
                 ))

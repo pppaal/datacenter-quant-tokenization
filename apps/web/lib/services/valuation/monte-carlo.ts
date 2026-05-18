@@ -111,10 +111,10 @@ const DRIVER_ORDER = ['Entry Cap Rate', 'Exit Cap Rate', 'Rent Growth', 'Interes
 // Default correlation matrix — empirically motivated, PSD-verified.
 const DEFAULT_CORRELATION: CorrelationMatrix = [
   //  entry  exit  growth  rate
-  [1.00, 0.85, -0.40, 0.70],
-  [0.85, 1.00, -0.50, 0.75],
-  [-0.40, -0.50, 1.00, -0.35],
-  [0.70, 0.75, -0.35, 1.00]
+  [1.0, 0.85, -0.4, 0.7],
+  [0.85, 1.0, -0.5, 0.75],
+  [-0.4, -0.5, 1.0, -0.35],
+  [0.7, 0.75, -0.35, 1.0]
 ];
 
 // ---------------------------------------------------------------------------
@@ -192,9 +192,16 @@ function percentile(sorted: number[], q: number): number | null {
 
 function emptyTail(): TailRiskMetrics {
   return {
-    p5: null, p1: null, expectedShortfall95: null, expectedShortfall99: null,
-    p95: null, p99: null, downsideDeviation: null, downsideTarget: 0,
-    worstObserved: null, sampleCount: 0
+    p5: null,
+    p1: null,
+    expectedShortfall95: null,
+    expectedShortfall99: null,
+    p95: null,
+    p99: null,
+    downsideDeviation: null,
+    downsideTarget: 0,
+    worstObserved: null,
+    sampleCount: 0
   };
 }
 
@@ -235,8 +242,16 @@ function buildTailMetrics(sorted: number[], values: number[], downsideTarget = 0
 function summarize(values: number[], bins = 12, downsideTarget = 0): MonteCarloDistribution {
   if (values.length === 0) {
     return {
-      p10: null, p25: null, p50: null, p75: null, p90: null,
-      mean: null, stdDev: null, min: null, max: null, histogram: [],
+      p10: null,
+      p25: null,
+      p50: null,
+      p75: null,
+      p90: null,
+      mean: null,
+      stdDev: null,
+      min: null,
+      max: null,
+      histogram: [],
       tail: emptyTail()
     };
   }
@@ -267,14 +282,16 @@ function summarize(values: number[], bins = 12, downsideTarget = 0): MonteCarloD
   }
 
   return {
-    p10: percentile(sorted, 0.10),
+    p10: percentile(sorted, 0.1),
     p25: percentile(sorted, 0.25),
-    p50: percentile(sorted, 0.50),
+    p50: percentile(sorted, 0.5),
     p75: percentile(sorted, 0.75),
-    p90: percentile(sorted, 0.90),
+    p90: percentile(sorted, 0.9),
     mean: Number(mean.toFixed(4)),
     stdDev: Number(stdDev.toFixed(4)),
-    min, max, histogram,
+    min,
+    max,
+    histogram,
     tail: buildTailMetrics(sorted, values, downsideTarget)
   };
 }
@@ -282,10 +299,17 @@ function summarize(values: number[], bins = 12, downsideTarget = 0): MonteCarloD
 function pearson(xs: number[], ys: number[]): number {
   const n = Math.min(xs.length, ys.length);
   if (n < 2) return 0;
-  let mx = 0, my = 0;
-  for (let i = 0; i < n; i++) { mx += xs[i]!; my += ys[i]!; }
-  mx /= n; my /= n;
-  let num = 0, dx = 0, dy = 0;
+  let mx = 0,
+    my = 0;
+  for (let i = 0; i < n; i++) {
+    mx += xs[i]!;
+    my += ys[i]!;
+  }
+  mx /= n;
+  my /= n;
+  let num = 0,
+    dx = 0,
+    dy = 0;
   for (let i = 0; i < n; i++) {
     const a = xs[i]! - mx;
     const b = ys[i]! - my;
@@ -325,10 +349,10 @@ export function runMonteCarlo(
 
   const draws: number[][] = [[], [], [], []]; // cap, exitCap, growth, rate
   const bounds = [
-    [1, 20],   // entry cap
-    [1, 20],   // exit cap
-    [-5, 15],  // growth
-    [0, 15]    // rate
+    [1, 20], // entry cap
+    [1, 20], // exit cap
+    [-5, 15], // growth
+    [0, 15] // rate
   ];
   const bases = [
     baseInputs.capRatePct,
@@ -402,7 +426,12 @@ export function runMonteCarlo(
         : 0
   }));
 
-  const driverSummary = (name: string, basePct: number, stdPp: number, ds: number[]): DriverSummary => {
+  const driverSummary = (
+    name: string,
+    basePct: number,
+    stdPp: number,
+    ds: number[]
+  ): DriverSummary => {
     const mean = ds.length ? ds.reduce((s, v) => s + v, 0) / ds.length : basePct;
     return {
       name,

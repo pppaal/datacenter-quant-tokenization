@@ -61,9 +61,13 @@ export function createEnergyAdapter(store: SourceCacheStore, fetcher?: Fetcher) 
 
         const data: EnergyData = {
           utilityName: String(payload.utilityName ?? fallback.utilityName),
-          substationDistanceKm: Number(payload.substationDistanceKm ?? fallback.substationDistanceKm),
+          substationDistanceKm: Number(
+            payload.substationDistanceKm ?? fallback.substationDistanceKm
+          ),
           tariffKrwPerKwh: Number(payload.tariffKrwPerKwh ?? fallback.tariffKrwPerKwh),
-          renewableAvailabilityPct: Number(payload.renewableAvailabilityPct ?? fallback.renewableAvailabilityPct),
+          renewableAvailabilityPct: Number(
+            payload.renewableAvailabilityPct ?? fallback.renewableAvailabilityPct
+          ),
           pueTarget: Number(payload.pueTarget ?? fallback.pueTarget),
           backupFuelHours: Number(payload.backupFuelHours ?? fallback.backupFuelHours)
         };

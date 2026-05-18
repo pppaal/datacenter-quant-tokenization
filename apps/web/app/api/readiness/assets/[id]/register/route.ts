@@ -2,7 +2,10 @@ import { NextResponse } from 'next/server';
 import { AdminAccessScopeType } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { assertActorScopeAccess } from '@/lib/security/admin-access';
-import { getRequestIpAddress, resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
+import {
+  getRequestIpAddress,
+  resolveVerifiedAdminActorFromHeaders
+} from '@/lib/security/admin-request';
 import { recordAuditEvent } from '@/lib/services/audit';
 import { registerAssetOnchain } from '@/lib/services/readiness';
 
@@ -47,11 +50,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       ipAddress,
       statusLabel: 'FAILED',
       metadata: {
-        error: error instanceof Error ? error.message : 'Failed to prepare the review package onchain'
+        error:
+          error instanceof Error ? error.message : 'Failed to prepare the review package onchain'
       }
     });
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to prepare the review package onchain' },
+      {
+        error:
+          error instanceof Error ? error.message : 'Failed to prepare the review package onchain'
+      },
       { status: 400 }
     );
   }

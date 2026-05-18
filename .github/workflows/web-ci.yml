@@ -1,0 +1,89 @@
+name: web-ci
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  static-checks:
+    name: typecheck + tests + build + abi-drift + migration-deploy
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ci_check
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d ci_check"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ci_check
+      ADMIN_SESSION_SECRET: ci-fixed-session-secret-32chars-1234
+      OPS_CRON_TOKEN: ci-fixed-ops-cron-token
+      APP_BASE_URL: https://ci.example.com
+      BLOCKCHAIN_MOCK_MODE: 'true'
+      DOCUMENT_STORAGE_DIR: ./storage/documents
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Dependency vulnerability scan (high+ severity)
+        run: npm audit --audit-level=high --omit=dev
+        continue-on-error: false
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Apply migrations against fresh CI Postgres
+        run: npx prisma migrate deploy
+
+      - name: Create shadow database for drift check
+        run: |
+          PGPASSWORD=postgres psql -h localhost -U postgres -d postgres \
+            -c "CREATE DATABASE ci_shadow;"
+
+      - name: Schema-migration drift guard
+        run: |
+          npx prisma migrate diff \
+            --from-migrations ./prisma/migrations \
+            --to-schema-datamodel ./prisma/schema.prisma \
+            --shadow-database-url "${DATABASE_URL/ci_check/ci_shadow}" \
+            --exit-code
+
+      - name: Registry ABI drift guard
+        run: npx tsx scripts/check-registry-abi.ts
+
+      - name: Lint (ESLint)
+        run: npm run lint
+
+      - name: Format check (Prettier)
+        run: npm run format
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Production build
+        run: npm run build

@@ -46,11 +46,16 @@ export function ValuationRunForm({ assetId }: { assetId: string }) {
     >
       <label className="space-y-2">
         <span className="fine-print">Run Label</span>
-        <Input data-testid="valuation-run-label" value={runLabel} onChange={(event) => setRunLabel(event.target.value)} />
+        <Input
+          data-testid="valuation-run-label"
+          value={runLabel}
+          onChange={(event) => setRunLabel(event.target.value)}
+        />
       </label>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="max-w-md text-sm text-slate-400">
-          This runs the return analysis through the Next.js API route and refreshes the asset dossier with a new generated IM.
+          This runs the return analysis through the Next.js API route and refreshes the asset
+          dossier with a new generated IM.
         </p>
         <Button type="submit" disabled={submitting} data-testid="valuation-run-submit">
           {submitting ? 'Running...' : 'Run Analysis + Generate IM'}

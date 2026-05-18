@@ -23,16 +23,36 @@ test('research dossier aggregates macro, market, micro, and document context for
       marketNotes: 'Prime office leasing remains disciplined.'
     },
     macroFactors: [
-      { factorKey: 'rate_level', label: 'Rate Level', value: 4.7, direction: 'NEGATIVE', observationDate: now },
-      { factorKey: 'property_demand', label: 'Property Demand', value: 11, direction: 'POSITIVE', observationDate: now }
+      {
+        factorKey: 'rate_level',
+        label: 'Rate Level',
+        value: 4.7,
+        direction: 'NEGATIVE',
+        observationDate: now
+      },
+      {
+        factorKey: 'property_demand',
+        label: 'Property Demand',
+        value: 11,
+        direction: 'POSITIVE',
+        observationDate: now
+      }
     ],
     marketIndicatorSeries: [
       { id: 'ind-1', indicatorKey: 'office_vacancy_pct', value: 9.4, observationDate: now },
       { id: 'ind-2', indicatorKey: 'office_cap_rate_pct', value: 4.7, observationDate: now }
     ],
     transactionComps: [{ id: 'tx-1', transactionDate: now, capRatePct: 4.7 }],
-    rentComps: [{ id: 'rent-1', observationDate: now, monthlyRentPerSqmKrw: 39200, occupancyPct: 95 }],
-    pipelineProjects: [{ id: 'pipe-1', projectName: 'Yeouido South Office Redevelopment', stageLabel: 'Pre-construction' }],
+    rentComps: [
+      { id: 'rent-1', observationDate: now, monthlyRentPerSqmKrw: 39200, occupancyPct: 95 }
+    ],
+    pipelineProjects: [
+      {
+        id: 'pipe-1',
+        projectName: 'Yeouido South Office Redevelopment',
+        stageLabel: 'Pre-construction'
+      }
+    ],
     ownershipRecords: [
       {
         id: 'own-1',
@@ -120,11 +140,19 @@ test('research dossier aggregates macro, market, micro, and document context for
         freshnessLabel: '2d old'
       }
     ],
-    readinessProject: { onchainRecords: [{ recordType: 'REVIEW_PACKET', payload: { packetFingerprint: 'packet-1' } }, { recordType: 'DOCUMENT_HASH', txHash: '0xabc' }] }
+    readinessProject: {
+      onchainRecords: [
+        { recordType: 'REVIEW_PACKET', payload: { packetFingerprint: 'packet-1' } },
+        { recordType: 'DOCUMENT_HASH', txHash: '0xabc' }
+      ]
+    }
   });
 
   assert.equal(dossier.playbook.label, 'Office');
-  assert.equal(dossier.marketThesis, 'Approved Seoul office house view with disciplined vacancy and rent support.');
+  assert.equal(
+    dossier.marketThesis,
+    'Approved Seoul office house view with disciplined vacancy and rent support.'
+  );
   assert.ok(dossier.micro.scorecards.some((item) => item.label.includes('Lease / Revenue')));
   assert.equal(dossier.documents.anchoredDocumentCount, 1);
   assert.equal(dossier.latestValuationId, 'run-1');
@@ -172,7 +200,10 @@ test('research dossier reports low confidence when no research snapshots exist',
   };
 
   const dossier = buildAssetResearchDossier(bareAsset as any);
-  assert.ok(dossier.confidence.score <= 58, `Expected low/moderate score, got ${dossier.confidence.score}`);
+  assert.ok(
+    dossier.confidence.score <= 58,
+    `Expected low/moderate score, got ${dossier.confidence.score}`
+  );
   assert.equal(dossier.confidence.level, 'low');
   assert.equal(dossier.provenance.sourceCount, 0);
   assert.equal(dossier.houseView.approvalStatus, null);
@@ -195,7 +226,13 @@ test('research dossier detects vacancy disagreement conflict', () => {
     macroSeries: [],
     macroFactors: [],
     marketIndicatorSeries: [
-      { id: 'ind-1', indicatorKey: 'seoul_office_vacancy', label: 'Vacancy', value: 10.0, observationDate: new Date() }
+      {
+        id: 'ind-1',
+        indicatorKey: 'seoul_office_vacancy',
+        label: 'Vacancy',
+        value: 10.0,
+        observationDate: new Date()
+      }
     ],
     transactionComps: [],
     rentComps: [],
@@ -227,7 +264,9 @@ test('research dossier detects vacancy disagreement conflict', () => {
 
   const dossier = buildAssetResearchDossier(conflictAsset as any);
   assert.ok(dossier.confidence.conflicts.length > 0, 'Expected at least one conflict');
-  const vacancyConflict = dossier.confidence.conflicts.find((c) => c.label === 'Vacancy disagreement');
+  const vacancyConflict = dossier.confidence.conflicts.find(
+    (c) => c.label === 'Vacancy disagreement'
+  );
   assert.ok(vacancyConflict, 'Expected vacancy disagreement conflict');
   assert.equal(vacancyConflict?.severity, 'danger');
 });

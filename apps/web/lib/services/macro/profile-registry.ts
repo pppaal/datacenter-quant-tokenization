@@ -4,7 +4,10 @@ import type { MacroSensitivityProfile } from '@/lib/services/macro/factors';
 type SensitivityModifier = Partial<
   Pick<
     MacroSensitivityProfile,
-    'capitalRateSensitivity' | 'liquiditySensitivity' | 'leasingSensitivity' | 'constructionSensitivity'
+    | 'capitalRateSensitivity'
+    | 'liquiditySensitivity'
+    | 'leasingSensitivity'
+    | 'constructionSensitivity'
   >
 >;
 
@@ -16,7 +19,9 @@ export type MacroSensitivityTemplate = {
   constructionSensitivity: number;
 };
 
-export const macroSensitivityTemplateRegistry: Partial<Record<AssetClass, MacroSensitivityTemplate>> = {
+export const macroSensitivityTemplateRegistry: Partial<
+  Record<AssetClass, MacroSensitivityTemplate>
+> = {
   [AssetClass.OFFICE]: {
     label: 'Long-duration leasing and capital-markets sensitive',
     capitalRateSensitivity: 1.15,
@@ -67,7 +72,8 @@ export const macroSensitivityTemplateRegistry: Partial<Record<AssetClass, MacroS
     constructionSensitivity: 1.08
   },
   [AssetClass.DATA_CENTER]: {
-    label: 'Infrastructure-style underwriting with elevated replacement-cost and funding sensitivity',
+    label:
+      'Infrastructure-style underwriting with elevated replacement-cost and funding sensitivity',
     capitalRateSensitivity: 1.2,
     liquiditySensitivity: 1,
     leasingSensitivity: 0.95,

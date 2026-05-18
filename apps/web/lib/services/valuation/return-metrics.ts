@@ -35,19 +35,23 @@ function npv(cashFlows: number[], rate: number): number {
 function npvDerivative(cashFlows: number[], rate: number): number {
   let result = 0;
   for (let i = 1; i < cashFlows.length; i++) {
-    result -= i * cashFlows[i]! / (1 + rate) ** (i + 1);
+    result -= (i * cashFlows[i]!) / (1 + rate) ** (i + 1);
   }
   return result;
 }
 
-export function computeIrr(cashFlows: number[], maxIterations = 200, tolerance = 1e-8): number | null {
+export function computeIrr(
+  cashFlows: number[],
+  maxIterations = 200,
+  tolerance = 1e-8
+): number | null {
   if (cashFlows.length < 2) return null;
 
   const hasPositive = cashFlows.some((cf) => cf > 0);
   const hasNegative = cashFlows.some((cf) => cf < 0);
   if (!hasPositive || !hasNegative) return null;
 
-  let rate = 0.10;
+  let rate = 0.1;
 
   for (let i = 0; i < maxIterations; i++) {
     const f = npv(cashFlows, rate);
@@ -139,11 +143,13 @@ export function computeReturnMetrics({
   const leveragedIrr = equityIrr;
 
   // --- Equity Multiple (MOIC) ---
-  const totalDistributions = equityWaterfall.years.reduce((sum, y) => sum + y.afterTaxDistributionKrw, 0);
+  const totalDistributions = equityWaterfall.years.reduce(
+    (sum, y) => sum + y.afterTaxDistributionKrw,
+    0
+  );
   const totalReturn = totalDistributions + equityWaterfall.netExitProceedsKrw;
-  const equityMultiple = initialEquityKrw > 0
-    ? Number((totalReturn / initialEquityKrw).toFixed(2))
-    : 0;
+  const equityMultiple =
+    initialEquityKrw > 0 ? Number((totalReturn / initialEquityKrw).toFixed(2)) : 0;
 
   // --- Cash-on-Cash Return by year ---
   const cashOnCashByYear: number[] = equityWaterfall.years.map((year) =>
@@ -151,9 +157,12 @@ export function computeReturnMetrics({
       ? Number(((year.afterTaxDistributionKrw / initialEquityKrw) * 100).toFixed(2))
       : 0
   );
-  const averageCashOnCash = cashOnCashByYear.length > 0
-    ? Number((cashOnCashByYear.reduce((sum, c) => sum + c, 0) / cashOnCashByYear.length).toFixed(2))
-    : 0;
+  const averageCashOnCash =
+    cashOnCashByYear.length > 0
+      ? Number(
+          (cashOnCashByYear.reduce((sum, c) => sum + c, 0) / cashOnCashByYear.length).toFixed(2)
+        )
+      : 0;
 
   // --- Peak equity exposure ---
   let cumulativeCashFlow = -initialEquityKrw;
@@ -223,18 +232,20 @@ export function computeReturnMetricsFromProForma(
 
   const totalDistributions = years.reduce((sum, y) => sum + y.afterTaxDistributionKrw, 0);
   const totalReturn = totalDistributions + netExitProceedsKrw;
-  const equityMultiple = initialEquityKrw > 0
-    ? Number((totalReturn / initialEquityKrw).toFixed(2))
-    : 0;
+  const equityMultiple =
+    initialEquityKrw > 0 ? Number((totalReturn / initialEquityKrw).toFixed(2)) : 0;
 
   const cashOnCashByYear = years.map((year) =>
     initialEquityKrw > 0
       ? Number(((year.afterTaxDistributionKrw / initialEquityKrw) * 100).toFixed(2))
       : 0
   );
-  const averageCashOnCash = cashOnCashByYear.length > 0
-    ? Number((cashOnCashByYear.reduce((sum, c) => sum + c, 0) / cashOnCashByYear.length).toFixed(2))
-    : 0;
+  const averageCashOnCash =
+    cashOnCashByYear.length > 0
+      ? Number(
+          (cashOnCashByYear.reduce((sum, c) => sum + c, 0) / cashOnCashByYear.length).toFixed(2)
+        )
+      : 0;
 
   let cumulativeCashFlow = -initialEquityKrw;
   let peakEquityExposureKrw = initialEquityKrw;

@@ -86,7 +86,9 @@ export function buildOpsAlertSummary(input: {
   sourceRefreshRuns: Array<{ statusLabel: string; startedAt: Date; errorSummary?: string | null }>;
   env?: NodeJS.ProcessEnv;
 }) {
-  const staleHoursRaw = Number(input.env?.OPS_ALERT_STALE_HOURS ?? process.env.OPS_ALERT_STALE_HOURS ?? 6);
+  const staleHoursRaw = Number(
+    input.env?.OPS_ALERT_STALE_HOURS ?? process.env.OPS_ALERT_STALE_HOURS ?? 6
+  );
   const staleHours = Number.isFinite(staleHoursRaw) && staleHoursRaw > 0 ? staleHoursRaw : 6;
   const failureStreakThresholdRaw = Number(
     input.env?.OPS_ALERT_FAILURE_STREAK ?? process.env.OPS_ALERT_FAILURE_STREAK ?? 2
@@ -95,17 +97,23 @@ export function buildOpsAlertSummary(input: {
     Number.isFinite(failureStreakThresholdRaw) && failureStreakThresholdRaw > 0
       ? Math.floor(failureStreakThresholdRaw)
       : 2;
-  const recentResearchFailures = input.researchSyncRuns.filter((run) => run.statusLabel === 'FAILED');
-  const recentSourceFailures = input.sourceRefreshRuns.filter((run) => run.statusLabel === 'FAILED');
+  const recentResearchFailures = input.researchSyncRuns.filter(
+    (run) => run.statusLabel === 'FAILED'
+  );
+  const recentSourceFailures = input.sourceRefreshRuns.filter(
+    (run) => run.statusLabel === 'FAILED'
+  );
   const latestResearchRun = input.researchSyncRuns[0] ?? null;
   const latestSourceRun = input.sourceRefreshRuns[0] ?? null;
   const now = Date.now();
   const staleCutoff = staleHours * 60 * 60 * 1000;
 
-  const latestResearchRunStale =
-    latestResearchRun ? now - latestResearchRun.startedAt.getTime() > staleCutoff : true;
-  const latestSourceRunStale =
-    latestSourceRun ? now - latestSourceRun.startedAt.getTime() > staleCutoff : true;
+  const latestResearchRunStale = latestResearchRun
+    ? now - latestResearchRun.startedAt.getTime() > staleCutoff
+    : true;
+  const latestSourceRunStale = latestSourceRun
+    ? now - latestSourceRun.startedAt.getTime() > staleCutoff
+    : true;
 
   const countLeadingFailures = (runs: Array<{ statusLabel: string }>) => {
     let streak = 0;
@@ -121,10 +129,14 @@ export function buildOpsAlertSummary(input: {
 
   const interventionItems: string[] = [];
   if (researchLeadingFailureStreak >= failureStreakThreshold) {
-    interventionItems.push(`Research sync has failed ${researchLeadingFailureStreak} runs in a row.`);
+    interventionItems.push(
+      `Research sync has failed ${researchLeadingFailureStreak} runs in a row.`
+    );
   }
   if (sourceLeadingFailureStreak >= failureStreakThreshold) {
-    interventionItems.push(`Source refresh has failed ${sourceLeadingFailureStreak} runs in a row.`);
+    interventionItems.push(
+      `Source refresh has failed ${sourceLeadingFailureStreak} runs in a row.`
+    );
   }
   if (latestResearchRunStale) {
     interventionItems.push(`Research sync is stale beyond ${staleHours}h.`);
@@ -135,8 +147,7 @@ export function buildOpsAlertSummary(input: {
 
   return {
     hasActiveAlert:
-      (latestResearchRun?.statusLabel === 'FAILED') ||
-      (latestSourceRun?.statusLabel === 'FAILED'),
+      latestResearchRun?.statusLabel === 'FAILED' || latestSourceRun?.statusLabel === 'FAILED',
     requiresIntervention: interventionItems.length > 0,
     researchFailureCount: recentResearchFailures.length,
     sourceFailureCount: recentSourceFailures.length,
@@ -154,7 +165,7 @@ export function buildOpsAlertSummary(input: {
         ? latestResearchRun.errorSummary || 'Latest research sync failed.'
         : latestSourceRun?.statusLabel === 'FAILED'
           ? latestSourceRun.errorSummary || 'Latest source refresh failed.'
-          : interventionItems[0] ?? 'Latest ops runs completed successfully.'
+          : (interventionItems[0] ?? 'Latest ops runs completed successfully.')
   };
 }
 
@@ -168,7 +179,8 @@ export function getDocumentStorageReadiness(env: NodeJS.ProcessEnv = process.env
     return {
       mode: 'local',
       status: 'warning',
-      detail: 'Documents are stored on local disk. Use external object storage before production deployment.'
+      detail:
+        'Documents are stored on local disk. Use external object storage before production deployment.'
     } as const;
   }
 
@@ -243,7 +255,9 @@ export async function getSecurityOverview(
         take: number;
         orderBy:
           | Array<{ role: 'asc' | 'desc' } | { name: 'asc' | 'desc' }>
-          | Array<{ isActive: 'asc' | 'desc' } | { role: 'asc' | 'desc' } | { name: 'asc' | 'desc' }>;
+          | Array<
+              { isActive: 'asc' | 'desc' } | { role: 'asc' | 'desc' } | { name: 'asc' | 'desc' }
+            >;
         select: {
           id: true;
           name: true;
@@ -252,7 +266,16 @@ export async function getSecurityOverview(
           isActive: true;
           sessionVersion: true;
         };
-      }): Promise<Array<{ id: string; name: string; email: string; role: string; isActive: boolean; sessionVersion: number }>>;
+      }): Promise<
+        Array<{
+          id: string;
+          name: string;
+          email: string;
+          role: string;
+          isActive: boolean;
+          sessionVersion: number;
+        }>
+      >;
     };
     opsAlertDelivery: {
       findMany(args: {
@@ -383,7 +406,10 @@ export async function getSecurityOverview(
         })
       : Promise.resolve([])
   ]);
-  const actorSummaryMap = new Map<string, { actorIdentifier: string; actorRole: string; eventCount: number; lastSeenAt: Date }>();
+  const actorSummaryMap = new Map<
+    string,
+    { actorIdentifier: string; actorRole: string; eventCount: number; lastSeenAt: Date }
+  >();
 
   for (const event of auditEvents) {
     const key = `${event.actorIdentifier}:${event.actorRole}`;
@@ -417,7 +443,9 @@ export async function getSecurityOverview(
     operatorSeats,
     opsAlertDeliveries,
     opsWorkItems,
-    actorSummary: [...actorSummaryMap.values()].sort((left, right) => right.lastSeenAt.getTime() - left.lastSeenAt.getTime()),
+    actorSummary: [...actorSummaryMap.values()].sort(
+      (left, right) => right.lastSeenAt.getTime() - left.lastSeenAt.getTime()
+    ),
     storageReadiness: getDocumentStorageReadiness(env),
     aiReadiness: getAiReadiness(env)
   };

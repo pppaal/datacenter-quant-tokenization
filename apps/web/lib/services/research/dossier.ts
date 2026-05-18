@@ -70,7 +70,10 @@ function extractSnapshotHighlights(metrics: unknown) {
 
 function inferSnapshotViewType(snapshot: ResearchSnapshotLike) {
   if (snapshot.viewType) return snapshot.viewType;
-  if (snapshot.snapshotType === 'official-source' || snapshot.snapshotType === 'market-official-source') {
+  if (
+    snapshot.snapshotType === 'official-source' ||
+    snapshot.snapshotType === 'market-official-source'
+  ) {
     return 'SOURCE';
   }
   return 'HOUSE';
@@ -218,14 +221,22 @@ function parseIndicatorFamily(indicatorKey: string) {
 }
 
 function latestIndicatorValue(asset: ResearchAssetLike, family: string) {
-  return (asset.marketIndicatorSeries ?? []).find((indicator) => parseIndicatorFamily(indicator.indicatorKey) === family)?.value ?? null;
+  return (
+    (asset.marketIndicatorSeries ?? []).find(
+      (indicator) => parseIndicatorFamily(indicator.indicatorKey) === family
+    )?.value ?? null
+  );
 }
 
 function median(values: Array<number | null | undefined>) {
-  const observed = values.filter((value): value is number => typeof value === 'number').sort((a, b) => a - b);
+  const observed = values
+    .filter((value): value is number => typeof value === 'number')
+    .sort((a, b) => a - b);
   if (observed.length === 0) return null;
   const middle = Math.floor(observed.length / 2);
-  return observed.length % 2 === 0 ? (observed[middle - 1] + observed[middle]) / 2 : observed[middle];
+  return observed.length % 2 === 0
+    ? (observed[middle - 1] + observed[middle]) / 2
+    : observed[middle];
 }
 
 function deriveResearchConflicts(asset: ResearchAssetLike) {
@@ -236,9 +247,15 @@ function deriveResearchConflicts(asset: ResearchAssetLike) {
   const snapshotVacancy = asset.marketSnapshot?.vacancyPct ?? null;
   const snapshotCapRate = asset.marketSnapshot?.capRatePct ?? null;
   const snapshotDiscountRate = asset.marketSnapshot?.discountRatePct ?? null;
-  const transactionCapRateMedian = median((asset.transactionComps ?? []).map((item) => item.capRatePct));
+  const transactionCapRateMedian = median(
+    (asset.transactionComps ?? []).map((item) => item.capRatePct)
+  );
 
-  if (snapshotVacancy != null && officialVacancy != null && Math.abs(snapshotVacancy - officialVacancy) >= 2.5) {
+  if (
+    snapshotVacancy != null &&
+    officialVacancy != null &&
+    Math.abs(snapshotVacancy - officialVacancy) >= 2.5
+  ) {
     conflicts.push({
       label: 'Vacancy disagreement',
       detail: `Market snapshot vacancy ${snapshotVacancy.toFixed(1)}% differs from official coverage at ${officialVacancy.toFixed(1)}%.`,
@@ -246,7 +263,11 @@ function deriveResearchConflicts(asset: ResearchAssetLike) {
     });
   }
 
-  if (snapshotCapRate != null && officialCapRate != null && Math.abs(snapshotCapRate - officialCapRate) >= 0.5) {
+  if (
+    snapshotCapRate != null &&
+    officialCapRate != null &&
+    Math.abs(snapshotCapRate - officialCapRate) >= 0.5
+  ) {
     conflicts.push({
       label: 'Cap-rate disagreement',
       detail: `Market snapshot cap rate ${snapshotCapRate.toFixed(1)}% differs from official coverage at ${officialCapRate.toFixed(1)}%.`,
@@ -254,7 +275,11 @@ function deriveResearchConflicts(asset: ResearchAssetLike) {
     });
   }
 
-  if (snapshotCapRate != null && transactionCapRateMedian != null && Math.abs(snapshotCapRate - transactionCapRateMedian) >= 0.6) {
+  if (
+    snapshotCapRate != null &&
+    transactionCapRateMedian != null &&
+    Math.abs(snapshotCapRate - transactionCapRateMedian) >= 0.6
+  ) {
     conflicts.push({
       label: 'Comp calibration drift',
       detail: `Market snapshot cap rate ${snapshotCapRate.toFixed(1)}% is off the median transaction-comp cap rate of ${transactionCapRateMedian.toFixed(1)}%.`,
@@ -318,7 +343,10 @@ function deriveResearchConfidence(args: {
   const level: 'high' | 'moderate' | 'low' =
     boundedScore >= 78 ? 'high' : boundedScore >= 58 ? 'moderate' : 'low';
   const thesisAgeDays = freshestSnapshot
-    ? Math.max(0, Math.round((Date.now() - freshestSnapshot.snapshotDate.getTime()) / (1000 * 60 * 60 * 24)))
+    ? Math.max(
+        0,
+        Math.round((Date.now() - freshestSnapshot.snapshotDate.getTime()) / (1000 * 60 * 60 * 24))
+      )
     : null;
 
   return {
@@ -369,7 +397,9 @@ export function buildAssetResearchDossier(asset: ResearchAssetLike) {
   const market = buildMarketResearchSummary(asset);
   const micro = buildMicroResearchSummary(asset, reviewSummary);
   const documents = buildDocumentResearchSummary(asset);
-  const latestReviewPacket = extractReviewPacketSummary(getLatestReviewPacketRecord(asset.readinessProject?.onchainRecords));
+  const latestReviewPacket = extractReviewPacketSummary(
+    getLatestReviewPacketRecord(asset.readinessProject?.onchainRecords)
+  );
   const researchSnapshots = [...(asset.researchSnapshots ?? [])];
   const houseViewSnapshot =
     researchSnapshots.find(
@@ -381,7 +411,9 @@ export function buildAssetResearchDossier(asset: ResearchAssetLike) {
     null;
   const draftHouseViewSnapshot =
     researchSnapshots.find(
-      (snapshot) => inferSnapshotViewType(snapshot) === 'HOUSE' && inferSnapshotApprovalStatus(snapshot) === 'DRAFT'
+      (snapshot) =>
+        inferSnapshotViewType(snapshot) === 'HOUSE' &&
+        inferSnapshotApprovalStatus(snapshot) === 'DRAFT'
     ) ?? null;
   const sourceViewSnapshot =
     researchSnapshots.find((snapshot) => inferSnapshotViewType(snapshot) === 'SOURCE') ?? null;
@@ -389,16 +421,22 @@ export function buildAssetResearchDossier(asset: ResearchAssetLike) {
   const freshestSnapshot = houseViewSnapshot ?? researchSnapshots[0] ?? null;
   const freshnessStatus = freshestSnapshot?.freshnessStatus ?? fallbackFreshness.status;
   const freshnessLabel = freshestSnapshot?.freshnessLabel ?? fallbackFreshness.label;
-  const openCoverageTasks = (asset.coverageTasks ?? []).filter((task) => task.status !== TaskStatus.DONE);
+  const openCoverageTasks = (asset.coverageTasks ?? []).filter(
+    (task) => task.status !== TaskStatus.DONE
+  );
   const provenanceSources = [
     ...new Set(
       researchSnapshots
         .map((snapshot) => snapshot.sourceSystem)
         .filter((value): value is string => Boolean(value))
-      )
+    )
   ];
   const officialSourceHighlights = researchSnapshots
-    .filter((snapshot) => snapshot.snapshotType === 'market-official-source' || snapshot.snapshotType === 'official-source')
+    .filter(
+      (snapshot) =>
+        snapshot.snapshotType === 'market-official-source' ||
+        snapshot.snapshotType === 'official-source'
+    )
     .flatMap((snapshot) =>
       extractSnapshotHighlights(snapshot.metrics).map((item) => ({
         ...item,
@@ -418,7 +456,9 @@ export function buildAssetResearchDossier(asset: ResearchAssetLike) {
   });
   const combinedMarketThesis = `${macro.thesis} ${market.thesis}`.trim();
   const houseViewSummary = houseViewSnapshot?.summary?.trim() || combinedMarketThesis;
-  const houseViewApprovalStatus = houseViewSnapshot ? inferSnapshotApprovalStatus(houseViewSnapshot) : null;
+  const houseViewApprovalStatus = houseViewSnapshot
+    ? inferSnapshotApprovalStatus(houseViewSnapshot)
+    : null;
 
   return {
     playbook: {
@@ -433,7 +473,8 @@ export function buildAssetResearchDossier(asset: ResearchAssetLike) {
     pendingBlockers: reviewSummary.pendingBlockers,
     latestValuationId: asset.valuations?.[0]?.id ?? null,
     reviewPacketFingerprint: latestReviewPacket?.fingerprint ?? null,
-    chainAnchorReference: asset.readinessProject?.onchainRecords?.find((record) => record.txHash)?.txHash ?? null,
+    chainAnchorReference:
+      asset.readinessProject?.onchainRecords?.find((record) => record.txHash)?.txHash ?? null,
     freshness: {
       status: freshnessStatus,
       label: freshnessLabel,
@@ -473,10 +514,9 @@ export function buildAssetResearchDossier(asset: ResearchAssetLike) {
       approvedById: houseViewSnapshot?.approvedById ?? null,
       snapshotDate: houseViewSnapshot?.snapshotDate ?? null,
       thesisAgeDays: confidence.thesisAgeDays,
-      lineage:
-        houseViewSnapshot?.supersedesSnapshotId
-          ? 'Current thesis supersedes an earlier house view.'
-          : 'Current thesis is derived from approved evidence, market comps, and official-source coverage.'
+      lineage: houseViewSnapshot?.supersedesSnapshotId
+        ? 'Current thesis supersedes an earlier house view.'
+        : 'Current thesis is derived from approved evidence, market comps, and official-source coverage.'
     },
     sourceView: {
       title: sourceViewSnapshot?.title ?? 'No persisted source view',

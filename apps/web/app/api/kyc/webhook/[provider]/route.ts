@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/db/prisma';
 import { recordAuditEvent } from '@/lib/services/audit';
 import { getRequestIpAddress } from '@/lib/security/admin-request';
 import { persistKycEvent } from '@/lib/services/kyc/bridge';
@@ -15,10 +14,7 @@ import { getKycProvider } from '@/lib/services/kyc/registry';
  * signing scheme. Each event is recorded in the audit trail whether or not
  * bridging succeeds.
  */
-export async function POST(
-  request: Request,
-  context: { params: Promise<{ provider: string }> }
-) {
+export async function POST(request: Request, context: { params: Promise<{ provider: string }> }) {
   const { provider: providerName } = await context.params;
   const ipAddress = getRequestIpAddress(request.headers);
   const rawBody = await request.text();

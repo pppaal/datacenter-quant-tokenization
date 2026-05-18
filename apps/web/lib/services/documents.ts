@@ -7,7 +7,7 @@ import { autoMatchDealDocumentRequestsForAsset } from '@/lib/services/deals';
 import { ingestFinancialStatement } from '@/lib/services/financial-statements';
 import { promoteDocumentFactsToFeatures } from '@/lib/services/feature-promotion';
 import {
-  createLocalDocumentStorage,
+  createDocumentStorageFromEnv,
   type DocumentStorageAdapter,
   type UploadableFile
 } from '@/lib/storage/local';
@@ -26,7 +26,7 @@ export async function uploadDocumentVersion(
   }
 ) {
   const db = deps?.db ?? prisma;
-  const storage = deps?.storage ?? createLocalDocumentStorage();
+  const storage = deps?.storage ?? createDocumentStorageFromEnv();
   const summarizer = deps?.summarizer ?? generateDocumentSummary;
   const extractor = deps?.extractor ?? ingestDocumentExtraction;
   const financialIngester = deps?.financialIngester ?? ingestFinancialStatement;

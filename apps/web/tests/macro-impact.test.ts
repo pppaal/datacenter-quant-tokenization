@@ -11,7 +11,10 @@ test('macro impact engine interprets multidimensional transmission paths', () =>
       country: 'US',
       submarket: 'Manhattan',
       label: 'Long-duration leasing and capital-markets sensitive',
-      adjustmentSummary: ['US liquidity and capital-market depth', 'NYC office duration and liquidity premium'],
+      adjustmentSummary: [
+        'US liquidity and capital-market depth',
+        'NYC office duration and liquidity premium'
+      ],
       capitalRateSensitivity: 1.15,
       liquiditySensitivity: 1.1,
       leasingSensitivity: 1.15,
@@ -118,7 +121,9 @@ test('macro impact engine interprets multidimensional transmission paths', () =>
   const pricing = matrix.dimensions.find((item) => item.key === 'pricing');
   const financing = matrix.dimensions.find((item) => item.key === 'financing');
   const leasing = matrix.dimensions.find((item) => item.key === 'leasing');
-  const refiPath = matrix.paths.find((item) => item.factorKey === 'credit_stress' && item.targetKey === 'refinancing');
+  const refiPath = matrix.paths.find(
+    (item) => item.factorKey === 'credit_stress' && item.targetKey === 'refinancing'
+  );
 
   assert.ok(pricing);
   assert.equal(pricing.direction, 'HEADWIND');

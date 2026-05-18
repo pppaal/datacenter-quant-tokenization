@@ -43,41 +43,33 @@ test('8% pref hit exactly — no promote, LP IRR = 8%', () => {
 
 test('large exit triggers catch-up and 80/20 promote', () => {
   // 10B equity → 30B exit = 3x return. Way above 8% pref.
-  const result = runLpGpWaterfall(
-    [0, 0, 0, 0, 0],
-    30_000_000_000,
-    {
-      totalEquityKrw: 10_000_000_000,
-      gpContributionSharePct: 5,
-      prefRatePct: 8,
-      promoteSharePct: 20,
-      catchUpSharePct: 100
-    }
-  );
+  const result = runLpGpWaterfall([0, 0, 0, 0, 0], 30_000_000_000, {
+    totalEquityKrw: 10_000_000_000,
+    gpContributionSharePct: 5,
+    prefRatePct: 8,
+    promoteSharePct: 20,
+    catchUpSharePct: 100
+  });
   assert.equal(result.promoteHit, true);
   assert.ok(result.gpPromoteCapturedKrw > 0);
   // GP captures roughly 20% of profit
   const totalProfit = result.lpProfitKrw + result.gpProfitKrw;
   const gpShareOfProfit = result.gpProfitKrw / totalProfit;
   assert.ok(gpShareOfProfit > 0.15);
-  assert.ok(gpShareOfProfit < 0.30);
+  assert.ok(gpShareOfProfit < 0.3);
 });
 
 test('annual distributions accrue pref year-by-year', () => {
   // 1B / year for 10 years + 10B exit on 10B equity.
   // LP should get pref 8% on 9.5B = 760M/yr, which annual 950M (LP 95% share)
   // distributions partially cover.
-  const result = runLpGpWaterfall(
-    Array(10).fill(1_000_000_000),
-    10_000_000_000,
-    {
-      totalEquityKrw: 10_000_000_000,
-      gpContributionSharePct: 5,
-      prefRatePct: 8,
-      promoteSharePct: 20,
-      catchUpSharePct: 100
-    }
-  );
+  const result = runLpGpWaterfall(Array(10).fill(1_000_000_000), 10_000_000_000, {
+    totalEquityKrw: 10_000_000_000,
+    gpContributionSharePct: 5,
+    prefRatePct: 8,
+    promoteSharePct: 20,
+    catchUpSharePct: 100
+  });
   // Pref should be mostly paid during the hold
   const totalPref = result.years.reduce((s, y) => s + y.tier2PrefLpKrw, 0);
   assert.ok(totalPref > 0);

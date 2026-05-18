@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { anchorLatestDocumentOnchain, registerAssetOnchain, stageReviewReadiness } from '@/lib/services/readiness';
+import {
+  anchorLatestDocumentOnchain,
+  registerAssetOnchain,
+  stageReviewReadiness
+} from '@/lib/services/readiness';
 
 function buildReadinessAssetContext() {
   return {
@@ -109,13 +113,17 @@ function buildReadinessDb(assetContext: ReturnType<typeof buildReadinessAssetCon
     },
     onchainRecord: {
       async findFirst(args: any) {
-        return createdRecords
-          .filter((record) => {
-            if (args.where?.recordType && record.recordType !== args.where.recordType) return false;
-            if ('documentId' in (args.where ?? {}) && record.documentId !== args.where.documentId) return false;
-            return true;
-          })
-          .at(-1) ?? null;
+        return (
+          createdRecords
+            .filter((record) => {
+              if (args.where?.recordType && record.recordType !== args.where.recordType)
+                return false;
+              if ('documentId' in (args.where ?? {}) && record.documentId !== args.where.documentId)
+                return false;
+              return true;
+            })
+            .at(-1) ?? null
+        );
       },
       async create(args: any) {
         createdRecords.push(args.data);
@@ -174,7 +182,10 @@ test('stageReviewReadiness stores deterministic review packet metadata offchain'
   assert.ok(typeof reviewPacket.payload.packetFingerprint === 'string');
   assert.equal(reviewPacket.payload.approvedEvidenceCount, 3);
   assert.equal(reviewPacket.payload.pendingEvidenceCount, 0);
-  assert.equal(documentHashRecord.payload.packetFingerprint, reviewPacket.payload.packetFingerprint);
+  assert.equal(
+    documentHashRecord.payload.packetFingerprint,
+    reviewPacket.payload.packetFingerprint
+  );
   assert.equal(updates.at(-1)?.data.readinessStatus, 'READY');
 });
 

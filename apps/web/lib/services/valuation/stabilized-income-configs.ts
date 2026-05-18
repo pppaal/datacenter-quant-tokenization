@@ -8,7 +8,9 @@ import type { UnderwritingBundle } from '@/lib/services/valuation/types';
 import { roundKrw } from '@/lib/services/valuation/utils';
 
 type ValuationConfig = Parameters<typeof buildStabilizedIncomeValuation>[2];
-type RiskConfig = Parameters<typeof import('@/lib/services/valuation/stabilized-income').buildStabilizedIncomeKeyRisks>[2];
+type RiskConfig = Parameters<
+  typeof import('@/lib/services/valuation/stabilized-income').buildStabilizedIncomeKeyRisks
+>[2];
 type ProvenanceConfig = Parameters<typeof buildStabilizedIncomeProvenance>[2];
 
 export const officeScenarioInputs: StabilizedIncomeScenarioInput[] = [
@@ -156,19 +158,25 @@ export function buildOfficeValuationConfig(): ValuationConfig {
     scenarioInputs: officeScenarioInputs,
     monthlyRentPerSqmKrw: (state) =>
       Math.max(
-        state.bundle.officeDetail?.stabilizedRentPerSqmMonthKrw ?? state.marketEvidence.averageMonthlyRentPerSqmKrw ?? 0,
-        ((state.marketValueProxyKrw ?? state.bundle.asset.purchasePriceKrw ?? 0) * (state.capRatePct / 100)) /
+        state.bundle.officeDetail?.stabilizedRentPerSqmMonthKrw ??
+          state.marketEvidence.averageMonthlyRentPerSqmKrw ??
+          0,
+        ((state.marketValueProxyKrw ?? state.bundle.asset.purchasePriceKrw ?? 0) *
+          (state.capRatePct / 100)) /
           Math.max(state.rentableAreaSqm * 12 * Math.max(state.adjustedOccupancyPct / 100, 0.5), 1)
       ),
     creditLossPct: (state) => state.bundle.officeDetail?.creditLossPct ?? 1.5,
     vacancyAllowancePct: (state) =>
-      state.bundle.officeDetail?.vacancyAllowancePct ?? Math.max(100 - state.adjustedOccupancyPct, 4),
+      state.bundle.officeDetail?.vacancyAllowancePct ??
+      Math.max(100 - state.adjustedOccupancyPct, 4),
     effectiveRentalRevenueKrw: (state) =>
       state.grossPotentialRentKrw *
       Math.max(0.45, state.adjustedOccupancyPct / 100) *
       Math.max(0.7, 1 - (state.vacancyAllowancePct + state.creditLossPct) / 100),
-    otherIncomeKrw: (state) => state.bundle.officeDetail?.otherIncomeKrw ?? state.grossPotentialRentKrw * 0.02,
-    annualOpexKrw: (state) => state.bundle.asset.opexAssumptionKrw ?? state.grossPotentialRentKrw * 0.18,
+    otherIncomeKrw: (state) =>
+      state.bundle.officeDetail?.otherIncomeKrw ?? state.grossPotentialRentKrw * 0.02,
+    annualOpexKrw: (state) =>
+      state.bundle.asset.opexAssumptionKrw ?? state.grossPotentialRentKrw * 0.18,
     annualCapexReserveKrw: (state) =>
       state.bundle.officeDetail?.annualCapexReserveKrw ?? state.grossPotentialRentKrw * 0.008,
     tenantImprovementReserveKrw: (state) =>
@@ -186,10 +194,15 @@ export function buildOfficeValuationConfig(): ValuationConfig {
         state.annualOpexKrw * 1.15
       ),
     scenario: (state, input) => {
-      const scenarioOccupancyPct = Math.min(100, Math.max(45, state.adjustedOccupancyPct + input.occupancyBumpPct));
+      const scenarioOccupancyPct = Math.min(
+        100,
+        Math.max(45, state.adjustedOccupancyPct + input.occupancyBumpPct)
+      );
       const scenarioCapRatePct = Math.max(3.25, state.capRatePct + input.capRateShiftPct);
       const scenarioNoiKrw =
-        state.stabilizedNoiKrw * input.noiFactor * (scenarioOccupancyPct / state.adjustedOccupancyPct);
+        state.stabilizedNoiKrw *
+        input.noiFactor *
+        (scenarioOccupancyPct / state.adjustedOccupancyPct);
       const valuationKrw = scenarioNoiKrw / (scenarioCapRatePct / 100);
 
       return {
@@ -237,7 +250,8 @@ export function buildIndustrialValuationConfig(): ValuationConfig {
     monthlyRentPerSqmKrw: (state) =>
       Math.max(
         state.marketEvidence.averageMonthlyRentPerSqmKrw ?? 0,
-        ((state.marketValueProxyKrw ?? state.bundle.asset.purchasePriceKrw ?? 0) * (state.capRatePct / 100)) /
+        ((state.marketValueProxyKrw ?? state.bundle.asset.purchasePriceKrw ?? 0) *
+          (state.capRatePct / 100)) /
           Math.max(state.rentableAreaSqm * 12 * Math.max(state.adjustedOccupancyPct / 100, 0.58), 1)
       ),
     creditLossPct: () => 1.2,
@@ -247,19 +261,30 @@ export function buildIndustrialValuationConfig(): ValuationConfig {
       Math.max(0.55, state.adjustedOccupancyPct / 100) *
       Math.max(0.78, 1 - (state.vacancyAllowancePct + state.creditLossPct) / 100),
     otherIncomeKrw: (state) => state.grossPotentialRentKrw * 0.015,
-    annualOpexKrw: (state) => state.bundle.asset.opexAssumptionKrw ?? state.grossPotentialRentKrw * 0.16,
+    annualOpexKrw: (state) =>
+      state.bundle.asset.opexAssumptionKrw ?? state.grossPotentialRentKrw * 0.16,
     annualCapexReserveKrw: (state) =>
-      state.bundle.asset.capexAssumptionKrw ? state.bundle.asset.capexAssumptionKrw * 0.035 : state.grossPotentialRentKrw * 0.007,
+      state.bundle.asset.capexAssumptionKrw
+        ? state.bundle.asset.capexAssumptionKrw * 0.035
+        : state.grossPotentialRentKrw * 0.007,
     stabilizedNoiKrw: (state) =>
       Math.max(
-        state.effectiveRentalRevenueKrw + state.otherIncomeKrw - state.annualOpexKrw - state.annualCapexReserveKrw,
+        state.effectiveRentalRevenueKrw +
+          state.otherIncomeKrw -
+          state.annualOpexKrw -
+          state.annualCapexReserveKrw,
         state.annualOpexKrw * 1.12
       ),
     scenario: (state, input) => {
-      const scenarioOccupancyPct = Math.min(98, Math.max(50, state.adjustedOccupancyPct + input.occupancyBumpPct));
+      const scenarioOccupancyPct = Math.min(
+        98,
+        Math.max(50, state.adjustedOccupancyPct + input.occupancyBumpPct)
+      );
       const scenarioCapRatePct = Math.max(3.75, state.capRatePct + input.capRateShiftPct);
       const scenarioNoiKrw =
-        state.stabilizedNoiKrw * input.noiFactor * (scenarioOccupancyPct / state.adjustedOccupancyPct);
+        state.stabilizedNoiKrw *
+        input.noiFactor *
+        (scenarioOccupancyPct / state.adjustedOccupancyPct);
       const valuationKrw = scenarioNoiKrw / (scenarioCapRatePct / 100);
 
       return {
@@ -314,21 +339,30 @@ export function buildRetailValuationConfig(): ValuationConfig {
       Math.max(0.5, state.adjustedOccupancyPct / 100) *
       Math.max(0.72, 1 - (state.vacancyAllowancePct + state.creditLossPct) / 100),
     otherIncomeKrw: (state) => state.grossPotentialRentKrw * 0.03,
-    annualOpexKrw: (state) => state.bundle.asset.opexAssumptionKrw ?? state.grossPotentialRentKrw * 0.22,
+    annualOpexKrw: (state) =>
+      state.bundle.asset.opexAssumptionKrw ?? state.grossPotentialRentKrw * 0.22,
     annualCapexReserveKrw: (state) =>
       state.bundle.asset.capexAssumptionKrw
         ? state.bundle.asset.capexAssumptionKrw * 0.04
         : state.grossPotentialRentKrw * 0.01,
     stabilizedNoiKrw: (state) =>
       Math.max(
-        state.effectiveRentalRevenueKrw + state.otherIncomeKrw - state.annualOpexKrw - state.annualCapexReserveKrw,
+        state.effectiveRentalRevenueKrw +
+          state.otherIncomeKrw -
+          state.annualOpexKrw -
+          state.annualCapexReserveKrw,
         state.annualOpexKrw * 1.15
       ),
     scenario: (state, input) => {
-      const scenarioOccupancyPct = Math.min(100, Math.max(42, state.adjustedOccupancyPct + input.occupancyBumpPct));
+      const scenarioOccupancyPct = Math.min(
+        100,
+        Math.max(42, state.adjustedOccupancyPct + input.occupancyBumpPct)
+      );
       const scenarioCapRatePct = Math.max(4.25, state.capRatePct + input.capRateShiftPct);
       const scenarioNoiKrw =
-        state.stabilizedNoiKrw * input.noiFactor * (scenarioOccupancyPct / state.adjustedOccupancyPct);
+        state.stabilizedNoiKrw *
+        input.noiFactor *
+        (scenarioOccupancyPct / state.adjustedOccupancyPct);
       const valuationKrw = scenarioNoiKrw / (scenarioCapRatePct / 100);
 
       return {
@@ -383,21 +417,30 @@ export function buildMultifamilyValuationConfig(): ValuationConfig {
       Math.max(0.75, state.adjustedOccupancyPct / 100) *
       Math.max(0.84, 1 - (state.vacancyAllowancePct + state.creditLossPct) / 100),
     otherIncomeKrw: (state) => state.grossPotentialRentKrw * 0.025,
-    annualOpexKrw: (state) => state.bundle.asset.opexAssumptionKrw ?? state.grossPotentialRentKrw * 0.17,
+    annualOpexKrw: (state) =>
+      state.bundle.asset.opexAssumptionKrw ?? state.grossPotentialRentKrw * 0.17,
     annualCapexReserveKrw: (state) =>
       state.bundle.asset.capexAssumptionKrw
         ? state.bundle.asset.capexAssumptionKrw * 0.035
         : state.grossPotentialRentKrw * 0.008,
     stabilizedNoiKrw: (state) =>
       Math.max(
-        state.effectiveRentalRevenueKrw + state.otherIncomeKrw - state.annualOpexKrw - state.annualCapexReserveKrw,
+        state.effectiveRentalRevenueKrw +
+          state.otherIncomeKrw -
+          state.annualOpexKrw -
+          state.annualCapexReserveKrw,
         state.annualOpexKrw * 1.12
       ),
     scenario: (state, input) => {
-      const scenarioOccupancyPct = Math.min(100, Math.max(72, state.adjustedOccupancyPct + input.occupancyBumpPct));
+      const scenarioOccupancyPct = Math.min(
+        100,
+        Math.max(72, state.adjustedOccupancyPct + input.occupancyBumpPct)
+      );
       const scenarioCapRatePct = Math.max(3.5, state.capRatePct + input.capRateShiftPct);
       const scenarioNoiKrw =
-        state.stabilizedNoiKrw * input.noiFactor * (scenarioOccupancyPct / state.adjustedOccupancyPct);
+        state.stabilizedNoiKrw *
+        input.noiFactor *
+        (scenarioOccupancyPct / state.adjustedOccupancyPct);
       const valuationKrw = scenarioNoiKrw / (scenarioCapRatePct / 100);
 
       return {
@@ -414,25 +457,30 @@ export function buildOfficeRiskConfig(bundle: UnderwritingBundle): RiskConfig {
   return {
     vacancyThreshold: 10,
     vacancyHighRisk: 'Leasing velocity is exposed to soft office vacancy in the target submarket.',
-    vacancyFallbackRisk: 'Tenant rollover and lease-up assumptions still need submarket-tested support.',
-    comparablePresentRisk: 'Comparable pricing exists but should be refreshed with recent office transactions before committee.',
+    vacancyFallbackRisk:
+      'Tenant rollover and lease-up assumptions still need submarket-tested support.',
+    comparablePresentRisk:
+      'Comparable pricing exists but should be refreshed with recent office transactions before committee.',
     comparableMarketRisk:
       'Raw market transaction comps are loaded, but curated weighting should still be reviewed before committee.',
     comparableMissingRisk:
       'No office comparable matrix is loaded yet, so valuation still leans on fallback pricing heuristics.',
     entryDefinedRisk:
       'Entry basis is captured, but rent roll and operating statements still need to validate the implied cap rate.',
-    entryMissingRisk: 'Purchase basis is not finalized, so downside protection depends on assumed market pricing.',
+    entryMissingRisk:
+      'Purchase basis is not finalized, so downside protection depends on assumed market pricing.',
     capexDefinedRisk:
       'Capital plan timing, tenant-improvement exposure, leasing commissions, and downtime assumptions should be validated.',
-    capexMissingRisk: 'Capital plan and leasing cost assumptions remain under-specified for the current screen.',
+    capexMissingRisk:
+      'Capital plan and leasing cost assumptions remain under-specified for the current screen.',
     leverageThresholdRatio: 0.6,
     leverageHighRisk:
       'Leverage is aggressive for a first-pass office screen and should be stress-tested against lower NOI.',
     leverageFallbackRisk:
       'Debt sizing is still high-level and should be reconciled against lender-specific covenants and amortization.',
     extraRisks: [
-      bundle.officeDetail?.weightedAverageLeaseTermYears && bundle.officeDetail.weightedAverageLeaseTermYears < 3
+      bundle.officeDetail?.weightedAverageLeaseTermYears &&
+      bundle.officeDetail.weightedAverageLeaseTermYears < 3
         ? 'Short WALT increases near-term rollover risk and could pressure downtime and TI spend.'
         : 'Lease rollover should still be reconciled against a tenant-by-tenant schedule before committee.',
       bundle.permitSnapshot?.permitStage
@@ -444,28 +492,37 @@ export function buildOfficeRiskConfig(bundle: UnderwritingBundle): RiskConfig {
 
 export const industrialRiskConfig: RiskConfig = {
   vacancyThreshold: 7,
-  vacancyHighRisk: 'Logistics vacancy is moving higher in the target corridor and could pressure lease-up.',
-  vacancyFallbackRisk: 'Occupancy assumptions still need lease-by-lease support before committee review.',
-  comparablePresentRisk: 'Comparable logistics pricing is available, but it should be refreshed with recent corridor trades.',
+  vacancyHighRisk:
+    'Logistics vacancy is moving higher in the target corridor and could pressure lease-up.',
+  vacancyFallbackRisk:
+    'Occupancy assumptions still need lease-by-lease support before committee review.',
+  comparablePresentRisk:
+    'Comparable logistics pricing is available, but it should be refreshed with recent corridor trades.',
   comparableMarketRisk:
     'Raw industrial transaction comps are loaded, but curated weighting should still be reviewed before committee.',
   comparableMissingRisk:
     'No industrial comparable set is loaded yet, so valuation still relies on fallback pricing heuristics.',
-  entryDefinedRisk: 'Entry basis is defined, but tenant rollover and downtime assumptions still need validation.',
+  entryDefinedRisk:
+    'Entry basis is defined, but tenant rollover and downtime assumptions still need validation.',
   entryMissingRisk:
     'Entry pricing remains provisional and should be reconciled against broker guidance and recent warehouse trades.',
-  capexDefinedRisk: 'Dock, yard, and reconfiguration capex should be validated against the business plan.',
-  capexMissingRisk: 'Re-tenanting and modernization capex remain under-specified for the current screen.',
+  capexDefinedRisk:
+    'Dock, yard, and reconfiguration capex should be validated against the business plan.',
+  capexMissingRisk:
+    'Re-tenanting and modernization capex remain under-specified for the current screen.',
   leverageThresholdRatio: 0.58,
-  leverageHighRisk: 'Leverage is high for a first-pass logistics screen and should be tested against downside occupancy.',
+  leverageHighRisk:
+    'Leverage is high for a first-pass logistics screen and should be tested against downside occupancy.',
   leverageFallbackRisk:
     'Debt sizing is still high-level and should be replaced with lender-specific terms and covenants.'
 };
 
 export const retailRiskConfig: RiskConfig = {
   vacancyThreshold: 12,
-  vacancyHighRisk: 'Retail vacancy is elevated in the target submarket and could pressure downtime and rent reversions.',
-  vacancyFallbackRisk: 'Retail occupancy and rollover still need tenant-level support before committee review.',
+  vacancyHighRisk:
+    'Retail vacancy is elevated in the target submarket and could pressure downtime and rent reversions.',
+  vacancyFallbackRisk:
+    'Retail occupancy and rollover still need tenant-level support before committee review.',
   comparablePresentRisk:
     'Retail comparable pricing is available, but it should be refreshed with recent trades and leasing evidence.',
   comparableMarketRisk:
@@ -476,10 +533,13 @@ export const retailRiskConfig: RiskConfig = {
     'Entry basis is defined, but rent roll, co-tenancy, and tenant sales exposure still need validation.',
   entryMissingRisk:
     'Entry pricing remains provisional and should be reconciled against broker guidance and recent center trades.',
-  capexDefinedRisk: 'Capex timing, facade/common-area upgrades, and re-tenanting costs should be validated.',
-  capexMissingRisk: 'Re-tenanting capex and leasing downtime remain under-specified for the current screen.',
+  capexDefinedRisk:
+    'Capex timing, facade/common-area upgrades, and re-tenanting costs should be validated.',
+  capexMissingRisk:
+    'Re-tenanting capex and leasing downtime remain under-specified for the current screen.',
   leverageThresholdRatio: 0.58,
-  leverageHighRisk: 'Leverage is high for a first-pass retail screen and should be tested against downside occupancy.',
+  leverageHighRisk:
+    'Leverage is high for a first-pass retail screen and should be tested against downside occupancy.',
   leverageFallbackRisk:
     'Debt sizing is still high-level and should be replaced with lender-specific terms and covenants.'
 };
@@ -488,7 +548,8 @@ export const multifamilyRiskConfig: RiskConfig = {
   vacancyThreshold: 7,
   vacancyHighRisk:
     'Residential vacancy is elevated relative to the target multifamily case and could pressure rent growth.',
-  vacancyFallbackRisk: 'Occupancy and rent growth assumptions still need property-level support before committee review.',
+  vacancyFallbackRisk:
+    'Occupancy and rent growth assumptions still need property-level support before committee review.',
   comparablePresentRisk:
     'Multifamily pricing evidence is available, but it should be refreshed with recent apartment trades.',
   comparableMarketRisk:
@@ -497,9 +558,12 @@ export const multifamilyRiskConfig: RiskConfig = {
     'No multifamily comparable set is loaded yet, so valuation still relies on fallback pricing heuristics.',
   entryDefinedRisk:
     'Entry basis is defined, but rent roll, concessions, and turnover assumptions still need validation.',
-  entryMissingRisk: 'Entry pricing remains provisional and should be reconciled against recent residential trades.',
-  capexDefinedRisk: 'Interior turn costs, amenity refresh, and deferred maintenance should be validated.',
-  capexMissingRisk: 'Turnover capex and maintenance reserves remain under-specified for the current screen.',
+  entryMissingRisk:
+    'Entry pricing remains provisional and should be reconciled against recent residential trades.',
+  capexDefinedRisk:
+    'Interior turn costs, amenity refresh, and deferred maintenance should be validated.',
+  capexMissingRisk:
+    'Turnover capex and maintenance reserves remain under-specified for the current screen.',
   leverageThresholdRatio: 0.58,
   leverageHighRisk:
     'Leverage is high for a first-pass multifamily screen and should be tested against softer occupancy.',
@@ -538,7 +602,10 @@ export const multifamilyDdChecklistBase = [
 export const debtDdChecklistItem =
   'Replace synthetic debt sizing with lender terms, reserves, and DSCR covenants.';
 
-export function buildOfficeAssumptionExtras(bundle: UnderwritingBundle, valuation: StabilizedIncomeValuation) {
+export function buildOfficeAssumptionExtras(
+  bundle: UnderwritingBundle,
+  valuation: StabilizedIncomeValuation
+) {
   return {
     tenantImprovementReserveKrw: roundKrw(valuation.tenantImprovementReserveKrw ?? 0),
     leasingCommissionReserveKrw: roundKrw(valuation.leasingCommissionReserveKrw ?? 0),
@@ -565,10 +632,17 @@ export function buildOfficeProvenanceConfig(
     },
     rent: {
       field: 'stabilizedRentPerSqmMonthKrw',
-      value: bundle.officeDetail?.stabilizedRentPerSqmMonthKrw ?? valuation.marketEvidence.averageMonthlyRentPerSqmKrw ?? null,
-      sourceSystem: bundle.officeDetail?.stabilizedRentPerSqmMonthKrw ? 'office-detail' : 'global-market-api',
+      value:
+        bundle.officeDetail?.stabilizedRentPerSqmMonthKrw ??
+        valuation.marketEvidence.averageMonthlyRentPerSqmKrw ??
+        null,
+      sourceSystem: bundle.officeDetail?.stabilizedRentPerSqmMonthKrw
+        ? 'office-detail'
+        : 'global-market-api',
       fallbackSourceSystem: 'fallback-rent-proxy',
-      freshnessLabel: bundle.officeDetail?.stabilizedRentPerSqmMonthKrw ? 'office intake' : 'market rent comps',
+      freshnessLabel: bundle.officeDetail?.stabilizedRentPerSqmMonthKrw
+        ? 'office intake'
+        : 'market rent comps',
       fallbackFreshnessLabel: 'proxy',
       hasPrimaryValue:
         bundle.officeDetail?.stabilizedRentPerSqmMonthKrw != null ||

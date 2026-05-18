@@ -66,7 +66,9 @@ function getDirectionWeight(direction: string) {
 function buildLatestFactorMap(factors: MacroFactor[]) {
   const latestByMarket = new Map<string, Map<string, MacroFactor>>();
 
-  for (const factor of [...factors].sort((left, right) => right.observationDate.getTime() - left.observationDate.getTime())) {
+  for (const factor of [...factors].sort(
+    (left, right) => right.observationDate.getTime() - left.observationDate.getTime()
+  )) {
     const marketMap = latestByMarket.get(factor.market) ?? new Map<string, MacroFactor>();
     if (!marketMap.has(factor.factorKey)) {
       marketMap.set(factor.factorKey, factor);
@@ -109,10 +111,14 @@ function buildRiskSignal(marketFactors: Map<string, MacroFactor>): QuantSignal {
           ? 'Credit and rate factors lean toward a risk-off posture.'
           : 'Macro factors are mixed, so overall risk posture stays neutral.',
     drivers: driversOf(
-      liquidity ? `Liquidity ${liquidity.direction.toLowerCase()} (${round(liquidity.value)})` : null,
+      liquidity
+        ? `Liquidity ${liquidity.direction.toLowerCase()} (${round(liquidity.value)})`
+        : null,
       growth ? `Growth ${growth.direction.toLowerCase()} (${round(growth.value)})` : null,
       credit ? `Credit ${credit.direction.toLowerCase()} (${round(credit.value)})` : null,
-      rateMomentum ? `Rate momentum ${rateMomentum.direction.toLowerCase()} (${round(rateMomentum.value)} bps)` : null
+      rateMomentum
+        ? `Rate momentum ${rateMomentum.direction.toLowerCase()} (${round(rateMomentum.value)} bps)`
+        : null
     )
   };
 }
@@ -139,9 +145,15 @@ function buildDurationSignal(marketFactors: Map<string, MacroFactor>): QuantSign
           ? 'Rates and inflation factors argue for keeping duration short.'
           : 'Duration signals are mixed.',
     drivers: driversOf(
-      rateLevel ? `Rate level ${rateLevel.direction.toLowerCase()} (${round(rateLevel.value)}%)` : null,
-      rateMomentum ? `Rate momentum ${rateMomentum.direction.toLowerCase()} (${round(rateMomentum.value)} bps)` : null,
-      inflation ? `Inflation ${inflation.direction.toLowerCase()} (${round(inflation.value)}%)` : null
+      rateLevel
+        ? `Rate level ${rateLevel.direction.toLowerCase()} (${round(rateLevel.value)}%)`
+        : null,
+      rateMomentum
+        ? `Rate momentum ${rateMomentum.direction.toLowerCase()} (${round(rateMomentum.value)} bps)`
+        : null,
+      inflation
+        ? `Inflation ${inflation.direction.toLowerCase()} (${round(inflation.value)}%)`
+        : null
     )
   };
 }
@@ -169,8 +181,12 @@ function buildCreditSignal(marketFactors: Map<string, MacroFactor>): QuantSignal
           : 'Credit conditions are balanced.',
     drivers: driversOf(
       credit ? `Credit ${credit.direction.toLowerCase()} (${round(credit.value)} bps)` : null,
-      liquidity ? `Liquidity ${liquidity.direction.toLowerCase()} (${round(liquidity.value)})` : null,
-      rateLevel ? `Rate level ${rateLevel.direction.toLowerCase()} (${round(rateLevel.value)}%)` : null
+      liquidity
+        ? `Liquidity ${liquidity.direction.toLowerCase()} (${round(liquidity.value)})`
+        : null,
+      rateLevel
+        ? `Rate level ${rateLevel.direction.toLowerCase()} (${round(rateLevel.value)}%)`
+        : null
     )
   };
 }
@@ -197,9 +213,15 @@ function buildRealAssetSignal(marketFactors: Map<string, MacroFactor>): QuantSig
           ? 'Demand and construction factors argue for a lighter real-asset stance.'
           : 'Real-asset factors are balanced.',
     drivers: driversOf(
-      propertyDemand ? `Property demand ${propertyDemand.direction.toLowerCase()} (${round(propertyDemand.value)})` : null,
-      construction ? `Construction ${construction.direction.toLowerCase()} (${round(construction.value)})` : null,
-      inflation ? `Inflation ${inflation.direction.toLowerCase()} (${round(inflation.value)}%)` : null
+      propertyDemand
+        ? `Property demand ${propertyDemand.direction.toLowerCase()} (${round(propertyDemand.value)})`
+        : null,
+      construction
+        ? `Construction ${construction.direction.toLowerCase()} (${round(construction.value)})`
+        : null,
+      inflation
+        ? `Inflation ${inflation.direction.toLowerCase()} (${round(inflation.value)}%)`
+        : null
     )
   };
 }
@@ -208,9 +230,10 @@ export function buildQuantMarketSignals(factors: MacroFactor[]): QuantMarketSign
   const latestByMarket = buildLatestFactorMap(factors);
 
   return [...latestByMarket.entries()].map(([market, marketFactors]) => {
-    const asOf = [...marketFactors.values()].sort(
-      (left, right) => right.observationDate.getTime() - left.observationDate.getTime()
-    )[0]?.observationDate.toISOString() ?? null;
+    const asOf =
+      [...marketFactors.values()]
+        .sort((left, right) => right.observationDate.getTime() - left.observationDate.getTime())[0]
+        ?.observationDate.toISOString() ?? null;
 
     return {
       market,
@@ -253,10 +276,10 @@ export function buildQuantAllocationView(signals: QuantMarketSignal[]): QuantAll
     const realAssets = market.signals.find((signal) => signal.key === 'realAssets');
 
     const score =
-      signalScore(risk ?? { score: 0, stance: 'NEUTRAL' } as QuantSignal) * 0.35 +
-      signalScore(duration ?? { score: 0, stance: 'NEUTRAL' } as QuantSignal) * 0.15 +
-      signalScore(credit ?? { score: 0, stance: 'NEUTRAL' } as QuantSignal) * 0.25 +
-      signalScore(realAssets ?? { score: 0, stance: 'NEUTRAL' } as QuantSignal) * 0.25;
+      signalScore(risk ?? ({ score: 0, stance: 'NEUTRAL' } as QuantSignal)) * 0.35 +
+      signalScore(duration ?? ({ score: 0, stance: 'NEUTRAL' } as QuantSignal)) * 0.15 +
+      signalScore(credit ?? ({ score: 0, stance: 'NEUTRAL' } as QuantSignal)) * 0.25 +
+      signalScore(realAssets ?? ({ score: 0, stance: 'NEUTRAL' } as QuantSignal)) * 0.25;
 
     const strongestSignals = [...market.signals]
       .sort((left, right) => Math.abs(right.score) - Math.abs(left.score))
@@ -320,10 +343,18 @@ export function buildQuantAssetClassAllocationView(
     return profiles.map((profile) => {
       const score =
         signalScore(risk ?? ({ score: 0, stance: 'NEUTRAL' } as QuantSignal)) * 0.25 +
-        signalScore(duration ?? ({ score: 0, stance: 'NEUTRAL' } as QuantSignal)) * 0.2 * profile.duration +
-        signalScore(credit ?? ({ score: 0, stance: 'NEUTRAL' } as QuantSignal)) * 0.25 * profile.credit +
-        signalScore(realAssets ?? ({ score: 0, stance: 'NEUTRAL' } as QuantSignal)) * 0.3 * profile.realAssets +
-        signalScore(risk ?? ({ score: 0, stance: 'NEUTRAL' } as QuantSignal)) * 0.15 * profile.capital;
+        signalScore(duration ?? ({ score: 0, stance: 'NEUTRAL' } as QuantSignal)) *
+          0.2 *
+          profile.duration +
+        signalScore(credit ?? ({ score: 0, stance: 'NEUTRAL' } as QuantSignal)) *
+          0.25 *
+          profile.credit +
+        signalScore(realAssets ?? ({ score: 0, stance: 'NEUTRAL' } as QuantSignal)) *
+          0.3 *
+          profile.realAssets +
+        signalScore(risk ?? ({ score: 0, stance: 'NEUTRAL' } as QuantSignal)) *
+          0.15 *
+          profile.capital;
 
       const strongestSignals = [
         `Capital beta ${round(profile.capital)}x`,

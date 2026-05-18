@@ -142,10 +142,27 @@ export type FundDashboard = ReturnType<typeof buildFundDashboard>;
 export type InvestorRecord = Awaited<ReturnType<typeof listInvestors>>[number];
 export type FundOperatorBriefs = ReturnType<typeof buildFundOperatorBriefs>;
 
-export function buildCommitmentMath(fund: Pick<FundBundle, 'commitments' | 'capitalCalls' | 'distributions' | 'targetSizeKrw' | 'committedCapitalKrw' | 'investedCapitalKrw' | 'dryPowderKrw'>) {
-  const totalCommitmentKrw = fund.commitments.reduce((total, item) => total + item.commitmentKrw, 0);
+export function buildCommitmentMath(
+  fund: Pick<
+    FundBundle,
+    | 'commitments'
+    | 'capitalCalls'
+    | 'distributions'
+    | 'targetSizeKrw'
+    | 'committedCapitalKrw'
+    | 'investedCapitalKrw'
+    | 'dryPowderKrw'
+  >
+) {
+  const totalCommitmentKrw = fund.commitments.reduce(
+    (total, item) => total + item.commitmentKrw,
+    0
+  );
   const totalCalledKrw = fund.commitments.reduce((total, item) => total + item.calledKrw, 0);
-  const totalDistributedKrw = fund.commitments.reduce((total, item) => total + item.distributedKrw, 0);
+  const totalDistributedKrw = fund.commitments.reduce(
+    (total, item) => total + item.distributedKrw,
+    0
+  );
   const pendingCallsKrw = fund.capitalCalls
     .filter((item) => item.status === 'PLANNED' || item.status === 'ISSUED')
     .reduce((total, item) => total + item.amountKrw, 0);
@@ -163,8 +180,8 @@ export function buildCommitmentMath(fund: Pick<FundBundle, 'commitments' | 'capi
     pendingDistributionsKrw,
     targetSizeKrw: fund.targetSizeKrw ?? null,
     committedCapitalKrw: fund.committedCapitalKrw ?? totalCommitmentKrw,
-    investedCapitalKrw: fund.investedCapitalKrw ?? (totalCalledKrw - totalDistributedKrw),
-    dryPowderKrw: fund.dryPowderKrw ?? (totalCommitmentKrw - totalCalledKrw)
+    investedCapitalKrw: fund.investedCapitalKrw ?? totalCalledKrw - totalDistributedKrw,
+    dryPowderKrw: fund.dryPowderKrw ?? totalCommitmentKrw - totalCalledKrw
   };
 }
 
@@ -185,7 +202,9 @@ export function buildFundDashboard(fund: FundBundle) {
         statusWeight(right.releaseStatus) - statusWeight(left.releaseStatus) ||
         (right.periodEnd?.getTime() ?? 0) - (left.periodEnd?.getTime() ?? 0)
     );
-  const releasedReports = fund.investorReports.filter((report) => (report.releaseStatus ?? 'DRAFT') === 'RELEASED');
+  const releasedReports = fund.investorReports.filter(
+    (report) => (report.releaseStatus ?? 'DRAFT') === 'RELEASED'
+  );
 
   const researchHighlights =
     fund.portfolio?.assets
@@ -229,7 +248,9 @@ export function buildFundOperatorBriefs(fund: FundBundle, dashboard = buildFundD
   const topInvestor = dashboard.topInvestors[0] ?? null;
   const ddqBacklog = fund.ddqResponses.filter((item) => item.statusLabel !== 'COMPLETE').length;
   const reportingBacklog = dashboard.releaseQueue.length;
-  const readyReports = dashboard.releaseQueue.filter((item) => (item.releaseStatus ?? 'DRAFT') === 'READY').length;
+  const readyReports = dashboard.releaseQueue.filter(
+    (item) => (item.releaseStatus ?? 'DRAFT') === 'READY'
+  ).length;
 
   const capitalActivityBrief = [
     `${fund.name} has KRW ${Math.round(dashboard.math.totalCommitmentKrw).toLocaleString()} of commitments and KRW ${Math.round(dashboard.math.dryPowderKrw).toLocaleString()} of modeled dry powder.`,

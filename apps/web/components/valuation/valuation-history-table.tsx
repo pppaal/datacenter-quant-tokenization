@@ -53,7 +53,9 @@ export function ValuationHistoryTable({
         <div>Status</div>
       </div>
       {runs.map((run) => {
-        const provenance = Array.isArray(run.provenance) ? (run.provenance as ProvenanceEntry[]) : [];
+        const provenance = Array.isArray(run.provenance)
+          ? (run.provenance as ProvenanceEntry[])
+          : [];
         const spreadRatio = getRunSpreadRatio(run.scenarios);
 
         return (
@@ -68,7 +70,9 @@ export function ValuationHistoryTable({
                 {formatDate(run.createdAt)} / {run.engineVersion}
               </div>
             </div>
-            <div>{formatCurrencyFromKrwAtRate(run.baseCaseValueKrw, displayCurrency, fxRateToKrw)}</div>
+            <div>
+              {formatCurrencyFromKrwAtRate(run.baseCaseValueKrw, displayCurrency, fxRateToKrw)}
+            </div>
             <div>{formatNumber(run.confidenceScore, 1)}</div>
             <div>{spreadRatio !== null ? `${formatNumber(spreadRatio * 100, 1)}%` : 'N/A'}</div>
             <div>

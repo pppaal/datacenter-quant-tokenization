@@ -50,7 +50,9 @@ export function QuickValuationRunButton({
             });
 
             if (!response.ok) {
-              const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+              const payload = (await response.json().catch(() => null)) as {
+                error?: string;
+              } | null;
               throw new Error(payload?.error ?? 'Failed to run analysis');
             }
 
@@ -65,7 +67,11 @@ export function QuickValuationRunButton({
       >
         {submitting ? 'Running...' : label}
       </Button>
-      {success ? <p className="mt-2 text-sm text-emerald-300" data-testid="quick-valuation-feedback">{success}</p> : null}
+      {success ? (
+        <p className="mt-2 text-sm text-emerald-300" data-testid="quick-valuation-feedback">
+          {success}
+        </p>
+      ) : null}
       {error ? <p className="mt-2 text-sm text-rose-300">{error}</p> : null}
     </div>
   );

@@ -44,7 +44,8 @@ export function ValuationDeltaCard({
       <Card>
         <div className="eyebrow">Run Delta</div>
         <p className="mt-4 text-sm leading-6 text-slate-300">
-          This is the earliest stored run for this asset, so there is no previous valuation snapshot to compare against yet.
+          This is the earliest stored run for this asset, so there is no previous valuation snapshot
+          to compare against yet.
         </p>
       </Card>
     );
@@ -53,13 +54,16 @@ export function ValuationDeltaCard({
   const baseDelta = currentRun.baseCaseValueKrw - previousRun.baseCaseValueKrw;
   const confidenceDelta = currentRun.confidenceScore - previousRun.confidenceScore;
   const capRateDelta =
-    getNumber(currentRun.assumptions, 'capRatePct') !== null && getNumber(previousRun.assumptions, 'capRatePct') !== null
-      ? getNumber(currentRun.assumptions, 'capRatePct')! - getNumber(previousRun.assumptions, 'capRatePct')!
+    getNumber(currentRun.assumptions, 'capRatePct') !== null &&
+    getNumber(previousRun.assumptions, 'capRatePct') !== null
+      ? getNumber(currentRun.assumptions, 'capRatePct')! -
+        getNumber(previousRun.assumptions, 'capRatePct')!
       : null;
   const discountRateDelta =
     getNumber(currentRun.assumptions, 'discountRatePct') !== null &&
     getNumber(previousRun.assumptions, 'discountRatePct') !== null
-      ? getNumber(currentRun.assumptions, 'discountRatePct')! - getNumber(previousRun.assumptions, 'discountRatePct')!
+      ? getNumber(currentRun.assumptions, 'discountRatePct')! -
+        getNumber(previousRun.assumptions, 'discountRatePct')!
       : null;
 
   return (
@@ -67,23 +71,27 @@ export function ValuationDeltaCard({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="eyebrow">Run Delta</div>
-          <div className="mt-2 text-sm text-slate-400">
-            Compared with {previousRun.runLabel}
-          </div>
+          <div className="mt-2 text-sm text-slate-400">Compared with {previousRun.runLabel}</div>
         </div>
         <Badge tone={deltaTone(baseDelta)}>{formatDelta(baseDelta, 'currency')}</Badge>
       </div>
       <div className="grid gap-4 md:grid-cols-3">
         <div className="rounded-2xl border border-border bg-slate-950/40 p-4">
           <div className="text-xs uppercase tracking-[0.18em] text-slate-500">Base Case Delta</div>
-          <div className="mt-2 text-lg font-semibold text-white">{formatDelta(baseDelta, 'currency')}</div>
+          <div className="mt-2 text-lg font-semibold text-white">
+            {formatDelta(baseDelta, 'currency')}
+          </div>
         </div>
         <div className="rounded-2xl border border-border bg-slate-950/40 p-4">
           <div className="text-xs uppercase tracking-[0.18em] text-slate-500">Confidence Delta</div>
-          <div className="mt-2 text-lg font-semibold text-white">{formatDelta(confidenceDelta, 'number')}</div>
+          <div className="mt-2 text-lg font-semibold text-white">
+            {formatDelta(confidenceDelta, 'number')}
+          </div>
         </div>
         <div className="rounded-2xl border border-border bg-slate-950/40 p-4">
-          <div className="text-xs uppercase tracking-[0.18em] text-slate-500">Cap / Discount Shift</div>
+          <div className="text-xs uppercase tracking-[0.18em] text-slate-500">
+            Cap / Discount Shift
+          </div>
           <div className="mt-2 text-lg font-semibold text-white">
             {formatDelta(capRateDelta, 'bps')} / {formatDelta(discountRateDelta, 'bps')}
           </div>
@@ -92,4 +100,3 @@ export function ValuationDeltaCard({
     </Card>
   );
 }
-

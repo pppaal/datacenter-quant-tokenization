@@ -30,12 +30,19 @@ function groupPoints(points: SensitivityPoint[]) {
   for (const point of points) {
     const group = grouped.get(point.shockLabel) ?? [];
     group.push(point);
-    grouped.set(point.shockLabel, group.sort((left, right) => left.sortOrder - right.sortOrder));
+    grouped.set(
+      point.shockLabel,
+      group.sort((left, right) => left.sortOrder - right.sortOrder)
+    );
   }
   return [...grouped.entries()];
 }
 
-function formatMetric(point: SensitivityPoint, displayCurrency: SupportedCurrency, fxRateToKrw?: number | null) {
+function formatMetric(
+  point: SensitivityPoint,
+  displayCurrency: SupportedCurrency,
+  fxRateToKrw?: number | null
+) {
   if (point.metricName === 'Value') {
     return formatCurrencyFromKrwAtRate(point.metricValue, displayCurrency, fxRateToKrw);
   }
@@ -76,7 +83,9 @@ function MatrixRun({
     <div className="overflow-x-auto">
       <div
         className="grid min-w-[720px] gap-2"
-        style={{ gridTemplateColumns: `minmax(140px, 1.2fr) repeat(${columns.length}, minmax(140px, 1fr))` }}
+        style={{
+          gridTemplateColumns: `minmax(140px, 1.2fr) repeat(${columns.length}, minmax(140px, 1fr))`
+        }}
       >
         <div className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-3 text-xs uppercase tracking-[0.18em] text-slate-500">
           {rowAxisLabel} / {columnAxisLabel}
@@ -91,9 +100,7 @@ function MatrixRun({
         ))}
         {rows.map((row, rowIndex) => (
           <div key={`${run.id}-row-group-${row}`} className="contents">
-            <div
-              className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-4 text-sm font-semibold text-white"
-            >
+            <div className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-4 text-sm font-semibold text-white">
               {row}
             </div>
             {columns.map((column, columnIndex) => {
@@ -108,7 +115,9 @@ function MatrixRun({
                   <div className={point.deltaPct < 0 ? 'text-rose-300' : 'text-emerald-300'}>
                     {formatPercent(point.deltaPct)}
                   </div>
-                  <div className="mt-2 text-white">{formatMetric(point, displayCurrency, fxRateToKrw)}</div>
+                  <div className="mt-2 text-white">
+                    {formatMetric(point, displayCurrency, fxRateToKrw)}
+                  </div>
                 </div>
               );
             })}
@@ -153,21 +162,32 @@ export function SensitivityTable({
                 <div>
                   <h3 className="text-xl font-semibold text-white">{run.title}</h3>
                   <p className="mt-1 text-sm text-slate-400">
-                    Baseline {run.baselineMetricName}: {run.baselineMetricName === 'Value'
-                      ? formatCurrencyFromKrwAtRate(run.baselineMetricValue, displayCurrency, fxRateToKrw)
+                    Baseline {run.baselineMetricName}:{' '}
+                    {run.baselineMetricName === 'Value'
+                      ? formatCurrencyFromKrwAtRate(
+                          run.baselineMetricValue,
+                          displayCurrency,
+                          fxRateToKrw
+                        )
                       : formatNumber(run.baselineMetricValue, 2)}
                     {run.baselineMetricName === 'DSCR' ? 'x' : ''}
                   </p>
                 </div>
                 {summary?.strongestDownsideDriver ? (
                   <Badge tone="warn">
-                    {summary.strongestDownsideDriver} {formatPercent(summary.strongestDownsideDeltaPct)}
+                    {summary.strongestDownsideDriver}{' '}
+                    {formatPercent(summary.strongestDownsideDeltaPct)}
                   </Badge>
                 ) : null}
               </div>
 
               {run.runType === 'MATRIX' ? (
-                <MatrixRun run={run} summary={summary} displayCurrency={displayCurrency} fxRateToKrw={fxRateToKrw} />
+                <MatrixRun
+                  run={run}
+                  summary={summary}
+                  displayCurrency={displayCurrency}
+                  fxRateToKrw={fxRateToKrw}
+                />
               ) : run.runType === 'FORECAST' || run.runType === 'MONTE_CARLO' ? (
                 <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
                   {groupPoints(run.points).map(([shockLabel, points]) => (
@@ -186,10 +206,18 @@ export function SensitivityTable({
                       <div className="mt-3 space-y-3">
                         {points.map((point) => (
                           <div key={point.id}>
-                            <div className="text-xs uppercase tracking-[0.12em] text-slate-500">{point.variableLabel}</div>
+                            <div className="text-xs uppercase tracking-[0.12em] text-slate-500">
+                              {point.variableLabel}
+                            </div>
                             <div className="mt-1 flex items-center justify-between gap-3">
-                              <div className="text-white">{formatMetric(point, displayCurrency, fxRateToKrw)}</div>
-                              <div className={point.deltaPct < 0 ? 'text-rose-300' : 'text-emerald-300'}>
+                              <div className="text-white">
+                                {formatMetric(point, displayCurrency, fxRateToKrw)}
+                              </div>
+                              <div
+                                className={
+                                  point.deltaPct < 0 ? 'text-rose-300' : 'text-emerald-300'
+                                }
+                              >
                                 {formatPercent(point.deltaPct)}
                               </div>
                             </div>
@@ -215,7 +243,9 @@ export function SensitivityTable({
                         </span>
                       </div>
                       <div className="mt-2 text-slate-400">{point.metricName}</div>
-                      <div className="mt-1 text-base text-white">{formatMetric(point, displayCurrency, fxRateToKrw)}</div>
+                      <div className="mt-1 text-base text-white">
+                        {formatMetric(point, displayCurrency, fxRateToKrw)}
+                      </div>
                     </div>
                   ))}
                 </div>

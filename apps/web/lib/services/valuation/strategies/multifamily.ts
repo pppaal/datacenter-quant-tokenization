@@ -25,7 +25,11 @@ export async function buildMultifamilyValuationAnalysis(
   bundle: UnderwritingBundle,
   context: ValuationStrategyContext = {}
 ): Promise<UnderwritingAnalysis> {
-  const valuation = buildStabilizedIncomeValuation(bundle, context, buildMultifamilyValuationConfig());
+  const valuation = buildStabilizedIncomeValuation(
+    bundle,
+    context,
+    buildMultifamilyValuationConfig()
+  );
   const baseScenario = pickBaseScenario(valuation.scenarios) ?? valuation.scenarios[0];
 
   const analysis: UnderwritingAnalysis = {

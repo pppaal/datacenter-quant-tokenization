@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { SourceStatus, TaskStatus } from '@prisma/client';
-import { extractKoreaPublicDatasetMetrics, listKoreaPublicDatasetDefinitions } from '@/lib/sources/adapters/korea-public';
+import {
+  extractKoreaPublicDatasetMetrics,
+  listKoreaPublicDatasetDefinitions
+} from '@/lib/sources/adapters/korea-public';
 import {
   buildResearchCoverageSurface,
   flattenNumericMetrics,
@@ -18,10 +21,7 @@ test('buildResearchCoverageSurface summarizes freshness and open coverage tasks'
         title: 'Office asset dossier'
       }
     ],
-    coverageTasks: [
-      { status: TaskStatus.OPEN },
-      { status: TaskStatus.DONE }
-    ]
+    coverageTasks: [{ status: TaskStatus.OPEN }, { status: TaskStatus.DONE }]
   });
 
   assert.equal(surface.freshnessStatus, SourceStatus.STALE);
@@ -70,7 +70,9 @@ test('flattenNumericMetrics extracts nested numeric official-source fields for n
 });
 
 test('extractKoreaPublicDatasetMetrics uses dataset-aware mappings for official-source normalization', () => {
-  const definition = listKoreaPublicDatasetDefinitions().find((item) => item.key === 'reb_property_statistics');
+  const definition = listKoreaPublicDatasetDefinitions().find(
+    (item) => item.key === 'reb_property_statistics'
+  );
   assert.ok(definition);
 
   const metrics = extractKoreaPublicDatasetMetrics(definition, {

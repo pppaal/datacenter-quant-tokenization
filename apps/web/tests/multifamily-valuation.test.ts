@@ -202,7 +202,8 @@ test('multifamily valuation produces a residential underwriting output', async (
   assert.ok(((analysis.assumptions as Record<string, unknown>).monthlyRentPerSqmKrw as number) > 0);
   assert.ok(
     analysis.keyRisks.some(
-      (risk) => risk.toLowerCase().includes('residential') || risk.toLowerCase().includes('occupancy')
+      (risk) =>
+        risk.toLowerCase().includes('residential') || risk.toLowerCase().includes('occupancy')
     )
   );
 });

@@ -96,7 +96,9 @@ function buildFacilityDraft(facility?: DebtFacilityDefaultValue): DebtFacilityDr
     balloonPct: stringifyValue(facility?.balloonPct),
     reserveMonths: stringifyValue(facility?.reserveMonths),
     notes: facility?.notes ?? '',
-    draws: facility?.draws.length ? facility.draws.map((draw) => buildDrawDraft(draw)) : [buildDrawDraft()]
+    draws: facility?.draws.length
+      ? facility.draws.map((draw) => buildDrawDraft(draw))
+      : [buildDrawDraft()]
   };
 }
 
@@ -115,26 +117,41 @@ export function DebtBookForm({
 }) {
   const router = useRouter();
   const [facilities, setFacilities] = useState<DebtFacilityDraft[]>(() =>
-    defaultFacilities.length > 0 ? defaultFacilities.map((facility) => buildFacilityDraft(facility)) : [buildFacilityDraft()]
+    defaultFacilities.length > 0
+      ? defaultFacilities.map((facility) => buildFacilityDraft(facility))
+      : [buildFacilityDraft()]
   );
   const [submittingId, setSubmittingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const updateFacility = (localId: string, key: keyof DebtFacilityDraft, value: string | DebtDrawDraft[]) => {
+  const updateFacility = (
+    localId: string,
+    key: keyof DebtFacilityDraft,
+    value: string | DebtDrawDraft[]
+  ) => {
     setFacilities((current) =>
-      current.map((facility) => (facility.localId === localId ? { ...facility, [key]: value } : facility))
+      current.map((facility) =>
+        facility.localId === localId ? { ...facility, [key]: value } : facility
+      )
     );
   };
 
-  const updateDraw = (facilityLocalId: string, drawLocalId: string, key: keyof DebtDrawDraft, value: string) => {
+  const updateDraw = (
+    facilityLocalId: string,
+    drawLocalId: string,
+    key: keyof DebtDrawDraft,
+    value: string
+  ) => {
     setFacilities((current) =>
       current.map((facility) =>
         facility.localId !== facilityLocalId
           ? facility
           : {
               ...facility,
-              draws: facility.draws.map((draw) => (draw.localId === drawLocalId ? { ...draw, [key]: value } : draw))
+              draws: facility.draws.map((draw) =>
+                draw.localId === drawLocalId ? { ...draw, [key]: value } : draw
+              )
             }
       )
     );
@@ -143,7 +160,9 @@ export function DebtBookForm({
   const addDraw = (facilityLocalId: string) => {
     setFacilities((current) =>
       current.map((facility) =>
-        facility.localId === facilityLocalId ? { ...facility, draws: [...facility.draws, buildDrawDraft()] } : facility
+        facility.localId === facilityLocalId
+          ? { ...facility, draws: [...facility.draws, buildDrawDraft()] }
+          : facility
       )
     );
   };
@@ -248,7 +267,10 @@ export function DebtBookForm({
     <div className="space-y-5">
       <div className="grid gap-4">
         {facilities.map((facility, index) => (
-          <div key={facility.localId} className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+          <div
+            key={facility.localId}
+            className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+          >
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <div className="eyebrow">Debt Facility {index + 1}</div>
@@ -270,7 +292,11 @@ export function DebtBookForm({
                   disabled={submittingId === facility.localId || deletingId === facility.localId}
                   onClick={() => handleSave(facility)}
                 >
-                  {submittingId === facility.localId ? 'Saving...' : facility.id ? 'Update Facility' : 'Add Facility'}
+                  {submittingId === facility.localId
+                    ? 'Saving...'
+                    : facility.id
+                      ? 'Update Facility'
+                      : 'Add Facility'}
                 </Button>
               </div>
             </div>
@@ -280,7 +306,9 @@ export function DebtBookForm({
                 <span className="fine-print">Facility Type</span>
                 <Select
                   value={facility.facilityType}
-                  onChange={(event) => updateFacility(facility.localId, 'facilityType', event.target.value)}
+                  onChange={(event) =>
+                    updateFacility(facility.localId, 'facilityType', event.target.value)
+                  }
                 >
                   <option value="">Select facility type</option>
                   {Object.values(DebtFacilityType).map((facilityType) => (
@@ -292,45 +320,110 @@ export function DebtBookForm({
               </label>
               <label className="space-y-2">
                 <span className="fine-print">Lender</span>
-                <Input value={facility.lenderName} onChange={(event) => updateFacility(facility.localId, 'lenderName', event.target.value)} />
+                <Input
+                  value={facility.lenderName}
+                  onChange={(event) =>
+                    updateFacility(facility.localId, 'lenderName', event.target.value)
+                  }
+                />
               </label>
               <label className="space-y-2">
                 <span className="fine-print">{moneyLabel('Commitment (KRW)', inputCurrency)}</span>
-                <Input type="number" step="any" value={facility.commitmentKrw} onChange={(event) => updateFacility(facility.localId, 'commitmentKrw', event.target.value)} />
+                <Input
+                  type="number"
+                  step="any"
+                  value={facility.commitmentKrw}
+                  onChange={(event) =>
+                    updateFacility(facility.localId, 'commitmentKrw', event.target.value)
+                  }
+                />
               </label>
               <label className="space-y-2">
-                <span className="fine-print">{moneyLabel('Drawn Amount (KRW)', inputCurrency)}</span>
-                <Input type="number" step="any" value={facility.drawnAmountKrw} onChange={(event) => updateFacility(facility.localId, 'drawnAmountKrw', event.target.value)} />
+                <span className="fine-print">
+                  {moneyLabel('Drawn Amount (KRW)', inputCurrency)}
+                </span>
+                <Input
+                  type="number"
+                  step="any"
+                  value={facility.drawnAmountKrw}
+                  onChange={(event) =>
+                    updateFacility(facility.localId, 'drawnAmountKrw', event.target.value)
+                  }
+                />
               </label>
               <label className="space-y-2">
                 <span className="fine-print">Interest Rate (%)</span>
-                <Input type="number" step="any" value={facility.interestRatePct} onChange={(event) => updateFacility(facility.localId, 'interestRatePct', event.target.value)} />
+                <Input
+                  type="number"
+                  step="any"
+                  value={facility.interestRatePct}
+                  onChange={(event) =>
+                    updateFacility(facility.localId, 'interestRatePct', event.target.value)
+                  }
+                />
               </label>
               <label className="space-y-2">
                 <span className="fine-print">Upfront Fee (%)</span>
-                <Input type="number" step="any" value={facility.upfrontFeePct} onChange={(event) => updateFacility(facility.localId, 'upfrontFeePct', event.target.value)} />
+                <Input
+                  type="number"
+                  step="any"
+                  value={facility.upfrontFeePct}
+                  onChange={(event) =>
+                    updateFacility(facility.localId, 'upfrontFeePct', event.target.value)
+                  }
+                />
               </label>
               <label className="space-y-2">
                 <span className="fine-print">Commitment Fee (%)</span>
-                <Input type="number" step="any" value={facility.commitmentFeePct} onChange={(event) => updateFacility(facility.localId, 'commitmentFeePct', event.target.value)} />
+                <Input
+                  type="number"
+                  step="any"
+                  value={facility.commitmentFeePct}
+                  onChange={(event) =>
+                    updateFacility(facility.localId, 'commitmentFeePct', event.target.value)
+                  }
+                />
               </label>
               <label className="space-y-2">
                 <span className="fine-print">Reserve Months</span>
-                <Input type="number" step="any" value={facility.reserveMonths} onChange={(event) => updateFacility(facility.localId, 'reserveMonths', event.target.value)} />
+                <Input
+                  type="number"
+                  step="any"
+                  value={facility.reserveMonths}
+                  onChange={(event) =>
+                    updateFacility(facility.localId, 'reserveMonths', event.target.value)
+                  }
+                />
               </label>
               <label className="space-y-2">
                 <span className="fine-print">Grace Period (months)</span>
-                <Input type="number" step="1" value={facility.gracePeriodMonths} onChange={(event) => updateFacility(facility.localId, 'gracePeriodMonths', event.target.value)} />
+                <Input
+                  type="number"
+                  step="1"
+                  value={facility.gracePeriodMonths}
+                  onChange={(event) =>
+                    updateFacility(facility.localId, 'gracePeriodMonths', event.target.value)
+                  }
+                />
               </label>
               <label className="space-y-2">
                 <span className="fine-print">Amortization Term (months)</span>
-                <Input type="number" step="1" value={facility.amortizationTermMonths} onChange={(event) => updateFacility(facility.localId, 'amortizationTermMonths', event.target.value)} />
+                <Input
+                  type="number"
+                  step="1"
+                  value={facility.amortizationTermMonths}
+                  onChange={(event) =>
+                    updateFacility(facility.localId, 'amortizationTermMonths', event.target.value)
+                  }
+                />
               </label>
               <label className="space-y-2">
                 <span className="fine-print">Amortization Profile</span>
                 <Select
                   value={facility.amortizationProfile}
-                  onChange={(event) => updateFacility(facility.localId, 'amortizationProfile', event.target.value)}
+                  onChange={(event) =>
+                    updateFacility(facility.localId, 'amortizationProfile', event.target.value)
+                  }
                 >
                   {Object.values(AmortizationProfile).map((profile) => (
                     <option key={profile} value={profile}>
@@ -341,15 +434,30 @@ export function DebtBookForm({
               </label>
               <label className="space-y-2">
                 <span className="fine-print">Balloon (%)</span>
-                <Input type="number" step="any" value={facility.balloonPct} onChange={(event) => updateFacility(facility.localId, 'balloonPct', event.target.value)} />
+                <Input
+                  type="number"
+                  step="any"
+                  value={facility.balloonPct}
+                  onChange={(event) =>
+                    updateFacility(facility.localId, 'balloonPct', event.target.value)
+                  }
+                />
               </label>
               <label className="space-y-2">
                 <span className="fine-print">Target DSCR</span>
-                <Input type="number" step="any" value={facility.sculptedTargetDscr} onChange={(event) => updateFacility(facility.localId, 'sculptedTargetDscr', event.target.value)} />
+                <Input
+                  type="number"
+                  step="any"
+                  value={facility.sculptedTargetDscr}
+                  onChange={(event) =>
+                    updateFacility(facility.localId, 'sculptedTargetDscr', event.target.value)
+                  }
+                />
               </label>
               <div className="rounded-2xl border border-white/10 bg-slate-950/30 px-4 py-3 text-sm text-slate-400 md:col-span-2 xl:col-span-3">
-                Add explicit draws if construction funding does not follow a generic two-draw pattern. If no facility is
-                entered, valuation falls back to the synthetic underwriting debt package.
+                Add explicit draws if construction funding does not follow a generic two-draw
+                pattern. If no facility is entered, valuation falls back to the synthetic
+                underwriting debt package.
               </div>
             </div>
 
@@ -357,7 +465,9 @@ export function DebtBookForm({
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <div className="eyebrow">Debt Draw Schedule</div>
-                  <div className="mt-1 text-sm text-slate-400">Year and month timing for each debt draw.</div>
+                  <div className="mt-1 text-sm text-slate-400">
+                    Year and month timing for each debt draw.
+                  </div>
                 </div>
                 <Button type="button" variant="secondary" onClick={() => addDraw(facility.localId)}>
                   Add Draw
@@ -366,25 +476,70 @@ export function DebtBookForm({
 
               <div className="mt-4 space-y-3">
                 {facility.draws.map((draw, drawIndex) => (
-                  <div key={draw.localId} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                  <div
+                    key={draw.localId}
+                    className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"
+                  >
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="text-sm font-medium text-white">Draw {drawIndex + 1}</div>
-                      <Button type="button" variant="secondary" onClick={() => deleteDraw(facility.localId, draw.localId)}>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => deleteDraw(facility.localId, draw.localId)}
+                      >
                         Remove Draw
                       </Button>
                     </div>
                     <div className="mt-3 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                       <label className="space-y-2">
                         <span className="fine-print">Draw Year</span>
-                        <Input type="number" step="1" value={draw.drawYear} onChange={(event) => updateDraw(facility.localId, draw.localId, 'drawYear', event.target.value)} />
+                        <Input
+                          type="number"
+                          step="1"
+                          value={draw.drawYear}
+                          onChange={(event) =>
+                            updateDraw(
+                              facility.localId,
+                              draw.localId,
+                              'drawYear',
+                              event.target.value
+                            )
+                          }
+                        />
                       </label>
                       <label className="space-y-2">
                         <span className="fine-print">Draw Month</span>
-                        <Input type="number" step="1" value={draw.drawMonth} onChange={(event) => updateDraw(facility.localId, draw.localId, 'drawMonth', event.target.value)} />
+                        <Input
+                          type="number"
+                          step="1"
+                          value={draw.drawMonth}
+                          onChange={(event) =>
+                            updateDraw(
+                              facility.localId,
+                              draw.localId,
+                              'drawMonth',
+                              event.target.value
+                            )
+                          }
+                        />
                       </label>
                       <label className="space-y-2 xl:col-span-2">
-                        <span className="fine-print">{moneyLabel('Draw Amount (KRW)', inputCurrency)}</span>
-                        <Input type="number" step="any" value={draw.amountKrw} onChange={(event) => updateDraw(facility.localId, draw.localId, 'amountKrw', event.target.value)} />
+                        <span className="fine-print">
+                          {moneyLabel('Draw Amount (KRW)', inputCurrency)}
+                        </span>
+                        <Input
+                          type="number"
+                          step="any"
+                          value={draw.amountKrw}
+                          onChange={(event) =>
+                            updateDraw(
+                              facility.localId,
+                              draw.localId,
+                              'amountKrw',
+                              event.target.value
+                            )
+                          }
+                        />
                       </label>
                     </div>
                     <label className="mt-3 block space-y-2">
@@ -392,7 +547,9 @@ export function DebtBookForm({
                       <Textarea
                         value={draw.notes}
                         placeholder="Milestone, EPC invoice timing, lender condition, or staged funding note."
-                        onChange={(event) => updateDraw(facility.localId, draw.localId, 'notes', event.target.value)}
+                        onChange={(event) =>
+                          updateDraw(facility.localId, draw.localId, 'notes', event.target.value)
+                        }
                       />
                     </label>
                   </div>
@@ -415,12 +572,16 @@ export function DebtBookForm({
 
       <div className="flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-4">
         <p className="max-w-3xl text-sm text-slate-400">
-          Capture actual debt terms so DSCR, reserve requirement, and ending balance stop leaning on the synthetic
-          facility fallback.
+          Capture actual debt terms so DSCR, reserve requirement, and ending balance stop leaning on
+          the synthetic facility fallback.
         </p>
         <div className="flex items-center gap-3">
           {errorMessage ? <span className="text-sm text-rose-300">{errorMessage}</span> : null}
-          <Button type="button" variant="secondary" onClick={() => setFacilities((current) => [...current, buildFacilityDraft()])}>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => setFacilities((current) => [...current, buildFacilityDraft()])}
+          >
             Add Debt Facility
           </Button>
         </div>

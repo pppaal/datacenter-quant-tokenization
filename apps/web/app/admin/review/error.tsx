@@ -12,9 +12,12 @@ export default function ReviewError({
   return (
     <Card className="space-y-4">
       <div className="eyebrow">Review Queue</div>
-      <h2 className="text-2xl font-semibold text-white">Could not load underwriting evidence for review</h2>
+      <h2 className="text-2xl font-semibold text-white">
+        Could not load underwriting evidence for review
+      </h2>
       <p className="text-sm leading-7 text-slate-400">
-        {error.message || 'The review queue failed to load. Retry the page and confirm the operator session is still valid.'}
+        {error.message ||
+          'The review queue failed to load. Retry the page and confirm the operator session is still valid.'}
       </p>
       <button
         type="button"

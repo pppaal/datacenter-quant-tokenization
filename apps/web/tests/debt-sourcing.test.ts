@@ -59,7 +59,9 @@ test('sourceDebt: construction stage routes to bridge / construction PF lenders'
   const result = sourceDebt(construction);
   const codes = result.recommendedTopN.map((m) => m.lender.code);
   // Construction PF lenders should show up; senior term banks should NOT.
-  assert.ok(codes.some((c) => c.includes('CONSTRUCTION') || c.includes('BRIDGE') || c === 'SEC_BRIDGE'));
+  assert.ok(
+    codes.some((c) => c.includes('CONSTRUCTION') || c.includes('BRIDGE') || c === 'SEC_BRIDGE')
+  );
   assert.ok(!codes.includes('INS_LIFE_PRIME')); // life insurance stays out of construction
 });
 
@@ -103,16 +105,19 @@ test('sourceDebt: regional asset outside Seoul loses prime-only lenders', () => 
 test('sourceDebt: no eligible lender gives fallback rationale', () => {
   const impossible: DebtDealProfile = {
     ...stabilizedSeoulOffice,
-    targetLtvPct: 95,  // way too high
+    targetLtvPct: 95, // way too high
     stabilizedDscr: 0.5,
     stabilizedDebtYieldPct: 2.0,
     tenantCreditIsInvestmentGrade: false,
-    maxUnderwritingWeeks: 1  // too fast
+    maxUnderwritingWeeks: 1 // too fast
   };
   const result = sourceDebt(impossible);
   assert.equal(result.eligibleCount, 0);
   assert.ok(result.fallbackRationale);
-  assert.ok(result.fallbackRationale!.includes('restructuring') || result.fallbackRationale!.includes('No eligible'));
+  assert.ok(
+    result.fallbackRationale!.includes('restructuring') ||
+      result.fallbackRationale!.includes('No eligible')
+  );
 });
 
 test('evaluateLender: indicative spread scales with LTV above midpoint', () => {
@@ -133,5 +138,9 @@ test('sourceDebt: data center asset routed to DC-focused insurance lender', () =
   };
   const result = sourceDebt(dcDeal);
   const codes = result.recommendedTopN.map((m) => m.lender.code);
-  assert.ok(codes.includes('INS_DC_INFRA') || codes.includes('BANK_IBK_IND') || codes.includes('FGN_OFFSHORE_FUND'));
+  assert.ok(
+    codes.includes('INS_DC_INFRA') ||
+      codes.includes('BANK_IBK_IND') ||
+      codes.includes('FGN_OFFSHORE_FUND')
+  );
 });

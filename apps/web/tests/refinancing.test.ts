@@ -8,21 +8,49 @@ function makeYears(overrides?: Partial<Record<number, Partial<ProFormaYear>>>): 
     const year = i + 1;
     const base: ProFormaYear = {
       year,
-      occupiedKw: 10, contractedKw: 6, residualOccupiedKw: 4,
-      grossPotentialRevenueKrw: 5000, contractedRevenueKrw: 3000, renewalRevenueKrw: 500,
-      residualRevenueKrw: 1500, downtimeLossKrw: 100, renewalDowntimeLossKrw: 50,
-      rentFreeLossKrw: 50, renewalRentFreeLossKrw: 20, fixedRecoveriesKrw: 200,
-      siteRecoveriesKrw: 100, utilityPassThroughRevenueKrw: 50, reimbursementRevenueKrw: 350,
-      totalOperatingRevenueKrw: 5000, revenueKrw: 4800, powerCostKrw: 600,
-      siteOperatingExpenseKrw: 400, nonRecoverableOperatingExpenseKrw: 300,
-      maintenanceReserveKrw: 100, operatingExpenseKrw: 500, tenantImprovementKrw: 100,
-      leasingCommissionKrw: 20, tenantCapitalCostKrw: 120, renewalTenantCapitalCostKrw: 30,
-      fitOutCostKrw: 50, noiKrw: 4000, cfadsBeforeDebtKrw: 3800,
-      activeRenewalLeaseCount: 0, weightedRenewalRatePerKwKrw: null,
-      drawAmountKrw: 0, interestKrw: 200, principalKrw: 300, debtServiceKrw: 500,
-      endingDebtBalanceKrw: 3000 - year * 300, dscr: 3800 / 500,
-      propertyTaxKrw: 50, insuranceKrw: 30, managementFeeKrw: 40,
-      reserveContributionKrw: 0, corporateTaxKrw: 100, afterTaxDistributionKrw: 2880
+      occupiedKw: 10,
+      contractedKw: 6,
+      residualOccupiedKw: 4,
+      grossPotentialRevenueKrw: 5000,
+      contractedRevenueKrw: 3000,
+      renewalRevenueKrw: 500,
+      residualRevenueKrw: 1500,
+      downtimeLossKrw: 100,
+      renewalDowntimeLossKrw: 50,
+      rentFreeLossKrw: 50,
+      renewalRentFreeLossKrw: 20,
+      fixedRecoveriesKrw: 200,
+      siteRecoveriesKrw: 100,
+      utilityPassThroughRevenueKrw: 50,
+      reimbursementRevenueKrw: 350,
+      totalOperatingRevenueKrw: 5000,
+      revenueKrw: 4800,
+      powerCostKrw: 600,
+      siteOperatingExpenseKrw: 400,
+      nonRecoverableOperatingExpenseKrw: 300,
+      maintenanceReserveKrw: 100,
+      operatingExpenseKrw: 500,
+      tenantImprovementKrw: 100,
+      leasingCommissionKrw: 20,
+      tenantCapitalCostKrw: 120,
+      renewalTenantCapitalCostKrw: 30,
+      fitOutCostKrw: 50,
+      noiKrw: 4000,
+      cfadsBeforeDebtKrw: 3800,
+      activeRenewalLeaseCount: 0,
+      weightedRenewalRatePerKwKrw: null,
+      drawAmountKrw: 0,
+      interestKrw: 200,
+      principalKrw: 300,
+      debtServiceKrw: 500,
+      endingDebtBalanceKrw: 3000 - year * 300,
+      dscr: 3800 / 500,
+      propertyTaxKrw: 50,
+      insuranceKrw: 30,
+      managementFeeKrw: 40,
+      reserveContributionKrw: 0,
+      corporateTaxKrw: 100,
+      afterTaxDistributionKrw: 2880
     };
     return { ...base, ...overrides?.[year] };
   });
@@ -55,7 +83,9 @@ test('analyzeRefinancing detects negative equity cash flow', () => {
 
   const result = analyzeRefinancing(years, 5.5, 84);
 
-  assert.ok(result.triggers.some((t) => t.severity === 'CRITICAL' && t.reason.includes('Negative')));
+  assert.ok(
+    result.triggers.some((t) => t.severity === 'CRITICAL' && t.reason.includes('Negative'))
+  );
 });
 
 test('analyzeRefinancing detects high debt service ratio', () => {

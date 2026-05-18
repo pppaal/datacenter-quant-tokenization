@@ -30,16 +30,16 @@ import type {
   UseZoneConnector,
   RentalComparable
 } from '@/lib/services/public-data/types';
-import type {
-  UnderwritingAnalysis,
-  UnderwritingBundle
-} from '@/lib/services/valuation/types';
+import type { UnderwritingAnalysis, UnderwritingBundle } from '@/lib/services/valuation/types';
 import { buildDataCenterValuationAnalysis } from '@/lib/services/valuation/strategies/data-center';
 import { buildIndustrialValuationAnalysis } from '@/lib/services/valuation/strategies/industrial';
 import { buildMultifamilyValuationAnalysis } from '@/lib/services/valuation/strategies/multifamily';
 import { buildOfficeValuationAnalysis } from '@/lib/services/valuation/strategies/office';
 import { buildRetailValuationAnalysis } from '@/lib/services/valuation/strategies/retail';
-import { safeConnectorCall, type ConnectorOutcome } from '@/lib/services/public-data/fetch-with-timeout';
+import {
+  safeConnectorCall,
+  type ConnectorOutcome
+} from '@/lib/services/public-data/fetch-with-timeout';
 
 export type AutoAnalyzeInput = {
   /** Either an address string (jibun or road) or a latlng pair. Provide one. */
@@ -98,10 +98,7 @@ const STRATEGY_BY_CLASS: Partial<
   [AssetClass.DATA_CENTER]: (b) => buildDataCenterValuationAnalysis(b)
 };
 
-function runStrategy(
-  cls: AssetClass,
-  bundle: UnderwritingBundle
-): Promise<UnderwritingAnalysis> {
+function runStrategy(cls: AssetClass, bundle: UnderwritingBundle): Promise<UnderwritingAnalysis> {
   const strategy = STRATEGY_BY_CLASS[cls];
   if (!strategy) {
     // Fall back to OFFICE for unsupported classes (HOTEL, LAND, MIXED_USE)
@@ -130,7 +127,9 @@ export async function autoAnalyzeProperty(
   const transactionCompsConnector = connectors.transactionComps ?? defaults.transactionComps;
 
   // 1. Resolve location
-  let parcel; let location; let districtName;
+  let parcel;
+  let location;
+  let districtName;
   if (input.address) {
     const geo = geocodeAddress(input.address);
     if (!geo) {
@@ -153,23 +152,19 @@ export async function autoAnalyzeProperty(
   // timeout and a non-throwing outcome wrapper so a single flaky upstream
   // doesn't bomb the whole analysis. Zone is the only load-bearing field;
   // if it fails we still have to stop. Everything else has a safe fallback.
-  const [
-    buildingOutcome,
-    zoneOutcome,
-    pricingOutcome,
-    gridOutcome,
-    macroOutcome
-  ] = await Promise.all([
-    safeConnectorCall('building-registry', () => buildingRegistry.fetch(parcel)),
-    safeConnectorCall('use-zone', () => useZone.fetch(parcel)),
-    safeConnectorCall('land-pricing', () => landPricing.fetch(parcel)),
-    safeConnectorCall('grid-access', () => grid.fetch(parcel, location)),
-    safeConnectorCall('macro-micro', () => macroMicro.fetch(districtName, ''))
-  ]);
+  const [buildingOutcome, zoneOutcome, pricingOutcome, gridOutcome, macroOutcome] =
+    await Promise.all([
+      safeConnectorCall('building-registry', () => buildingRegistry.fetch(parcel)),
+      safeConnectorCall('use-zone', () => useZone.fetch(parcel)),
+      safeConnectorCall('land-pricing', () => landPricing.fetch(parcel)),
+      safeConnectorCall('grid-access', () => grid.fetch(parcel, location)),
+      safeConnectorCall('macro-micro', () => macroMicro.fetch(districtName, ''))
+    ]);
 
   const connectorFailures: Array<{ label: string; message: string }> = [];
-  const pushFailure = <T,>(outcome: ConnectorOutcome<T>) => {
-    if (!outcome.ok) connectorFailures.push({ label: outcome.label, message: outcome.error.message });
+  const pushFailure = <T>(outcome: ConnectorOutcome<T>) => {
+    if (!outcome.ok)
+      connectorFailures.push({ label: outcome.label, message: outcome.error.message });
   };
   pushFailure(buildingOutcome);
   pushFailure(zoneOutcome);
@@ -212,7 +207,10 @@ export async function autoAnalyzeProperty(
     rentComps.fetch(location, compClassMap[primaryClass], 2.0)
   );
   if (!primaryCompsOutcome.ok) {
-    console.warn('[auto-analyze] rent comps failed, using empty set', primaryCompsOutcome.error.message);
+    console.warn(
+      '[auto-analyze] rent comps failed, using empty set',
+      primaryCompsOutcome.error.message
+    );
   }
   const primaryComps = primaryCompsOutcome.ok ? primaryCompsOutcome.value : [];
 
@@ -267,10 +265,17 @@ export async function autoAnalyzeProperty(
         const altComps = altCompsOutcome.ok ? altCompsOutcome.value : [];
         const altBundle = assembleBundle({
           addressInput: input.address ?? '',
-          parcel, location, districtName, building, zone,
-          landPricing: pricing, grid: gridAccess, rentComps: altComps,
+          parcel,
+          location,
+          districtName,
+          building,
+          zone,
+          landPricing: pricing,
+          grid: gridAccess,
+          rentComps: altComps,
           transactionComps: transactionCompsData,
-          macroMicro: macro, assetClass: alt.assetClass
+          macroMicro: macro,
+          assetClass: alt.assetClass
         });
         const altAnalysis = await runStrategy(alt.assetClass, altBundle);
         return { assetClass: alt.assetClass, analysis: altAnalysis };
@@ -314,7 +319,10 @@ export async function autoAnalyzeProperty(
  * Produce (fromYyyyMm, toYyyyMm) for a trailing N-month RTMS window anchored
  * at `anchor`. Exposed for tests.
  */
-export function rtmsWindowYyyyMm(anchor: Date, monthsBack: number): {
+export function rtmsWindowYyyyMm(
+  anchor: Date,
+  monthsBack: number
+): {
   fromYyyyMm: string;
   toYyyyMm: string;
 } {

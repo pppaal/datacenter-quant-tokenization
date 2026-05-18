@@ -708,18 +708,17 @@ test('early-stage valuation keeps scenario dispersion above the downside floor',
   assert.equal(analysis.baseCaseValueKrw, analysis.scenarios[1]?.valuationKrw);
   assert.ok(analysis.scenarios[0].valuationKrw > analysis.scenarios[1].valuationKrw);
   assert.ok(analysis.scenarios[1].valuationKrw > analysis.scenarios[2].valuationKrw);
-  assert.equal(
-    (analysis.assumptions.leasing as { leaseCount: number }).leaseCount,
-    1
+  assert.equal((analysis.assumptions.leasing as { leaseCount: number }).leaseCount, 1);
+  assert.ok(
+    ((analysis.assumptions.comparables as { directComparableValueKrw: number | null })
+      .directComparableValueKrw ?? 0) > 0
   );
   assert.ok(
-    ((analysis.assumptions.comparables as { directComparableValueKrw: number | null }).directComparableValueKrw ?? 0) > 0
+    (analysis.assumptions.debt as { initialDebtFundingKrw: number }).initialDebtFundingKrw > 0
   );
   assert.ok(
-    ((analysis.assumptions.debt as { initialDebtFundingKrw: number }).initialDebtFundingKrw) > 0
-  );
-  assert.ok(
-    Math.abs((analysis.assumptions.metrics as { occupancyPct: number }).occupancyPct - 69.25) < 0.001
+    Math.abs((analysis.assumptions.metrics as { occupancyPct: number }).occupancyPct - 69.25) <
+      0.001
   );
   assert.equal(
     (analysis.assumptions.documentFeatures as { sourceVersion: string | null }).sourceVersion,
@@ -733,23 +732,20 @@ test('early-stage valuation keeps scenario dispersion above the downside floor',
     Math.abs((analysis.assumptions.metrics as { debtCostPct: number }).debtCostPct - 6.56) < 0.001
   );
   assert.equal(
-    (
-      (analysis.assumptions.macroRegime as { guidance: { debtCostShiftPct: number } }).guidance
-    ).debtCostShiftPct,
+    (analysis.assumptions.macroRegime as { guidance: { debtCostShiftPct: number } }).guidance
+      .debtCostShiftPct,
     0.66
   );
   assert.equal(
-    (analysis.assumptions.curatedFeatures as { marketInputs: { sourceVersion: string | null } }).marketInputs.sourceVersion,
+    (analysis.assumptions.curatedFeatures as { marketInputs: { sourceVersion: string | null } })
+      .marketInputs.sourceVersion,
     'marketSnapshot:2026-03-22T00:00:00.000Z'
   );
   assert.equal(
     (analysis.assumptions.metrics as { powerPriceKrwPerKwh: number }).powerPriceKrwPerKwh,
     158
   );
-  assert.equal(
-    (analysis.assumptions.metrics as { pueTarget: number }).pueTarget,
-    1.29
-  );
+  assert.equal((analysis.assumptions.metrics as { pueTarget: number }).pueTarget, 1.29);
   assert.equal(
     (
       analysis.assumptions.curatedFeatures as {
@@ -823,17 +819,22 @@ test('early-stage valuation keeps scenario dispersion above the downside floor',
   );
   assert.ok(
     analysis.provenance.some(
-      (entry) => entry.field === 'satelliteFeatureSnapshot' && entry.value === 'siteProfile:2026-03-22T00:00:00.000Z'
+      (entry) =>
+        entry.field === 'satelliteFeatureSnapshot' &&
+        entry.value === 'siteProfile:2026-03-22T00:00:00.000Z'
     )
   );
   assert.ok(
     analysis.provenance.some(
-      (entry) => entry.field === 'powerFeatureSnapshot' && entry.value === 'energySnapshot:2026-03-22T00:00:00.000Z'
+      (entry) =>
+        entry.field === 'powerFeatureSnapshot' &&
+        entry.value === 'energySnapshot:2026-03-22T00:00:00.000Z'
     )
   );
   assert.ok(
     analysis.provenance.some(
-      (entry) => entry.field === 'legalFeatureSnapshot' && entry.value === 'legal:2026-03-22T00:00:00.000Z'
+      (entry) =>
+        entry.field === 'legalFeatureSnapshot' && entry.value === 'legal:2026-03-22T00:00:00.000Z'
     )
   );
 });

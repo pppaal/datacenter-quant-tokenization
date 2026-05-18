@@ -21,8 +21,15 @@ type AgentRequestBody = {
   maxToolCalls?: unknown;
 };
 
-function parseBody(body: AgentRequestBody | null):
-  | { question: string; submarketLabel: string | null; asOf: Date; maxToolCalls: number | undefined }
+function parseBody(
+  body: AgentRequestBody | null
+):
+  | {
+      question: string;
+      submarketLabel: string | null;
+      asOf: Date;
+      maxToolCalls: number | undefined;
+    }
   | { error: string } {
   if (!body || typeof body.question !== 'string' || body.question.trim().length === 0) {
     return { error: 'question is required.' };
@@ -33,14 +40,14 @@ function parseBody(body: AgentRequestBody | null):
       ? body.submarketLabel.trim().slice(0, 200)
       : null;
   const asOf =
-    typeof body.asOf === 'string' && body.asOf.trim().length > 0
-      ? new Date(body.asOf)
-      : new Date();
+    typeof body.asOf === 'string' && body.asOf.trim().length > 0 ? new Date(body.asOf) : new Date();
   if (Number.isNaN(asOf.getTime())) {
     return { error: 'asOf must be a valid ISO date string.' };
   }
   const maxToolCalls =
-    typeof body.maxToolCalls === 'number' && Number.isFinite(body.maxToolCalls) && body.maxToolCalls > 0
+    typeof body.maxToolCalls === 'number' &&
+    Number.isFinite(body.maxToolCalls) &&
+    body.maxToolCalls > 0
       ? Math.min(Math.floor(body.maxToolCalls), 12)
       : undefined;
   return { question, submarketLabel, asOf, maxToolCalls };

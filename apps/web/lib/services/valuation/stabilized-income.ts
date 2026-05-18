@@ -128,7 +128,9 @@ export function buildStabilizedIncomeAssumptions(
         ? Number(valuation.creditLossPct.toFixed(2))
         : valuation.creditLossPct,
     comparableEntryCount,
-    comparableValuePerSqmKrw: valuation.comparableValuePerSqm ? roundKrw(valuation.comparableValuePerSqm) : null,
+    comparableValuePerSqmKrw: valuation.comparableValuePerSqm
+      ? roundKrw(valuation.comparableValuePerSqm)
+      : null,
     marketTransactionCompCount: valuation.marketEvidence.transactionCompCount,
     marketRentCompCount: valuation.marketEvidence.rentCompCount,
     marketIndicatorCount: valuation.marketEvidence.indicatorCount,
@@ -155,7 +157,8 @@ export function buildStabilizedIncomeKeyRisks(
   config: StabilizedIncomeRiskConfig
 ) {
   return [
-    bundle.marketSnapshot?.vacancyPct != null && bundle.marketSnapshot.vacancyPct > config.vacancyThreshold
+    bundle.marketSnapshot?.vacancyPct != null &&
+    bundle.marketSnapshot.vacancyPct > config.vacancyThreshold
       ? config.vacancyHighRisk
       : config.vacancyFallbackRisk,
     ...(config.extraRisks ?? []),
@@ -262,10 +265,14 @@ export function buildStabilizedIncomeProvenance(
     {
       field: 'rentableAreaSqm',
       value: valuation.rentableAreaSqm,
-      sourceSystem: bundle.asset.rentableAreaSqm ? 'asset-intake' : config.rentableArea.fallbackSourceSystem,
+      sourceSystem: bundle.asset.rentableAreaSqm
+        ? 'asset-intake'
+        : config.rentableArea.fallbackSourceSystem,
       mode: 'manual',
       fetchedAt: now,
-      freshnessLabel: bundle.asset.rentableAreaSqm ? config.rentableArea.intakeLabel : 'gross area fallback'
+      freshnessLabel: bundle.asset.rentableAreaSqm
+        ? config.rentableArea.intakeLabel
+        : 'gross area fallback'
     },
     {
       field: 'capRatePct',
@@ -286,7 +293,9 @@ export function buildStabilizedIncomeProvenance(
       sourceSystem: bundle.asset.purchasePriceKrw ? 'asset-intake' : 'current-valuation-fallback',
       mode: 'manual',
       fetchedAt: now,
-      freshnessLabel: bundle.asset.purchasePriceKrw ? 'purchase assumption' : 'current valuation fallback'
+      freshnessLabel: bundle.asset.purchasePriceKrw
+        ? 'purchase assumption'
+        : 'current valuation fallback'
     },
     {
       field: 'macro.guidance',
@@ -314,12 +323,14 @@ export function buildStabilizedIncomeProvenance(
     entries.splice(2, 0, {
       field: config.occupancy.field,
       value: config.occupancy.value,
-      sourceSystem: bundle.asset.stabilizedOccupancyPct ? config.occupancy.sourceSystem : config.occupancy.fallbackSourceSystem ?? 'market-vacancy-fallback',
+      sourceSystem: bundle.asset.stabilizedOccupancyPct
+        ? config.occupancy.sourceSystem
+        : (config.occupancy.fallbackSourceSystem ?? 'market-vacancy-fallback'),
       mode: 'manual',
       fetchedAt: now,
       freshnessLabel: bundle.asset.stabilizedOccupancyPct
         ? config.occupancy.freshnessLabel
-        : config.occupancy.fallbackFreshnessLabel ?? 'vacancy-derived fallback'
+        : (config.occupancy.fallbackFreshnessLabel ?? 'vacancy-derived fallback')
     });
   }
 
@@ -328,10 +339,14 @@ export function buildStabilizedIncomeProvenance(
     entries.splice(3, 0, {
       field: config.rent.field,
       value: config.rent.value,
-      sourceSystem: hasPrimaryValue ? config.rent.sourceSystem : config.rent.fallbackSourceSystem ?? 'fallback-rent-proxy',
+      sourceSystem: hasPrimaryValue
+        ? config.rent.sourceSystem
+        : (config.rent.fallbackSourceSystem ?? 'fallback-rent-proxy'),
       mode: 'manual',
       fetchedAt: now,
-      freshnessLabel: hasPrimaryValue ? config.rent.freshnessLabel : config.rent.fallbackFreshnessLabel ?? 'proxy'
+      freshnessLabel: hasPrimaryValue
+        ? config.rent.freshnessLabel
+        : (config.rent.fallbackFreshnessLabel ?? 'proxy')
     });
   }
 
@@ -380,7 +395,8 @@ export function buildStabilizedIncomeValuation(
       config.capRate.fallbackPct) + macroGuidance.exitCapRateShiftPct
   );
   const comparableValuePerSqm = averageComparableValuePerSqm(bundle);
-  const marketPricePerSqmKrw = comparableValuePerSqm ?? marketEvidence.averageTransactionPricePerSqmKrw;
+  const marketPricePerSqmKrw =
+    comparableValuePerSqm ?? marketEvidence.averageTransactionPricePerSqmKrw;
   const marketValueProxyKrw = marketPricePerSqmKrw ? marketPricePerSqmKrw * rentableAreaSqm : null;
 
   const state: StrategyState = {
@@ -464,8 +480,9 @@ export function buildStabilizedIncomeValuation(
   const debtLtvPct = bundle.asset.financingLtvPct ?? config.debtLtvDefaultPct;
   const debtCostPct = Math.max(
     config.debtCostFloorPct,
-    (bundle.asset.financingRatePct ?? bundle.marketSnapshot?.debtCostPct ?? config.debtCostFallbackPct) +
-      macroGuidance.debtCostShiftPct
+    (bundle.asset.financingRatePct ??
+      bundle.marketSnapshot?.debtCostPct ??
+      config.debtCostFallbackPct) + macroGuidance.debtCostShiftPct
   );
   const debtPrincipalKrw = purchasePriceKrw * (debtLtvPct / 100);
   const annualDebtServiceKrw = Math.max(

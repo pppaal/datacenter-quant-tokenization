@@ -1,6 +1,8 @@
 import { Suspense } from 'react';
+import Link from 'next/link';
 import { headers } from 'next/headers';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { PanelSkeleton } from '@/components/ui/skeleton';
 import { MacroDashboardPanel } from '@/components/admin/macro-dashboard-panel';
 import { ResearchRefreshButton } from '@/components/admin/research-refresh-button';
@@ -8,7 +10,10 @@ import { ResearchWorkspacePanel } from '@/components/admin/research-workspace-pa
 import { hasRequiredAdminRole } from '@/lib/security/admin-auth';
 import { getAdminActorFromHeaders } from '@/lib/security/admin-request';
 import { buildMacroDashboard } from '@/lib/services/macro-dashboard';
-import { getResearchWorkspaceData, type ResearchWorkspaceTab } from '@/lib/services/research/workspace';
+import {
+  getResearchWorkspaceData,
+  type ResearchWorkspaceTab
+} from '@/lib/services/research/workspace';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,16 +23,33 @@ type Props = {
   }>;
 };
 
-const validTabs: ResearchWorkspaceTab[] = ['macro', 'markets', 'submarkets', 'assets', 'optimization', 'coverage'];
+const validTabs: ResearchWorkspaceTab[] = [
+  'macro',
+  'markets',
+  'submarkets',
+  'assets',
+  'optimization',
+  'coverage'
+];
 
-async function ResearchContent({ activeTab, canApproveHouseView }: { activeTab: ResearchWorkspaceTab; canApproveHouseView: boolean }) {
+async function ResearchContent({
+  activeTab,
+  canApproveHouseView
+}: {
+  activeTab: ResearchWorkspaceTab;
+  canApproveHouseView: boolean;
+}) {
   const [data, macroDashboard] = await Promise.all([
     getResearchWorkspaceData(),
-    activeTab === 'macro' ? buildMacroDashboard() : Promise.resolve(null),
+    activeTab === 'macro' ? buildMacroDashboard() : Promise.resolve(null)
   ]);
   return (
     <>
-      <ResearchWorkspacePanel data={data} activeTab={activeTab} canApproveHouseView={canApproveHouseView} />
+      <ResearchWorkspacePanel
+        data={data}
+        activeTab={activeTab}
+        canApproveHouseView={canApproveHouseView}
+      />
       {activeTab === 'macro' && macroDashboard ? (
         <MacroDashboardPanel data={macroDashboard} />
       ) : null}
@@ -60,15 +82,29 @@ export default async function AdminResearchPage({ searchParams }: Props) {
           Official-source research fabric for underwriting, deals, portfolio, and capital workflows.
         </h1>
         <p className="mt-4 max-w-4xl text-base leading-8 text-slate-200">
-          This workspace turns Korean public-source coverage, approved micro evidence, and market/submarket research
-          into a shared operating layer. Every thesis and metric is surfaced with freshness, provenance, and a coverage
-          queue that can be worked before underwriting, sourcing, hold monitoring, or investor reporting relies on it.
+          This workspace turns Korean public-source coverage, approved micro evidence, and
+          market/submarket research into a shared operating layer. Every thesis and metric is
+          surfaced with freshness, provenance, and a coverage queue that can be worked before
+          underwriting, sourcing, hold monitoring, or investor reporting relies on it.
         </p>
-        {canRefreshResearch ? (
-          <div className="mt-6">
-            <ResearchRefreshButton />
-          </div>
-        ) : null}
+        <div className="mt-6 flex flex-wrap gap-3">
+          {canRefreshResearch ? <ResearchRefreshButton /> : null}
+          <Link href="/admin/research/comps">
+            <Button variant="ghost">Cap-rate matrix · comps</Button>
+          </Link>
+          <Link href="/admin/research/quarterly">
+            <Button variant="ghost">Quarterly publication</Button>
+          </Link>
+          <Link href="/admin/research/tenant-demand">
+            <Button variant="ghost">Tenant in the market</Button>
+          </Link>
+          <Link href="/admin/research/timeseries-import">
+            <Button variant="ghost">Time-series import</Button>
+          </Link>
+          <Link href="/admin/research/deal-flow">
+            <Button variant="ghost">Deal flow</Button>
+          </Link>
+        </div>
       </section>
 
       <Suspense fallback={<PanelSkeleton rows={4} />}>

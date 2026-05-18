@@ -20,7 +20,7 @@ const riskLevels = ['LOW', 'MEDIUM', 'HIGH'] as const;
 const axisLabels: Record<(typeof riskLevels)[number], string> = {
   LOW: 'LOW',
   MEDIUM: 'MED',
-  HIGH: 'HIGH',
+  HIGH: 'HIGH'
 };
 
 function healthDot(health: 'good' | 'warn' | 'danger') {

@@ -51,10 +51,7 @@ test('climate adapter uses NASA POWER climatology when no custom overlay endpoin
       return new Response(
         JSON.stringify({
           type: 'FeatureCollection',
-          features: [
-            { properties: { value: 18.4 } },
-            { properties: { precip: 26.7 } }
-          ]
+          features: [{ properties: { value: 18.4 } }, { properties: { precip: 26.7 } }]
         }),
         { status: 200 }
       );
@@ -101,8 +98,14 @@ test('climate adapter uses NASA POWER climatology when no custom overlay endpoin
 
   assert.equal(result.sourceSystem, 'nasa-power');
   assert.equal(result.mode, 'api');
-  assert.match(result.data.climateRiskNote, /NASA POWER climatology indicates average temperature 14.2C/);
-  assert.match(result.data.climateRiskNote, /Recent NASA POWER daily NRT shows average temperature 17.2C/);
+  assert.match(
+    result.data.climateRiskNote,
+    /NASA POWER climatology indicates average temperature 14.2C/
+  );
+  assert.match(
+    result.data.climateRiskNote,
+    /Recent NASA POWER daily NRT shows average temperature 17.2C/
+  );
   assert.match(result.data.climateRiskNote, /GPM IMERG near-real-time precipitation/);
   assert.match(result.data.climateRiskNote, /FIRMS detected 2 recent hotspot/);
   assert.equal(result.data.heavyRainDays, 1);

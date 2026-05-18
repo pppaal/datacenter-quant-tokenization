@@ -5,7 +5,10 @@ import { generateNarrative } from '@/lib/services/quarterly-report/narrative';
 import { LAWD_CODES } from '@/lib/services/quarterly-report/connectors/molit-transactions';
 
 function isAuthorized(request: Request, expectedToken: string) {
-  const bearer = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '').trim();
+  const bearer = request.headers
+    .get('authorization')
+    ?.replace(/^Bearer\s+/i, '')
+    .trim();
   const headerToken = request.headers.get('x-ops-cron-token')?.trim();
   return bearer === expectedToken || headerToken === expectedToken;
 }

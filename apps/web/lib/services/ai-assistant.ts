@@ -170,10 +170,7 @@ export async function summarizeResearchSnapshot(
   return { ...parsed, cached: false };
 }
 
-export async function scoreDeal(
-  dealId: string,
-  db: AssistantDb = prisma
-): Promise<DealScore> {
+export async function scoreDeal(dealId: string, db: AssistantDb = prisma): Promise<DealScore> {
   if (!isOpenAIConfigured()) {
     throw new OpenAIConfigurationError();
   }

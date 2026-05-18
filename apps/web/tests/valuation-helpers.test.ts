@@ -60,9 +60,33 @@ test('scenario output helpers round and sort into underwriting shape', () => {
   assert.equal(scenario.debtServiceCoverage, 1.28);
 
   const ordered = buildOrderedScenarioOutputs([
-    { name: 'Bear', valuationKrw: 90, impliedYieldPct: 6, exitCapRatePct: 7, debtServiceCoverage: 1, notes: 'bear', scenarioOrder: 2 },
-    { name: 'Bull', valuationKrw: 110, impliedYieldPct: 5, exitCapRatePct: 6, debtServiceCoverage: 1.5, notes: 'bull', scenarioOrder: 0 },
-    { name: 'Base', valuationKrw: 100, impliedYieldPct: 5.5, exitCapRatePct: 6.5, debtServiceCoverage: 1.2, notes: 'base', scenarioOrder: 1 }
+    {
+      name: 'Bear',
+      valuationKrw: 90,
+      impliedYieldPct: 6,
+      exitCapRatePct: 7,
+      debtServiceCoverage: 1,
+      notes: 'bear',
+      scenarioOrder: 2
+    },
+    {
+      name: 'Bull',
+      valuationKrw: 110,
+      impliedYieldPct: 5,
+      exitCapRatePct: 6,
+      debtServiceCoverage: 1.5,
+      notes: 'bull',
+      scenarioOrder: 0
+    },
+    {
+      name: 'Base',
+      valuationKrw: 100,
+      impliedYieldPct: 5.5,
+      exitCapRatePct: 6.5,
+      debtServiceCoverage: 1.2,
+      notes: 'base',
+      scenarioOrder: 1
+    }
   ]);
 
   assert.deepEqual(

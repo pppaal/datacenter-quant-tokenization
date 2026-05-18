@@ -51,7 +51,9 @@ export function ValuationApprovalForm({
 
           router.refresh();
         } catch (caughtError) {
-          setError(caughtError instanceof Error ? caughtError.message : 'Failed to update approval');
+          setError(
+            caughtError instanceof Error ? caughtError.message : 'Failed to update approval'
+          );
         } finally {
           setSubmitting(false);
         }

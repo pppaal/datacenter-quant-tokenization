@@ -41,7 +41,9 @@ function round(value: number, decimals = 1) {
 }
 
 function buildFactorBacktest(rows: MacroFactor[]): MacroBacktestFactorRow | null {
-  const ordered = [...rows].sort((left, right) => left.observationDate.getTime() - right.observationDate.getTime());
+  const ordered = [...rows].sort(
+    (left, right) => left.observationDate.getTime() - right.observationDate.getTime()
+  );
   if (ordered.length < 2) return null;
 
   let hits = 0;
@@ -85,12 +87,16 @@ export function buildMacroBacktest(factors: MacroFactor[]): MacroBacktest {
       const factorRows = [...factorMap.values()]
         .map((rows) => buildFactorBacktest(rows))
         .filter((row): row is MacroBacktestFactorRow => row !== null)
-        .sort((left, right) => right.hitRatePct - left.hitRatePct || right.transitionCount - left.transitionCount);
+        .sort(
+          (left, right) =>
+            right.hitRatePct - left.hitRatePct || right.transitionCount - left.transitionCount
+        );
 
       const transitionCount = factorRows.reduce((sum, row) => sum + row.transitionCount, 0);
       const weightedHitRate =
         transitionCount > 0
-          ? factorRows.reduce((sum, row) => sum + row.hitRatePct * row.transitionCount, 0) / transitionCount
+          ? factorRows.reduce((sum, row) => sum + row.hitRatePct * row.transitionCount, 0) /
+            transitionCount
           : 0;
       const latestObservationDate =
         factorRows
@@ -109,17 +115,25 @@ export function buildMacroBacktest(factors: MacroFactor[]): MacroBacktest {
         latestObservationDate,
         bestFactor: factorRows[0] ?? null,
         weakestFactor:
-          [...factorRows].sort((left, right) => left.hitRatePct - right.hitRatePct || right.transitionCount - left.transitionCount)[0] ??
-          null,
+          [...factorRows].sort(
+            (left, right) =>
+              left.hitRatePct - right.hitRatePct || right.transitionCount - left.transitionCount
+          )[0] ?? null,
         factors: factorRows
       } satisfies MacroBacktestMarketRow;
     })
-    .sort((left, right) => right.hitRatePct - left.hitRatePct || right.transitionCount - left.transitionCount);
+    .sort(
+      (left, right) =>
+        right.hitRatePct - left.hitRatePct || right.transitionCount - left.transitionCount
+    );
 
   const totalTransitions = markets.reduce((sum, market) => sum + market.transitionCount, 0);
   const overallHitRatePct =
     totalTransitions > 0
-      ? round(markets.reduce((sum, market) => sum + market.hitRatePct * market.transitionCount, 0) / totalTransitions)
+      ? round(
+          markets.reduce((sum, market) => sum + market.hitRatePct * market.transitionCount, 0) /
+            totalTransitions
+        )
       : 0;
 
   return {

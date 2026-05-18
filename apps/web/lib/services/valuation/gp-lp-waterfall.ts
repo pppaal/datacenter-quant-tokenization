@@ -43,29 +43,29 @@ function solveIrr(flows: number[]): number | null {
 }
 
 export type WaterfallConfig = {
-  lpCommitmentPct: number;       // e.g., 0.90
-  gpCommitmentPct: number;       // e.g., 0.10
-  preferredReturnPct: number;    // e.g., 8.0 (annual, compounded)
-  catchUpLpSplit: number;        // e.g., 0.80 (LP share in first promote tier, drives catch-up target)
-  catchUpGpSplit: number;        // e.g., 0.20 (GP share)
-  residualLpSplit: number;       // e.g., 0.80 (above catch-up)
-  residualGpSplit: number;       // e.g., 0.20
+  lpCommitmentPct: number; // e.g., 0.90
+  gpCommitmentPct: number; // e.g., 0.10
+  preferredReturnPct: number; // e.g., 8.0 (annual, compounded)
+  catchUpLpSplit: number; // e.g., 0.80 (LP share in first promote tier, drives catch-up target)
+  catchUpGpSplit: number; // e.g., 0.20 (GP share)
+  residualLpSplit: number; // e.g., 0.80 (above catch-up)
+  residualGpSplit: number; // e.g., 0.20
 };
 
 export const DEFAULT_WATERFALL_CONFIG: WaterfallConfig = {
-  lpCommitmentPct: 0.90,
-  gpCommitmentPct: 0.10,
+  lpCommitmentPct: 0.9,
+  gpCommitmentPct: 0.1,
   preferredReturnPct: 8.0,
-  catchUpLpSplit: 0.80,
-  catchUpGpSplit: 0.20,
-  residualLpSplit: 0.80,
-  residualGpSplit: 0.20
+  catchUpLpSplit: 0.8,
+  catchUpGpSplit: 0.2,
+  residualLpSplit: 0.8,
+  residualGpSplit: 0.2
 };
 
 export type WaterfallInputs = {
   initialEquityKrw: number;
-  annualDistributionsKrw: number[];   // Y1..YT after-tax distributions
-  netExitProceedsKrw: number;         // lump-sum added to terminal year
+  annualDistributionsKrw: number[]; // Y1..YT after-tax distributions
+  netExitProceedsKrw: number; // lump-sum added to terminal year
   terminalYear: number;
   config: WaterfallConfig;
 };
@@ -91,13 +91,14 @@ export type GpLpWaterfallResult = {
   gpMoic: number;
   lpIrrPct: number | null;
   gpIrrPct: number | null;
-  gpPromoteEarnedKrw: number;   // GP distribution above pure pro-rata (the "carry")
-  proRataLpKrw: number;         // what LP would have received without promote (reference)
+  gpPromoteEarnedKrw: number; // GP distribution above pure pro-rata (the "carry")
+  proRataLpKrw: number; // what LP would have received without promote (reference)
   proRataGpKrw: number;
 };
 
 export function computeGpLpWaterfall(inputs: WaterfallInputs): GpLpWaterfallResult {
-  const { initialEquityKrw, annualDistributionsKrw, netExitProceedsKrw, terminalYear, config } = inputs;
+  const { initialEquityKrw, annualDistributionsKrw, netExitProceedsKrw, terminalYear, config } =
+    inputs;
 
   const lpCommitted = Math.round(initialEquityKrw * config.lpCommitmentPct);
   const gpCommitted = Math.round(initialEquityKrw * config.gpCommitmentPct);
@@ -121,10 +122,14 @@ export function computeGpLpWaterfall(inputs: WaterfallInputs): GpLpWaterfallResu
   let cumLpPrefPaid = 0;
   let cumGpCatchupPaid = 0;
 
-  let tier1Total = 0, tier1LpTotal = 0, tier1GpTotal = 0;
+  let tier1Total = 0,
+    tier1LpTotal = 0,
+    tier1GpTotal = 0;
   let tier2Total = 0;
   let tier3Total = 0;
-  let tier4Total = 0, tier4LpTotal = 0, tier4GpTotal = 0;
+  let tier4Total = 0,
+    tier4LpTotal = 0,
+    tier4GpTotal = 0;
 
   const lpFlows: number[] = [-lpCommitted];
   const gpFlows: number[] = [-gpCommitted];
@@ -143,7 +148,10 @@ export function computeGpLpWaterfall(inputs: WaterfallInputs): GpLpWaterfallResu
     const totalCapOutstanding = lpCapitalRemaining + gpCapitalRemaining;
     if (remaining > 0 && totalCapOutstanding > 0) {
       const t1 = Math.min(remaining, totalCapOutstanding);
-      const t1Lp = Math.min(lpCapitalRemaining, Math.round(t1 * (lpCapitalRemaining / totalCapOutstanding)));
+      const t1Lp = Math.min(
+        lpCapitalRemaining,
+        Math.round(t1 * (lpCapitalRemaining / totalCapOutstanding))
+      );
       const t1Gp = Math.min(gpCapitalRemaining, t1 - t1Lp);
       lpCapitalRemaining -= t1Lp;
       gpCapitalRemaining -= t1Gp;
@@ -197,9 +205,9 @@ export function computeGpLpWaterfall(inputs: WaterfallInputs): GpLpWaterfallResu
   // Cumulative tier rollups for the summary (post-simulation)
   const cumLp1 = tier1LpTotal;
   const cumGp1 = tier1GpTotal;
-  const cumLp2 = cumLp1 + tier2Total;        // tier 2 is 100% LP
+  const cumLp2 = cumLp1 + tier2Total; // tier 2 is 100% LP
   const cumGp2 = cumGp1;
-  const cumLp3 = cumLp2;                     // tier 3 is 100% GP
+  const cumLp3 = cumLp2; // tier 3 is 100% GP
   const cumGp3 = cumGp2 + tier3Total;
   const cumLp4 = cumLp3 + tier4LpTotal;
   const cumGp4 = cumGp3 + tier4GpTotal;

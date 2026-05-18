@@ -55,21 +55,29 @@ export function getAdminSsoConfig(env: NodeJS.ProcessEnv = process.env): AdminSs
   const userinfoEndpoint = trim(env.ADMIN_OIDC_USERINFO_ENDPOINT) || null;
   const clientId = trim(env.ADMIN_OIDC_CLIENT_ID) || null;
   const clientSecret = trim(env.ADMIN_OIDC_CLIENT_SECRET) || null;
-  const redirectUri = trim(env.ADMIN_OIDC_REDIRECT_URI) || `${getDefaultAppBaseUrl(env)}/api/admin/sso/callback`;
+  const redirectUri =
+    trim(env.ADMIN_OIDC_REDIRECT_URI) || `${getDefaultAppBaseUrl(env)}/api/admin/sso/callback`;
   const scopes = trim(env.ADMIN_OIDC_SCOPES) || 'openid profile email';
   const identifierClaim = trim(env.ADMIN_OIDC_IDENTIFIER_CLAIM) || 'email';
   const roleClaim = trim(env.ADMIN_OIDC_ROLE_CLAIM) || 'role';
   const defaultRoleRaw = trim(env.ADMIN_OIDC_DEFAULT_ROLE).toUpperCase();
-  const defaultRole = (defaultRoleRaw === 'ADMIN' || defaultRoleRaw === 'ANALYST' || defaultRoleRaw === 'VIEWER'
-    ? defaultRoleRaw
-    : 'VIEWER') as AdminAccessRole;
+  const defaultRole = (
+    defaultRoleRaw === 'ADMIN' || defaultRoleRaw === 'ANALYST' || defaultRoleRaw === 'VIEWER'
+      ? defaultRoleRaw
+      : 'VIEWER'
+  ) as AdminAccessRole;
   const viewerRoles = splitList(env.ADMIN_OIDC_VIEWER_ROLES);
   const analystRoles = splitList(env.ADMIN_OIDC_ANALYST_ROLES);
   const adminRoles = splitList(env.ADMIN_OIDC_ADMIN_ROLES);
   const errors: string[] = [];
 
   const hasAnySsoConfig = Boolean(
-    issuerUrl || authorizationEndpoint || tokenEndpoint || userinfoEndpoint || clientId || clientSecret
+    issuerUrl ||
+    authorizationEndpoint ||
+    tokenEndpoint ||
+    userinfoEndpoint ||
+    clientId ||
+    clientSecret
   );
 
   if (!hasAnySsoConfig) {
@@ -98,7 +106,9 @@ export function getAdminSsoConfig(env: NodeJS.ProcessEnv = process.env): AdminSs
   }
 
   if (!issuerUrl && (!authorizationEndpoint || !tokenEndpoint || !userinfoEndpoint)) {
-    errors.push('Set ADMIN_OIDC_ISSUER_URL or provide authorization/token/userinfo endpoints explicitly.');
+    errors.push(
+      'Set ADMIN_OIDC_ISSUER_URL or provide authorization/token/userinfo endpoints explicitly.'
+    );
   }
 
   return {
@@ -126,7 +136,10 @@ async function sha256Base64Url(value: string) {
   return Buffer.from(digest).toString('base64url');
 }
 
-export function createAdminSsoCookieOptions(env: NodeJS.ProcessEnv = process.env, maxAgeSeconds = 600) {
+export function createAdminSsoCookieOptions(
+  env: NodeJS.ProcessEnv = process.env,
+  maxAgeSeconds = 600
+) {
   return {
     httpOnly: true,
     sameSite: 'lax' as const,

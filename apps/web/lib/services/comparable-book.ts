@@ -20,15 +20,26 @@ async function getAssetContext(assetId: string, db: PrismaClient) {
   return asset;
 }
 
-function normalizeComparableInput(asset: Awaited<ReturnType<typeof getAssetContext>>, input: unknown) {
+function normalizeComparableInput(
+  asset: Awaited<ReturnType<typeof getAssetContext>>,
+  input: unknown
+) {
   const parsed = comparableBookInputSchema.parse(input);
-  const inputCurrency = resolveInputCurrency(asset.address?.country ?? asset.market, parsed.inputCurrency);
+  const inputCurrency = resolveInputCurrency(
+    asset.address?.country ?? asset.market,
+    parsed.inputCurrency
+  );
 
   return {
     ...parsed,
-    valuationKrw: typeof parsed.valuationKrw === 'number' ? convertToKrw(parsed.valuationKrw, inputCurrency) : undefined,
+    valuationKrw:
+      typeof parsed.valuationKrw === 'number'
+        ? convertToKrw(parsed.valuationKrw, inputCurrency)
+        : undefined,
     pricePerMwKrw:
-      typeof parsed.pricePerMwKrw === 'number' ? convertToKrw(parsed.pricePerMwKrw, inputCurrency) : undefined,
+      typeof parsed.pricePerMwKrw === 'number'
+        ? convertToKrw(parsed.pricePerMwKrw, inputCurrency)
+        : undefined,
     monthlyRatePerKwKrw:
       typeof parsed.monthlyRatePerKwKrw === 'number'
         ? convertToKrw(parsed.monthlyRatePerKwKrw, inputCurrency)
@@ -56,7 +67,11 @@ async function ensureComparableSet(
   });
 }
 
-export async function createComparableEntry(assetId: string, input: unknown, deps?: ComparableBookDeps) {
+export async function createComparableEntry(
+  assetId: string,
+  input: unknown,
+  deps?: ComparableBookDeps
+) {
   const db = deps?.db ?? prisma;
   const asset = await getAssetContext(assetId, db);
   const normalized = normalizeComparableInput(asset, input);
@@ -128,7 +143,11 @@ export async function updateComparableEntry(
   });
 }
 
-export async function deleteComparableEntry(assetId: string, entryId: string, deps?: ComparableBookDeps) {
+export async function deleteComparableEntry(
+  assetId: string,
+  entryId: string,
+  deps?: ComparableBookDeps
+) {
   const db = deps?.db ?? prisma;
   const existing = await db.comparableEntry.findUnique({
     where: { id: entryId },

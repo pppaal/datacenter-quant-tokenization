@@ -1,12 +1,44 @@
 const FEATURE_SOURCE_CONFIG = [
-  { namespace: 'document_facts', label: 'Document Facts', path: ['documentFeatures', 'sourceVersion'] },
-  { namespace: 'market_inputs', label: 'Market Inputs', path: ['curatedFeatures', 'marketInputs', 'sourceVersion'] },
-  { namespace: 'satellite_risk', label: 'Satellite Risk', path: ['curatedFeatures', 'satelliteRisk', 'sourceVersion'] },
-  { namespace: 'permit_inputs', label: 'Permit Inputs', path: ['curatedFeatures', 'permitInputs', 'sourceVersion'] },
-  { namespace: 'power_micro', label: 'Power Micro', path: ['curatedFeatures', 'powerMicro', 'sourceVersion'] },
-  { namespace: 'revenue_micro', label: 'Revenue Micro', path: ['curatedFeatures', 'revenueMicro', 'sourceVersion'] },
-  { namespace: 'legal_micro', label: 'Legal Micro', path: ['curatedFeatures', 'legalMicro', 'sourceVersion'] },
-  { namespace: 'readiness_legal', label: 'Review Readiness', path: ['curatedFeatures', 'reviewReadiness', 'sourceVersion'] }
+  {
+    namespace: 'document_facts',
+    label: 'Document Facts',
+    path: ['documentFeatures', 'sourceVersion']
+  },
+  {
+    namespace: 'market_inputs',
+    label: 'Market Inputs',
+    path: ['curatedFeatures', 'marketInputs', 'sourceVersion']
+  },
+  {
+    namespace: 'satellite_risk',
+    label: 'Satellite Risk',
+    path: ['curatedFeatures', 'satelliteRisk', 'sourceVersion']
+  },
+  {
+    namespace: 'permit_inputs',
+    label: 'Permit Inputs',
+    path: ['curatedFeatures', 'permitInputs', 'sourceVersion']
+  },
+  {
+    namespace: 'power_micro',
+    label: 'Power Micro',
+    path: ['curatedFeatures', 'powerMicro', 'sourceVersion']
+  },
+  {
+    namespace: 'revenue_micro',
+    label: 'Revenue Micro',
+    path: ['curatedFeatures', 'revenueMicro', 'sourceVersion']
+  },
+  {
+    namespace: 'legal_micro',
+    label: 'Legal Micro',
+    path: ['curatedFeatures', 'legalMicro', 'sourceVersion']
+  },
+  {
+    namespace: 'readiness_legal',
+    label: 'Review Readiness',
+    path: ['curatedFeatures', 'reviewReadiness', 'sourceVersion']
+  }
 ] as const;
 
 type RecordLike = Record<string, unknown>;
@@ -39,7 +71,9 @@ function readNestedString(source: unknown, path: readonly string[]) {
   return typeof current === 'string' && current.length > 0 ? current : null;
 }
 
-export function getValuationFeatureSourceDescriptors(assumptions: unknown): ValuationFeatureSourceDescriptor[] {
+export function getValuationFeatureSourceDescriptors(
+  assumptions: unknown
+): ValuationFeatureSourceDescriptor[] {
   return FEATURE_SOURCE_CONFIG.flatMap((config) => {
     const sourceVersion = readNestedString(assumptions, config.path);
     if (!sourceVersion) return [];
@@ -54,14 +88,23 @@ export function getValuationFeatureSourceDescriptors(assumptions: unknown): Valu
   });
 }
 
-export function filterValuationFeatureSnapshots<T extends FeatureSnapshotLike>(snapshots: T[], assumptions: unknown): T[] {
-  const sourceVersions = new Set(getValuationFeatureSourceDescriptors(assumptions).map((entry) => entry.sourceVersion));
+export function filterValuationFeatureSnapshots<T extends FeatureSnapshotLike>(
+  snapshots: T[],
+  assumptions: unknown
+): T[] {
+  const sourceVersions = new Set(
+    getValuationFeatureSourceDescriptors(assumptions).map((entry) => entry.sourceVersion)
+  );
 
   return snapshots
     .filter((snapshot) => snapshot.sourceVersion && sourceVersions.has(snapshot.sourceVersion))
     .sort((left, right) => {
-      const leftIndex = FEATURE_SOURCE_CONFIG.findIndex((entry) => entry.namespace === left.featureNamespace);
-      const rightIndex = FEATURE_SOURCE_CONFIG.findIndex((entry) => entry.namespace === right.featureNamespace);
+      const leftIndex = FEATURE_SOURCE_CONFIG.findIndex(
+        (entry) => entry.namespace === left.featureNamespace
+      );
+      const rightIndex = FEATURE_SOURCE_CONFIG.findIndex(
+        (entry) => entry.namespace === right.featureNamespace
+      );
 
       return leftIndex - rightIndex;
     });

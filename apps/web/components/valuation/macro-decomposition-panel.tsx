@@ -38,10 +38,12 @@ export function MacroDecompositionPanel({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="eyebrow">Macro Decomposition</div>
-          <h3 className="mt-2 text-xl font-semibold text-white">Why The Underwriting View Changed</h3>
+          <h3 className="mt-2 text-xl font-semibold text-white">
+            Why The Underwriting View Changed
+          </h3>
           <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-400">
-            Compares the current macro interpretation against the previous valuation run and shows which overlays,
-            transmission scores, and factors actually moved.
+            Compares the current macro interpretation against the previous valuation run and shows
+            which overlays, transmission scores, and factors actually moved.
           </p>
         </div>
         <div className="text-xs uppercase tracking-[0.18em] text-slate-500">
@@ -53,7 +55,10 @@ export function MacroDecompositionPanel({
 
       <div className="grid gap-4 md:grid-cols-3">
         {decomposition.summary.map((line) => (
-          <div key={line} className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4 text-sm leading-7 text-slate-300">
+          <div
+            key={line}
+            className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4 text-sm leading-7 text-slate-300"
+          >
             {line}
           </div>
         ))}
@@ -64,23 +69,34 @@ export function MacroDecompositionPanel({
           <div className="eyebrow">Guidance Delta</div>
           <div className="grid gap-3">
             {decomposition.guidanceChanges.map((item) => (
-              <div key={item.key} className="rounded-[18px] border border-white/10 bg-white/[0.03] p-4">
+              <div
+                key={item.key}
+                className="rounded-[18px] border border-white/10 bg-white/[0.03] p-4"
+              >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="text-sm font-semibold text-white">{item.label}</div>
-                  <Badge tone={toneForDelta(item.delta)}>{formatShift(item.delta, item.unit)}</Badge>
+                  <Badge tone={toneForDelta(item.delta)}>
+                    {formatShift(item.delta, item.unit)}
+                  </Badge>
                 </div>
                 <div className="mt-3 grid gap-3 sm:grid-cols-3">
                   <div>
                     <div className="fine-print">Current</div>
-                    <div className="mt-2 text-lg font-semibold text-white">{formatShift(item.currentValue, item.unit)}</div>
+                    <div className="mt-2 text-lg font-semibold text-white">
+                      {formatShift(item.currentValue, item.unit)}
+                    </div>
                   </div>
                   <div>
                     <div className="fine-print">Previous</div>
-                    <div className="mt-2 text-lg font-semibold text-white">{formatShift(item.previousValue, item.unit)}</div>
+                    <div className="mt-2 text-lg font-semibold text-white">
+                      {formatShift(item.previousValue, item.unit)}
+                    </div>
                   </div>
                   <div>
                     <div className="fine-print">Delta</div>
-                    <div className="mt-2 text-lg font-semibold text-white">{formatShift(item.delta, item.unit)}</div>
+                    <div className="mt-2 text-lg font-semibold text-white">
+                      {formatShift(item.delta, item.unit)}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -92,7 +108,10 @@ export function MacroDecompositionPanel({
           <div className="eyebrow">Impact Delta</div>
           <div className="grid gap-3">
             {decomposition.impactChanges.map((item) => (
-              <div key={item.key} className="rounded-[18px] border border-white/10 bg-white/[0.03] p-4">
+              <div
+                key={item.key}
+                className="rounded-[18px] border border-white/10 bg-white/[0.03] p-4"
+              >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="text-sm font-semibold text-white">{item.label}</div>
                   <div className="flex gap-2">
@@ -107,7 +126,9 @@ export function MacroDecompositionPanel({
                 <div className="mt-3 grid gap-3 sm:grid-cols-3">
                   <div>
                     <div className="fine-print">Current</div>
-                    <div className="mt-2 text-lg font-semibold text-white">{formatNumber(item.currentScore, 2)}</div>
+                    <div className="mt-2 text-lg font-semibold text-white">
+                      {formatNumber(item.currentScore, 2)}
+                    </div>
                   </div>
                   <div>
                     <div className="fine-print">Previous</div>
@@ -118,7 +139,9 @@ export function MacroDecompositionPanel({
                   <div>
                     <div className="fine-print">Delta</div>
                     <div className="mt-2 text-lg font-semibold text-white">
-                      {item.delta === null ? 'N/A' : `${item.delta > 0 ? '+' : ''}${formatNumber(item.delta, 2)}`}
+                      {item.delta === null
+                        ? 'N/A'
+                        : `${item.delta > 0 ? '+' : ''}${formatNumber(item.delta, 2)}`}
                     </div>
                   </div>
                 </div>
@@ -132,14 +155,33 @@ export function MacroDecompositionPanel({
         <div className="eyebrow">Factor Drivers</div>
         <div className="mt-4 grid gap-3">
           {decomposition.factorDrivers.map((item) => (
-            <div key={item.key} className="rounded-[18px] border border-white/10 bg-white/[0.03] p-4">
+            <div
+              key={item.key}
+              className="rounded-[18px] border border-white/10 bg-white/[0.03] p-4"
+            >
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="text-sm font-semibold text-white">{item.label}</div>
                 <div className="flex gap-2">
-                  <Badge tone={item.previousDirection === 'NEGATIVE' ? 'warn' : item.previousDirection === 'POSITIVE' ? 'good' : 'neutral'}>
+                  <Badge
+                    tone={
+                      item.previousDirection === 'NEGATIVE'
+                        ? 'warn'
+                        : item.previousDirection === 'POSITIVE'
+                          ? 'good'
+                          : 'neutral'
+                    }
+                  >
                     prev {item.previousDirection?.toLowerCase() ?? 'n/a'}
                   </Badge>
-                  <Badge tone={item.currentDirection === 'NEGATIVE' ? 'warn' : item.currentDirection === 'POSITIVE' ? 'good' : 'neutral'}>
+                  <Badge
+                    tone={
+                      item.currentDirection === 'NEGATIVE'
+                        ? 'warn'
+                        : item.currentDirection === 'POSITIVE'
+                          ? 'good'
+                          : 'neutral'
+                    }
+                  >
                     now {item.currentDirection.toLowerCase()}
                   </Badge>
                 </div>
@@ -147,16 +189,22 @@ export function MacroDecompositionPanel({
               <div className="mt-3 grid gap-3 sm:grid-cols-3">
                 <div>
                   <div className="fine-print">Current</div>
-                  <div className="mt-2 text-lg font-semibold text-white">{formatFactorValue(item.currentValue)}</div>
+                  <div className="mt-2 text-lg font-semibold text-white">
+                    {formatFactorValue(item.currentValue)}
+                  </div>
                 </div>
                 <div>
                   <div className="fine-print">Previous</div>
-                  <div className="mt-2 text-lg font-semibold text-white">{formatFactorValue(item.previousValue)}</div>
+                  <div className="mt-2 text-lg font-semibold text-white">
+                    {formatFactorValue(item.previousValue)}
+                  </div>
                 </div>
                 <div>
                   <div className="fine-print">Delta</div>
                   <div className="mt-2 text-lg font-semibold text-white">
-                    {item.delta === null ? 'Direction change' : `${item.delta > 0 ? '+' : ''}${formatNumber(item.delta, 2)}`}
+                    {item.delta === null
+                      ? 'Direction change'
+                      : `${item.delta > 0 ? '+' : ''}${formatNumber(item.delta, 2)}`}
                   </div>
                 </div>
               </div>

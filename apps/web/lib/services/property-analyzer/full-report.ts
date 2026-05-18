@@ -17,7 +17,10 @@
 import type { AssetClass, MacroFactor } from '@prisma/client';
 import type { AutoAnalyzeResult } from '@/lib/services/property-analyzer/auto-analyze';
 import type { ProFormaBaseCase, UnderwritingAnalysis } from '@/lib/services/valuation/types';
-import { computeReturnMetricsFromProForma, type ReturnMetrics } from '@/lib/services/valuation/return-metrics';
+import {
+  computeReturnMetricsFromProForma,
+  type ReturnMetrics
+} from '@/lib/services/valuation/return-metrics';
 import {
   buildCapRateExitSensitivity,
   buildInterestRateSensitivity,
@@ -43,14 +46,20 @@ import {
   type ProFormaExtras
 } from '@/lib/services/valuation/synthetic-pro-forma';
 import { runMonteCarlo, type MonteCarloResult } from '@/lib/services/valuation/monte-carlo';
-import { evaluateInvestment, type InvestmentVerdict } from '@/lib/services/valuation/investment-verdict';
+import {
+  evaluateInvestment,
+  type InvestmentVerdict
+} from '@/lib/services/valuation/investment-verdict';
 import { solveImpliedBids, type ImpliedBidSet } from '@/lib/services/valuation/implied-bid';
 import {
   computeGpLpWaterfall,
   DEFAULT_WATERFALL_CONFIG,
   type GpLpWaterfallResult
 } from '@/lib/services/valuation/gp-lp-waterfall';
-import { generateInvestmentMemo, type InvestmentMemo } from '@/lib/services/property-analyzer/investment-memo';
+import {
+  generateInvestmentMemo,
+  type InvestmentMemo
+} from '@/lib/services/property-analyzer/investment-memo';
 import {
   sourceDebt,
   type DebtDealProfile,
@@ -154,10 +163,7 @@ function extractMacroRegime(analysis: UnderwritingAnalysis): MacroRegimeBlock {
 // so the scoring engine has something to reason about without a DB.
 // ---------------------------------------------------------------------------
 
-function synthesizeMacroFactors(
-  market: string,
-  macroMicro: MacroMicroSnapshot
-): MacroFactor[] {
+function synthesizeMacroFactors(market: string, macroMicro: MacroMicroSnapshot): MacroFactor[] {
   const now = new Date();
   const vac = macroMicro.submarketVacancyPct ?? 8;
   const growth = macroMicro.submarketRentGrowthPct ?? 2;
@@ -326,7 +332,8 @@ export async function buildFullReport(
   const totalCapex = proFormaExtras.totalBasisKrw;
   const terminalValue = proForma.summary.terminalValueKrw;
   const netExit = proForma.summary.netExitProceedsKrw;
-  const occupancyPct = bundle.asset.stabilizedOccupancyPct ?? bundle.asset.occupancyAssumptionPct ?? 85;
+  const occupancyPct =
+    bundle.asset.stabilizedOccupancyPct ?? bundle.asset.occupancyAssumptionPct ?? 85;
 
   const returnMetrics = computeReturnMetricsFromProForma(
     proForma,
@@ -429,9 +436,10 @@ export async function buildFullReport(
   });
 
   // Tenant-credit rent-default overlay (only if caller supplied tenant exposures).
-  const tenantCredit = options.tenantExposures && options.tenantExposures.length > 0
-    ? projectRentDefault(options.tenantExposures)
-    : null;
+  const tenantCredit =
+    options.tenantExposures && options.tenantExposures.length > 0
+      ? projectRentDefault(options.tenantExposures)
+      : null;
 
   const stabilizedDscr = proForma.years[0]?.dscr ?? 1.2;
   const stabilizedDebtYieldPct = initialDebt > 0 ? (year1Noi / initialDebt) * 100 : 0;

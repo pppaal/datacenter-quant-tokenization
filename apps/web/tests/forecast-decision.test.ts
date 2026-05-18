@@ -161,7 +161,16 @@ test('forecast decision guide prefers ML for asset drift when learned forecast i
     }
   });
 
-  assert.equal(guide.useCases.find((useCase) => useCase.key === 'market-nowcast')?.recommendedModelKey, 'macro-regime-nowcast');
-  assert.equal(guide.useCases.find((useCase) => useCase.key === 'committee-downside')?.recommendedModelKey, 'monte-carlo-envelope');
-  assert.equal(guide.useCases.find((useCase) => useCase.key === 'asset-drift')?.recommendedModelKey, 'gradient-boosting-forecast');
+  assert.equal(
+    guide.useCases.find((useCase) => useCase.key === 'market-nowcast')?.recommendedModelKey,
+    'macro-regime-nowcast'
+  );
+  assert.equal(
+    guide.useCases.find((useCase) => useCase.key === 'committee-downside')?.recommendedModelKey,
+    'monte-carlo-envelope'
+  );
+  assert.equal(
+    guide.useCases.find((useCase) => useCase.key === 'asset-drift')?.recommendedModelKey,
+    'gradient-boosting-forecast'
+  );
 });

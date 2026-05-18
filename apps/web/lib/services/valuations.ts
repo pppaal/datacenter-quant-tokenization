@@ -1,22 +1,26 @@
 import type { Prisma, PrismaClient } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { generateUnderwritingMemo } from '@/lib/ai/openai';
-import { buildForecastDecisionNarrative, getForecastDecisionGuideForRun } from '@/lib/services/forecast/decision';
+import {
+  buildForecastDecisionNarrative,
+  getForecastDecisionGuideForRun
+} from '@/lib/services/forecast/decision';
 import { getGradientBoostingForecastForRun } from '@/lib/services/forecast/gradient-boosting';
 import { buildMacroRegimeProvenance, buildMacroRegimeSnapshot } from '@/lib/services/macro/series';
 import { assetBundleInclude, enrichAssetFromSources } from '@/lib/services/assets';
 import { syncDealProbabilitySnapshotsForAssetDeals } from '@/lib/services/deals';
 import { buildSensitivityRuns } from '@/lib/services/sensitivity/engine';
+import { computeValuationInputsHash } from '@/lib/services/valuation/inputs-hash';
 import { runValuationAnalysis } from '@/lib/services/valuation-runner';
 import { valuationApprovalSchema, valuationRunSchema } from '@/lib/validations/valuation';
 
 function canSyncDealProbabilitySnapshots(db: PrismaClient) {
   return Boolean(
     db &&
-      typeof db === 'object' &&
-      'deal' in db &&
-      db.deal &&
-      typeof db.deal.findMany === 'function'
+    typeof db === 'object' &&
+    'deal' in db &&
+    db.deal &&
+    typeof db.deal.findMany === 'function'
   );
 }
 
@@ -87,6 +91,7 @@ export async function createValuationRun(input: unknown, db: PrismaClient = pris
     ...creditProvenance
   ];
 
+  const inputsHash = computeValuationInputsHash({ engineVersion, assumptions });
   const run = await db.valuationRun.create({
     data: {
       assetId: asset.id,
@@ -100,6 +105,7 @@ export async function createValuationRun(input: unknown, db: PrismaClient = pris
       ddChecklist: analysis.ddChecklist,
       assumptions: assumptions as Prisma.InputJsonValue,
       provenance: provenance as Prisma.InputJsonValue,
+      inputsHash,
       scenarios: {
         create: analysis.scenarios.map((scenario) => ({
           name: scenario.name,

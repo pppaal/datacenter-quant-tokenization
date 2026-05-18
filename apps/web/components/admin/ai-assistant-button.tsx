@@ -48,11 +48,8 @@ export function AiAssistantButton({ kind, entityId }: Props) {
     setResult(null);
     try {
       const endpoint =
-        kind === 'research'
-          ? '/api/admin/ai/research-summary'
-          : '/api/admin/ai/deal-score';
-      const payload =
-        kind === 'research' ? { snapshotId: entityId } : { dealId: entityId };
+        kind === 'research' ? '/api/admin/ai/research-summary' : '/api/admin/ai/deal-score';
+      const payload = kind === 'research' ? { snapshotId: entityId } : { dealId: entityId };
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -62,7 +59,8 @@ export function AiAssistantButton({ kind, entityId }: Props) {
       const data = (await response.json().catch(() => ({}))) as Record<string, unknown>;
 
       if (!response.ok) {
-        const message = typeof data.error === 'string' ? data.error : 'AI assistant request failed.';
+        const message =
+          typeof data.error === 'string' ? data.error : 'AI assistant request failed.';
         throw new Error(message);
       }
 
@@ -131,9 +129,7 @@ export function AiAssistantButton({ kind, entityId }: Props) {
         </div>
       ) : null}
 
-      {result?.kind === 'deal' ? (
-        <DealScorePanel data={result.data} />
-      ) : null}
+      {result?.kind === 'deal' ? <DealScorePanel data={result.data} /> : null}
     </div>
   );
 }

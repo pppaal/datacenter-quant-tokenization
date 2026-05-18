@@ -3,9 +3,14 @@ import test from 'node:test';
 import type { MacroFactor } from '@prisma/client';
 import { buildMacroBacktest } from '@/lib/services/macro/backtest';
 
-function factor(input: Partial<MacroFactor> & Pick<MacroFactor, 'market' | 'factorKey' | 'label' | 'value' | 'direction'>): MacroFactor {
+function factor(
+  input: Partial<MacroFactor> &
+    Pick<MacroFactor, 'market' | 'factorKey' | 'label' | 'value' | 'direction'>
+): MacroFactor {
   return {
-    id: input.id ?? `${input.market}-${input.factorKey}-${input.observationDate?.toISOString() ?? 'now'}`,
+    id:
+      input.id ??
+      `${input.market}-${input.factorKey}-${input.observationDate?.toISOString() ?? 'now'}`,
     assetId: input.assetId ?? null,
     market: input.market,
     factorKey: input.factorKey,

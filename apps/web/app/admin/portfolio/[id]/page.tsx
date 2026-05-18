@@ -9,7 +9,11 @@ import { canActorAccessScope } from '@/lib/security/admin-access';
 import { prisma } from '@/lib/db/prisma';
 import { resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
 import { buildPortfolioOptimizationLab } from '@/lib/services/portfolio-optimization';
-import { buildPortfolioDashboard, buildPortfolioOperatorBriefs, getPortfolioById } from '@/lib/services/portfolio';
+import {
+  buildPortfolioDashboard,
+  buildPortfolioOperatorBriefs,
+  getPortfolioById
+} from '@/lib/services/portfolio';
 import { buildResearchPrioritySignal } from '@/lib/services/research/workspace';
 import { formatCurrency, formatDate, formatNumber, formatPercent } from '@/lib/utils';
 
@@ -27,7 +31,12 @@ export default async function PortfolioDetailPage({ params }: Props) {
     allowBasic: false,
     requireActiveSeat: true
   });
-  const canAccessPortfolio = await canActorAccessScope(actor, AdminAccessScopeType.PORTFOLIO, id, prisma);
+  const canAccessPortfolio = await canActorAccessScope(
+    actor,
+    AdminAccessScopeType.PORTFOLIO,
+    id,
+    prisma
+  );
   if (!canAccessPortfolio) notFound();
   const portfolio = await getPortfolioById(id);
   if (!portfolio) notFound();
@@ -47,26 +56,38 @@ export default async function PortfolioDetailPage({ params }: Props) {
         <h1 className="mt-3 text-5xl font-semibold leading-[0.96] tracking-[-0.05em] text-white md:text-6xl">
           {portfolio.name}
         </h1>
-        <p className="mt-4 max-w-4xl text-base leading-8 text-slate-200">{dashboard.operatorSummary}</p>
-        <p className="mt-3 max-w-4xl text-sm leading-7 text-slate-400">{dashboard.researchSummary}</p>
+        <p className="mt-4 max-w-4xl text-base leading-8 text-slate-200">
+          {dashboard.operatorSummary}
+        </p>
+        <p className="mt-3 max-w-4xl text-sm leading-7 text-slate-400">
+          {dashboard.researchSummary}
+        </p>
       </section>
 
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <div className="fine-print">Gross Hold Value</div>
-          <div className="mt-3 text-3xl font-semibold text-white">{formatCurrency(dashboard.summary.grossHoldValueKrw)}</div>
+          <div className="mt-3 text-3xl font-semibold text-white">
+            {formatCurrency(dashboard.summary.grossHoldValueKrw)}
+          </div>
         </Card>
         <Card>
           <div className="fine-print">Average Occupancy</div>
-          <div className="mt-3 text-3xl font-semibold text-white">{formatPercent(dashboard.summary.averageOccupancyPct)}</div>
+          <div className="mt-3 text-3xl font-semibold text-white">
+            {formatPercent(dashboard.summary.averageOccupancyPct)}
+          </div>
         </Card>
         <Card>
           <div className="fine-print">Annualized NOI</div>
-          <div className="mt-3 text-3xl font-semibold text-white">{formatCurrency(dashboard.summary.annualizedNoiKrw)}</div>
+          <div className="mt-3 text-3xl font-semibold text-white">
+            {formatCurrency(dashboard.summary.annualizedNoiKrw)}
+          </div>
         </Card>
         <Card>
           <div className="fine-print">Watchlist Assets</div>
-          <div className="mt-3 text-3xl font-semibold text-white">{formatNumber(dashboard.summary.watchlistCount, 0)}</div>
+          <div className="mt-3 text-3xl font-semibold text-white">
+            {formatNumber(dashboard.summary.watchlistCount, 0)}
+          </div>
         </Card>
       </div>
 
@@ -112,66 +133,97 @@ export default async function PortfolioDetailPage({ params }: Props) {
           {dashboard.assetRows.map((row) => {
             const researchPriority = buildResearchPrioritySignal(row.portfolioAsset.asset as any);
             return (
-              <div key={row.portfolioAsset.id} className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+              <div
+                key={row.portfolioAsset.id}
+                className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+              >
                 <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <div className="text-lg font-semibold text-white">{row.portfolioAsset.asset.name}</div>
-                    <Badge>{row.portfolioAsset.status.toLowerCase()}</Badge>
-                    <Badge tone="neutral">{row.portfolioAsset.asset.assetClass.replaceAll('_', ' ')}</Badge>
-                  </div>
-                  <div className="mt-2 text-sm text-slate-400">
-                    {row.portfolioAsset.asset.assetCode} / {row.portfolioAsset.asset.address?.city ?? row.portfolioAsset.asset.market}
-                  </div>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {row.latestDocumentHash ? <Badge>doc {row.latestDocumentHash.slice(0, 10)}</Badge> : null}
-                    {row.latestAnchorReference ? <Badge tone="good">anchored</Badge> : <Badge tone="warn">offchain only</Badge>}
-                    {row.covenant.breachCount > 0 ? <Badge tone="danger">covenant breach</Badge> : null}
-                    {(row.leaseRoll?.next12MonthsExpiringPct ?? 0) >= 20 ? <Badge tone="warn">rollover watch</Badge> : null}
-                    <Badge
-                      tone={
-                        researchPriority.freshnessStatus === 'FRESH'
-                          ? 'good'
-                          : researchPriority.freshnessStatus === 'STALE'
-                            ? 'warn'
-                            : 'danger'
-                      }
-                    >
-                      research {researchPriority.scorePct.toFixed(0)}%
-                    </Badge>
-                    {researchPriority.taskCount > 0 ? <Badge tone="warn">{researchPriority.taskCount} research tasks</Badge> : null}
-                  </div>
-                  <div className="mt-2 text-xs text-slate-500">{researchPriority.summary}</div>
-                </div>
-                <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
                   <div>
-                    <div className="fine-print">Hold Value</div>
-                    <div className="mt-2 text-sm text-white">{formatCurrency(row.holdValueKrw)}</div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="text-lg font-semibold text-white">
+                        {row.portfolioAsset.asset.name}
+                      </div>
+                      <Badge>{row.portfolioAsset.status.toLowerCase()}</Badge>
+                      <Badge tone="neutral">
+                        {row.portfolioAsset.asset.assetClass.replaceAll('_', ' ')}
+                      </Badge>
+                    </div>
+                    <div className="mt-2 text-sm text-slate-400">
+                      {row.portfolioAsset.asset.assetCode} /{' '}
+                      {row.portfolioAsset.asset.address?.city ?? row.portfolioAsset.asset.market}
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {row.latestDocumentHash ? (
+                        <Badge>doc {row.latestDocumentHash.slice(0, 10)}</Badge>
+                      ) : null}
+                      {row.latestAnchorReference ? (
+                        <Badge tone="good">anchored</Badge>
+                      ) : (
+                        <Badge tone="warn">offchain only</Badge>
+                      )}
+                      {row.covenant.breachCount > 0 ? (
+                        <Badge tone="danger">covenant breach</Badge>
+                      ) : null}
+                      {(row.leaseRoll?.next12MonthsExpiringPct ?? 0) >= 20 ? (
+                        <Badge tone="warn">rollover watch</Badge>
+                      ) : null}
+                      <Badge
+                        tone={
+                          researchPriority.freshnessStatus === 'FRESH'
+                            ? 'good'
+                            : researchPriority.freshnessStatus === 'STALE'
+                              ? 'warn'
+                              : 'danger'
+                        }
+                      >
+                        research {researchPriority.scorePct.toFixed(0)}%
+                      </Badge>
+                      {researchPriority.taskCount > 0 ? (
+                        <Badge tone="warn">{researchPriority.taskCount} research tasks</Badge>
+                      ) : null}
+                    </div>
+                    <div className="mt-2 text-xs text-slate-500">{researchPriority.summary}</div>
                   </div>
-                  <div>
-                    <div className="fine-print">Occupancy</div>
-                    <div className="mt-2 text-sm text-white">{formatPercent(row.latest?.occupancyPct)}</div>
-                  </div>
-                  <div>
-                    <div className="fine-print">NOI</div>
-                    <div className="mt-2 text-sm text-white">{formatCurrency(row.latest?.noiKrw)}</div>
-                  </div>
-                  <div>
-                    <div className="fine-print">Passing Rent</div>
-                    <div className="mt-2 text-sm text-white">{formatCurrency(row.latest?.passingRentKrwPerSqmMonth)}</div>
-                  </div>
-                  <div>
-                    <div className="fine-print">Market Rent</div>
-                    <div className="mt-2 text-sm text-white">{formatCurrency(row.latest?.marketRentKrwPerSqmMonth)}</div>
-                  </div>
-                  <div>
-                    <div className="fine-print">DSCR / LTV</div>
-                    <div className="mt-2 text-sm text-white">
-                      {formatNumber(row.latest?.debtServiceCoverage, 2)}x / {formatPercent(row.latest?.ltvPct)}
+                  <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
+                    <div>
+                      <div className="fine-print">Hold Value</div>
+                      <div className="mt-2 text-sm text-white">
+                        {formatCurrency(row.holdValueKrw)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="fine-print">Occupancy</div>
+                      <div className="mt-2 text-sm text-white">
+                        {formatPercent(row.latest?.occupancyPct)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="fine-print">NOI</div>
+                      <div className="mt-2 text-sm text-white">
+                        {formatCurrency(row.latest?.noiKrw)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="fine-print">Passing Rent</div>
+                      <div className="mt-2 text-sm text-white">
+                        {formatCurrency(row.latest?.passingRentKrwPerSqmMonth)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="fine-print">Market Rent</div>
+                      <div className="mt-2 text-sm text-white">
+                        {formatCurrency(row.latest?.marketRentKrwPerSqmMonth)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="fine-print">DSCR / LTV</div>
+                      <div className="mt-2 text-sm text-white">
+                        {formatNumber(row.latest?.debtServiceCoverage, 2)}x /{' '}
+                        {formatPercent(row.latest?.ltvPct)}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
               </div>
             );
           })}
@@ -194,11 +246,18 @@ export default async function PortfolioDetailPage({ params }: Props) {
           <div className="eyebrow">Lease Rollover Watchlist</div>
           <div className="mt-4 space-y-3">
             {dashboard.leaseRolloverWatchlist.map((row) => (
-              <div key={row.portfolioAsset.id} className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
+              <div
+                key={row.portfolioAsset.id}
+                className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4"
+              >
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <div className="text-sm font-semibold text-white">{row.portfolioAsset.asset.name}</div>
-                    <div className="mt-1 text-xs text-slate-400">{row.leaseRoll?.watchlistSummary ?? 'Lease expiry risk review'}</div>
+                    <div className="text-sm font-semibold text-white">
+                      {row.portfolioAsset.asset.name}
+                    </div>
+                    <div className="mt-1 text-xs text-slate-400">
+                      {row.leaseRoll?.watchlistSummary ?? 'Lease expiry risk review'}
+                    </div>
                   </div>
                   <div className="text-right text-sm text-white">
                     <div>12m {formatPercent(row.leaseRoll?.next12MonthsExpiringPct)}</div>
@@ -214,11 +273,17 @@ export default async function PortfolioDetailPage({ params }: Props) {
           <div className="eyebrow">Debt Maturity Wall</div>
           <div className="mt-4 space-y-3">
             {dashboard.debtMaturityWall.map((row) => (
-              <div key={row.facility.id} className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
+              <div
+                key={row.facility.id}
+                className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4"
+              >
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <div className="text-sm font-semibold text-white">{row.asset.name}</div>
-                    <div className="mt-1 text-xs text-slate-400">{row.facility.lenderName ?? 'Lender pending'} / {row.facility.facilityType.toLowerCase()}</div>
+                    <div className="mt-1 text-xs text-slate-400">
+                      {row.facility.lenderName ?? 'Lender pending'} /{' '}
+                      {row.facility.facilityType.toLowerCase()}
+                    </div>
                   </div>
                   <div className="text-right text-sm text-white">
                     <div>{formatCurrency(row.facility.commitmentKrw)}</div>
@@ -236,12 +301,18 @@ export default async function PortfolioDetailPage({ params }: Props) {
           <div className="eyebrow">LTV / DSCR / Covenant Status</div>
           <div className="mt-4 space-y-3">
             {dashboard.covenantWatchlist.map((row) => (
-              <div key={row.portfolioAsset.id} className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
+              <div
+                key={row.portfolioAsset.id}
+                className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4"
+              >
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <div className="text-sm font-semibold text-white">{row.portfolioAsset.asset.name}</div>
+                    <div className="text-sm font-semibold text-white">
+                      {row.portfolioAsset.asset.name}
+                    </div>
                     <div className="mt-1 text-xs text-slate-400">
-                      {row.covenant.breachCount} breach / {row.covenant.watchCount} watch / {row.covenant.passingCount} pass
+                      {row.covenant.breachCount} breach / {row.covenant.watchCount} watch /{' '}
+                      {row.covenant.passingCount} pass
                     </div>
                   </div>
                   <div className="text-right text-sm text-white">
@@ -258,10 +329,15 @@ export default async function PortfolioDetailPage({ params }: Props) {
           <div className="eyebrow">Capex vs Budget</div>
           <div className="mt-4 space-y-3">
             {dashboard.capexBudgetTracker.map((row) => (
-              <div key={row.portfolioAsset.id} className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
+              <div
+                key={row.portfolioAsset.id}
+                className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4"
+              >
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <div className="text-sm font-semibold text-white">{row.portfolioAsset.asset.name}</div>
+                    <div className="text-sm font-semibold text-white">
+                      {row.portfolioAsset.asset.name}
+                    </div>
                     <div className="mt-1 text-xs text-slate-400">
                       Budget variance {formatCurrency(row.varianceBudget)}
                     </div>
@@ -281,7 +357,10 @@ export default async function PortfolioDetailPage({ params }: Props) {
         <div className="eyebrow">Exit Case Tracker</div>
         <div className="mt-4 space-y-3">
           {dashboard.exitCaseTracker.map((row) => (
-            <div key={row.exitCase.id} className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
+            <div
+              key={row.exitCase.id}
+              className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4"
+            >
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <div className="text-sm font-semibold text-white">{row.asset.name}</div>
@@ -292,8 +371,10 @@ export default async function PortfolioDetailPage({ params }: Props) {
                 <div className="text-right text-sm text-white">
                   <div>{formatCurrency(row.exitCase.underwritingValueKrw ?? row.holdValueKrw)}</div>
                   <div>
-                    {row.exitCase.targetExitDate ? formatDate(row.exitCase.targetExitDate) : 'date pending'} / cap{' '}
-                    {formatPercent(row.exitCase.targetCapRatePct)}
+                    {row.exitCase.targetExitDate
+                      ? formatDate(row.exitCase.targetExitDate)
+                      : 'date pending'}{' '}
+                    / cap {formatPercent(row.exitCase.targetCapRatePct)}
                   </div>
                 </div>
               </div>

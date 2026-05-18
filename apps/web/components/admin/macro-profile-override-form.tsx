@@ -66,7 +66,8 @@ function draftFromOverride(override: MacroProfileOverrideView): OverrideDraft {
     submarketPattern: override.submarketPattern ?? '',
     capitalRateMultiplier:
       override.capitalRateMultiplier != null ? String(override.capitalRateMultiplier) : '',
-    liquidityMultiplier: override.liquidityMultiplier != null ? String(override.liquidityMultiplier) : '',
+    liquidityMultiplier:
+      override.liquidityMultiplier != null ? String(override.liquidityMultiplier) : '',
     leasingMultiplier: override.leasingMultiplier != null ? String(override.leasingMultiplier) : '',
     constructionMultiplier:
       override.constructionMultiplier != null ? String(override.constructionMultiplier) : '',
@@ -111,8 +112,10 @@ function normalizeRecord(record: Record<string, unknown>): MacroProfileOverrideV
     label: String(record.label),
     capitalRateMultiplier:
       typeof record.capitalRateMultiplier === 'number' ? record.capitalRateMultiplier : null,
-    liquidityMultiplier: typeof record.liquidityMultiplier === 'number' ? record.liquidityMultiplier : null,
-    leasingMultiplier: typeof record.leasingMultiplier === 'number' ? record.leasingMultiplier : null,
+    liquidityMultiplier:
+      typeof record.liquidityMultiplier === 'number' ? record.liquidityMultiplier : null,
+    leasingMultiplier:
+      typeof record.leasingMultiplier === 'number' ? record.leasingMultiplier : null,
     constructionMultiplier:
       typeof record.constructionMultiplier === 'number' ? record.constructionMultiplier : null,
     priority: Number(record.priority),
@@ -149,7 +152,8 @@ function OverrideEditorCard({
       });
 
       const payload = (await response.json().catch(() => null)) as Record<string, unknown> | null;
-      if (!response.ok) throw new Error((payload?.error as string | undefined) ?? 'Failed to update override');
+      if (!response.ok)
+        throw new Error((payload?.error as string | undefined) ?? 'Failed to update override');
 
       onSaved(normalizeRecord(payload ?? {}));
       router.refresh();
@@ -182,7 +186,8 @@ function OverrideEditorCard({
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-4">
         <div className="text-sm text-slate-400">
-          Change this rule to rebalance capital, liquidity, leasing, and construction transmission without redeploying.
+          Change this rule to rebalance capital, liquidity, leasing, and construction transmission
+          without redeploying.
         </div>
         <div className="flex items-center gap-3">
           {errorMessage ? <span className="text-sm text-rose-300">{errorMessage}</span> : null}
@@ -218,7 +223,10 @@ function OverrideDraftFields({
         </label>
         <label className="space-y-2">
           <span className="fine-print">Asset Class</span>
-          <Select value={draft.assetClass} onChange={(event) => setField('assetClass', event.target.value)}>
+          <Select
+            value={draft.assetClass}
+            onChange={(event) => setField('assetClass', event.target.value)}
+          >
             <option value="">All Asset Classes</option>
             {assetClassOptions.map((assetClass) => (
               <option key={assetClass} value={assetClass}>
@@ -257,7 +265,10 @@ function OverrideDraftFields({
         </label>
         <label className="space-y-2">
           <span className="fine-print">Status</span>
-          <Select value={draft.isActive} onChange={(event) => setField('isActive', event.target.value)}>
+          <Select
+            value={draft.isActive}
+            onChange={(event) => setField('isActive', event.target.value)}
+          >
             <option value="true">Active</option>
             <option value="false">Inactive</option>
           </Select>
@@ -349,7 +360,8 @@ export function MacroProfileOverrideForm({
       });
 
       const payload = (await response.json().catch(() => null)) as Record<string, unknown> | null;
-      if (!response.ok) throw new Error((payload?.error as string | undefined) ?? 'Failed to create override');
+      if (!response.ok)
+        throw new Error((payload?.error as string | undefined) ?? 'Failed to create override');
 
       const created = normalizeRecord(payload ?? {});
       setOverrides((current) =>
@@ -374,16 +386,22 @@ export function MacroProfileOverrideForm({
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <div className="eyebrow">New Override</div>
-            <h3 className="mt-2 text-2xl font-semibold text-white">Add market-specific transmission logic</h3>
+            <h3 className="mt-2 text-2xl font-semibold text-white">
+              Add market-specific transmission logic
+            </h3>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400">
-              Use this layer to override the default macro sensitivity template for a country, asset class, or regex
-              matched submarket without changing code.
+              Use this layer to override the default macro sensitivity template for a country, asset
+              class, or regex matched submarket without changing code.
             </p>
           </div>
           <div className="metric-card min-w-[220px]">
             <div className="fine-print">Live Rules</div>
-            <div className="mt-3 text-2xl font-semibold text-white">{overrides.filter((row) => row.isActive).length}</div>
-            <p className="mt-2 text-sm text-slate-400">Active rules merge on top of the static registry at valuation time.</p>
+            <div className="mt-3 text-2xl font-semibold text-white">
+              {overrides.filter((row) => row.isActive).length}
+            </div>
+            <p className="mt-2 text-sm text-slate-400">
+              Active rules merge on top of the static registry at valuation time.
+            </p>
           </div>
         </div>
 
@@ -391,7 +409,8 @@ export function MacroProfileOverrideForm({
 
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-4">
           <div className="text-sm text-slate-400">
-            Scope by asset class, country, submarket regex, or any combination. Lower priority numbers apply first.
+            Scope by asset class, country, submarket regex, or any combination. Lower priority
+            numbers apply first.
           </div>
           <div className="flex items-center gap-3">
             {errorMessage ? <span className="text-sm text-rose-300">{errorMessage}</span> : null}

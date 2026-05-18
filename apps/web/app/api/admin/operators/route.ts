@@ -1,7 +1,13 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
-import { getRequestIpAddress, resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
-import { rotateAdminOperatorSessionVersion, updateAdminOperatorSeat } from '@/lib/security/admin-identity';
+import {
+  getRequestIpAddress,
+  resolveVerifiedAdminActorFromHeaders
+} from '@/lib/security/admin-request';
+import {
+  rotateAdminOperatorSessionVersion,
+  updateAdminOperatorSeat
+} from '@/lib/security/admin-identity';
 import { revokePersistedAdminSessionsForUser } from '@/lib/security/admin-session';
 import { recordAuditEvent } from '@/lib/services/audit';
 

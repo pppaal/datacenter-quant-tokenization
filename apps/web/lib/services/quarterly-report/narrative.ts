@@ -8,6 +8,7 @@
 
 import Anthropic from '@anthropic-ai/sdk';
 import type { AssetClass, QuarterlyMarketNarrative, QuarterlyMarketSnapshot } from '@prisma/client';
+import { anthropicModel } from '@/lib/ai/models';
 import { prisma } from '@/lib/db/prisma';
 
 export type NarrativeDraft = {
@@ -21,10 +22,8 @@ export type NarrativeDraft = {
   risks: Array<{ severity: 'LOW' | 'MEDIUM' | 'HIGH'; title: string; rationale: string }>;
 };
 
-const DEFAULT_MODEL = 'claude-opus-4-7';
-
 function resolveModel(): string {
-  return process.env.ANTHROPIC_NARRATIVE_MODEL?.trim() || DEFAULT_MODEL;
+  return anthropicModel('ANTHROPIC_NARRATIVE_MODEL');
 }
 
 function resolveClient(): Anthropic | null {
@@ -55,7 +54,9 @@ function buildOfflineNarrative(
       ? ['INDUSTRIAL' as AssetClass, 'MULTIFAMILY' as AssetClass]
       : ['OFFICE' as AssetClass, 'DATA_CENTER' as AssetClass];
   const underweight: AssetClass[] =
-    regime === 'restrictive' ? ['RETAIL' as AssetClass, 'HOTEL' as AssetClass] : ['LAND' as AssetClass];
+    regime === 'restrictive'
+      ? ['RETAIL' as AssetClass, 'HOTEL' as AssetClass]
+      : ['LAND' as AssetClass];
 
   return {
     headline: `${snap.submarket} ${snap.quarter} · base ${base.toFixed(2)}% / CPI ${cpi.toFixed(1)}% · ${regime} regime`,
@@ -122,17 +123,27 @@ function buildPrompt(
     lines.push('## Prior-quarter comparison');
     lines.push(`- ${prior.quarter} transactions: ${prior.transactionCount ?? 'n/a'}`);
     lines.push(`- ${prior.quarter} volume: ${prior.transactionVolumeKrw?.toString() ?? 'n/a'}`);
-    lines.push(`- ${prior.quarter} median price/sqm: ${prior.medianPriceKrwPerSqm?.toString() ?? 'n/a'}`);
+    lines.push(
+      `- ${prior.quarter} median price/sqm: ${prior.medianPriceKrwPerSqm?.toString() ?? 'n/a'}`
+    );
   }
   if (national) {
-    const raw = national.rawMetrics as { dart?: { topReitDisclosures?: unknown[]; topRealEstateTransactions?: unknown[] } };
+    const raw = national.rawMetrics as {
+      dart?: { topReitDisclosures?: unknown[]; topRealEstateTransactions?: unknown[] };
+    };
     lines.push('');
     lines.push('## Capital-markets signal (DART disclosures, national)');
     lines.push(`- REIT disclosures this quarter: ${raw?.dart?.topReitDisclosures?.length ?? 0}`);
-    lines.push(`- Real-estate transaction disclosures: ${raw?.dart?.topRealEstateTransactions?.length ?? 0}`);
+    lines.push(
+      `- Real-estate transaction disclosures: ${raw?.dart?.topRealEstateTransactions?.length ?? 0}`
+    );
     if (raw?.dart?.topRealEstateTransactions && raw.dart.topRealEstateTransactions.length > 0) {
       lines.push('- Sample disclosures:');
-      for (const d of raw.dart.topRealEstateTransactions.slice(0, 8) as Array<{ corpName: string; reportName: string; receiptDate: string }>) {
+      for (const d of raw.dart.topRealEstateTransactions.slice(0, 8) as Array<{
+        corpName: string;
+        reportName: string;
+        receiptDate: string;
+      }>) {
         lines.push(`  * ${d.receiptDate} · ${d.corpName} · ${d.reportName}`);
       }
     }
@@ -142,19 +153,31 @@ function buildPrompt(
   lines.push('Return a single JSON object (no prose outside it) with this exact shape:');
   lines.push('{');
   lines.push('  "headline": "<1 sentence, ≤120 chars>",');
-  lines.push('  "marketPulse": "<150-250 words: transaction volume, price trend, vacancy/rent signal>",');
-  lines.push('  "supplyPipeline": "<100-200 words: acknowledge supply-pipeline data gap if none; otherwise cite new construction approvals>",');
-  lines.push('  "capitalMarkets": "<150-250 words: rate path, cap rate implication, REIT flows, cross-border capital>",');
+  lines.push(
+    '  "marketPulse": "<150-250 words: transaction volume, price trend, vacancy/rent signal>",'
+  );
+  lines.push(
+    '  "supplyPipeline": "<100-200 words: acknowledge supply-pipeline data gap if none; otherwise cite new construction approvals>",'
+  );
+  lines.push(
+    '  "capitalMarkets": "<150-250 words: rate path, cap rate implication, REIT flows, cross-border capital>",'
+  );
   lines.push('  "outlook": "<200-300 words forward-looking, specific to this submarket>",');
-  lines.push('  "overweightList": ["OFFICE"|"INDUSTRIAL"|"RETAIL"|"MULTIFAMILY"|"HOTEL"|"DATA_CENTER"|"LAND"|"MIXED_USE", ...],');
+  lines.push(
+    '  "overweightList": ["OFFICE"|"INDUSTRIAL"|"RETAIL"|"MULTIFAMILY"|"HOTEL"|"DATA_CENTER"|"LAND"|"MIXED_USE", ...],'
+  );
   lines.push('  "underweightList": [...same enum...],');
-  lines.push('  "risks": [{"severity":"LOW|MEDIUM|HIGH","title":"...","rationale":"..."}, ...at least 3 risks]');
+  lines.push(
+    '  "risks": [{"severity":"LOW|MEDIUM|HIGH","title":"...","rationale":"..."}, ...at least 3 risks]'
+  );
   lines.push('}');
   lines.push('');
   lines.push('Rules:');
   lines.push('- Be specific about numbers; cite the value you are interpreting.');
   lines.push('- If a metric is null, call it out as a known data gap rather than fabricating.');
-  lines.push('- Maintain an institutional tone (no hype, no hedging to the point of being useless).');
+  lines.push(
+    '- Maintain an institutional tone (no hype, no hedging to the point of being useless).'
+  );
   lines.push('- Output ONLY the JSON object.');
   return lines.join('\n');
 }
@@ -194,18 +217,19 @@ export async function generateNarrative(
 
   // Find prior quarter snapshot (same submarket + assetClass) for QoQ context
   const prior = await findPriorSnapshot(snap);
-  const national = snap.submarket === '전국'
-    ? null
-    : await prisma.quarterlyMarketSnapshot.findUnique({
-        where: {
-          market_submarket_assetClass_quarter: {
-            market: snap.market,
-            submarket: '전국',
-            assetClass: snap.assetClass as never,
-            quarter: snap.quarter
+  const national =
+    snap.submarket === '전국'
+      ? null
+      : await prisma.quarterlyMarketSnapshot.findUnique({
+          where: {
+            market_submarket_assetClass_quarter: {
+              market: snap.market,
+              submarket: '전국',
+              assetClass: snap.assetClass as never,
+              quarter: snap.quarter
+            }
           }
-        }
-      });
+        });
 
   const client = resolveClient();
   let draft: NarrativeDraft;

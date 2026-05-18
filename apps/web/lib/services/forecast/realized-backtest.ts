@@ -2,7 +2,10 @@ import { AssetClass, type Asset, type RealizedOutcome, type ValuationRun } from 
 import { buildGradientBoostingForecast } from '@/lib/services/forecast/gradient-boosting';
 import { pickBaseDscr } from '@/lib/services/valuation/scenario-utils';
 
-type RunLike = Pick<ValuationRun, 'id' | 'assetId' | 'createdAt' | 'baseCaseValueKrw' | 'confidenceScore' | 'assumptions'> & {
+type RunLike = Pick<
+  ValuationRun,
+  'id' | 'assetId' | 'createdAt' | 'baseCaseValueKrw' | 'confidenceScore' | 'assumptions'
+> & {
   asset: Pick<Asset, 'id' | 'name' | 'assetCode' | 'assetClass' | 'market'>;
   scenarios: Array<{
     name: string;
@@ -52,9 +55,12 @@ function differenceInDays(start: Date, end: Date) {
 }
 
 function selectMatchedForecastOutcome(runCreatedAt: Date, outcomes: OutcomeLike[]) {
-  return [...outcomes]
-    .filter((outcome) => outcome.observationDate.getTime() >= runCreatedAt.getTime())
-    .sort((left, right) => left.observationDate.getTime() - right.observationDate.getTime())[0] ?? null;
+  return (
+    [...outcomes]
+      .filter((outcome) => outcome.observationDate.getTime() >= runCreatedAt.getTime())
+      .sort((left, right) => left.observationDate.getTime() - right.observationDate.getTime())[0] ??
+    null
+  );
 }
 
 function sign(value: number) {
@@ -77,14 +83,26 @@ export function buildGradientBoostingRealizedBacktest({
     outcomesByAsset.set(outcome.assetId, group);
   }
 
-  const orderedRuns = [...runs].sort((left, right) => left.createdAt.getTime() - right.createdAt.getTime());
+  const orderedRuns = [...runs].sort(
+    (left, right) => left.createdAt.getTime() - right.createdAt.getTime()
+  );
   const rows: GradientBoostingRealizedBacktestRow[] = [];
 
   for (const run of orderedRuns) {
-    const matchedOutcome = selectMatchedForecastOutcome(run.createdAt, outcomesByAsset.get(run.assetId) ?? []);
-    if (!matchedOutcome || matchedOutcome.valuationKrw === null || matchedOutcome.valuationKrw === undefined) continue;
+    const matchedOutcome = selectMatchedForecastOutcome(
+      run.createdAt,
+      outcomesByAsset.get(run.assetId) ?? []
+    );
+    if (
+      !matchedOutcome ||
+      matchedOutcome.valuationKrw === null ||
+      matchedOutcome.valuationKrw === undefined
+    )
+      continue;
 
-    const availableHistory = orderedRuns.filter((candidate) => candidate.createdAt.getTime() <= run.createdAt.getTime());
+    const availableHistory = orderedRuns.filter(
+      (candidate) => candidate.createdAt.getTime() <= run.createdAt.getTime()
+    );
     const forecast = buildGradientBoostingForecast(run, availableHistory);
     if (forecast.status !== 'READY' || forecast.predictedValueChangePct === null) continue;
 
@@ -138,9 +156,13 @@ export function buildGradientBoostingRealizedBacktest({
       assetCoverage: new Set(rows.map((row) => row.assetId)).size,
       directionalHitRatePct: rows.length > 0 ? round((directionalHits / rows.length) * 100) : null,
       meanAbsoluteValueErrorPct:
-        valueErrors.length > 0 ? round(valueErrors.reduce((sum, value) => sum + value, 0) / valueErrors.length) : null,
+        valueErrors.length > 0
+          ? round(valueErrors.reduce((sum, value) => sum + value, 0) / valueErrors.length)
+          : null,
       meanAbsoluteDscrErrorPct:
-        dscrErrors.length > 0 ? round(dscrErrors.reduce((sum, value) => sum + value, 0) / dscrErrors.length) : null
+        dscrErrors.length > 0
+          ? round(dscrErrors.reduce((sum, value) => sum + value, 0) / dscrErrors.length)
+          : null
     },
     rows: rows.sort(
       (left, right) =>

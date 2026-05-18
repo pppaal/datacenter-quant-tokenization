@@ -92,6 +92,10 @@ export type UnderwritingBundle = {
   permitSnapshot: PermitSnapshot | null;
   energySnapshot: EnergySnapshot | null;
   marketSnapshot: MarketSnapshot | null;
+  buildingContext?: {
+    approvalYear: number | null;
+    regionalConstructionCostPerSqmKrw: number | null;
+  } | null;
   transactionComps?: TransactionComp[];
   rentComps?: RentComp[];
   marketIndicatorSeries?: MarketIndicatorSeries[];
@@ -133,6 +137,22 @@ export type UnderwritingAnalysis = {
   assumptions: Record<string, unknown>;
   provenance: ProvenanceEntry[];
   scenarios: UnderwritingScenario[];
+  threeApproach?: {
+    methodology: string;
+    reconciledValueKrw: number | null;
+    reconciledValuePerSqmKrw: number | null;
+    rulesApplied: string[];
+    approaches: Array<{
+      approach: string;
+      labelKo: string;
+      labelEn: string;
+      valueKrw: number | null;
+      valuePerSqmKrw: number | null;
+      weight: number;
+      dataQuality: string;
+      note: string;
+    }>;
+  } | null;
 };
 
 export type ValuationStrategyContext = {
@@ -404,6 +424,10 @@ export type ProFormaSummary = {
   peakEquityExposureKrw: number;
   initialEquityKrw: number;
   initialDebtFundingKrw: number;
+  vatRefundKrw?: number;
+  jongbuseYear1Krw?: number;
+  jongbuseMethodNote?: string;
+  totalCapexReserveKrw?: number;
 };
 
 export type ProFormaYear = {
@@ -446,9 +470,11 @@ export type ProFormaYear = {
   endingDebtBalanceKrw: number;
   dscr: number | null;
   propertyTaxKrw: number;
+  jongbuseKrw?: number;
   insuranceKrw: number;
   managementFeeKrw: number;
   reserveContributionKrw: number;
+  capexReserveKrw?: number;
   corporateTaxKrw: number;
   afterTaxDistributionKrw: number;
 };

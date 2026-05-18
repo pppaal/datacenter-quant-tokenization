@@ -14,7 +14,8 @@ export default function AssetReportsError({
       <div className="eyebrow">Underwriting Reports</div>
       <h2 className="text-2xl font-semibold text-white">Could not load the report library</h2>
       <p className="text-sm leading-7 text-slate-400">
-        {error.message || 'The report pack failed to load. Retry the page after confirming the asset dossier and valuation bundle are available.'}
+        {error.message ||
+          'The report pack failed to load. Retry the page after confirming the asset dossier and valuation bundle are available.'}
       </p>
       <button
         type="button"

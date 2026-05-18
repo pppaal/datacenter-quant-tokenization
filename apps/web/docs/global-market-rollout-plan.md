@@ -16,11 +16,13 @@ The principle is simple:
 ### Phase 1: United States
 
 Reason:
+
 - deepest public macro stack
 - most liquid transaction market
 - strongest benchmarking environment for underwriting credibility
 
 Priority sources:
+
 - FRED
 - Treasury yields
 - BLS CPI / labor
@@ -29,6 +31,7 @@ Priority sources:
 - comp ingestion from licensed or internal sources
 
 Target asset classes:
+
 - Office
 - Industrial
 - Multifamily
@@ -36,6 +39,7 @@ Target asset classes:
 - Data Center
 
 Main product work:
+
 - region-aware macro adapter
 - USD handling
 - US submarket mapping
@@ -44,10 +48,12 @@ Main product work:
 ### Phase 2: United Kingdom / Europe
 
 Reason:
+
 - strong institutional user base
 - relevant for office, logistics, living, and data center
 
 Priority sources:
+
 - ECB
 - Bank of England
 - Eurostat
@@ -56,6 +62,7 @@ Priority sources:
 - transaction comp ingestion
 
 Main product work:
+
 - currency normalization
 - country-level macro overlays
 - local market term mapping
@@ -63,10 +70,12 @@ Main product work:
 ### Phase 3: Japan / Singapore
 
 Reason:
+
 - strong APAC gateway markets
 - high relevance for logistics and data center underwriting
 
 Priority sources:
+
 - BoJ
 - MAS
 - official statistics portals
@@ -74,6 +83,7 @@ Priority sources:
 - local broker reports
 
 Main product work:
+
 - local terminology layer
 - power and infrastructure source mapping
 - multilingual document extraction support
@@ -81,10 +91,12 @@ Main product work:
 ### Phase 4: Middle East / broader APAC
 
 Reason:
+
 - attractive growth regions
 - lower source consistency, so should follow after core markets
 
 Priority sources:
+
 - central bank data
 - IMF / World Bank
 - local statistics agencies
@@ -92,6 +104,7 @@ Priority sources:
 - partner data rooms
 
 Main product work:
+
 - data confidence scoring
 - manual override-heavy workflow
 - partner-assisted comp curation
@@ -103,6 +116,7 @@ Main product work:
 The product should not fork by country.
 
 Global core:
+
 - asset
 - market snapshot
 - macro series
@@ -112,6 +126,7 @@ Global core:
 - IM
 
 Regional layers should only change:
+
 - source adapters
 - term mapping
 - default assumptions
@@ -120,6 +135,7 @@ Regional layers should only change:
 ### 2. Separate Macro From Market Data
 
 Macro:
+
 - rates
 - spreads
 - inflation
@@ -127,6 +143,7 @@ Macro:
 - construction cost indices
 
 Market:
+
 - vacancy
 - rent growth
 - cap rates
@@ -140,6 +157,7 @@ This keeps the regime engine portable across regions.
 Not every region will have the same public data quality.
 
 Every market launch should define:
+
 - source availability
 - refresh cadence
 - fallback dependency

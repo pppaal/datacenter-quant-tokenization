@@ -23,6 +23,8 @@ import type {
   ResearchSource,
   ResearchToolset
 } from '@/lib/services/research/research-agent';
+import { semanticSearch } from '@/lib/services/research/document-indexer';
+import { safeFetch } from '@/lib/security/safe-fetch';
 
 // ---------------------------------------------------------------------------
 // Database toolset — queries curated snapshots
@@ -135,6 +137,41 @@ export function createDatabaseToolset(
         };
       }
       throw new Error(`database toolset cannot fetch external URL: ${url}`);
+    },
+
+    /**
+     * Semantic-search adapter over DocumentEmbedding. Each hit becomes a
+     * ResearchSource so the agent can dedupe corpus passages alongside
+     * web sources via the same `seen` set. Title is rebuilt from the
+     * Document.title to give the agent a meaningful hint when it later
+     * references the result by sourceId.
+     */
+    async searchCorpus(query: string): Promise<ResearchSource[]> {
+      if (!query.trim()) return [];
+      const hits = await semanticSearch({ queryText: query, limit }, prisma);
+      if (hits.length === 0) return [];
+
+      // Lookup the Document.title for each unique DocumentVersion.id so
+      // the source.title field shows something meaningful. The semantic
+      // search returned passage text, not the parent file name.
+      const versionIds = [...new Set(hits.map((h) => h.documentId))];
+      const versions = await prisma.documentVersion.findMany({
+        where: { id: { in: versionIds } },
+        select: { id: true, document: { select: { title: true } }, createdAt: true }
+      });
+      const versionLookup = new Map(versions.map((v) => [v.id, v]));
+
+      return hits.map((hit) => {
+        const meta = versionLookup.get(hit.documentId);
+        return {
+          id: `corpus:${hit.documentId}:${hit.chunkIndex}`,
+          url: `internal://document/${hit.documentId}#chunk=${hit.chunkIndex}`,
+          title: meta?.document?.title ?? `Document ${hit.documentId.slice(0, 8)}`,
+          publisher: 'internal-corpus',
+          publishedAt: meta?.createdAt ?? null,
+          snippet: hit.text.slice(0, 600)
+        };
+      });
     }
   };
 }
@@ -163,6 +200,43 @@ function stripHtml(html: string): string {
     .trim();
 }
 
+/**
+ * Pick a TextDecoder label for the response body. Prefer the charset from
+ * Content-Type, then look for a meta http-equiv / meta charset tag in the
+ * first 4 KiB of bytes (decoded as latin-1 since charset tags are ASCII).
+ * Falls back to UTF-8. Korean government / KOSPI listed-company sites
+ * still serve a meaningful number of pages as EUC-KR or CP949; without
+ * this they decoded into corrupted bytes that the LLM treated as garbage.
+ */
+export function pickEncoding(contentType: string | null, head: Uint8Array): string {
+  const labelFromHeader = contentType?.toLowerCase().match(/charset=([^;\s]+)/);
+  if (labelFromHeader) return labelFromHeader[1]!.trim().toLowerCase();
+  const sniffed = new TextDecoder('latin1').decode(head);
+  const metaCharset =
+    /<meta[^>]+charset=["']?([a-zA-Z0-9_-]+)/i.exec(sniffed) ??
+    /<meta[^>]+http-equiv=["']?content-type["'][^>]+content=["'][^"']*charset=([a-zA-Z0-9_-]+)/i.exec(
+      sniffed
+    );
+  if (metaCharset) {
+    const label = metaCharset[1]!.toLowerCase();
+    // CP949 is a Microsoft superset of EUC-KR; Node's TextDecoder labels
+    // both via "euc-kr". ks_c_5601-1987 is the IANA name for the same.
+    if (label === 'cp949' || label === 'ksc5601' || label === 'ks_c_5601-1987') return 'euc-kr';
+    return label;
+  }
+  return 'utf-8';
+}
+
+export function decodeWithFallback(buffer: ArrayBuffer, contentType: string | null): string {
+  const head = new Uint8Array(buffer, 0, Math.min(buffer.byteLength, 4096));
+  const label = pickEncoding(contentType, head);
+  try {
+    return new TextDecoder(label, { fatal: false }).decode(buffer);
+  } catch {
+    return new TextDecoder('utf-8', { fatal: false }).decode(buffer);
+  }
+}
+
 function extractTitle(html: string): string {
   const og = /<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i.exec(html);
   if (og) return og[1]!.trim();
@@ -187,44 +261,190 @@ function extractPublishedAt(html: string): Date | null {
   return null;
 }
 
-async function httpFetchPage(url: string): Promise<ResearchFetchedPage> {
-  if (!/^https?:\/\//i.test(url)) {
-    throw new Error(`httpFetchPage only supports http(s) URLs: ${url}`);
-  }
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), HTTP_TIMEOUT_MS);
+async function extractPdfText(buffer: ArrayBuffer): Promise<{ text: string; title: string | null }> {
+  // pdf-parse is loaded dynamically so the (relatively heavy) pdfjs-dist
+  // dependency isn't pulled into routes that never touch PDFs. PDFParse
+  // accepts a Uint8Array and exposes getText() / getInfo() methods.
+  const { PDFParse } = await import('pdf-parse');
+  const parser = new PDFParse({ data: new Uint8Array(buffer) });
   try {
-    const response = await fetch(url, {
-      signal: controller.signal,
-      redirect: 'follow',
-      headers: {
-        'user-agent': 'DatacenterQuant-ResearchAgent/1.0 (+https://example.internal/bot)'
-      }
-    });
-    if (!response.ok) {
-      throw new Error(`http ${response.status} for ${url}`);
+    const [text, info] = await Promise.all([parser.getText(), parser.getInfo()]);
+    const meta = info.info as { Title?: unknown } | undefined;
+    const title = meta && typeof meta.Title === 'string' ? meta.Title : null;
+    return { text: text.text, title };
+  } finally {
+    await parser.destroy().catch(() => {});
+  }
+}
+
+async function httpFetchPage(url: string): Promise<ResearchFetchedPage> {
+  // SSRF guard: rejects non-http(s) schemes, hostnames that resolve to
+  // private/loopback/link-local/IMDS IPs, and bounds the redirect chain.
+  // Content-Type whitelist: the agent surfaces arbitrary URLs from search
+  // results. HTML and PDF are both accepted; binary / image payloads are
+  // rejected here so the LLM doesn't receive UTF-decoded garbage as
+  // "context". The whitelist plus retry-on-transient-error handle the
+  // network reliability gap.
+  const response = await safeFetch(url, {
+    timeoutMs: HTTP_TIMEOUT_MS,
+    retries: 2,
+    retryBackoffMs: 300,
+    acceptedContentTypes: [
+      'text/html',
+      'application/xhtml+xml',
+      'text/plain',
+      'application/pdf'
+    ],
+    headers: {
+      'user-agent': 'DatacenterQuant-ResearchAgent/1.0 (+https://example.internal/bot)'
     }
-    const buffer = await response.arrayBuffer();
-    if (buffer.byteLength > HTTP_MAX_BYTES) {
-      throw new Error(`response too large (${buffer.byteLength} > ${HTTP_MAX_BYTES})`);
-    }
-    const html = new TextDecoder('utf-8', { fatal: false }).decode(buffer);
+  });
+  if (!response.ok) {
+    throw new Error(`http ${response.status} for ${url}`);
+  }
+  const buffer = await response.arrayBuffer();
+  if (buffer.byteLength > HTTP_MAX_BYTES) {
+    throw new Error(`response too large (${buffer.byteLength} > ${HTTP_MAX_BYTES})`);
+  }
+  const contentType = (response.headers.get('content-type') ?? '').toLowerCase();
+  if (contentType.startsWith('application/pdf')) {
+    const { text, title } = await extractPdfText(buffer);
     return {
       url,
-      title: extractTitle(html) || url,
-      publishedAt: extractPublishedAt(html),
-      text: stripHtml(html).slice(0, 20_000)
+      title: title ?? url,
+      publishedAt: null,
+      text: text.replace(/\s+/g, ' ').slice(0, 20_000)
     };
-  } finally {
-    clearTimeout(timer);
+  }
+  const html = decodeWithFallback(buffer, contentType);
+  return {
+    url,
+    title: extractTitle(html) || url,
+    publishedAt: extractPublishedAt(html),
+    text: stripHtml(html).slice(0, 20_000)
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Vendor web search — Tavily / Serper. Both expose a "give me search results
+// for a query" endpoint and return enough structure (url + title + snippet
+// + published time) to map onto ResearchSource without HTML scraping.
+//
+// Selection rule: TAVILY_API_KEY is preferred when both are set (Tavily's
+// /search endpoint surfaces published_date directly so the agent has real
+// freshness signals). Fall back to SERPER_API_KEY otherwise. With no key
+// at all the toolset returns []; the agent then degrades to its DB-only
+// discovery path, which is still useful for curated snapshots.
+// ---------------------------------------------------------------------------
+
+type VendorSearchResult = ResearchSource;
+
+async function tavilySearchNews(query: string, apiKey: string): Promise<VendorSearchResult[]> {
+  const response = await safeFetch('https://api.tavily.com/search', {
+    method: 'POST',
+    timeoutMs: HTTP_TIMEOUT_MS,
+    retries: 1,
+    retryBackoffMs: 200,
+    acceptedContentTypes: ['application/json'],
+    headers: {
+      'content-type': 'application/json',
+      'authorization': `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      query,
+      search_depth: 'basic',
+      max_results: 8,
+      include_answer: false
+    })
+  });
+  if (!response.ok) {
+    throw new Error(`tavily search ${response.status}`);
+  }
+  const body = (await response.json()) as {
+    results?: Array<{
+      url?: unknown;
+      title?: unknown;
+      content?: unknown;
+      published_date?: unknown;
+    }>;
+  };
+  const out: VendorSearchResult[] = [];
+  for (const item of body.results ?? []) {
+    if (typeof item.url !== 'string' || typeof item.title !== 'string') continue;
+    const publishedAt =
+      typeof item.published_date === 'string' ? new Date(item.published_date) : null;
+    out.push({
+      id: item.url,
+      url: item.url,
+      title: item.title,
+      publisher: tryHostname(item.url) ?? 'unknown',
+      publishedAt: publishedAt && !Number.isNaN(publishedAt.getTime()) ? publishedAt : null,
+      snippet: typeof item.content === 'string' ? item.content : ''
+    });
+  }
+  return out;
+}
+
+async function serperSearchNews(query: string, apiKey: string): Promise<VendorSearchResult[]> {
+  const response = await safeFetch('https://google.serper.dev/search', {
+    method: 'POST',
+    timeoutMs: HTTP_TIMEOUT_MS,
+    retries: 1,
+    retryBackoffMs: 200,
+    acceptedContentTypes: ['application/json'],
+    headers: {
+      'content-type': 'application/json',
+      'x-api-key': apiKey
+    },
+    body: JSON.stringify({ q: query, num: 8 })
+  });
+  if (!response.ok) {
+    throw new Error(`serper search ${response.status}`);
+  }
+  const body = (await response.json()) as {
+    organic?: Array<{ link?: unknown; title?: unknown; snippet?: unknown; date?: unknown }>;
+  };
+  const out: VendorSearchResult[] = [];
+  for (const item of body.organic ?? []) {
+    if (typeof item.link !== 'string' || typeof item.title !== 'string') continue;
+    const publishedAt = typeof item.date === 'string' ? new Date(item.date) : null;
+    out.push({
+      id: item.link,
+      url: item.link,
+      title: item.title,
+      publisher: tryHostname(item.link) ?? 'unknown',
+      publishedAt: publishedAt && !Number.isNaN(publishedAt.getTime()) ? publishedAt : null,
+      snippet: typeof item.snippet === 'string' ? item.snippet : ''
+    });
+  }
+  return out;
+}
+
+function tryHostname(url: string): string | null {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return null;
   }
 }
 
 export function createHttpToolset(): ResearchToolset {
+  const tavilyKey = process.env.TAVILY_API_KEY?.trim();
+  const serperKey = process.env.SERPER_API_KEY?.trim();
   return {
-    async searchNews(_query: string): Promise<ResearchSource[]> {
-      // No vendor search API wired yet. Agent should use the DB toolset for
-      // discovery and come here only for fetch_page.
+    async searchNews(query: string): Promise<ResearchSource[]> {
+      const trimmed = query.trim();
+      if (!trimmed) return [];
+      try {
+        if (tavilyKey) return await tavilySearchNews(trimmed, tavilyKey);
+        if (serperKey) return await serperSearchNews(trimmed, serperKey);
+      } catch {
+        // Vendor search is best-effort; the agent has the DB toolset as a
+        // fallback discovery path. Returning [] degrades gracefully and
+        // surfaces the failure via the audit log when the agent tries the
+        // empty result and re-issues a different query.
+        return [];
+      }
       return [];
     },
     fetchPage: httpFetchPage
@@ -281,6 +501,25 @@ export function combineToolsets(...toolsets: ResearchToolset[]): ResearchToolset
         }
       }
       throw lastError instanceof Error ? lastError : new Error(`no toolset fetched ${url}`);
+    },
+    async searchCorpus(query: string): Promise<ResearchSource[]> {
+      const seen = new Set<string>();
+      const out: ResearchSource[] = [];
+      for (const t of toolsets) {
+        if (!t.searchCorpus) continue;
+        try {
+          const results = await t.searchCorpus(query);
+          for (const r of results) {
+            const key = normalizedUrlKey(r.url);
+            if (seen.has(key)) continue;
+            seen.add(key);
+            out.push(r);
+          }
+        } catch {
+          // individual toolset failure shouldn't kill the overall search
+        }
+      }
+      return out;
     }
   };
 }

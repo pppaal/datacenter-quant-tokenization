@@ -1,4 +1,9 @@
-import { buildDealReport, getAssetReportBundle, isReportKind, serializeReportToMarkdown } from '@/lib/services/reports';
+import {
+  buildDealReport,
+  getAssetReportBundle,
+  isReportKind,
+  serializeReportToMarkdown
+} from '@/lib/services/reports';
 
 export const dynamic = 'force-dynamic';
 

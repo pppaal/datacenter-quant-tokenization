@@ -54,8 +54,8 @@ export default async function ValuationsPage() {
             Generated IMs, scenario output, and committee posture in one stream.
           </h2>
           <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-400">
-            Review what changed in each run across multiple asset sectors, which deals are ready for committee, and
-            where the scenario spread or diligence posture still needs work.
+            Review what changed in each run across multiple asset sectors, which deals are ready for
+            committee, and where the scenario spread or diligence posture still needs work.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Link href="/admin/assets">
@@ -68,7 +68,11 @@ export default async function ValuationsPage() {
           {[
             ['IM Runs', formatNumber(runs.length, 0), 'generated analyses'],
             ['Avg Confidence', formatNumber(avgConfidence, 1), 'across current run history'],
-            ['Committee Ready', formatNumber(runs.filter((run) => (run.confidenceScore ?? 0) >= 75).length, 0), 'strongest current candidates']
+            [
+              'Committee Ready',
+              formatNumber(runs.filter((run) => (run.confidenceScore ?? 0) >= 75).length, 0),
+              'strongest current candidates'
+            ]
           ].map(([label, value, detail]) => (
             <div key={label} className="metric-card">
               <div className="fine-print">{label}</div>
@@ -81,8 +85,12 @@ export default async function ValuationsPage() {
 
       <div className="grid gap-5">
         {runs.map((run) => {
-          const provenance = Array.isArray(run.provenance) ? (run.provenance as ProvenanceEntry[]) : [];
-          const displayCurrency = resolveDisplayCurrency(run.asset.address?.country ?? run.asset.market);
+          const provenance = Array.isArray(run.provenance)
+            ? (run.provenance as ProvenanceEntry[])
+            : [];
+          const displayCurrency = resolveDisplayCurrency(
+            run.asset.address?.country ?? run.asset.market
+          );
           const fxRateToKrw = fxRateMap[displayCurrency];
           const satelliteRisk = resolveSatelliteRiskSnapshot({
             assumptions: run.assumptions,
@@ -110,7 +118,9 @@ export default async function ValuationsPage() {
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <Badge tone="good">{run.status}</Badge>
-                      <Badge tone={getApprovalTone(run.approvalStatus)}>{run.approvalStatus.replaceAll('_', ' ')}</Badge>
+                      <Badge tone={getApprovalTone(run.approvalStatus)}>
+                        {run.approvalStatus.replaceAll('_', ' ')}
+                      </Badge>
                       <Badge>{recommendation}</Badge>
                     </div>
                   </div>
@@ -128,23 +138,37 @@ export default async function ValuationsPage() {
                     <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
                       <div className="fine-print">Base Case</div>
                       <div className="mt-2 text-lg font-semibold text-white">
-                        {formatCurrencyFromKrwAtRate(run.baseCaseValueKrw, displayCurrency, fxRateToKrw)}
+                        {formatCurrencyFromKrwAtRate(
+                          run.baseCaseValueKrw,
+                          displayCurrency,
+                          fxRateToKrw
+                        )}
                       </div>
                     </div>
                     <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
                       <div className="fine-print">Confidence</div>
-                      <div className="mt-2 text-lg font-semibold text-white">{formatNumber(run.confidenceScore, 1)}</div>
+                      <div className="mt-2 text-lg font-semibold text-white">
+                        {formatNumber(run.confidenceScore, 1)}
+                      </div>
                     </div>
                     <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
                       <div className="fine-print">Bull</div>
                       <div className="mt-2 text-lg font-semibold text-white">
-                        {formatCurrencyFromKrwAtRate(run.scenarios[0]?.valuationKrw, displayCurrency, fxRateToKrw)}
+                        {formatCurrencyFromKrwAtRate(
+                          run.scenarios[0]?.valuationKrw,
+                          displayCurrency,
+                          fxRateToKrw
+                        )}
                       </div>
                     </div>
                     <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
                       <div className="fine-print">Bear</div>
                       <div className="mt-2 text-lg font-semibold text-white">
-                        {formatCurrencyFromKrwAtRate(run.scenarios[2]?.valuationKrw, displayCurrency, fxRateToKrw)}
+                        {formatCurrencyFromKrwAtRate(
+                          run.scenarios[2]?.valuationKrw,
+                          displayCurrency,
+                          fxRateToKrw
+                        )}
                       </div>
                     </div>
                   </div>
@@ -163,8 +187,12 @@ export default async function ValuationsPage() {
 
                   <div className="mt-5 flex flex-wrap gap-3">
                     {run.scenarios.map((scenario) => (
-                      <div key={scenario.id} className="rounded-full border border-white/10 px-4 py-2 text-sm text-slate-300">
-                        {scenario.name}: {formatPercent(scenario.exitCapRatePct)} exit cap / {formatNumber(scenario.debtServiceCoverage, 2)}x DSCR
+                      <div
+                        key={scenario.id}
+                        className="rounded-full border border-white/10 px-4 py-2 text-sm text-slate-300"
+                      >
+                        {scenario.name}: {formatPercent(scenario.exitCapRatePct)} exit cap /{' '}
+                        {formatNumber(scenario.debtServiceCoverage, 2)}x DSCR
                       </div>
                     ))}
                     <div className="rounded-full border border-white/10 px-4 py-2 text-sm text-slate-300">

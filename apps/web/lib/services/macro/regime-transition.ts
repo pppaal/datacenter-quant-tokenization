@@ -1,4 +1,4 @@
-import type { MacroRegimeBlock, MacroInterpretation } from '@/lib/services/macro/regime';
+import type { MacroInterpretation } from '@/lib/services/macro/regime';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -41,7 +41,7 @@ const STATE_SEVERITY_ORDER: Record<string, number> = {
   HIGH: 2,
   // refinance
   LOW: 0,
-  MODERATE: 1,
+  MODERATE: 1
   // HIGH is already 2
 };
 
@@ -57,16 +57,22 @@ const BLOCK_LABELS: Record<string, string> = {
   capitalMarkets: 'Capital Markets',
   leasing: 'Leasing',
   construction: 'Construction',
-  refinance: 'Refinancing',
+  refinance: 'Refinancing'
 };
 
-function classifyTransitionDirection(prevSeverity: number, currSeverity: number): RegimeTransition['direction'] {
+function classifyTransitionDirection(
+  prevSeverity: number,
+  currSeverity: number
+): RegimeTransition['direction'] {
   if (currSeverity > prevSeverity) return 'TIGHTENING';
   if (currSeverity < prevSeverity) return 'EASING';
   return 'LATERAL';
 }
 
-function classifyTransitionSeverity(prevSeverity: number, currSeverity: number): RegimeTransition['severity'] {
+function classifyTransitionSeverity(
+  prevSeverity: number,
+  currSeverity: number
+): RegimeTransition['severity'] {
   return Math.abs(currSeverity - prevSeverity) >= 2 ? 'MAJOR' : 'MINOR';
 }
 

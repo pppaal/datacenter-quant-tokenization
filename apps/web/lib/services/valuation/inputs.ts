@@ -12,7 +12,10 @@ import type {
 import { buildMacroRegimeAnalysis } from '@/lib/services/macro/regime';
 import { ensureNumber, stageMultiplier, weightedAverage } from '@/lib/services/valuation/utils';
 
-function buildComparableCalibration(bundle: UnderwritingBundle, capacityMw: number): ComparableCalibration {
+function buildComparableCalibration(
+  bundle: UnderwritingBundle,
+  capacityMw: number
+): ComparableCalibration {
   const entries = bundle.comparableSet?.entries ?? [];
   const weightedEntries = entries.map((entry) => ({
     entry,
@@ -41,7 +44,9 @@ function buildComparableCalibration(bundle: UnderwritingBundle, capacityMw: numb
     weightedEntries.map(({ entry, weight }) => ({
       value:
         entry.pricePerMwKrw ??
-        (entry.valuationKrw && entry.powerCapacityMw ? entry.valuationKrw / entry.powerCapacityMw : null),
+        (entry.valuationKrw && entry.powerCapacityMw
+          ? entry.valuationKrw / entry.powerCapacityMw
+          : null),
       weight
     }))
   );
@@ -94,7 +99,10 @@ function buildCapexBreakdown(
   for (const item of lineItems) {
     totalCapexKrw += item.amountKrw;
     if (item.isEmbedded) embeddedCostKrw += item.amountKrw;
-    amountByCategory.set(item.category, (amountByCategory.get(item.category) ?? 0) + item.amountKrw);
+    amountByCategory.set(
+      item.category,
+      (amountByCategory.get(item.category) ?? 0) + item.amountKrw
+    );
   }
 
   const landValueKrw = amountByCategory.get('LAND') ?? 0;
@@ -150,7 +158,9 @@ function getLatestDocumentFeatureSnapshot(bundle: UnderwritingBundle) {
 }
 
 function getLatestFeatureSnapshot(bundle: UnderwritingBundle, namespace: string) {
-  return bundle.featureSnapshots?.find((snapshot) => snapshot.featureNamespace === namespace) ?? null;
+  return (
+    bundle.featureSnapshots?.find((snapshot) => snapshot.featureNamespace === namespace) ?? null
+  );
 }
 
 function getFeatureNumber(snapshot: BundleFeatureSnapshot | null, key: string) {
@@ -181,7 +191,8 @@ function buildDocumentFeatureOverrides(bundle: UnderwritingBundle) {
     capRatePct: getFeatureNumber(snapshot, 'document.cap_rate_pct'),
     discountRatePct: getFeatureNumber(snapshot, 'document.discount_rate_pct'),
     capexKrw:
-      getFeatureNumber(snapshot, 'document.capex_krw') ?? getFeatureNumber(snapshot, 'document.budget_krw'),
+      getFeatureNumber(snapshot, 'document.capex_krw') ??
+      getFeatureNumber(snapshot, 'document.budget_krw'),
     contractedKw: getFeatureNumber(snapshot, 'document.contracted_kw'),
     permitStatusNote: getFeatureText(snapshot, 'document.permit_status_note'),
     sourceVersion: snapshot?.sourceVersion ?? null
@@ -196,7 +207,8 @@ function buildCuratedFeatureOverrides(bundle: UnderwritingBundle) {
   const revenueSnapshot = getLatestFeatureSnapshot(bundle, 'revenue_micro');
   const legalSnapshot = getLatestFeatureSnapshot(bundle, 'legal_micro');
   const readinessSnapshot =
-    getLatestFeatureSnapshot(bundle, 'readiness_legal') ?? getLatestFeatureSnapshot(bundle, 'registry_legal');
+    getLatestFeatureSnapshot(bundle, 'readiness_legal') ??
+    getLatestFeatureSnapshot(bundle, 'registry_legal');
 
   return {
     marketInputs: {
@@ -204,7 +216,10 @@ function buildCuratedFeatureOverrides(bundle: UnderwritingBundle) {
       capRatePct: getFeatureNumber(marketSnapshot, 'market.cap_rate_pct'),
       discountRatePct: getFeatureNumber(marketSnapshot, 'market.discount_rate_pct'),
       debtCostPct: getFeatureNumber(marketSnapshot, 'market.debt_cost_pct'),
-      constructionCostPerMwKrw: getFeatureNumber(marketSnapshot, 'market.construction_cost_per_mw_krw'),
+      constructionCostPerMwKrw: getFeatureNumber(
+        marketSnapshot,
+        'market.construction_cost_per_mw_krw'
+      ),
       note: getFeatureText(marketSnapshot, 'market.note'),
       sourceVersion: marketSnapshot?.sourceVersion ?? null
     },
@@ -252,10 +267,22 @@ function buildCuratedFeatureOverrides(bundle: UnderwritingBundle) {
       sourceVersion: legalSnapshot?.sourceVersion ?? null
     },
     reviewReadiness: {
-      readinessStatus: getFeatureTextAny(readinessSnapshot, ['readiness.status', 'registry.status']),
-      reviewPhase: getFeatureTextAny(readinessSnapshot, ['readiness.review_phase', 'registry.tokenization_phase']),
-      legalStructure: getFeatureTextAny(readinessSnapshot, ['readiness.legal_structure', 'registry.legal_structure']),
-      nextAction: getFeatureTextAny(readinessSnapshot, ['readiness.next_action', 'registry.next_action']),
+      readinessStatus: getFeatureTextAny(readinessSnapshot, [
+        'readiness.status',
+        'registry.status'
+      ]),
+      reviewPhase: getFeatureTextAny(readinessSnapshot, [
+        'readiness.review_phase',
+        'registry.tokenization_phase'
+      ]),
+      legalStructure: getFeatureTextAny(readinessSnapshot, [
+        'readiness.legal_structure',
+        'registry.legal_structure'
+      ]),
+      nextAction: getFeatureTextAny(readinessSnapshot, [
+        'readiness.next_action',
+        'registry.next_action'
+      ]),
       sourceVersion: readinessSnapshot?.sourceVersion ?? null
     }
   };
@@ -292,7 +319,7 @@ export function prepareValuationInputs(
   );
   const comparableRate = comparableCalibration.weightedMonthlyRatePerKwKrw;
   const baseMonthlyRatePerKwKrw =
-    comparableRate === null ? marketRate : (marketRate * 0.4) + (comparableRate * 0.6);
+    comparableRate === null ? marketRate : marketRate * 0.4 + comparableRate * 0.6;
 
   const marketCapRatePct = ensureNumber(
     documentFeatureOverrides.capRatePct ??
@@ -303,7 +330,7 @@ export function prepareValuationInputs(
   const baseCapRatePct =
     comparableCalibration.weightedCapRatePct === null
       ? marketCapRatePct
-      : (marketCapRatePct * 0.45) + (comparableCalibration.weightedCapRatePct * 0.55);
+      : marketCapRatePct * 0.45 + comparableCalibration.weightedCapRatePct * 0.55;
 
   const marketDiscountRatePct = ensureNumber(
     documentFeatureOverrides.discountRatePct ??
@@ -314,18 +341,19 @@ export function prepareValuationInputs(
   const baseDiscountRatePct =
     comparableCalibration.weightedDiscountRatePct === null
       ? marketDiscountRatePct
-      : (marketDiscountRatePct * 0.5) + (comparableCalibration.weightedDiscountRatePct * 0.5);
+      : marketDiscountRatePct * 0.5 + comparableCalibration.weightedDiscountRatePct * 0.5;
 
   const baseDebtCostPct = ensureNumber(
     curatedFeatureOverrides.marketInputs.debtCostPct ?? marketSnapshot?.debtCostPct,
     asset.financingRatePct ?? 5.3
   );
   const baseReplacementCostPerMwKrw = ensureNumber(
-    curatedFeatureOverrides.marketInputs.constructionCostPerMwKrw ?? marketSnapshot?.constructionCostPerMwKrw,
+    curatedFeatureOverrides.marketInputs.constructionCostPerMwKrw ??
+      marketSnapshot?.constructionCostPerMwKrw,
     7200000000
   );
   const adjustedReplacementCostPerMwKrw =
-    baseReplacementCostPerMwKrw * (1 + (macroGuidance.replacementCostShiftPct / 100));
+    baseReplacementCostPerMwKrw * (1 + macroGuidance.replacementCostShiftPct / 100);
   const capexBreakdown = buildCapexBreakdown(
     bundle,
     adjustedReplacementCostPerMwKrw,
@@ -340,11 +368,15 @@ export function prepareValuationInputs(
     curatedFeatureOverrides.powerMicro.tariffKrwPerKwh ?? energySnapshot?.tariffKrwPerKwh,
     140
   );
-  const pueTarget = ensureNumber(curatedFeatureOverrides.powerMicro.pueTarget ?? energySnapshot?.pueTarget, 1.33);
+  const pueTarget = ensureNumber(
+    curatedFeatureOverrides.powerMicro.pueTarget ?? energySnapshot?.pueTarget,
+    1.33
+  );
   const annualGrowthPct = Math.max(0, ensureNumber(marketSnapshot?.inflationPct, 2.3));
   const baseOpexKrw = ensureNumber(asset.opexAssumptionKrw, capacityKw * 62000);
   const stageFactor = stageMultiplier[stage];
-  const powerApprovalStatus = `${curatedFeatureOverrides.permitInputs.powerApprovalStatus ?? permitSnapshot?.powerApprovalStatus ?? ''} ${documentFeatureOverrides.permitStatusNote ?? curatedFeatureOverrides.permitInputs.timelineNote ?? ''}`.toLowerCase();
+  const powerApprovalStatus =
+    `${curatedFeatureOverrides.permitInputs.powerApprovalStatus ?? permitSnapshot?.powerApprovalStatus ?? ''} ${documentFeatureOverrides.permitStatusNote ?? curatedFeatureOverrides.permitInputs.timelineNote ?? ''}`.toLowerCase();
   const permitPenalty = powerApprovalStatus.includes('pending')
     ? 0.93
     : powerApprovalStatus.includes('denied')
@@ -353,7 +385,9 @@ export function prepareValuationInputs(
   const effectiveFloodRiskScore =
     curatedFeatureOverrides.satelliteRisk.floodRiskScore ?? siteProfile?.floodRiskScore ?? null;
   const effectiveWildfireRiskScore =
-    curatedFeatureOverrides.satelliteRisk.wildfireRiskScore ?? siteProfile?.wildfireRiskScore ?? null;
+    curatedFeatureOverrides.satelliteRisk.wildfireRiskScore ??
+    siteProfile?.wildfireRiskScore ??
+    null;
   const floodPenalty = effectiveFloodRiskScore
     ? Math.max(0.9, 1 - effectiveFloodRiskScore * 0.015)
     : 0.97;
@@ -362,9 +396,15 @@ export function prepareValuationInputs(
     : 0.985;
   const city = address?.city?.toLowerCase() ?? '';
   const locationPremium = city.includes('seoul') || city.includes('incheon') ? 1.04 : 1;
-  const adjustedOccupancyPct = Math.min(98, Math.max(45, occupancyPct + macroGuidance.occupancyShiftPct));
+  const adjustedOccupancyPct = Math.min(
+    98,
+    Math.max(45, occupancyPct + macroGuidance.occupancyShiftPct)
+  );
   const adjustedCapRatePct = Math.max(4, baseCapRatePct + macroGuidance.exitCapRateShiftPct);
-  const adjustedDiscountRatePct = Math.max(6.5, baseDiscountRatePct + macroGuidance.discountRateShiftPct);
+  const adjustedDiscountRatePct = Math.max(
+    6.5,
+    baseDiscountRatePct + macroGuidance.discountRateShiftPct
+  );
   const adjustedDebtCostPct = Math.max(3.75, baseDebtCostPct + macroGuidance.debtCostShiftPct);
   const adjustedAnnualGrowthPct = Math.max(0, annualGrowthPct + macroGuidance.growthShiftPct);
 

@@ -1,4 +1,9 @@
-import { AssetClass, type MarketIndicatorSeries, type RentComp, type TransactionComp } from '@prisma/client';
+import {
+  AssetClass,
+  type MarketIndicatorSeries,
+  type RentComp,
+  type TransactionComp
+} from '@prisma/client';
 import type { UnderwritingBundle } from '@/lib/services/valuation/types';
 
 type IncomeMarketEvidence = {
@@ -13,7 +18,9 @@ type IncomeMarketEvidence = {
 };
 
 function average(values: Array<number | null | undefined>) {
-  const normalized = values.filter((value): value is number => typeof value === 'number' && Number.isFinite(value));
+  const normalized = values.filter(
+    (value): value is number => typeof value === 'number' && Number.isFinite(value)
+  );
   if (normalized.length === 0) return null;
   return normalized.reduce((sum, value) => sum + value, 0) / normalized.length;
 }
@@ -56,13 +63,20 @@ export function buildIncomeMarketEvidence(
     indicatorValue(indicators, ['cap_rate_pct', 'market_cap_rate', 'cap_rate']);
   const averageMonthlyRentPerSqmKrw =
     average(rentComps.map((comp) => rentPerSqm(assetClass, comp))) ??
-    indicatorValue(indicators, ['monthly_rent_per_sqm_krw', 'market_rent_per_sqm_krw', 'rent_per_sqm_krw']);
+    indicatorValue(indicators, [
+      'monthly_rent_per_sqm_krw',
+      'market_rent_per_sqm_krw',
+      'rent_per_sqm_krw'
+    ]);
   const averageOccupancyPct =
     average(rentComps.map((comp) => comp.occupancyPct)) ??
     indicatorValue(indicators, ['occupancy_pct', 'market_occupancy_pct']) ??
     indicatorValue(indicators, ['vacancy_pct', 'market_vacancy_pct'], (value) => 100 - value);
-  const averageRentGrowthPct =
-    indicatorValue(indicators, ['rent_growth_pct', 'market_rent_growth_pct', 'rent_growth']);
+  const averageRentGrowthPct = indicatorValue(indicators, [
+    'rent_growth_pct',
+    'market_rent_growth_pct',
+    'rent_growth'
+  ]);
 
   return {
     transactionCompCount: transactionComps.length,

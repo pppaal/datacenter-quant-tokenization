@@ -85,8 +85,7 @@ export async function updateAssetManagementInitiative(
   }
 
   const nextStatus = input.status ?? existing.status;
-  const completedAt =
-    nextStatus === TaskStatus.DONE ? existing.completedAt ?? new Date() : null;
+  const completedAt = nextStatus === TaskStatus.DONE ? (existing.completedAt ?? new Date()) : null;
 
   return db.assetManagementInitiative.update({
     where: { id: initiativeId },
@@ -99,7 +98,8 @@ export async function updateAssetManagementInitiative(
       targetDate: input.targetDate !== undefined ? normalizeDate(input.targetDate) : undefined,
       completedAt,
       summary: input.summary != null ? input.summary.trim() || null : undefined,
-      blockerSummary: input.blockerSummary != null ? input.blockerSummary.trim() || null : undefined,
+      blockerSummary:
+        input.blockerSummary != null ? input.blockerSummary.trim() || null : undefined,
       nextStep: input.nextStep != null ? input.nextStep.trim() || null : undefined
     }
   });

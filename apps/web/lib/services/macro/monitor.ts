@@ -1,5 +1,9 @@
 import type { MacroFactor } from '@prisma/client';
-import type { QuantAllocationView, QuantMarketSignal, QuantSignalStance } from '@/lib/services/macro/quant';
+import type {
+  QuantAllocationView,
+  QuantMarketSignal,
+  QuantSignalStance
+} from '@/lib/services/macro/quant';
 
 const MONITORED_FACTOR_KEYS = [
   'inflation_trend',
@@ -51,12 +55,15 @@ export type MacroMonitor = {
 function getLatestFactorMap(factors: MacroFactor[]) {
   const latestByMarket = new Map<string, Map<MonitoredFactorKey, MacroFactor>>();
 
-  for (const factor of [...factors].sort((left, right) => right.observationDate.getTime() - left.observationDate.getTime())) {
+  for (const factor of [...factors].sort(
+    (left, right) => right.observationDate.getTime() - left.observationDate.getTime()
+  )) {
     if (!MONITORED_FACTOR_KEYS.includes(factor.factorKey as MonitoredFactorKey)) {
       continue;
     }
 
-    const marketMap = latestByMarket.get(factor.market) ?? new Map<MonitoredFactorKey, MacroFactor>();
+    const marketMap =
+      latestByMarket.get(factor.market) ?? new Map<MonitoredFactorKey, MacroFactor>();
     const factorKey = factor.factorKey as MonitoredFactorKey;
     if (!marketMap.has(factorKey)) {
       marketMap.set(factorKey, factor);
@@ -90,9 +97,14 @@ function getSeverity(factor: MacroFactor) {
   }
 }
 
-function getQuantSignalStance(signals: QuantMarketSignal[], market: string, key: 'risk' | 'realAssets') {
+function getQuantSignalStance(
+  signals: QuantMarketSignal[],
+  market: string,
+  key: 'risk' | 'realAssets'
+) {
   return (
-    signals.find((signal) => signal.market === market)?.signals.find((item) => item.key === key)?.stance ?? 'NEUTRAL'
+    signals.find((signal) => signal.market === market)?.signals.find((item) => item.key === key)
+      ?.stance ?? 'NEUTRAL'
   );
 }
 
@@ -132,7 +144,9 @@ function buildDriverBoard(rows: MacroMonitorMarketRow[]) {
   }
 
   return [...counts.values()]
-    .sort((left, right) => right.marketCount - left.marketCount || left.label.localeCompare(right.label))
+    .sort(
+      (left, right) => right.marketCount - left.marketCount || left.label.localeCompare(right.label)
+    )
     .slice(0, 6);
 }
 
@@ -148,10 +162,15 @@ export function buildMacroMonitor(
       const headwinds = pickDrivers(observedFactors, 'NEGATIVE');
       const tailwinds = pickDrivers(observedFactors, 'POSITIVE');
       const latestAsOf =
-        observedFactors.sort((left, right) => right.observationDate.getTime() - left.observationDate.getTime())[0]
+        observedFactors
+          .sort(
+            (left, right) => right.observationDate.getTime() - left.observationDate.getTime()
+          )[0]
           ?.observationDate.toISOString() ?? null;
 
-      const missingFactors = MONITORED_FACTOR_KEYS.filter((factorKey) => !marketFactors.has(factorKey)).map((factorKey) => {
+      const missingFactors = MONITORED_FACTOR_KEYS.filter(
+        (factorKey) => !marketFactors.has(factorKey)
+      ).map((factorKey) => {
         switch (factorKey) {
           case 'inflation_trend':
             return 'Inflation';
@@ -214,11 +233,12 @@ export function buildMacroMonitor(
           market.missingFactorCount === 0
       ).length,
       missingDataMarkets: markets.filter((market) => market.missingFactorCount > 0).length,
-      latestAsOf: markets
-        .map((market) => market.asOf)
-        .filter((item): item is string => Boolean(item))
-        .sort()
-        .at(-1) ?? null
+      latestAsOf:
+        markets
+          .map((market) => market.asOf)
+          .filter((item): item is string => Boolean(item))
+          .sort()
+          .at(-1) ?? null
     },
     markets,
     driverBoard: buildDriverBoard(markets)

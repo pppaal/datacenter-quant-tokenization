@@ -130,7 +130,11 @@ function zeroYear(y: number): ProFormaYear {
   };
 }
 
-export function amortizeYear(openingBalance: number, monthlyRate: number, monthlyPmt: number): {
+export function amortizeYear(
+  openingBalance: number,
+  monthlyRate: number,
+  monthlyPmt: number
+): {
   interest: number;
   principal: number;
   endingBalance: number;
@@ -152,9 +156,10 @@ export function amortizeYear(openingBalance: number, monthlyRate: number, monthl
   };
 }
 
-export function buildSyntheticProForma(
-  inputs: ProFormaInputs
-): { proForma: ProFormaBaseCase; extras: ProFormaExtras } {
+export function buildSyntheticProForma(inputs: ProFormaInputs): {
+  proForma: ProFormaBaseCase;
+  extras: ProFormaExtras;
+} {
   const {
     purchasePriceKrw,
     ltvPct,
@@ -195,13 +200,10 @@ export function buildSyntheticProForma(
   // ─ 매입부가세. Commercial acquisitions: 10% VAT on the building portion is
   // recoverable by a VAT-registered SPV. Residential (주택) is exempt from VAT
   // entirely (면세). Default to asset-class-driven recoverability, allow override.
-  const defaultRefundablePct =
-    assetClass === 'MULTIFAMILY' || assetClass === 'LAND' ? 0 : 10;
+  const defaultRefundablePct = assetClass === 'MULTIFAMILY' || assetClass === 'LAND' ? 0 : 10;
   const effectiveVatPct = vatRefundablePortionPct ?? defaultRefundablePct;
   const buildingPortion = Math.max(0, 1 - landValuePct / 100);
-  const vatRefundKrw = Math.round(
-    purchasePriceKrw * buildingPortion * (effectiveVatPct / 100)
-  );
+  const vatRefundKrw = Math.round(purchasePriceKrw * buildingPortion * (effectiveVatPct / 100));
 
   // ─ Capex reserve. Separate from opex, builds a fund for major systems
   // refresh (HVAC, elevators, exterior). Grows with revenue.
@@ -219,7 +221,8 @@ export function buildSyntheticProForma(
   const annualDebtService = Math.round(monthlyPmt * 12);
 
   const depreciableBasis = Math.max(0, Math.round(totalBasis * (1 - landValuePct / 100)));
-  const annualDepreciation = depreciationYears > 0 ? Math.round(depreciableBasis / depreciationYears) : 0;
+  const annualDepreciation =
+    depreciationYears > 0 ? Math.round(depreciableBasis / depreciationYears) : 0;
 
   const years: ProFormaYear[] = [];
   let openingBalance = initialDebt;
@@ -231,7 +234,7 @@ export function buildSyntheticProForma(
 
   for (let i = 0; i < HOLDING_YEARS; i++) {
     const yearNum = i + 1;
-    const revenue = Math.round(year1Noi / (1 - opexRatio) * Math.pow(1 + growthPct / 100, i));
+    const revenue = Math.round((year1Noi / (1 - opexRatio)) * Math.pow(1 + growthPct / 100, i));
     const opex = Math.round(revenue * opexRatio);
     const noi = revenue - opex;
     const cfads = noi;
@@ -246,7 +249,9 @@ export function buildSyntheticProForma(
     // Applying both haircuts so propertyTaxPct (e.g., 0.25%) is the statutory
     // rate and not a synthetic full-market rate.
     const propertyTaxBase = totalBasis * assessmentRatio * propertyTaxFairMarketRatio;
-    const propertyTax = Math.round(propertyTaxBase * (propertyTaxPct / 100) * Math.pow(1 + propertyTaxGrowthPct / 100, i));
+    const propertyTax = Math.round(
+      propertyTaxBase * (propertyTaxPct / 100) * Math.pow(1 + propertyTaxGrowthPct / 100, i)
+    );
     // 종부세 grows with the same 공시가격 index as 재산세
     const jongbuseThisYear = Math.round(
       year1JongbuseKrw * Math.pow(1 + propertyTaxGrowthPct / 100, i)
@@ -261,7 +266,13 @@ export function buildSyntheticProForma(
     const shieldThisYear = Math.round(annualDepreciation * (corpTaxPct / 100));
 
     const pretaxCash =
-      noi - debtService - propertyTax - jongbuseThisYear - insurance - reserveContribution - capexReserve;
+      noi -
+      debtService -
+      propertyTax -
+      jongbuseThisYear -
+      insurance -
+      reserveContribution -
+      capexReserve;
     const afterTax = pretaxCash - corporateTax;
 
     cumulativeAfterTax += afterTax;
@@ -335,7 +346,8 @@ export function buildSyntheticProForma(
   // under-states exit value by ~one growth period.
   const inPlaceTerminalNoi = years[HOLDING_YEARS - 1]!.noiKrw;
   const forwardTerminalNoi = Math.round(inPlaceTerminalNoi * (1 + growthPct / 100));
-  const grossExit = exitCapRatePct > 0 ? Math.round(forwardTerminalNoi / (exitCapRatePct / 100)) : 0;
+  const grossExit =
+    exitCapRatePct > 0 ? Math.round(forwardTerminalNoi / (exitCapRatePct / 100)) : 0;
 
   const adjustedBasis = Math.max(0, totalBasis - cumulativeDepreciation);
   const realizedGain = Math.max(0, grossExit - adjustedBasis);
@@ -350,8 +362,7 @@ export function buildSyntheticProForma(
   // assets with heavy mid-hold capex the build-out should be netted separately.
   const releasedReservesKrw = cumulativeCapexReserve + cumulativeOperatingReserve;
 
-  const netExit =
-    grossExit - openingBalance - exitTax - exitTransactionCost + releasedReservesKrw;
+  const netExit = grossExit - openingBalance - exitTax - exitTransactionCost + releasedReservesKrw;
 
   const initialEquity = totalBasis - initialDebt;
   const averageCoC =

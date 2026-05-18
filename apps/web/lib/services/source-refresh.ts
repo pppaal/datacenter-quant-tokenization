@@ -112,11 +112,14 @@ export async function getSourceRefreshHealth(db: SourceRefreshDb = prisma, now =
     })
   ]);
 
-  const staleAssets = assets.filter((asset) => !asset.lastEnrichedAt || asset.lastEnrichedAt < staleCutoff);
-  const latestFetchAt = sourceRows
-    .map((row) => row.fetchedAt)
-    .filter((value): value is Date => value instanceof Date)
-    .sort((a, b) => b.getTime() - a.getTime())[0] ?? null;
+  const staleAssets = assets.filter(
+    (asset) => !asset.lastEnrichedAt || asset.lastEnrichedAt < staleCutoff
+  );
+  const latestFetchAt =
+    sourceRows
+      .map((row) => row.fetchedAt)
+      .filter((value): value is Date => value instanceof Date)
+      .sort((a, b) => b.getTime() - a.getTime())[0] ?? null;
 
   return {
     staleThresholdHours,
@@ -125,7 +128,9 @@ export async function getSourceRefreshHealth(db: SourceRefreshDb = prisma, now =
       fresh: sourceRows.filter((row) => row.status === 'FRESH').length,
       stale: sourceRows.filter((row) => row.status === 'STALE').length,
       failed: sourceRows.filter((row) => row.status === 'FAILED').length,
-      staleSystems: sourceRows.filter((row) => row.status !== 'FRESH').map((row) => row.sourceSystem),
+      staleSystems: sourceRows
+        .filter((row) => row.status !== 'FRESH')
+        .map((row) => row.sourceSystem),
       latestFetchAt: latestFetchAt ? latestFetchAt.toISOString() : null
     },
     assetFreshness: {

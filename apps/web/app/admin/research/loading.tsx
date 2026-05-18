@@ -7,7 +7,8 @@ export default function AdminResearchLoading() {
           Loading research fabric...
         </h1>
         <p className="mt-4 max-w-4xl text-base leading-8 text-slate-200">
-          Pulling official-source freshness, market universes, submarkets, asset dossiers, and coverage tasks.
+          Pulling official-source freshness, market universes, submarkets, asset dossiers, and
+          coverage tasks.
         </p>
       </section>
     </div>

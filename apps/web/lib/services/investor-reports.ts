@@ -82,20 +82,28 @@ export async function buildInvestorReport(
 
   const reportDate = new Date().toISOString().slice(0, 10);
   const periodLabel =
-    options.periodLabel ?? `Q${Math.ceil((new Date().getMonth() + 1) / 3)} ${new Date().getFullYear()}`;
+    options.periodLabel ??
+    `Q${Math.ceil((new Date().getMonth() + 1) / 3)} ${new Date().getFullYear()}`;
 
   const committedKrw = fund.commitments.reduce((sum, c) => {
-    const amt = typeof c.commitmentKrw === 'number' ? c.commitmentKrw : (c.commitmentKrw as any)?.toNumber?.() ?? 0;
+    const amt =
+      typeof c.commitmentKrw === 'number'
+        ? c.commitmentKrw
+        : ((c.commitmentKrw as any)?.toNumber?.() ?? 0);
     return sum + amt;
   }, 0);
 
   const calledKrw = fund.commitments.reduce((sum, c) => {
-    const amt = typeof c.calledKrw === 'number' ? c.calledKrw : (c.calledKrw as any)?.toNumber?.() ?? 0;
+    const amt =
+      typeof c.calledKrw === 'number' ? c.calledKrw : ((c.calledKrw as any)?.toNumber?.() ?? 0);
     return sum + amt;
   }, 0);
 
   const distributedKrw = fund.commitments.reduce((sum, c) => {
-    const amt = typeof c.distributedKrw === 'number' ? c.distributedKrw : (c.distributedKrw as any)?.toNumber?.() ?? 0;
+    const amt =
+      typeof c.distributedKrw === 'number'
+        ? c.distributedKrw
+        : ((c.distributedKrw as any)?.toNumber?.() ?? 0);
     return sum + amt;
   }, 0);
 
@@ -133,7 +141,7 @@ export async function buildInvestorReport(
                 const price =
                   typeof asset.purchasePriceKrw === 'number'
                     ? asset.purchasePriceKrw
-                    : (asset.purchasePriceKrw as any)?.toNumber?.() ?? 0;
+                    : ((asset.purchasePriceKrw as any)?.toNumber?.() ?? 0);
                 return `- ${asset.name} (${asset.assetCode}): ${asset.assetClass ?? 'N/A'}, ${formatKrwBillions(price)}`;
               })
               .filter(Boolean)
@@ -230,7 +238,9 @@ export function serializeInvestorReportToCsv(report: InvestorReportBundle) {
   rows.push(['Committed', report.metrics.committedKrw].map(csvEscape).join(','));
   rows.push(['Called', report.metrics.calledKrw].map(csvEscape).join(','));
   rows.push(['Distributed', report.metrics.distributedKrw].map(csvEscape).join(','));
-  rows.push(['Remaining Commitment', report.metrics.remainingCommitmentKrw].map(csvEscape).join(','));
+  rows.push(
+    ['Remaining Commitment', report.metrics.remainingCommitmentKrw].map(csvEscape).join(',')
+  );
   rows.push(['DPI Multiple', report.metrics.dpiMultiple].map(csvEscape).join(','));
   rows.push(['TVPI Multiple', report.metrics.tvpiMultiple].map(csvEscape).join(','));
   rows.push(['Asset Count', report.metrics.assetCount].map(csvEscape).join(','));

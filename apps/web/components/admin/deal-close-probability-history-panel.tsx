@@ -23,7 +23,9 @@ export function DealCloseProbabilityHistoryPanel({ history }: Props) {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="eyebrow">Close Probability History</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">How execution certainty is moving</h2>
+          <h2 className="mt-2 text-2xl font-semibold text-white">
+            How execution certainty is moving
+          </h2>
         </div>
         {latest ? (
           <div className="flex flex-wrap items-center gap-2">
@@ -61,7 +63,9 @@ export function DealCloseProbabilityHistoryPanel({ history }: Props) {
         </div>
         <div className="metric-card">
           <div className="fine-print">Latest Snapshot</div>
-          <div className="mt-3 text-base font-semibold text-white">{formatDate(latest?.createdAt ?? null)}</div>
+          <div className="mt-3 text-base font-semibold text-white">
+            {formatDate(latest?.createdAt ?? null)}
+          </div>
           <p className="mt-2 text-sm text-slate-400">{latest?.reason ?? 'No snapshots yet.'}</p>
         </div>
       </div>
@@ -110,7 +114,8 @@ export function DealCloseProbabilityHistoryPanel({ history }: Props) {
                   <div>
                     <div className="fine-print">Risks / Overdue / DD</div>
                     <div className="mt-1">
-                      {formatNumber(point.openRiskCount, 0)} / {formatNumber(point.overdueTaskCount, 0)} /{' '}
+                      {formatNumber(point.openRiskCount, 0)} /{' '}
+                      {formatNumber(point.overdueTaskCount, 0)} /{' '}
                       {formatNumber(point.pendingSuggestedRequestCount, 0)}
                     </div>
                   </div>
@@ -120,7 +125,8 @@ export function DealCloseProbabilityHistoryPanel({ history }: Props) {
           })
         ) : (
           <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5 text-sm text-slate-400">
-            No execution probability snapshots yet. The first new stage, task, risk, bid, lender, or negotiation update will start the trend.
+            No execution probability snapshots yet. The first new stage, task, risk, bid, lender, or
+            negotiation update will start the trend.
           </div>
         )}
       </div>

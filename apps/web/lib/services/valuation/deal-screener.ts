@@ -48,13 +48,13 @@ export type ListingAssetClass =
 
 export type EncumbranceTag =
   | 'CLEAN_TITLE'
-  | 'EXISTING_LEASE'            // 임차인 있음 (통상 승계)
-  | 'TENANT_OPPOSABILITY'       // 임차인 대항력 (severity high)
-  | 'LIEN_HOLDER_CLAIM'         // 유치권 (severity high)
-  | 'SECOND_LIEN'               // 후순위 근저당
-  | 'TAX_LIEN'                  // 세금 우선특권
-  | 'SMALL_CLAIMS'              // 소액 가압류 등
-  | 'ENVIRONMENTAL_FLAG'        // 토양오염 등
+  | 'EXISTING_LEASE' // 임차인 있음 (통상 승계)
+  | 'TENANT_OPPOSABILITY' // 임차인 대항력 (severity high)
+  | 'LIEN_HOLDER_CLAIM' // 유치권 (severity high)
+  | 'SECOND_LIEN' // 후순위 근저당
+  | 'TAX_LIEN' // 세금 우선특권
+  | 'SMALL_CLAIMS' // 소액 가압류 등
+  | 'ENVIRONMENTAL_FLAG' // 토양오염 등
   | 'CONSTRUCTION_INCOMPLETE';
 
 export type RawListing = {
@@ -266,7 +266,8 @@ export function screenListing(
   // Failed-rounds signal on court auction: 2+ failed rounds = stale/problematic.
   if (listing.channel === 'COURT_AUCTION') {
     if (listing.priorFailedRounds === 0) score += 5;
-    else if (listing.priorFailedRounds === 1) score += 8; // sweet spot
+    else if (listing.priorFailedRounds === 1)
+      score += 8; // sweet spot
     else if (listing.priorFailedRounds === 2) score += 3;
     else score -= 5; // 3+ failed rounds = something is wrong
     if (listing.priorFailedRounds >= 2) {

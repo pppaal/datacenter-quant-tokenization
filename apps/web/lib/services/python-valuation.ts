@@ -147,7 +147,9 @@ export async function canUsePythonValuation() {
   return scriptExists();
 }
 
-export async function runPythonValuation(bundle: UnderwritingBundle): Promise<PythonValuationResult | null> {
+export async function runPythonValuation(
+  bundle: UnderwritingBundle
+): Promise<PythonValuationResult | null> {
   if (!(await scriptExists())) return null;
 
   const pythonCommand = resolvePythonCommand();

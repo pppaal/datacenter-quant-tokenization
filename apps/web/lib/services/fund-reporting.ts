@@ -34,19 +34,20 @@ export async function updateInvestorReportRelease(
   }
 
   const nextReleaseStatus = input.releaseStatus ?? existing.releaseStatus;
-  if (existing.releaseStatus === InvestorReportReleaseStatus.RELEASED && nextReleaseStatus !== InvestorReportReleaseStatus.RELEASED) {
+  if (
+    existing.releaseStatus === InvestorReportReleaseStatus.RELEASED &&
+    nextReleaseStatus !== InvestorReportReleaseStatus.RELEASED
+  ) {
     throw new Error('Released investor reports cannot be moved back to draft status.');
   }
 
   const now = new Date();
   const reviewedAt =
-    nextReleaseStatus === InvestorReportReleaseStatus.DRAFT
-      ? null
-      : existing.reviewedAt ?? now;
+    nextReleaseStatus === InvestorReportReleaseStatus.DRAFT ? null : (existing.reviewedAt ?? now);
 
   const publishedAt =
     nextReleaseStatus === InvestorReportReleaseStatus.RELEASED
-      ? existing.publishedAt ?? now
+      ? (existing.publishedAt ?? now)
       : existing.publishedAt;
 
   return db.investorReport.update({
@@ -59,11 +60,11 @@ export async function updateInvestorReportRelease(
       reviewedById:
         nextReleaseStatus === InvestorReportReleaseStatus.DRAFT
           ? null
-          : actor.userId ?? undefined,
+          : (actor.userId ?? undefined),
       publishedAt,
       releasedById:
         nextReleaseStatus === InvestorReportReleaseStatus.RELEASED
-          ? actor.userId ?? null
+          ? (actor.userId ?? null)
           : undefined
     }
   });

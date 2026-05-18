@@ -60,7 +60,8 @@ export function buildLeaseExpiryLadder(
       const lastStep = resolveLastEffectiveStep(lease.steps);
       const expiringKw = lastStep?.leasedKw ?? lease.leasedKw ?? 0;
       const expiryYear = (lease.startYear ?? 1) + (lease.termYears ?? 1) - 1;
-      const renewProbabilityPct = lastStep?.renewProbabilityPct ?? lease.renewProbabilityPct ?? null;
+      const renewProbabilityPct =
+        lastStep?.renewProbabilityPct ?? lease.renewProbabilityPct ?? null;
       const rolloverDowntimeMonths =
         lastStep?.rolloverDowntimeMonths ?? lease.rolloverDowntimeMonths ?? null;
       const renewalTermYears =
@@ -89,43 +90,49 @@ export function buildLeaseExpiryLadder(
         lastModeledRenewalEndYear
       };
     })
-    .sort((left, right) => left.expiryYear - right.expiryYear || right.expiringKw - left.expiringKw);
+    .sort(
+      (left, right) => left.expiryYear - right.expiryYear || right.expiringKw - left.expiringKw
+    );
 
-  const rowMap = new Map<number, LeaseExpiryLadderRow & {
-    renewProbabilityWeighted: number;
-    rolloverWeighted: number;
-    renewalTermWeighted: number;
-    renewalCountWeighted: number;
-    mtmRateWeighted: number;
-  }>();
+  const rowMap = new Map<
+    number,
+    LeaseExpiryLadderRow & {
+      renewProbabilityWeighted: number;
+      rolloverWeighted: number;
+      renewalTermWeighted: number;
+      renewalCountWeighted: number;
+      mtmRateWeighted: number;
+    }
+  >();
 
   for (const detail of details) {
-    const current =
-      rowMap.get(detail.expiryYear) ??
-      {
-        expiryYear: detail.expiryYear,
-        expiringKw: 0,
-        leaseCount: 0,
-        weightedRenewProbabilityPct: null,
-        weightedRolloverDowntimeMonths: null,
-        weightedRenewalTermYears: null,
-        weightedRenewalCount: null,
-        weightedMarkToMarketRatePerKwKrw: null,
-        firstRenewalStartYear: null,
-        lastModeledRenewalEndYear: null,
-        renewProbabilityWeighted: 0,
-        rolloverWeighted: 0,
-        renewalTermWeighted: 0,
-        renewalCountWeighted: 0,
-        mtmRateWeighted: 0
-      };
+    const current = rowMap.get(detail.expiryYear) ?? {
+      expiryYear: detail.expiryYear,
+      expiringKw: 0,
+      leaseCount: 0,
+      weightedRenewProbabilityPct: null,
+      weightedRolloverDowntimeMonths: null,
+      weightedRenewalTermYears: null,
+      weightedRenewalCount: null,
+      weightedMarkToMarketRatePerKwKrw: null,
+      firstRenewalStartYear: null,
+      lastModeledRenewalEndYear: null,
+      renewProbabilityWeighted: 0,
+      rolloverWeighted: 0,
+      renewalTermWeighted: 0,
+      renewalCountWeighted: 0,
+      mtmRateWeighted: 0
+    };
 
     current.expiringKw += detail.expiringKw;
     current.leaseCount += 1;
     current.firstRenewalStartYear =
       current.firstRenewalStartYear === null
         ? detail.firstRenewalStartYear
-        : Math.min(current.firstRenewalStartYear, detail.firstRenewalStartYear ?? current.firstRenewalStartYear);
+        : Math.min(
+            current.firstRenewalStartYear,
+            detail.firstRenewalStartYear ?? current.firstRenewalStartYear
+          );
     current.lastModeledRenewalEndYear =
       current.lastModeledRenewalEndYear === null
         ? detail.lastModeledRenewalEndYear

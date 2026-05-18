@@ -28,12 +28,19 @@ export async function GET(request: Request) {
     response.cookies.set(ADMIN_SSO_STATE_COOKIE, state, createAdminSsoCookieOptions());
     response.cookies.set(ADMIN_SSO_VERIFIER_COOKIE, verifier, createAdminSsoCookieOptions());
     if (nextPath) {
-      response.cookies.set(ADMIN_SSO_NEXT_COOKIE, nextPath, createAdminSsoCookieOptions(process.env, 900));
+      response.cookies.set(
+        ADMIN_SSO_NEXT_COOKIE,
+        nextPath,
+        createAdminSsoCookieOptions(process.env, 900)
+      );
     }
     return response;
   } catch (error) {
     const target = new URL('/admin/login?error=sso_config', request.url);
-    target.searchParams.set('detail', error instanceof Error ? error.message : 'Unable to initialize SSO.');
+    target.searchParams.set(
+      'detail',
+      error instanceof Error ? error.message : 'Unable to initialize SSO.'
+    );
     return NextResponse.redirect(target);
   }
 }

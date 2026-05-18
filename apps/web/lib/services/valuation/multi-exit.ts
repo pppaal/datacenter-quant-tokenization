@@ -32,11 +32,7 @@
  * which scenario wins on NPV and what the decision rationale is.
  */
 
-export type MultiExitScenarioKey =
-  | 'BULK_SALE'
-  | 'STRATA_SALE'
-  | 'REIT_SEED'
-  | 'REFI_HOLD';
+export type MultiExitScenarioKey = 'BULK_SALE' | 'STRATA_SALE' | 'REIT_SEED' | 'REFI_HOLD';
 
 export type MultiExitInput = {
   /** Stabilized annual NOI (KRW) at exit year. */
@@ -70,7 +66,7 @@ export type ExitScenarioResult = {
   scenario: MultiExitScenarioKey;
   labelKo: string;
   grossProceedsKrw: number;
-  frictionKrw: number;          // broker + legal + VAT net
+  frictionKrw: number; // broker + legal + VAT net
   taxKrw: number;
   debtPayoffKrw: number;
   netToEquityKrw: number;
@@ -140,11 +136,11 @@ function scenarioBulkSale(input: MultiExitInput): ExitScenarioResult {
 // Scenario 2 — STRATA_SALE (분양)
 // ---------------------------------------------------------------------------
 
-const STRATA_GROSS_PREMIUM_PCT = 18;     // Retail buyers pay up vs institutional cap rate
+const STRATA_GROSS_PREMIUM_PCT = 18; // Retail buyers pay up vs institutional cap rate
 const STRATA_MARKETING_FEE_PCT = 6;
 const STRATA_VAT_PCT = 10;
-const STRATA_BUILDING_SHARE_PCT = 60;    // Building portion subject to VAT; land exempt
-const STRATA_SELL_DOWN_YEARS = 3;        // 30% year 1, 45% year 2, 25% year 3
+const STRATA_BUILDING_SHARE_PCT = 60; // Building portion subject to VAT; land exempt
+const STRATA_SELL_DOWN_YEARS = 3; // 30% year 1, 45% year 2, 25% year 3
 
 function scenarioStrataSale(input: MultiExitInput): ExitScenarioResult {
   if (!input.strataEligible) {
@@ -213,10 +209,10 @@ function scenarioStrataSale(input: MultiExitInput): ExitScenarioResult {
 // Scenario 3 — REIT_SEED
 // ---------------------------------------------------------------------------
 
-const REIT_IMPLIED_CAP_SPREAD_PCT = -1.0;   // REIT valuation 100bps thinner than market
-const REIT_CASH_OUT_SHARE_PCT = 75;          // Sponsor keeps 25% units
-const REIT_LISTING_FRICTION_PCT = 3;         // Underwriter, legal, marketing
-const REIT_RESIDUAL_UNIT_DISCOUNT_PCT = 15;  // illiquidity / lockup mark
+const REIT_IMPLIED_CAP_SPREAD_PCT = -1.0; // REIT valuation 100bps thinner than market
+const REIT_CASH_OUT_SHARE_PCT = 75; // Sponsor keeps 25% units
+const REIT_LISTING_FRICTION_PCT = 3; // Underwriter, legal, marketing
+const REIT_RESIDUAL_UNIT_DISCOUNT_PCT = 15; // illiquidity / lockup mark
 
 function scenarioReitSeed(input: MultiExitInput): ExitScenarioResult {
   if (!input.reitSeedEligible) {
@@ -245,15 +241,26 @@ function scenarioReitSeed(input: MultiExitInput): ExitScenarioResult {
   const markedUnits = residualUnits * (1 - REIT_RESIDUAL_UNIT_DISCOUNT_PCT / 100);
   const grossToSponsor = cashOut + markedUnits;
 
-  const taxableGain = gain(cashOut - listingFee, input.bookBasisKrw * (REIT_CASH_OUT_SHARE_PCT / 100));
+  const taxableGain = gain(
+    cashOut - listingFee,
+    input.bookBasisKrw * (REIT_CASH_OUT_SHARE_PCT / 100)
+  );
   const tax = taxableGain * (corp / 100);
   const netToEquity = grossToSponsor - listingFee - tax - input.outstandingDebtKrw;
 
   // Cash-out comes at exit. Residual unit value realized over a ~2yr lockup →
   // approximate as half at exit year, half at exit+2.
   const npv =
-    discount((cashOut - listingFee - tax) * 0.5 + markedUnits * 0.5, input.exitYear, input.discountRatePct) +
-    discount((cashOut - listingFee - tax) * 0.5 + markedUnits * 0.5, input.exitYear + 2, input.discountRatePct) -
+    discount(
+      (cashOut - listingFee - tax) * 0.5 + markedUnits * 0.5,
+      input.exitYear,
+      input.discountRatePct
+    ) +
+    discount(
+      (cashOut - listingFee - tax) * 0.5 + markedUnits * 0.5,
+      input.exitYear + 2,
+      input.discountRatePct
+    ) -
     discount(input.outstandingDebtKrw, input.exitYear, input.discountRatePct);
 
   return {
@@ -302,7 +309,11 @@ function scenarioRefiHold(input: MultiExitInput): ExitScenarioResult {
   // Terminal value of asset minus remaining debt at end of extended hold (still cap'd at same rate).
   const terminalValue = impliedValue;
   const terminalNetOfDebt = terminalValue - newDebt;
-  npv += discount(terminalNetOfDebt, input.exitYear + REFI_EXTEND_HOLD_YEARS, input.discountRatePct);
+  npv += discount(
+    terminalNetOfDebt,
+    input.exitYear + REFI_EXTEND_HOLD_YEARS,
+    input.discountRatePct
+  );
 
   return {
     scenario: 'REFI_HOLD',

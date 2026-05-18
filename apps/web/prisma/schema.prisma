@@ -378,6 +378,8 @@ model User {
   reviewedInvestorReports         InvestorReport[]       @relation("InvestorReportReviewedBy")
   releasedInvestorReports         InvestorReport[]       @relation("InvestorReportReleasedBy")
   approvedResearchSnapshots       ResearchSnapshot[]     @relation("ResearchSnapshotApprovedBy")
+  recordedTenantDemand            TenantDemand[]         @relation("TenantDemandRecordedBy")
+  recordedDealFlow                DealFlowEntry[]        @relation("DealFlowRecordedBy")
 }
 
 model AdminIdentityBinding {
@@ -527,6 +529,10 @@ model Asset {
   portfolioAssets       PortfolioAsset[]
   committeePackets      InvestmentCommitteePacket[]
   tokenization          TokenizedAsset?
+  media                 AssetMedia[]
+  insurancePolicies     InsurancePolicy[]
+  carbonRecords         CarbonEmissionRecord[]
+  sideLetters           SideLetter[]
 }
 
 model Address {
@@ -706,6 +712,11 @@ model ValuationRun {
   ddChecklist      String[]
   assumptions      Json
   provenance       Json
+  // SHA-256 of the canonical JSON of (engineVersion, assumptions). Two runs
+  // with the same hash were produced by the same engine version against
+  // identical assumptions and should yield identical scenarios; mismatch
+  // exposes engine drift or hidden assumption mutation.
+  inputsHash       String?
   createdById      String?
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
@@ -715,6 +726,8 @@ model ValuationRun {
   sensitivityRuns  SensitivityRun[]
   aiInsights       AiInsight[]
   committeePackets InvestmentCommitteePacket[]
+
+  @@index([assetId, inputsHash])
 }
 
 model ValuationScenario {
@@ -1362,14 +1375,28 @@ model FinancialStatement {
   fiscalYear         Int?
   fiscalPeriod       String?
   periodEndDate      DateTime?
+  // Display currency for the *Krw columns. Historically defaulted to KRW
+  // and the column names assume that — kept stable for back-compat.
   currency           String             @default("KRW")
-  revenueKrw         Float?
-  ebitdaKrw          Float?
-  cashKrw            Float?
-  totalDebtKrw       Float?
-  totalAssetsKrw     Float?
-  totalEquityKrw     Float?
-  interestExpenseKrw Float?
+  // Original filing currency. Differs from `currency` when the source
+  // document was filed in USD/JPY/etc and we converted to KRW for storage.
+  sourceCurrency     String?
+  // FX snapshot pinned at intake so the row reads consistently after market
+  // rates move. Without this, re-rendering an old IC memo with today's rate
+  // produces different numbers for the same statement.
+  fxRateToKrw        Float?
+  fxAsOf             DateTime?
+  // Where this statement came from: 'DART', 'UPLOAD', 'MANUAL', etc.
+  // Distinct from documentVersionId (which is the file we extracted from)
+  // because manual entry has no document version.
+  provenanceSystem   String?
+  revenueKrw         Decimal?           @db.Decimal(20, 2)
+  ebitdaKrw          Decimal?           @db.Decimal(20, 2)
+  cashKrw            Decimal?           @db.Decimal(20, 2)
+  totalDebtKrw       Decimal?           @db.Decimal(20, 2)
+  totalAssetsKrw     Decimal?           @db.Decimal(20, 2)
+  totalEquityKrw     Decimal?           @db.Decimal(20, 2)
+  interestExpenseKrw Decimal?           @db.Decimal(20, 2)
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
   asset              Asset              @relation(fields: [assetId], references: [id], onDelete: Cascade)
@@ -1380,6 +1407,11 @@ model FinancialStatement {
 
   @@index([assetId, counterpartyId, createdAt])
   @@index([documentVersionId, createdAt])
+  // Unique enforcement is a partial index defined in the migration that
+  // only applies when fiscalYear and fiscalPeriod are both populated; it
+  // can't be expressed via @@unique because Prisma 5 doesn't support
+  // partial unique constraints. See
+  // 20260429120000_add_financial_statement_fx_provenance.
 }
 
 model FinancialLineItem {
@@ -1387,7 +1419,7 @@ model FinancialLineItem {
   financialStatementId String
   lineKey              String
   lineLabel            String
-  valueKrw             Float
+  valueKrw             Decimal            @db.Decimal(20, 2)
   createdAt            DateTime           @default(now())
   financialStatement   FinancialStatement @relation(fields: [financialStatementId], references: [id], onDelete: Cascade)
 
@@ -1541,6 +1573,13 @@ model TransactionComp {
   assetId         String?
   market          String
   region          String
+  // Asset-class + tier ('PRIME' / 'GRADE_A' / 'GRADE_B' / 'STRATA' /
+  // ...) on the comp row so the aggregator can produce CBRE-style
+  // submarket × tier cap-rate matrices. assetTier is free text rather
+  // than an enum because the taxonomy expands more often than the SQL
+  // schema should.
+  assetClass      AssetClass?
+  assetTier       String?
   comparableType  String
   transactionDate DateTime?
   priceKrw        Float?
@@ -1558,6 +1597,7 @@ model TransactionComp {
 
   @@index([assetId, transactionDate])
   @@index([market, region, transactionDate])
+  @@index([market, region, assetClass, assetTier, transactionDate])
 }
 
 model RentComp {
@@ -1587,6 +1627,11 @@ model MarketIndicatorSeries {
   assetId         String?
   market          String
   region          String?
+  // Asset-class + tier so cap-rate / vacancy / rent-growth points can
+  // be sliced like CBRE's submarket reports. Both nullable for
+  // back-compat with rows ingested before the tier taxonomy landed.
+  assetClass      AssetClass?
+  assetTier       String?
   indicatorKey    String
   observationDate DateTime
   value           Float?
@@ -1598,6 +1643,7 @@ model MarketIndicatorSeries {
 
   @@index([assetId, indicatorKey, observationDate])
   @@index([market, region, indicatorKey, observationDate])
+  @@index([market, region, assetClass, assetTier, indicatorKey, observationDate])
 }
 
 model MacroSeries {
@@ -2116,6 +2162,7 @@ model OpsAlertDelivery {
 
   @@index([createdAt])
   @@index([statusLabel, createdAt])
+  @@index([reason, deliveredAt])
 }
 
 model OpsWorkItem {
@@ -2182,9 +2229,290 @@ model OnchainRecord {
   status             ReadinessStatus @default(NOT_STARTED)
   payload            Json
   anchoredAt         DateTime?
+  // Receipt metadata captured after waitForTransactionReceipt. Nullable
+  // because mock-mode rows have no real receipt and pre-#10 rows were
+  // written without them.
+  blockNumber        BigInt?
+  gasUsed            BigInt?
+  effectiveGasPrice  String?
+  receiptStatus      String?
   createdAt          DateTime        @default(now())
   readinessProject   ReadinessProject @relation(fields: [readinessProjectId], references: [id], onDelete: Cascade)
   document           Document?       @relation(fields: [documentId], references: [id], onDelete: SetNull)
+}
+
+// Cursor for the chain → DB event indexer. One row per
+// (chainId, contractAddress); `lastBlock` records the highest block already
+// drained from `getLogs`, so the next poll resumes from `lastBlock + 1`.
+// `label` is informational ("registry", "token", "compliance", ...).
+// Vector embeddings for semantic search over the document corpus. The
+// `embedding` column is pgvector's vector(1536) type (sized for OpenAI
+// text-embedding-3-small / Anthropic voyage-3 family). Prisma 5 doesn't
+// type pgvector natively, so the column lives behind Unsupported and
+// callers use raw $queryRaw / $executeRaw to read or insert. The
+// vector extension is enabled by the matching migration.
+model DocumentEmbedding {
+  id          String   @id @default(cuid())
+  documentId  String
+  chunkIndex  Int
+  model       String
+  embedding   Unsupported("vector(1536)")
+  text        String
+  tokenCount  Int?
+  indexedAt   DateTime @default(now())
+
+  @@unique([documentId, chunkIndex, model])
+  @@index([documentId])
+}
+
+// Cache for deterministic LLM responses. promptHash is SHA-256 over the
+// canonical request envelope (model + system + messages + tools), so any
+// callable LLM operation that is genuinely deterministic w.r.t. those
+// inputs can short-circuit on a cache hit. expiresAt drives TTL eviction
+// so stale market context doesn't linger past its useful life.
+model AiResponseCache {
+  id           String   @id @default(cuid())
+  promptHash   String
+  model        String
+  response     String
+  inputTokens  Int?
+  outputTokens Int?
+  createdAt    DateTime @default(now())
+  expiresAt    DateTime
+  hitCount     Int      @default(0)
+  lastHitAt    DateTime?
+
+  @@unique([promptHash, model])
+  @@index([expiresAt])
+}
+
+// Sponsor track-record models. Real REPE IMs include a "Sponsor track
+// record" page when the deal is a JV: prior deals vintage, equity
+// multiple, gross IRR, exit year. LPs read this to underwrite manager
+// skill, not just the deal. Match by name (Asset.sponsorName), not FK,
+// so adding a Sponsor doesn't require asset backfill. See
+// 20260430070000_add_sponsor_track_record.
+model Sponsor {
+  id          String              @id @default(cuid())
+  name        String              @unique
+  shortName   String?
+  hqMarket    String?
+  aumKrw      Float?
+  fundCount   Int?
+  yearFounded Int?
+  websiteUrl  String?
+  notes       String?
+  priorDeals  SponsorPriorDeal[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+}
+
+model SponsorPriorDeal {
+  id             String      @id @default(cuid())
+  sponsorId      String
+  sponsor        Sponsor     @relation(fields: [sponsorId], references: [id], onDelete: Cascade)
+  dealName       String
+  vintageYear    Int
+  exitYear       Int?
+  assetClass     AssetClass?
+  market         String?
+  equityKrw      Float?
+  equityMultiple Float?
+  grossIrrPct    Float?
+  status         String      @default("EXITED")
+  notes          String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  @@index([sponsorId, vintageYear])
+}
+
+// Per-asset media library. REPE IMs are not LPs' first experience of an
+// asset without a photo — every Blackstone / Brookfield / KKR cover has
+// a hero shot, and underwriting decks include site plan + floorplan +
+// renders. Files live behind the same `createDocumentStorageFromEnv()`
+// adapter as documents (local FS in dev, S3-compatible in prod). `kind`
+// is TEXT so the taxonomy can grow (HERO / EXTERIOR / INTERIOR /
+// SITE_PLAN / FLOORPLAN / RENDER / DRONE / FLOORPLATE / ...) without a
+// migration. See 20260430080000_add_asset_media.
+model AssetMedia {
+  id          String   @id @default(cuid())
+  assetId     String
+  asset       Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  kind        String   @default("PHOTO")
+  storagePath String
+  mimeType    String
+  sizeBytes   Int
+  caption     String?
+  sortOrder   Int      @default(0)
+  uploadedById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([assetId, sortOrder])
+}
+
+// Insurance policy register. Real REPE IMs carry an insurance
+// summary covering property / business interruption / liability /
+// builder's risk / cyber where applicable. policyType + status
+// kept as TEXT so the taxonomy expands without a schema migration.
+// Premiums and coverage held in KRW with a flag for non-KRW
+// carriers via `currency`. See 20260430090000_add_insurance_policy.
+model InsurancePolicy {
+  id              String   @id @default(cuid())
+  assetId         String
+  asset           Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  policyType      String   // PROPERTY / BI / LIABILITY / CYBER / CONSTRUCTION / D&O
+  insurer         String
+  brokerName      String?
+  coverageKrw     Float?   // limit
+  deductibleKrw   Float?
+  premiumKrw      Float?
+  currency        String   @default("KRW")
+  effectiveFrom   DateTime?
+  expiresOn       DateTime?
+  status          String   @default("ACTIVE") // ACTIVE / EXPIRED / PENDING_RENEWAL
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([assetId, policyType, status])
+}
+
+// Carbon-emissions register per asset. Replaces the IM's derived
+// estimate when actual measurements are on file. scope is 1/2/3
+// per GHG Protocol; methodology + sourceSystem track whether the
+// figure came from a third-party verifier (CDP/SBTi/ISO 14064)
+// or from internal calc. See 20260430100000_add_carbon_emission_record.
+model CarbonEmissionRecord {
+  id             String   @id @default(cuid())
+  assetId        String
+  asset          Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  scope          Int      // 1, 2, or 3
+  category       String   // PURCHASED_ELECTRICITY / FUEL_COMBUSTION / EMBODIED / OTHER
+  vintageYear    Int
+  tco2e          Float
+  methodology    String?  // GHG_PROTOCOL_LB / MARKET_BASED / SBTI / ISO_14064
+  verifiedBy     String?
+  sourceSystem   String?
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([assetId, scope, vintageYear])
+}
+
+// Side-letter terms register. Tracks LP-specific carve-outs from
+// the LPA — MFN-eligible terms, fee discounts, co-investment
+// rights, ESG opt-outs, reporting cadence overrides. Each entry
+// pins to an LP name + an asset / deal where the side-letter is
+// in force. See 20260430100000_add_side_letter.
+model SideLetter {
+  id              String   @id @default(cuid())
+  assetId         String
+  asset           Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  lpName          String
+  lpEntityType    String?
+  termCategory    String   // MFN / FEE_DISCOUNT / COINVESTMENT / REPORTING / ESG / KEY_PERSON
+  termSummary     String
+  effectiveFrom   DateTime?
+  expiresOn       DateTime?
+  mfnEligible     Boolean  @default(false)
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([assetId, termCategory])
+  @@index([lpName])
+}
+
+// Proprietary deal flow log. The Deal table tracks our own pipeline;
+// DealFlowEntry captures deals we SAW in the market — the proprietary
+// intel a brokerage relationship surfaces that REB / MOLIT can't.
+// dealType/status as TEXT so the taxonomy expands without a schema
+// migration. See 20260430060000_add_deal_flow_entry.
+model DealFlowEntry {
+  id               String      @id @default(cuid())
+  market           String
+  region           String?
+  assetClass       AssetClass?
+  assetTier        String?
+  dealType         String
+  status           String      @default("LIVE")
+  assetName        String?
+  estimatedSizeKrw Float?
+  estimatedCapPct  Float?
+  sponsor          String?
+  brokerSource     String?
+  observedAt       DateTime    @default(now())
+  notes            String?
+  recordedById     String?
+  recordedBy       User?       @relation("DealFlowRecordedBy", fields: [recordedById], references: [id], onDelete: SetNull)
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  @@index([market, dealType, status, observedAt])
+  @@index([assetClass, observedAt])
+}
+
+// Tenant in the Market tracker. CBRE / JLL leasing brokerages maintain a
+// private list of named tenants actively requirementing space; this is
+// the operator's analog. Status taxonomy lives in code rather than enum
+// so it can grow ('ACTIVE' / 'SIGNED' / 'WITHDRAWN' / 'STALLED' / ...)
+// without a schema migration.
+model TenantDemand {
+  id               String      @id @default(cuid())
+  tenantName       String
+  market           String
+  region           String?
+  assetClass       AssetClass?
+  assetTier        String?
+  targetSizeSqm    Float?
+  targetMoveInDate DateTime?
+  status           String      @default("ACTIVE")
+  notes            String?
+  source           String?
+  observedAt       DateTime    @default(now())
+  recordedById     String?
+  recordedBy       User?       @relation("TenantDemandRecordedBy", fields: [recordedById], references: [id], onDelete: SetNull)
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  @@index([market, assetClass, status, observedAt])
+  @@index([region, observedAt])
+}
+
+model OnchainEventCursor {
+  id              String   @id @default(cuid())
+  chainId         Int
+  contractAddress String
+  label           String
+  lastBlock       BigInt   @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([chainId, contractAddress])
+}
+
+// Mirrored chain event. Indexer writes one row per matched log; the
+// (chainId, txHash, logIndex) tuple is the natural key, so re-running the
+// indexer is idempotent. `args` holds the viem-decoded event arguments
+// (BigInts pre-stringified) so consumers can read without an ABI.
+model OnchainEvent {
+  id              String   @id @default(cuid())
+  chainId         Int
+  blockNumber     BigInt
+  blockHash       String
+  txHash          String
+  logIndex        Int
+  contractAddress String
+  eventName       String
+  args            Json
+  indexedAt       DateTime @default(now())
+
+  @@unique([chainId, txHash, logIndex])
+  @@index([chainId, contractAddress, eventName])
+  @@index([chainId, blockNumber])
 }
 
 // Tokenization deployment manifest mirror. One row per asset for which an
@@ -2771,4 +3099,70 @@ model Notification {
 
   @@index([createdAt])
   @@index([readAt])
+}
+
+enum QuarterlyNarrativeStatus {
+  DRAFT
+  HUMAN_REVIEWED
+  PUBLISHED
+  SUPERSEDED
+}
+
+model QuarterlyMarketSnapshot {
+  id                            String      @id @default(cuid())
+  market                        String
+  submarket                     String
+  assetClass                    AssetClass?
+  quarter                       String
+  quarterEndDate                DateTime
+  transactionCount              Int?
+  transactionVolumeKrw          BigInt?
+  medianPriceKrwPerSqm          Decimal?    @db.Decimal(18, 2)
+  priceChangeQoQPct             Decimal?    @db.Decimal(10, 4)
+  priceChangeYoYPct             Decimal?    @db.Decimal(10, 4)
+  vacancyPct                    Decimal?    @db.Decimal(6, 3)
+  rentKrwPerSqm                 Decimal?    @db.Decimal(12, 2)
+  capRatePct                    Decimal?    @db.Decimal(6, 3)
+  newConstructionApprovalsCount Int?
+  newConstructionApprovalsGfaSqm Decimal?   @db.Decimal(18, 2)
+  baseRatePct                   Decimal?    @db.Decimal(6, 3)
+  krwUsd                        Decimal?    @db.Decimal(12, 4)
+  cpiYoYPct                     Decimal?    @db.Decimal(6, 3)
+  gdpYoYPct                     Decimal?    @db.Decimal(6, 3)
+  rawMetrics                    Json
+  sourceManifest                Json
+  generatedAt                   DateTime    @default(now())
+  updatedAt                     DateTime    @updatedAt
+  narratives                    QuarterlyMarketNarrative[] @relation("SnapshotNarratives")
+
+  @@unique([market, submarket, assetClass, quarter], name: "market_submarket_assetClass_quarter")
+  @@index([quarter])
+  @@index([market, submarket])
+}
+
+model QuarterlyMarketNarrative {
+  id                String                   @id @default(cuid())
+  snapshotId        String
+  snapshot          QuarterlyMarketSnapshot  @relation("SnapshotNarratives", fields: [snapshotId], references: [id], onDelete: Cascade)
+  priorQuarterId    String?
+  status            QuarterlyNarrativeStatus @default(DRAFT)
+  model             String
+  promptTokens      Int?
+  completionTokens  Int?
+  headline          String
+  marketPulse       String
+  supplyPipeline    String
+  capitalMarkets    String
+  outlook           String
+  overweightList    Json
+  underweightList   Json
+  risks             Json
+  reviewedBy        String?
+  reviewedAt        DateTime?
+  publishedAt       DateTime?
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
+
+  @@index([snapshotId])
+  @@index([status])
 }

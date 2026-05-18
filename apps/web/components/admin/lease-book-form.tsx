@@ -408,8 +408,9 @@ export function LeaseBookForm({
     <div id="lease-book" className="space-y-5">
       <div className="grid gap-4">
         <div className="rounded-[24px] border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-100">
-          New or edited lease rows save into the normalized lease layer as <span className="font-semibold">PENDING</span>.
-          Only approved leases are promoted into `revenue_micro` and treated as committee-ready evidence.
+          New or edited lease rows save into the normalized lease layer as{' '}
+          <span className="font-semibold">PENDING</span>. Only approved leases are promoted into
+          `revenue_micro` and treated as committee-ready evidence.
         </div>
         {leases.map((lease, index) => (
           <div
@@ -437,7 +438,9 @@ export function LeaseBookForm({
                       {lease.reviewStatus}
                     </Badge>
                     {lease.reviewNotes ? (
-                      <span className="text-xs text-slate-500">Review note: {lease.reviewNotes}</span>
+                      <span className="text-xs text-slate-500">
+                        Review note: {lease.reviewNotes}
+                      </span>
                     ) : null}
                   </div>
                 ) : null}
@@ -456,7 +459,11 @@ export function LeaseBookForm({
                   disabled={submittingId === lease.localId || deletingId === lease.localId}
                   onClick={() => handleSave(lease)}
                 >
-                  {submittingId === lease.localId ? 'Saving...' : lease.id ? 'Update Lease' : 'Add Lease'}
+                  {submittingId === lease.localId
+                    ? 'Saving...'
+                    : lease.id
+                      ? 'Update Lease'
+                      : 'Add Lease'}
                 </Button>
               </div>
             </div>
@@ -464,11 +471,19 @@ export function LeaseBookForm({
             <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               <label className="space-y-2">
                 <span className="fine-print">Tenant</span>
-                <Input value={lease.tenantName} onChange={(event) => updateLease(lease.localId, 'tenantName', event.target.value)} />
+                <Input
+                  value={lease.tenantName}
+                  onChange={(event) => updateLease(lease.localId, 'tenantName', event.target.value)}
+                />
               </label>
               <label className="space-y-2">
                 <span className="fine-print">Lease Status</span>
-                <Select value={lease.leaseStatus} onChange={(event) => updateLease(lease.localId, 'leaseStatus', event.target.value)}>
+                <Select
+                  value={lease.leaseStatus}
+                  onChange={(event) =>
+                    updateLease(lease.localId, 'leaseStatus', event.target.value)
+                  }
+                >
                   <option value="">Select status</option>
                   {Object.values(LeaseStatus).map((status) => (
                     <option key={status} value={status}>
@@ -479,99 +494,269 @@ export function LeaseBookForm({
               </label>
               <label className="space-y-2">
                 <span className="fine-print">Leased kW</span>
-                <Input type="number" step="any" value={lease.leasedKw} onChange={(event) => updateLease(lease.localId, 'leasedKw', event.target.value)} />
+                <Input
+                  type="number"
+                  step="any"
+                  value={lease.leasedKw}
+                  onChange={(event) => updateLease(lease.localId, 'leasedKw', event.target.value)}
+                />
               </label>
               <label className="space-y-2">
                 <span className="fine-print">Start Year</span>
-                <Input type="number" step="1" value={lease.startYear} onChange={(event) => updateLease(lease.localId, 'startYear', event.target.value)} />
+                <Input
+                  type="number"
+                  step="1"
+                  value={lease.startYear}
+                  onChange={(event) => updateLease(lease.localId, 'startYear', event.target.value)}
+                />
               </label>
               <label className="space-y-2">
                 <span className="fine-print">Term (Years)</span>
-                <Input type="number" step="1" value={lease.termYears} onChange={(event) => updateLease(lease.localId, 'termYears', event.target.value)} />
+                <Input
+                  type="number"
+                  step="1"
+                  value={lease.termYears}
+                  onChange={(event) => updateLease(lease.localId, 'termYears', event.target.value)}
+                />
               </label>
               <label className="space-y-2">
-                <span className="fine-print">{moneyLabel('Base Rate / kW (KRW)', inputCurrency)}</span>
-                <Input type="number" step="any" value={lease.baseRatePerKwKrw} onChange={(event) => updateLease(lease.localId, 'baseRatePerKwKrw', event.target.value)} />
+                <span className="fine-print">
+                  {moneyLabel('Base Rate / kW (KRW)', inputCurrency)}
+                </span>
+                <Input
+                  type="number"
+                  step="any"
+                  value={lease.baseRatePerKwKrw}
+                  onChange={(event) =>
+                    updateLease(lease.localId, 'baseRatePerKwKrw', event.target.value)
+                  }
+                />
               </label>
               <label className="space-y-2">
                 <span className="fine-print">Annual Escalation (%)</span>
-                <Input type="number" step="any" value={lease.annualEscalationPct} onChange={(event) => updateLease(lease.localId, 'annualEscalationPct', event.target.value)} />
+                <Input
+                  type="number"
+                  step="any"
+                  value={lease.annualEscalationPct}
+                  onChange={(event) =>
+                    updateLease(lease.localId, 'annualEscalationPct', event.target.value)
+                  }
+                />
               </label>
               <label className="space-y-2">
                 <span className="fine-print">Execution Probability (%)</span>
-                <Input type="number" step="any" value={lease.probabilityPct} onChange={(event) => updateLease(lease.localId, 'probabilityPct', event.target.value)} />
+                <Input
+                  type="number"
+                  step="any"
+                  value={lease.probabilityPct}
+                  onChange={(event) =>
+                    updateLease(lease.localId, 'probabilityPct', event.target.value)
+                  }
+                />
               </label>
               <label className="space-y-2">
                 <span className="fine-print">Renewal Probability (%)</span>
-                <Input type="number" step="any" value={lease.renewProbabilityPct} onChange={(event) => updateLease(lease.localId, 'renewProbabilityPct', event.target.value)} />
+                <Input
+                  type="number"
+                  step="any"
+                  value={lease.renewProbabilityPct}
+                  onChange={(event) =>
+                    updateLease(lease.localId, 'renewProbabilityPct', event.target.value)
+                  }
+                />
               </label>
               <label className="space-y-2">
                 <span className="fine-print">Downtime (Months)</span>
-                <Input type="number" step="1" value={lease.downtimeMonths} onChange={(event) => updateLease(lease.localId, 'downtimeMonths', event.target.value)} />
+                <Input
+                  type="number"
+                  step="1"
+                  value={lease.downtimeMonths}
+                  onChange={(event) =>
+                    updateLease(lease.localId, 'downtimeMonths', event.target.value)
+                  }
+                />
               </label>
               <label className="space-y-2">
                 <span className="fine-print">Rollover Downtime (Months)</span>
-                <Input type="number" step="1" value={lease.rolloverDowntimeMonths} onChange={(event) => updateLease(lease.localId, 'rolloverDowntimeMonths', event.target.value)} />
+                <Input
+                  type="number"
+                  step="1"
+                  value={lease.rolloverDowntimeMonths}
+                  onChange={(event) =>
+                    updateLease(lease.localId, 'rolloverDowntimeMonths', event.target.value)
+                  }
+                />
               </label>
               <label className="space-y-2">
                 <span className="fine-print">Renewal Term (Years)</span>
-                <Input type="number" step="1" value={lease.renewalTermYears} onChange={(event) => updateLease(lease.localId, 'renewalTermYears', event.target.value)} />
+                <Input
+                  type="number"
+                  step="1"
+                  value={lease.renewalTermYears}
+                  onChange={(event) =>
+                    updateLease(lease.localId, 'renewalTermYears', event.target.value)
+                  }
+                />
               </label>
               <label className="space-y-2">
                 <span className="fine-print">Renewal Rent-Free (Months)</span>
-                <Input type="number" step="1" value={lease.renewalRentFreeMonths} onChange={(event) => updateLease(lease.localId, 'renewalRentFreeMonths', event.target.value)} />
+                <Input
+                  type="number"
+                  step="1"
+                  value={lease.renewalRentFreeMonths}
+                  onChange={(event) =>
+                    updateLease(lease.localId, 'renewalRentFreeMonths', event.target.value)
+                  }
+                />
               </label>
               <label className="space-y-2">
                 <span className="fine-print">Renewal Count</span>
-                <Input type="number" step="1" value={lease.renewalCount} onChange={(event) => updateLease(lease.localId, 'renewalCount', event.target.value)} />
+                <Input
+                  type="number"
+                  step="1"
+                  value={lease.renewalCount}
+                  onChange={(event) =>
+                    updateLease(lease.localId, 'renewalCount', event.target.value)
+                  }
+                />
               </label>
               <label className="space-y-2">
                 <span className="fine-print">Rent-Free (Months)</span>
-                <Input type="number" step="1" value={lease.rentFreeMonths} onChange={(event) => updateLease(lease.localId, 'rentFreeMonths', event.target.value)} />
+                <Input
+                  type="number"
+                  step="1"
+                  value={lease.rentFreeMonths}
+                  onChange={(event) =>
+                    updateLease(lease.localId, 'rentFreeMonths', event.target.value)
+                  }
+                />
               </label>
               <label className="space-y-2">
-                <span className="fine-print">{moneyLabel('MTM Rollover Rate / kW (KRW)', inputCurrency)}</span>
-                <Input type="number" step="any" value={lease.markToMarketRatePerKwKrw} onChange={(event) => updateLease(lease.localId, 'markToMarketRatePerKwKrw', event.target.value)} />
+                <span className="fine-print">
+                  {moneyLabel('MTM Rollover Rate / kW (KRW)', inputCurrency)}
+                </span>
+                <Input
+                  type="number"
+                  step="any"
+                  value={lease.markToMarketRatePerKwKrw}
+                  onChange={(event) =>
+                    updateLease(lease.localId, 'markToMarketRatePerKwKrw', event.target.value)
+                  }
+                />
               </label>
               <label className="space-y-2">
                 <span className="fine-print">{moneyLabel('Renewal TI (KRW)', inputCurrency)}</span>
-                <Input type="number" step="any" value={lease.renewalTenantImprovementKrw} onChange={(event) => updateLease(lease.localId, 'renewalTenantImprovementKrw', event.target.value)} />
+                <Input
+                  type="number"
+                  step="any"
+                  value={lease.renewalTenantImprovementKrw}
+                  onChange={(event) =>
+                    updateLease(lease.localId, 'renewalTenantImprovementKrw', event.target.value)
+                  }
+                />
               </label>
               <label className="space-y-2">
                 <span className="fine-print">{moneyLabel('Renewal LC (KRW)', inputCurrency)}</span>
-                <Input type="number" step="any" value={lease.renewalLeasingCommissionKrw} onChange={(event) => updateLease(lease.localId, 'renewalLeasingCommissionKrw', event.target.value)} />
+                <Input
+                  type="number"
+                  step="any"
+                  value={lease.renewalLeasingCommissionKrw}
+                  onChange={(event) =>
+                    updateLease(lease.localId, 'renewalLeasingCommissionKrw', event.target.value)
+                  }
+                />
               </label>
               <label className="space-y-2">
-                <span className="fine-print">{moneyLabel('Tenant Improvement (KRW)', inputCurrency)}</span>
-                <Input type="number" step="any" value={lease.tenantImprovementKrw} onChange={(event) => updateLease(lease.localId, 'tenantImprovementKrw', event.target.value)} />
+                <span className="fine-print">
+                  {moneyLabel('Tenant Improvement (KRW)', inputCurrency)}
+                </span>
+                <Input
+                  type="number"
+                  step="any"
+                  value={lease.tenantImprovementKrw}
+                  onChange={(event) =>
+                    updateLease(lease.localId, 'tenantImprovementKrw', event.target.value)
+                  }
+                />
               </label>
               <label className="space-y-2">
-                <span className="fine-print">{moneyLabel('Leasing Commission (KRW)', inputCurrency)}</span>
-                <Input type="number" step="any" value={lease.leasingCommissionKrw} onChange={(event) => updateLease(lease.localId, 'leasingCommissionKrw', event.target.value)} />
+                <span className="fine-print">
+                  {moneyLabel('Leasing Commission (KRW)', inputCurrency)}
+                </span>
+                <Input
+                  type="number"
+                  step="any"
+                  value={lease.leasingCommissionKrw}
+                  onChange={(event) =>
+                    updateLease(lease.localId, 'leasingCommissionKrw', event.target.value)
+                  }
+                />
               </label>
               <label className="space-y-2">
                 <span className="fine-print">Recoverable OpEx Ratio (%)</span>
-                <Input type="number" step="any" value={lease.recoverableOpexRatioPct} onChange={(event) => updateLease(lease.localId, 'recoverableOpexRatioPct', event.target.value)} />
+                <Input
+                  type="number"
+                  step="any"
+                  value={lease.recoverableOpexRatioPct}
+                  onChange={(event) =>
+                    updateLease(lease.localId, 'recoverableOpexRatioPct', event.target.value)
+                  }
+                />
               </label>
               <label className="space-y-2">
-                <span className="fine-print">{moneyLabel('Fixed Recoveries / Year (KRW)', inputCurrency)}</span>
-                <Input type="number" step="any" value={lease.fixedRecoveriesKrw} onChange={(event) => updateLease(lease.localId, 'fixedRecoveriesKrw', event.target.value)} />
+                <span className="fine-print">
+                  {moneyLabel('Fixed Recoveries / Year (KRW)', inputCurrency)}
+                </span>
+                <Input
+                  type="number"
+                  step="any"
+                  value={lease.fixedRecoveriesKrw}
+                  onChange={(event) =>
+                    updateLease(lease.localId, 'fixedRecoveriesKrw', event.target.value)
+                  }
+                />
               </label>
               <label className="space-y-2">
-                <span className="fine-print">{moneyLabel('Expense Stop / kW / Month (KRW)', inputCurrency)}</span>
-                <Input type="number" step="any" value={lease.expenseStopKrwPerKwMonth} onChange={(event) => updateLease(lease.localId, 'expenseStopKrwPerKwMonth', event.target.value)} />
+                <span className="fine-print">
+                  {moneyLabel('Expense Stop / kW / Month (KRW)', inputCurrency)}
+                </span>
+                <Input
+                  type="number"
+                  step="any"
+                  value={lease.expenseStopKrwPerKwMonth}
+                  onChange={(event) =>
+                    updateLease(lease.localId, 'expenseStopKrwPerKwMonth', event.target.value)
+                  }
+                />
               </label>
               <label className="space-y-2">
                 <span className="fine-print">Utility Pass-Through (%)</span>
-                <Input type="number" step="any" value={lease.utilityPassThroughPct} onChange={(event) => updateLease(lease.localId, 'utilityPassThroughPct', event.target.value)} />
+                <Input
+                  type="number"
+                  step="any"
+                  value={lease.utilityPassThroughPct}
+                  onChange={(event) =>
+                    updateLease(lease.localId, 'utilityPassThroughPct', event.target.value)
+                  }
+                />
               </label>
               <label className="space-y-2">
-                <span className="fine-print">{moneyLabel('Fit-Out Cost (KRW)', inputCurrency)}</span>
-                <Input type="number" step="any" value={lease.fitOutCostKrw} onChange={(event) => updateLease(lease.localId, 'fitOutCostKrw', event.target.value)} />
+                <span className="fine-print">
+                  {moneyLabel('Fit-Out Cost (KRW)', inputCurrency)}
+                </span>
+                <Input
+                  type="number"
+                  step="any"
+                  value={lease.fitOutCostKrw}
+                  onChange={(event) =>
+                    updateLease(lease.localId, 'fitOutCostKrw', event.target.value)
+                  }
+                />
               </label>
               <div className="rounded-2xl border border-white/10 bg-slate-950/30 px-4 py-3 text-sm text-slate-400">
-                Each lease row feeds the DCF directly. Save signed, active, and pipeline tranches separately so the
-                revenue stack stops leaning on synthetic residual ramp assumptions.
+                Each lease row feeds the DCF directly. Save signed, active, and pipeline tranches
+                separately so the revenue stack stops leaning on synthetic residual ramp
+                assumptions.
               </div>
             </div>
 
@@ -600,106 +785,382 @@ export function LeaseBookForm({
 
               {lease.steps.length === 0 ? (
                 <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-slate-400">
-                  No lease steps yet. If rent, load, or occupancy changes over time, add staged steps here.
+                  No lease steps yet. If rent, load, or occupancy changes over time, add staged
+                  steps here.
                 </div>
               ) : (
                 <div className="mt-4 space-y-4">
                   {lease.steps.map((step, stepIndex) => (
-                    <div key={step.localId} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                    <div
+                      key={step.localId}
+                      className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"
+                    >
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <div className="text-sm font-semibold text-white">Step {stepIndex + 1}</div>
-                        <Button type="button" variant="secondary" onClick={() => removeStep(lease.localId, step.localId)}>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={() => removeStep(lease.localId, step.localId)}
+                        >
                           Remove Step
                         </Button>
                       </div>
                       <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                         <label className="space-y-2">
                           <span className="fine-print">Start Year</span>
-                          <Input type="number" step="1" value={step.startYear} onChange={(event) => updateStep(lease.localId, step.localId, 'startYear', event.target.value)} />
+                          <Input
+                            type="number"
+                            step="1"
+                            value={step.startYear}
+                            onChange={(event) =>
+                              updateStep(
+                                lease.localId,
+                                step.localId,
+                                'startYear',
+                                event.target.value
+                              )
+                            }
+                          />
                         </label>
                         <label className="space-y-2">
                           <span className="fine-print">End Year</span>
-                          <Input type="number" step="1" value={step.endYear} onChange={(event) => updateStep(lease.localId, step.localId, 'endYear', event.target.value)} />
+                          <Input
+                            type="number"
+                            step="1"
+                            value={step.endYear}
+                            onChange={(event) =>
+                              updateStep(lease.localId, step.localId, 'endYear', event.target.value)
+                            }
+                          />
                         </label>
                         <label className="space-y-2">
-                          <span className="fine-print">{moneyLabel('Rate / kW (KRW)', inputCurrency)}</span>
-                          <Input type="number" step="any" value={step.ratePerKwKrw} onChange={(event) => updateStep(lease.localId, step.localId, 'ratePerKwKrw', event.target.value)} />
+                          <span className="fine-print">
+                            {moneyLabel('Rate / kW (KRW)', inputCurrency)}
+                          </span>
+                          <Input
+                            type="number"
+                            step="any"
+                            value={step.ratePerKwKrw}
+                            onChange={(event) =>
+                              updateStep(
+                                lease.localId,
+                                step.localId,
+                                'ratePerKwKrw',
+                                event.target.value
+                              )
+                            }
+                          />
                         </label>
                         <label className="space-y-2">
                           <span className="fine-print">Leased kW</span>
-                          <Input type="number" step="any" value={step.leasedKw} onChange={(event) => updateStep(lease.localId, step.localId, 'leasedKw', event.target.value)} />
+                          <Input
+                            type="number"
+                            step="any"
+                            value={step.leasedKw}
+                            onChange={(event) =>
+                              updateStep(
+                                lease.localId,
+                                step.localId,
+                                'leasedKw',
+                                event.target.value
+                              )
+                            }
+                          />
                         </label>
                         <label className="space-y-2">
                           <span className="fine-print">Annual Escalation (%)</span>
-                          <Input type="number" step="any" value={step.annualEscalationPct} onChange={(event) => updateStep(lease.localId, step.localId, 'annualEscalationPct', event.target.value)} />
+                          <Input
+                            type="number"
+                            step="any"
+                            value={step.annualEscalationPct}
+                            onChange={(event) =>
+                              updateStep(
+                                lease.localId,
+                                step.localId,
+                                'annualEscalationPct',
+                                event.target.value
+                              )
+                            }
+                          />
                         </label>
                         <label className="space-y-2">
                           <span className="fine-print">Occupancy (%)</span>
-                          <Input type="number" step="any" value={step.occupancyPct} onChange={(event) => updateStep(lease.localId, step.localId, 'occupancyPct', event.target.value)} />
+                          <Input
+                            type="number"
+                            step="any"
+                            value={step.occupancyPct}
+                            onChange={(event) =>
+                              updateStep(
+                                lease.localId,
+                                step.localId,
+                                'occupancyPct',
+                                event.target.value
+                              )
+                            }
+                          />
                         </label>
                         <label className="space-y-2">
                           <span className="fine-print">Rent-Free (Months)</span>
-                          <Input type="number" step="1" value={step.rentFreeMonths} onChange={(event) => updateStep(lease.localId, step.localId, 'rentFreeMonths', event.target.value)} />
+                          <Input
+                            type="number"
+                            step="1"
+                            value={step.rentFreeMonths}
+                            onChange={(event) =>
+                              updateStep(
+                                lease.localId,
+                                step.localId,
+                                'rentFreeMonths',
+                                event.target.value
+                              )
+                            }
+                          />
                         </label>
                         <label className="space-y-2">
                           <span className="fine-print">Step Renewal Probability (%)</span>
-                          <Input type="number" step="any" value={step.renewProbabilityPct} onChange={(event) => updateStep(lease.localId, step.localId, 'renewProbabilityPct', event.target.value)} />
+                          <Input
+                            type="number"
+                            step="any"
+                            value={step.renewProbabilityPct}
+                            onChange={(event) =>
+                              updateStep(
+                                lease.localId,
+                                step.localId,
+                                'renewProbabilityPct',
+                                event.target.value
+                              )
+                            }
+                          />
                         </label>
                         <label className="space-y-2">
                           <span className="fine-print">Step Rollover Downtime (Months)</span>
-                          <Input type="number" step="1" value={step.rolloverDowntimeMonths} onChange={(event) => updateStep(lease.localId, step.localId, 'rolloverDowntimeMonths', event.target.value)} />
+                          <Input
+                            type="number"
+                            step="1"
+                            value={step.rolloverDowntimeMonths}
+                            onChange={(event) =>
+                              updateStep(
+                                lease.localId,
+                                step.localId,
+                                'rolloverDowntimeMonths',
+                                event.target.value
+                              )
+                            }
+                          />
                         </label>
                         <label className="space-y-2">
                           <span className="fine-print">Step Renewal Term (Years)</span>
-                          <Input type="number" step="1" value={step.renewalTermYears} onChange={(event) => updateStep(lease.localId, step.localId, 'renewalTermYears', event.target.value)} />
+                          <Input
+                            type="number"
+                            step="1"
+                            value={step.renewalTermYears}
+                            onChange={(event) =>
+                              updateStep(
+                                lease.localId,
+                                step.localId,
+                                'renewalTermYears',
+                                event.target.value
+                              )
+                            }
+                          />
                         </label>
                         <label className="space-y-2">
                           <span className="fine-print">Step Renewal Rent-Free (Months)</span>
-                          <Input type="number" step="1" value={step.renewalRentFreeMonths} onChange={(event) => updateStep(lease.localId, step.localId, 'renewalRentFreeMonths', event.target.value)} />
+                          <Input
+                            type="number"
+                            step="1"
+                            value={step.renewalRentFreeMonths}
+                            onChange={(event) =>
+                              updateStep(
+                                lease.localId,
+                                step.localId,
+                                'renewalRentFreeMonths',
+                                event.target.value
+                              )
+                            }
+                          />
                         </label>
                         <label className="space-y-2">
                           <span className="fine-print">Step Renewal Count</span>
-                          <Input type="number" step="1" value={step.renewalCount} onChange={(event) => updateStep(lease.localId, step.localId, 'renewalCount', event.target.value)} />
+                          <Input
+                            type="number"
+                            step="1"
+                            value={step.renewalCount}
+                            onChange={(event) =>
+                              updateStep(
+                                lease.localId,
+                                step.localId,
+                                'renewalCount',
+                                event.target.value
+                              )
+                            }
+                          />
                         </label>
                         <label className="space-y-2">
-                          <span className="fine-print">{moneyLabel('Step MTM Rollover Rate / kW (KRW)', inputCurrency)}</span>
-                          <Input type="number" step="any" value={step.markToMarketRatePerKwKrw} onChange={(event) => updateStep(lease.localId, step.localId, 'markToMarketRatePerKwKrw', event.target.value)} />
+                          <span className="fine-print">
+                            {moneyLabel('Step MTM Rollover Rate / kW (KRW)', inputCurrency)}
+                          </span>
+                          <Input
+                            type="number"
+                            step="any"
+                            value={step.markToMarketRatePerKwKrw}
+                            onChange={(event) =>
+                              updateStep(
+                                lease.localId,
+                                step.localId,
+                                'markToMarketRatePerKwKrw',
+                                event.target.value
+                              )
+                            }
+                          />
                         </label>
                         <label className="space-y-2">
-                          <span className="fine-print">{moneyLabel('Step Renewal TI (KRW)', inputCurrency)}</span>
-                          <Input type="number" step="any" value={step.renewalTenantImprovementKrw} onChange={(event) => updateStep(lease.localId, step.localId, 'renewalTenantImprovementKrw', event.target.value)} />
+                          <span className="fine-print">
+                            {moneyLabel('Step Renewal TI (KRW)', inputCurrency)}
+                          </span>
+                          <Input
+                            type="number"
+                            step="any"
+                            value={step.renewalTenantImprovementKrw}
+                            onChange={(event) =>
+                              updateStep(
+                                lease.localId,
+                                step.localId,
+                                'renewalTenantImprovementKrw',
+                                event.target.value
+                              )
+                            }
+                          />
                         </label>
                         <label className="space-y-2">
-                          <span className="fine-print">{moneyLabel('Step Renewal LC (KRW)', inputCurrency)}</span>
-                          <Input type="number" step="any" value={step.renewalLeasingCommissionKrw} onChange={(event) => updateStep(lease.localId, step.localId, 'renewalLeasingCommissionKrw', event.target.value)} />
+                          <span className="fine-print">
+                            {moneyLabel('Step Renewal LC (KRW)', inputCurrency)}
+                          </span>
+                          <Input
+                            type="number"
+                            step="any"
+                            value={step.renewalLeasingCommissionKrw}
+                            onChange={(event) =>
+                              updateStep(
+                                lease.localId,
+                                step.localId,
+                                'renewalLeasingCommissionKrw',
+                                event.target.value
+                              )
+                            }
+                          />
                         </label>
                         <label className="space-y-2">
-                          <span className="fine-print">{moneyLabel('Step TI (KRW)', inputCurrency)}</span>
-                          <Input type="number" step="any" value={step.tenantImprovementKrw} onChange={(event) => updateStep(lease.localId, step.localId, 'tenantImprovementKrw', event.target.value)} />
+                          <span className="fine-print">
+                            {moneyLabel('Step TI (KRW)', inputCurrency)}
+                          </span>
+                          <Input
+                            type="number"
+                            step="any"
+                            value={step.tenantImprovementKrw}
+                            onChange={(event) =>
+                              updateStep(
+                                lease.localId,
+                                step.localId,
+                                'tenantImprovementKrw',
+                                event.target.value
+                              )
+                            }
+                          />
                         </label>
                         <label className="space-y-2">
-                          <span className="fine-print">{moneyLabel('Step LC (KRW)', inputCurrency)}</span>
-                          <Input type="number" step="any" value={step.leasingCommissionKrw} onChange={(event) => updateStep(lease.localId, step.localId, 'leasingCommissionKrw', event.target.value)} />
+                          <span className="fine-print">
+                            {moneyLabel('Step LC (KRW)', inputCurrency)}
+                          </span>
+                          <Input
+                            type="number"
+                            step="any"
+                            value={step.leasingCommissionKrw}
+                            onChange={(event) =>
+                              updateStep(
+                                lease.localId,
+                                step.localId,
+                                'leasingCommissionKrw',
+                                event.target.value
+                              )
+                            }
+                          />
                         </label>
                         <label className="space-y-2">
                           <span className="fine-print">Recoverable OpEx (%)</span>
-                          <Input type="number" step="any" value={step.recoverableOpexRatioPct} onChange={(event) => updateStep(lease.localId, step.localId, 'recoverableOpexRatioPct', event.target.value)} />
+                          <Input
+                            type="number"
+                            step="any"
+                            value={step.recoverableOpexRatioPct}
+                            onChange={(event) =>
+                              updateStep(
+                                lease.localId,
+                                step.localId,
+                                'recoverableOpexRatioPct',
+                                event.target.value
+                              )
+                            }
+                          />
                         </label>
                         <label className="space-y-2">
-                          <span className="fine-print">{moneyLabel('Fixed Recoveries / Year (KRW)', inputCurrency)}</span>
-                          <Input type="number" step="any" value={step.fixedRecoveriesKrw} onChange={(event) => updateStep(lease.localId, step.localId, 'fixedRecoveriesKrw', event.target.value)} />
+                          <span className="fine-print">
+                            {moneyLabel('Fixed Recoveries / Year (KRW)', inputCurrency)}
+                          </span>
+                          <Input
+                            type="number"
+                            step="any"
+                            value={step.fixedRecoveriesKrw}
+                            onChange={(event) =>
+                              updateStep(
+                                lease.localId,
+                                step.localId,
+                                'fixedRecoveriesKrw',
+                                event.target.value
+                              )
+                            }
+                          />
                         </label>
                         <label className="space-y-2">
-                          <span className="fine-print">{moneyLabel('Expense Stop / kW / Month (KRW)', inputCurrency)}</span>
-                          <Input type="number" step="any" value={step.expenseStopKrwPerKwMonth} onChange={(event) => updateStep(lease.localId, step.localId, 'expenseStopKrwPerKwMonth', event.target.value)} />
+                          <span className="fine-print">
+                            {moneyLabel('Expense Stop / kW / Month (KRW)', inputCurrency)}
+                          </span>
+                          <Input
+                            type="number"
+                            step="any"
+                            value={step.expenseStopKrwPerKwMonth}
+                            onChange={(event) =>
+                              updateStep(
+                                lease.localId,
+                                step.localId,
+                                'expenseStopKrwPerKwMonth',
+                                event.target.value
+                              )
+                            }
+                          />
                         </label>
                         <label className="space-y-2">
                           <span className="fine-print">Utility Pass-Through (%)</span>
-                          <Input type="number" step="any" value={step.utilityPassThroughPct} onChange={(event) => updateStep(lease.localId, step.localId, 'utilityPassThroughPct', event.target.value)} />
+                          <Input
+                            type="number"
+                            step="any"
+                            value={step.utilityPassThroughPct}
+                            onChange={(event) =>
+                              updateStep(
+                                lease.localId,
+                                step.localId,
+                                'utilityPassThroughPct',
+                                event.target.value
+                              )
+                            }
+                          />
                         </label>
                         <label className="space-y-2 xl:col-span-2">
                           <span className="fine-print">Step Notes</span>
-                          <Input value={step.notes} onChange={(event) => updateStep(lease.localId, step.localId, 'notes', event.target.value)} />
+                          <Input
+                            value={step.notes}
+                            onChange={(event) =>
+                              updateStep(lease.localId, step.localId, 'notes', event.target.value)
+                            }
+                          />
                         </label>
                       </div>
                     </div>
@@ -713,13 +1174,17 @@ export function LeaseBookForm({
 
       <div className="flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-4">
         <p className="max-w-3xl text-sm text-slate-400">
-          Capture each tenant or capacity tranche separately. Monetary inputs are entered in {inputCurrency} and
-          normalized to KRW internally before the valuation engine rebuilds revenue micro snapshots. Saving a row sends
-          it back to the review queue.
+          Capture each tenant or capacity tranche separately. Monetary inputs are entered in{' '}
+          {inputCurrency} and normalized to KRW internally before the valuation engine rebuilds
+          revenue micro snapshots. Saving a row sends it back to the review queue.
         </p>
         <div className="flex items-center gap-3">
           {errorMessage ? <span className="text-sm text-rose-300">{errorMessage}</span> : null}
-          <Button type="button" variant="secondary" onClick={() => setLeases((current) => [...current, buildDraft()])}>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => setLeases((current) => [...current, buildDraft()])}
+          >
             Add Lease Row
           </Button>
         </div>

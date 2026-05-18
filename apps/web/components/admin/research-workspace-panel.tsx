@@ -2,7 +2,10 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { ResearchHouseViewApprovalButton } from '@/components/admin/research-house-view-approval-button';
-import type { ResearchWorkspaceData, ResearchWorkspaceTab } from '@/lib/services/research/workspace';
+import type {
+  ResearchWorkspaceData,
+  ResearchWorkspaceTab
+} from '@/lib/services/research/workspace';
 
 type Props = {
   data: ResearchWorkspaceData;
@@ -38,7 +41,9 @@ export function ResearchWorkspacePanel({ data, activeTab, canApproveHouseView = 
             {data.status.staleAssetDossierCount} unstaged asset dossiers
           </Badge>
           {data.status.latestOfficialSyncAt ? (
-            <Badge>official sync {data.status.latestOfficialSyncAt.toISOString().slice(0, 10)}</Badge>
+            <Badge>
+              official sync {data.status.latestOfficialSyncAt.toISOString().slice(0, 10)}
+            </Badge>
           ) : null}
           {data.status.latestAssetSyncAt ? (
             <Badge>asset sync {data.status.latestAssetSyncAt.toISOString().slice(0, 10)}</Badge>
@@ -47,25 +52,41 @@ export function ResearchWorkspacePanel({ data, activeTab, canApproveHouseView = 
         <p className="mt-3 text-sm leading-7 text-slate-400">{data.status.headline}</p>
         {data.status.staleOfficialSourceCount > 0 || data.status.staleAssetDossierCount > 0 ? (
           <p className="mt-2 text-xs leading-6 text-slate-500">
-            Research sync now runs explicitly. Use <span className="text-slate-300">Run Research Sync</span> to refresh
-            official sources and dossier staging when coverage is stale.
+            Research sync now runs explicitly. Use{' '}
+            <span className="text-slate-300">Run Research Sync</span> to refresh official sources
+            and dossier staging when coverage is stale.
           </p>
         ) : null}
         {data.status.recentRuns.length > 0 ? (
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             {data.status.recentRuns.slice(0, 4).map((run) => (
-              <div key={run.id} className="rounded-[18px] border border-white/10 bg-white/[0.03] p-4">
+              <div
+                key={run.id}
+                className="rounded-[18px] border border-white/10 bg-white/[0.03] p-4"
+              >
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="text-sm font-semibold text-white">{run.triggerType.replaceAll('_', ' ')}</div>
+                  <div className="text-sm font-semibold text-white">
+                    {run.triggerType.replaceAll('_', ' ')}
+                  </div>
                   <div className="flex flex-wrap gap-2">
-                    <Badge tone={run.statusLabel === 'SUCCESS' ? 'good' : run.statusLabel === 'RUNNING' ? 'warn' : 'danger'}>
+                    <Badge
+                      tone={
+                        run.statusLabel === 'SUCCESS'
+                          ? 'good'
+                          : run.statusLabel === 'RUNNING'
+                            ? 'warn'
+                            : 'danger'
+                      }
+                    >
                       {run.statusLabel.toLowerCase()}
                     </Badge>
                     <Badge>{run.startedAt.toISOString().slice(0, 16).replace('T', ' ')}</Badge>
                   </div>
                 </div>
                 <div className="mt-2 text-xs leading-6 text-slate-400">
-                  {run.officialSourceCount} official sources / {run.assetDossierCount} asset dossiers / {run.staleOfficialSourceCount} stale source tasks / {run.staleAssetDossierCount} stale asset dossiers
+                  {run.officialSourceCount} official sources / {run.assetDossierCount} asset
+                  dossiers / {run.staleOfficialSourceCount} stale source tasks /{' '}
+                  {run.staleAssetDossierCount} stale asset dossiers
                 </div>
                 <div className="mt-2 text-xs text-slate-500">
                   {run.refreshedByActor ? `actor ${run.refreshedByActor}` : 'system run'}
@@ -100,19 +121,27 @@ export function ResearchWorkspacePanel({ data, activeTab, canApproveHouseView = 
       {activeTab === 'macro' ? (
         <Card>
           <div className="eyebrow">Macro Coverage</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">Official-source macro and national research fabric</h2>
+          <h2 className="mt-2 text-2xl font-semibold text-white">
+            Official-source macro and national research fabric
+          </h2>
           <div className="mt-5 grid gap-4">
             {data.macro.snapshots.map((snapshot) => (
-              <div key={snapshot.id} className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+              <div
+                key={snapshot.id}
+                className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+              >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <div className="text-sm font-semibold text-white">{snapshot.title}</div>
                     <div className="mt-1 text-xs text-slate-500">
-                      {snapshot.sourceSystem ?? 'research'} / {snapshot.snapshotDate.toISOString().slice(0, 10)}
+                      {snapshot.sourceSystem ?? 'research'} /{' '}
+                      {snapshot.snapshotDate.toISOString().slice(0, 10)}
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <Badge tone={toneForFreshness(snapshot.freshnessStatus)}>{snapshot.freshnessStatus?.toLowerCase() ?? 'unknown'}</Badge>
+                    <Badge tone={toneForFreshness(snapshot.freshnessStatus)}>
+                      {snapshot.freshnessStatus?.toLowerCase() ?? 'unknown'}
+                    </Badge>
                     <Badge>{snapshot.freshnessLabel ?? 'unknown freshness'}</Badge>
                     <Badge>{snapshot.provenanceCount} provenance rows</Badge>
                   </div>
@@ -121,7 +150,9 @@ export function ResearchWorkspacePanel({ data, activeTab, canApproveHouseView = 
                 {snapshot.highlights.length > 0 ? (
                   <div className="mt-3 flex flex-wrap gap-2">
                     {snapshot.highlights.map((item) => (
-                      <Badge key={`${snapshot.id}-${item.label}`}>{item.label}: {item.value}</Badge>
+                      <Badge key={`${snapshot.id}-${item.label}`}>
+                        {item.label}: {item.value}
+                      </Badge>
                     ))}
                   </div>
                 ) : null}
@@ -147,14 +178,19 @@ export function ResearchWorkspacePanel({ data, activeTab, canApproveHouseView = 
           <h2 className="mt-2 text-2xl font-semibold text-white">Asset-class market coverage</h2>
           <div className="mt-5 grid gap-4 md:grid-cols-2">
             {data.markets.map((market) => (
-              <div key={market.id} className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+              <div
+                key={market.id}
+                className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+              >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <div className="text-sm font-semibold text-white">{market.label}</div>
                     <div className="mt-1 text-xs text-slate-500">{market.marketKey}</div>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {market.assetClass ? <Badge>{market.assetClass.replaceAll('_', ' ')}</Badge> : null}
+                    {market.assetClass ? (
+                      <Badge>{market.assetClass.replaceAll('_', ' ')}</Badge>
+                    ) : null}
                     {market.snapshot ? (
                       <Badge tone={toneForFreshness(market.snapshot.freshnessStatus)}>
                         {market.snapshot.freshnessLabel ?? 'unknown'}
@@ -172,20 +208,29 @@ export function ResearchWorkspacePanel({ data, activeTab, canApproveHouseView = 
                 </div>
                 {canApproveHouseView && market.houseView?.draftSnapshotId ? (
                   <div className="mt-3">
-                    <ResearchHouseViewApprovalButton snapshotId={market.houseView.draftSnapshotId} compact />
+                    <ResearchHouseViewApprovalButton
+                      snapshotId={market.houseView.draftSnapshotId}
+                      compact
+                    />
                   </div>
                 ) : null}
-                <p className="mt-3 text-sm leading-7 text-slate-400">{market.snapshot?.summary ?? market.thesis ?? 'No market thesis yet.'}</p>
+                <p className="mt-3 text-sm leading-7 text-slate-400">
+                  {market.snapshot?.summary ?? market.thesis ?? 'No market thesis yet.'}
+                </p>
                 {market.houseView?.thesisAgeDays != null ? (
                   <div className="mt-2 text-xs text-slate-500">
                     House thesis age {market.houseView.thesisAgeDays}d
-                    {market.sourceView?.freshnessLabel ? ` / source view ${market.sourceView.freshnessLabel}` : ''}
+                    {market.sourceView?.freshnessLabel
+                      ? ` / source view ${market.sourceView.freshnessLabel}`
+                      : ''}
                   </div>
                 ) : null}
                 {market.officialHighlights.length > 0 ? (
                   <div className="mt-3 flex flex-wrap gap-2">
                     {market.officialHighlights.map((item) => (
-                      <Badge key={`${market.id}-${item.label}`}>{item.label}: {item.value}</Badge>
+                      <Badge key={`${market.id}-${item.label}`}>
+                        {item.label}: {item.value}
+                      </Badge>
                     ))}
                   </div>
                 ) : null}
@@ -206,7 +251,10 @@ export function ResearchWorkspacePanel({ data, activeTab, canApproveHouseView = 
           <h2 className="mt-2 text-2xl font-semibold text-white">City and district coverage</h2>
           <div className="mt-5 grid gap-4 md:grid-cols-2">
             {data.submarkets.map((submarket) => (
-              <div key={submarket.id} className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+              <div
+                key={submarket.id}
+                className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+              >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <div className="text-sm font-semibold text-white">{submarket.label}</div>
@@ -215,7 +263,9 @@ export function ResearchWorkspacePanel({ data, activeTab, canApproveHouseView = 
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {submarket.assetClass ? <Badge>{submarket.assetClass.replaceAll('_', ' ')}</Badge> : null}
+                    {submarket.assetClass ? (
+                      <Badge>{submarket.assetClass.replaceAll('_', ' ')}</Badge>
+                    ) : null}
                     {submarket.snapshot ? (
                       <Badge tone={toneForFreshness(submarket.snapshot.freshnessStatus)}>
                         {submarket.snapshot.freshnessLabel ?? 'unknown'}
@@ -233,10 +283,15 @@ export function ResearchWorkspacePanel({ data, activeTab, canApproveHouseView = 
                 </div>
                 {canApproveHouseView && submarket.houseView?.draftSnapshotId ? (
                   <div className="mt-3">
-                    <ResearchHouseViewApprovalButton snapshotId={submarket.houseView.draftSnapshotId} compact />
+                    <ResearchHouseViewApprovalButton
+                      snapshotId={submarket.houseView.draftSnapshotId}
+                      compact
+                    />
                   </div>
                 ) : null}
-                <p className="mt-3 text-sm leading-7 text-slate-400">{submarket.snapshot?.summary ?? submarket.thesis ?? 'No submarket thesis yet.'}</p>
+                <p className="mt-3 text-sm leading-7 text-slate-400">
+                  {submarket.snapshot?.summary ?? submarket.thesis ?? 'No submarket thesis yet.'}
+                </p>
                 {submarket.houseView?.thesisAgeDays != null ? (
                   <div className="mt-2 text-xs text-slate-500">
                     House thesis age {submarket.houseView.thesisAgeDays}d
@@ -256,7 +311,9 @@ export function ResearchWorkspacePanel({ data, activeTab, canApproveHouseView = 
       {activeTab === 'assets' ? (
         <Card>
           <div className="eyebrow">Asset Dossiers</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">Asset-level research coverage and blockers</h2>
+          <h2 className="mt-2 text-2xl font-semibold text-white">
+            Asset-level research coverage and blockers
+          </h2>
           <div className="mt-5 grid gap-4">
             {data.assetDossiers.map((asset) => (
               <Link
@@ -301,7 +358,10 @@ export function ResearchWorkspacePanel({ data, activeTab, canApproveHouseView = 
                 </div>
                 {canApproveHouseView && asset.draftHouseViewSnapshotId ? (
                   <div className="mt-3">
-                    <ResearchHouseViewApprovalButton snapshotId={asset.draftHouseViewSnapshotId} compact />
+                    <ResearchHouseViewApprovalButton
+                      snapshotId={asset.draftHouseViewSnapshotId}
+                      compact
+                    />
                   </div>
                 ) : null}
                 <p className="mt-3 text-sm leading-7 text-slate-400">{asset.marketThesis}</p>
@@ -327,9 +387,10 @@ export function ResearchWorkspacePanel({ data, activeTab, canApproveHouseView = 
             Quantum-inspired portfolio search and scenario exploration
           </h2>
           <p className="mt-3 text-sm leading-7 text-slate-400">
-            This tab runs deterministic quantum-inspired search on current held portfolios using operating KPIs,
-            covenant pressure, research blockers, and official market signal freshness. It is a classical research
-            module for operator decision support, not quantum hardware execution.
+            This tab runs deterministic quantum-inspired search on current held portfolios using
+            operating KPIs, covenant pressure, research blockers, and official market signal
+            freshness. It is a classical research module for operator decision support, not quantum
+            hardware execution.
           </p>
           <div className="mt-5 grid gap-4">
             {data.optimization.map((portfolio) => (
@@ -340,7 +401,9 @@ export function ResearchWorkspacePanel({ data, activeTab, canApproveHouseView = 
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <div className="text-sm font-semibold text-white">{portfolio.portfolioName}</div>
+                    <div className="text-sm font-semibold text-white">
+                      {portfolio.portfolioName}
+                    </div>
                     <div className="mt-1 text-xs text-slate-500">
                       {portfolio.portfolioCode} / {portfolio.assetCount} held assets
                     </div>
@@ -373,15 +436,24 @@ export function ResearchWorkspacePanel({ data, activeTab, canApproveHouseView = 
                   </div>
                   <div>
                     <div className="fine-print">Defensive Move</div>
-                    <p className="mt-2 text-sm leading-7 text-slate-300">{portfolio.defensiveMove}</p>
+                    <p className="mt-2 text-sm leading-7 text-slate-300">
+                      {portfolio.defensiveMove}
+                    </p>
                   </div>
                 </div>
                 <div className="mt-4 flex flex-wrap gap-2">
-                  <Badge tone={portfolio.addCount > 0 ? 'good' : 'neutral'}>{portfolio.addCount} adds</Badge>
-                  <Badge tone={portfolio.trimCount > 0 ? 'warn' : 'neutral'}>{portfolio.trimCount} trims</Badge>
+                  <Badge tone={portfolio.addCount > 0 ? 'good' : 'neutral'}>
+                    {portfolio.addCount} adds
+                  </Badge>
+                  <Badge tone={portfolio.trimCount > 0 ? 'warn' : 'neutral'}>
+                    {portfolio.trimCount} trims
+                  </Badge>
                   {portfolio.fragileScenario ? (
-                    <Badge tone={portfolio.fragileScenario.weightedStressScore >= 18 ? 'danger' : 'warn'}>
-                      {portfolio.fragileScenario.label} {portfolio.fragileScenario.weightedStressScore.toFixed(1)}
+                    <Badge
+                      tone={portfolio.fragileScenario.weightedStressScore >= 18 ? 'danger' : 'warn'}
+                    >
+                      {portfolio.fragileScenario.label}{' '}
+                      {portfolio.fragileScenario.weightedStressScore.toFixed(1)}
                     </Badge>
                   ) : null}
                 </div>
@@ -406,10 +478,15 @@ export function ResearchWorkspacePanel({ data, activeTab, canApproveHouseView = 
       {activeTab === 'coverage' ? (
         <Card>
           <div className="eyebrow">Coverage Queue</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">Open research tasks and freshness exceptions</h2>
+          <h2 className="mt-2 text-2xl font-semibold text-white">
+            Open research tasks and freshness exceptions
+          </h2>
           <div className="mt-5 grid gap-4">
             {data.coverageQueue.map((task) => (
-              <div key={task.id} className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+              <div
+                key={task.id}
+                className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+              >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <div className="text-sm font-semibold text-white">{task.title}</div>
@@ -418,14 +495,20 @@ export function ResearchWorkspacePanel({ data, activeTab, canApproveHouseView = 
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <Badge tone={task.priority === 'HIGH' || task.priority === 'URGENT' ? 'danger' : 'warn'}>
+                    <Badge
+                      tone={
+                        task.priority === 'HIGH' || task.priority === 'URGENT' ? 'danger' : 'warn'
+                      }
+                    >
                       {task.priority.toLowerCase()}
                     </Badge>
                     {task.freshnessLabel ? <Badge>{task.freshnessLabel}</Badge> : null}
                     {task.sourceSystem ? <Badge>{task.sourceSystem}</Badge> : null}
                   </div>
                 </div>
-                <p className="mt-3 text-sm leading-7 text-slate-400">{task.notes ?? 'No operator note yet.'}</p>
+                <p className="mt-3 text-sm leading-7 text-slate-400">
+                  {task.notes ?? 'No operator note yet.'}
+                </p>
               </div>
             ))}
             {data.coverageQueue.length === 0 ? (

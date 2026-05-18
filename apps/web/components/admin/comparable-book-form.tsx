@@ -134,7 +134,9 @@ export function ComparableBookForm({
         inputCurrency
       };
       const response = await fetch(
-        entry.id ? `/api/assets/${assetId}/comparables/${entry.id}` : `/api/assets/${assetId}/comparables`,
+        entry.id
+          ? `/api/assets/${assetId}/comparables/${entry.id}`
+          : `/api/assets/${assetId}/comparables`,
         {
           method: entry.id ? 'PATCH' : 'POST',
           headers: {
@@ -192,7 +194,11 @@ export function ComparableBookForm({
       <div className="grid gap-4 md:grid-cols-[0.7fr_1.3fr]">
         <label className="space-y-2">
           <span className="fine-print">Comparable Set Name</span>
-          <Input value={setName} onChange={(event) => setSetName(event.target.value)} placeholder="Greater Seoul screening set" />
+          <Input
+            value={setName}
+            onChange={(event) => setSetName(event.target.value)}
+            placeholder="Greater Seoul screening set"
+          />
         </label>
         <label className="space-y-2">
           <span className="fine-print">Set Notes</span>
@@ -207,11 +213,16 @@ export function ComparableBookForm({
 
       <div className="grid gap-4">
         {entries.map((entry, index) => (
-          <div key={entry.localId} className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+          <div
+            key={entry.localId}
+            className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+          >
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <div className="eyebrow">Comparable {index + 1}</div>
-                <h4 className="mt-2 text-xl font-semibold text-white">{entry.label || `Peer ${index + 1}`}</h4>
+                <h4 className="mt-2 text-xl font-semibold text-white">
+                  {entry.label || `Peer ${index + 1}`}
+                </h4>
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button
@@ -227,7 +238,11 @@ export function ComparableBookForm({
                   disabled={submittingId === entry.localId || deletingId === entry.localId}
                   onClick={() => handleSave(entry)}
                 >
-                  {submittingId === entry.localId ? 'Saving...' : entry.id ? 'Update Comparable' : 'Add Comparable'}
+                  {submittingId === entry.localId
+                    ? 'Saving...'
+                    : entry.id
+                      ? 'Update Comparable'
+                      : 'Add Comparable'}
                 </Button>
               </div>
             </div>
@@ -235,19 +250,31 @@ export function ComparableBookForm({
             <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               <label className="space-y-2">
                 <span className="fine-print">Label</span>
-                <Input value={entry.label} onChange={(event) => updateEntry(entry.localId, 'label', event.target.value)} />
+                <Input
+                  value={entry.label}
+                  onChange={(event) => updateEntry(entry.localId, 'label', event.target.value)}
+                />
               </label>
               <label className="space-y-2">
                 <span className="fine-print">Location</span>
-                <Input value={entry.location} onChange={(event) => updateEntry(entry.localId, 'location', event.target.value)} />
+                <Input
+                  value={entry.location}
+                  onChange={(event) => updateEntry(entry.localId, 'location', event.target.value)}
+                />
               </label>
               <label className="space-y-2">
                 <span className="fine-print">Asset Type</span>
-                <Input value={entry.assetType} onChange={(event) => updateEntry(entry.localId, 'assetType', event.target.value)} />
+                <Input
+                  value={entry.assetType}
+                  onChange={(event) => updateEntry(entry.localId, 'assetType', event.target.value)}
+                />
               </label>
               <label className="space-y-2">
                 <span className="fine-print">Stage</span>
-                <Select value={entry.stage} onChange={(event) => updateEntry(entry.localId, 'stage', event.target.value)}>
+                <Select
+                  value={entry.stage}
+                  onChange={(event) => updateEntry(entry.localId, 'stage', event.target.value)}
+                >
                   <option value="">Select stage</option>
                   {Object.values(AssetStage).map((stage) => (
                     <option key={stage} value={stage}>
@@ -258,43 +285,108 @@ export function ComparableBookForm({
               </label>
               <label className="space-y-2">
                 <span className="fine-print">Power Capacity (MW)</span>
-                <Input type="number" step="any" value={entry.powerCapacityMw} onChange={(event) => updateEntry(entry.localId, 'powerCapacityMw', event.target.value)} />
+                <Input
+                  type="number"
+                  step="any"
+                  value={entry.powerCapacityMw}
+                  onChange={(event) =>
+                    updateEntry(entry.localId, 'powerCapacityMw', event.target.value)
+                  }
+                />
               </label>
               <label className="space-y-2">
                 <span className="fine-print">Gross Floor Area (sqm)</span>
-                <Input type="number" step="any" value={entry.grossFloorAreaSqm} onChange={(event) => updateEntry(entry.localId, 'grossFloorAreaSqm', event.target.value)} />
+                <Input
+                  type="number"
+                  step="any"
+                  value={entry.grossFloorAreaSqm}
+                  onChange={(event) =>
+                    updateEntry(entry.localId, 'grossFloorAreaSqm', event.target.value)
+                  }
+                />
               </label>
               <label className="space-y-2">
                 <span className="fine-print">Occupancy (%)</span>
-                <Input type="number" step="any" value={entry.occupancyPct} onChange={(event) => updateEntry(entry.localId, 'occupancyPct', event.target.value)} />
+                <Input
+                  type="number"
+                  step="any"
+                  value={entry.occupancyPct}
+                  onChange={(event) =>
+                    updateEntry(entry.localId, 'occupancyPct', event.target.value)
+                  }
+                />
               </label>
               <label className="space-y-2">
                 <span className="fine-print">Weight (%)</span>
-                <Input type="number" step="any" value={entry.weightPct} onChange={(event) => updateEntry(entry.localId, 'weightPct', event.target.value)} />
+                <Input
+                  type="number"
+                  step="any"
+                  value={entry.weightPct}
+                  onChange={(event) => updateEntry(entry.localId, 'weightPct', event.target.value)}
+                />
               </label>
               <label className="space-y-2">
                 <span className="fine-print">{moneyLabel('Valuation (KRW)', inputCurrency)}</span>
-                <Input type="number" step="any" value={entry.valuationKrw} onChange={(event) => updateEntry(entry.localId, 'valuationKrw', event.target.value)} />
+                <Input
+                  type="number"
+                  step="any"
+                  value={entry.valuationKrw}
+                  onChange={(event) =>
+                    updateEntry(entry.localId, 'valuationKrw', event.target.value)
+                  }
+                />
               </label>
               <label className="space-y-2">
                 <span className="fine-print">{moneyLabel('Price / MW (KRW)', inputCurrency)}</span>
-                <Input type="number" step="any" value={entry.pricePerMwKrw} onChange={(event) => updateEntry(entry.localId, 'pricePerMwKrw', event.target.value)} />
+                <Input
+                  type="number"
+                  step="any"
+                  value={entry.pricePerMwKrw}
+                  onChange={(event) =>
+                    updateEntry(entry.localId, 'pricePerMwKrw', event.target.value)
+                  }
+                />
               </label>
               <label className="space-y-2">
-                <span className="fine-print">{moneyLabel('Monthly Rate / kW (KRW)', inputCurrency)}</span>
-                <Input type="number" step="any" value={entry.monthlyRatePerKwKrw} onChange={(event) => updateEntry(entry.localId, 'monthlyRatePerKwKrw', event.target.value)} />
+                <span className="fine-print">
+                  {moneyLabel('Monthly Rate / kW (KRW)', inputCurrency)}
+                </span>
+                <Input
+                  type="number"
+                  step="any"
+                  value={entry.monthlyRatePerKwKrw}
+                  onChange={(event) =>
+                    updateEntry(entry.localId, 'monthlyRatePerKwKrw', event.target.value)
+                  }
+                />
               </label>
               <label className="space-y-2">
                 <span className="fine-print">Cap Rate (%)</span>
-                <Input type="number" step="any" value={entry.capRatePct} onChange={(event) => updateEntry(entry.localId, 'capRatePct', event.target.value)} />
+                <Input
+                  type="number"
+                  step="any"
+                  value={entry.capRatePct}
+                  onChange={(event) => updateEntry(entry.localId, 'capRatePct', event.target.value)}
+                />
               </label>
               <label className="space-y-2">
                 <span className="fine-print">Discount Rate (%)</span>
-                <Input type="number" step="any" value={entry.discountRatePct} onChange={(event) => updateEntry(entry.localId, 'discountRatePct', event.target.value)} />
+                <Input
+                  type="number"
+                  step="any"
+                  value={entry.discountRatePct}
+                  onChange={(event) =>
+                    updateEntry(entry.localId, 'discountRatePct', event.target.value)
+                  }
+                />
               </label>
               <label className="space-y-2 xl:col-span-3">
                 <span className="fine-print">Source Link</span>
-                <Input value={entry.sourceLink} onChange={(event) => updateEntry(entry.localId, 'sourceLink', event.target.value)} placeholder="https://broker-memo-or-transaction-source" />
+                <Input
+                  value={entry.sourceLink}
+                  onChange={(event) => updateEntry(entry.localId, 'sourceLink', event.target.value)}
+                  placeholder="https://broker-memo-or-transaction-source"
+                />
               </label>
             </div>
 
@@ -313,12 +405,16 @@ export function ComparableBookForm({
 
       <div className="flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-4">
         <p className="max-w-3xl text-sm text-slate-400">
-          Add at least three comparables with usable pricing signals. Valuation, price per MW, and monthly rate inputs
-          are entered in {inputCurrency} and normalized to KRW internally.
+          Add at least three comparables with usable pricing signals. Valuation, price per MW, and
+          monthly rate inputs are entered in {inputCurrency} and normalized to KRW internally.
         </p>
         <div className="flex items-center gap-3">
           {errorMessage ? <span className="text-sm text-rose-300">{errorMessage}</span> : null}
-          <Button type="button" variant="secondary" onClick={() => setEntries((current) => [...current, buildDraft()])}>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => setEntries((current) => [...current, buildDraft()])}
+          >
             Add Comparable
           </Button>
         </div>

@@ -32,8 +32,10 @@ export default async function TransfersPage() {
         <h2 className="mt-2 text-3xl font-semibold text-white">Pre-cleared share transfers</h2>
         <p className="mt-2 text-sm text-slate-400">
           Broker-dealers open a ticket; issuers approve or reject after KYC + accreditation review;
-          settlement pulls shares via <code className="ml-1 rounded bg-white/5 px-1.5 py-0.5">TransferAgent.settle</code>,
-          which calls <code className="mx-1 rounded bg-white/5 px-1.5 py-0.5">AssetToken.forceTransfer</code>.
+          settlement pulls shares via{' '}
+          <code className="ml-1 rounded bg-white/5 px-1.5 py-0.5">TransferAgent.settle</code>, which
+          calls{' '}
+          <code className="mx-1 rounded bg-white/5 px-1.5 py-0.5">AssetToken.forceTransfer</code>.
           Open a new ticket via
           <code className="ml-1 rounded bg-white/5 px-1.5 py-0.5">
             POST /api/tokenization/transfers
@@ -62,7 +64,8 @@ export default async function TransfersPage() {
                     </span>
                   </div>
                   <div className="mt-1 text-xs text-slate-500">
-                    agent {shortenHash(t.transferAgentAddress)} / token {shortenHash(t.tokenAddress)}
+                    agent {shortenHash(t.transferAgentAddress)} / token{' '}
+                    {shortenHash(t.tokenAddress)}
                   </div>
                 </div>
                 <Badge tone={tone(t.status)}>{t.status}</Badge>
@@ -71,7 +74,9 @@ export default async function TransfersPage() {
                 <Row label="Seller">{shortenHash(t.sellerAddress)}</Row>
                 <Row label="Buyer">{shortenHash(t.buyerAddress)}</Row>
                 <Row label="Shares">{t.shareAmount}</Row>
-                <Row label="Quote">{t.quotePrice} {t.quoteAssetSymbol}</Row>
+                <Row label="Quote">
+                  {t.quotePrice} {t.quoteAssetSymbol}
+                </Row>
                 <Row label="RFQ ref">{shortenHash(t.rfqRef, 8)}</Row>
                 <Row label="Expires">{t.expiresAt ? formatDate(t.expiresAt) : '—'}</Row>
                 <Row label="Opened by">{t.openedBy}</Row>

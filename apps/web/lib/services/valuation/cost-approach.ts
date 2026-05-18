@@ -26,7 +26,10 @@ export function computeCostApproach(
   const retainedContingencyKrw = capexBreakdown.contingencyKrw * 0.4 * scenario.floorFactor;
 
   const replacementCostFloorKrw = Math.max(
-    (capexBreakdown.landValueKrw + retainedHardCostKrw + retainedSoftCostKrw + retainedContingencyKrw) *
+    (capexBreakdown.landValueKrw +
+      retainedHardCostKrw +
+      retainedSoftCostKrw +
+      retainedContingencyKrw) *
       permitPenalty *
       floodPenalty *
       wildfirePenalty,

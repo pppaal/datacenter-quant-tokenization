@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
-import { getRequestIpAddress, resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
+import {
+  getRequestIpAddress,
+  resolveVerifiedAdminActorFromHeaders
+} from '@/lib/security/admin-request';
 import { recordAuditEvent } from '@/lib/services/audit';
 import { hasRequiredAdminRole } from '@/lib/security/admin-auth';
-import {
-  OpenAIConfigurationError,
-  summarizeResearchSnapshot
-} from '@/lib/services/ai-assistant';
+import { OpenAIConfigurationError, summarizeResearchSnapshot } from '@/lib/services/ai-assistant';
 
 export async function POST(request: Request) {
   const actor = await resolveVerifiedAdminActorFromHeaders(request.headers, prisma, {
@@ -67,10 +67,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(
       {
-        error:
-          error instanceof Error
-            ? error.message
-            : 'Failed to summarize research snapshot'
+        error: error instanceof Error ? error.message : 'Failed to summarize research snapshot'
       },
       { status }
     );

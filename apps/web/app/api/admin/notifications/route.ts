@@ -2,7 +2,10 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { recordAuditEvent } from '@/lib/services/audit';
 import { listRecentNotifications } from '@/lib/services/notifications';
-import { getRequestIpAddress, resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
+import {
+  getRequestIpAddress,
+  resolveVerifiedAdminActorFromHeaders
+} from '@/lib/security/admin-request';
 import { hasRequiredAdminRole } from '@/lib/security/admin-auth';
 
 export async function GET(request: Request) {

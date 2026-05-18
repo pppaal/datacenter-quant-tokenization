@@ -234,23 +234,14 @@ test('macro adapter can fetch euro-area ECB series and map them into macro input
     const url = String(input);
 
     if (url.includes('/ICP/')) {
-      return new Response(
-        'TIME_PERIOD,OBS_VALUE\n2026-02,2.5\n',
-        { status: 200 }
-      );
+      return new Response('TIME_PERIOD,OBS_VALUE\n2026-02,2.5\n', { status: 200 });
     }
 
     if (url.includes('/FM/') && url.includes('MRR_FR')) {
-      return new Response(
-        'TIME_PERIOD,OBS_VALUE\n2026-03-18,4.0\n',
-        { status: 200 }
-      );
+      return new Response('TIME_PERIOD,OBS_VALUE\n2026-03-18,4.0\n', { status: 200 });
     }
 
-    return new Response(
-      'TIME_PERIOD,OBS_VALUE\n2026-03-18,145\n',
-      { status: 200 }
-    );
+    return new Response('TIME_PERIOD,OBS_VALUE\n2026-03-18,145\n', { status: 200 });
   });
 
   const result = await adapter.fetch({

@@ -43,8 +43,14 @@ test('forecast model stack reports live and building models from current data co
 
   assert.equal(stack.features.marketCount, 2);
   assert.equal(stack.summary.buildableModels > 0, true);
-  assert.equal(stack.models.some((model) => model.key === 'monte-carlo-envelope' && model.status === 'READY'), true);
-  assert.equal(stack.models.some((model) => model.key === 'deep-tft-model'), true);
+  assert.equal(
+    stack.models.some((model) => model.key === 'monte-carlo-envelope' && model.status === 'READY'),
+    true
+  );
+  assert.equal(
+    stack.models.some((model) => model.key === 'deep-tft-model'),
+    true
+  );
   const gradientBoosting = stack.models.find((model) => model.key === 'gradient-boosting-forecast');
   assert.ok(gradientBoosting);
   assert.equal(gradientBoosting?.validationScore !== null, true);

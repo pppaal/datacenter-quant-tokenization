@@ -90,10 +90,14 @@ export function computeCorrelationPenalty(
 
   // Also check factor-level directions for correlated factors
   const factorToHeadwind: Record<string, boolean> = {
-    rate: headwindKeys.has('rate') || factorDirections['rate_level'] === 'NEGATIVE' || factorDirections['rate_momentum_bps'] === 'NEGATIVE',
+    rate:
+      headwindKeys.has('rate') ||
+      factorDirections['rate_level'] === 'NEGATIVE' ||
+      factorDirections['rate_momentum_bps'] === 'NEGATIVE',
     credit: headwindKeys.has('credit') || factorDirections['credit_stress'] === 'NEGATIVE',
     demand: headwindKeys.has('demand') || factorDirections['property_demand'] === 'NEGATIVE',
-    construction: headwindKeys.has('construction') || factorDirections['construction_pressure'] === 'NEGATIVE',
+    construction:
+      headwindKeys.has('construction') || factorDirections['construction_pressure'] === 'NEGATIVE',
     leverage: headwindKeys.has('leverage'),
     liquidity: headwindKeys.has('liquidity') || factorDirections['liquidity'] === 'NEGATIVE'
   };

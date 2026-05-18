@@ -1,9 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {
-  enumerateMonths,
-  parseRtmsXml
-} from '@/lib/services/public-data/live/rtms';
+import { enumerateMonths, parseRtmsXml } from '@/lib/services/public-data/live/rtms';
 import { MockTransactionComps } from '@/lib/services/public-data/mock/transaction-comps';
 import { rtmsWindowYyyyMm } from '@/lib/services/property-analyzer/auto-analyze';
 
@@ -67,12 +64,7 @@ test('parseRtmsXml returns empty array on malformed xml', () => {
 });
 
 test('enumerateMonths produces inclusive month sequence', () => {
-  assert.deepEqual(enumerateMonths('202511', '202602'), [
-    '202511',
-    '202512',
-    '202601',
-    '202602'
-  ]);
+  assert.deepEqual(enumerateMonths('202511', '202602'), ['202511', '202512', '202601', '202602']);
 });
 
 test('enumerateMonths single month echoes input', () => {

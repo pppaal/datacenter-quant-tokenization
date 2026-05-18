@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import type { Prisma } from '@prisma/client';
 
 type OpsRunSummary = {
@@ -282,6 +283,59 @@ export async function sendOpsWebhookAlerts(
   };
 }
 
+/**
+ * Stable fingerprint for an alert payload. Two payloads with identical
+ * status + summary + error produce the same fingerprint and are considered
+ * duplicates within `OPS_ALERT_DEDUP_WINDOW_MINUTES` (default 30).
+ */
+export function computeOpsAlertFingerprint(payload: OpsCycleAlertPayload): string {
+  const canonical = [
+    payload.status,
+    payload.alertSummary?.trim() ?? '',
+    payload.errorMessage?.trim() ?? '',
+    payload.sourceRun?.statusLabel ?? '',
+    payload.researchRun?.statusLabel ?? ''
+  ].join('|');
+  return createHash('sha256').update(canonical).digest('hex').slice(0, 16);
+}
+
+function dedupWindowMs(env: NodeJS.ProcessEnv): number {
+  const raw = Number(env.OPS_ALERT_DEDUP_WINDOW_MINUTES ?? 30);
+  if (!Number.isFinite(raw) || raw <= 0) return 30 * 60 * 1000;
+  return Math.floor(raw) * 60 * 1000;
+}
+
+/**
+ * Returns true when an alert with the same fingerprint was delivered in
+ * the dedup window, so the caller should skip re-sending. Soft-fails on
+ * DB errors (returns false) so an outage of the audit table never silences
+ * a real incident.
+ */
+export async function isDuplicateOpsAlert(
+  fingerprint: string,
+  db: {
+    opsAlertDelivery: {
+      findFirst(args: {
+        where: { reason: string; deliveredAt: { gte: Date } };
+        orderBy: { deliveredAt: 'desc' };
+      }): Promise<{ id: string } | null>;
+    };
+  },
+  env: NodeJS.ProcessEnv = process.env
+): Promise<boolean> {
+  try {
+    const cutoff = new Date(Date.now() - dedupWindowMs(env));
+    const reason = `fingerprint:${fingerprint}`;
+    const recent = await db.opsAlertDelivery.findFirst({
+      where: { reason, deliveredAt: { gte: cutoff } },
+      orderBy: { deliveredAt: 'desc' }
+    });
+    return Boolean(recent);
+  } catch {
+    return false;
+  }
+}
+
 export async function recordOpsAlertDelivery(
   input: {
     channel: string;
@@ -401,7 +455,9 @@ export async function listRecentOpsAlertDeliveries(
   });
 }
 
-export function parseOpsCycleAlertPayload(payload: Prisma.JsonValue | null | undefined): OpsCycleAlertPayload | null {
+export function parseOpsCycleAlertPayload(
+  payload: Prisma.JsonValue | null | undefined
+): OpsCycleAlertPayload | null {
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
     return null;
   }
@@ -411,20 +467,30 @@ export function parseOpsCycleAlertPayload(payload: Prisma.JsonValue | null | und
   const actorIdentifier = candidate.actorIdentifier;
   const alertSummary = candidate.alertSummary;
 
-  if ((status !== 'SUCCESS' && status !== 'FAILED') || typeof actorIdentifier !== 'string' || typeof alertSummary !== 'string') {
+  if (
+    (status !== 'SUCCESS' && status !== 'FAILED') ||
+    typeof actorIdentifier !== 'string' ||
+    typeof alertSummary !== 'string'
+  ) {
     return null;
   }
 
   const attemptSummaryCandidate =
-    candidate.attemptSummary && typeof candidate.attemptSummary === 'object' && !Array.isArray(candidate.attemptSummary)
+    candidate.attemptSummary &&
+    typeof candidate.attemptSummary === 'object' &&
+    !Array.isArray(candidate.attemptSummary)
       ? (candidate.attemptSummary as Record<string, unknown>)
       : null;
   const sourceRunCandidate =
-    candidate.sourceRun && typeof candidate.sourceRun === 'object' && !Array.isArray(candidate.sourceRun)
+    candidate.sourceRun &&
+    typeof candidate.sourceRun === 'object' &&
+    !Array.isArray(candidate.sourceRun)
       ? (candidate.sourceRun as Record<string, unknown>)
       : null;
   const researchRunCandidate =
-    candidate.researchRun && typeof candidate.researchRun === 'object' && !Array.isArray(candidate.researchRun)
+    candidate.researchRun &&
+    typeof candidate.researchRun === 'object' &&
+    !Array.isArray(candidate.researchRun)
       ? (candidate.researchRun as Record<string, unknown>)
       : null;
 
@@ -441,13 +507,19 @@ export function parseOpsCycleAlertPayload(payload: Prisma.JsonValue | null | und
     sourceRun: sourceRunCandidate
       ? {
           id: typeof sourceRunCandidate.id === 'string' ? sourceRunCandidate.id : undefined,
-          statusLabel: typeof sourceRunCandidate.statusLabel === 'string' ? sourceRunCandidate.statusLabel : undefined
+          statusLabel:
+            typeof sourceRunCandidate.statusLabel === 'string'
+              ? sourceRunCandidate.statusLabel
+              : undefined
         }
       : undefined,
     researchRun: researchRunCandidate
       ? {
           id: typeof researchRunCandidate.id === 'string' ? researchRunCandidate.id : undefined,
-          statusLabel: typeof researchRunCandidate.statusLabel === 'string' ? researchRunCandidate.statusLabel : undefined
+          statusLabel:
+            typeof researchRunCandidate.statusLabel === 'string'
+              ? researchRunCandidate.statusLabel
+              : undefined
         }
       : undefined,
     errorMessage: typeof candidate.errorMessage === 'string' ? candidate.errorMessage : null
@@ -471,7 +543,7 @@ export async function replayOpsAlertDelivery(
   const matchingTarget =
     delivery.channel === 'webhook_secondary'
       ? targets.find((target) => target.channel === 'webhook_secondary')
-      : targets.find((target) => target.channel === 'webhook_primary') ?? targets[0];
+      : (targets.find((target) => target.channel === 'webhook_primary') ?? targets[0]);
 
   if (!matchingTarget) {
     return {

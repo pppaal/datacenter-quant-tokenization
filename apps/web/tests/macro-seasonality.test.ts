@@ -4,7 +4,12 @@ import type { MacroSeries } from '@prisma/client';
 import { SourceStatus } from '@prisma/client';
 import { detectSeasonality, deseasonalize } from '@/lib/services/macro/seasonality';
 
-function makeSeries(seriesKey: string, values: number[], startYear = 2023, startMonth = 0): MacroSeries[] {
+function makeSeries(
+  seriesKey: string,
+  values: number[],
+  startYear = 2023,
+  startMonth = 0
+): MacroSeries[] {
   const now = new Date();
   return values.map((value, i) => ({
     id: `${seriesKey}-${i}`,

@@ -31,7 +31,10 @@ import { ValuationRunBadges } from '@/components/valuation/valuation-run-badges'
 import { ValuationSignals } from '@/components/valuation/valuation-signals';
 import { getFxRateMap } from '@/lib/services/fx';
 import { getGradientBoostingForecastForRun } from '@/lib/services/forecast/gradient-boosting';
-import { buildForecastDecisionNarrative, getForecastDecisionGuideForRun } from '@/lib/services/forecast/decision';
+import {
+  buildForecastDecisionNarrative,
+  getForecastDecisionGuideForRun
+} from '@/lib/services/forecast/decision';
 import { buildMacroImpactHistory } from '@/lib/services/macro/history';
 import { buildRealizedOutcomeComparison } from '@/lib/services/realized-outcomes';
 import { getValuationRunById } from '@/lib/services/valuations';
@@ -67,7 +70,11 @@ function getApprovalTone(approvalStatus: string) {
   return 'neutral' as const;
 }
 
-export default async function ValuationRunDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ValuationRunDetailPage({
+  params
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = await params;
   const run = await getValuationRunById(id);
   if (!run) notFound();
@@ -81,8 +88,15 @@ export default async function ValuationRunDetailPage({ params }: { params: Promi
   const bullValue = run.scenarios[0]?.valuationKrw ?? null;
   const bearValue = run.scenarios[2]?.valuationKrw ?? null;
   const featureSources = getValuationFeatureSourceDescriptors(run.assumptions);
-  const usedFeatureSnapshots = filterValuationFeatureSnapshots(run.asset.featureSnapshots, run.assumptions);
-  const featureMappings = buildFeatureAssumptionMappings(usedFeatureSnapshots, run.assumptions, provenance);
+  const usedFeatureSnapshots = filterValuationFeatureSnapshots(
+    run.asset.featureSnapshots,
+    run.assumptions
+  );
+  const featureMappings = buildFeatureAssumptionMappings(
+    usedFeatureSnapshots,
+    run.assumptions,
+    provenance
+  );
   const isDataCenter = run.asset.assetClass === AssetClass.DATA_CENTER;
   const displayCurrency = resolveDisplayCurrency(run.asset.address?.country ?? run.asset.market);
   const fxRateToKrw = (await getFxRateMap([displayCurrency]))[displayCurrency];
@@ -131,7 +145,9 @@ export default async function ValuationRunDetailPage({ params }: { params: Promi
           <Badge tone="good">Generated IM</Badge>
           <Badge>{run.asset.assetCode}</Badge>
           <Badge>{recommendation}</Badge>
-          <Badge tone={getApprovalTone(run.approvalStatus)}>{run.approvalStatus.replaceAll('_', ' ')}</Badge>
+          <Badge tone={getApprovalTone(run.approvalStatus)}>
+            {run.approvalStatus.replaceAll('_', ' ')}
+          </Badge>
         </div>
 
         <div className="mt-6 grid gap-8 xl:grid-cols-[1.05fr_0.95fr]">
@@ -160,19 +176,27 @@ export default async function ValuationRunDetailPage({ params }: { params: Promi
               <div className="metric-card">
                 <div className="fine-print">Recommendation</div>
                 <div className="mt-3 text-2xl font-semibold text-white">{recommendation}</div>
-                <p className="mt-2 text-sm text-slate-400">Current committee posture based on the latest model run.</p>
+                <p className="mt-2 text-sm text-slate-400">
+                  Current committee posture based on the latest model run.
+                </p>
               </div>
               <div className="metric-card">
                 <div className="fine-print">Base Case Value</div>
                 <div className="mt-3 text-2xl font-semibold text-white">
                   {formatCurrencyFromKrwAtRate(run.baseCaseValueKrw, displayCurrency, fxRateToKrw)}
                 </div>
-                <p className="mt-2 text-sm text-slate-400">Modeled central case for the current underwriting view.</p>
+                <p className="mt-2 text-sm text-slate-400">
+                  Modeled central case for the current underwriting view.
+                </p>
               </div>
               <div className="metric-card">
                 <div className="fine-print">Confidence Score</div>
-                <div className="mt-3 text-2xl font-semibold text-white">{formatNumber(run.confidenceScore, 1)}</div>
-                <p className="mt-2 text-sm text-slate-400">Reflects data completeness, freshness, and source fallback usage.</p>
+                <div className="mt-3 text-2xl font-semibold text-white">
+                  {formatNumber(run.confidenceScore, 1)}
+                </div>
+                <p className="mt-2 text-sm text-slate-400">
+                  Reflects data completeness, freshness, and source fallback usage.
+                </p>
               </div>
             </div>
           </div>
@@ -207,7 +231,8 @@ export default async function ValuationRunDetailPage({ params }: { params: Promi
             <div className="rounded-[24px] border border-accent/20 bg-accent/10 p-5">
               <div className="fine-print text-accent">Investment View</div>
               <p className="mt-3 text-sm leading-7 text-slate-200">
-                This IM combines the scenario model, data freshness signals, and asset-level diligence context into a review-ready committee memo.
+                This IM combines the scenario model, data freshness signals, and asset-level
+                diligence context into a review-ready committee memo.
               </p>
             </div>
           </Card>
@@ -216,8 +241,16 @@ export default async function ValuationRunDetailPage({ params }: { params: Promi
 
       <div className="grid gap-4 md:grid-cols-4">
         {[
-          ['Bull Case', formatCurrencyFromKrwAtRate(bullValue, displayCurrency, fxRateToKrw), 'upside scenario'],
-          ['Bear Case', formatCurrencyFromKrwAtRate(bearValue, displayCurrency, fxRateToKrw), 'downside scenario'],
+          [
+            'Bull Case',
+            formatCurrencyFromKrwAtRate(bullValue, displayCurrency, fxRateToKrw),
+            'upside scenario'
+          ],
+          [
+            'Bear Case',
+            formatCurrencyFromKrwAtRate(bearValue, displayCurrency, fxRateToKrw),
+            'downside scenario'
+          ],
           ['Implied Yield', formatPercent(run.scenarios[1]?.impliedYieldPct), 'base scenario'],
           ['Exit Cap Rate', formatPercent(run.scenarios[1]?.exitCapRatePct), 'base scenario']
         ].map(([label, value, detail]) => (
@@ -238,19 +271,22 @@ export default async function ValuationRunDetailPage({ params }: { params: Promi
               <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
                 <div className="fine-print">Asset Thesis</div>
                 <p className="mt-3 text-sm leading-7 text-slate-300">
-                  Asset quality, market positioning, and scenario resilience define the current investment case.
+                  Asset quality, market positioning, and scenario resilience define the current
+                  investment case.
                 </p>
               </div>
               <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
                 <div className="fine-print">Return Profile</div>
                 <p className="mt-3 text-sm leading-7 text-slate-300">
-                  The modeled base scenario anchors the memo while the outer cases frame upside and downside.
+                  The modeled base scenario anchors the memo while the outer cases frame upside and
+                  downside.
                 </p>
               </div>
               <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
                 <div className="fine-print">Diligence Posture</div>
                 <p className="mt-3 text-sm leading-7 text-slate-300">
-                  Committee attention should focus on the remaining risk items and due diligence requirements below.
+                  Committee attention should focus on the remaining risk items and due diligence
+                  requirements below.
                 </p>
               </div>
             </div>
@@ -263,7 +299,9 @@ export default async function ValuationRunDetailPage({ params }: { params: Promi
             <div className="mt-4 grid gap-4 text-sm text-slate-300">
               <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
                 <div className="fine-print">Updated</div>
-                <div className="mt-2 text-lg font-semibold text-white">{formatDate(run.createdAt)}</div>
+                <div className="mt-2 text-lg font-semibold text-white">
+                  {formatDate(run.createdAt)}
+                </div>
               </div>
               <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
                 <div className="fine-print">Latest Base Case</div>
@@ -282,9 +320,13 @@ export default async function ValuationRunDetailPage({ params }: { params: Promi
                 <div className="fine-print">Feature Layers Applied</div>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {featureSources.length > 0 ? (
-                    featureSources.map((feature) => <Badge key={feature.namespace}>{feature.label}</Badge>)
+                    featureSources.map((feature) => (
+                      <Badge key={feature.namespace}>{feature.label}</Badge>
+                    ))
                   ) : (
-                    <span className="text-sm text-slate-500">No promoted feature snapshots applied.</span>
+                    <span className="text-sm text-slate-500">
+                      No promoted feature snapshots applied.
+                    </span>
                   )}
                 </div>
               </div>
@@ -312,7 +354,10 @@ export default async function ValuationRunDetailPage({ params }: { params: Promi
             <div className="eyebrow">Key Risks</div>
             <ul className="mt-4 space-y-3 text-sm text-slate-300">
               {run.keyRisks.map((risk) => (
-                <li key={risk} className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-3">
+                <li
+                  key={risk}
+                  className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-3"
+                >
                   {risk}
                 </li>
               ))}
@@ -323,7 +368,10 @@ export default async function ValuationRunDetailPage({ params }: { params: Promi
             <div className="eyebrow">DD Checklist</div>
             <ul className="mt-4 space-y-3 text-sm text-slate-300">
               {run.ddChecklist.map((item) => (
-                <li key={item} className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-3">
+                <li
+                  key={item}
+                  className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-3"
+                >
                   {item}
                 </li>
               ))}
@@ -337,9 +385,13 @@ export default async function ValuationRunDetailPage({ params }: { params: Promi
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <div className="fine-print">Current Status</div>
-                    <div className="mt-2 text-lg font-semibold text-white">{run.approvalStatus.replaceAll('_', ' ')}</div>
+                    <div className="mt-2 text-lg font-semibold text-white">
+                      {run.approvalStatus.replaceAll('_', ' ')}
+                    </div>
                   </div>
-                  <Badge tone={getApprovalTone(run.approvalStatus)}>{run.approvalStatus.replaceAll('_', ' ')}</Badge>
+                  <Badge tone={getApprovalTone(run.approvalStatus)}>
+                    {run.approvalStatus.replaceAll('_', ' ')}
+                  </Badge>
                 </div>
                 <div className="mt-3 text-sm text-slate-400">
                   {run.approvedByLabel
@@ -349,7 +401,9 @@ export default async function ValuationRunDetailPage({ params }: { params: Promi
               </div>
               <ValuationApprovalForm
                 runId={run.id}
-                approvalStatus={run.approvalStatus as 'PENDING_REVIEW' | 'APPROVED' | 'CONDITIONAL' | 'REJECTED'}
+                approvalStatus={
+                  run.approvalStatus as 'PENDING_REVIEW' | 'APPROVED' | 'CONDITIONAL' | 'REJECTED'
+                }
                 approvalNotes={run.approvalNotes}
               />
             </div>
@@ -367,7 +421,11 @@ export default async function ValuationRunDetailPage({ params }: { params: Promi
 
       <FeatureAssumptionMapping rows={featureMappings} />
 
-      <CreditAssessmentPanel assessments={run.asset.creditAssessments} displayCurrency={displayCurrency} fxRateToKrw={fxRateToKrw} />
+      <CreditAssessmentPanel
+        assessments={run.asset.creditAssessments}
+        displayCurrency={displayCurrency}
+        fxRateToKrw={fxRateToKrw}
+      />
 
       <MacroRegimePanel macroRegime={macroRegime} />
 
@@ -400,7 +458,11 @@ export default async function ValuationRunDetailPage({ params }: { params: Promi
         marketIndicators={run.asset.marketIndicatorSeries}
       />
 
-      <SensitivityTable runs={run.sensitivityRuns} displayCurrency={displayCurrency} fxRateToKrw={fxRateToKrw} />
+      <SensitivityTable
+        runs={run.sensitivityRuns}
+        displayCurrency={displayCurrency}
+        fxRateToKrw={fxRateToKrw}
+      />
 
       <ValuationDeltaCard currentRun={run} previousRun={previousRun} />
 
@@ -433,7 +495,10 @@ export default async function ValuationRunDetailPage({ params }: { params: Promi
         <Card className="space-y-4">
           <div className="eyebrow">Scenario Table</div>
           {run.scenarios.map((scenario) => (
-            <div key={scenario.id} className="rounded-[22px] border border-white/10 bg-slate-950/45 p-4">
+            <div
+              key={scenario.id}
+              className="rounded-[22px] border border-white/10 bg-slate-950/45 p-4"
+            >
               <div className="flex items-center justify-between gap-3">
                 <div className="text-lg font-semibold text-white">{scenario.name}</div>
                 <div className="text-sm text-slate-300">
@@ -464,9 +529,12 @@ export default async function ValuationRunDetailPage({ params }: { params: Promi
 
           <Card className="hero-mesh print-hidden">
             <div className="eyebrow">Next Step</div>
-            <h2 className="mt-3 text-2xl font-semibold text-white">Continue from the asset dossier.</h2>
+            <h2 className="mt-3 text-2xl font-semibold text-white">
+              Continue from the asset dossier.
+            </h2>
             <p className="mt-4 text-sm leading-7 text-slate-300">
-              Move back to the asset record to refresh source enrichment, upload new diligence materials, or rerun the analysis with updated assumptions.
+              Move back to the asset record to refresh source enrichment, upload new diligence
+              materials, or rerun the analysis with updated assumptions.
             </p>
             <div className="mt-6 rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
               <ValuationRunForm assetId={run.assetId} />

@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { buildCommitmentMath, buildFundDashboard, buildFundOperatorBriefs } from '@/lib/services/capital';
+import {
+  buildCommitmentMath,
+  buildFundDashboard,
+  buildFundOperatorBriefs
+} from '@/lib/services/capital';
 
 test('buildCommitmentMath summarizes commitments, calls, distributions, and dry powder', () => {
   const math = buildCommitmentMath({
@@ -9,14 +13,21 @@ test('buildCommitmentMath summarizes commitments, calls, distributions, and dry 
     investedCapitalKrw: null,
     dryPowderKrw: null,
     commitments: [
-      { commitmentKrw: 320_000_000_000, calledKrw: 208_000_000_000, distributedKrw: 22_000_000_000 },
+      {
+        commitmentKrw: 320_000_000_000,
+        calledKrw: 208_000_000_000,
+        distributedKrw: 22_000_000_000
+      },
       { commitmentKrw: 210_000_000_000, calledKrw: 134_000_000_000, distributedKrw: 8_000_000_000 }
     ],
     capitalCalls: [
       { amountKrw: 42_000_000_000, status: 'ISSUED' },
       { amountKrw: 12_000_000_000, status: 'FUNDED' }
     ],
-    distributions: [{ amountKrw: 30_000_000_000, status: 'PAID' }, { amountKrw: 5_000_000_000, status: 'PLANNED' }]
+    distributions: [
+      { amountKrw: 30_000_000_000, status: 'PAID' },
+      { amountKrw: 5_000_000_000, status: 'PLANNED' }
+    ]
   } as any);
 
   assert.equal(math.totalCommitmentKrw, 530_000_000_000);
@@ -49,8 +60,17 @@ test('buildFundDashboard produces investor-update-ready summary', () => {
         vehicle: null
       }
     ],
-    capitalCalls: [{ callDate: new Date('2026-02-10'), amountKrw: 42_000_000_000, purpose: 'Capex and leasing reserves', status: 'ISSUED' }],
-    distributions: [{ distributionDate: new Date('2026-03-20'), amountKrw: 30_000_000_000, status: 'PAID' }],
+    capitalCalls: [
+      {
+        callDate: new Date('2026-02-10'),
+        amountKrw: 42_000_000_000,
+        purpose: 'Capex and leasing reserves',
+        status: 'ISSUED'
+      }
+    ],
+    distributions: [
+      { distributionDate: new Date('2026-03-20'), amountKrw: 30_000_000_000, status: 'PAID' }
+    ],
     investorReports: [{ title: 'Q1 2026 Investor Update', releaseStatus: 'RELEASED' }],
     ddqResponses: [],
     mandates: [],
@@ -80,9 +100,23 @@ test('buildFundOperatorBriefs produces capital and investor coverage summaries',
         vehicle: null
       }
     ],
-    capitalCalls: [{ callDate: new Date('2026-02-10'), amountKrw: 42_000_000_000, purpose: 'Capex and leasing reserves', status: 'ISSUED' }],
+    capitalCalls: [
+      {
+        callDate: new Date('2026-02-10'),
+        amountKrw: 42_000_000_000,
+        purpose: 'Capex and leasing reserves',
+        status: 'ISSUED'
+      }
+    ],
     distributions: [],
-    investorReports: [{ title: 'Q1 2026 Investor Update', publishedAt: null, releaseStatus: 'READY', periodEnd: new Date('2026-03-31') }],
+    investorReports: [
+      {
+        title: 'Q1 2026 Investor Update',
+        publishedAt: null,
+        releaseStatus: 'READY',
+        periodEnd: new Date('2026-03-31')
+      }
+    ],
     ddqResponses: [{ title: 'Operational DDQ', statusLabel: 'DRAFT' }],
     mandates: [],
     vehicles: [],
@@ -124,7 +158,11 @@ test('buildFundDashboard carries linked portfolio research into investor update 
             address: { city: 'Seoul', province: 'Seoul', country: 'KR' },
             siteProfile: { siteNotes: 'Prime office corridor' },
             buildingSnapshot: { structureDescription: 'High-rise office tower' },
-            marketSnapshot: { metroRegion: 'Seoul CBD', vacancyPct: 7.2, marketNotes: 'Office leasing remains disciplined.' },
+            marketSnapshot: {
+              metroRegion: 'Seoul CBD',
+              vacancyPct: 7.2,
+              marketNotes: 'Office leasing remains disciplined.'
+            },
             macroFactors: [],
             macroSeries: [],
             marketIndicatorSeries: [

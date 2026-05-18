@@ -347,13 +347,13 @@ Target:
 Suggested structure:
 
 ```ts
-baseAssetSchema
-officeAssetSchema
-industrialAssetSchema
-retailAssetSchema
-multifamilyAssetSchema
-hotelAssetSchema
-dataCenterAssetSchema
+baseAssetSchema;
+officeAssetSchema;
+industrialAssetSchema;
+retailAssetSchema;
+multifamilyAssetSchema;
+hotelAssetSchema;
+dataCenterAssetSchema;
 ```
 
 Then:
@@ -377,34 +377,31 @@ Current issue:
 Target structure:
 
 ```ts
-lib/services/valuation/
-  strategies/
-    office.ts
-    industrial.ts
-    retail.ts
-    multifamily.ts
-    hotel.ts
-    data-center.ts
-  shared/
-    debt.ts
-    scenario.ts
-    memo.ts
-    risk.ts
+lib / services / valuation / strategies / office.ts;
+industrial.ts;
+retail.ts;
+multifamily.ts;
+hotel.ts;
+data - center.ts;
+shared / debt.ts;
+scenario.ts;
+memo.ts;
+risk.ts;
 ```
 
 Suggested interface:
 
 ```ts
 type AssetClassValuationStrategy = {
-  prepareInputs(bundle: UnderwritingBundle): PreparedInputs
-  runScenarios(inputs: PreparedInputs): UnderwritingAnalysis
-}
+  prepareInputs(bundle: UnderwritingBundle): PreparedInputs;
+  runScenarios(inputs: PreparedInputs): UnderwritingAnalysis;
+};
 ```
 
 Dispatch layer:
 
 ```ts
-getValuationStrategy(asset.assetClass)
+getValuationStrategy(asset.assetClass);
 ```
 
 ### What stays shared
@@ -447,7 +444,7 @@ generateInvestmentMemo({
   assetClass,
   analysis,
   template
-})
+});
 ```
 
 Prompt behavior should vary by asset class:

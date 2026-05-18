@@ -18,11 +18,16 @@ type ScenarioOutputInput = {
 
 export function sortScenariosByOrder<T extends ScenarioLike>(scenarios: T[]): T[] {
   return [...scenarios].sort(
-    (left, right) => (left.scenarioOrder ?? Number.MAX_SAFE_INTEGER) - (right.scenarioOrder ?? Number.MAX_SAFE_INTEGER)
+    (left, right) =>
+      (left.scenarioOrder ?? Number.MAX_SAFE_INTEGER) -
+      (right.scenarioOrder ?? Number.MAX_SAFE_INTEGER)
   );
 }
 
-export function findScenarioByName<T extends ScenarioLike>(scenarios: T[], name: string): T | undefined {
+export function findScenarioByName<T extends ScenarioLike>(
+  scenarios: T[],
+  name: string
+): T | undefined {
   return scenarios.find((scenario) => scenario.name.toLowerCase() === name.toLowerCase());
 }
 
@@ -32,7 +37,9 @@ export function pickBaseScenario<T extends ScenarioLike>(scenarios: T[]): T | un
 
 export function pickBaseDscr(scenarios: ScenarioLike[]): number | null {
   const baseScenario = pickBaseScenario(scenarios);
-  return typeof baseScenario?.debtServiceCoverage === 'number' ? baseScenario.debtServiceCoverage : null;
+  return typeof baseScenario?.debtServiceCoverage === 'number'
+    ? baseScenario.debtServiceCoverage
+    : null;
 }
 
 export function buildScenarioOutput(input: ScenarioOutputInput): UnderwritingScenario {

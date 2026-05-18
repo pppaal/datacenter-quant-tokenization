@@ -8,10 +8,7 @@ import {
   resolveVerifiedAdminActorFromHeaders
 } from '@/lib/security/admin-request';
 import { recordAuditEvent } from '@/lib/services/audit';
-import {
-  draftDistribution,
-  fundDistribution
-} from '@/lib/services/onchain/dividend-distributor';
+import { draftDistribution, fundDistribution } from '@/lib/services/onchain/dividend-distributor';
 
 const addressRe = /^0x[a-fA-F0-9]{40}$/;
 const amountRe = /^\d+$/;
@@ -53,7 +50,9 @@ export async function GET(request: Request) {
   const tokenizedAssetId = url.searchParams.get('tokenizedAssetId') ?? undefined;
   const distributions = await prisma.tokenDistribution.findMany({
     where: tokenizedAssetId ? { tokenizedAssetId } : undefined,
-    include: { allocations: { select: { id: true, holderAddress: true, amount: true, claimedAt: true } } },
+    include: {
+      allocations: { select: { id: true, holderAddress: true, amount: true, claimedAt: true } }
+    },
     orderBy: { createdAt: 'desc' }
   });
   return NextResponse.json({ distributions });

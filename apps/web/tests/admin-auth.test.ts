@@ -26,7 +26,10 @@ test('admin auth accepts a valid basic auth header', () => {
   const header = `Basic ${Buffer.from('admin:secret').toString('base64')}`;
 
   assert.equal(isAdminAuthorized(header, config), true);
-  assert.equal(isAdminAuthorized(`Basic ${Buffer.from('admin:wrong').toString('base64')}`, config), false);
+  assert.equal(
+    isAdminAuthorized(`Basic ${Buffer.from('admin:wrong').toString('base64')}`, config),
+    false
+  );
 });
 
 test('admin auth accepts valid credentials without a basic auth header', () => {

@@ -2,7 +2,10 @@ import { NextResponse } from 'next/server';
 import { AdminAccessScopeType } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { assertActorScopeAccess } from '@/lib/security/admin-access';
-import { getRequestIpAddress, resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
+import {
+  getRequestIpAddress,
+  resolveVerifiedAdminActorFromHeaders
+} from '@/lib/security/admin-request';
 import { recordAuditEvent } from '@/lib/services/audit';
 import { updateAssetManagementInitiative } from '@/lib/services/asset-management';
 
@@ -35,7 +38,12 @@ export async function PATCH(
       return NextResponse.json({ error: 'Portfolio asset not found.' }, { status: 404 });
     }
 
-    await assertActorScopeAccess(actor, AdminAccessScopeType.PORTFOLIO, portfolioAsset.portfolioId, prisma);
+    await assertActorScopeAccess(
+      actor,
+      AdminAccessScopeType.PORTFOLIO,
+      portfolioAsset.portfolioId,
+      prisma
+    );
     const payload = await request.json();
     const initiative = await updateAssetManagementInitiative(id, initiativeId, payload, prisma);
 
@@ -71,12 +79,16 @@ export async function PATCH(
       ipAddress,
       statusLabel: 'FAILED',
       metadata: {
-        error: error instanceof Error ? error.message : 'Failed to update asset-management initiative'
+        error:
+          error instanceof Error ? error.message : 'Failed to update asset-management initiative'
       }
     });
 
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to update asset-management initiative' },
+      {
+        error:
+          error instanceof Error ? error.message : 'Failed to update asset-management initiative'
+      },
       { status: 400 }
     );
   }

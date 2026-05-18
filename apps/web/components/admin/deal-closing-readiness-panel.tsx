@@ -17,11 +17,15 @@ export function DealClosingReadinessPanel({ readiness, probability }: Props) {
           <h2 className="mt-2 text-2xl font-semibold text-white">Can this deal actually close?</h2>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Badge tone={readiness.readyToClose ? 'good' : readiness.scorePct >= 60 ? 'warn' : 'danger'}>
+          <Badge
+            tone={readiness.readyToClose ? 'good' : readiness.scorePct >= 60 ? 'warn' : 'danger'}
+          >
             {formatNumber(readiness.scorePct, 0)}%
           </Badge>
           <Badge tone={readiness.readyToClose ? 'good' : 'warn'}>
-            {readiness.readyToClose ? 'ready' : `${readiness.blockerCount} blocker${readiness.blockerCount === 1 ? '' : 's'}`}
+            {readiness.readyToClose
+              ? 'ready'
+              : `${readiness.blockerCount} blocker${readiness.blockerCount === 1 ? '' : 's'}`}
           </Badge>
         </div>
       </div>
@@ -39,11 +43,15 @@ export function DealClosingReadinessPanel({ readiness, probability }: Props) {
         </div>
         <div className="metric-card">
           <div className="fine-print">Status</div>
-          <div className="mt-3 text-3xl font-semibold text-white">{readiness.readyToClose ? 'Ready' : 'Work'}</div>
+          <div className="mt-3 text-3xl font-semibold text-white">
+            {readiness.readyToClose ? 'Ready' : 'Work'}
+          </div>
         </div>
         <div className="metric-card">
           <div className="fine-print">Probability To Close</div>
-          <div className="mt-3 text-3xl font-semibold text-white">{formatNumber(probability.scorePct, 0)}%</div>
+          <div className="mt-3 text-3xl font-semibold text-white">
+            {formatNumber(probability.scorePct, 0)}%
+          </div>
           <p className="mt-2 text-sm leading-7 text-slate-300">{probability.headline}</p>
         </div>
         <div className="metric-card">
@@ -51,7 +59,7 @@ export function DealClosingReadinessPanel({ readiness, probability }: Props) {
           <p className="mt-3 text-sm leading-7 text-slate-300">
             {readiness.readyToClose
               ? 'Commercial, financing, and process gates are covered.'
-              : readiness.blockers[0] ?? 'A closing blocker still needs to be cleared.'}
+              : (readiness.blockers[0] ?? 'A closing blocker still needs to be cleared.')}
           </p>
         </div>
       </div>
@@ -59,7 +67,10 @@ export function DealClosingReadinessPanel({ readiness, probability }: Props) {
       <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
         <div className="grid gap-3">
           {readiness.checks.map((check) => (
-            <div key={check.key} className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+            <div
+              key={check.key}
+              className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+            >
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="text-sm font-semibold text-white">{check.title}</div>
                 <div className="flex items-center gap-2">
@@ -84,7 +95,15 @@ export function DealClosingReadinessPanel({ readiness, probability }: Props) {
             {readiness.blockers.length > 0 ? 'Still missing before close' : 'No blockers flagged'}
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
-            <Badge tone={probability.band === 'HIGH' ? 'good' : probability.band === 'MEDIUM' ? 'warn' : 'danger'}>
+            <Badge
+              tone={
+                probability.band === 'HIGH'
+                  ? 'good'
+                  : probability.band === 'MEDIUM'
+                    ? 'warn'
+                    : 'danger'
+              }
+            >
               {probability.band.toLowerCase()} probability
             </Badge>
           </div>

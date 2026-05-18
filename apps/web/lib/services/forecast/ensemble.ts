@@ -77,14 +77,16 @@ function buildModelScoreMap({
   macroForecastBacktest: MacroForecastBacktest;
   forecastRealizedBacktest: GradientBoostingRealizedBacktest;
 }) {
-  const readinessByKey = new Map(modelStack.models.map((model) => [model.key, model.readinessScore]));
+  const readinessByKey = new Map(
+    modelStack.models.map((model) => [model.key, model.readinessScore])
+  );
   const monteScore = readinessByKey.get('monte-carlo-envelope') ?? 50;
   const regimeReadiness = readinessByKey.get('regime-nowcast') ?? 50;
   const treeReadiness = readinessByKey.get('gradient-boosting-forecast') ?? 50;
 
   const regimeValidation = clamp(
-    (macroBacktest.summary.overallHitRatePct * 0.55) +
-      ((macroForecastBacktest.summary.directionalHitRatePct ?? 0) * 0.25) +
+    macroBacktest.summary.overallHitRatePct * 0.55 +
+      (macroForecastBacktest.summary.directionalHitRatePct ?? 0) * 0.25 +
       Math.max(0, 20 - Math.min(macroForecastBacktest.summary.meanAbsoluteErrorPct ?? 20, 20))
   );
   const treeValidation =
@@ -102,7 +104,10 @@ function buildModelScoreMap({
   return {
     'macro-regime-nowcast': clamp(regimeReadiness * 0.55 + regimeValidation * 0.45),
     'monte-carlo-envelope': clamp(monteScore),
-    'gradient-boosting-forecast': treeValidation === null ? clamp(treeReadiness * 0.85) : clamp(treeReadiness * 0.45 + treeValidation * 0.55),
+    'gradient-boosting-forecast':
+      treeValidation === null
+        ? clamp(treeReadiness * 0.85)
+        : clamp(treeReadiness * 0.45 + treeValidation * 0.55),
     validatedModelCount: [regimeValidation, treeValidation].filter((value) => value !== null).length
   } as const;
 }
@@ -129,14 +134,16 @@ export function buildForecastEnsemblePolicy({
     {
       key: 'market-nowcast',
       label: 'Market Nowcast',
-      summary: 'Use for top-down market stance, allocation, and macro interpretation before asset-level downside work.',
+      summary:
+        'Use for top-down market stance, allocation, and macro interpretation before asset-level downside work.',
       weights: normalizeWeights([
         {
           modelKey: 'macro-regime-nowcast',
           label: 'Macro Regime Nowcast',
           baseWeight: 60,
           qualityScore: scores['macro-regime-nowcast'],
-          rationale: 'Best suited to interpret macro regime direction and cross-market transmission.'
+          rationale:
+            'Best suited to interpret macro regime direction and cross-market transmission.'
         },
         {
           modelKey: 'monte-carlo-envelope',
@@ -150,7 +157,8 @@ export function buildForecastEnsemblePolicy({
           label: 'Gradient Boosting Forecast',
           baseWeight: 20,
           qualityScore: scores['gradient-boosting-forecast'],
-          rationale: 'Useful as a challenger model for short-horizon drift, not the first macro nowcast lens.'
+          rationale:
+            'Useful as a challenger model for short-horizon drift, not the first macro nowcast lens.'
         }
       ]),
       championModelKey: 'macro-regime-nowcast',
@@ -166,21 +174,24 @@ export function buildForecastEnsemblePolicy({
           label: 'Monte Carlo Envelope',
           baseWeight: 55,
           qualityScore: scores['monte-carlo-envelope'],
-          rationale: 'Best suited to downside distribution, tail cases, and breach probability framing.'
+          rationale:
+            'Best suited to downside distribution, tail cases, and breach probability framing.'
         },
         {
           modelKey: 'macro-regime-nowcast',
           label: 'Macro Regime Nowcast',
           baseWeight: 30,
           qualityScore: scores['macro-regime-nowcast'],
-          rationale: 'Provides the macro interpretation that should drive downside overlays and stress posture.'
+          rationale:
+            'Provides the macro interpretation that should drive downside overlays and stress posture.'
         },
         {
           modelKey: 'gradient-boosting-forecast',
           label: 'Gradient Boosting Forecast',
           baseWeight: 15,
           qualityScore: scores['gradient-boosting-forecast'],
-          rationale: 'Useful as a check on near-term drift but not the primary committee downside engine.'
+          rationale:
+            'Useful as a check on near-term drift but not the primary committee downside engine.'
         }
       ]),
       championModelKey: 'monte-carlo-envelope',
@@ -189,14 +200,16 @@ export function buildForecastEnsemblePolicy({
     {
       key: 'asset-drift',
       label: 'Near-Term Asset Drift',
-      summary: 'Use for 6-12 month value and DSCR drift on specific assets after underwriting is in place.',
+      summary:
+        'Use for 6-12 month value and DSCR drift on specific assets after underwriting is in place.',
       weights: normalizeWeights([
         {
           modelKey: 'gradient-boosting-forecast',
           label: 'Gradient Boosting Forecast',
           baseWeight: 50,
           qualityScore: scores['gradient-boosting-forecast'],
-          rationale: 'This is the only learned model currently validated against realized asset outcomes.'
+          rationale:
+            'This is the only learned model currently validated against realized asset outcomes.'
         },
         {
           modelKey: 'macro-regime-nowcast',
@@ -210,7 +223,8 @@ export function buildForecastEnsemblePolicy({
           label: 'Monte Carlo Envelope',
           baseWeight: 20,
           qualityScore: scores['monte-carlo-envelope'],
-          rationale: 'Useful for error bands and downside framing around the learned point forecast.'
+          rationale:
+            'Useful for error bands and downside framing around the learned point forecast.'
         }
       ]),
       championModelKey: 'gradient-boosting-forecast',
@@ -224,25 +238,26 @@ export function buildForecastEnsemblePolicy({
     challengerModelKey: useCase.weights[1]?.modelKey ?? useCase.challengerModelKey
   }));
 
-  const primaryModelKey =
-    [...useCases.flatMap((useCase) => useCase.weights)]
-      .reduce<Record<EnsembleKey, number>>(
-        (acc, weight) => {
-          acc[weight.modelKey] = (acc[weight.modelKey] ?? 0) + weight.weightPct;
-          return acc;
-        },
-        {
-          'macro-regime-nowcast': 0,
-          'monte-carlo-envelope': 0,
-          'gradient-boosting-forecast': 0
-        }
-      );
+  const primaryModelKey = [...useCases.flatMap((useCase) => useCase.weights)].reduce<
+    Record<EnsembleKey, number>
+  >(
+    (acc, weight) => {
+      acc[weight.modelKey] = (acc[weight.modelKey] ?? 0) + weight.weightPct;
+      return acc;
+    },
+    {
+      'macro-regime-nowcast': 0,
+      'monte-carlo-envelope': 0,
+      'gradient-boosting-forecast': 0
+    }
+  );
 
   const rankedPrimary = (Object.entries(primaryModelKey) as Array<[EnsembleKey, number]>).sort(
     (left, right) => right[1] - left[1]
   );
   const avgTopScore =
-    useCases.reduce((sum, useCase) => sum + (useCase.weights[0]?.qualityScore ?? 0), 0) / Math.max(useCases.length, 1);
+    useCases.reduce((sum, useCase) => sum + (useCase.weights[0]?.qualityScore ?? 0), 0) /
+    Math.max(useCases.length, 1);
 
   return {
     summary: {

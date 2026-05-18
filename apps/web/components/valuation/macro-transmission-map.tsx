@@ -52,7 +52,8 @@ export function MacroTransmissionMap({ impacts }: { impacts: MacroImpactMatrix }
         <div>
           <div className="fine-print">Transmission Map</div>
           <p className="mt-2 text-sm leading-7 text-slate-300">
-            Shows which macro factors are currently feeding which underwriting transmission dimensions.
+            Shows which macro factors are currently feeding which underwriting transmission
+            dimensions.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -66,7 +67,10 @@ export function MacroTransmissionMap({ impacts }: { impacts: MacroImpactMatrix }
         <div className="space-y-3">
           <div className="fine-print">Factors</div>
           {factors.map((factor) => (
-            <div key={factor.key} className="rounded-[18px] border border-white/10 bg-slate-950/35 p-4">
+            <div
+              key={factor.key}
+              className="rounded-[18px] border border-white/10 bg-slate-950/35 p-4"
+            >
               <div className="text-sm font-semibold text-white">{factor.label}</div>
               <div className="mt-2 text-xs uppercase tracking-[0.14em] text-slate-500">
                 {factor.count} active path{factor.count === 1 ? '' : 's'}
@@ -104,14 +108,19 @@ export function MacroTransmissionMap({ impacts }: { impacts: MacroImpactMatrix }
         <div className="space-y-3">
           <div className="fine-print">Targets</div>
           {dimensions.map((dimension) => (
-            <div key={dimension.key} className="rounded-[18px] border border-white/10 bg-slate-950/35 p-4">
+            <div
+              key={dimension.key}
+              className="rounded-[18px] border border-white/10 bg-slate-950/35 p-4"
+            >
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="text-sm font-semibold text-white">{dimension.label}</div>
                 <Badge tone={toneForImpact(dimension.direction)}>
                   {dimension.direction.toLowerCase()}
                 </Badge>
               </div>
-              <div className="mt-3 text-2xl font-semibold text-white">{formatNumber(dimension.score, 2)}</div>
+              <div className="mt-3 text-2xl font-semibold text-white">
+                {formatNumber(dimension.score, 2)}
+              </div>
             </div>
           ))}
         </div>
