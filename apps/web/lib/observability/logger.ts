@@ -107,20 +107,19 @@ export const logger = {
 };
 
 /**
- * Forwards an error to an external error-tracking webhook
- * (`ERROR_REPORT_WEBHOOK_URL`). Sentry-compatible projects can wire their
- * envelope endpoint here by setting `SENTRY_DSN` separately and using the
- * Sentry SDK at runtime; this helper exists so the rest of the app can
- * call a single function regardless of which backend is configured.
+ * Forwards an error to the configured error backend(s):
+ *   - Sentry (via `@sentry/nextjs`) when `SENTRY_DSN` is set — auto-init
+ *     happens in `instrumentation.ts`.
+ *   - Generic webhook (`ERROR_REPORT_WEBHOOK_URL`) when set — kept for
+ *     Datadog / Logtail / custom pipelines that don't speak Sentry envelope.
  *
- * The call is fire-and-forget so it never delays the user request, and it
- * silently drops on transport failure to avoid recursive logging loops.
+ * Both are fire-and-forget so they never delay the user request, and both
+ * silently drop on transport failure to avoid recursive logging loops.
  */
 export async function reportError(
   error: unknown,
   context?: Record<string, unknown>
 ): Promise<void> {
-  const url = process.env.ERROR_REPORT_WEBHOOK_URL?.trim();
   logger.error('runtime_error', {
     error:
       error instanceof Error
@@ -128,6 +127,20 @@ export async function reportError(
         : error,
     ...context
   });
+
+  // Sentry path — lazy-load so the SDK only initializes if it was wired
+  // through instrumentation.ts (DSN present).
+  if (process.env.SENTRY_DSN?.trim()) {
+    try {
+      const sentry = await import('@sentry/nextjs');
+      sentry.captureException(error, { extra: context });
+    } catch {
+      // Sentry SDK absent at runtime (e.g. edge bundle stripped it) — skip.
+    }
+  }
+
+  // Generic webhook path.
+  const url = process.env.ERROR_REPORT_WEBHOOK_URL?.trim();
   if (!url) return;
   try {
     await fetch(url, {

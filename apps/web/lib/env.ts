@@ -101,6 +101,13 @@ const envSchema = z.object({
   // Observability
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).optional(),
   ERROR_REPORT_WEBHOOK_URL: optionalString,
+  SENTRY_DSN: optionalString,
+  SENTRY_ENVIRONMENT: optionalString,
+  SENTRY_TRACES_SAMPLE_RATE: optionalString,
+  SENTRY_PROFILES_SAMPLE_RATE: optionalString,
+  SENTRY_AUTH_TOKEN: optionalString,
+  SENTRY_ORG: optionalString,
+  SENTRY_PROJECT: optionalString,
 
   // Audit retention
   AUDIT_RETENTION_DAYS: optionalNumber('AUDIT_RETENTION_DAYS'),
