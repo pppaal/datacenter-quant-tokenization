@@ -1,9 +1,16 @@
+import type { Metadata } from 'next';
 import { InquiryForm } from '@/components/marketing/inquiry-form';
 import { SiteNav } from '@/components/marketing/site-nav';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 
 export const dynamic = 'force-static';
+
+export const metadata: Metadata = {
+  title: '데모 · 문의',
+  description:
+    '30분 라이브 데모. 영업일 24시간 내 회신. 영업 · 보안 · 기술 · 본사 채널 안내, NDA 전/후 자료 가이드.'
+};
 
 const channels = [
   {

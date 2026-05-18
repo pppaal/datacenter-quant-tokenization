@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { SiteNav } from '@/components/marketing/site-nav';
 import { Badge } from '@/components/ui/badge';
@@ -5,6 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 
 export const dynamic = 'force-static';
+
+export const metadata: Metadata = {
+  title: '릴리스 노트',
+  description:
+    '일자별 릴리스 노트. 기능 · Quant · 보안 · 인프라 · 수정 카테고리로 분류. 월간 운영자 노트도 구독 가능.'
+};
 
 type ChangeKind = 'feature' | 'quant' | 'security' | 'infra' | 'fix';
 

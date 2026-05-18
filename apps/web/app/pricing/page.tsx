@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { SiteNav } from '@/components/marketing/site-nav';
 import { Badge } from '@/components/ui/badge';
@@ -5,6 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 
 export const dynamic = 'force-static';
+
+export const metadata: Metadata = {
+  title: '가격',
+  description:
+    '한국 부동산 운용사 OS 라이선스 — Pilot · Institutional · Enterprise. AUM 규모와 모듈 구성에 맞춘 3개 플랜.'
+};
 
 const tiers = [
   {

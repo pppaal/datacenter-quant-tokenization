@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { SiteNav } from '@/components/marketing/site-nav';
 import { Badge } from '@/components/ui/badge';
@@ -5,6 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 
 export const dynamic = 'force-static';
+
+export const metadata: Metadata = {
+  title: '보안 · 컴플라이언스',
+  description:
+    '인증 · RBAC · Edge 보호 · 관측 · 문서 무결성 · 블록체인 6개 방어 계층. PIPA · 자본시장법 · SOC2 · GDPR 대응 데이터 거버넌스.'
+};
 
 const layers = [
   {

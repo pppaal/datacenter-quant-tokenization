@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { SiteNav } from '@/components/marketing/site-nav';
 import { Badge } from '@/components/ui/badge';
@@ -5,6 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 
 export const dynamic = 'force-static';
+
+export const metadata: Metadata = {
+  title: '리서치 데스크',
+  description:
+    '헤도닉 OLS 회귀 · 캡레이트 6요소 분해 · 단계별 확률가중 공급-수요. 결정론적 pure function quant 코어가 IM 36섹션에 임베드됩니다.'
+};
 
 const pillars = [
   {
