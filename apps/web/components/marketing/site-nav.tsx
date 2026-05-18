@@ -1,5 +1,14 @@
 import Link from 'next/link';
 
+const navLinks = [
+  { href: '/product', label: '제품' },
+  { href: '/research', label: '리서치' },
+  { href: '/security', label: '보안' },
+  { href: '/pricing', label: '가격' },
+  { href: '/changelog', label: '릴리스' },
+  { href: '/sample-report', label: '샘플 IM' }
+];
+
 export function SiteNav() {
   return (
     <header className="app-shell sticky top-0 z-30 py-6">
@@ -16,24 +25,27 @@ export function SiteNav() {
           </div>
         </Link>
 
-        <nav className="flex flex-wrap items-center gap-2 text-sm text-slate-300">
+        <nav className="flex flex-wrap items-center gap-1 text-sm text-slate-300">
+          {navLinks.map((l) => (
+            <Link
+              key={l.href}
+              href={l.href}
+              className="rounded-full px-3 py-2 transition hover:bg-white/5 hover:text-white"
+            >
+              {l.label}
+            </Link>
+          ))}
           <Link
-            href="/product"
-            className="rounded-full px-4 py-2 transition hover:bg-white/5 hover:text-white"
+            href="/contact"
+            className="ml-1 rounded-full border border-accent/40 bg-accent/10 px-4 py-2 text-accent transition hover:bg-accent/15"
           >
-            제품
-          </Link>
-          <Link
-            href="/sample-report"
-            className="rounded-full px-4 py-2 transition hover:bg-white/5 hover:text-white"
-          >
-            샘플 IM
+            데모 요청
           </Link>
           <Link
             href="/admin"
             className="rounded-full border border-white/10 px-4 py-2 text-white transition hover:border-accent/40 hover:bg-white/5"
           >
-            콘솔 열기
+            콘솔
           </Link>
         </nav>
       </div>
