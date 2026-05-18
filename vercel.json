@@ -4,11 +4,6 @@
   "regions": ["icn1"],
   "buildCommand": "npm run build",
   "outputDirectory": "apps/web/build",
-  "functions": {
-    "apps/web/app/api/**/route.ts": {
-      "maxDuration": 60
-    }
-  },
   "crons": [
     { "path": "/api/ops/cycle/trigger", "schedule": "*/15 * * * *" },
     { "path": "/api/ops/quarterly-snapshot", "schedule": "0 6 * * *" },
