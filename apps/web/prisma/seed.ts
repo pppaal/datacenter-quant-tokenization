@@ -794,6 +794,445 @@ async function main() {
     readinessStatus: ReadinessStatus.NOT_STARTED
   });
 
+  await seedAsset(prisma, {
+    assetCode: 'PYEONGTAEK-GODEOK-04',
+    slug: 'pyeongtaek-godeok-04-ai-mega-campus',
+    name: 'Pyeongtaek AI Mega Campus',
+    city: 'Pyeongtaek',
+    province: 'Gyeonggi',
+    district: 'Godeok-myeon',
+    line1: '88 Godeok-daero',
+    description:
+      'Large-scale Gyeonggi hyperscale campus underwriting case with a confirmed power allocation, deep fiber redundancy, and an anchor AI training tenant in advanced negotiation.',
+    stage: AssetStage.CONSTRUCTION,
+    status: AssetStatus.UNDER_REVIEW,
+    powerCapacityMw: 48,
+    targetItLoadMw: 42,
+    landAreaSqm: 26400,
+    grossFloorAreaSqm: 98600,
+    occupancyAssumptionPct: 82,
+    tenantAssumption: 'One hyperscale anchor plus two AI training pods on phased delivery',
+    capexAssumptionKrw: 372000000000,
+    opexAssumptionKrw: 13800000000,
+    financingLtvPct: 60,
+    financingRatePct: 5.1,
+    ownerName: 'Pyeongtaek Digital Infra SPC',
+    sponsorName: 'Nexus Infrastructure Advisory',
+    developmentSummary:
+      'Construction-stage mega campus positioned for committee circulation with secured grid capacity.',
+    siteProfile: {
+      gridAvailability: '345 kV substation on-site, 96 MW reserved',
+      fiberAccess: 'Triple carrier route confirmed',
+      latencyProfile: 'Sub-7ms to Seoul and Pangyo IX cores',
+      floodRiskScore: 1.2,
+      wildfireRiskScore: 0.6,
+      seismicRiskScore: 1.0,
+      siteNotes: 'Phased delivery sequencing and water permit for adiabatic cooling remain on the diligence list.'
+    },
+    buildingSnapshot: {
+      zoning: 'Industrial complex',
+      buildingCoveragePct: 58,
+      floorAreaRatioPct: 312,
+      structureDescription: '4-block low-rise campus with central utility yard',
+      redundancyTier: 'Tier IV design target',
+      coolingType: 'Adiabatic with chilled-water backup'
+    },
+    permitSnapshot: {
+      permitStage: 'Construction permit issued',
+      zoningApprovalStatus: 'Compliant',
+      environmentalReviewStatus: 'Approved with monitoring conditions',
+      powerApprovalStatus: 'Allocation confirmed',
+      timelineNotes: 'Phase 1 energization targeted within 3 quarters.'
+    },
+    energySnapshot: {
+      utilityName: 'KEPCO Gyeonggi South',
+      substationDistanceKm: 0.3,
+      tariffKrwPerKwh: 138,
+      renewableAvailabilityPct: 41,
+      pueTarget: 1.25,
+      backupFuelHours: 72
+    },
+    marketSnapshot: {
+      metroRegion: 'Greater Seoul South',
+      vacancyPct: 4.8,
+      colocationRatePerKwKrw: 232000,
+      capRatePct: 5.9,
+      debtCostPct: 5.1,
+      inflationPct: 2.3,
+      constructionCostPerMwKrw: 7600000000,
+      discountRatePct: 9.1,
+      marketNotes:
+        'Confirmed power and Tier IV design support premium colocation pricing in the southern corridor.'
+    },
+    comparableEntries: [
+      {
+        label: 'Pangyo Hyperscale Reference',
+        location: 'Gyeonggi',
+        assetType: 'Data Center',
+        stage: AssetStage.LIVE,
+        sourceLink: 'https://example.com/comp-pangyo',
+        powerCapacityMw: 45,
+        grossFloorAreaSqm: 94000,
+        occupancyPct: 90,
+        valuationKrw: 612000000000,
+        monthlyRatePerKwKrw: 238000,
+        capRatePct: 5.75,
+        discountRatePct: 8.9,
+        weightPct: 0.45,
+        notes: 'Live southern-corridor campus anchoring premium yield.'
+      },
+      {
+        label: 'Cheonan AI Build Transaction',
+        location: 'Chungnam',
+        assetType: 'Data Center',
+        stage: AssetStage.CONSTRUCTION,
+        sourceLink: 'https://example.com/comp-cheonan',
+        powerCapacityMw: 40,
+        grossFloorAreaSqm: 82000,
+        occupancyPct: 78,
+        valuationKrw: 468000000000,
+        monthlyRatePerKwKrw: 224000,
+        capRatePct: 6.05,
+        discountRatePct: 9.3,
+        weightPct: 0.35,
+        notes: 'Construction-stage comparable with similar tenant pipeline.'
+      },
+      {
+        label: 'Greater Seoul Colocation Yield Marker',
+        location: 'Gyeonggi',
+        assetType: 'Colocation',
+        stage: AssetStage.LIVE,
+        sourceLink: 'https://example.com/comp-gyeonggi-colo-2',
+        powerCapacityMw: 24,
+        grossFloorAreaSqm: 52000,
+        occupancyPct: 89,
+        valuationKrw: 268000000000,
+        monthlyRatePerKwKrw: 214000,
+        capRatePct: 6.25,
+        discountRatePct: 9.2,
+        weightPct: 0.2,
+        notes: 'Stabilized colocation marker for terminal yield.'
+      }
+    ],
+    capexLineItems: buildCapexLineItems(372000000000, 0.16),
+    leases: [
+      {
+        tenantName: 'Hyperscale Anchor X',
+        status: LeaseStatus.SIGNED,
+        leasedKw: 24000,
+        startYear: 1,
+        termYears: 10,
+        baseRatePerKwKrw: 232000,
+        annualEscalationPct: 2.6,
+        probabilityPct: 95,
+        renewProbabilityPct: 70,
+        downtimeMonths: 2,
+        fitOutCostKrw: 15200000000,
+        notes: 'Hyperscale anchor with long-dated term and phased fit-out.',
+        steps: [
+          {
+            stepOrder: 1,
+            startYear: 1,
+            endYear: 2,
+            ratePerKwKrw: 232000,
+            leasedKw: 24000,
+            occupancyPct: 90,
+            notes: 'Phase 1 energization'
+          },
+          {
+            stepOrder: 2,
+            startYear: 3,
+            endYear: 10,
+            ratePerKwKrw: 241000,
+            leasedKw: 24000,
+            annualEscalationPct: 2.6,
+            occupancyPct: 100,
+            notes: 'Stabilized term'
+          }
+        ]
+      },
+      {
+        tenantName: 'AI Training Pod North',
+        status: LeaseStatus.PIPELINE,
+        leasedKw: 12000,
+        startYear: 2,
+        termYears: 6,
+        baseRatePerKwKrw: 248000,
+        annualEscalationPct: 2.9,
+        probabilityPct: 78,
+        renewProbabilityPct: 58,
+        downtimeMonths: 3,
+        fitOutCostKrw: 8600000000,
+        notes: 'High-density AI pod in advanced negotiation.'
+      }
+    ],
+    taxAssumption: {
+      acquisitionTaxPct: 4.6,
+      vatRecoveryPct: 93,
+      propertyTaxPct: 0.34,
+      insurancePct: 0.1,
+      corporateTaxPct: 24.2,
+      withholdingTaxPct: 15.4,
+      exitTaxPct: 1.2,
+      notes: 'Korea SPC holdco assumptions for committee base case.'
+    },
+    spvStructure: {
+      legalStructure: 'Development SPC with operating manager',
+      managementFeePct: 1.1,
+      performanceFeePct: 8,
+      promoteThresholdPct: 10,
+      promoteSharePct: 15,
+      reserveTargetMonths: 6,
+      distributionWaterfall:
+        'Operating cash to reserves, debt service, investor pref, sponsor promote.',
+      notes: 'Indicative waterfall pending counsel sign-off.'
+    },
+    debtFacilities: [
+      {
+        facilityType: DebtFacilityType.CONSTRUCTION,
+        lenderName: 'Korea Digital Infra Bank',
+        commitmentKrw: 158000000000,
+        drawnAmountKrw: 120000000000,
+        interestRatePct: 5.2,
+        upfrontFeePct: 1,
+        commitmentFeePct: 0.25,
+        gracePeriodMonths: 12,
+        amortizationTermMonths: 96,
+        amortizationProfile: AmortizationProfile.SCULPTED,
+        sculptedTargetDscr: 1.35,
+        balloonPct: 20,
+        reserveMonths: 6,
+        notes: 'Construction-to-term facility for the mega campus.',
+        draws: [
+          { drawYear: 1, drawMonth: 1, amountKrw: 72000000000, notes: 'Shell, core and substation' },
+          { drawYear: 1, drawMonth: 8, amountKrw: 48000000000, notes: 'Electrical and cooling' }
+        ]
+      }
+    ],
+    documents: [
+      {
+        title: 'Confirmed Power Allocation Letter',
+        documentType: DocumentType.POWER_STUDY,
+        sourceLink: 'https://example.com/pyeongtaek-power',
+        aiSummary:
+          'Utility confirmation memo covering the 96 MW reserved allocation and energization schedule.',
+        documentHash: deterministicDocumentHash('seed-doc', 'pyeongtaek-power')
+      },
+      {
+        title: 'Investment Committee Draft Model',
+        documentType: DocumentType.MODEL,
+        sourceLink: 'https://example.com/pyeongtaek-model',
+        aiSummary: 'Scenario workbook for bull, base, and bear underwriting review.',
+        documentHash: deterministicDocumentHash('seed-doc', 'pyeongtaek-model')
+      }
+    ],
+    readinessStatus: ReadinessStatus.READY
+  });
+
+  await seedAsset(prisma, {
+    assetCode: 'DAEJEON-DAEDEOK-05',
+    slug: 'daejeon-daedeok-05-research-compute-hub',
+    name: 'Daejeon Research Compute Hub',
+    city: 'Daejeon',
+    province: 'Daejeon',
+    district: 'Yuseong-gu',
+    line1: '70 Gwahak-ro',
+    description:
+      'Early-stage research-corridor compute hub serving public research institutes and university HPC demand, with attractive land cost and a developing power allocation workstream.',
+    stage: AssetStage.PERMITTING,
+    status: AssetStatus.INTAKE,
+    powerCapacityMw: 22,
+    targetItLoadMw: 19,
+    landAreaSqm: 14200,
+    grossFloorAreaSqm: 48600,
+    occupancyAssumptionPct: 71,
+    tenantAssumption: 'Public research HPC anchor plus university overflow capacity',
+    capexAssumptionKrw: 162000000000,
+    opexAssumptionKrw: 6400000000,
+    financingLtvPct: 55,
+    financingRatePct: 5.4,
+    ownerName: 'Daedeok Research Infra SPC',
+    sponsorName: 'Nexus Infrastructure Advisory',
+    developmentSummary:
+      'Intake-stage research compute hub under early diligence and permitting review.',
+    siteProfile: {
+      gridAvailability: '154 kV line available within 2.4 km',
+      fiberAccess: 'Dual carrier route via research network backbone',
+      latencyProfile: 'Sub-12ms to Daejeon research IX',
+      floodRiskScore: 1.5,
+      wildfireRiskScore: 0.9,
+      seismicRiskScore: 1.3,
+      siteNotes: 'Power allocation queue position and substation upgrade timing remain open items.'
+    },
+    buildingSnapshot: {
+      zoning: 'Research complex',
+      buildingCoveragePct: 50,
+      floorAreaRatioPct: 248,
+      structureDescription: '8-storey reinforced concrete shell with rooftop mechanical deck',
+      redundancyTier: 'Tier III design target',
+      coolingType: 'Chilled-water'
+    },
+    permitSnapshot: {
+      permitStage: 'Permitting review',
+      zoningApprovalStatus: 'Under review',
+      environmentalReviewStatus: 'Scoping submitted',
+      powerApprovalStatus: 'Allocation application filed',
+      timelineNotes: 'Permit conversion expected within 3-4 quarters subject to utility queue.'
+    },
+    energySnapshot: {
+      utilityName: 'KEPCO Chungcheong',
+      substationDistanceKm: 2.4,
+      tariffKrwPerKwh: 131,
+      renewableAvailabilityPct: 37,
+      pueTarget: 1.34,
+      backupFuelHours: 48
+    },
+    marketSnapshot: {
+      metroRegion: 'Daejeon Research Corridor',
+      vacancyPct: 8.2,
+      colocationRatePerKwKrw: 196000,
+      capRatePct: 6.6,
+      debtCostPct: 5.4,
+      inflationPct: 2.3,
+      constructionCostPerMwKrw: 7400000000,
+      discountRatePct: 9.7,
+      marketNotes:
+        'Research-corridor demand is steady but thinner; longer lease-up offset by lower land basis.'
+    },
+    comparableEntries: [
+      {
+        label: 'Sejong Compute Reference',
+        location: 'Sejong',
+        assetType: 'Data Center',
+        stage: AssetStage.CONSTRUCTION,
+        sourceLink: 'https://example.com/comp-sejong',
+        powerCapacityMw: 20,
+        grossFloorAreaSqm: 44000,
+        occupancyPct: 70,
+        valuationKrw: 168000000000,
+        monthlyRatePerKwKrw: 198000,
+        capRatePct: 6.55,
+        discountRatePct: 9.6,
+        weightPct: 0.4,
+        notes: 'Nearby research-corridor comparable with similar demand profile.'
+      },
+      {
+        label: 'Chungbuk Edge Transaction',
+        location: 'Chungbuk',
+        assetType: 'Data Center',
+        stage: AssetStage.LIVE,
+        sourceLink: 'https://example.com/comp-chungbuk',
+        powerCapacityMw: 16,
+        grossFloorAreaSqm: 36000,
+        occupancyPct: 84,
+        valuationKrw: 132000000000,
+        monthlyRatePerKwKrw: 192000,
+        capRatePct: 6.8,
+        discountRatePct: 9.8,
+        weightPct: 0.35,
+        notes: 'Live edge campus used for terminal yield anchoring.'
+      },
+      {
+        label: 'Regional Colocation Yield Marker',
+        location: 'Chungnam',
+        assetType: 'Colocation',
+        stage: AssetStage.LIVE,
+        sourceLink: 'https://example.com/comp-chungnam-colo',
+        powerCapacityMw: 12,
+        grossFloorAreaSqm: 28000,
+        occupancyPct: 86,
+        valuationKrw: 104000000000,
+        monthlyRatePerKwKrw: 188000,
+        capRatePct: 6.95,
+        discountRatePct: 9.7,
+        weightPct: 0.25,
+        notes: 'Stabilized regional colocation marker.'
+      }
+    ],
+    capexLineItems: buildCapexLineItems(162000000000, 0.14),
+    leases: [
+      {
+        tenantName: 'Public Research HPC Anchor',
+        status: LeaseStatus.PIPELINE,
+        leasedKw: 8000,
+        startYear: 3,
+        termYears: 8,
+        baseRatePerKwKrw: 198000,
+        annualEscalationPct: 2.2,
+        probabilityPct: 68,
+        renewProbabilityPct: 72,
+        downtimeMonths: 5,
+        fitOutCostKrw: 5200000000,
+        notes: 'Public research anchor under early discussion.'
+      },
+      {
+        tenantName: 'University HPC Overflow',
+        status: LeaseStatus.PIPELINE,
+        leasedKw: 4000,
+        startYear: 4,
+        termYears: 5,
+        baseRatePerKwKrw: 204000,
+        annualEscalationPct: 2.4,
+        probabilityPct: 60,
+        renewProbabilityPct: 50,
+        downtimeMonths: 6,
+        fitOutCostKrw: 2600000000,
+        notes: 'University overflow capacity pipeline.'
+      }
+    ],
+    taxAssumption: {
+      acquisitionTaxPct: 4.6,
+      vatRecoveryPct: 90,
+      propertyTaxPct: 0.34,
+      insurancePct: 0.12,
+      corporateTaxPct: 24.2,
+      withholdingTaxPct: 15.4,
+      exitTaxPct: 1.2,
+      notes: 'Korea SPC holdco assumptions for early-stage base case.'
+    },
+    spvStructure: {
+      legalStructure: 'Development SPC with operating manager',
+      managementFeePct: 1.25,
+      performanceFeePct: 8,
+      promoteThresholdPct: 10,
+      promoteSharePct: 15,
+      reserveTargetMonths: 7,
+      distributionWaterfall:
+        'Operating cash to reserves, debt service, investor pref, sponsor promote.',
+      notes: 'Indicative waterfall pending counsel sign-off.'
+    },
+    debtFacilities: [
+      {
+        facilityType: DebtFacilityType.CONSTRUCTION,
+        lenderName: 'Chungcheong Infra Bank',
+        commitmentKrw: 62000000000,
+        drawnAmountKrw: 0,
+        interestRatePct: 5.5,
+        upfrontFeePct: 1,
+        commitmentFeePct: 0.3,
+        gracePeriodMonths: 24,
+        amortizationTermMonths: 84,
+        amortizationProfile: AmortizationProfile.SCULPTED,
+        sculptedTargetDscr: 1.3,
+        balloonPct: 18,
+        reserveMonths: 7,
+        notes: 'Committed but undrawn construction facility pending permit conversion.',
+        draws: []
+      }
+    ],
+    documents: [
+      {
+        title: 'Site Assembly Memorandum',
+        documentType: DocumentType.IM,
+        sourceLink: 'https://example.com/daejeon-site',
+        aiSummary:
+          'Site assembly memo summarizing land control, research demand context, and early diligence status.',
+        documentHash: deterministicDocumentHash('seed-doc', 'daejeon-site')
+      }
+    ],
+    readinessStatus: ReadinessStatus.NOT_STARTED
+  });
+
   await seedOfficeAsset(prisma);
   await seedDealExecution(prisma);
   await seedPortfolioAndCapitalShell(prisma);

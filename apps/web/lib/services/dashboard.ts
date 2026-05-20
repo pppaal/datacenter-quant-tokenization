@@ -674,7 +674,7 @@ export async function getLandingData(db: PrismaClient = prisma) {
       orderBy: {
         createdAt: 'asc'
       },
-      take: 3
+      take: 6
     }),
     getDashboardSummary(db)
   ]);
