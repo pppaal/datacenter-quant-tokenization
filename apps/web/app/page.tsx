@@ -5,10 +5,11 @@ import { SiteNav } from '@/components/marketing/site-nav';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Stat } from '@/components/ui/stat';
 import { formatCurrencyFromKrwAtRate, resolveDisplayCurrency } from '@/lib/finance/currency';
 import { getLandingData } from '@/lib/services/dashboard';
 import { getFxRateMap } from '@/lib/services/fx';
-import { formatNumber, formatPercent } from '@/lib/utils';
+import { formatNumber, formatPercent, toSentenceCase } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -64,6 +65,20 @@ function getPrimaryMetric(asset: Awaited<ReturnType<typeof getLandingData>>['ass
   }
 
   return ['연면적', `${formatNumber(asset.rentableAreaSqm ?? asset.grossFloorAreaSqm)} sqm`];
+}
+
+function assetClassMeta(assetClass: AssetClass): {
+  label: string;
+  tone: 'good' | 'warn' | 'neutral';
+} {
+  switch (assetClass) {
+    case AssetClass.DATA_CENTER:
+      return { label: 'Data Center', tone: 'good' };
+    case AssetClass.OFFICE:
+      return { label: 'Office', tone: 'warn' };
+    default:
+      return { label: toSentenceCase(assetClass.replace(/_/g, ' ')), tone: 'neutral' };
+  }
 }
 
 export default async function LandingPage() {
@@ -141,10 +156,7 @@ export default async function LandingPage() {
                   ['문서', formatNumber(summary.documentCount, 0)],
                   ['IM 실행 횟수', formatNumber(summary.valuationCount, 0)]
                 ].map(([label, value]) => (
-                  <div key={label} className="metric-card">
-                    <div className="fine-print">{label}</div>
-                    <div className="mt-3 text-3xl font-semibold text-white">{value}</div>
-                  </div>
+                  <Stat key={label} label={label} value={value} size="lg" />
                 ))}
               </div>
             </div>
@@ -203,11 +215,7 @@ export default async function LandingPage() {
               '가장 최근 모델링된 기준값'
             ]
           ].map(([label, value, detail]) => (
-            <div key={label} className="metric-card">
-              <div className="fine-print">{label}</div>
-              <div className="mt-3 text-2xl font-semibold text-white">{value}</div>
-              <p className="mt-2 text-sm text-slate-400">{detail}</p>
-            </div>
+            <Stat key={label} label={label} value={value} detail={detail} />
           ))}
         </div>
       </section>
@@ -235,16 +243,22 @@ export default async function LandingPage() {
             const [metricLabel, metricValue] = getPrimaryMetric(asset);
             const displayCurrency = resolveDisplayCurrency(asset.address?.country ?? asset.market);
             const fxRateToKrw = fxRateMap[displayCurrency];
+            const meta = assetClassMeta(asset.assetClass);
 
             return (
-              <Card key={asset.id} className="overflow-hidden">
+              <Card
+                key={asset.id}
+                className="group overflow-hidden transition duration-300 hover:-translate-y-1 hover:border-accent/30"
+              >
                 <div className="fine-print">Asset {String(index + 1).padStart(2, '0')}</div>
                 <div className="mt-4 flex items-center justify-between gap-4">
-                  <Badge>{asset.assetClass}</Badge>
+                  <Badge tone={meta.tone}>{meta.label}</Badge>
                   <span className="fine-print">{asset.assetCode}</span>
                 </div>
                 <div className="mt-5">
-                  <h3 className="text-2xl font-semibold text-white">{asset.name}</h3>
+                  <h3 className="text-2xl font-semibold text-white transition-colors duration-300 group-hover:text-accent">
+                    {asset.name}
+                  </h3>
                   <p className="mt-3 text-sm leading-7 text-slate-400">{asset.description}</p>
                 </div>
                 <div className="mt-6 grid gap-3 text-sm text-slate-300">
@@ -254,7 +268,7 @@ export default async function LandingPage() {
                   </div>
                   <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.02] px-4 py-3">
                     <span>{metricLabel}</span>
-                    <span>{metricValue}</span>
+                    <span className="font-semibold text-white">{metricValue}</span>
                   </div>
                   <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.02] px-4 py-3">
                     <span>Cap Rate</span>
@@ -262,7 +276,7 @@ export default async function LandingPage() {
                   </div>
                   <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.02] px-4 py-3">
                     <span>최신 베이스 케이스</span>
-                    <span>
+                    <span className="font-semibold text-accent">
                       {formatCurrencyFromKrwAtRate(
                         asset.valuations[0]?.baseCaseValueKrw ?? asset.currentValuationKrw,
                         displayCurrency,
