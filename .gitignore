@@ -4,7 +4,7 @@ node_modules/
 dist/
 build/
 coverage/
-storage/
+apps/web/storage/
 .env
 .env.*
 !.env.example
