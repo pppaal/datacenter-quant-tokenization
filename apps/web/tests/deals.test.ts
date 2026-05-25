@@ -1631,7 +1631,12 @@ test('buildDealPipelineSummary ranks blocked and urgent deals first', () => {
       bidRevisions: [],
       lenderQuotes: [],
       negotiationEvents: [
-        { eventType: 'EXCLUSIVITY_GRANTED', expiresAt: new Date('2026-05-02T00:00:00.000Z') }
+        {
+          eventType: 'EXCLUSIVITY_GRANTED',
+          // Relative to the real clock so the live-exclusivity assertion does
+          // not decay — buildDealExecutionSnapshot compares against Date.now().
+          expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 45)
+        }
       ],
       activityLogs: [],
       asset: {
