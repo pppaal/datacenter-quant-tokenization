@@ -227,6 +227,7 @@ export async function seedAsset(prisma: PrismaClient, input: SeedAssetInput) {
       opexAssumptionKrw: input.opexAssumptionKrw,
       financingLtvPct: input.financingLtvPct,
       financingRatePct: input.financingRatePct,
+      holdingPeriodYears: 10,
       lastEnrichedAt: new Date(),
       address: {
         create: {

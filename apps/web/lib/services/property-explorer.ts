@@ -261,7 +261,7 @@ function buildBootstrapInput(seed: ExplorerSeed): AssetIntakeInput {
     opexAssumptionKrw: seed.assetClass === AssetClass.DATA_CENTER ? 18_000_000_000 : 11_000_000_000,
     financingLtvPct: seed.assetClass === AssetClass.DATA_CENTER ? 50 : 52,
     financingRatePct: seed.assetClass === AssetClass.DATA_CENTER ? 5.2 : 4.9,
-    holdingPeriodYears: 5,
+    holdingPeriodYears: 10,
     exitCapRatePct: seed.assetClass === AssetClass.DATA_CENTER ? 5.8 : 4.9,
     line1: seed.addressLine1,
     district: seed.district,

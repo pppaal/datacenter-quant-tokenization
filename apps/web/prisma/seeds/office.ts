@@ -63,7 +63,7 @@ export async function seedOfficeAsset(prisma: PrismaClient) {
       opexAssumptionKrw: 14500000000,
       financingLtvPct: 52,
       financingRatePct: 4.9,
-      holdingPeriodYears: 5,
+      holdingPeriodYears: 10,
       exitCapRatePct: 4.9,
       lastEnrichedAt: now,
       address: {
