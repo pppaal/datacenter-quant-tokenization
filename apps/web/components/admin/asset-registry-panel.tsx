@@ -38,6 +38,10 @@ export function AssetRegistryPanel({
           <h3 className="mt-2 text-2xl font-semibold text-white">
             Parcels, building records, and location intelligence
           </h3>
+          <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400">
+            Title-level parcel and building-ledger records plus geospatial signals (grid, fiber,
+            transit, hazard) sourced from public registries.
+          </p>
         </div>
       </div>
 

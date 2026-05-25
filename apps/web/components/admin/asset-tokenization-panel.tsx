@@ -34,6 +34,9 @@ export function AssetTokenizationPanel({ tokenization, assetId }: Props) {
         <div>
           <div className="eyebrow">Tokenization</div>
           <h3 className="mt-2 text-2xl font-semibold text-white">On-chain ERC-3643 deployment</h3>
+          <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400">
+            Deployed permissioned-token registry, identity, and compliance contracts for this asset.
+          </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Badge tone="neutral">Chain {tokenization.chainId}</Badge>

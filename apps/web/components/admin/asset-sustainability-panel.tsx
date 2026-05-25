@@ -42,6 +42,10 @@ export function AssetSustainabilityPanel({
           <h3 className="mt-2 text-2xl font-semibold text-white">
             Risk transfer, carbon footprint, and side-letter obligations
           </h3>
+          <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400">
+            Insurance program limits, Scope 1-3 carbon footprint, and LP side-letter terms that bind
+            this asset.
+          </p>
         </div>
         <div className="flex flex-wrap gap-2">
           {insurancePolicies.length > 0 ? <Badge>{insurancePolicies.length} policies</Badge> : null}

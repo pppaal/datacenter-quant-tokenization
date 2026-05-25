@@ -19,6 +19,10 @@ export function AssetInsightsPanel({ aiInsights, pipelineProjects }: Props) {
           <h3 className="mt-2 text-2xl font-semibold text-white">
             Model-generated signals and competing supply
           </h3>
+          <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400">
+            AI-surfaced risks and market signals alongside competing development pipeline that could
+            pressure stabilized rents at exit.
+          </p>
         </div>
       </div>
 
