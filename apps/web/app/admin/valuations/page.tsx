@@ -25,8 +25,9 @@ type ProvenanceEntry = {
 };
 
 function getRecommendation(confidenceScore?: number | null) {
-  if ((confidenceScore ?? 0) >= 75) return 'Proceed To Committee';
-  if ((confidenceScore ?? 0) >= 55) return 'Proceed With Conditions';
+  // confidenceScore is on a 0-10 scale (engine clamps ~4.5-9.9; ConfidenceBreakdown shows "x / 10").
+  if ((confidenceScore ?? 0) >= 7.5) return 'Proceed To Committee';
+  if ((confidenceScore ?? 0) >= 5.5) return 'Proceed With Conditions';
   return 'Further Diligence Required';
 }
 
@@ -70,7 +71,7 @@ export default async function ValuationsPage() {
             ['Avg Confidence', formatNumber(avgConfidence, 1), 'across current run history'],
             [
               'Committee Ready',
-              formatNumber(runs.filter((run) => (run.confidenceScore ?? 0) >= 75).length, 0),
+              formatNumber(runs.filter((run) => (run.confidenceScore ?? 0) >= 7.5).length, 0),
               'strongest current candidates'
             ]
           ].map(([label, value, detail]) => (

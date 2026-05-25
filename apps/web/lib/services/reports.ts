@@ -259,8 +259,9 @@ const reportTemplateMeta: Record<ReportKind, ReportTemplateMeta> = {
 };
 
 function getRecommendation(confidenceScore?: number | null) {
-  if ((confidenceScore ?? 0) >= 75) return 'Proceed To Committee';
-  if ((confidenceScore ?? 0) >= 55) return 'Proceed With Conditions';
+  // confidenceScore is on a 0-10 scale (engine clamps ~4.5-9.9; ConfidenceBreakdown shows "x / 10").
+  if ((confidenceScore ?? 0) >= 7.5) return 'Proceed To Committee';
+  if ((confidenceScore ?? 0) >= 5.5) return 'Proceed With Conditions';
   return 'Further Diligence Required';
 }
 
@@ -1285,7 +1286,7 @@ export async function buildReportBundleFromAsset(
   const latestValuation = asset.valuations[0];
   const displayCurrency = resolveDisplayCurrency(asset.address?.country ?? asset.market);
   const fxRateToKrw: number | null =
-    (options?.fxRateToKrw ?? null) ??
+    options?.fxRateToKrw ??
     (await getFxRateMap([displayCurrency]).then((rates) => rates[displayCurrency] ?? null));
   const provenance = Array.isArray(latestValuation?.provenance)
     ? (latestValuation.provenance as ProvenanceEntry[])

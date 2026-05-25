@@ -58,8 +58,9 @@ type ProvenanceEntry = {
 };
 
 function getRecommendation(confidenceScore?: number | null) {
-  if ((confidenceScore ?? 0) >= 75) return 'Proceed To Committee';
-  if ((confidenceScore ?? 0) >= 55) return 'Proceed With Conditions';
+  // confidenceScore is on a 0-10 scale (engine clamps ~4.5-9.9; ConfidenceBreakdown shows "x / 10").
+  if ((confidenceScore ?? 0) >= 7.5) return 'Proceed To Committee';
+  if ((confidenceScore ?? 0) >= 5.5) return 'Proceed With Conditions';
   return 'Further Diligence Required';
 }
 

@@ -43,10 +43,7 @@ import {
 import { buildAuditTrail } from '@/lib/services/im/audit-trail';
 import { buildCapitalCallSchedule } from '@/lib/services/im/capital-calls';
 import { buildCounterpartyRollup } from '@/lib/services/im/counterparty-rollup';
-import {
-  buildCovenantAlerts,
-  buildCovenantHeadroom
-} from '@/lib/services/im/covenant';
+import { buildCovenantAlerts, buildCovenantHeadroom } from '@/lib/services/im/covenant';
 import { buildEmissionsBreakdown, buildEsgSummary } from '@/lib/services/im/esg';
 import { buildInsuranceSummary } from '@/lib/services/im/insurance';
 import { buildFxExposure } from '@/lib/services/im/fx-exposure';
@@ -88,8 +85,9 @@ type ProvenanceEntry = {
 };
 
 function getRecommendation(confidenceScore?: number | null) {
-  if ((confidenceScore ?? 0) >= 75) return 'Proceed To Committee';
-  if ((confidenceScore ?? 0) >= 55) return 'Proceed With Conditions';
+  // confidenceScore is on a 0-10 scale (engine clamps ~4.5-9.9; ConfidenceBreakdown shows "x / 10").
+  if ((confidenceScore ?? 0) >= 7.5) return 'Proceed To Committee';
+  if ((confidenceScore ?? 0) >= 5.5) return 'Proceed With Conditions';
   return 'Further Diligence Required';
 }
 
@@ -159,9 +157,7 @@ export default async function SampleReportPage({
   const compareReturnsSnapshot = compareLatestRun
     ? computeReturnsSnapshot(compareLatestRun.scenarios ?? [])
     : null;
-  const compareLeaseRoll = compareAsset
-    ? computeLeaseRollSummary(compareAsset.leases ?? [])
-    : null;
+  const compareLeaseRoll = compareAsset ? computeLeaseRollSummary(compareAsset.leases ?? []) : null;
 
   const scenarios = latestRun.scenarios ?? [];
   const provenance = Array.isArray(latestRun.provenance)
@@ -210,20 +206,15 @@ export default async function SampleReportPage({
           riskFreeRatePct: macroByKey.gov_yield_10y_pct ?? macroByKey.policy_rate_pct,
           equityRiskPremiumPct: 5.0,
           sectorBeta:
-            asset.assetClass === 'DATA_CENTER'
-              ? 0.45
-              : asset.assetClass === 'OFFICE'
-                ? 0.6
-                : 0.5,
+            asset.assetClass === 'DATA_CENTER' ? 0.45 : asset.assetClass === 'OFFICE' ? 0.6 : 0.5,
           submarketSpreadPct: submarketSpread.spreadPct,
           growthExpectationPct:
             (macroByKey.rent_growth_pct ?? 0) +
             (macroByKey.inflation_pct ? macroByKey.inflation_pct * 0.5 : 0),
           transactionVolumeIndex: macroByKey.transaction_volume_index ?? 100,
-          vintageYear:
-            asset.buildingRecords?.[0]?.completionDate
-              ? new Date(asset.buildingRecords[0].completionDate).getFullYear()
-              : new Date().getFullYear(),
+          vintageYear: asset.buildingRecords?.[0]?.completionDate
+            ? new Date(asset.buildingRecords[0].completionDate).getFullYear()
+            : new Date().getFullYear(),
           referenceYear: new Date().getFullYear()
         })
       : null;
@@ -293,18 +284,14 @@ export default async function SampleReportPage({
     (asset.purchasePriceKrw ?? 0) > 0
       ? asset.purchasePriceKrw!
       : proForma
-        ? (proForma.summary.initialDebtFundingKrw ?? 0) +
-          (proForma.summary.initialEquityKrw ?? 0)
+        ? (proForma.summary.initialDebtFundingKrw ?? 0) + (proForma.summary.initialEquityKrw ?? 0)
         : (asset.capexAssumptionKrw ?? 0);
   const taxWalk = buildTaxWalk(asset.taxAssumption ?? null, {
     purchasePriceKrw: investmentBasisKrw,
-    cumulativeNoiKrw: proForma
-      ? proForma.years.reduce((sum, y) => sum + y.noiKrw, 0)
-      : 0,
+    cumulativeNoiKrw: proForma ? proForma.years.reduce((sum, y) => sum + y.noiKrw, 0) : 0,
     exitValueKrw: proForma?.summary.grossExitValueKrw ?? 0,
     holdYears: proForma?.years.length ?? 10,
-    basisSource:
-      (asset.purchasePriceKrw ?? 0) > 0 ? 'purchase_price' : 'capex_total'
+    basisSource: (asset.purchasePriceKrw ?? 0) > 0 ? 'purchase_price' : 'capex_total'
   });
   const fxExposure = buildFxExposure(latestRun.baseCaseValueKrw, {
     assetCurrency: 'KRW',
@@ -383,8 +370,7 @@ export default async function SampleReportPage({
       tier: c.assetTier ?? null,
       dealStructure: c.buyerType ?? null
     }));
-  const hedonicTargetSize =
-    asset.grossFloorAreaSqm ?? asset.rentableAreaSqm ?? null;
+  const hedonicTargetSize = asset.grossFloorAreaSqm ?? asset.rentableAreaSqm ?? null;
   const hedonicFit =
     hedonicTargetSize && hedonicTargetSize > 0
       ? fitHedonic(hedonicCompInputs, {
@@ -408,19 +394,14 @@ export default async function SampleReportPage({
           orderBy: { expectedDeliveryDate: 'asc' },
           take: 8
         });
-  const pipelineToShow = asset.pipelineProjects?.length
-    ? asset.pipelineProjects
-    : marketPipeline;
+  const pipelineToShow = asset.pipelineProjects?.length ? asset.pipelineProjects : marketPipeline;
 
   // DC supply-demand 5y forecast: probability-weighted pipeline +
   // baseline demand growth (8% AI training default, override via
   // macro rent_growth_pct when present). Only DC assets render.
-  const supplyDemandUnit: 'MW' | 'sqm' =
-    asset.assetClass === 'DATA_CENTER' ? 'MW' : 'sqm';
+  const supplyDemandUnit: 'MW' | 'sqm' = asset.assetClass === 'DATA_CENTER' ? 'MW' : 'sqm';
   const startingSupply =
-    supplyDemandUnit === 'MW'
-      ? asset.powerCapacityMw ?? 0
-      : asset.grossFloorAreaSqm ?? 0;
+    supplyDemandUnit === 'MW' ? (asset.powerCapacityMw ?? 0) : (asset.grossFloorAreaSqm ?? 0);
   const demandGrowthPct =
     macroByKey.rent_growth_pct ?? (asset.assetClass === 'DATA_CENTER' ? 8 : 3);
   const supplyDemandModel =
@@ -561,7 +542,9 @@ export default async function SampleReportPage({
           <div className="mt-6 grid gap-8 lg:grid-cols-[1.05fr_0.95fr]">
             <div className="space-y-5">
               <div>
-                <div className="fine-print">Committee Draft · {formatDate(latestRun.createdAt)}</div>
+                <div className="fine-print">
+                  Committee Draft · {formatDate(latestRun.createdAt)}
+                </div>
                 <h1 className="mt-3 text-5xl font-semibold leading-[0.96] tracking-[-0.05em] text-white md:text-6xl">
                   {asset.name}
                 </h1>
@@ -569,10 +552,7 @@ export default async function SampleReportPage({
 
               <p className="max-w-3xl text-lg leading-8 text-slate-300">{asset.description}</p>
 
-              <div
-                className="print-hidden flex flex-wrap gap-3"
-                data-im-print-hidden
-              >
+              <div className="print-hidden flex flex-wrap gap-3" data-im-print-hidden>
                 <PrintImButton />
                 <Link href="/admin">
                   <Button variant="ghost">Operator console</Button>
@@ -864,7 +844,9 @@ export default async function SampleReportPage({
                   and committee pack draw from.
                 </p>
               </div>
-              <span className="text-xs text-slate-500">{asset.media.length} item{asset.media.length === 1 ? '' : 's'}</span>
+              <span className="text-xs text-slate-500">
+                {asset.media.length} item{asset.media.length === 1 ? '' : 's'}
+              </span>
             </div>
             <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {asset.media.map((m) => (
@@ -887,10 +869,10 @@ export default async function SampleReportPage({
                     )}
                   </div>
                   <figcaption className="space-y-1 p-3">
-                    <div className="text-[11px] uppercase tracking-wide text-slate-500">{m.kind}</div>
-                    {m.caption ? (
-                      <div className="text-sm text-slate-200">{m.caption}</div>
-                    ) : null}
+                    <div className="text-[11px] uppercase tracking-wide text-slate-500">
+                      {m.kind}
+                    </div>
+                    {m.caption ? <div className="text-sm text-slate-200">{m.caption}</div> : null}
                   </figcaption>
                 </figure>
               ))}
@@ -935,7 +917,9 @@ export default async function SampleReportPage({
               <div>
                 <div className="eyebrow">Macro regime overlay</div>
                 <p className="mt-2 max-w-3xl text-sm text-slate-400">
-                  Per-driver overlay applied to the base scenario before the proforma runs. Discount and exit cap widen in tight capital markets; occupancy and growth tighten when leasing is soft; replacement cost steps up with construction inflation.
+                  Per-driver overlay applied to the base scenario before the proforma runs. Discount
+                  and exit cap widen in tight capital markets; occupancy and growth tighten when
+                  leasing is soft; replacement cost steps up with construction inflation.
                 </p>
               </div>
               <Badge>macro-regime-engine</Badge>
@@ -953,25 +937,23 @@ export default async function SampleReportPage({
                   ['Debt cost', macroGuidance.shifts.debtCostShiftPct, 'pts', 'add'],
                   ['Occupancy', macroGuidance.shifts.occupancyShiftPct, 'pts', 'subtract'],
                   ['Growth', macroGuidance.shifts.growthShiftPct, 'pts', 'subtract'],
-                  [
-                    'Replacement cost',
-                    macroGuidance.shifts.replacementCostShiftPct,
-                    '%',
-                    'add'
-                  ]
+                  ['Replacement cost', macroGuidance.shifts.replacementCostShiftPct, '%', 'add']
                 ] as const
               ).map(([label, value, unit, badShift]) => {
                 if (value === null) return null;
                 const isWiden =
                   (badShift === 'add' && value > 0) || (badShift === 'subtract' && value < 0);
-                const tone = value === 0 ? 'text-white' : isWiden ? 'text-rose-300' : 'text-emerald-300';
+                const tone =
+                  value === 0 ? 'text-white' : isWiden ? 'text-rose-300' : 'text-emerald-300';
                 const sign = value > 0 ? '+' : '';
                 return (
                   <div
                     key={label}
                     className="rounded-[16px] border border-white/10 bg-white/[0.02] p-3"
                   >
-                    <div className="text-[11px] uppercase tracking-wide text-slate-500">{label}</div>
+                    <div className="text-[11px] uppercase tracking-wide text-slate-500">
+                      {label}
+                    </div>
                     <div className={`mt-2 font-mono text-sm ${tone}`}>
                       {sign}
                       {value.toFixed(2)} {unit}
@@ -998,7 +980,8 @@ export default async function SampleReportPage({
           <Card>
             <div className="eyebrow">Returns snapshot</div>
             <p className="mt-2 text-sm text-slate-400">
-              Headline returns from the latest valuation run. Going-in yield and exit cap reflect the base case; minimum DSCR is the floor across all scenarios.
+              Headline returns from the latest valuation run. Going-in yield and exit cap reflect
+              the base case; minimum DSCR is the floor across all scenarios.
             </p>
             <dl className="mt-5 grid gap-3 text-sm">
               <Row label="Going-in yield">
@@ -1022,9 +1005,7 @@ export default async function SampleReportPage({
                   : '—'}
               </Row>
               <Row label="Min DSCR">
-                {returnsSnapshot.minDscr !== null
-                  ? `${returnsSnapshot.minDscr.toFixed(2)}x`
-                  : '—'}
+                {returnsSnapshot.minDscr !== null ? `${returnsSnapshot.minDscr.toFixed(2)}x` : '—'}
               </Row>
             </dl>
             <ProvenancePill entries={provenanceByCard.valuationRates} />
@@ -1054,9 +1035,7 @@ export default async function SampleReportPage({
                   : `${capStack.drawnPctOfCommitment.toFixed(1)}%`}
               </Row>
               <Row label="Blended rate">
-                {capStack.totalCommitmentKrw === 0
-                  ? '—'
-                  : `${capStack.blendedRatePct.toFixed(2)}%`}
+                {capStack.totalCommitmentKrw === 0 ? '—' : `${capStack.blendedRatePct.toFixed(2)}%`}
               </Row>
             </dl>
             {asset.debtFacilities && asset.debtFacilities.length > 0 ? (
@@ -1205,7 +1184,8 @@ export default async function SampleReportPage({
                   </tbody>
                 </table>
                 <p className="border-t border-white/5 bg-white/[0.02] px-2 py-2 text-[10px] text-slate-500">
-                  WALT = Σ(term × kW) / Σ(kW); weighted in-place rent uses the same kW weighting on contract rate; MTM gap = blended market rate / blended in-place rate − 1.
+                  WALT = Σ(term × kW) / Σ(kW); weighted in-place rent uses the same kW weighting on
+                  contract rate; MTM gap = blended market rate / blended in-place rate − 1.
                 </p>
               </div>
             ) : null}
@@ -1220,7 +1200,9 @@ export default async function SampleReportPage({
             <div>
               <div className="eyebrow">Underwriting assumptions (base case)</div>
               <p className="mt-2 max-w-3xl text-sm text-slate-400">
-                Inputs anchoring the base scenario on this run. Cap rate and discount rate are the primary value drivers; tax leakage and SPV economics drive the gap between unlevered and equity returns.
+                Inputs anchoring the base scenario on this run. Cap rate and discount rate are the
+                primary value drivers; tax leakage and SPV economics drive the gap between unlevered
+                and equity returns.
               </p>
             </div>
             <Badge tone="good">{latestRun.engineVersion}</Badge>
@@ -1324,12 +1306,15 @@ export default async function SampleReportPage({
           </div>
           <p className="mt-4 text-[11px] text-slate-500">
             Stage / location / permit / flood / wildfire multipliers applied during scenario
-            generation:&nbsp;
-            stage {underwriting.stageFactor !== null ? underwriting.stageFactor.toFixed(2) : '—'} ·
-            location ×{underwriting.locationPremium !== null ? underwriting.locationPremium.toFixed(2) : '—'} ·
-            permit ×{underwriting.permitPenalty !== null ? underwriting.permitPenalty.toFixed(2) : '—'} ·
-            flood ×{underwriting.floodPenalty !== null ? underwriting.floodPenalty.toFixed(3) : '—'} ·
-            wildfire ×{underwriting.wildfirePenalty !== null ? underwriting.wildfirePenalty.toFixed(3) : '—'}.
+            generation:&nbsp; stage{' '}
+            {underwriting.stageFactor !== null ? underwriting.stageFactor.toFixed(2) : '—'} ·
+            location ×
+            {underwriting.locationPremium !== null ? underwriting.locationPremium.toFixed(2) : '—'}{' '}
+            · permit ×
+            {underwriting.permitPenalty !== null ? underwriting.permitPenalty.toFixed(2) : '—'} ·
+            flood ×{underwriting.floodPenalty !== null ? underwriting.floodPenalty.toFixed(3) : '—'}{' '}
+            · wildfire ×
+            {underwriting.wildfirePenalty !== null ? underwriting.wildfirePenalty.toFixed(3) : '—'}.
           </p>
 
           {capRateDecomp ? (
@@ -1339,13 +1324,11 @@ export default async function SampleReportPage({
                   <div className="fine-print">Cap rate decomposition</div>
                   <p className="mt-1 max-w-3xl text-xs text-slate-400">
                     Bridges the headline cap rate into 6 transparent components so the LP can see
-                    what is driving the price. RFR and growth from macro feed; submarket spread
-                    from comp regression; obsolescence from vintage age.
+                    what is driving the price. RFR and growth from macro feed; submarket spread from
+                    comp regression; obsolescence from vintage age.
                   </p>
                 </div>
-                <Badge>
-                  {capRateDecomp.capRatePct.toFixed(2)}% implied
-                </Badge>
+                <Badge>{capRateDecomp.capRatePct.toFixed(2)}% implied</Badge>
               </div>
               <div className="mt-4 overflow-x-auto rounded-[12px] border border-white/10">
                 <table className="w-full text-xs">
@@ -1368,9 +1351,7 @@ export default async function SampleReportPage({
                         >
                           {c.sign}
                         </td>
-                        <td className="px-2 py-2 text-right font-mono">
-                          {c.pct.toFixed(2)}%
-                        </td>
+                        <td className="px-2 py-2 text-right font-mono">{c.pct.toFixed(2)}%</td>
                         <td className="px-2 py-2 text-[10px] text-slate-400">{c.notes}</td>
                       </tr>
                     ))}
@@ -1399,7 +1380,9 @@ export default async function SampleReportPage({
               <div>
                 <div className="eyebrow">Site hazard scores</div>
                 <p className="mt-2 max-w-3xl text-sm text-slate-400">
-                  Per-asset physical-risk readings. Flood and wildfire each carry a confidence-score penalty (×0.05 and ×0.04 respectively). Insurance pricing and reserve sizing track the same readings.
+                  Per-asset physical-risk readings. Flood and wildfire each carry a confidence-score
+                  penalty (×0.05 and ×0.04 respectively). Insurance pricing and reserve sizing track
+                  the same readings.
                 </p>
               </div>
               <div className="flex items-center gap-3">
@@ -1465,9 +1448,9 @@ export default async function SampleReportPage({
               <div>
                 <div className="eyebrow">ESG &amp; sustainability</div>
                 <p className="mt-2 max-w-3xl text-sm text-slate-400">
-                  Operational sustainability metrics anchoring LP-side ESG disclosure. PUE
-                  governs Scope-2 carbon intensity; renewable share governs Scope-2 reduction
-                  path; backup autonomy governs Tier-rated uptime and outage exposure.
+                  Operational sustainability metrics anchoring LP-side ESG disclosure. PUE governs
+                  Scope-2 carbon intensity; renewable share governs Scope-2 reduction path; backup
+                  autonomy governs Tier-rated uptime and outage exposure.
                 </p>
               </div>
               {esgSummary.composite ? (
@@ -1571,9 +1554,11 @@ export default async function SampleReportPage({
                         <div className="flex flex-wrap gap-2">
                           <Badge tone="good">{primary.length} primary</Badge>
                           <Badge>
-                            Total {totalPrimary.toLocaleString(undefined, {
+                            Total{' '}
+                            {totalPrimary.toLocaleString(undefined, {
                               maximumFractionDigits: 0
-                            })} tCO2e
+                            })}{' '}
+                            tCO2e
                           </Badge>
                         </div>
                       </div>
@@ -1649,7 +1634,9 @@ export default async function SampleReportPage({
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <div className="fine-print">
                     Scope 1 / 2 / 3 emissions estimate
-                    {(asset.carbonRecords?.length ?? 0) > 0 ? ' (derived — for comparison vs verified above)' : ''}
+                    {(asset.carbonRecords?.length ?? 0) > 0
+                      ? ' (derived — for comparison vs verified above)'
+                      : ''}
                   </div>
                   <div className="text-[10px] text-slate-500">
                     Total ≈{' '}
@@ -1716,17 +1703,14 @@ export default async function SampleReportPage({
               <div>
                 <div className="eyebrow">Insurance register</div>
                 <p className="mt-2 max-w-3xl text-sm text-slate-400">
-                  Active policies covering property, business interruption, liability,
-                  construction, and cyber. Renewals expiring within 90 days are flagged for
-                  pre-IC review; coverage limits anchor the LP-side underwriting of catastrophic
-                  loss exposure.
+                  Active policies covering property, business interruption, liability, construction,
+                  and cyber. Renewals expiring within 90 days are flagged for pre-IC review;
+                  coverage limits anchor the LP-side underwriting of catastrophic loss exposure.
                 </p>
               </div>
               <div className="flex items-center gap-2">
                 {insuranceSummary.expiringSoonCount > 0 ? (
-                  <Badge tone="warn">
-                    {insuranceSummary.expiringSoonCount} expiring &lt; 90d
-                  </Badge>
+                  <Badge tone="warn">{insuranceSummary.expiringSoonCount} expiring &lt; 90d</Badge>
                 ) : null}
                 <Badge>
                   {insuranceSummary.policies.length} polic
@@ -1838,9 +1822,9 @@ export default async function SampleReportPage({
                 <div className="eyebrow">Tax leakage walk</div>
                 <p className="mt-2 max-w-3xl text-sm text-slate-400">
                   Cash-tax outflow over the hold — acquisition transfer, annual property tax,
-                  corporate income tax on operating earnings, exit transfer tax, and cross-
-                  border withholding. Lets the LP size the gross-to-net tax drag separately
-                  from the operating model.
+                  corporate income tax on operating earnings, exit transfer tax, and cross- border
+                  withholding. Lets the LP size the gross-to-net tax drag separately from the
+                  operating model.
                 </p>
               </div>
               <Badge tone="warn">
@@ -1867,9 +1851,7 @@ export default async function SampleReportPage({
                   {taxWalk.rows.map((row) => (
                     <tr key={row.category}>
                       <td className="px-2 py-2 text-white">{row.label}</td>
-                      <td className="px-2 py-2 text-right font-mono">
-                        {row.ratePct.toFixed(2)}%
-                      </td>
+                      <td className="px-2 py-2 text-right font-mono">{row.ratePct.toFixed(2)}%</td>
                       <td className="px-2 py-2 text-right font-mono text-slate-400">
                         {formatCurrencyFromKrwAtRate(row.baseKrw, displayCurrency, fxRateToKrw)}
                         <div className="text-[9px] text-slate-500">{row.baseLabel}</div>
@@ -1906,7 +1888,9 @@ export default async function SampleReportPage({
             </div>
             {taxWalk.basisCaveat ? (
               <p className="mt-3 rounded-[12px] border border-amber-300/20 bg-amber-300/[0.04] px-3 py-2 text-[10px] leading-5 text-amber-200">
-                <span className="font-semibold uppercase tracking-wide text-amber-300">Basis caveat ·{' '}</span>
+                <span className="font-semibold uppercase tracking-wide text-amber-300">
+                  Basis caveat ·{' '}
+                </span>
                 {taxWalk.basisCaveat}
               </p>
             ) : null}
@@ -1920,9 +1904,7 @@ export default async function SampleReportPage({
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
                 <div className="eyebrow">FX exposure</div>
-                <p className="mt-2 max-w-3xl text-sm text-slate-400">
-                  {fxExposure.notes}
-                </p>
+                <p className="mt-2 max-w-3xl text-sm text-slate-400">{fxExposure.notes}</p>
               </div>
               <Badge
                 tone={
@@ -1954,9 +1936,7 @@ export default async function SampleReportPage({
                 </div>
               </div>
               <div className="rounded-[16px] border border-white/10 bg-white/[0.02] p-3">
-                <div className="text-[10px] uppercase tracking-wide text-slate-500">
-                  Spot
-                </div>
+                <div className="text-[10px] uppercase tracking-wide text-slate-500">Spot</div>
                 <div className="mt-2 font-mono text-sm text-white">{fxExposure.spotRateLabel}</div>
               </div>
             </div>
@@ -1967,7 +1947,8 @@ export default async function SampleReportPage({
                     <th className="px-2 py-2 font-semibold">FX shock</th>
                     {fxExposure.sensitivity.map((s) => (
                       <th key={s.shockPct} className="px-2 py-2 text-right font-semibold">
-                        {s.shockPct >= 0 ? '+' : ''}{s.shockPct}%
+                        {s.shockPct >= 0 ? '+' : ''}
+                        {s.shockPct}%
                       </th>
                     ))}
                   </tr>
@@ -1985,13 +1966,11 @@ export default async function SampleReportPage({
                             ? 'text-rose-300'
                             : 'text-white';
                       return (
-                        <td
-                          key={s.shockPct}
-                          className={`px-2 py-2 text-right font-mono ${tone}`}
-                        >
+                        <td key={s.shockPct} className={`px-2 py-2 text-right font-mono ${tone}`}>
                           {(s.baseCurrencyValue / 1_000_000).toLocaleString(undefined, {
                             maximumFractionDigits: 1
-                          })}M {fxExposure.lpBaseCurrency}
+                          })}
+                          M {fxExposure.lpBaseCurrency}
                         </td>
                       );
                     })}
@@ -2000,9 +1979,9 @@ export default async function SampleReportPage({
               </table>
             </div>
             <p className="mt-3 text-[10px] leading-4 text-slate-500">
-              Negative shock = KRW strengthens vs {fxExposure.lpBaseCurrency} (translation
-              gain). Positive shock = KRW weakens (translation loss). No deal-level NDF /
-              forward hedge is modeled.
+              Negative shock = KRW strengthens vs {fxExposure.lpBaseCurrency} (translation gain).
+              Positive shock = KRW weakens (translation loss). No deal-level NDF / forward hedge is
+              modeled.
             </p>
           </Card>
         </section>
@@ -2017,7 +1996,9 @@ export default async function SampleReportPage({
           <Card>
             <div className="eyebrow">Title, parcel &amp; planning diligence</div>
             <p className="mt-2 max-w-3xl text-sm text-slate-400">
-              Legal diligence anchors. Ownership establishes title; parcels carry zoning and official land valuation; encumbrances list liens and pledges; planning constraints capture zoning overlays and use restrictions.
+              Legal diligence anchors. Ownership establishes title; parcels carry zoning and
+              official land valuation; encumbrances list liens and pledges; planning constraints
+              capture zoning overlays and use restrictions.
             </p>
 
             <div className="mt-5 grid gap-4 lg:grid-cols-2">
@@ -2033,7 +2014,9 @@ export default async function SampleReportPage({
                         <div className="flex items-center justify-between gap-2">
                           <span className="font-semibold text-white">{o.ownerName}</span>
                           <span className="font-mono text-xs text-slate-400">
-                            {typeof o.ownershipPct === 'number' ? `${o.ownershipPct.toFixed(0)}%` : '—'}
+                            {typeof o.ownershipPct === 'number'
+                              ? `${o.ownershipPct.toFixed(0)}%`
+                              : '—'}
                           </span>
                         </div>
                         <div className="mt-1 text-[11px] text-slate-500">
@@ -2180,7 +2163,8 @@ export default async function SampleReportPage({
             <Card>
               <div className="eyebrow">Sources & Uses</div>
               <p className="mt-2 text-sm text-slate-400">
-                Initial capitalization at close. Equity equals total cost less drawn debt at funding; reserves accrue against the year-one equity outflow.
+                Initial capitalization at close. Equity equals total cost less drawn debt at
+                funding; reserves accrue against the year-one equity outflow.
               </p>
               <dl className="mt-5 grid gap-3 text-sm">
                 <Row label="Sources · senior debt">
@@ -2238,15 +2222,17 @@ export default async function SampleReportPage({
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5 text-slate-200">
-                      {([
-                        ['Land', capexBreakdown.landValueKrw],
-                        ['Shell & core', capexBreakdown.shellCoreKrw],
-                        ['Mechanical', capexBreakdown.mechanicalKrw],
-                        ['Electrical', capexBreakdown.electricalKrw],
-                        ['IT fit-out', capexBreakdown.itFitOutKrw],
-                        ['Soft cost', capexBreakdown.softCostKrw],
-                        ['Contingency', capexBreakdown.contingencyKrw]
-                      ] as const)
+                      {(
+                        [
+                          ['Land', capexBreakdown.landValueKrw],
+                          ['Shell & core', capexBreakdown.shellCoreKrw],
+                          ['Mechanical', capexBreakdown.mechanicalKrw],
+                          ['Electrical', capexBreakdown.electricalKrw],
+                          ['IT fit-out', capexBreakdown.itFitOutKrw],
+                          ['Soft cost', capexBreakdown.softCostKrw],
+                          ['Contingency', capexBreakdown.contingencyKrw]
+                        ] as const
+                      )
                         .filter(([, v]) => typeof v === 'number' && v > 0)
                         .map(([label, value]) => (
                           <tr key={label}>
@@ -2259,7 +2245,11 @@ export default async function SampleReportPage({
                               )}
                             </td>
                             <td className="px-2 py-2 text-right font-mono text-slate-400">
-                              {(((value as number) / (capexBreakdown.totalCapexKrw ?? 1)) * 100).toFixed(1)}%
+                              {(
+                                ((value as number) / (capexBreakdown.totalCapexKrw ?? 1)) *
+                                100
+                              ).toFixed(1)}
+                              %
                             </td>
                           </tr>
                         ))}
@@ -2284,7 +2274,8 @@ export default async function SampleReportPage({
             <Card>
               <div className="eyebrow">Equity returns</div>
               <p className="mt-2 text-sm text-slate-400">
-                Levered returns computed from the year-by-year cash flow stream of the base case. Equity multiple = total distributions / initial equity.
+                Levered returns computed from the year-by-year cash flow stream of the base case.
+                Equity multiple = total distributions / initial equity.
               </p>
               <dl className="mt-5 grid gap-3 text-sm">
                 <Row label="Equity IRR">
@@ -2339,8 +2330,8 @@ export default async function SampleReportPage({
                 <p className="mt-2 max-w-3xl text-sm text-slate-400">
                   Default 60 / 30 / reserve top-up split applied as a placeholder. The actual
                   schedule is set by the LPA and varies materially by fund-vehicle structure
-                  (closed-end vs evergreen), draw-down period, and per-LP commitment size.
-                  Treat this as cash-staging guidance, not a covenant.
+                  (closed-end vs evergreen), draw-down period, and per-LP commitment size. Treat
+                  this as cash-staging guidance, not a covenant.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -2352,9 +2343,7 @@ export default async function SampleReportPage({
                     fxRateToKrw
                   )}
                 </Badge>
-                <Badge tone="good">
-                  Upfront {capitalCalls.upfrontPctOfCommitment.toFixed(0)}%
-                </Badge>
+                <Badge tone="good">Upfront {capitalCalls.upfrontPctOfCommitment.toFixed(0)}%</Badge>
               </div>
             </div>
             <div className="mt-5 overflow-x-auto rounded-[14px] border border-white/10">
@@ -2372,19 +2361,11 @@ export default async function SampleReportPage({
                 <tbody className="divide-y divide-white/5 text-slate-200">
                   {capitalCalls.rows.map((row) => (
                     <tr key={row.callNumber}>
-                      <td className="px-2 py-2 font-mono text-slate-400">
-                        #{row.callNumber}
-                      </td>
+                      <td className="px-2 py-2 font-mono text-slate-400">#{row.callNumber}</td>
                       <td className="px-2 py-2 text-slate-300">{row.yearLabel}</td>
-                      <td className="px-2 py-2 text-[11px] text-slate-400">
-                        {row.purpose}
-                      </td>
+                      <td className="px-2 py-2 text-[11px] text-slate-400">{row.purpose}</td>
                       <td className="px-2 py-2 text-right font-mono">
-                        {formatCurrencyFromKrwAtRate(
-                          row.amountKrw,
-                          displayCurrency,
-                          fxRateToKrw
-                        )}
+                        {formatCurrencyFromKrwAtRate(row.amountKrw, displayCurrency, fxRateToKrw)}
                       </td>
                       <td className="px-2 py-2 text-right font-mono text-slate-400">
                         {formatCurrencyFromKrwAtRate(
@@ -2425,11 +2406,14 @@ export default async function SampleReportPage({
               <div>
                 <div className="eyebrow">Capex schedule (line items)</div>
                 <p className="mt-2 max-w-3xl text-sm text-slate-400">
-                  Capex schedule by trade package and spend year. Sources &amp; Uses above carries the category aggregates; this view splits the underlying budget lines, with embedded-in-price vs incremental capex flagged on each row.
+                  Capex schedule by trade package and spend year. Sources &amp; Uses above carries
+                  the category aggregates; this view splits the underlying budget lines, with
+                  embedded-in-price vs incremental capex flagged on each row.
                 </p>
               </div>
               <Badge>
-                {asset.capexLineItems.length} line item{asset.capexLineItems.length === 1 ? '' : 's'}
+                {asset.capexLineItems.length} line item
+                {asset.capexLineItems.length === 1 ? '' : 's'}
               </Badge>
             </div>
             <div className="mt-5 overflow-x-auto rounded-[14px] border border-white/10">
@@ -2461,11 +2445,7 @@ export default async function SampleReportPage({
                         )}
                       </td>
                       <td className="px-2 py-2 text-right font-mono">
-                        {formatCurrencyFromKrwAtRate(
-                          item.amountKrw,
-                          displayCurrency,
-                          fxRateToKrw
-                        )}
+                        {formatCurrencyFromKrwAtRate(item.amountKrw, displayCurrency, fxRateToKrw)}
                       </td>
                     </tr>
                   ))}
@@ -2495,7 +2475,9 @@ export default async function SampleReportPage({
               <div>
                 <div className="eyebrow">Year-by-year P&L (base case)</div>
                 <p className="mt-2 text-sm text-slate-400">
-                  Operating cash flow per year of the hold — revenue, NOI, debt service, DSCR. Numbers in KRW millions; toggle to {displayCurrency} via the cover currency selector.
+                  Operating cash flow per year of the hold — revenue, NOI, debt service, DSCR.
+                  Numbers in KRW millions; toggle to {displayCurrency} via the cover currency
+                  selector.
                 </p>
               </div>
               <Badge tone="good">{proForma.years.length} year hold</Badge>
@@ -2599,9 +2581,7 @@ export default async function SampleReportPage({
                           {isBase ? '—' : fmtBps(row.impliedYieldDeltaBps)}
                         </td>
                         <td className="px-3 py-2 text-right font-mono text-xs">
-                          {row.exitCapRatePct !== null
-                            ? `${row.exitCapRatePct.toFixed(2)}%`
-                            : '—'}
+                          {row.exitCapRatePct !== null ? `${row.exitCapRatePct.toFixed(2)}%` : '—'}
                         </td>
                         <td className="px-3 py-2 text-right font-mono text-xs text-slate-400">
                           {isBase ? '—' : fmtBps(row.exitCapDeltaBps)}
@@ -2646,7 +2626,9 @@ export default async function SampleReportPage({
           <Card>
             <div className="eyebrow">Comparable transactions &amp; rent comps</div>
             <p className="mt-2 max-w-3xl text-sm text-slate-400">
-              Submarket comparables anchoring cap-rate and rent underwriting. Transaction comps support the value approach; rent comps support WALT and mark-to-market. Each row references its source.
+              Submarket comparables anchoring cap-rate and rent underwriting. Transaction comps
+              support the value approach; rent comps support WALT and mark-to-market. Each row
+              references its source.
               {asset.transactionComps?.length === 0 && txCompsToShow.length > 0
                 ? ' Submarket-wide comparables shown for pre-stabilization assets without direct comps.'
                 : ''}
@@ -2657,9 +2639,9 @@ export default async function SampleReportPage({
                 <div>
                   <div className="fine-print">Hedonic-fitted comparable price</div>
                   <p className="mt-1 max-w-3xl text-xs text-slate-400">
-                    OLS log-linear regression of comp price/sqm on size, vintage, submarket,
-                    tier, and deal-structure dummies. Returns the fitted price/sqm for this
-                    asset controlled for those features — independent of the raw comp average.
+                    OLS log-linear regression of comp price/sqm on size, vintage, submarket, tier,
+                    and deal-structure dummies. Returns the fitted price/sqm for this asset
+                    controlled for those features — independent of the raw comp average.
                   </p>
                 </div>
                 {hedonicFit ? (
@@ -2700,8 +2682,8 @@ export default async function SampleReportPage({
               ) : (
                 <p className="mt-3 text-[11px] leading-5 text-slate-400">
                   Need at least {Math.max(4 - hedonicCompInputs.length, 1)} more comparable
-                  transactions to identify the regression. Add MOLIT 실거래가 ingest for
-                  faster fill.
+                  transactions to identify the regression. Add MOLIT 실거래가 ingest for faster
+                  fill.
                 </p>
               )}
             </div>
@@ -2737,17 +2719,11 @@ export default async function SampleReportPage({
                         </td>
                         <td className="px-2 py-2 text-right font-mono">
                           {typeof c.priceKrw === 'number' && c.priceKrw > 0
-                            ? formatCurrencyFromKrwAtRate(
-                                c.priceKrw,
-                                displayCurrency,
-                                fxRateToKrw
-                              )
+                            ? formatCurrencyFromKrwAtRate(c.priceKrw, displayCurrency, fxRateToKrw)
                             : '—'}
                         </td>
                         <td className="px-2 py-2 text-right font-mono">
-                          {typeof c.capRatePct === 'number'
-                            ? `${c.capRatePct.toFixed(2)}%`
-                            : '—'}
+                          {typeof c.capRatePct === 'number' ? `${c.capRatePct.toFixed(2)}%` : '—'}
                         </td>
                         <td className="px-2 py-2 text-right text-[10px] text-slate-400">
                           {c.sourceSystem}
@@ -2824,7 +2800,9 @@ export default async function SampleReportPage({
                   <Badge>{asset.researchSnapshots.length}</Badge>
                 </div>
                 <p className="mt-2 text-sm text-slate-400">
-                  Approved research snapshots anchoring the asset macro context. Each snapshot freshness status determines whether the underwriting may rely on it without a refresh.
+                  Approved research snapshots anchoring the asset macro context. Each snapshot
+                  freshness status determines whether the underwriting may rely on it without a
+                  refresh.
                 </p>
                 <ul className="mt-5 space-y-2">
                   {asset.researchSnapshots.slice(0, 6).map((s) => (
@@ -2863,7 +2841,8 @@ export default async function SampleReportPage({
                   </Badge>
                 </div>
                 <p className="mt-2 text-sm text-slate-400">
-                  Outstanding research coverage items for the asset. HIGH-priority open items reduce confidence and require closure prior to investment committee.
+                  Outstanding research coverage items for the asset. HIGH-priority open items reduce
+                  confidence and require closure prior to investment committee.
                 </p>
                 <ul className="mt-5 space-y-2">
                   {asset.coverageTasks.slice(0, 8).map((t) => {
@@ -2884,11 +2863,7 @@ export default async function SampleReportPage({
                             <span className="text-slate-500">{t.taskType}</span>
                             <span className="text-slate-300">{t.priority}</span>
                             <span
-                              className={
-                                t.status === 'OPEN'
-                                  ? 'text-rose-300'
-                                  : 'text-emerald-300'
-                              }
+                              className={t.status === 'OPEN' ? 'text-rose-300' : 'text-emerald-300'}
                             >
                               {t.status}
                             </span>
@@ -2916,7 +2891,8 @@ export default async function SampleReportPage({
                   <Badge>{asset.aiInsights.length}</Badge>
                 </div>
                 <p className="mt-2 text-sm text-slate-400">
-                  Model-generated commentary on the asset and its valuation runs. Each insight carries model attribution and an evidence reference.
+                  Model-generated commentary on the asset and its valuation runs. Each insight
+                  carries model attribution and an evidence reference.
                 </p>
                 <ul className="mt-5 space-y-2">
                   {asset.aiInsights.slice(0, 6).map((insight) => (
@@ -2953,7 +2929,8 @@ export default async function SampleReportPage({
               <Card>
                 <div className="eyebrow">Realized outcomes</div>
                 <p className="mt-2 text-sm text-slate-400">
-                  Realized occupancy, NOI, and DSCR observations on the asset. Used to calibrate underwriting against actual performance.
+                  Realized occupancy, NOI, and DSCR observations on the asset. Used to calibrate
+                  underwriting against actual performance.
                 </p>
                 <div className="mt-5 overflow-x-auto rounded-[14px] border border-white/10">
                   <table className="w-full text-xs">
@@ -2980,11 +2957,7 @@ export default async function SampleReportPage({
                           </td>
                           <td className="px-2 py-2 text-right font-mono">
                             {typeof o.noiKrw === 'number'
-                              ? formatCurrencyFromKrwAtRate(
-                                  o.noiKrw,
-                                  displayCurrency,
-                                  fxRateToKrw
-                                )
+                              ? formatCurrencyFromKrwAtRate(o.noiKrw, displayCurrency, fxRateToKrw)
                               : '—'}
                           </td>
                           <td className="px-2 py-2 text-right font-mono">
@@ -3042,9 +3015,7 @@ export default async function SampleReportPage({
                               <div className="text-[10px] text-slate-500">{p.sponsorName}</div>
                             ) : null}
                           </td>
-                          <td className="px-2 py-2 text-slate-300">
-                            {p.region ?? p.market}
-                          </td>
+                          <td className="px-2 py-2 text-slate-300">{p.region ?? p.market}</td>
                           <td className="px-2 py-2 text-slate-300">{p.stageLabel ?? '—'}</td>
                           <td className="px-2 py-2 text-right font-mono">
                             {typeof p.expectedPowerMw === 'number'
@@ -3054,9 +3025,7 @@ export default async function SampleReportPage({
                                 : '—'}
                           </td>
                           <td className="px-2 py-2 text-right font-mono text-slate-400">
-                            {p.expectedDeliveryDate
-                              ? formatDate(p.expectedDeliveryDate)
-                              : '—'}
+                            {p.expectedDeliveryDate ? formatDate(p.expectedDeliveryDate) : '—'}
                           </td>
                         </tr>
                       ))}
@@ -3076,15 +3045,15 @@ export default async function SampleReportPage({
               <div>
                 <div className="eyebrow">Supply-demand forecast</div>
                 <p className="mt-2 max-w-3xl text-sm text-slate-400">
-                  Probability-weighted pipeline supply (stage-conditional completion
-                  rates) paired with a {supplyDemandModel.unit === 'MW' ? '8% AI-load' : '3% baseline'}
-                  {' '}
-                  demand growth assumption to project net absorption and implied vacancy
-                  over a 5-year hold.
+                  Probability-weighted pipeline supply (stage-conditional completion rates) paired
+                  with a {supplyDemandModel.unit === 'MW' ? '8% AI-load' : '3% baseline'} demand
+                  growth assumption to project net absorption and implied vacancy over a 5-year
+                  hold.
                 </p>
               </div>
               <Badge>
-                Year-1 pipeline = {formatNumber(supplyDemandModel.pipelineIntensityPct, 1)}% of supply
+                Year-1 pipeline = {formatNumber(supplyDemandModel.pipelineIntensityPct, 1)}% of
+                supply
               </Badge>
             </div>
             <div className="mt-5 overflow-x-auto rounded-[14px] border border-white/10">
@@ -3140,11 +3109,10 @@ export default async function SampleReportPage({
               </table>
             </div>
             <p className="mt-3 text-[11px] text-slate-500">
-              Stage-weighted: ANNOUNCED 30% · PERMITTED 65% · UNDER_CONSTRUCTION 90% ·
-              COMMISSIONING 98%. Override with sponsor-specific completion rates as
-              new evidence arrives. Baseline demand seeded at 80% of starting supply
-              (proxy for current take-up); replace with KEPCO load forecast when
-              available.
+              Stage-weighted: ANNOUNCED 30% · PERMITTED 65% · UNDER_CONSTRUCTION 90% · COMMISSIONING
+              98%. Override with sponsor-specific completion rates as new evidence arrives. Baseline
+              demand seeded at 80% of starting supply (proxy for current take-up); replace with
+              KEPCO load forecast when available.
             </p>
           </Card>
         </section>
@@ -3155,7 +3123,9 @@ export default async function SampleReportPage({
           <Card>
             <div className="eyebrow">Sensitivity matrices</div>
             <p className="mt-2 max-w-3xl text-sm text-slate-400">
-              Two-way shock grids against the base case. Each cell shows the resulting metric and its delta versus base — sized for the committee underwriting band rather than a single point estimate.
+              Two-way shock grids against the base case. Each cell shows the resulting metric and
+              its delta versus base — sized for the committee underwriting band rather than a single
+              point estimate.
             </p>
             <div className="mt-5 grid gap-5 lg:grid-cols-2">
               {sensitivityGrids.map((grid) => {
@@ -3211,7 +3181,8 @@ export default async function SampleReportPage({
                                     </td>
                                   );
                                 }
-                                const sign = cell.deltaPct === 0 ? '' : cell.deltaPct > 0 ? '+' : '';
+                                const sign =
+                                  cell.deltaPct === 0 ? '' : cell.deltaPct > 0 ? '+' : '';
                                 const tone =
                                   cell.deltaPct === 0
                                     ? 'text-white'
@@ -3247,7 +3218,9 @@ export default async function SampleReportPage({
             <div>
               <div className="eyebrow">Confidence score breakdown</div>
               <p className="mt-2 max-w-3xl text-sm text-slate-400">
-                Coverage-driven composite. Each external section, structured section, and anchor signal contributes; physical-risk signals subtract. Present (green) and absent (slate) signals are listed below — closing the absent ones lifts the score.
+                Coverage-driven composite. Each external section, structured section, and anchor
+                signal contributes; physical-risk signals subtract. Present (green) and absent
+                (slate) signals are listed below — closing the absent ones lifts the score.
               </p>
             </div>
             <div className="rounded-[16px] border border-white/10 bg-white/[0.03] px-4 py-3 text-right">
@@ -3256,57 +3229,65 @@ export default async function SampleReportPage({
                 {confidenceBreakdown.finalScore.toFixed(1)}
               </div>
               <div className="text-[10px] text-slate-500">
-                {confidenceBreakdown.presentCount} / {confidenceBreakdown.totalCount} positive signals present
+                {confidenceBreakdown.presentCount} / {confidenceBreakdown.totalCount} positive
+                signals present
               </div>
             </div>
           </div>
           <div className="mt-5 grid gap-4 lg:grid-cols-2">
-            {(['External sections', 'Structured sections', 'Geo & price anchors', 'Risk penalties'] as const).map(
-              (group) => {
-                const rows = confidenceBreakdown.signals.filter((s) => s.group === group);
-                if (rows.length === 0) return null;
-                return (
-                  <div
-                    key={group}
-                    className="rounded-[18px] border border-white/10 bg-white/[0.02] p-4"
-                  >
-                    <div className="fine-print">{group}</div>
-                    <ul className="mt-3 space-y-2 text-sm">
-                      {rows.map((row) => {
-                        const isPenalty = row.direction === 'subtract';
-                        const dot = row.present
-                          ? isPenalty
-                            ? 'bg-rose-400'
-                            : 'bg-emerald-400'
-                          : 'bg-slate-700';
-                        const sign = isPenalty ? '−' : '+';
-                        return (
-                          <li
-                            key={row.label}
-                            className="flex items-center justify-between gap-3 rounded-[12px] border border-white/5 bg-white/[0.015] px-3 py-2"
-                          >
-                            <div className="flex items-center gap-2">
-                              <span className={`inline-block h-2 w-2 rounded-full ${dot}`} />
-                              <span className="text-slate-200">{row.label}</span>
-                            </div>
-                            <span className="font-mono text-xs text-slate-400">
-                              {row.present
-                                ? `${sign}${row.weight.toFixed(2)} pts`
-                                : isPenalty
-                                  ? '—'
-                                  : `+${row.weight.toFixed(2)} pts (missing)`}
-                            </span>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
-                );
-              }
-            )}
+            {(
+              [
+                'External sections',
+                'Structured sections',
+                'Geo & price anchors',
+                'Risk penalties'
+              ] as const
+            ).map((group) => {
+              const rows = confidenceBreakdown.signals.filter((s) => s.group === group);
+              if (rows.length === 0) return null;
+              return (
+                <div
+                  key={group}
+                  className="rounded-[18px] border border-white/10 bg-white/[0.02] p-4"
+                >
+                  <div className="fine-print">{group}</div>
+                  <ul className="mt-3 space-y-2 text-sm">
+                    {rows.map((row) => {
+                      const isPenalty = row.direction === 'subtract';
+                      const dot = row.present
+                        ? isPenalty
+                          ? 'bg-rose-400'
+                          : 'bg-emerald-400'
+                        : 'bg-slate-700';
+                      const sign = isPenalty ? '−' : '+';
+                      return (
+                        <li
+                          key={row.label}
+                          className="flex items-center justify-between gap-3 rounded-[12px] border border-white/5 bg-white/[0.015] px-3 py-2"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className={`inline-block h-2 w-2 rounded-full ${dot}`} />
+                            <span className="text-slate-200">{row.label}</span>
+                          </div>
+                          <span className="font-mono text-xs text-slate-400">
+                            {row.present
+                              ? `${sign}${row.weight.toFixed(2)} pts`
+                              : isPenalty
+                                ? '—'
+                                : `+${row.weight.toFixed(2)} pts (missing)`}
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              );
+            })}
           </div>
           <p className="mt-4 text-[11px] text-slate-500">
-            Per-signal weights are the data-center underwriting framework’s nominal contributions. The final score is clamped between 4.5 and 9.9 and adjusted by a credit overlay; the listed contributions are illustrative and do not reconcile exactly to the printed value.
+            Per-signal weights are the data-center underwriting framework’s nominal contributions.
+            The final score is clamped between 4.5 and 9.9 and adjusted by a credit overlay; the
+            listed contributions are illustrative and do not reconcile exactly to the printed value.
           </p>
         </Card>
       </section>
@@ -3331,9 +3312,7 @@ export default async function SampleReportPage({
                   <Badge tone="good">avg {sponsorTrack.averageEquityMultiple.toFixed(2)}x</Badge>
                 ) : null}
                 {sponsorTrack.averageGrossIrrPct !== null ? (
-                  <Badge tone="good">
-                    avg IRR {sponsorTrack.averageGrossIrrPct.toFixed(1)}%
-                  </Badge>
+                  <Badge tone="good">avg IRR {sponsorTrack.averageGrossIrrPct.toFixed(1)}%</Badge>
                 ) : null}
                 <Badge>{sponsorTrack.priorDealCount} prior</Badge>
                 {sponsorTrack.oldestVintage ? (
@@ -3391,7 +3370,7 @@ export default async function SampleReportPage({
         </section>
       ) : null}
 
-      {(latestRun.keyRisks.length > 0 || latestRun.ddChecklist.length > 0) ? (
+      {latestRun.keyRisks.length > 0 || latestRun.ddChecklist.length > 0 ? (
         <section id="im-risks" className="app-shell py-4">
           <div className="grid gap-4 lg:grid-cols-2">
             {latestRun.keyRisks.length > 0 ? (
@@ -3401,7 +3380,8 @@ export default async function SampleReportPage({
                   <Badge tone="warn">{latestRun.keyRisks.length}</Badge>
                 </div>
                 <p className="mt-2 text-sm text-slate-400">
-                  Outstanding underwriting risks. Each item requires committee discussion; unresolved risks reduce confidence and may shift the recommendation.
+                  Outstanding underwriting risks. Each item requires committee discussion;
+                  unresolved risks reduce confidence and may shift the recommendation.
                 </p>
                 <ul className="mt-5 space-y-2">
                   {latestRun.keyRisks.map((risk, idx) => (
@@ -3457,13 +3437,14 @@ export default async function SampleReportPage({
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="eyebrow">Counterparty financials</div>
               <Badge>
-                {asset.counterparties.length} counterpart{asset.counterparties.length === 1 ? 'y' : 'ies'}
+                {asset.counterparties.length} counterpart
+                {asset.counterparties.length === 1 ? 'y' : 'ies'}
               </Badge>
             </div>
             <p className="mt-2 max-w-3xl text-sm text-slate-400">
-              Filed financials, derived credit ratios benchmarked against KR sponsor peer
-              medians, 10-year projection, CFADS-based DSCR forward path, distribution
-              waterfall, liquidity ladder, and 4×4 sensitivity grid.
+              Filed financials, derived credit ratios benchmarked against KR sponsor peer medians,
+              10-year projection, CFADS-based DSCR forward path, distribution waterfall, liquidity
+              ladder, and 4×4 sensitivity grid.
             </p>
 
             {(() => {
@@ -3499,9 +3480,7 @@ export default async function SampleReportPage({
                             Avg score
                           </div>
                           <div className="mt-1 font-mono text-sm font-semibold text-white">
-                            {rollup!.averageScore !== null
-                              ? rollup!.averageScore.toFixed(0)
-                              : '—'}
+                            {rollup!.averageScore !== null ? rollup!.averageScore.toFixed(0) : '—'}
                           </div>
                         </div>
                         <div>
@@ -3529,17 +3508,11 @@ export default async function SampleReportPage({
                             Risk mix
                           </div>
                           <div className="mt-1 font-mono text-[11px]">
-                            <span className="text-emerald-300">
-                              {rollup!.riskMix.LOW} LOW
-                            </span>
+                            <span className="text-emerald-300">{rollup!.riskMix.LOW} LOW</span>
                             {' · '}
-                            <span className="text-amber-300">
-                              {rollup!.riskMix.MODERATE} MOD
-                            </span>
+                            <span className="text-amber-300">{rollup!.riskMix.MODERATE} MOD</span>
                             {' · '}
-                            <span className="text-rose-300">
-                              {rollup!.riskMix.HIGH} HIGH
-                            </span>
+                            <span className="text-rose-300">{rollup!.riskMix.HIGH} HIGH</span>
                           </div>
                           {rollup!.weakestCounterpartyName ? (
                             <div className="mt-1 text-[10px] text-slate-500">
@@ -3610,17 +3583,14 @@ export default async function SampleReportPage({
                     ? asset.taxAssumption.corporateTaxPct / 100
                     : DEFAULT_CASH_FLOW_ASSUMPTIONS.taxRate;
                 const principalRepayment =
-                  bs.totalDebtKrw !== null
-                    ? bs.totalDebtKrw * (amortInput.value / 100)
-                    : 0;
+                  bs.totalDebtKrw !== null ? bs.totalDebtKrw * (amortInput.value / 100) : 0;
                 const cashFlow = buildCashFlowSlice({
                   ebitdaKrw: latestFs.ebitdaKrw,
                   revenueKrw: latestFs.revenueKrw,
                   interestExpenseKrw: latestFs.interestExpenseKrw,
                   taxRate: taxRateDecimal,
                   daRateOfRevenue: DEFAULT_CASH_FLOW_ASSUMPTIONS.daRateOfRevenue,
-                  maintCapexRateOfRevenue:
-                    DEFAULT_CASH_FLOW_ASSUMPTIONS.maintCapexRateOfRevenue,
+                  maintCapexRateOfRevenue: DEFAULT_CASH_FLOW_ASSUMPTIONS.maintCapexRateOfRevenue,
                   wcChangeRate: DEFAULT_CASH_FLOW_ASSUMPTIONS.wcChangeRate,
                   principalRepaymentKrw: principalRepayment
                 });
@@ -3674,9 +3644,7 @@ export default async function SampleReportPage({
                       ? 'border-rose-300/30 bg-rose-300/[0.04] text-rose-200'
                       : 'border-amber-300/30 bg-amber-300/[0.04] text-amber-200';
                 const fmt = (v: number | null) =>
-                  v !== null
-                    ? formatCurrencyFromKrwAtRate(v, displayCurrency, fxRateToKrw)
-                    : '—';
+                  v !== null ? formatCurrencyFromKrwAtRate(v, displayCurrency, fxRateToKrw) : '—';
                 return (
                   <div
                     key={cp.id}
@@ -3689,14 +3657,25 @@ export default async function SampleReportPage({
                           <div className="text-base font-semibold text-white">{cp.name}</div>
                           {(() => {
                             const provSys = latestFs.provenanceSystem ?? '';
-                            const sourceLabel =
-                              provSys.toUpperCase().includes('DART')
-                                ? { text: 'DART filing', tone: 'border-emerald-300/30 bg-emerald-300/[0.04] text-emerald-200' }
-                                : provSys.toUpperCase().includes('AUDIT')
-                                  ? { text: 'Audited', tone: 'border-emerald-300/30 bg-emerald-300/[0.04] text-emerald-200' }
-                                  : provSys.toUpperCase().includes('UPLOAD')
-                                    ? { text: 'Uploaded filing', tone: 'border-amber-300/30 bg-amber-300/[0.04] text-amber-200' }
-                                    : { text: 'Management estimate', tone: 'border-slate-300/30 bg-slate-300/[0.04] text-slate-300' };
+                            const sourceLabel = provSys.toUpperCase().includes('DART')
+                              ? {
+                                  text: 'DART filing',
+                                  tone: 'border-emerald-300/30 bg-emerald-300/[0.04] text-emerald-200'
+                                }
+                              : provSys.toUpperCase().includes('AUDIT')
+                                ? {
+                                    text: 'Audited',
+                                    tone: 'border-emerald-300/30 bg-emerald-300/[0.04] text-emerald-200'
+                                  }
+                                : provSys.toUpperCase().includes('UPLOAD')
+                                  ? {
+                                      text: 'Uploaded filing',
+                                      tone: 'border-amber-300/30 bg-amber-300/[0.04] text-amber-200'
+                                    }
+                                  : {
+                                      text: 'Management estimate',
+                                      tone: 'border-slate-300/30 bg-slate-300/[0.04] text-slate-300'
+                                    };
                             return (
                               <span
                                 className={`rounded-[8px] border px-2 py-0.5 font-mono text-[9px] uppercase tracking-wide ${sourceLabel.tone}`}
@@ -3744,7 +3723,9 @@ export default async function SampleReportPage({
                                 <th className="px-2 py-2 font-semibold">Period</th>
                                 <th className="px-2 py-2 text-right font-semibold">Revenue</th>
                                 <th className="px-2 py-2 text-right font-semibold">EBITDA</th>
-                                <th className="px-2 py-2 text-right font-semibold">EBITDA margin</th>
+                                <th className="px-2 py-2 text-right font-semibold">
+                                  EBITDA margin
+                                </th>
                                 <th className="px-2 py-2 text-right font-semibold">Total debt</th>
                                 <th className="px-2 py-2 text-right font-semibold">Equity</th>
                               </tr>
@@ -3752,9 +3733,8 @@ export default async function SampleReportPage({
                             <tbody className="divide-y divide-white/5 text-slate-200">
                               {cp.financialStatements!.slice(0, 5).map((row, idx, arr) => {
                                 const next = arr[idx + 1] ?? null;
-                                const num = (
-                                  d: { toNumber: () => number } | null | undefined
-                                ) => (d ? d.toNumber() : null);
+                                const num = (d: { toNumber: () => number } | null | undefined) =>
+                                  d ? d.toNumber() : null;
                                 const rev = num(row.revenueKrw);
                                 const ebd = num(row.ebitdaKrw);
                                 const debt = num(row.totalDebtKrw);
@@ -3762,20 +3742,15 @@ export default async function SampleReportPage({
                                 const margin = rev && ebd ? (ebd / rev) * 100 : null;
                                 const yoyRev =
                                   next && rev !== null && num(next.revenueKrw)
-                                    ? ((rev - num(next.revenueKrw)!) /
-                                        num(next.revenueKrw)!) *
-                                      100
+                                    ? ((rev - num(next.revenueKrw)!) / num(next.revenueKrw)!) * 100
                                     : null;
                                 const yoyEbd =
                                   next && ebd !== null && num(next.ebitdaKrw)
-                                    ? ((ebd - num(next.ebitdaKrw)!) /
-                                        num(next.ebitdaKrw)!) *
-                                      100
+                                    ? ((ebd - num(next.ebitdaKrw)!) / num(next.ebitdaKrw)!) * 100
                                     : null;
                                 const arrow = (delta: number | null) => {
                                   if (delta === null) return null;
-                                  const tone =
-                                    delta > 0 ? 'text-emerald-300' : 'text-rose-300';
+                                  const tone = delta > 0 ? 'text-emerald-300' : 'text-rose-300';
                                   const sign = delta > 0 ? '▲' : '▼';
                                   return (
                                     <div className={`text-[9px] ${tone}`}>
@@ -3786,8 +3761,7 @@ export default async function SampleReportPage({
                                 return (
                                   <tr key={`${row.fiscalYear ?? idx}`}>
                                     <td className="px-2 py-2 font-mono text-slate-400">
-                                      {row.fiscalPeriod ?? 'FY'}{' '}
-                                      {row.fiscalYear ?? ''}
+                                      {row.fiscalPeriod ?? 'FY'} {row.fiscalYear ?? ''}
                                     </td>
                                     <td className="px-2 py-2 text-right font-mono">
                                       {rev !== null
@@ -3880,11 +3854,14 @@ export default async function SampleReportPage({
                           </div>
                         </dl>
                         <p className="mt-3 text-[10px] leading-4 text-slate-500">
-                          D&amp;A: {(DEFAULT_CASH_FLOW_ASSUMPTIONS.daRateOfRevenue * 100).toFixed(1)}% of revenue (sector proxy);
-                          tax: {(taxRateDecimal * 100).toFixed(1)}%
-                          {asset.taxAssumption?.corporateTaxPct !== undefined && asset.taxAssumption.corporateTaxPct !== null
+                          D&amp;A:{' '}
+                          {(DEFAULT_CASH_FLOW_ASSUMPTIONS.daRateOfRevenue * 100).toFixed(1)}% of
+                          revenue (sector proxy); tax: {(taxRateDecimal * 100).toFixed(1)}%
+                          {asset.taxAssumption?.corporateTaxPct !== undefined &&
+                          asset.taxAssumption.corporateTaxPct !== null
                             ? ' (asset taxAssumption)'
-                            : ' (default)'}.
+                            : ' (default)'}
+                          .
                         </p>
                       </div>
                       <div className="rounded-[14px] border border-white/10 bg-white/[0.02] p-4">
@@ -3935,7 +3912,9 @@ export default async function SampleReportPage({
                         <dl className="mt-3 space-y-1.5 text-xs">
                           <div className="flex justify-between">
                             <dt className="text-slate-400">Operating cash flow</dt>
-                            <dd className="font-mono text-white">{fmt(cashFlow.operatingCashFlowKrw)}</dd>
+                            <dd className="font-mono text-white">
+                              {fmt(cashFlow.operatingCashFlowKrw)}
+                            </dd>
                           </div>
                           <div className="flex justify-between">
                             <dt className="text-slate-400">Maintenance capex</dt>
@@ -3962,20 +3941,31 @@ export default async function SampleReportPage({
                       <div className="rounded-[14px] border border-white/10 bg-white/[0.02] p-4">
                         <div className="fine-print">CFADS DSCR (lender-grade)</div>
                         <div className="mt-3 text-3xl font-semibold text-white">
-                          {cashFlow.cfadsDscr !== null
-                            ? `${cashFlow.cfadsDscr.toFixed(2)}x`
-                            : '—'}
+                          {cashFlow.cfadsDscr !== null ? `${cashFlow.cfadsDscr.toFixed(2)}x` : '—'}
                         </div>
                         <p className="mt-2 text-[11px] leading-5 text-slate-400">
                           CFADS ÷ debt service (interest + scheduled principal). Tighter than the
-                          headline EBITDA / interest coverage above because it nets out cash tax
-                          and maintenance capex. The 2.0x lender minimum is the typical project-
-                          finance covenant.
+                          headline EBITDA / interest coverage above because it nets out cash tax and
+                          maintenance capex. The 2.0x lender minimum is the typical project- finance
+                          covenant.
                         </p>
                         <div className="mt-3 grid gap-1.5 text-[10px] text-slate-500">
-                          <div>D&amp;A proxy: {(DEFAULT_CASH_FLOW_ASSUMPTIONS.daRateOfRevenue * 100).toFixed(1)}% of revenue</div>
-                          <div>Maint capex proxy: {(DEFAULT_CASH_FLOW_ASSUMPTIONS.maintCapexRateOfRevenue * 100).toFixed(1)}% of revenue</div>
-                          <div>WC drag: {(DEFAULT_CASH_FLOW_ASSUMPTIONS.wcChangeRate * 100).toFixed(1)}% of revenue</div>
+                          <div>
+                            D&amp;A proxy:{' '}
+                            {(DEFAULT_CASH_FLOW_ASSUMPTIONS.daRateOfRevenue * 100).toFixed(1)}% of
+                            revenue
+                          </div>
+                          <div>
+                            Maint capex proxy:{' '}
+                            {(DEFAULT_CASH_FLOW_ASSUMPTIONS.maintCapexRateOfRevenue * 100).toFixed(
+                              1
+                            )}
+                            % of revenue
+                          </div>
+                          <div>
+                            WC drag: {(DEFAULT_CASH_FLOW_ASSUMPTIONS.wcChangeRate * 100).toFixed(1)}
+                            % of revenue
+                          </div>
                           <div>Tax rate: {(taxRateDecimal * 100).toFixed(1)}%</div>
                         </div>
                       </div>
@@ -3991,10 +3981,7 @@ export default async function SampleReportPage({
                               : a.severity === 'warning'
                                 ? 'border-amber-300/40 bg-amber-300/[0.05]'
                                 : 'border-amber-300/20 bg-amber-300/[0.03]';
-                          const dot =
-                            a.severity === 'critical'
-                              ? 'bg-rose-300'
-                              : 'bg-amber-300';
+                          const dot = a.severity === 'critical' ? 'bg-rose-300' : 'bg-amber-300';
                           const label =
                             a.severity === 'critical'
                               ? 'Critical'
@@ -4020,9 +4007,7 @@ export default async function SampleReportPage({
                                     </span>
                                     ; worst{' '}
                                     <span className="font-mono text-slate-200">
-                                      {a.worstValue !== null
-                                        ? `${a.worstValue.toFixed(2)}x`
-                                        : '—'}
+                                      {a.worstValue !== null ? `${a.worstValue.toFixed(2)}x` : '—'}
                                     </span>{' '}
                                     in {a.worstYear ?? '—'}.
                                   </p>
@@ -4116,7 +4101,9 @@ export default async function SampleReportPage({
                     {liquidity.rows.length > 0 && cp.role === 'SPONSOR' ? (
                       <div className="mt-5 rounded-[14px] border border-white/10 bg-white/[0.02] p-4">
                         <div className="flex flex-wrap items-baseline justify-between gap-2">
-                          <div className="fine-print">Liquidity ladder — asset facility vs sponsor liquid resources</div>
+                          <div className="fine-print">
+                            Liquidity ladder — asset facility vs sponsor liquid resources
+                          </div>
                           <div className="text-[10px] text-slate-500">
                             12mo coverage:{' '}
                             <span
@@ -4149,14 +4136,18 @@ export default async function SampleReportPage({
                               {liquidity.rows.map((row) => (
                                 <tr key={row.facilityKey}>
                                   <td className="px-2 py-2 text-slate-300">{row.label}</td>
-                                  <td className="px-2 py-2 text-right font-mono">{fmt(row.drawnKrw)}</td>
+                                  <td className="px-2 py-2 text-right font-mono">
+                                    {fmt(row.drawnKrw)}
+                                  </td>
                                   <td className="px-2 py-2 text-right font-mono">
                                     {row.interestRatePct !== null
                                       ? `${row.interestRatePct.toFixed(2)}%`
                                       : '—'}
                                   </td>
                                   <td className="px-2 py-2 text-right font-mono">
-                                    {row.termYears !== null ? `${row.termYears.toFixed(0)} yr` : '—'}
+                                    {row.termYears !== null
+                                      ? `${row.termYears.toFixed(0)} yr`
+                                      : '—'}
                                   </td>
                                   <td className="px-2 py-2 text-right font-mono">
                                     {fmt(row.yearlyAmortizationKrw)}
@@ -4229,7 +4220,9 @@ export default async function SampleReportPage({
                             <thead>
                               <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
                                 <th className="px-2 py-2 font-semibold">Tier</th>
-                                <th className="px-2 py-2 text-right font-semibold">IRR threshold</th>
+                                <th className="px-2 py-2 text-right font-semibold">
+                                  IRR threshold
+                                </th>
                                 <th className="px-2 py-2 text-right font-semibold">LP</th>
                                 <th className="px-2 py-2 text-right font-semibold">GP</th>
                                 <th className="px-2 py-2 font-semibold">Description</th>
@@ -4282,7 +4275,9 @@ export default async function SampleReportPage({
 
                     {/* Credit ratios table */}
                     <div className="mt-5">
-                      <div className="fine-print">Credit ratios — vs typical PE-sponsor thresholds</div>
+                      <div className="fine-print">
+                        Credit ratios — vs typical PE-sponsor thresholds
+                      </div>
                       <div className="mt-3 overflow-x-auto rounded-[14px] border border-white/10">
                         <table className="w-full text-xs">
                           <thead>
@@ -4406,7 +4401,9 @@ export default async function SampleReportPage({
                                   <td className="px-2 py-2 text-right font-mono text-slate-400">
                                     {fmtVal(c.pct75)}
                                   </td>
-                                  <td className={`px-2 py-2 text-right text-[10px] font-mono ${bandTone}`}>
+                                  <td
+                                    className={`px-2 py-2 text-right text-[10px] font-mono ${bandTone}`}
+                                  >
                                     {bandLabel}
                                   </td>
                                 </tr>
@@ -4423,9 +4420,8 @@ export default async function SampleReportPage({
                         <div className="flex flex-wrap items-baseline justify-between gap-2">
                           <div className="fine-print">10-year projection</div>
                           <div className="text-[10px] text-slate-500">
-                            Revenue growth: {growthInput.value.toFixed(1)}%/yr ·
-                            {' '}Debt amort: {amortInput.value.toFixed(1)}%/yr ·
-                            {' '}Margin held constant
+                            Revenue growth: {growthInput.value.toFixed(1)}%/yr · Debt amort:{' '}
+                            {amortInput.value.toFixed(1)}%/yr · Margin held constant
                           </div>
                         </div>
                         <div className="mt-3 overflow-x-auto rounded-[14px] border border-white/10">
@@ -4446,34 +4442,49 @@ export default async function SampleReportPage({
                               {projection.map((row, idx) => {
                                 const cfadsRow = cfadsProjection[idx] ?? null;
                                 return (
-                                <tr key={row.year}>
-                                  <td className="px-2 py-2 font-mono text-slate-400">{row.year}</td>
-                                  <td className="px-2 py-2 text-right font-mono">{fmt(row.revenueKrw)}</td>
-                                  <td className="px-2 py-2 text-right font-mono">{fmt(row.ebitdaKrw)}</td>
-                                  <td className="px-2 py-2 text-right font-mono text-slate-400">
-                                    {row.ebitdaMarginPct !== null
-                                      ? `${row.ebitdaMarginPct.toFixed(1)}%`
-                                      : '—'}
-                                  </td>
-                                  <td className="px-2 py-2 text-right font-mono">{fmt(row.totalDebtKrw)}</td>
-                                  <td className="px-2 py-2 text-right font-mono">
-                                    {row.leverage !== null ? `${row.leverage.toFixed(2)}x` : '—'}
-                                  </td>
-                                  <td className="px-2 py-2 text-right font-mono">
-                                    {row.interestCoverage !== null
-                                      ? `${row.interestCoverage.toFixed(2)}x`
-                                      : '—'}
-                                  </td>
-                                  <td className="px-2 py-2 text-right font-mono">
-                                    {cfadsRow?.cfadsDscr !== null && cfadsRow?.cfadsDscr !== undefined
-                                      ? (
-                                        <span className={cfadsRow.cfadsDscr >= 2.0 ? 'text-emerald-300' : 'text-rose-300'}>
+                                  <tr key={row.year}>
+                                    <td className="px-2 py-2 font-mono text-slate-400">
+                                      {row.year}
+                                    </td>
+                                    <td className="px-2 py-2 text-right font-mono">
+                                      {fmt(row.revenueKrw)}
+                                    </td>
+                                    <td className="px-2 py-2 text-right font-mono">
+                                      {fmt(row.ebitdaKrw)}
+                                    </td>
+                                    <td className="px-2 py-2 text-right font-mono text-slate-400">
+                                      {row.ebitdaMarginPct !== null
+                                        ? `${row.ebitdaMarginPct.toFixed(1)}%`
+                                        : '—'}
+                                    </td>
+                                    <td className="px-2 py-2 text-right font-mono">
+                                      {fmt(row.totalDebtKrw)}
+                                    </td>
+                                    <td className="px-2 py-2 text-right font-mono">
+                                      {row.leverage !== null ? `${row.leverage.toFixed(2)}x` : '—'}
+                                    </td>
+                                    <td className="px-2 py-2 text-right font-mono">
+                                      {row.interestCoverage !== null
+                                        ? `${row.interestCoverage.toFixed(2)}x`
+                                        : '—'}
+                                    </td>
+                                    <td className="px-2 py-2 text-right font-mono">
+                                      {cfadsRow?.cfadsDscr !== null &&
+                                      cfadsRow?.cfadsDscr !== undefined ? (
+                                        <span
+                                          className={
+                                            cfadsRow.cfadsDscr >= 2.0
+                                              ? 'text-emerald-300'
+                                              : 'text-rose-300'
+                                          }
+                                        >
                                           {cfadsRow.cfadsDscr.toFixed(2)}x
                                         </span>
-                                      )
-                                      : '—'}
-                                  </td>
-                                </tr>
+                                      ) : (
+                                        '—'
+                                      )}
+                                    </td>
+                                  </tr>
                                 );
                               })}
                             </tbody>
@@ -4511,10 +4522,13 @@ export default async function SampleReportPage({
                           <table className="w-full text-xs">
                             <thead>
                               <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
-                                <th className="px-2 py-2 font-semibold">EBITDA shock ↓ / Rate shock →</th>
+                                <th className="px-2 py-2 font-semibold">
+                                  EBITDA shock ↓ / Rate shock →
+                                </th>
                                 {sensitivityMatrix.rateShocks.map((rs) => (
                                   <th key={rs} className="px-2 py-2 text-right font-semibold">
-                                    {rs >= 0 ? '+' : ''}{rs} bps
+                                    {rs >= 0 ? '+' : ''}
+                                    {rs} bps
                                   </th>
                                 ))}
                               </tr>
@@ -4556,12 +4570,12 @@ export default async function SampleReportPage({
                           </table>
                         </div>
                         <p className="mt-3 text-[10px] leading-4 text-slate-500">
-                          Each cell shows interest coverage and leverage at the shock combo.
-                          Green = covenant pass; rose = covenant breach. Rate shock conservatively
-                          assumes 100% of the debt balance reprices on a parallel curve shift —
-                          actual exposure depends on the fixed/floating split per facility, which
-                          is not captured in the current schema. Treat the grid as the worst-case
-                          mark; partial fixed-rate hedging would mute the rate-axis shocks.
+                          Each cell shows interest coverage and leverage at the shock combo. Green =
+                          covenant pass; rose = covenant breach. Rate shock conservatively assumes
+                          100% of the debt balance reprices on a parallel curve shift — actual
+                          exposure depends on the fixed/floating split per facility, which is not
+                          captured in the current schema. Treat the grid as the worst-case mark;
+                          partial fixed-rate hedging would mute the rate-axis shocks.
                         </p>
                       </div>
                     ) : null}
@@ -4592,7 +4606,8 @@ export default async function SampleReportPage({
               </Badge>
             </div>
             <p className="mt-2 max-w-3xl text-sm text-slate-400">
-              Source documents on file. Each version anchors specific evidence — lease schedule, power study, IC model, lender term sheet — and links through to the original filing.
+              Source documents on file. Each version anchors specific evidence — lease schedule,
+              power study, IC model, lender term sheet — and links through to the original filing.
             </p>
             <div className="mt-5 overflow-x-auto rounded-[14px] border border-white/10">
               <table className="w-full text-xs">
@@ -4664,7 +4679,9 @@ export default async function SampleReportPage({
               </Badge>
             </div>
             <p className="mt-2 max-w-3xl text-sm text-slate-400">
-              Investment committee packets prepared on the asset. Decision summary records the outcome (CONDITIONAL / APPROVED / DEFERRED / DECLINED); follow-up captures the resulting action items.
+              Investment committee packets prepared on the asset. Decision summary records the
+              outcome (CONDITIONAL / APPROVED / DEFERRED / DECLINED); follow-up captures the
+              resulting action items.
             </p>
             <ul className="mt-5 space-y-3">
               {asset.committeePackets.map((p) => {
@@ -4700,14 +4717,16 @@ export default async function SampleReportPage({
                     {p.decisionSummary ? (
                       <p className="mt-3 text-sm leading-6 text-slate-200">
                         <span className="text-[10px] uppercase tracking-wide text-slate-500">
-                          Decision · </span>
+                          Decision ·{' '}
+                        </span>
                         {p.decisionSummary}
                       </p>
                     ) : null}
                     {p.followUpSummary ? (
                       <p className="mt-2 text-sm leading-6 text-slate-300">
                         <span className="text-[10px] uppercase tracking-wide text-slate-500">
-                          Follow-up · </span>
+                          Follow-up ·{' '}
+                        </span>
                         {p.followUpSummary}
                       </p>
                     ) : null}
@@ -4727,9 +4746,9 @@ export default async function SampleReportPage({
                 <div className="eyebrow">Side-letter terms</div>
                 <p className="mt-2 max-w-3xl text-sm text-slate-400">
                   LP-specific carve-outs from the LPA. Most-favored-nation entries propagate to
-                  every LP at or below the threshold; co-investment, fee, ESG and reporting
-                  terms apply per signing LP. The IM surfaces the register so the committee can
-                  confirm fund-economics consistency before close.
+                  every LP at or below the threshold; co-investment, fee, ESG and reporting terms
+                  apply per signing LP. The IM surfaces the register so the committee can confirm
+                  fund-economics consistency before close.
                 </p>
               </div>
               <Badge>
@@ -4797,7 +4816,9 @@ export default async function SampleReportPage({
               <Badge>{asset.featureSnapshots.length}</Badge>
             </div>
             <p className="mt-2 max-w-3xl text-sm text-slate-400">
-              Underwriting input bundles by namespace (site, power, revenue, legal, permit, market, readiness, satellite). Each snapshot captures the inputs read at run time, supporting exact reproducibility on re-run.
+              Underwriting input bundles by namespace (site, power, revenue, legal, permit, market,
+              readiness, satellite). Each snapshot captures the inputs read at run time, supporting
+              exact reproducibility on re-run.
             </p>
             <div className="mt-5 grid gap-3 md:grid-cols-2 lg:grid-cols-4">
               {asset.featureSnapshots.map((s) => (
@@ -4815,7 +4836,10 @@ export default async function SampleReportPage({
                     {formatDate(s.snapshotDate)}
                   </div>
                   {s.sourceVersion ? (
-                    <div className="mt-1 truncate text-[10px] text-slate-600" title={s.sourceVersion}>
+                    <div
+                      className="mt-1 truncate text-[10px] text-slate-600"
+                      title={s.sourceVersion}
+                    >
                       v{s.sourceVersion}
                     </div>
                   ) : null}
@@ -4836,7 +4860,9 @@ export default async function SampleReportPage({
               </Badge>
             </div>
             <p className="mt-2 max-w-3xl text-sm text-slate-400">
-              On-chain registration. The identity registry gates KYC; the compliance contract enforces transfer rules; lockup, max-holders, and country-restriction modules deploy where configured.
+              On-chain registration. The identity registry gates KYC; the compliance contract
+              enforces transfer rules; lockup, max-holders, and country-restriction modules deploy
+              where configured.
             </p>
             <dl className="mt-5 grid gap-3 text-sm md:grid-cols-2">
               <Row label="Chain ID">{asset.tokenization.chainId}</Row>
@@ -4844,7 +4870,9 @@ export default async function SampleReportPage({
                 <span className="break-all">{asset.tokenization.registryAssetId}</span>
               </Row>
               <Row label="Token address">
-                <span className="break-all font-mono text-xs">{asset.tokenization.tokenAddress}</span>
+                <span className="break-all font-mono text-xs">
+                  {asset.tokenization.tokenAddress}
+                </span>
               </Row>
               <Row label="Identity registry">
                 <span className="break-all font-mono text-xs">
@@ -4871,9 +4899,9 @@ export default async function SampleReportPage({
               <div>
                 <div className="eyebrow">Audit trail</div>
                 <p className="mt-2 max-w-3xl text-sm text-slate-400">
-                  Recent system events on the asset, valuation run, and counterparties.
-                  Establishes who touched the underwriting most recently — required for
-                  committee review of data lineage and for SOC-2 / fund-administrator review.
+                  Recent system events on the asset, valuation run, and counterparties. Establishes
+                  who touched the underwriting most recently — required for committee review of data
+                  lineage and for SOC-2 / fund-administrator review.
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -4884,12 +4912,9 @@ export default async function SampleReportPage({
               </div>
             </div>
             <div className="mt-3 text-[11px] text-slate-500">
-              Last event:{' '}
-              {auditTrail.lastEventAt ? formatDate(auditTrail.lastEventAt) : '—'} ·
+              Last event: {auditTrail.lastEventAt ? formatDate(auditTrail.lastEventAt) : '—'} ·
               Distinct actors:{' '}
-              <span className="font-mono text-slate-300">
-                {auditTrail.uniqueActors.join(', ')}
-              </span>
+              <span className="font-mono text-slate-300">{auditTrail.uniqueActors.join(', ')}</span>
             </div>
             <div className="mt-4 overflow-x-auto rounded-[14px] border border-white/10">
               <table className="w-full text-xs">
@@ -4917,9 +4942,7 @@ export default async function SampleReportPage({
                         <td className="px-2 py-2 font-mono text-[11px] text-slate-300">
                           {e.action}
                         </td>
-                        <td className="px-2 py-2 text-[11px] text-slate-400">
-                          {e.entityType}
-                        </td>
+                        <td className="px-2 py-2 text-[11px] text-slate-400">{e.entityType}</td>
                         <td
                           className={`px-2 py-2 text-right font-mono text-[10px] ${
                             ok ? 'text-emerald-300' : 'text-rose-300'
@@ -5177,11 +5200,7 @@ function FreshnessDot({
   const f = classifyFreshness(observedAt);
   if (!f.band) return null;
   const dotTone =
-    f.band === 'fresh'
-      ? 'bg-emerald-300'
-      : f.band === 'recent'
-        ? 'bg-amber-300'
-        : 'bg-rose-300';
+    f.band === 'fresh' ? 'bg-emerald-300' : f.band === 'recent' ? 'bg-amber-300' : 'bg-rose-300';
   const textTone =
     f.band === 'fresh'
       ? 'text-emerald-300'
@@ -5189,10 +5208,7 @@ function FreshnessDot({
         ? 'text-amber-300'
         : 'text-rose-300';
   return (
-    <span
-      className="inline-flex items-center gap-1.5 text-[10px]"
-      title={`Observed ${f.label}`}
-    >
+    <span className="inline-flex items-center gap-1.5 text-[10px]" title={`Observed ${f.label}`}>
       <span className={`inline-block h-1.5 w-1.5 rounded-full ${dotTone}`} />
       <span className={textTone}>{label ?? f.label}</span>
     </span>
