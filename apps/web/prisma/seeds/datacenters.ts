@@ -14,6 +14,7 @@ import {
   SourceStatus
 } from '@prisma/client';
 import { ingestFinancialStatement } from '../../lib/services/financial-statements';
+import { seedAssetCounterpartyFinancials } from './financials';
 import { promoteAssetSnapshotsToFeatures } from '../../lib/services/feature-promotion';
 import {
   buildMacroRegimeProvenance,
@@ -518,6 +519,7 @@ export async function seedAsset(prisma: PrismaClient, input: SeedAssetInput) {
       `Interest expense KRW ${Math.round(input.capexAssumptionKrw * 0.008)}.`
     ].join(' ')
   });
+  await seedAssetCounterpartyFinancials(prisma, asset.id, input.assetCode);
   const creditAssessments = await prisma.creditAssessment.findMany({
     where: {
       assetId: asset.id
@@ -649,4 +651,3 @@ export async function seedAsset(prisma: PrismaClient, input: SeedAssetInput) {
     }
   }
 }
-

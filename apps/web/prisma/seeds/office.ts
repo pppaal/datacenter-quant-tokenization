@@ -12,15 +12,13 @@ import {
   ReviewStatus,
   SourceStatus
 } from '@prisma/client';
+import { seedAssetCounterpartyFinancials } from './financials';
 import { promoteAssetSnapshotsToFeatures } from '../../lib/services/feature-promotion';
 import { buildMacroRegimeSnapshot } from '../../lib/services/macro/series';
 import { stageReviewReadiness } from '../../lib/services/readiness';
 import { buildSensitivityRuns } from '../../lib/services/sensitivity/engine';
 import { buildValuationAnalysis } from '../../lib/services/valuation-engine';
-import {
-  buildMacroSeriesSeedRows,
-  deterministicDocumentHash
-} from './helpers';
+import { buildMacroSeriesSeedRows, deterministicDocumentHash } from './helpers';
 
 /**
  * Seeds the Yeouido Core Office Tower demo asset along with its lease,
@@ -552,6 +550,13 @@ export async function seedOfficeAsset(prisma: PrismaClient) {
 
   await promoteAssetSnapshotsToFeatures(asset.id, prisma);
 
+  await seedAssetCounterpartyFinancials(prisma, asset.id, 'SEOUL-YEOUIDO-01');
+  const creditAssessments = await prisma.creditAssessment.findMany({
+    where: { assetId: asset.id },
+    include: { counterparty: true },
+    orderBy: { createdAt: 'desc' }
+  });
+
   const analysis = await buildValuationAnalysis({
     asset,
     address: asset.address,
@@ -567,7 +572,7 @@ export async function seedOfficeAsset(prisma: PrismaClient) {
     taxAssumption: asset.taxAssumption,
     spvStructure: asset.spvStructure,
     debtFacilities: asset.debtFacilities,
-    creditAssessments: []
+    creditAssessments
   });
   const sensitivityRuns = buildSensitivityRuns(analysis);
   const macroRegime = buildMacroRegimeSnapshot(asset.macroSeries);

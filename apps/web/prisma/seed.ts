@@ -9,10 +9,10 @@ import {
   ReadinessStatus,
   UserRole
 } from '@prisma/client';
+import { seedAssetIntel } from './seeds/asset-intel';
 import { seedCommitteeGovernance } from './seeds/committee';
 import { seedAsset } from './seeds/datacenters';
 import { seedDealExecution } from './seeds/deals';
-import { seedCounterpartyFinancials } from './seeds/financials';
 import { buildCapexLineItems, deterministicDocumentHash } from './seeds/helpers';
 import { seedOfficeAsset } from './seeds/office';
 import { seedPortfolioAndCapitalShell } from './seeds/portfolio';
@@ -60,6 +60,8 @@ async function main() {
   await prisma.readinessProject.deleteMany();
   await prisma.documentVersion.deleteMany();
   await prisma.document.deleteMany();
+  await prisma.aiInsight.deleteMany();
+  await prisma.pipelineProject.deleteMany();
   await prisma.creditAssessment.deleteMany();
   await prisma.financialLineItem.deleteMany();
   await prisma.financialStatement.deleteMany();
@@ -1239,7 +1241,7 @@ async function main() {
   });
 
   await seedOfficeAsset(prisma);
-  await seedCounterpartyFinancials(prisma);
+  await seedAssetIntel(prisma);
   await seedDealExecution(prisma);
   await seedPortfolioAndCapitalShell(prisma);
   await seedCommitteeGovernance(prisma);

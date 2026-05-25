@@ -284,22 +284,24 @@ const ASSET_FINANCIALS: Record<string, CounterpartyFinancialSpec[]> = {
 
 /**
  * Seeds 10 fiscal years of counterparty financial statements (+ line items
- * and credit assessments) for the demo assets, so the asset-dossier financial
- * viewer and the valuation credit overlay have real data to work with.
- * Looks assets up by `assetCode`; silently skips any that are absent.
+ * and credit assessments) for one asset, keyed by `assetCode`. Called from the
+ * per-asset seeders *before* their valuation runs so the credit overlay in the
+ * valuation engine reflects the seeded counterparty credit. No-op when the
+ * asset has no configured counterparties.
  */
-export async function seedCounterpartyFinancials(prisma: PrismaClient): Promise<void> {
+export async function seedAssetCounterpartyFinancials(
+  prisma: PrismaClient,
+  assetId: string,
+  assetCode: string
+): Promise<void> {
+  const specs = ASSET_FINANCIALS[assetCode];
+  if (!specs) return;
+
   const endingFiscalYear = new Date().getFullYear() - 1;
-
-  for (const [assetCode, specs] of Object.entries(ASSET_FINANCIALS)) {
-    const asset = await prisma.asset.findUnique({ where: { assetCode } });
-    if (!asset) continue;
-
-    for (const spec of specs) {
-      await writeCounterpartyFinancials(prisma, asset.id, spec, {
-        years: 10,
-        endingFiscalYear
-      });
-    }
+  for (const spec of specs) {
+    await writeCounterpartyFinancials(prisma, assetId, spec, {
+      years: 10,
+      endingFiscalYear
+    });
   }
 }
