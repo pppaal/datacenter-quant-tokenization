@@ -16,6 +16,10 @@ import { DebtBookForm } from '@/components/admin/debt-book-form';
 import { DocumentUploadForm } from '@/components/admin/document-upload-form';
 import { FeatureSnapshotPanel } from '@/components/admin/feature-snapshot-panel';
 import { FinancialStatementsPanel } from '@/components/admin/financial-statements-panel';
+import { CounterpartyCashflowPanel } from '@/components/admin/counterparty-cashflow-panel';
+import { AssetSustainabilityPanel } from '@/components/admin/asset-sustainability-panel';
+import { AssetRegistryPanel } from '@/components/admin/asset-registry-panel';
+import { AssetInsightsPanel } from '@/components/admin/asset-insights-panel';
 import { LeaseBookForm } from '@/components/admin/lease-book-form';
 import { MicroDataForm } from '@/components/admin/micro-data-form';
 import { ReadinessActionPanel } from '@/components/admin/readiness-action-panel';
@@ -735,6 +739,30 @@ export default async function AssetDetailPage({
         displayCurrency={displayCurrency}
         fxRateToKrw={fxRateToKrw}
       />
+
+      <CounterpartyCashflowPanel
+        statements={financialStatements}
+        displayCurrency={displayCurrency}
+        fxRateToKrw={fxRateToKrw}
+      />
+
+      <AssetSustainabilityPanel
+        insurancePolicies={asset.insurancePolicies}
+        carbonRecords={asset.carbonRecords}
+        sideLetters={asset.sideLetters}
+        displayCurrency={displayCurrency}
+        fxRateToKrw={fxRateToKrw}
+      />
+
+      <AssetRegistryPanel
+        parcels={asset.parcels}
+        buildingRecords={asset.buildingRecords}
+        geoFeatures={asset.geoFeatures}
+        displayCurrency={displayCurrency}
+        fxRateToKrw={fxRateToKrw}
+      />
+
+      <AssetInsightsPanel aiInsights={asset.aiInsights} pipelineProjects={asset.pipelineProjects} />
 
       <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
         <Card>
