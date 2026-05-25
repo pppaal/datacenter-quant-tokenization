@@ -3,24 +3,20 @@
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AssetClass } from '@prisma/client';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { PropertyMap } from '@/components/admin/property-map';
+import type { MapProviderConfig } from '@/lib/maps/config';
 import type { PropertyExplorerData } from '@/lib/services/property-explorer';
 import { formatNumber, toSentenceCase } from '@/lib/utils';
 
 type Props = {
   data: PropertyExplorerData;
+  mapConfig: MapProviderConfig;
 };
 
-function getMarkerTone(assetClass: AssetClass, hasLiveDossier: boolean) {
-  if (hasLiveDossier) return 'border-emerald-400 bg-emerald-500/20 text-emerald-100';
-  if (assetClass === AssetClass.DATA_CENTER) return 'border-sky-400 bg-sky-500/15 text-sky-100';
-  return 'border-amber-300 bg-amber-400/15 text-amber-100';
-}
-
-export function PropertyExplorerPanel({ data }: Props) {
+export function PropertyExplorerPanel({ data, mapConfig }: Props) {
   const router = useRouter();
   const [selectedId, setSelectedId] = useState(data.candidates[0]?.id ?? null);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -123,44 +119,12 @@ export function PropertyExplorerPanel({ data }: Props) {
           </div>
 
           <div className="mt-6 grid gap-6 lg:grid-cols-[1.08fr_0.92fr]">
-            <div className="relative min-h-[480px] overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.18),_transparent_38%),linear-gradient(180deg,rgba(8,47,73,0.65),rgba(15,23,42,0.92))] p-6">
-              <div className="pointer-events-none absolute inset-0 opacity-40 [background-image:linear-gradient(rgba(148,163,184,0.12)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.12)_1px,transparent_1px)] [background-size:54px_54px]" />
-              <div className="pointer-events-none absolute left-6 top-6 rounded-full border border-white/10 bg-slate-950/70 px-4 py-2 text-xs uppercase tracking-[0.28em] text-slate-300">
-                Seoul / Incheon / Pangyo screen
-              </div>
-              {data.candidates.map((candidate) => (
-                <button
-                  key={candidate.id}
-                  type="button"
-                  onClick={() => setSelectedId(candidate.id)}
-                  className={`absolute h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 shadow-[0_0_0_8px_rgba(15,23,42,0.28)] transition ${getMarkerTone(
-                    candidate.assetClass,
-                    candidate.hasLiveDossier
-                  )} ${candidate.id === selected.id ? 'scale-125' : 'hover:scale-110'}`}
-                  style={{
-                    left: `${candidate.mapPosition.leftPct}%`,
-                    top: `${candidate.mapPosition.topPct}%`
-                  }}
-                  aria-label={candidate.name}
-                  data-testid="property-explorer-marker"
-                />
-              ))}
-              <div className="absolute bottom-6 left-6 right-6 grid gap-3 rounded-[24px] border border-white/10 bg-slate-950/78 p-4 backdrop-blur">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <div className="fine-print">Selected candidate</div>
-                    <div className="mt-2 text-xl font-semibold text-white">{selected.name}</div>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Badge>{toSentenceCase(selected.assetClass)}</Badge>
-                    <Badge tone={selected.hasLiveDossier ? 'good' : 'warn'}>
-                      {selected.hasLiveDossier ? 'Live dossier' : 'Bootstrap ready'}
-                    </Badge>
-                  </div>
-                </div>
-                <p className="text-sm leading-7 text-slate-300">{selected.screenSummary}</p>
-              </div>
-            </div>
+            <PropertyMap
+              markers={data.candidates}
+              selectedId={selected.id}
+              onSelect={setSelectedId}
+              config={mapConfig}
+            />
 
             <div className="space-y-4">
               <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">

@@ -15,6 +15,7 @@ import { ResearchDossierPanel } from '@/components/admin/research-dossier-panel'
 import { DebtBookForm } from '@/components/admin/debt-book-form';
 import { DocumentUploadForm } from '@/components/admin/document-upload-form';
 import { FeatureSnapshotPanel } from '@/components/admin/feature-snapshot-panel';
+import { FinancialStatementsPanel } from '@/components/admin/financial-statements-panel';
 import { LeaseBookForm } from '@/components/admin/lease-book-form';
 import { MicroDataForm } from '@/components/admin/micro-data-form';
 import { ReadinessActionPanel } from '@/components/admin/readiness-action-panel';
@@ -45,6 +46,7 @@ import { canActorAccessScope } from '@/lib/security/admin-access';
 import { prisma } from '@/lib/db/prisma';
 import { resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
 import { getAssetById } from '@/lib/services/assets';
+import { getAssetFinancialStatements } from '@/lib/services/financial-statements';
 import { getFxRateMap } from '@/lib/services/fx';
 import { buildRealizedOutcomeComparison } from '@/lib/services/realized-outcomes';
 import { buildAssetResearchDossier } from '@/lib/services/research/dossier';
@@ -105,6 +107,8 @@ export default async function AssetDetailPage({
   if (!canAccessAsset) notFound();
   const asset = await getAssetById(id);
   if (!asset) notFound();
+
+  const financialStatements = await getAssetFinancialStatements(id);
 
   const latestRun = asset.valuations[0];
   const provenance = Array.isArray(latestRun?.provenance)
@@ -725,6 +729,12 @@ export default async function AssetDetailPage({
           />
         </div>
       </Card>
+
+      <FinancialStatementsPanel
+        statements={financialStatements}
+        displayCurrency={displayCurrency}
+        fxRateToKrw={fxRateToKrw}
+      />
 
       <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
         <Card>

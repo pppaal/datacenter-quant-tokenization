@@ -2,13 +2,15 @@ import { Suspense } from 'react';
 import { PropertyExplorerPanel } from '@/components/admin/property-explorer-panel';
 import { Card } from '@/components/ui/card';
 import { PanelSkeleton } from '@/components/ui/skeleton';
+import { getMapProviderConfig } from '@/lib/maps/config';
 import { buildPropertyExplorerData } from '@/lib/services/property-explorer';
 
 export const dynamic = 'force-dynamic';
 
 async function PropertyExplorerContent() {
   const data = await buildPropertyExplorerData();
-  return <PropertyExplorerPanel data={data} />;
+  const mapConfig = getMapProviderConfig();
+  return <PropertyExplorerPanel data={data} mapConfig={mapConfig} />;
 }
 
 export default function PropertyExplorerPage() {

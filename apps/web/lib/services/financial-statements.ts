@@ -25,6 +25,41 @@ type StatementLineItem = {
   valueKrw: number;
 };
 
+export type AssetFinancialStatement = Prisma.FinancialStatementGetPayload<{
+  include: {
+    counterparty: true;
+    lineItems: true;
+    creditAssessments: true;
+  };
+}>;
+
+/**
+ * Loads every financial statement ingested for an asset, newest fiscal year
+ * first within each counterparty, with line-item detail and the latest credit
+ * assessment attached. Powers the per-asset financial-statement viewer on the
+ * dossier page. Kept out of `assetBundleInclude` so the heavier line-item join
+ * only runs where it is rendered.
+ */
+export async function getAssetFinancialStatements(
+  assetId: string,
+  db: typeof prisma = prisma
+): Promise<AssetFinancialStatement[]> {
+  return db.financialStatement.findMany({
+    where: { assetId },
+    orderBy: [
+      { counterpartyId: 'asc' },
+      { fiscalYear: 'desc' },
+      { fiscalPeriod: 'asc' },
+      { createdAt: 'desc' }
+    ],
+    include: {
+      counterparty: true,
+      lineItems: { orderBy: { lineKey: 'asc' } },
+      creditAssessments: { orderBy: { createdAt: 'desc' }, take: 1 }
+    }
+  });
+}
+
 type ParsedFinancialStatementCandidate = Partial<Omit<ParsedFinancialStatement, 'lineItems'>> & {
   lineItems?: StatementLineItem[];
 };

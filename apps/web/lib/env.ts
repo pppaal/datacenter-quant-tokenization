@@ -119,6 +119,12 @@ const envSchema = z.object({
   PLAYWRIGHT_ALLOW_HOSTED_MUTATIONS: optionalBool,
   PLAYWRIGHT_ALLOWED_HOST_PATTERN: optionalString,
 
+  // Maps (optional). When KAKAO_MAP_API_KEY is set, the property explorer
+  // renders a Kakao map; otherwise it falls back to Leaflet + OpenStreetMap,
+  // which needs no key. The key is a public JS API key (domain-scoped on the
+  // Kakao console) and is intentionally exposed to the browser.
+  KAKAO_MAP_API_KEY: optionalString,
+
   // External AI / model providers (optional)
   OPENAI_API_KEY: optionalString,
   OPENAI_MODEL: optionalString,
