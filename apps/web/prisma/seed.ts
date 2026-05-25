@@ -12,6 +12,7 @@ import {
 import { seedCommitteeGovernance } from './seeds/committee';
 import { seedAsset } from './seeds/datacenters';
 import { seedDealExecution } from './seeds/deals';
+import { seedCounterpartyFinancials } from './seeds/financials';
 import { buildCapexLineItems, deterministicDocumentHash } from './seeds/helpers';
 import { seedOfficeAsset } from './seeds/office';
 import { seedPortfolioAndCapitalShell } from './seeds/portfolio';
@@ -19,8 +20,6 @@ import { seedQuarterlyMarketBootstrap } from './seeds/quarterly';
 import { seedResearchAndMacro } from './seeds/research';
 
 const prisma = new PrismaClient();
-
-
 
 async function main() {
   await prisma.investmentCommitteeDecision.deleteMany();
@@ -827,7 +826,8 @@ async function main() {
       floodRiskScore: 1.2,
       wildfireRiskScore: 0.6,
       seismicRiskScore: 1.0,
-      siteNotes: 'Phased delivery sequencing and water permit for adiabatic cooling remain on the diligence list.'
+      siteNotes:
+        'Phased delivery sequencing and water permit for adiabatic cooling remain on the diligence list.'
     },
     buildingSnapshot: {
       zoning: 'Industrial complex',
@@ -1004,7 +1004,12 @@ async function main() {
         reserveMonths: 6,
         notes: 'Construction-to-term facility for the mega campus.',
         draws: [
-          { drawYear: 1, drawMonth: 1, amountKrw: 72000000000, notes: 'Shell, core and substation' },
+          {
+            drawYear: 1,
+            drawMonth: 1,
+            amountKrw: 72000000000,
+            notes: 'Shell, core and substation'
+          },
           { drawYear: 1, drawMonth: 8, amountKrw: 48000000000, notes: 'Electrical and cooling' }
         ]
       }
@@ -1234,6 +1239,7 @@ async function main() {
   });
 
   await seedOfficeAsset(prisma);
+  await seedCounterpartyFinancials(prisma);
   await seedDealExecution(prisma);
   await seedPortfolioAndCapitalShell(prisma);
   await seedCommitteeGovernance(prisma);
