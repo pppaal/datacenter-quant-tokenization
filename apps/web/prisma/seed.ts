@@ -18,6 +18,7 @@ import { seedOfficeAsset } from './seeds/office';
 import { seedPortfolioAndCapitalShell } from './seeds/portfolio';
 import { seedQuarterlyMarketBootstrap } from './seeds/quarterly';
 import { seedResearchAndMacro } from './seeds/research';
+import { seedTokenization } from './seeds/tokenization';
 
 const prisma = new PrismaClient();
 
@@ -1242,6 +1243,7 @@ async function main() {
 
   await seedOfficeAsset(prisma);
   await seedAssetIntel(prisma);
+  await seedTokenization(prisma);
   await seedDealExecution(prisma);
   await seedPortfolioAndCapitalShell(prisma);
   await seedCommitteeGovernance(prisma);

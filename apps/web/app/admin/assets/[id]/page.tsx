@@ -20,6 +20,7 @@ import { CounterpartyCashflowPanel } from '@/components/admin/counterparty-cashf
 import { AssetSustainabilityPanel } from '@/components/admin/asset-sustainability-panel';
 import { AssetRegistryPanel } from '@/components/admin/asset-registry-panel';
 import { AssetInsightsPanel } from '@/components/admin/asset-insights-panel';
+import { AssetTokenizationPanel } from '@/components/admin/asset-tokenization-panel';
 import { LeaseBookForm } from '@/components/admin/lease-book-form';
 import { MicroDataForm } from '@/components/admin/micro-data-form';
 import { ReadinessActionPanel } from '@/components/admin/readiness-action-panel';
@@ -763,6 +764,8 @@ export default async function AssetDetailPage({
       />
 
       <AssetInsightsPanel aiInsights={asset.aiInsights} pipelineProjects={asset.pipelineProjects} />
+
+      <AssetTokenizationPanel tokenization={asset.tokenization} assetId={asset.id} />
 
       <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
         <Card>
