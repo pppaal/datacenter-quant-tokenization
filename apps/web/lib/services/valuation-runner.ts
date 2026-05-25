@@ -16,7 +16,17 @@ export async function runValuationAnalysis(
   if (pythonEligible && mode !== 'typescript') {
     try {
       const python = await runPythonValuation(bundle);
-      if (python) {
+      // The dossier (pro-forma, lease ladder, valuation breakdown) reads the
+      // TS engine's assumption shape — notably `proForma.baseCase`. The Python
+      // engine returns a lighter assumption set without it, so under `auto`
+      // only serve the Python result when it actually carries that shape;
+      // otherwise fall through to the TS engine. `mode === 'python'` opts in
+      // explicitly and accepts the lighter output.
+      const pythonHasProForma = Boolean(
+        (python?.assumptions as { proForma?: { baseCase?: unknown } } | undefined)?.proForma
+          ?.baseCase
+      );
+      if (python && (pythonHasProForma || mode === 'python')) {
         const analysis: UnderwritingAnalysis = {
           asset: {
             name: bundle.asset.name,
