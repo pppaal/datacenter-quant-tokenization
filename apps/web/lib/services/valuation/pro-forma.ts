@@ -157,6 +157,30 @@ function num(value: unknown): number | null {
   return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
+export type EngineCrossCheck = {
+  engineVersion: string;
+  baseCaseValueKrw: number | null;
+  confidenceScore: number | null;
+  valueDeltaPct: number | null;
+};
+
+/**
+ * Reads the secondary-engine cross-check the runner records on data-center
+ * valuations (canonical value stays TS; this is the independent Python pass and
+ * its delta vs the TS base case). Null when no cross-check ran.
+ */
+export function readEngineCrossCheck(assumptions: unknown): EngineCrossCheck | null {
+  const root = asRecord(assumptions);
+  const cross = asRecord(root?.engineCrossCheck);
+  if (!cross || typeof cross.engineVersion !== 'string') return null;
+  return {
+    engineVersion: cross.engineVersion,
+    baseCaseValueKrw: num(cross.baseCaseValueKrw),
+    confidenceScore: num(cross.confidenceScore),
+    valueDeltaPct: num(cross.valueDeltaPct)
+  };
+}
+
 /**
  * Reads the stabilized direct-capitalization assumptions emitted by
  * buildStabilizedIncomeAssumptions (office / retail / industrial / multifamily).

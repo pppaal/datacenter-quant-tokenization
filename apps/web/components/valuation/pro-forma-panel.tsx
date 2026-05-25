@@ -1,13 +1,23 @@
 import Link from 'next/link';
+import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { formatCurrencyFromKrwAtRate, type SupportedCurrency } from '@/lib/finance/currency';
 import {
+  readEngineCrossCheck,
   readStabilizedIncome,
   readStoredBaseCaseProForma
 } from '@/lib/services/valuation/pro-forma';
 import { StabilizedIncomePanel } from '@/components/valuation/stabilized-income-panel';
 import type { ProFormaYear } from '@/lib/services/valuation/types';
 import { formatNumber } from '@/lib/utils';
+
+function crossCheckTone(deltaPct: number | null): 'good' | 'warn' | 'danger' | 'neutral' {
+  if (deltaPct === null) return 'neutral';
+  const magnitude = Math.abs(deltaPct);
+  if (magnitude <= 10) return 'good';
+  if (magnitude <= 25) return 'warn';
+  return 'danger';
+}
 
 type StatementRow = {
   label: string;
@@ -721,6 +731,8 @@ export function ProFormaPanel({
     highlights: buildSectionHighlights(section, proForma.years, displayCurrency, fxRateToKrw)
   }));
 
+  const crossCheck = readEngineCrossCheck(assumptions);
+
   return (
     <Card>
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -730,8 +742,18 @@ export function ProFormaPanel({
             Revenue, operating costs, financing, and equity cash flow laid out as a statement.
           </div>
         </div>
-        <div className="text-sm text-slate-400">
-          {formatNumber(proForma.years.length, 0)} forecast years
+        <div className="flex flex-wrap items-center gap-2">
+          {crossCheck ? (
+            <Badge tone={crossCheckTone(crossCheck.valueDeltaPct)}>
+              Python cross-check{' '}
+              {crossCheck.valueDeltaPct !== null
+                ? `Δ ${crossCheck.valueDeltaPct > 0 ? '+' : ''}${formatNumber(crossCheck.valueDeltaPct, 1)}%`
+                : 'n/a'}
+            </Badge>
+          ) : null}
+          <span className="text-sm text-slate-400">
+            {formatNumber(proForma.years.length, 0)} forecast years
+          </span>
         </div>
       </div>
 
