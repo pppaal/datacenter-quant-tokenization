@@ -18,6 +18,9 @@ apps/web/playwright-report/
 apps/web/test-results/
 
 # Local tool state (Claude Code session, auto-memory, editor config)
-.claude/
+# Track the shared SessionStart hook + project settings; ignore local state.
+.claude/*
+!.claude/settings.json
+!.claude/hooks/
 memory/
 .vscode/
