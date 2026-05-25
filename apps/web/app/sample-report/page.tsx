@@ -17,6 +17,7 @@ import { prisma } from '@/lib/db/prisma';
 import { getAssetBySlug } from '@/lib/services/assets';
 import { getSampleReport } from '@/lib/services/dashboard';
 import { getFxRateMap } from '@/lib/services/fx';
+import { getValuationRecommendation } from '@/lib/valuation/recommendation';
 import {
   computeCapitalStructure,
   computeLeaseRollSummary,
@@ -83,13 +84,6 @@ type ProvenanceEntry = {
   mode: string;
   freshnessLabel: string;
 };
-
-function getRecommendation(confidenceScore?: number | null) {
-  // confidenceScore is on a 0-10 scale (engine clamps ~4.5-9.9; ConfidenceBreakdown shows "x / 10").
-  if ((confidenceScore ?? 0) >= 7.5) return 'Proceed To Committee';
-  if ((confidenceScore ?? 0) >= 5.5) return 'Proceed With Conditions';
-  return 'Further Diligence Required';
-}
 
 const glossary = [
   {
@@ -165,7 +159,7 @@ export default async function SampleReportPage({
     : [];
   const bullValue = scenarios[0]?.valuationKrw ?? null;
   const bearValue = scenarios[2]?.valuationKrw ?? null;
-  const recommendation = getRecommendation(latestRun.confidenceScore);
+  const recommendation = getValuationRecommendation(latestRun.confidenceScore);
   const isDataCenter = asset.assetClass === AssetClass.DATA_CENTER;
   const displayCurrency = resolveDisplayCurrency(asset.address?.country ?? asset.market);
   const fxRateToKrw = (await getFxRateMap([displayCurrency]))[displayCurrency];

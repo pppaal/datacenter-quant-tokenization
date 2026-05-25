@@ -9,6 +9,7 @@ import {
 import { getAssetById } from '@/lib/services/assets';
 import { getFxRateMap } from '@/lib/services/fx';
 import { readStoredBaseCaseProForma } from '@/lib/services/valuation/pro-forma';
+import { getValuationRecommendation } from '@/lib/valuation/recommendation';
 import {
   buildAssetEvidenceReviewSummary,
   extractReviewPacketSummary,
@@ -257,13 +258,6 @@ const reportTemplateMeta: Record<ReportKind, ReportTemplateMeta> = {
       'Useful for deal review; severity and mitigation language remains template-derived from current data.'
   }
 };
-
-function getRecommendation(confidenceScore?: number | null) {
-  // confidenceScore is on a 0-10 scale (engine clamps ~4.5-9.9; ConfidenceBreakdown shows "x / 10").
-  if ((confidenceScore ?? 0) >= 7.5) return 'Proceed To Committee';
-  if ((confidenceScore ?? 0) >= 5.5) return 'Proceed With Conditions';
-  return 'Further Diligence Required';
-}
 
 function getReportStatusLabel(status: ReportTemplateStatus) {
   return status === 'production-ready' ? 'Production Ready' : 'Partial';
@@ -617,7 +611,7 @@ function buildHeroFacts(bundle: DealReportBundle, kind: ReportKind): ReportFact[
   const latestRun = bundle.latestValuation;
   const baseScenario = latestRun?.baseScenario;
   const yearOne = bundle.proForma?.years[0];
-  const recommendation = getRecommendation(latestRun?.confidenceScore);
+  const recommendation = getValuationRecommendation(latestRun?.confidenceScore);
 
   const facts: ReportFact[] = [
     {
@@ -915,7 +909,7 @@ function buildIcMemoSections(bundle: DealReportBundle): ReportSection[] {
       kicker: 'Decision Request',
       title: 'Proposed Committee Posture',
       body: [
-        `${getRecommendation(latestRun?.confidenceScore)} is the current recommended posture based on valuation confidence, downside coverage, and document support.`,
+        `${getValuationRecommendation(latestRun?.confidenceScore)} is the current recommended posture based on valuation confidence, downside coverage, and document support.`,
         latestRun?.keyRisks.length
           ? `Approval, if granted, should stay conditional on the following: ${latestRun.keyRisks.slice(0, 2).join(' ')}`
           : 'No formal conditions are available yet because the current valuation risk list is empty.'

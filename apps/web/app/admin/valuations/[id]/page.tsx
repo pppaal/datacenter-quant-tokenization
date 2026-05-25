@@ -46,6 +46,7 @@ import {
   getValuationFeatureSourceDescriptors
 } from '@/lib/valuation/feature-snapshot-usage';
 import { resolveSatelliteRiskSnapshot } from '@/lib/valuation/satellite-risk';
+import { getValuationRecommendation } from '@/lib/valuation/recommendation';
 
 export const dynamic = 'force-dynamic';
 
@@ -56,13 +57,6 @@ type ProvenanceEntry = {
   mode: string;
   freshnessLabel: string;
 };
-
-function getRecommendation(confidenceScore?: number | null) {
-  // confidenceScore is on a 0-10 scale (engine clamps ~4.5-9.9; ConfidenceBreakdown shows "x / 10").
-  if ((confidenceScore ?? 0) >= 7.5) return 'Proceed To Committee';
-  if ((confidenceScore ?? 0) >= 5.5) return 'Proceed With Conditions';
-  return 'Further Diligence Required';
-}
 
 function getApprovalTone(approvalStatus: string) {
   if (approvalStatus === 'APPROVED') return 'good' as const;
@@ -85,7 +79,7 @@ export default async function ValuationRunDetailPage({
     assumptions: run.assumptions,
     siteProfile: run.asset.siteProfile
   });
-  const recommendation = getRecommendation(run.confidenceScore);
+  const recommendation = getValuationRecommendation(run.confidenceScore);
   const bullValue = run.scenarios[0]?.valuationKrw ?? null;
   const bearValue = run.scenarios[2]?.valuationKrw ?? null;
   const featureSources = getValuationFeatureSourceDescriptors(run.assumptions);

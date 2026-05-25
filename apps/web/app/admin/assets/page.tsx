@@ -9,15 +9,9 @@ import { listAssets } from '@/lib/services/assets';
 import { getFxRateMap } from '@/lib/services/fx';
 import { formatDate, formatNumber } from '@/lib/utils';
 import { resolveSatelliteRiskSnapshot } from '@/lib/valuation/satellite-risk';
+import { getValuationRecommendation } from '@/lib/valuation/recommendation';
 
 export const dynamic = 'force-dynamic';
-
-function getRecommendation(confidenceScore?: number | null) {
-  // confidenceScore is on a 0-10 scale (engine clamps ~4.5-9.9; ConfidenceBreakdown shows "x / 10").
-  if ((confidenceScore ?? 0) >= 7.5) return 'Proceed To Committee';
-  if ((confidenceScore ?? 0) >= 5.5) return 'Proceed With Conditions';
-  return 'Further Diligence Required';
-}
 
 export default async function AssetsPage() {
   const assets = await listAssets();
@@ -90,7 +84,7 @@ export default async function AssetsPage() {
             assumptions: latestRun?.assumptions,
             siteProfile: asset.siteProfile
           });
-          const recommendation = getRecommendation(latestRun?.confidenceScore);
+          const recommendation = getValuationRecommendation(latestRun?.confidenceScore);
 
           return (
             <Card key={asset.id}>
