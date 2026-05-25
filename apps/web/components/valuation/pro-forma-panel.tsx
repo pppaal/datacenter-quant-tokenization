@@ -1,7 +1,11 @@
 import Link from 'next/link';
 import { Card } from '@/components/ui/card';
 import { formatCurrencyFromKrwAtRate, type SupportedCurrency } from '@/lib/finance/currency';
-import { readStoredBaseCaseProForma } from '@/lib/services/valuation/pro-forma';
+import {
+  readStabilizedIncome,
+  readStoredBaseCaseProForma
+} from '@/lib/services/valuation/pro-forma';
+import { StabilizedIncomePanel } from '@/components/valuation/stabilized-income-panel';
 import type { ProFormaYear } from '@/lib/services/valuation/types';
 import { formatNumber } from '@/lib/utils';
 
@@ -612,6 +616,19 @@ export function ProFormaPanel({
   const proForma = readStoredBaseCaseProForma(assumptions);
 
   if (!proForma) {
+    // Non-DC asset classes are valued on a stabilized direct-capitalization
+    // basis (no multi-year DCF). Render that view instead of an empty state.
+    const stabilized = readStabilizedIncome(assumptions);
+    if (stabilized) {
+      return (
+        <StabilizedIncomePanel
+          view={stabilized}
+          displayCurrency={displayCurrency}
+          fxRateToKrw={fxRateToKrw}
+        />
+      );
+    }
+
     return (
       <Card>
         <div className="eyebrow">Base Case Pro Forma</div>

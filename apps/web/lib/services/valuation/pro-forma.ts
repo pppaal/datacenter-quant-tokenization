@@ -130,3 +130,66 @@ export function readStoredBaseCaseProForma(assumptions: unknown): ProFormaBaseCa
     years: years as ProFormaBaseCase['years']
   };
 }
+
+export type StabilizedIncomeView = {
+  assetClass: string | null;
+  rentableAreaSqm: number | null;
+  occupancyPct: number | null;
+  monthlyRentPerSqmKrw: number | null;
+  grossPotentialRentKrw: number | null;
+  effectiveRentalRevenueKrw: number | null;
+  otherIncomeKrw: number | null;
+  annualOpexKrw: number | null;
+  annualCapexReserveKrw: number | null;
+  stabilizedNoiKrw: number;
+  capRatePct: number;
+  purchasePriceKrw: number | null;
+  debtLtvPct: number | null;
+  debtCostPct: number | null;
+  vacancyAllowancePct: number | null;
+  comparableEntryCount: number | null;
+  marketTransactionCompCount: number | null;
+  marketRentCompCount: number | null;
+  marketEvidenceCapRatePct: number | null;
+};
+
+function num(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+/**
+ * Reads the stabilized direct-capitalization assumptions emitted by
+ * buildStabilizedIncomeAssumptions (office / retail / industrial / multifamily).
+ * Returns null for data centers (which store a full `proForma.baseCase` instead)
+ * or when the stabilized fields are absent. Lets the pro-forma surface render a
+ * direct-cap view for non-DC asset classes rather than an empty state.
+ */
+export function readStabilizedIncome(assumptions: unknown): StabilizedIncomeView | null {
+  const root = asRecord(assumptions);
+  if (!root) return null;
+  const stabilizedNoiKrw = num(root.stabilizedNoiKrw);
+  const capRatePct = num(root.capRatePct);
+  if (stabilizedNoiKrw === null || capRatePct === null || capRatePct <= 0) return null;
+
+  return {
+    assetClass: typeof root.assetClass === 'string' ? root.assetClass : null,
+    rentableAreaSqm: num(root.rentableAreaSqm),
+    occupancyPct: num(root.occupancyPct),
+    monthlyRentPerSqmKrw: num(root.monthlyRentPerSqmKrw),
+    grossPotentialRentKrw: num(root.grossPotentialRentKrw),
+    effectiveRentalRevenueKrw: num(root.effectiveRentalRevenueKrw),
+    otherIncomeKrw: num(root.otherIncomeKrw),
+    annualOpexKrw: num(root.annualOpexKrw),
+    annualCapexReserveKrw: num(root.annualCapexReserveKrw),
+    stabilizedNoiKrw,
+    capRatePct,
+    purchasePriceKrw: num(root.purchasePriceKrw),
+    debtLtvPct: num(root.debtLtvPct),
+    debtCostPct: num(root.debtCostPct),
+    vacancyAllowancePct: num(root.vacancyAllowancePct),
+    comparableEntryCount: num(root.comparableEntryCount),
+    marketTransactionCompCount: num(root.marketTransactionCompCount),
+    marketRentCompCount: num(root.marketRentCompCount),
+    marketEvidenceCapRatePct: num(root.marketEvidenceCapRatePct)
+  };
+}
