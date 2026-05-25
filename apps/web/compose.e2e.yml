@@ -1,6 +1,10 @@
 services:
   postgres:
-    image: postgres:16
+    # pgvector/pgvector:pg16 = stock Postgres 16 + the pgvector extension.
+    # Required: migration 20260429140000_add_pgvector_and_ai_cache runs
+    # `CREATE EXTENSION IF NOT EXISTS vector`, which fails on plain postgres:16
+    # because the extension files are not installed in that image.
+    image: pgvector/pgvector:pg16
     container_name: korea-re-ops-e2e-postgres
     environment:
       POSTGRES_USER: postgres
