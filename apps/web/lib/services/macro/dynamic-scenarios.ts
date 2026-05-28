@@ -110,8 +110,10 @@ export function generateTrendContinuationScenario(
 }
 
 /**
- * Generates a "tail risk" scenario: takes current headwinds and
- * applies a 2-sigma shock on each adverse factor.
+ * Generates a "tail risk" scenario: takes current headwinds and applies a
+ * fixed adverse stress to each factor. The shock magnitudes below are
+ * hand-set constants (e.g. 250bps on rates when stressed), NOT computed
+ * standard deviations / sigmas of the underlying series.
  */
 export function generateTailRiskScenario(ctx: DynamicScenarioContext): MacroStressScenario {
   const lookup = buildFactorLookup(ctx.factors, ctx.market);
@@ -121,7 +123,8 @@ export function generateTailRiskScenario(ctx: DynamicScenarioContext): MacroStre
   const demandDir = lookup.get('property_demand')?.direction ?? 'NEUTRAL';
   const constructionDir = lookup.get('construction_pressure')?.direction ?? 'NEUTRAL';
 
-  // Amplify shocks on already-stressed dimensions
+  // Apply larger fixed adverse shocks on already-stressed dimensions. These
+  // are hand-set constants, not 2σ moves derived from the data.
   const rateShiftBps = rateDir === 'NEGATIVE' ? 250 : 100;
   const spreadShiftBps = creditDir === 'NEGATIVE' ? 200 : 75;
   const vacancyShiftPct = demandDir === 'NEGATIVE' ? 4.0 : 1.5;
@@ -136,8 +139,8 @@ export function generateTailRiskScenario(ctx: DynamicScenarioContext): MacroStre
 
   const description =
     headwinds.length > 0
-      ? `Tail-risk stress centered on current headwinds: ${headwinds.join(', ')}. 2σ adverse shocks applied.`
-      : 'Baseline tail-risk scenario with moderate shocks across all dimensions.';
+      ? `Tail-risk stress centered on current headwinds: ${headwinds.join(', ')}. Fixed adverse shocks applied.`
+      : 'Baseline tail-risk scenario with moderate fixed shocks across all dimensions.';
 
   return {
     name: 'Dynamic Tail Risk',

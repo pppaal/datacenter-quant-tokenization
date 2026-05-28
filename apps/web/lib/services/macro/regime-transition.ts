@@ -1,6 +1,16 @@
 import type { MacroInterpretation } from '@/lib/services/macro/regime';
 
 // ---------------------------------------------------------------------------
+// Regime severity-shift detection
+// ---------------------------------------------------------------------------
+// NOTE ON METHODOLOGY: This is a deterministic ordinal comparison between the
+// previous and current regime state for each block (see STATE_SEVERITY_ORDER).
+// It detects whether a block's regime got tighter, looser, or stayed lateral.
+// It is NOT a Markov chain and does NOT estimate transition probabilities — it
+// only reports the observed prev-vs-current severity shift. Labels intentionally
+// use "regime change" / "severity shift" wording, never "transition probability".
+
+// ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 

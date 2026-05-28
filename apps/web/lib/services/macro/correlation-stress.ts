@@ -13,19 +13,25 @@ export type CorrelationPenalty = {
 };
 
 // ---------------------------------------------------------------------------
-// Known correlated stress pairs
+// Factor co-stress heuristic — named pairs with expert-set amplifiers
 // ---------------------------------------------------------------------------
-// When these factor pairs are both NEGATIVE simultaneously, the combined
-// impact is worse than the sum of individual scores.
+// METHODOLOGY: This is a heuristic stress amplifier, NOT a statistical
+// correlation/covariance estimate. When a named factor pair is both NEGATIVE
+// simultaneously, we add a hand-tuned amplification percentage on the premise
+// that combined headwinds hurt more than the sum of individual scores. The
+// `amplificationPct` values below are expert-set constants, not correlation
+// coefficients estimated from data.
 
 type StressPair = {
   factorA: string;
   factorB: string;
   label: string;
+  // Expert-set amplification constant (percentage points), not an estimated
+  // correlation coefficient.
   amplificationPct: number;
 };
 
-const CORRELATED_STRESS_PAIRS: StressPair[] = [
+const CO_STRESS_PAIRS: StressPair[] = [
   {
     factorA: 'rate',
     factorB: 'credit',
@@ -72,8 +78,10 @@ const TRIPLE_HEADWIND_THRESHOLD = 3;
 const TRIPLE_HEADWIND_EXTRA_PCT = 8;
 
 // ---------------------------------------------------------------------------
-// Core: compute correlation-based stress amplification
+// Core: compute heuristic co-stress amplification
 // ---------------------------------------------------------------------------
+// Sums the expert-set amplifiers for every co-stressed pair plus a cascade
+// bonus. This is a heuristic amplifier, not a correlation/covariance model.
 
 export function computeCorrelationPenalty(
   dimensions: DealMacroExposureDimension[],
@@ -106,8 +114,8 @@ export function computeCorrelationPenalty(
   let totalPenalty = 0;
   const activePairs: string[] = [];
 
-  // Check correlated pairs
-  for (const pair of CORRELATED_STRESS_PAIRS) {
+  // Check co-stressed pairs
+  for (const pair of CO_STRESS_PAIRS) {
     if (factorToHeadwind[pair.factorA] && factorToHeadwind[pair.factorB]) {
       totalPenalty += pair.amplificationPct;
       activePairs.push(pair.label);
@@ -125,13 +133,13 @@ export function computeCorrelationPenalty(
 
   let commentary: string;
   if (totalPenalty === 0) {
-    commentary = 'No correlated stress amplification. Headwinds are isolated.';
+    commentary = 'No co-stress amplification. Headwinds are isolated.';
   } else if (totalPenalty <= 15) {
-    commentary = `Mild correlation stress (+${totalPenalty}% penalty). ${activePairs.join(', ')} detected.`;
+    commentary = `Mild co-stress amplifier (+${totalPenalty}% penalty). ${activePairs.join(', ')} detected.`;
   } else if (totalPenalty <= 30) {
-    commentary = `Significant correlation stress (+${totalPenalty}% penalty). Multiple correlated headwinds: ${activePairs.join(', ')}.`;
+    commentary = `Significant co-stress amplifier (+${totalPenalty}% penalty). Multiple simultaneous headwinds: ${activePairs.join(', ')}.`;
   } else {
-    commentary = `Severe correlation stress (+${totalPenalty}% penalty). Systemic risk conditions: ${activePairs.join(', ')}. Consider defensive positioning.`;
+    commentary = `Severe co-stress amplifier (+${totalPenalty}% penalty). Systemic risk conditions: ${activePairs.join(', ')}. Consider defensive positioning.`;
   }
 
   return {
@@ -148,7 +156,8 @@ export function computeCorrelationPenalty(
 
 export function applyCorrelationPenalty(baseScore: number, penalty: CorrelationPenalty): number {
   if (penalty.appliedPenaltyPct === 0) return baseScore;
-  // Penalty shifts the score toward 100, proportional to remaining headroom
+  // The heuristic amplifier shifts the score toward 100, proportional to
+  // remaining headroom.
   const headroom = 100 - baseScore;
   const boost = headroom * (penalty.appliedPenaltyPct / 100);
   return Math.min(100, Math.round(baseScore + boost));

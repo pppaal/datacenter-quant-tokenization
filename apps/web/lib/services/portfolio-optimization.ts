@@ -497,9 +497,9 @@ export function buildPortfolioOptimizationLab(
   const scenarioRows = buildScenarioRows(portfolio, assetRows, signalsByAssetId);
 
   return {
-    methodologyLabel: 'Quantum-inspired discrete search',
+    methodologyLabel: 'Allocation screening heuristic',
     objectiveScorePct,
-    summary: `${portfolio.name} optimization lab reweights current holdings using a deterministic annealing-style search over income quality, leverage, rollover, covenant pressure, and research coverage. This is a classical quantum-inspired heuristic, not quantum hardware execution.`,
+    summary: `${portfolio.name} allocation screening reweights current holdings using a deterministic annealing-style search over an ad-hoc score combining income quality, leverage, rollover, covenant pressure, and research coverage. This is a screening heuristic, not a returns/covariance/risk-model optimization — it does not estimate expected returns or portfolio risk.`,
     topMove,
     defensiveMove: defensiveMove
       ? `${defensiveMove.assetName} is the main defensive trim candidate because stress load is ${defensiveMove.stressPenaltyPct.toFixed(0)}%.`
