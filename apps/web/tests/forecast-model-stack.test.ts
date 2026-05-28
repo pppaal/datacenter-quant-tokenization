@@ -35,7 +35,19 @@ test('forecast model stack reports live and building models from current data co
         assetCoverage: 2,
         directionalHitRatePct: 72,
         meanAbsoluteValueErrorPct: 6.5,
-        meanAbsoluteDscrErrorPct: 4.2
+        meanAbsoluteDscrErrorPct: 4.2,
+        horizonMonths: 12,
+        horizonWindowMonths: 3,
+        outOfSample: {
+          evaluatedCount: 5,
+          status: 'OK',
+          rmsePct: 7,
+          maePct: 5.5,
+          mapePct: 20,
+          baselineMaePct: 7.5,
+          baselineRmsePct: 8.5,
+          skillVsNaive: 0.12
+        }
       },
       rows: []
     }

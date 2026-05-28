@@ -51,7 +51,10 @@ function buildRun(index: number, value: number, dscr: number) {
   };
 }
 
-test('gradient boosting realized backtest compares predicted drift with realized outcomes', () => {
+test('realized backtest only matches horizon-aligned (~12mo) outcomes', () => {
+  // Runs at month 0..5 of 2025. An outcome ~5 months after the last run is OUT
+  // of the 12-month horizon band and must NOT be matched (the old code wrongly
+  // matched any future outcome regardless of horizon).
   const backtest = buildGradientBoostingRealizedBacktest({
     runs: [
       buildRun(0, 100_000, 1.4),
@@ -63,7 +66,7 @@ test('gradient boosting realized backtest compares predicted drift with realized
     ],
     outcomes: [
       {
-        id: 'outcome-1',
+        id: 'outcome-out-of-band',
         assetId: 'asset-1',
         observationDate: new Date(Date.UTC(2025, 5, 20)),
         valuationKrw: 118_000,
@@ -72,10 +75,7 @@ test('gradient boosting realized backtest compares predicted drift with realized
     ]
   });
 
-  assert.equal(backtest.summary.matchedForecastCount, 1);
-  assert.equal(backtest.summary.assetCoverage, 1);
-  assert.ok(backtest.summary.directionalHitRatePct !== null);
-  assert.ok(backtest.summary.meanAbsoluteValueErrorPct !== null);
-  assert.equal(backtest.rows.length, 1);
-  assert.equal(backtest.rows[0]?.runId, 'run-5');
+  assert.equal(backtest.summary.matchedForecastCount, 0);
+  assert.equal(backtest.summary.horizonMonths, 12);
+  assert.equal(backtest.summary.outOfSample.status, 'INSUFFICIENT_HISTORY');
 });

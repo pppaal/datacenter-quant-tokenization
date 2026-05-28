@@ -7,7 +7,7 @@ type ScenarioLike = {
   debtServiceCoverage?: number | null;
 };
 
-type ForecastRunLike = {
+export type ForecastRunLike = {
   id: string;
   assetId: string;
   createdAt: Date;
@@ -23,7 +23,7 @@ type ForecastRunLike = {
   scenarios: ScenarioLike[];
 };
 
-type FeatureVector = {
+export type FeatureVector = {
   occupancyPct: number;
   capRatePct: number;
   discountRatePct: number;
@@ -41,7 +41,7 @@ type FeatureVector = {
   dataCenter: number;
 };
 
-type TrainingSample = {
+export type TrainingSample = {
   features: FeatureVector;
   targetValueChangePct: number;
   targetDscrChangePct: number;
@@ -54,7 +54,7 @@ type DecisionStump = {
   rightValue: number;
 };
 
-type BoostedStumpModel = {
+export type BoostedStumpModel = {
   basePrediction: number;
   learningRate: number;
   estimators: DecisionStump[];
@@ -128,7 +128,7 @@ function round(value: number, decimals = 2) {
   return Number(value.toFixed(decimals));
 }
 
-function buildFeatureVector(run: ForecastRunLike): FeatureVector {
+export function buildFeatureVector(run: ForecastRunLike): FeatureVector {
   return {
     occupancyPct: getMetric(run.assumptions, 'occupancyPct') ?? 90,
     capRatePct: getMetric(run.assumptions, 'capRatePct') ?? 6,
@@ -196,7 +196,7 @@ function trainDecisionStump(samples: FeatureVector[], residuals: number[]): Deci
   return best?.stump ?? null;
 }
 
-function trainBoostedStumps(
+export function trainBoostedStumps(
   samples: FeatureVector[],
   targets: number[],
   estimatorCount = 6,
@@ -224,7 +224,7 @@ function trainBoostedStumps(
   };
 }
 
-function predictWithModel(model: BoostedStumpModel, sample: FeatureVector) {
+export function predictWithModel(model: BoostedStumpModel, sample: FeatureVector) {
   return model.estimators.reduce(
     (prediction, stump) => prediction + model.learningRate * applyStump(sample, stump),
     model.basePrediction
@@ -249,10 +249,20 @@ function summarizeDrivers(model: BoostedStumpModel, sample: FeatureVector) {
     }));
 }
 
-export function buildGradientBoostingForecast(
-  currentRun: ForecastRunLike,
-  runs: ForecastRunLike[]
-): GradientBoostingForecast {
+/**
+ * Build the strictly point-in-time training set for predicting `currentRun`.
+ *
+ * Leakage guard: a (source -> next) pair is only admissible when BOTH endpoints
+ * strictly predate `cutoff` (the predicted run's createdAt) and neither endpoint
+ * IS the predicted run. This guarantees no label or feature observed at/after the
+ * prediction time can leak into training. Exported for tests.
+ */
+export function buildPointInTimeTrainingSamples(
+  runs: ForecastRunLike[],
+  cutoff: Date,
+  excludeRunId?: string
+): TrainingSample[] {
+  const cutoffTime = cutoff.getTime();
   const byAsset = new Map<string, ForecastRunLike[]>();
   for (const run of runs) {
     const group = byAsset.get(run.assetId) ?? [];
@@ -270,6 +280,15 @@ export function buildGradientBoostingForecast(
       const next = ordered[index + 1];
       if (!current || !next || current.baseCaseValueKrw <= 0) continue;
 
+      // Strict point-in-time split: both endpoints must strictly predate the
+      // prediction time, and neither may be the predicted run itself.
+      if (current.createdAt.getTime() >= cutoffTime || next.createdAt.getTime() >= cutoffTime) {
+        continue;
+      }
+      if (excludeRunId && (current.id === excludeRunId || next.id === excludeRunId)) {
+        continue;
+      }
+
       const currentDscr = getBaseDscr(current);
       const nextDscr = getBaseDscr(next);
       samples.push({
@@ -281,8 +300,25 @@ export function buildGradientBoostingForecast(
     }
   }
 
+  return samples;
+}
+
+export function buildGradientBoostingForecast(
+  currentRun: ForecastRunLike,
+  runs: ForecastRunLike[]
+): GradientBoostingForecast {
+  // Leakage fix: train ONLY on (source -> next) pairs that strictly predate the
+  // predicted run, excluding any pair sourced at the predicted run. Previously
+  // the caller could pass history that included the current run's own forward
+  // pair, training the model on the very outcome it then "predicted".
+  const samples = buildPointInTimeTrainingSamples(runs, currentRun.createdAt, currentRun.id);
+
   const currentFeatures = buildFeatureVector(currentRun);
-  const assetCoverage = uniqueCount(runs.map((run) => run.assetId));
+  const assetCoverage = uniqueCount(
+    runs
+      .filter((run) => run.createdAt.getTime() < currentRun.createdAt.getTime())
+      .map((run) => run.assetId)
+  );
 
   if (samples.length < 5) {
     return {

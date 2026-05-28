@@ -34,7 +34,19 @@ test('forecast ensemble policy ranks models by use case from readiness and valid
         assetCoverage: 3,
         directionalHitRatePct: 76,
         meanAbsoluteValueErrorPct: 6,
-        meanAbsoluteDscrErrorPct: 4
+        meanAbsoluteDscrErrorPct: 4,
+        horizonMonths: 12,
+        horizonWindowMonths: 3,
+        outOfSample: {
+          evaluatedCount: 7,
+          status: 'OK',
+          rmsePct: 6.5,
+          maePct: 5,
+          mapePct: 18,
+          baselineMaePct: 7,
+          baselineRmsePct: 8,
+          skillVsNaive: 0.18
+        }
       },
       rows: []
     }
@@ -69,7 +81,19 @@ test('forecast ensemble policy ranks models by use case from readiness and valid
         assetCoverage: 3,
         directionalHitRatePct: 76,
         meanAbsoluteValueErrorPct: 6,
-        meanAbsoluteDscrErrorPct: 4
+        meanAbsoluteDscrErrorPct: 4,
+        horizonMonths: 12,
+        horizonWindowMonths: 3,
+        outOfSample: {
+          evaluatedCount: 7,
+          status: 'OK',
+          rmsePct: 6.5,
+          maePct: 5,
+          mapePct: 18,
+          baselineMaePct: 7,
+          baselineRmsePct: 8,
+          skillVsNaive: 0.18
+        }
       },
       rows: []
     }
