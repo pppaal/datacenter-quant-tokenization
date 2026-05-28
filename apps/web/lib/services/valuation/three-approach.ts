@@ -25,8 +25,31 @@
  */
 
 import type { UnderwritingBundle } from '@/lib/services/valuation/types';
+import {
+  adjustComp,
+  fitHedonic,
+  predictHedonic,
+  HEDONIC_MIN_COMPS,
+  type AdjustedComp,
+  type CompAdjustmentFactor,
+  type HedonicSample
+} from '@/lib/services/valuation/comp-adjustments';
 
 export type ValuationApproachKey = 'income' | 'salesComparison' | 'cost';
+
+/**
+ * Per-comp adjustment record exposed on the sales-comparison detail so the
+ * report can render "comp → adjustments → adjusted value". Additive / optional.
+ */
+export type CompAdjustmentRecord = {
+  source: 'comparableEntry' | 'transactionComp';
+  rawPricePerSqmKrw: number;
+  adjustedPricePerSqmKrw: number;
+  netAdjustmentPct: number;
+  netClamped: boolean;
+  weight: number;
+  factors: CompAdjustmentFactor[];
+};
 
 export type ValuationApproachDetail = {
   approach: ValuationApproachKey;
@@ -38,6 +61,16 @@ export type ValuationApproachDetail = {
   dataQuality: 'high' | 'medium' | 'low' | 'unavailable';
   inputs: Record<string, number | string | null>;
   note: string;
+  /**
+   * Sales-comparison only: per-comp quantitative adjustment breakdown
+   * (시점·규모·지역 보정) so the report can show comp → adjustments → adjusted
+   * value. Additive / optional — undefined on income & cost approaches and on
+   * legacy callers. The raw-weighted value before adjustment is exposed
+   * alongside for an auditable before→after.
+   */
+  compAdjustments?: CompAdjustmentRecord[];
+  rawWeightedPricePerSqmKrw?: number | null;
+  hedonicApplied?: boolean;
 };
 
 export type ThreeApproachValuation = {
@@ -55,6 +88,12 @@ export type ComparableCompInput = {
   transactionDate: Date | null;
   market: string | null;
   region: string | null;
+  /**
+   * Optional explicit relative price-level signal (subject submarket vs this
+   * comp's submarket, in %). When present it drives the location adjustment
+   * directly; otherwise a conservative categorical rule applies.
+   */
+  subjectVsCompPriceLevelPct?: number | null;
 };
 
 export type ThreeApproachInputs = {
@@ -74,6 +113,13 @@ export type ThreeApproachInputs = {
   approvalYear: number | null;
   regionalConstructionCostPerSqmKrw: number | null;
   fallbackReplacementCostPerSqmKrw: number;
+
+  /**
+   * Annual capital-value growth (%/yr) used for time-adjusting comps
+   * (시점수정). Derived from a market price-growth index when available;
+   * null ⇒ the documented conservative default in comp-adjustments.ts.
+   */
+  annualPriceGrowthPct?: number | null;
 };
 
 // ---------------------------------------------------------------------------
@@ -266,14 +312,80 @@ function computeSalesComparisonApproach(
   inputs: ThreeApproachInputs,
   underwritingYear: number
 ): ValuationApproachDetail {
-  const weighted: WeightedComp[] = [];
+  // Valuation as-of date — mid-year anchor of the underwriting year (matches
+  // the recency-weight anchor so weighting and adjustment use one timeline).
+  const valuationDate = new Date(underwritingYear, 5, 30);
+
+  // Raw weighted (LEGACY) and adjusted weighted (NEW) tracks computed in
+  // parallel so we can expose the before→after delta for auditability.
+  const rawWeighted: WeightedComp[] = [];
+  const adjWeighted: WeightedComp[] = [];
+  const compAdjustments: CompAdjustmentRecord[] = [];
+  const hedonicSamples: HedonicSample[] = [];
+
   let usedTransactionCompCount = 0;
   let usedComparableEntryCount = 0;
 
+  const msPerYear = 1000 * 60 * 60 * 24 * 365.25;
+
+  function pushComp(args: {
+    source: CompAdjustmentRecord['source'];
+    rawPrice: number;
+    area: number | null;
+    transactionDate: Date | null;
+    market: string | null;
+    region: string | null;
+    subjectVsCompPriceLevelPct: number | null;
+    weight: number;
+  }): AdjustedComp {
+    const adjusted = adjustComp({
+      rawPricePerSqmKrw: args.rawPrice,
+      compAreaSqm: args.area,
+      subjectAreaSqm: inputs.rentableAreaSqm,
+      transactionDate: args.transactionDate,
+      valuationDate,
+      annualPriceGrowthPct: inputs.annualPriceGrowthPct ?? null,
+      compMarket: args.market,
+      compRegion: args.region,
+      subjectMarket: inputs.subjectMarket,
+      subjectProvince: inputs.subjectProvince,
+      subjectVsCompPriceLevelPct: args.subjectVsCompPriceLevelPct
+    });
+    rawWeighted.push({ pricePerSqmKrw: args.rawPrice, weight: args.weight });
+    adjWeighted.push({ pricePerSqmKrw: adjusted.adjustedPricePerSqmKrw, weight: args.weight });
+    compAdjustments.push({
+      source: args.source,
+      rawPricePerSqmKrw: roundKrw(adjusted.rawPricePerSqmKrw),
+      adjustedPricePerSqmKrw: roundKrw(adjusted.adjustedPricePerSqmKrw),
+      netAdjustmentPct: adjusted.netAdjustmentPct,
+      netClamped: adjusted.netClamped,
+      weight: Number(args.weight.toFixed(4)),
+      factors: adjusted.factors
+    });
+    if (args.area && args.area > 0) {
+      const ageYears = args.transactionDate
+        ? Math.max(0, (valuationDate.getTime() - args.transactionDate.getTime()) / msPerYear)
+        : 0;
+      hedonicSamples.push({ pricePerSqmKrw: args.rawPrice, areaSqm: args.area, ageYears });
+    }
+    return adjusted;
+  }
+
   for (const entry of inputs.comparableSetEntries) {
     if (!entry.pricePerSqmKrw || entry.pricePerSqmKrw <= 0) continue;
+    // ComparableSet entries carry area but no date/market on this input shape;
+    // weight keeps the legacy 0.85 confidence factor.
     const weight = areaSimilarityWeight(inputs.rentableAreaSqm, entry.areaSqm) * 0.85;
-    weighted.push({ pricePerSqmKrw: entry.pricePerSqmKrw, weight });
+    pushComp({
+      source: 'comparableEntry',
+      rawPrice: entry.pricePerSqmKrw,
+      area: entry.areaSqm,
+      transactionDate: null,
+      market: null,
+      region: null,
+      subjectVsCompPriceLevelPct: null,
+      weight
+    });
     usedComparableEntryCount += 1;
   }
 
@@ -289,12 +401,41 @@ function computeSalesComparisonApproach(
     );
     const combined = area * recency * market;
     if (combined <= 0.05) continue; // drop essentially-irrelevant comps
-    weighted.push({ pricePerSqmKrw: comp.pricePerSqmKrw, weight: combined });
+    pushComp({
+      source: 'transactionComp',
+      rawPrice: comp.pricePerSqmKrw,
+      area: comp.areaSqm,
+      transactionDate: comp.transactionDate,
+      market: comp.market,
+      region: comp.region,
+      subjectVsCompPriceLevelPct: comp.subjectVsCompPriceLevelPct ?? null,
+      weight: combined
+    });
     usedTransactionCompCount += 1;
   }
 
-  const weightedPrice = weightedAveragePrice(weighted);
-  const valueKrw = weightedPrice ? weightedPrice * inputs.rentableAreaSqm : null;
+  const rawWeightedPrice = weightedAveragePrice(rawWeighted);
+  let adjustedPrice = weightedAveragePrice(adjWeighted);
+  let hedonicApplied = false;
+
+  // Optional hedonic OLS — only on a sufficiently large comp set
+  // (HEDONIC_MIN_COMPS). It must AGREE with the factor-adjusted value within a
+  // sanity band, otherwise we discard the regression (the task forbids an
+  // unstable regression dominating). Predicts subject price at age 0 (current).
+  if (hedonicSamples.length >= HEDONIC_MIN_COMPS && adjustedPrice) {
+    const fit = fitHedonic(hedonicSamples);
+    if (fit && fit.r2 >= 0.3) {
+      const predicted = predictHedonic(fit, inputs.rentableAreaSqm, 0);
+      // Accept only if within ±25% of the transparent factor-adjusted value.
+      if (predicted && Math.abs(predicted / adjustedPrice - 1) <= 0.25) {
+        // Blend 50/50 — keep the auditable factor method anchoring the result.
+        adjustedPrice = (adjustedPrice + predicted) / 2;
+        hedonicApplied = true;
+      }
+    }
+  }
+
+  const valueKrw = adjustedPrice ? adjustedPrice * inputs.rentableAreaSqm : null;
 
   const totalUsable = usedComparableEntryCount + usedTransactionCompCount;
   let dataQuality: ValuationApproachDetail['dataQuality'] = 'unavailable';
@@ -307,18 +448,23 @@ function computeSalesComparisonApproach(
     labelKo: '거래사례비교법',
     labelEn: 'Sales Comparison',
     valueKrw: valueKrw === null ? null : roundKrw(valueKrw),
-    valuePerSqmKrw: weightedPrice ? roundKrw(weightedPrice) : null,
+    valuePerSqmKrw: adjustedPrice ? roundKrw(adjustedPrice) : null,
     weight: 0,
     dataQuality,
     inputs: {
-      weightedPricePerSqmKrw: weightedPrice ? roundKrw(weightedPrice) : null,
+      adjustedPricePerSqmKrw: adjustedPrice ? roundKrw(adjustedPrice) : null,
+      rawWeightedPricePerSqmKrw: rawWeightedPrice ? roundKrw(rawWeightedPrice) : null,
       usedComparableEntries: usedComparableEntryCount,
-      usedTransactionComps: usedTransactionCompCount
+      usedTransactionComps: usedTransactionCompCount,
+      hedonicApplied: hedonicApplied ? 1 : 0
     },
     note:
       dataQuality === 'unavailable'
         ? 'No usable comps — excluded from reconciliation.'
-        : `Weighted by area similarity × recency (${RECENCY_HALF_LIFE_MONTHS}-mo half-life) × market match.`
+        : `Comps quantitatively adjusted (시점·규모·지역) then weighted by area × recency (${RECENCY_HALF_LIFE_MONTHS}-mo half-life) × market match${hedonicApplied ? ' + hedonic OLS blend' : ''}.`,
+    compAdjustments,
+    rawWeightedPricePerSqmKrw: rawWeightedPrice ? roundKrw(rawWeightedPrice) : null,
+    hedonicApplied
   };
 }
 
@@ -463,8 +609,14 @@ export function deriveThreeApproachInputs(
     areaSqm: null, // TransactionComp schema has no area field — keep area weight neutral (0.5)
     transactionDate: c.transactionDate ? new Date(c.transactionDate) : null,
     market: c.market ?? null,
-    region: c.region ?? null
+    region: c.region ?? null,
+    subjectVsCompPriceLevelPct: null
   }));
+
+  // Derive a market price-growth signal (%/yr) for time-adjustment from the
+  // indicator series. Prefer explicit *price* growth keys; null ⇒ the
+  // documented conservative default is used inside comp-adjustments.ts.
+  const annualPriceGrowthPct = derivePriceGrowthSignal(bundle.marketIndicatorSeries ?? []);
 
   return {
     rentableAreaSqm: state.rentableAreaSqm,
@@ -480,6 +632,30 @@ export function deriveThreeApproachInputs(
     approvalYear: bundle.buildingContext?.approvalYear ?? null,
     regionalConstructionCostPerSqmKrw:
       bundle.buildingContext?.regionalConstructionCostPerSqmKrw ?? null,
-    fallbackReplacementCostPerSqmKrw
+    fallbackReplacementCostPerSqmKrw,
+    annualPriceGrowthPct
   };
+}
+
+/**
+ * Extract an annual capital-value growth signal (%/yr) from MarketIndicatorSeries.
+ * Averages indicator values whose key references price/capital-value growth.
+ * Returns null when no such indicator exists (caller falls back to the
+ * documented default growth rate).
+ */
+function derivePriceGrowthSignal(
+  indicators: Array<{ indicatorKey: string; value: number | null }>
+): number | null {
+  const matches = indicators
+    .filter((i) => {
+      const k = i.indicatorKey.toLowerCase();
+      return (
+        (k.includes('price') || k.includes('capital_value') || k.includes('value')) &&
+        k.includes('growth')
+      );
+    })
+    .map((i) => i.value)
+    .filter((v): v is number => typeof v === 'number' && Number.isFinite(v));
+  if (matches.length === 0) return null;
+  return matches.reduce((s, v) => s + v, 0) / matches.length;
 }
