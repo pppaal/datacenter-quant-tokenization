@@ -16,6 +16,7 @@
 
 import type { AssetClass, MacroFactor } from '@prisma/client';
 import type { AutoAnalyzeResult } from '@/lib/services/property-analyzer/auto-analyze';
+import type { AnalysisProvenance } from '@/lib/services/property-analyzer/bundle-assembler';
 import type { ProFormaBaseCase, UnderwritingAnalysis } from '@/lib/services/valuation/types';
 import { buildTaxProfile } from '@/lib/services/valuation/inputs';
 import {
@@ -126,6 +127,13 @@ export type FullReport = {
   tenantCredit: RentDefaultProjection | null;
   prosCons: ProsConsReport;
   idiosyncraticRisk: IdiosyncraticRiskReport;
+  /**
+   * Data-quality / provenance summary for the material inputs: which came from
+   * LIVE/SEED connectors vs IMPUTED/FALLBACK assumptions or MOCK geocode, plus
+   * connector failures and a top-level trust hint. Optional + additive so it is
+   * backward-compatible; mirrors `autoAnalyze.provenance`.
+   */
+  assumptionsQuality?: AnalysisProvenance;
 };
 
 export type BuildFullReportOptions = {
@@ -561,6 +569,9 @@ export async function buildFullReport(
     debtSourcing,
     tenantCredit,
     prosCons,
-    idiosyncraticRisk
+    idiosyncraticRisk,
+    // Surface the provenance captured during bundle assembly. Optional on the
+    // type so older callers/serialized reports remain valid.
+    assumptionsQuality: auto.provenance
   };
 }

@@ -17,7 +17,14 @@ import {
   classifyAsset,
   type ClassificationResult
 } from '@/lib/services/property-analyzer/asset-classifier';
-import { assembleBundle } from '@/lib/services/property-analyzer/bundle-assembler';
+import {
+  assembleBundle,
+  buildAnalysisProvenance,
+  type AnalysisProvenance,
+  type ConnectorFailure,
+  type ConnectorModeMap
+} from '@/lib/services/property-analyzer/bundle-assembler';
+import { resolveConnectorMode } from '@/lib/services/public-data/registry';
 import type {
   BuildingRegistryConnector,
   GridAccessConnector,
@@ -65,6 +72,11 @@ export type AutoAnalyzeResult = {
   };
   classification: ClassificationResult;
   bundle: UnderwritingBundle;
+  /**
+   * Provenance / data-quality of the material inputs that drove the primary
+   * analysis. Surfacing-only; valuation math is unaffected.
+   */
+  provenance: AnalysisProvenance;
   primaryAnalysis: UnderwritingAnalysis;
   alternativeAnalyses: Array<{
     assetClass: AssetClass;
@@ -133,10 +145,16 @@ export async function autoAnalyzeProperty(
   const macroMicro = connectors.macroMicro ?? defaults.macroMicro;
   const transactionCompsConnector = connectors.transactionComps ?? defaults.transactionComps;
 
-  // 1. Resolve location
+  // Surfaced connector/data failures (previously only console.warn'd). These
+  // are attached to the provenance block so the UI can show them.
+  const surfacedFailures: ConnectorFailure[] = [];
+
+  // 1. Resolve location. The only geocoder wired today is the deterministic
+  // mock; mark geocode provenance as MOCK until a live geocoder is added.
   let parcel;
   let location;
   let districtName;
+  const mockGeocode = true;
   if (input.address) {
     const geo = geocodeAddress(input.address);
     if (!geo) {
@@ -181,6 +199,7 @@ export async function autoAnalyzeProperty(
   if (connectorFailures.length > 0) {
     console.warn('[auto-analyze] connector failures', connectorFailures);
   }
+  surfacedFailures.push(...connectorFailures);
 
   if (!zoneOutcome.ok || !zoneOutcome.value) {
     const reason = zoneOutcome.ok ? 'returned no record' : zoneOutcome.error.message;
@@ -218,6 +237,10 @@ export async function autoAnalyzeProperty(
       '[auto-analyze] rent comps failed, using empty set',
       primaryCompsOutcome.error.message
     );
+    surfacedFailures.push({
+      label: 'rent-comps-primary',
+      message: primaryCompsOutcome.error.message
+    });
   }
   const primaryComps = primaryCompsOutcome.ok ? primaryCompsOutcome.value : [];
 
@@ -233,11 +256,15 @@ export async function autoAnalyzeProperty(
       '[auto-analyze] transaction comps failed, using empty set',
       transactionCompsOutcome.error.message
     );
+    surfacedFailures.push({
+      label: 'transaction-comps',
+      message: transactionCompsOutcome.error.message
+    });
   }
   const transactionCompsData = transactionCompsOutcome.ok ? transactionCompsOutcome.value : [];
 
   // 5. Assemble bundle for primary class
-  const bundle = assembleBundle({
+  const primaryAssemblerInput = {
     addressInput: input.address ?? `${location.latitude},${location.longitude}`,
     parcel,
     location,
@@ -250,6 +277,24 @@ export async function autoAnalyzeProperty(
     transactionComps: transactionCompsData,
     macroMicro: macro,
     assetClass: primaryClass
+  };
+  const bundle = assembleBundle(primaryAssemblerInput);
+
+  // 5b. Capture provenance / data-quality for the primary inputs. Pure
+  // surfacing — does not touch the bundle the engine consumes.
+  const connectorModeReport = resolveConnectorMode();
+  const connectorModes: ConnectorModeMap = {
+    buildingRegistry: connectorModeReport.buildingRegistry,
+    useZone: connectorModeReport.useZone,
+    landPricing: connectorModeReport.landPricing,
+    rentComps: connectorModeReport.rentComps,
+    grid: connectorModeReport.grid,
+    macroMicro: connectorModeReport.macroMicro
+  };
+  const provenance = buildAnalysisProvenance(primaryAssemblerInput, {
+    mockGeocode,
+    connectorModes,
+    connectorFailures: surfacedFailures
   });
 
   // 6. Run primary valuation
@@ -308,6 +353,7 @@ export async function autoAnalyzeProperty(
     },
     classification,
     bundle,
+    provenance,
     primaryAnalysis,
     alternativeAnalyses,
     publicData: {
