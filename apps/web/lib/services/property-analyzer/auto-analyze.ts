@@ -32,7 +32,10 @@ import type {
 } from '@/lib/services/public-data/types';
 import type { UnderwritingAnalysis, UnderwritingBundle } from '@/lib/services/valuation/types';
 import { buildDataCenterValuationAnalysis } from '@/lib/services/valuation/strategies/data-center';
+import { buildHotelValuationAnalysis } from '@/lib/services/valuation/strategies/hotel';
 import { buildIndustrialValuationAnalysis } from '@/lib/services/valuation/strategies/industrial';
+import { buildLandValuationAnalysis } from '@/lib/services/valuation/strategies/land';
+import { buildMixedUseValuationAnalysis } from '@/lib/services/valuation/strategies/mixed-use';
 import { buildMultifamilyValuationAnalysis } from '@/lib/services/valuation/strategies/multifamily';
 import { buildOfficeValuationAnalysis } from '@/lib/services/valuation/strategies/office';
 import { buildRetailValuationAnalysis } from '@/lib/services/valuation/strategies/retail';
@@ -95,13 +98,17 @@ const STRATEGY_BY_CLASS: Partial<
   [AssetClass.RETAIL]: (b) => buildRetailValuationAnalysis(b),
   [AssetClass.INDUSTRIAL]: (b) => buildIndustrialValuationAnalysis(b),
   [AssetClass.MULTIFAMILY]: (b) => buildMultifamilyValuationAnalysis(b),
-  [AssetClass.DATA_CENTER]: (b) => buildDataCenterValuationAnalysis(b)
+  [AssetClass.DATA_CENTER]: (b) => buildDataCenterValuationAnalysis(b),
+  [AssetClass.HOTEL]: (b) => buildHotelValuationAnalysis(b),
+  [AssetClass.MIXED_USE]: (b) => buildMixedUseValuationAnalysis(b),
+  [AssetClass.LAND]: (b) => buildLandValuationAnalysis(b)
 };
 
 function runStrategy(cls: AssetClass, bundle: UnderwritingBundle): Promise<UnderwritingAnalysis> {
   const strategy = STRATEGY_BY_CLASS[cls];
   if (!strategy) {
-    // Fall back to OFFICE for unsupported classes (HOTEL, LAND, MIXED_USE)
+    // Every AssetClass now has a dedicated strategy; this guards only against a
+    // future enum member added without a matching entry above.
     return buildOfficeValuationAnalysis({
       ...bundle,
       asset: { ...bundle.asset, assetClass: AssetClass.OFFICE }
