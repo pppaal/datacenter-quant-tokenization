@@ -630,7 +630,7 @@ function buildHeroFacts(bundle: DealReportBundle, kind: ReportKind): ReportFact[
     },
     {
       label: 'Confidence',
-      value: latestRun ? `${formatNumber(latestRun.confidenceScore, 1)} / 100` : 'N/A'
+      value: latestRun ? `${formatNumber(latestRun.confidenceScore, 1)} / 10` : 'N/A'
     },
     {
       label: 'Year 1 NOI',
@@ -1163,8 +1163,8 @@ function buildRiskMemoSections(bundle: DealReportBundle): ReportSection[] {
       facts: [
         {
           label: 'Confidence',
-          value: latestRun ? `${formatNumber(latestRun.confidenceScore, 1)} / 100` : 'N/A',
-          tone: (latestRun?.confidenceScore ?? 0) < 55 ? 'danger' : 'warn'
+          value: latestRun ? `${formatNumber(latestRun.confidenceScore, 1)} / 10` : 'N/A',
+          tone: (latestRun?.confidenceScore ?? 0) < 5.5 ? 'danger' : 'warn'
         },
         {
           label: 'Base DSCR',

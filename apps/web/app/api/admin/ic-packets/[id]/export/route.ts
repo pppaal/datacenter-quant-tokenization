@@ -130,7 +130,7 @@ function buildPacketHtml(packet: NonNullable<Awaited<ReturnType<typeof loadPacke
     [
       'Valuation Confidence',
       packet.valuationRun?.confidenceScore != null
-        ? `${(packet.valuationRun.confidenceScore * 100).toFixed(1)}%`
+        ? `${packet.valuationRun.confidenceScore.toFixed(1)} / 10`
         : '—'
     ]
   ];
