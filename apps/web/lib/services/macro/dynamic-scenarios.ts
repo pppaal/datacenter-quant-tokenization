@@ -1,6 +1,12 @@
-import type { MacroFactor } from '@prisma/client';
+import type { MacroFactor, MacroSeries } from '@prisma/client';
 import type { MacroStressScenario } from '@/lib/services/macro/deal-risk';
 import type { TrendAnalysis } from '@/lib/services/macro/trend';
+import {
+  estimateFactorCovariance,
+  choleskyPsd,
+  drawCorrelatedShock,
+  mulberry32
+} from '@/lib/services/macro/covariance';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -10,6 +16,12 @@ export type DynamicScenarioContext = {
   market: string;
   factors: MacroFactor[];
   trends: TrendAnalysis[];
+  /**
+   * Optional MacroSeries history. When supplied with sufficient observations,
+   * the tail-risk scenario draws genuine multi-σ correlated shocks instead of
+   * hand-set constants.
+   */
+  series?: MacroSeries[];
 };
 
 // ---------------------------------------------------------------------------
@@ -109,13 +121,100 @@ export function generateTrendContinuationScenario(
   };
 }
 
+// Shock dimensions in a fixed order, each mapped to its MacroSeries proxy and
+// the sign that makes a draw "adverse" for that dimension.
+//   rate / spread / vacancy / construction → adverse when they RISE  (+1)
+//   growth → adverse when it FALLS (-1)
+const TAIL_DIMENSIONS = [
+  { seriesKey: 'policy_rate_pct', adverseSign: +1 },
+  { seriesKey: 'credit_spread_bps', adverseSign: +1 },
+  { seriesKey: 'vacancy_pct', adverseSign: +1 },
+  { seriesKey: 'rent_growth_pct', adverseSign: -1 },
+  { seriesKey: 'construction_cost_index', adverseSign: +1 }
+] as const;
+
+// Adverse severity in σ units for the correlated draw. ~2.3σ ≈ a 1-in-100
+// adverse move per dimension before correlation reshapes the joint draw.
+const TAIL_SIGMA_MULTIPLE = 2.3;
+const TAIL_DRAW_SEED = 1337;
+
 /**
- * Generates a "tail risk" scenario: takes current headwinds and applies a
- * fixed adverse stress to each factor. The shock magnitudes below are
- * hand-set constants (e.g. 250bps on rates when stressed), NOT computed
- * standard deviations / sigmas of the underlying series.
+ * Generates a "tail risk" scenario.
+ *
+ * When sufficient MacroSeries history is supplied (>= MIN_CHANGE_OBSERVATIONS
+ * change observations across the tail dimensions), shocks are GENUINELY σ-based:
+ * we estimate the covariance of factor changes, draw a correlated multi-σ
+ * adverse vector via the reused PSD-safe Cholesky, and orient each component to
+ * its adverse direction. Otherwise we fall back to the original hand-set
+ * constants (labelled "Fixed adverse shocks" so the output stays honest).
  */
 export function generateTailRiskScenario(ctx: DynamicScenarioContext): MacroStressScenario {
+  const covariant = ctx.series ? tryCovarianceTailRisk(ctx) : null;
+  if (covariant) return covariant;
+  return fixedTailRiskScenario(ctx);
+}
+
+function tryCovarianceTailRisk(ctx: DynamicScenarioContext): MacroStressScenario | null {
+  const seriesKeys = TAIL_DIMENSIONS.map((d) => d.seriesKey);
+  const estimate = estimateFactorCovariance(ctx.series ?? [], seriesKeys, ctx.market);
+  if (!estimate.sufficient) return null;
+
+  // Mean adverse draw: shock_i = adverseSign_i · TAIL_SIGMA_MULTIPLE · σ_i,
+  // reshaped by the correlation structure of the covariance via Cholesky. We
+  // average a deterministic ensemble so the reported scenario reflects the
+  // joint covariance rather than one noisy draw, while staying reproducible.
+  const L = choleskyPsd(estimate.covariance);
+  const rng = mulberry32(TAIL_DRAW_SEED);
+  const ENSEMBLE = 256;
+  const accum = new Array(seriesKeys.length).fill(0);
+  for (let n = 0; n < ENSEMBLE; n++) {
+    const draw = drawCorrelatedShock(L, rng);
+    // Orient each component to its adverse tail and take the adverse magnitude.
+    for (let i = 0; i < draw.length; i++) {
+      const adverse = TAIL_DIMENSIONS[i]!.adverseSign * Math.abs(draw[i]!);
+      accum[i] += adverse;
+    }
+  }
+  // Mean of |N(0,σ²)| ≈ 0.8σ; scale the averaged magnitude up to TAIL_SIGMA_MULTIPLE σ.
+  const meanAbsToSigma = TAIL_SIGMA_MULTIPLE / 0.7979;
+  const shock = accum.map((v, i) => {
+    const mean = v / ENSEMBLE;
+    return TAIL_DIMENSIONS[i]!.adverseSign * Math.abs(mean) * meanAbsToSigma;
+  });
+
+  const [rateChg, spreadChg, vacancyChg, growthChg, constructionChg] = shock;
+
+  // policy_rate is in %, the shock model expects bps → ×100. credit_spread is
+  // already bps. vacancy / rent_growth in %, construction in index points (~%).
+  const rateShiftBps = Math.max(0, Math.round(rateChg! * 100));
+  const spreadShiftBps = Math.max(0, Math.round(spreadChg!));
+  const vacancyShiftPct = Math.max(0, Number(vacancyChg!.toFixed(1)));
+  const growthShiftPct = Math.min(0, Number(growthChg!.toFixed(1)));
+  const constructionCostShiftPct = Math.max(0, Number(constructionChg!.toFixed(1)));
+
+  const description =
+    `Covariance-aware tail risk: correlated ${TAIL_SIGMA_MULTIPLE}σ adverse draw from ` +
+    `${estimate.observationCount} change observations (shrinkage δ=${estimate.shrinkageIntensity.toFixed(2)}). ` +
+    `σ-based shocks via PSD-safe Cholesky.`;
+
+  return {
+    name: 'Dynamic Tail Risk',
+    description,
+    shocks: {
+      rateShiftBps,
+      spreadShiftBps,
+      vacancyShiftPct,
+      growthShiftPct,
+      constructionCostShiftPct
+    }
+  };
+}
+
+/**
+ * Original fixed-constant tail-risk scenario. The shock magnitudes are hand-set
+ * constants (e.g. 250bps on rates when stressed), NOT computed σ moves.
+ */
+function fixedTailRiskScenario(ctx: DynamicScenarioContext): MacroStressScenario {
   const lookup = buildFactorLookup(ctx.factors, ctx.market);
 
   const rateDir = lookup.get('rate_level')?.direction ?? 'NEUTRAL';
