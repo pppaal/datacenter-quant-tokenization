@@ -2,7 +2,12 @@ import {
   computeAnnualJongbuseKrw,
   DEFAULT_FAIR_MARKET_RATIO
 } from '@/lib/services/valuation/jongbuse';
-import type { ProFormaBaseCase, ProFormaYear } from '@/lib/services/valuation/types';
+import { buildTerminalValueCrossCheck } from '@/lib/services/valuation/lease-dcf';
+import type {
+  ProFormaBaseCase,
+  ProFormaYear,
+  TerminalValueCrossCheck
+} from '@/lib/services/valuation/types';
 
 export const HOLDING_YEARS = 10;
 
@@ -73,6 +78,8 @@ export type ProFormaExtras = {
   releasedReservesAtExitKrw: number;
   inPlaceTerminalNoiKrw: number;
   forwardTerminalNoiKrw: number;
+  /** Exit-cap-vs-Gordon-growth terminal-value reconciliation + sanity flags. */
+  terminalValueCrossCheck: TerminalValueCrossCheck;
 };
 
 /** Per-asset-class capex reserve as pct of revenue (major systems refresh). */
@@ -175,6 +182,7 @@ export function buildSyntheticProForma(inputs: ProFormaInputs): {
     ltvPct,
     interestRatePct,
     amortTermMonths,
+    capRatePct,
     exitCapRatePct,
     year1Noi,
     growthPct,
@@ -374,6 +382,20 @@ export function buildSyntheticProForma(inputs: ProFormaInputs): {
   const grossExit =
     exitCapRatePct > 0 ? Math.round(forwardTerminalNoi / (exitCapRatePct / 100)) : 0;
 
+  // Terminal-value cross-check: reconcile the exit-cap TV against a Gordon-growth
+  // perpetuity. No explicit discount rate is carried in ProFormaInputs, so we use
+  // the standard cap-rate identity r ≈ going-in cap + growth as the discount-rate
+  // proxy (cap = r - g). Surfaced for reviewers; exit-cap stays primary.
+  const terminalDiscountRatePct = capRatePct + growthPct;
+  const terminalValueCrossCheck = buildTerminalValueCrossCheck({
+    forwardNoiKrw: forwardTerminalNoi,
+    exitCapTerminalValueKrw: grossExit,
+    exitCapRatePct,
+    goingInCapRatePct: capRatePct,
+    discountRatePct: terminalDiscountRatePct,
+    growthPct
+  });
+
   const adjustedBasis = Math.max(0, totalBasis - cumulativeDepreciation);
   const realizedGain = Math.max(0, grossExit - adjustedBasis);
   const exitTax = Math.round(realizedGain * (exitTaxPct / 100));
@@ -440,7 +462,8 @@ export function buildSyntheticProForma(inputs: ProFormaInputs): {
       totalOperatingReserveKrw: cumulativeOperatingReserve,
       releasedReservesAtExitKrw: releasedReservesKrw,
       inPlaceTerminalNoiKrw: inPlaceTerminalNoi,
-      forwardTerminalNoiKrw: forwardTerminalNoi
+      forwardTerminalNoiKrw: forwardTerminalNoi,
+      terminalValueCrossCheck
     }
   };
 }

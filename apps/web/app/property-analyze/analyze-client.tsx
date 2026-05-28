@@ -110,6 +110,7 @@ export default function PropertyAnalyzePage({ mapConfig }: { mapConfig: MapProvi
   const capMatrix = report?.sensitivities?.capRateExit;
   const irRows = report?.sensitivities?.interestRate ?? [];
   const md = report?.sensitivities?.macroDriven;
+  const tornado = report?.sensitivities?.tornado;
   const refi = report?.refinancing;
   const wf = report?.gpLpWaterfall;
 
@@ -1860,6 +1861,87 @@ export default function PropertyAnalyzePage({ mapConfig }: { mapConfig: MapProvi
                 </table>
               </div>
             </Section>
+
+            {tornado && tornado.drivers.length > 0 && (
+              <Section
+                title="9b. Tornado — Driver Sensitivity (levered IRR swing)"
+                collapsible
+                defaultOpen={false}
+              >
+                <div className="mb-2 text-xs text-zinc-400">
+                  Base equity IRR:{' '}
+                  {tornado.baseEquityIrr === null ? 'N/A' : pct(tornado.baseEquityIrr)} · drivers
+                  ranked by absolute IRR swing for a +/- shock.
+                </div>
+                <div className="space-y-2">
+                  {tornado.drivers.map((d: any) => {
+                    const maxSwing = tornado.drivers[0]?.irrSwing || 1;
+                    const widthPct = Math.max(2, Math.round((d.irrSwing / maxSwing) * 100));
+                    return (
+                      <div key={d.key} className="text-sm">
+                        <div className="flex items-center justify-between text-xs text-zinc-400">
+                          <span>
+                            {d.label} <span className="text-zinc-600">({d.deltaLabel})</span>
+                          </span>
+                          <span className="font-mono">
+                            {d.lowIrr === null ? 'N/A' : pct(d.lowIrr, 1)} →{' '}
+                            {d.highIrr === null ? 'N/A' : pct(d.highIrr, 1)} · Δ{' '}
+                            {d.irrSwing.toFixed(2)}pp
+                          </span>
+                        </div>
+                        <div className="mt-1 h-3 w-full rounded bg-zinc-800">
+                          <div
+                            className="h-3 rounded bg-indigo-500"
+                            style={{ width: `${widthPct}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {pfx?.terminalValueCrossCheck && (
+                  <div className="mt-4 border-t border-zinc-800 pt-3 text-xs text-zinc-400">
+                    <div className="mb-1 font-semibold text-zinc-300">
+                      Terminal Value Cross-Check
+                    </div>
+                    <Row
+                      k="Exit-Cap TV (primary)"
+                      v={krw(pfx.terminalValueCrossCheck.exitCapTerminalValueKrw)}
+                    />
+                    <Row
+                      k="Gordon-Growth TV"
+                      v={
+                        pfx.terminalValueCrossCheck.gordonTerminalValueKrw === null
+                          ? 'N/A (r ≤ g)'
+                          : krw(pfx.terminalValueCrossCheck.gordonTerminalValueKrw)
+                      }
+                    />
+                    <Row
+                      k="Divergence"
+                      v={
+                        pfx.terminalValueCrossCheck.divergencePct === null
+                          ? 'N/A'
+                          : `${pfx.terminalValueCrossCheck.divergencePct.toFixed(1)}%`
+                      }
+                    />
+                    {pfx.terminalValueCrossCheck.divergesBeyondThreshold && (
+                      <p className="mt-1 text-amber-400">
+                        ⚠ Exit-cap and Gordon TV diverge &gt;{' '}
+                        {pfx.terminalValueCrossCheck.divergenceThresholdPct}% — review exit
+                        assumptions.
+                      </p>
+                    )}
+                    {pfx.terminalValueCrossCheck.terminalSpreadInverted && (
+                      <p className="mt-1 text-amber-400">
+                        ⚠ Exit cap below going-in (
+                        {pfx.terminalValueCrossCheck.terminalCapSpreadBps}
+                        bps) — assumes cap compression at exit.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </Section>
+            )}
 
             <Section title="10. Refinancing Analysis" collapsible defaultOpen={false}>
               <Row k="Triggers detected" v={refi.triggers.length} />

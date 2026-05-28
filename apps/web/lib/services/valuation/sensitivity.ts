@@ -232,6 +232,225 @@ export function buildInterestRateSensitivity(
 }
 
 // ---------------------------------------------------------------------------
+// Tornado sensitivity (one-way, all key drivers ranked by |levered IRR swing|)
+// ---------------------------------------------------------------------------
+//
+// Deterministic: each driver is independently shocked +delta and -delta around
+// the base case, the resulting levered equity IRR is recomputed, and drivers are
+// ranked by the absolute spread between their up and down IRR outcomes. This is
+// the classic "tornado" view — the widest bar (biggest swing) sits on top.
+
+export type TornadoDriver = {
+  key: string;
+  label: string;
+  /** Human-readable description of the +/- shock applied. */
+  deltaLabel: string;
+  baseIrr: number | null;
+  lowIrr: number | null;
+  highIrr: number | null;
+  /** |highIrr - lowIrr| in IRR percentage points; the bar length / rank key. */
+  irrSwing: number;
+};
+
+export type TornadoResult = {
+  baseEquityIrr: number | null;
+  drivers: TornadoDriver[];
+};
+
+type TornadoInputs = {
+  proForma: ProFormaBaseCase;
+  totalCapexKrw: number;
+  initialDebtFundingKrw: number;
+  baseCapRatePct: number;
+  baseExitCapRatePct: number;
+  baseInterestRatePct: number;
+  baseOccupancyPct: number;
+  growthPct: number;
+  stabilizedNoiKrw: number;
+  terminalValueKrw: number;
+};
+
+// A scenario is a per-year transform on (afterTaxDistribution, terminalAddOn).
+type TornadoScenario = (args: { year: ProFormaBaseCase['years'][number]; isTerminal: boolean }) => {
+  distribution: number;
+  terminalAddOn: number;
+};
+
+function tornadoIrr(
+  inputs: TornadoInputs,
+  scenario: TornadoScenario,
+  initialEquityKrw: number
+): number | null {
+  const years = inputs.proForma.years;
+  const cashFlows: number[] = [-initialEquityKrw];
+  for (let i = 0; i < years.length; i++) {
+    const year = years[i]!;
+    const isTerminal = i === years.length - 1;
+    const { distribution, terminalAddOn } = scenario({ year, isTerminal });
+    cashFlows.push(distribution + (isTerminal ? terminalAddOn : 0));
+  }
+  return computeIrr(cashFlows);
+}
+
+export function buildTornadoSensitivity(inputs: TornadoInputs): TornadoResult {
+  const initialEquityKrw = inputs.totalCapexKrw - inputs.initialDebtFundingKrw;
+  const endingDebt = inputs.proForma.summary.endingDebtBalanceKrw;
+  const baseTerminalNet = inputs.terminalValueKrw - endingDebt;
+
+  const baseScenario: TornadoScenario = ({ year }) => ({
+    distribution: year.afterTaxDistributionKrw,
+    terminalAddOn: baseTerminalNet
+  });
+  const baseEquityIrr = tornadoIrr(inputs, baseScenario, initialEquityKrw);
+
+  // Each driver: a +/- shock factory. Deltas are symmetric and deterministic.
+  type DriverSpec = {
+    key: string;
+    label: string;
+    deltaLabel: string;
+    make: (sign: 1 | -1) => TornadoScenario;
+  };
+
+  // Going-in cap rate proxy: scale NOI-driven distributions by the cap ratio.
+  const capDelta = 0.5; // ±50bps
+  const exitCapDelta = 0.5; // ±50bps
+  const rentDelta = 0.1; // ±10% NOI/rent
+  const occDeltaPct = 5; // ±5 occupancy points
+  const rateDeltaBps = 100; // ±100bps interest
+  const opexDelta = 0.05; // ±5% opex burden on distributions
+  const growthDelta = 1.0; // ±100bps rent growth → terminal value
+
+  const drivers: DriverSpec[] = [
+    {
+      key: 'capRate',
+      label: 'Going-In Cap Rate',
+      deltaLabel: `±${capDelta.toFixed(1)}%`,
+      make: (sign) => {
+        // Higher cap rate ⇒ lower entry value ⇒ proxy lower distributions.
+        const mult =
+          inputs.baseCapRatePct > 0
+            ? inputs.baseCapRatePct / (inputs.baseCapRatePct + sign * capDelta)
+            : 1;
+        return ({ year }) => ({
+          distribution: year.afterTaxDistributionKrw * mult,
+          terminalAddOn: baseTerminalNet
+        });
+      }
+    },
+    {
+      key: 'exitCapRate',
+      label: 'Exit Cap Rate',
+      deltaLabel: `±${exitCapDelta.toFixed(1)}%`,
+      make: (sign) => {
+        const newExitCap = inputs.baseExitCapRatePct + sign * exitCapDelta;
+        const newTerminalGross = newExitCap > 0 ? inputs.stabilizedNoiKrw / (newExitCap / 100) : 0;
+        const newTerminalNet = newTerminalGross - endingDebt;
+        return ({ year }) => ({
+          distribution: year.afterTaxDistributionKrw,
+          terminalAddOn: newTerminalNet
+        });
+      }
+    },
+    {
+      key: 'rentNoi',
+      label: 'Rent / NOI',
+      deltaLabel: `±${(rentDelta * 100).toFixed(0)}%`,
+      make: (sign) => {
+        const mult = 1 + sign * rentDelta;
+        return ({ year }) => ({
+          distribution: year.afterTaxDistributionKrw * mult,
+          terminalAddOn: baseTerminalNet * mult + endingDebt * (1 - mult)
+        });
+      }
+    },
+    {
+      key: 'occupancy',
+      label: 'Occupancy',
+      deltaLabel: `±${occDeltaPct} pts`,
+      make: (sign) => {
+        const occMult =
+          inputs.baseOccupancyPct > 0
+            ? (inputs.baseOccupancyPct + sign * occDeltaPct) / inputs.baseOccupancyPct
+            : 1;
+        return ({ year }) => ({
+          distribution: year.afterTaxDistributionKrw * occMult,
+          terminalAddOn: inputs.terminalValueKrw * occMult - endingDebt
+        });
+      }
+    },
+    {
+      key: 'interestRate',
+      label: 'Interest Rate',
+      deltaLabel: `±${rateDeltaBps}bps`,
+      make: (sign) => {
+        const debtCostFactor =
+          1 + (sign * rateDeltaBps) / 100 / Math.max(inputs.baseInterestRatePct, 1);
+        return ({ year }) => {
+          const adjustedInterest = year.interestKrw * debtCostFactor;
+          const debtServiceDelta = year.debtServiceKrw - (adjustedInterest + year.principalKrw);
+          return {
+            distribution: year.afterTaxDistributionKrw + debtServiceDelta,
+            terminalAddOn: baseTerminalNet
+          };
+        };
+      }
+    },
+    {
+      key: 'opex',
+      label: 'Operating Expense',
+      deltaLabel: `±${(opexDelta * 100).toFixed(0)}%`,
+      make: (sign) => {
+        // Higher opex ⇒ lower NOI ⇒ proxy lower distributions. Use opex burden:
+        // shock distributions by the opex's share-of-revenue proportionally.
+        return ({ year }) => {
+          const opexShock = year.operatingExpenseKrw * sign * opexDelta;
+          return {
+            distribution: year.afterTaxDistributionKrw - opexShock,
+            terminalAddOn: baseTerminalNet
+          };
+        };
+      }
+    },
+    {
+      key: 'growth',
+      label: 'Rent Growth',
+      deltaLabel: `±${growthDelta.toFixed(1)}%`,
+      make: (sign) => {
+        // Growth compounds into the terminal value (forward-NOI driven). Approximate
+        // terminal sensitivity over the holding period; distributions held flat.
+        const holdYears = inputs.proForma.years.length;
+        const growthMult = (1 + (sign * growthDelta) / 100) ** holdYears;
+        return ({ year }) => ({
+          distribution: year.afterTaxDistributionKrw,
+          terminalAddOn: inputs.terminalValueKrw * growthMult - endingDebt
+        });
+      }
+    }
+  ];
+
+  const computed: TornadoDriver[] = drivers.map((d) => {
+    const lowIrr = tornadoIrr(inputs, d.make(-1), initialEquityKrw);
+    const highIrr = tornadoIrr(inputs, d.make(1), initialEquityKrw);
+    const irrSwing =
+      lowIrr !== null && highIrr !== null ? Number(Math.abs(highIrr - lowIrr).toFixed(4)) : 0;
+    return {
+      key: d.key,
+      label: d.label,
+      deltaLabel: d.deltaLabel,
+      baseIrr: baseEquityIrr,
+      lowIrr,
+      highIrr,
+      irrSwing
+    };
+  });
+
+  // Rank by absolute IRR swing, widest bar first (classic tornado ordering).
+  computed.sort((a, b) => b.irrSwing - a.irrSwing);
+
+  return { baseEquityIrr, drivers: computed };
+}
+
+// ---------------------------------------------------------------------------
 // Macro-driven sensitivity: steps derived from dynamic macro scenarios
 // ---------------------------------------------------------------------------
 //

@@ -389,6 +389,24 @@ export type LeaseCashFlowYear = {
   weightedRenewalRatePerKwKrw: number | null;
 };
 
+export type TerminalValueCrossCheck = {
+  /** Primary terminal value from exit-cap method (NOI_{n+1} / exitCap). */
+  exitCapTerminalValueKrw: number;
+  /** Cross-check terminal value from Gordon-growth perpetuity (NOI_{n+1}/(r-g)). */
+  gordonTerminalValueKrw: number | null;
+  /** (gordon - exitCap) / |exitCap| × 100. Null when Gordon is undefined. */
+  divergencePct: number | null;
+  /** True when |divergencePct| exceeds the threshold. */
+  divergesBeyondThreshold: boolean;
+  divergenceThresholdPct: number;
+  /** Exit cap minus going-in cap, in bps (positive = conservative exit). */
+  terminalCapSpreadBps: number;
+  /** True when exit cap < going-in cap (cap compression at exit — flag). */
+  terminalSpreadInverted: boolean;
+  /** False when (r - g) is not a meaningful positive spread (Gordon undefined). */
+  gordonValid: boolean;
+};
+
 export type LeaseDcfResult = {
   years: LeaseCashFlowYear[];
   annualRevenueKrw: number;
@@ -398,6 +416,7 @@ export type LeaseDcfResult = {
   leaseDrivenValueKrw: number;
   terminalValueKrw: number;
   terminalYear: number;
+  terminalValueCrossCheck?: TerminalValueCrossCheck;
 };
 
 export type DebtScheduleYear = {

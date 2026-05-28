@@ -27,9 +27,11 @@ import {
   buildInterestRateSensitivity,
   buildMacroDrivenSensitivity,
   buildOccupancyRentSensitivity,
+  buildTornadoSensitivity,
   type MacroDrivenSensitivityMatrix,
   type OneWaySensitivityRow,
-  type SensitivityMatrix
+  type SensitivityMatrix,
+  type TornadoResult
 } from '@/lib/services/valuation/sensitivity';
 import { analyzeRefinancing, type RefinanceAnalysis } from '@/lib/services/valuation/refinancing';
 import { analyzeCovenants, type CovenantAnalysis } from '@/lib/services/valuation/covenants';
@@ -109,6 +111,7 @@ export type FullReport = {
     occupancyRent: SensitivityMatrix;
     interestRate: OneWaySensitivityRow[];
     macroDriven: MacroDrivenSensitivityMatrix;
+    tornado: TornadoResult;
   };
   refinancing: RefinanceAnalysis;
   macro: {
@@ -341,12 +344,17 @@ export async function buildFullReport(
   const occupancyPct =
     bundle.asset.stabilizedOccupancyPct ?? bundle.asset.occupancyAssumptionPct ?? 85;
 
+  // Mid-year discounting convention: operating distributions are spread across
+  // the year, so we treat them as arriving mid-period. This is the institutional
+  // standard and lifts levered IRR slightly relative to the end-of-year default
+  // retained elsewhere in the codebase.
   const returnMetrics = computeReturnMetricsFromProForma(
     proForma,
     totalCapex,
     initialDebt,
     netExit,
-    terminalValue
+    terminalValue,
+    true
   );
 
   const monteCarlo = runMonteCarlo(proFormaInputs, { iterations: 1000, seed: 42 });
@@ -382,6 +390,18 @@ export async function buildFullReport(
     baseOccupancyPct: occupancyPct,
     terminalValueKrw: terminalValue,
     scenarios: STRESS_SCENARIOS
+  });
+  const tornado = buildTornadoSensitivity({
+    proForma,
+    totalCapexKrw: totalCapex,
+    initialDebtFundingKrw: initialDebt,
+    baseCapRatePct: capRatePct,
+    baseExitCapRatePct: exitCapRatePct,
+    baseInterestRatePct: interestRatePct,
+    baseOccupancyPct: occupancyPct,
+    growthPct,
+    stabilizedNoiKrw: year1Noi,
+    terminalValueKrw: terminalValue
   });
 
   const refinancing = analyzeRefinancing(proForma.years, interestRatePct, 180);
@@ -526,7 +546,8 @@ export async function buildFullReport(
       capRateExit,
       occupancyRent,
       interestRate,
-      macroDriven
+      macroDriven,
+      tornado
     },
     refinancing,
     macro: {
