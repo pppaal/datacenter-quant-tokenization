@@ -54,7 +54,7 @@ export async function buildIndustrialValuationAnalysis(
     scenarios: valuation.scenarios
   };
 
-  const finalized = applyCreditOverlay(analysis, bundle);
+  const finalized = applyCreditOverlay(analysis, bundle, valuation.confidenceBounds);
   finalized.underwritingMemo = await generateUnderwritingMemo(finalized);
 
   return finalized;

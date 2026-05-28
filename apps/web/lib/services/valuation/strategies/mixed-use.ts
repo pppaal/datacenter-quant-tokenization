@@ -101,10 +101,12 @@ export function buildMixedUseValuationConfig(): ValuationConfig {
     // 1.65% credit loss blends office (1.5%) and retail (1.8%).
     creditLossPct: () => 1.65,
     vacancyAllowancePct: (state) => Math.max(100 - state.adjustedOccupancyPct, 4.5),
+    // EGI applies the occupancy/vacancy haircut EXACTLY ONCE via
+    // adjustedOccupancyPct; only the credit-loss term is layered on top.
     effectiveRentalRevenueKrw: (state) =>
       state.grossPotentialRentKrw *
       Math.max(0.48, state.adjustedOccupancyPct / 100) *
-      Math.max(0.71, 1 - (state.vacancyAllowancePct + state.creditLossPct) / 100),
+      Math.max(0.71, 1 - state.creditLossPct / 100),
     // 2.5% other income blends office (2%) and retail (3%).
     otherIncomeKrw: (state) => state.grossPotentialRentKrw * 0.025,
     annualOpexKrw: (state) =>
@@ -218,7 +220,7 @@ export async function buildMixedUseValuationAnalysis(
     scenarios: valuation.scenarios
   };
 
-  const finalized = applyCreditOverlay(analysis, bundle);
+  const finalized = applyCreditOverlay(analysis, bundle, valuation.confidenceBounds);
   finalized.underwritingMemo = await generateUnderwritingMemo(finalized);
 
   return finalized;

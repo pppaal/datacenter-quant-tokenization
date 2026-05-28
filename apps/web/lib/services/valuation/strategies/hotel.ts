@@ -89,15 +89,21 @@ export function buildHotelValuationConfig(): ValuationConfig {
       stabilizedOccupancyBonus: 0.25
     },
     scenarioInputs: hotelScenarioInputs,
+    // Prioritize real rent/RevPAR evidence; back-solved rent is the fallback floor.
     monthlyRentPerSqmKrw: (state) =>
-      (state.purchasePriceKrw * (state.capRatePct / 100)) /
-      Math.max(state.rentableAreaSqm * 12 * Math.max(state.adjustedOccupancyPct / 100, 0.45), 1),
+      Math.max(
+        state.marketEvidence.averageMonthlyRentPerSqmKrw ?? 0,
+        (state.purchasePriceKrw * (state.capRatePct / 100)) /
+          Math.max(state.rentableAreaSqm * 12 * Math.max(state.adjustedOccupancyPct / 100, 0.45), 1)
+      ),
     creditLossPct: () => 1.5,
     vacancyAllowancePct: (state) => Math.max(100 - state.adjustedOccupancyPct, 8),
+    // EGI applies the occupancy/vacancy haircut EXACTLY ONCE via
+    // adjustedOccupancyPct; only the credit-loss term is layered on top.
     effectiveRentalRevenueKrw: (state) =>
       state.grossPotentialRentKrw *
       Math.max(0.45, state.adjustedOccupancyPct / 100) *
-      Math.max(0.6, 1 - (state.vacancyAllowancePct + state.creditLossPct) / 100),
+      Math.max(0.6, 1 - state.creditLossPct / 100),
     // Hotels run F&B, spa, events and other ancillary income well above an
     // office's modest other-income line.
     otherIncomeKrw: (state) => state.grossPotentialRentKrw * 0.18,
@@ -215,7 +221,7 @@ export async function buildHotelValuationAnalysis(
     scenarios: valuation.scenarios
   };
 
-  const finalized = applyCreditOverlay(analysis, bundle);
+  const finalized = applyCreditOverlay(analysis, bundle, valuation.confidenceBounds);
   finalized.underwritingMemo = await generateUnderwritingMemo(finalized);
 
   return finalized;
