@@ -189,7 +189,42 @@ export type TaxProfile = {
   corporateTaxPct: number;
   withholdingTaxPct: number;
   exitTaxPct: number;
+  /**
+   * Korea-tax correctness metadata (derived, in-memory only — NOT persisted).
+   *
+   * `entityType` / `inCongestedZone` are *inferred* from free-text fields
+   * (`spvStructure.legalStructure`, `asset.market`, `marketSnapshot.metroRegion`)
+   * because there are no first-class Prisma columns yet.
+   * TODO(tax): add first-class `SpvStructure.entityType` and an asset/region
+   * `과밀억제권역` boolean so these no longer rely on string heuristics.
+   *
+   * Optional so existing literal constructors (scripts/tests that build a bare
+   * TaxProfile) keep compiling; `buildTaxProfile` always populates them.
+   */
+  entityType?: KoreanEntityType;
+  /** true ⇒ 과밀억제권역 (Seoul metropolitan concentration zone) for 취득세 중과. */
+  inCongestedZone?: boolean;
+  /** true ⇒ vehicle is a flow-through (REIT/펀드/PFV) ⇒ vehicle-level 법인세 ≈ 0. */
+  isPassThroughVehicle?: boolean;
+  /** Pass-through 법인세 rate actually applied to the vehicle (0 for REIT/펀드). */
+  effectiveCorporateTaxPct?: number;
+  /** Resolved 취득세율 actually used (after 중과 brackets / explicit override). */
+  resolvedAcquisitionTaxPct?: number;
+  /** true when `taxAssumption.acquisitionTaxPct` was supplied (real data wins). */
+  acquisitionTaxIsOverride?: boolean;
+  /** Resolved exit-disposition tax rate (corp rate +옵션 land surtax, or override). */
+  resolvedExitTaxPct?: number;
+  /** true when `taxAssumption.exitTaxPct` was supplied (real data wins). */
+  exitTaxIsOverride?: boolean;
+  /** Human-readable note on how each Korea-tax rate was derived. */
+  rateRationale?: string;
 };
+
+/**
+ * Inferred owning-entity tax classification. Korea taxes 법인/개인/리츠/펀드
+ * very differently, especially for 취득세 중과 and vehicle-level 법인세.
+ */
+export type KoreanEntityType = 'CORPORATION' | 'INDIVIDUAL' | 'REIT' | 'FUND' | 'PFV';
 
 export type SpvProfile = {
   legalStructure: string;

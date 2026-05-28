@@ -1,4 +1,7 @@
-import { computeAnnualJongbuseKrw } from '@/lib/services/valuation/jongbuse';
+import {
+  computeAnnualJongbuseKrw,
+  DEFAULT_FAIR_MARKET_RATIO
+} from '@/lib/services/valuation/jongbuse';
 import type { ProFormaBaseCase, ProFormaYear } from '@/lib/services/valuation/types';
 
 export const HOLDING_YEARS = 10;
@@ -33,6 +36,13 @@ export type ProFormaInputs = {
    * property-tax base under Korean 지방세법.
    */
   propertyTaxFairMarketRatio?: number;
+  /**
+   * 공정시장가액비율 for 종부세 (separate from 재산세's ratio above). 토지·법인 주택
+   * default 0.6 under 종합부동산세법. Applied inside computeAnnualJongbuseKrw to the
+   * taxable base AFTER the statutory deduction. The 재산세 ratio (~0.7) and 종부세
+   * ratio (~0.6) are intentionally distinct rates in Korean law.
+   */
+  jongbuseFairMarketRatio?: number;
   /**
    * 매입부가세 환급. Commercial acquisitions incur 10% VAT on the building
    * portion which is recoverable within ~6 months for a VAT-registered SPV.
@@ -181,6 +191,7 @@ export function buildSyntheticProForma(inputs: ProFormaInputs): {
     assetClass = 'OFFICE',
     assessmentRatio = 0.65,
     propertyTaxFairMarketRatio = 0.7,
+    jongbuseFairMarketRatio = DEFAULT_FAIR_MARKET_RATIO,
     vatRefundablePortionPct,
     capexReservePct
   } = inputs;
@@ -193,13 +204,27 @@ export function buildSyntheticProForma(inputs: ProFormaInputs): {
     assetClass,
     purchasePriceKrw,
     landValuePct,
-    assessmentRatio
+    assessmentRatio,
+    fairMarketRatio: jongbuseFairMarketRatio
   });
   const year1JongbuseKrw = jongbuse.annualJongbuseKrw;
 
   // ─ 매입부가세. Commercial acquisitions: 10% VAT on the building portion is
   // recoverable by a VAT-registered SPV. Residential (주택) is exempt from VAT
   // entirely (면세). Default to asset-class-driven recoverability, allow override.
+  //
+  // NOTE (VAT double-tracking, fix #5): `TaxProfile.vatRecoveryPct` (default 90,
+  // in inputs.ts) and this `vatRefundablePortionPct` measure DIFFERENT things and
+  // are intentionally kept separate:
+  //   - `vatRefundablePortionPct` here = the VAT *rate* applied to the building
+  //     portion of the purchase (10% statutory 부가가치세), i.e. how much VAT is
+  //     incurred & refundable on acquisition.
+  //   - `TaxProfile.vatRecoveryPct` = the *share* of that incurred VAT the SPV
+  //     expects to actually recover (timing/registration haircut), used by the
+  //     ledger layer, not here.
+  // They are not redundant; reconciling them into one field would conflate "VAT
+  // rate" with "recovery efficiency", so we leave both. TODO(tax): if a future
+  // model wants net VAT cash, multiply the two explicitly at the call site.
   const defaultRefundablePct = assetClass === 'MULTIFAMILY' || assetClass === 'LAND' ? 0 : 10;
   const effectiveVatPct = vatRefundablePortionPct ?? defaultRefundablePct;
   const buildingPortion = Math.max(0, 1 - landValuePct / 100);

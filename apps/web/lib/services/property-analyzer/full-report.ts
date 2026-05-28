@@ -17,6 +17,7 @@
 import type { AssetClass, MacroFactor } from '@prisma/client';
 import type { AutoAnalyzeResult } from '@/lib/services/property-analyzer/auto-analyze';
 import type { ProFormaBaseCase, UnderwritingAnalysis } from '@/lib/services/valuation/types';
+import { buildTaxProfile } from '@/lib/services/valuation/inputs';
 import {
   computeReturnMetricsFromProForma,
   type ReturnMetrics
@@ -304,6 +305,11 @@ export async function buildFullReport(
   const landValuePct = LAND_VALUE_PCT[primary.asset.assetClass] ?? 30;
   const depreciationYears = DEPRECIATION_YEARS[primary.asset.assetClass] ?? 40;
 
+  // Use the Korea-tax-aware resolved rates (취득세 중과세, corporate/exit, and
+  // REIT/펀드 pass-through relief) instead of flat placeholders so the synthetic
+  // pro-forma reflects the same tax reality as the equity-waterfall path.
+  const taxProfile = buildTaxProfile(bundle);
+
   const proFormaInputs: ProFormaInputs = {
     purchasePriceKrw: purchasePrice,
     ltvPct,
@@ -316,9 +322,9 @@ export async function buildFullReport(
     opexRatio,
     propertyTaxPct: 0.25,
     insurancePct: 0.08,
-    corpTaxPct: 22,
-    exitTaxPct: 22,
-    acquisitionTaxPct: 4.6,
+    corpTaxPct: taxProfile.corporateTaxPct,
+    exitTaxPct: taxProfile.exitTaxPct,
+    acquisitionTaxPct: taxProfile.acquisitionTaxPct,
     landValuePct,
     depreciationYears,
     exitCostPct: 1.5,
