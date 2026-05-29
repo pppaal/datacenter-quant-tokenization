@@ -1037,6 +1037,9 @@ model Counterparty {
   bidRevisions        DealBidRevision[]
   lenderQuotes        DealLenderQuote[]
   negotiationEvents   DealNegotiationEvent[]
+  beneficialOwners    BeneficialOwner[]
+  screeningResults    ScreeningResult[]
+  suspiciousActivityReports SuspiciousActivityReport[]
 
   @@index([assetId, role, createdAt])
   @@index([dealId, role, createdAt])
@@ -2696,12 +2699,124 @@ model AuditEvent {
   ipAddress       String?
   statusLabel     String   @default("SUCCESS")
   metadata        Json?
+  // Optional before/after state snapshots so "who changed what to what" is
+  // answerable. Both are nullable + additive; existing callers stay valid.
+  beforeState     Json?
+  afterState      Json?
+  // Tamper-evident hash chain. `recordHash` = SHA-256 over the event's
+  // canonical fields (including the prior event's `recordHash` in `prevHash`).
+  // Sequence numbers are strictly monotonic to detect deletions / gaps.
+  sequence        Int      @default(autoincrement())
+  prevHash        String?
+  recordHash      String?
   createdAt       DateTime @default(now())
 
   @@index([createdAt])
   @@index([actorIdentifier, createdAt])
   @@index([entityType, entityId, createdAt])
   @@index([assetId, createdAt])
+  @@index([sequence])
+}
+
+// ---------------------------------------------------------------------------
+// AML / CDD (고객확인의무 · 자금세탁방지) primitives
+// ---------------------------------------------------------------------------
+
+// Beneficial owner (실소유자) declared / verified for an investor or
+// counterparty. Korean AML (특정금융정보법) requires identifying natural
+// persons holding >= 25% or otherwise exercising control.
+model BeneficialOwner {
+  id                 String   @id @default(cuid())
+  investorId         String?
+  counterpartyId     String?
+  name               String
+  ownershipPct       Float?
+  relationship       String?  // e.g. "SHAREHOLDER", "TRUSTEE", "CONTROLLER"
+  dateOfBirth        DateTime?
+  nationality        String?  // ISO 3166-1 alpha-3
+  // PENDING | VERIFIED | REJECTED
+  verificationStatus String   @default("PENDING")
+  verifiedAt         DateTime?
+  notes              String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  investor           Investor?     @relation(fields: [investorId], references: [id], onDelete: Cascade)
+  counterparty       Counterparty? @relation(fields: [counterpartyId], references: [id], onDelete: Cascade)
+  screeningResults   ScreeningResult[]
+
+  @@index([investorId])
+  @@index([counterpartyId])
+  @@index([verificationStatus])
+}
+
+// Result of a single sanctions / PEP screening run against a subject.
+// listType ∈ OFAC | UN | EU | UK_HMT | KR_MOFA | PEP | INTERNAL.
+// status ∈ CLEAR | POTENTIAL_MATCH | CONFIRMED_MATCH | ESCALATED | REJECTED.
+model ScreeningResult {
+  id             String   @id @default(cuid())
+  investorId     String?
+  counterpartyId String?
+  beneficialOwnerId String?
+  subjectName    String
+  subjectDob     DateTime?
+  subjectCountry String?  // ISO 3166-1 alpha-3
+  provider       String   @default("local") // "local" | "dowjones" | "refinitiv" ...
+  listType       String?  // populated on a hit
+  matchScore     Float    @default(0)
+  isPep          Boolean  @default(false)
+  status         String   @default("CLEAR")
+  matchedEntries Json?    // raw matched list entries for evidence
+  screenedAt     DateTime @default(now())
+  // Ongoing-monitoring: the next re-screen due date (null = none scheduled).
+  rescreenDueAt  DateTime?
+  createdAt      DateTime @default(now())
+  investor       Investor?        @relation(fields: [investorId], references: [id], onDelete: Cascade)
+  counterparty   Counterparty?    @relation(fields: [counterpartyId], references: [id], onDelete: Cascade)
+  beneficialOwner BeneficialOwner? @relation(fields: [beneficialOwnerId], references: [id], onDelete: Cascade)
+
+  @@index([investorId, screenedAt])
+  @@index([counterpartyId, screenedAt])
+  @@index([status, screenedAt])
+  @@index([rescreenDueAt])
+}
+
+// Per-investor AML risk rating (위험평가). Derived from screening outcomes,
+// jurisdiction, investor type, and PEP exposure.
+model AmlRiskRating {
+  id           String   @id @default(cuid())
+  investorId   String   @unique
+  rating       String   @default("LOW") // LOW | MEDIUM | HIGH
+  score        Int      @default(0)
+  factors      Json?    // array of { code, label, weight }
+  ratedAt      DateTime @default(now())
+  ratedBy      String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  investor     Investor @relation(fields: [investorId], references: [id], onDelete: Cascade)
+
+  @@index([rating])
+}
+
+// Suspicious Transaction Report (의심거래보고 / STR) scaffold. Filing to the
+// KoFIU (금융정보분석원) is a manual downstream step; this records the flag,
+// rationale, and lifecycle.
+model SuspiciousActivityReport {
+  id             String   @id @default(cuid())
+  investorId     String?
+  counterpartyId String?
+  reason         String
+  details        String?
+  // OPEN | UNDER_REVIEW | FILED | DISMISSED
+  status         String   @default("OPEN")
+  raisedBy       String?
+  filedAt        DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  investor       Investor?     @relation(fields: [investorId], references: [id], onDelete: SetNull)
+  counterparty   Counterparty? @relation(fields: [counterpartyId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([investorId])
 }
 
 model SequenceCounter {
@@ -3005,6 +3120,9 @@ model Investor {
   contactName   String?
   contactEmail  String?
   notes         String?
+  // Accreditation / suitability (적격투자자 · 전문투자자). Null = unassessed.
+  accreditationStatus String? // e.g. "PROFESSIONAL" | "QUALIFIED" | "RETAIL"
+  accreditedAt  DateTime?
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
   commitments   Commitment[]
@@ -3012,6 +3130,10 @@ model Investor {
   ddqResponses  DdqResponse[]
   capitalCallAllocations CapitalCallAllocation[]
   distributionAllocations DistributionAllocation[]
+  beneficialOwners BeneficialOwner[]
+  screeningResults ScreeningResult[]
+  amlRiskRating AmlRiskRating?
+  suspiciousActivityReports SuspiciousActivityReport[]
 
   @@index([investorType, domicile])
 }

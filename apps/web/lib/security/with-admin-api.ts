@@ -61,8 +61,21 @@ export type WithAdminApiOptions<
   auditEntityIdFromParams?: (params: TParams) => string | null;
   handler: (
     context: WithAdminApiContext<TSchema extends ZodTypeAny ? z.infer<TSchema> : undefined, TParams>
-  ) => Promise<Response>;
+  ) => Promise<HandlerResult>;
 };
+
+/**
+ * Handlers may either return a `Response` directly (legacy / backward-compatible)
+ * or `{ response, before, after }` so the audit event captures before/after
+ * state snapshots ("who changed what to what"). Both forms are accepted.
+ */
+export type HandlerResult =
+  | Response
+  | {
+      response: Response;
+      before?: unknown;
+      after?: unknown;
+    };
 
 type WithAdminApiRouteContext<TParams> = { params: Promise<TParams> };
 
@@ -141,7 +154,13 @@ export function withAdminApi<
       };
 
       try {
-        const response = await options.handler(context);
+        const handlerResult = await options.handler(context);
+        const isWrapped = handlerResult instanceof Response === false;
+        const response = isWrapped
+          ? (handlerResult as { response: Response }).response
+          : (handlerResult as Response);
+        const before = isWrapped ? (handlerResult as { before?: unknown }).before : undefined;
+        const after = isWrapped ? (handlerResult as { after?: unknown }).after : undefined;
         if (options.auditAction && options.auditEntityType) {
           await recordAuditEvent({
             actorIdentifier: actor.identifier,
@@ -152,7 +171,9 @@ export function withAdminApi<
             requestPath: new URL(request.url).pathname,
             requestMethod: request.method,
             ipAddress,
-            metadata: { requestId }
+            metadata: { requestId },
+            before: (before ?? undefined) as Parameters<typeof recordAuditEvent>[0]['before'],
+            after: (after ?? undefined) as Parameters<typeof recordAuditEvent>[0]['after']
           });
         }
         response.headers.set('X-Request-Id', requestId);

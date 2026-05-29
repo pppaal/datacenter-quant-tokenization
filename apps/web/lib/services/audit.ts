@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import type { Prisma, PrismaClient } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import {
@@ -20,27 +21,200 @@ export type AuditEventInput = {
   ipAddress?: string | null;
   statusLabel?: string | null;
   metadata?: Prisma.InputJsonValue | null;
+  /** Optional snapshot of the entity state before the mutation. */
+  before?: Prisma.InputJsonValue | null;
+  /** Optional snapshot of the entity state after the mutation. */
+  after?: Prisma.InputJsonValue | null;
 };
+
+/**
+ * Subset of an `AuditEvent` row required to compute / verify its hash.
+ * Kept narrow so verification works against any read projection.
+ */
+export type HashableAuditEvent = {
+  id: string;
+  actorIdentifier: string;
+  actorRole: string;
+  action: string;
+  entityType: string;
+  entityId: string | null;
+  assetId: string | null;
+  requestPath: string | null;
+  requestMethod: string | null;
+  ipAddress: string | null;
+  statusLabel: string;
+  metadata: unknown;
+  beforeState: unknown;
+  afterState: unknown;
+  createdAt: Date;
+  prevHash: string | null;
+};
+
+/**
+ * Deterministically serialize a value (objects with sorted keys) so that the
+ * canonical string is stable across runs and JSON key-ordering differences.
+ */
+function canonicalize(value: unknown): string {
+  if (value === null || value === undefined) return 'null';
+  if (typeof value !== 'object') return JSON.stringify(value);
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => canonicalize(item)).join(',')}]`;
+  }
+  const entries = Object.entries(value as Record<string, unknown>)
+    .filter(([, v]) => v !== undefined)
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+    .map(([k, v]) => `${JSON.stringify(k)}:${canonicalize(v)}`);
+  return `{${entries.join(',')}}`;
+}
+
+/**
+ * Compute the SHA-256 record hash over an event's canonical fields, including
+ * the prior event's `recordHash` (carried in `prevHash`). Any tampering with a
+ * field, or removal of an earlier row, breaks the chain at the affected link.
+ */
+export function computeAuditRecordHash(event: HashableAuditEvent): string {
+  const canonical = canonicalize({
+    id: event.id,
+    actorIdentifier: event.actorIdentifier,
+    actorRole: event.actorRole,
+    action: event.action,
+    entityType: event.entityType,
+    entityId: event.entityId ?? null,
+    assetId: event.assetId ?? null,
+    requestPath: event.requestPath ?? null,
+    requestMethod: event.requestMethod ?? null,
+    ipAddress: event.ipAddress ?? null,
+    statusLabel: event.statusLabel,
+    metadata: event.metadata ?? null,
+    beforeState: event.beforeState ?? null,
+    afterState: event.afterState ?? null,
+    createdAt: event.createdAt instanceof Date ? event.createdAt.toISOString() : event.createdAt,
+    prevHash: event.prevHash ?? null
+  });
+  return crypto.createHash('sha256').update(canonical, 'utf8').digest('hex');
+}
 
 export async function recordAuditEvent(
   input: AuditEventInput,
   db: Pick<PrismaClient, 'auditEvent'> = prisma
 ) {
+  // Link to the most recent event by sequence to form the hash chain. Reading
+  // the tip and writing the new row are racy under high concurrency; the
+  // strictly-monotonic `sequence` column lets `verifyAuditChain` detect any
+  // resulting gap or reorder, and the DB append-only trigger prevents
+  // after-the-fact rewrites that would otherwise hide a break.
+  const tip = await db.auditEvent.findFirst({
+    orderBy: { sequence: 'desc' },
+    select: { recordHash: true }
+  });
+  const prevHash = tip?.recordHash ?? null;
+
+  const id = crypto.randomUUID();
+  const createdAt = new Date();
+  const base = {
+    id,
+    actorIdentifier: input.actorIdentifier?.trim() || 'unknown_actor',
+    actorRole: input.actorRole?.trim() || 'UNKNOWN',
+    action: input.action,
+    entityType: input.entityType,
+    entityId: input.entityId ?? null,
+    assetId: input.assetId ?? null,
+    requestPath: input.requestPath ?? null,
+    requestMethod: input.requestMethod ?? null,
+    ipAddress: input.ipAddress ?? null,
+    statusLabel: input.statusLabel ?? 'SUCCESS',
+    metadata: input.metadata ?? null,
+    beforeState: input.before ?? null,
+    afterState: input.after ?? null,
+    createdAt,
+    prevHash
+  };
+
+  const recordHash = computeAuditRecordHash(base);
+
   return db.auditEvent.create({
     data: {
-      actorIdentifier: input.actorIdentifier?.trim() || 'unknown_actor',
-      actorRole: input.actorRole?.trim() || 'UNKNOWN',
-      action: input.action,
-      entityType: input.entityType,
-      entityId: input.entityId ?? null,
-      assetId: input.assetId ?? null,
-      requestPath: input.requestPath ?? null,
-      requestMethod: input.requestMethod ?? null,
-      ipAddress: input.ipAddress ?? null,
-      statusLabel: input.statusLabel ?? 'SUCCESS',
-      metadata: input.metadata ?? undefined
+      id,
+      actorIdentifier: base.actorIdentifier,
+      actorRole: base.actorRole,
+      action: base.action,
+      entityType: base.entityType,
+      entityId: base.entityId,
+      assetId: base.assetId,
+      requestPath: base.requestPath,
+      requestMethod: base.requestMethod,
+      ipAddress: base.ipAddress,
+      statusLabel: base.statusLabel,
+      metadata: input.metadata ?? undefined,
+      beforeState: input.before ?? undefined,
+      afterState: input.after ?? undefined,
+      createdAt,
+      prevHash,
+      recordHash
     }
   });
+}
+
+export type AuditChainVerification =
+  | { ok: true; checked: number }
+  | {
+      ok: false;
+      checked: number;
+      brokenAt: { id: string; sequence: number; reason: string } | null;
+    };
+
+/**
+ * Walk the audit chain in sequence order and confirm every link:
+ *   - each row's `recordHash` matches a recomputation of its fields,
+ *   - each row's `prevHash` equals the prior row's `recordHash`,
+ *   - the `sequence` column has no gaps (a deleted row leaves a hole).
+ * Returns the first break found, or `{ ok: true }` when the chain is intact.
+ */
+export async function verifyAuditChain(
+  db: Pick<PrismaClient, 'auditEvent'> = prisma
+): Promise<AuditChainVerification> {
+  const events = (await db.auditEvent.findMany({
+    orderBy: { sequence: 'asc' }
+  })) as Array<HashableAuditEvent & { sequence: number; recordHash: string | null }>;
+
+  let prevHash: string | null = null;
+  let prevSequence: number | null = null;
+
+  for (const event of events) {
+    if (prevSequence !== null && event.sequence !== prevSequence + 1) {
+      return {
+        ok: false,
+        checked: events.length,
+        brokenAt: {
+          id: event.id,
+          sequence: event.sequence,
+          reason: `sequence gap: expected ${prevSequence + 1}, got ${event.sequence}`
+        }
+      };
+    }
+
+    if ((event.prevHash ?? null) !== prevHash) {
+      return {
+        ok: false,
+        checked: events.length,
+        brokenAt: { id: event.id, sequence: event.sequence, reason: 'prevHash mismatch' }
+      };
+    }
+
+    const expected = computeAuditRecordHash({ ...event, prevHash: event.prevHash ?? null });
+    if (event.recordHash !== expected) {
+      return {
+        ok: false,
+        checked: events.length,
+        brokenAt: { id: event.id, sequence: event.sequence, reason: 'recordHash mismatch' }
+      };
+    }
+
+    prevHash = event.recordHash;
+    prevSequence = event.sequence;
+  }
+
+  return { ok: true, checked: events.length };
 }
 
 export async function listAuditEvents(
