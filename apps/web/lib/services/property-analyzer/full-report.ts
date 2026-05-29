@@ -384,6 +384,20 @@ export async function buildFullReport(
     true
   );
 
+  // End-of-year recompute off the SAME pro-forma, used ONLY for the memo's
+  // base-vs-MC-base consistency flag (FIX 2). The MC base case is end-of-year,
+  // so comparing the mid-year headline against it conflated the discounting
+  // convention with real model drift and tripped the warning on high-IRR deals.
+  // The displayed headline stays mid-year (`returnMetrics`).
+  const returnMetricsEndOfYear = computeReturnMetricsFromProForma(
+    proForma,
+    totalCapex,
+    initialDebt,
+    netExit,
+    terminalValue,
+    false
+  );
+
   const monteCarlo = runMonteCarlo(proFormaInputs, { iterations: 1000, seed: 42 });
 
   const capRateExit = buildCapRateExitSensitivity(
@@ -562,7 +576,10 @@ export async function buildFullReport(
     // (end-of-year convention, shares one pro-forma base with the headline) for
     // the reconciliation table's consistency check.
     assumptionsQuality: auto.provenance,
-    monteCarloBaseLeveredIrrPct: monteCarlo.baseLeveredIrr
+    monteCarloBaseLeveredIrrPct: monteCarlo.baseLeveredIrr,
+    // Convention-matched (end-of-year) headline IRR for the consistency flag, so
+    // it measures real drift vs the end-of-year MC base, not the mid-year gap.
+    headlineEndOfYearLeveredIrrPct: returnMetricsEndOfYear.equityIrr
   });
 
   return {

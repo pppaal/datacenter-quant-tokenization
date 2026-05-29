@@ -14,7 +14,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { runMonteCarlo } from '@/lib/services/valuation/monte-carlo';
-import type { ProFormaInputs } from '@/lib/services/valuation/synthetic-pro-forma';
+import {
+  buildSyntheticProForma,
+  type ProFormaInputs
+} from '@/lib/services/valuation/synthetic-pro-forma';
+import { computeReturnMetricsFromProForma } from '@/lib/services/valuation/return-metrics';
 
 function baseInputs(): ProFormaInputs {
   const purchase = 100_000_000_000; // 100B KRW
@@ -253,4 +257,147 @@ test('occupancy and opex ratio appear as stochastic drivers', () => {
   assert.ok(occ.maxDrawnPct > occ.minDrawnPct, 'occupancy is drawn, not frozen');
   const opex = r.drivers[r.driverOrder.indexOf('Opex Ratio')]!;
   assert.ok(opex.maxDrawnPct > opex.minDrawnPct, 'opex ratio is drawn, not frozen');
+});
+
+// ---------------------------------------------------------------------------
+// FIX 1: data-center NOI vector must be MODULATED by sampled occupancy /
+// rent-growth shocks, not used verbatim. Otherwise per-draw cap/occ/growth
+// shocks don't move NOI and the MC distribution understates downside.
+// ---------------------------------------------------------------------------
+
+// A DC asset whose NOI is supplied as a (rollover-shaped) year-by-year vector.
+function dcVectorInputs(): ProFormaInputs {
+  const purchase = 100_000_000_000;
+  const capRatePct = 5.0;
+  const y1 = Math.round((purchase * capRatePct) / 100);
+  // Non-flat rollover shape (dip in year 3) to prove the shape is preserved.
+  const noiByYearKrw = [
+    y1,
+    Math.round(y1 * 1.06),
+    Math.round(y1 * 0.98),
+    Math.round(y1 * 1.1),
+    Math.round(y1 * 1.16),
+    Math.round(y1 * 1.22),
+    Math.round(y1 * 1.27),
+    Math.round(y1 * 1.32),
+    Math.round(y1 * 1.36),
+    Math.round(y1 * 1.4)
+  ];
+  return {
+    purchasePriceKrw: purchase,
+    ltvPct: 55,
+    interestRatePct: 4.5,
+    amortTermMonths: 360,
+    capRatePct,
+    exitCapRatePct: 5.5,
+    year1Noi: y1,
+    growthPct: 2.5,
+    opexRatio: 0.45,
+    propertyTaxPct: 0.3,
+    insurancePct: 0.1,
+    corpTaxPct: 22,
+    exitTaxPct: 22,
+    acquisitionTaxPct: 4.6,
+    landValuePct: 40,
+    depreciationYears: 20,
+    exitCostPct: 2.0,
+    propertyTaxGrowthPct: 2.0,
+    capexReservePct: 1.5,
+    assetClass: 'DATA_CENTER',
+    noiByYearKrw
+  };
+}
+
+test('FIX 1: data-center MC drivers actually move NOI — vector-path IRR std is NOT ~0', () => {
+  const dc = dcVectorInputs();
+  // With the bug, the vector was used verbatim and occupancy/growth shocks never
+  // touched NOI, collapsing the levered-IRR spread to a near-constant. The std
+  // must now be materially positive.
+  const r = runMonteCarlo(dc, { iterations: 1500, seed: 101 });
+  assert.ok(r.leveredIrr.stdDev !== null);
+  assert.ok(
+    r.leveredIrr.stdDev! > 0.5,
+    `vector-path levered-IRR std should be materially > 0 (got ${r.leveredIrr.stdDev})`
+  );
+});
+
+test('FIX 1: widening entry-cap + occupancy σ measurably increases the vector-path IRR std', () => {
+  const dc = dcVectorInputs();
+  const tight = runMonteCarlo(dc, {
+    iterations: 2000,
+    seed: 202,
+    sigma: { capRatePp: 0.25, occupancyPp: 1.0 }
+  });
+  const wide = runMonteCarlo(dc, {
+    iterations: 2000,
+    seed: 202,
+    sigma: { capRatePp: 1.0, occupancyPp: 8.0 }
+  });
+  assert.ok(tight.leveredIrr.stdDev !== null && wide.leveredIrr.stdDev !== null);
+  assert.ok(
+    wide.leveredIrr.stdDev! > tight.leveredIrr.stdDev! * 1.2,
+    `wider entry-cap+occupancy σ must widen the IRR distribution: wide ${wide.leveredIrr.stdDev} vs tight ${tight.leveredIrr.stdDev}`
+  );
+});
+
+test('FIX 1: data-center MC base equals the end-of-year headline (base draw leaves vector unchanged)', () => {
+  const dc = dcVectorInputs();
+  const r = runMonteCarlo(dc, { iterations: 500, seed: 303 });
+  // The base draw applies identity scale factors, so the MC base must equal the
+  // end-of-year recompute off the unmodulated headline pro-forma.
+  const built = buildSyntheticProForma(dc);
+  const eoy = computeReturnMetricsFromProForma(
+    built.proForma,
+    built.extras.totalBasisKrw,
+    built.proForma.summary.initialDebtFundingKrw,
+    built.proForma.summary.netExitProceedsKrw,
+    built.proForma.summary.terminalValueKrw,
+    false
+  );
+  assert.equal(r.baseLeveredIrr, eoy.leveragedIrr, 'MC base == end-of-year headline (vector path)');
+  assert.equal(r.baseUnleveredIrr, eoy.unleveragedIrr);
+
+  // And the supplied vector is unchanged at the base (no modulation applied):
+  // year-1 NOI reflects the supplied vector, and the year-3 rollover dip survives.
+  assert.ok(
+    built.proForma.years[2]!.noiKrw < built.proForma.years[1]!.noiKrw,
+    'rollover dip preserved'
+  );
+});
+
+// ---------------------------------------------------------------------------
+// FIX 3: the sampled opex-ratio driver must MOVE NOI. revenue = NOI/(1−opex)
+// previously cancelled opex out, so the driver never moved the IRR.
+// ---------------------------------------------------------------------------
+
+test('FIX 3: opex driver measurably moves the IRR distribution (no-vector path)', () => {
+  const noOpex = runMonteCarlo(baseInputs(), {
+    iterations: 2000,
+    seed: 404,
+    sigma: { opexRatioPp: 0.01 }
+  });
+  const wideOpex = runMonteCarlo(baseInputs(), {
+    iterations: 2000,
+    seed: 404,
+    sigma: { opexRatioPp: 8.0 }
+  });
+  assert.ok(noOpex.leveredIrr.stdDev !== null && wideOpex.leveredIrr.stdDev !== null);
+  assert.ok(
+    wideOpex.leveredIrr.stdDev! > noOpex.leveredIrr.stdDev! * 1.05,
+    `wider opex σ must widen the IRR distribution: wide ${wideOpex.leveredIrr.stdDev} vs flat ${noOpex.leveredIrr.stdDev}`
+  );
+  // Base case must remain pinned regardless of opex σ (opex haircut = 0 at base).
+  assert.equal(wideOpex.baseLeveredIrr, 5.1319, 'base IRR still pinned with wide opex σ');
+});
+
+test('FIX 3: higher sampled opex lowers NOI in the synthetic pro-forma (direct)', () => {
+  const base = buildSyntheticProForma(baseInputs());
+  const higherOpex = buildSyntheticProForma({ ...baseInputs(), noiOpexHaircut: 0.05 });
+  assert.ok(
+    higherOpex.proForma.years[0]!.noiKrw < base.proForma.years[0]!.noiKrw,
+    'a positive opex haircut must reduce year-1 NOI'
+  );
+  // Zero haircut is byte-identical to the base (identity factor).
+  const zeroHaircut = buildSyntheticProForma({ ...baseInputs(), noiOpexHaircut: 0 });
+  assert.equal(zeroHaircut.proForma.years[0]!.noiKrw, base.proForma.years[0]!.noiKrw);
 });

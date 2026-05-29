@@ -558,6 +558,18 @@ export function runMonteCarlo(
     const occFactor = baseOccupancyPct > 0 ? occupancyPct / baseOccupancyPct : 1;
     const year1Noi = Math.round((purchase * capRatePct * occFactor) / 100);
 
+    // Data-center path supplies a real NOI vector, which buildSyntheticProForma
+    // would otherwise use VERBATIM — silencing the sampled occupancy / rent-
+    // growth shocks (FIX 1). Pass the shock factors so they modulate the vector:
+    //   - occupancy: flat multiplicative scale = sampledOcc / baseOcc (= occFactor)
+    //   - growth:    per-year compounding DIVERGENCE from base (0 at base draw)
+    // These are vector-only inside buildSyntheticProForma (the no-vector path
+    // already injects occupancy via year1Noi and grows at the sampled growthPct).
+    const growthDivergencePct = growthPct - baseInputs.growthPct;
+    // Opex deviation from base haircuts NOI in BOTH paths (FIX 3): revenue =
+    // NOI/(1−opexRatio) made opexRatio cancel out, so the driver never moved NOI.
+    const opexHaircut = opexRatio - baseInputs.opexRatio;
+
     const draw: ProFormaInputs = {
       ...baseInputs,
       capRatePct,
@@ -565,7 +577,10 @@ export function runMonteCarlo(
       growthPct,
       interestRatePct,
       opexRatio,
-      year1Noi
+      year1Noi,
+      noiVectorOccupancyScale: occFactor,
+      noiVectorGrowthDivergencePct: growthDivergencePct,
+      noiOpexHaircut: opexHaircut
     };
 
     try {

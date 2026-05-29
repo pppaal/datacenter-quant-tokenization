@@ -92,13 +92,25 @@ test('property: MC base levered IRR equals end-of-year recompute off the headlin
     `headline ${report.returnMetrics.leveragedIrr} and MC base ${report.monteCarlo.baseLeveredIrr} should differ only by convention`
   );
 
-  // And the memo reconciliation must report the same MC base + a within-tolerance flag.
+  // And the memo reconciliation must report the same MC base. The DISPLAYED base
+  // IRR stays the mid-year headline; the consistency FLAG, however, compares the
+  // end-of-year-matched headline against the (end-of-year) MC base (FIX 2), so it
+  // measures REAL model drift, not the discounting-convention gap. At the base
+  // these run off one pro-forma, so the matched drift is ~0 and must not flag —
+  // even on a high-IRR deal where the mid-year-vs-MC gap could exceed tolerance.
   assert.equal(report.memo.reconciliation.monteCarloBaseIrrPct, report.monteCarlo.baseLeveredIrr);
   assert.equal(report.memo.reconciliation.baseLeveredIrrPct, report.returnMetrics.equityIrr);
+  // The convention-matched divergence the flag uses is essentially zero (the
+  // end-of-year headline == the end-of-year MC base, modulo IRR-solver rounding).
+  assert.ok(
+    report.memo.reconciliation.baseVsMcBaseDivergencePp !== null &&
+      report.memo.reconciliation.baseVsMcBaseDivergencePp < 0.05,
+    `convention-matched drift should be ~0 (got ${report.memo.reconciliation.baseVsMcBaseDivergencePp})`
+  );
   assert.equal(
     report.memo.reconciliation.flagged,
     false,
-    'base vs MC-base should reconcile within tolerance'
+    'base vs MC-base should reconcile (no real drift)'
   );
 });
 

@@ -258,6 +258,43 @@ test('memo reconciliation: FLAGS divergence when deterministic base and MC base 
   );
 });
 
+test('FIX 2: convention gap on a high-IRR deal does NOT flag (flag uses end-of-year-matched pair)', async () => {
+  // High-return deal: mid-year headline 22.0%, end-of-year recompute 20.4%, MC
+  // base (end-of-year) 20.4%. The mid-year-vs-MC gap is 1.6pp (> 1.5pp tol) and
+  // would have spuriously tripped the flag. The convention-matched pair (20.4 vs
+  // 20.4) shows ~0 real drift → must NOT flag.
+  const memo = await generateInvestmentMemo(
+    makeInputs({
+      returnMetrics: fakeReturnMetrics(22.0),
+      monteCarlo: fakeMonteCarlo(20.4, 20.0, 19.8),
+      monteCarloBaseLeveredIrrPct: 20.4,
+      headlineEndOfYearLeveredIrrPct: 20.4
+    })
+  );
+  const r = memo.reconciliation;
+  // Displayed headline stays the mid-year number.
+  assert.equal(r.baseLeveredIrrPct, 22.0);
+  assert.equal(r.monteCarloBaseIrrPct, 20.4);
+  // Flag measures real drift (end-of-year matched) ≈ 0, NOT the 1.6pp convention gap.
+  assert.equal(r.baseVsMcBaseDivergencePp, 0);
+  assert.equal(r.flagged, false, 'convention gap alone must not flag');
+});
+
+test('FIX 2: flag still fires on REAL model drift (end-of-year headline diverges from MC base)', async () => {
+  // Convention-matched end-of-year headline 20.4% vs MC base 16.0% = 4.4pp REAL
+  // drift → must flag, even though the mid-year display number is higher.
+  const memo = await generateInvestmentMemo(
+    makeInputs({
+      returnMetrics: fakeReturnMetrics(22.0),
+      monteCarlo: fakeMonteCarlo(16.0, 15.5, 15.2),
+      monteCarloBaseLeveredIrrPct: 16.0,
+      headlineEndOfYearLeveredIrrPct: 20.4
+    })
+  );
+  assert.equal(memo.reconciliation.baseVsMcBaseDivergencePp, 4.4);
+  assert.equal(memo.reconciliation.flagged, true, 'real drift must still flag');
+});
+
 test('memo reconciliation: handles null IRRs gracefully (no NaN, not flagged)', async () => {
   const memo = await generateInvestmentMemo(
     makeInputs({

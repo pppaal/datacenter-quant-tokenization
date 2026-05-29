@@ -97,6 +97,17 @@ export type InvestmentMemoInputs = {
    * are read directly off `monteCarlo`, so only the base IRR needs wiring.
    */
   monteCarloBaseLeveredIrrPct?: number | null;
+  /**
+   * Optional END-OF-YEAR headline levered IRR, recomputed off the SAME pro-forma
+   * as `returnMetrics.equityIrr` but with the end-of-year discounting convention
+   * (FIX 2). The `flagged` consistency check compares THIS against the MC base
+   * (also end-of-year) so the flag measures real model drift, not the mid-year-
+   * vs-end-of-year discounting gap — which scales with IRR level and used to trip
+   * the warning spuriously on high-return deals. The DISPLAYED base IRR remains
+   * the mid-year `returnMetrics.equityIrr`. Falls back to the mid-year headline
+   * when omitted (preserves prior behavior for callers that don't supply it).
+   */
+  headlineEndOfYearLeveredIrrPct?: number | null;
 };
 
 /** Base-vs-MC-base IRR divergence (pp) above which we flag a consistency issue. */
@@ -221,9 +232,18 @@ function buildReconciliation(inputs: InvestmentMemoInputs): IrrReconciliation {
     inputs.monteCarloBaseLeveredIrrPct ?? inputs.monteCarlo.baseLeveredIrr ?? null;
   const impliedBidBaseIrrPct = inputs.impliedBid.baseBaseIrrPct ?? null;
 
+  // FIX 2: flag REAL drift, not the discounting-convention gap. Compare the
+  // end-of-year headline (convention-matched to the end-of-year MC base) rather
+  // than the mid-year display IRR. Fall back to the display IRR when the caller
+  // did not supply the convention-matched value (legacy callers).
+  const flagComparisonIrrPct =
+    inputs.headlineEndOfYearLeveredIrrPct !== undefined
+      ? inputs.headlineEndOfYearLeveredIrrPct
+      : baseLeveredIrrPct;
+
   const baseVsMcBaseDivergencePp =
-    baseLeveredIrrPct !== null && monteCarloBaseIrrPct !== null
-      ? Number(Math.abs(baseLeveredIrrPct - monteCarloBaseIrrPct).toFixed(4))
+    flagComparisonIrrPct !== null && monteCarloBaseIrrPct !== null
+      ? Number(Math.abs(flagComparisonIrrPct - monteCarloBaseIrrPct).toFixed(4))
       : null;
   const flagged =
     baseVsMcBaseDivergencePp !== null &&

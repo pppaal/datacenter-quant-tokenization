@@ -71,6 +71,32 @@ export type ProFormaInputs = {
    * bit-for-bit.
    */
   noiByYearKrw?: number[];
+  /**
+   * Monte-Carlo NOI shock factors (default to the no-op identity so the base
+   * case stays bit-for-bit). They let per-draw occupancy / rent-growth / opex
+   * shocks actually move NOI for the `noiByYearKrw` (data-center) path, where
+   * the supplied vector would otherwise be used verbatim and silence those
+   * drivers (FIX 1 & FIX 3).
+   *
+   * - `noiVectorOccupancyScale` (default 1): multiplicative scale applied to
+   *   every vector year, = sampledOccupancy / baseOccupancy. VECTOR-PATH ONLY —
+   *   the no-vector path already injects occupancy through `year1Noi`, so we do
+   *   NOT re-apply it there (would double-count). Ignored when no vector.
+   * - `noiVectorGrowthDivergencePct` (default 0): the per-draw rent-growth
+   *   DEVIATION from base (sampledGrowthPct − baseGrowthPct, in pp). Year y NOI
+   *   is scaled by (1 + dev/100)^y so a draw above base compounds upside and a
+   *   draw below base compounds downside, while the vector's rollover SHAPE is
+   *   preserved. VECTOR-PATH ONLY — the no-vector path already grows at the
+   *   sampled `growthPct`. Ignored when no vector.
+   * - `noiOpexHaircut` (default 0): sampledOpexRatio − baseOpexRatio. NOI is
+   *   scaled by (1 − haircut) so higher opex lowers NOI (FIX 3). Applied to
+   *   BOTH paths because revenue = NOI/(1−opexRatio) ⇒ opexRatio alone never
+   *   moved NOI. Clamped to keep the factor in a sane band. At the base draw
+   *   the haircut is 0 ⇒ factor 1 ⇒ byte-identical.
+   */
+  noiVectorOccupancyScale?: number;
+  noiVectorGrowthDivergencePct?: number;
+  noiOpexHaircut?: number;
 };
 
 export type ProFormaExtras = {
@@ -213,8 +239,16 @@ export function buildSyntheticProForma(inputs: ProFormaInputs): {
     jongbuseFairMarketRatio = DEFAULT_FAIR_MARKET_RATIO,
     vatRefundablePortionPct,
     capexReservePct,
-    noiByYearKrw
+    noiByYearKrw,
+    noiVectorOccupancyScale = 1,
+    noiVectorGrowthDivergencePct = 0,
+    noiOpexHaircut = 0
   } = inputs;
+
+  const hasVector = !!(noiByYearKrw && noiByYearKrw.length > 0);
+  // Opex haircut bites on NOI in BOTH paths (FIX 3). Clamp the multiplier to a
+  // sane band so a pathological opex draw cannot drive NOI negative or balloon.
+  const opexNoiFactor = Math.min(1.5, Math.max(0.5, 1 - noiOpexHaircut));
 
   const acquisitionTax = Math.round(purchasePriceKrw * (acquisitionTaxPct / 100));
   const totalBasis = purchasePriceKrw + acquisitionTax;
@@ -283,16 +317,24 @@ export function buildSyntheticProForma(inputs: ProFormaInputs): {
     // flat single-rate growth when supplied. Years past the vector flat-grow off
     // its last supplied entry so the hold always covers HOLDING_YEARS.
     let baseNoiThisYear: number;
-    if (noiByYearKrw && noiByYearKrw.length > 0) {
-      if (i < noiByYearKrw.length) {
-        baseNoiThisYear = noiByYearKrw[i]!;
+    if (hasVector) {
+      if (i < noiByYearKrw!.length) {
+        baseNoiThisYear = noiByYearKrw![i]!;
       } else {
-        const last = noiByYearKrw[noiByYearKrw.length - 1]!;
-        baseNoiThisYear = last * Math.pow(1 + growthPct / 100, i - (noiByYearKrw.length - 1));
+        const last = noiByYearKrw![noiByYearKrw!.length - 1]!;
+        baseNoiThisYear = last * Math.pow(1 + growthPct / 100, i - (noiByYearKrw!.length - 1));
       }
+      // FIX 1: let per-draw occupancy / rent-growth shocks bite on the vector
+      // instead of using it verbatim. Occupancy is a flat multiplicative scale;
+      // rent-growth divergence compounds over the hold (0 at base). Both default
+      // to the identity so the base draw leaves the vector unchanged.
+      baseNoiThisYear *=
+        noiVectorOccupancyScale * Math.pow(1 + noiVectorGrowthDivergencePct / 100, i);
     } else {
       baseNoiThisYear = year1Noi * Math.pow(1 + growthPct / 100, i);
     }
+    // FIX 3: opex deviation from base actually moves NOI (factor 1 at base).
+    baseNoiThisYear *= opexNoiFactor;
     const revenue = Math.round(baseNoiThisYear / (1 - opexRatio));
     const opex = Math.round(revenue * opexRatio);
     const noi = revenue - opex;
