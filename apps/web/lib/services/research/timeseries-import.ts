@@ -77,7 +77,10 @@ export function parseTimeseriesCsv(text: string): {
       continue;
     }
     if (cols.length !== headerCols.length) {
-      errors.push({ line: i + 1, reason: `column count ${cols.length} ≠ header ${headerCols.length}` });
+      errors.push({
+        line: i + 1,
+        reason: `column count ${cols.length} ≠ header ${headerCols.length}`
+      });
       continue;
     }
     const obj: Record<string, string> = {};

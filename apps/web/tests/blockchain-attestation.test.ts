@@ -16,8 +16,7 @@ const DOMAIN = {
   verifyingContract: '0x1111111111111111111111111111111111111111' as const
 };
 
-const PRIVATE_KEY =
-  '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80' as const; // anvil[0]
+const PRIVATE_KEY = '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80' as const; // anvil[0]
 
 test('toBytes32Identifier produces a stable 32-byte hash', () => {
   const a = toBytes32Identifier('SEOUL-GANGSEO-01');
@@ -48,7 +47,10 @@ test('buildNavAttestation derives navPerShare from baseCaseValueKrw', () => {
   });
   // Single-share default → navPerShare === value × 1e18 (since totalShares = 1e18)
   assert.equal(att.navPerShare, 259_936_015_008n * 10n ** 18n);
-  assert.equal(att.navTimestamp, BigInt(Math.floor(new Date('2026-04-30T05:20:20.000Z').getTime() / 1000)));
+  assert.equal(
+    att.navTimestamp,
+    BigInt(Math.floor(new Date('2026-04-30T05:20:20.000Z').getTime() / 1000))
+  );
 });
 
 test('buildNavAttestation supports custom totalSharesScaled', () => {

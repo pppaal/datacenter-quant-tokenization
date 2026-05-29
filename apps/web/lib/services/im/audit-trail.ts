@@ -34,9 +34,7 @@ export async function buildAuditTrail(
   }
 ): Promise<AuditTrailSummary> {
   const limit = options.limit ?? 12;
-  const ids = [options.assetId, ...(options.additionalEntityIds ?? [])].filter(
-    Boolean
-  );
+  const ids = [options.assetId, ...(options.additionalEntityIds ?? [])].filter(Boolean);
   const events = await db.auditEvent.findMany({
     where: {
       OR: [{ assetId: options.assetId }, { entityId: { in: ids } }]
@@ -57,9 +55,7 @@ export async function buildAuditTrail(
     where: { OR: [{ assetId: options.assetId }, { entityId: { in: ids } }] }
   });
   const uniqueActors = Array.from(new Set(events.map((e) => e.actorIdentifier)));
-  const successCount = events.filter((e) =>
-    /SUCCESS|OK/i.test(e.statusLabel)
-  ).length;
+  const successCount = events.filter((e) => /SUCCESS|OK/i.test(e.statusLabel)).length;
   const failureCount = events.length - successCount;
   return {
     events,

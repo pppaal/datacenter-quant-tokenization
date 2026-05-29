@@ -69,8 +69,8 @@ export function TimeseriesImportForm() {
           <p className="mt-1 text-sm text-slate-400">
             Paste CSV from a REB / MOLIT historical Excel, an internally-tracked rate sheet, or a
             cross-market vendor pull. Header row required: target / market / indicatorKey /
-            observationDate / value (rest optional). Re-import is safe — rows upsert on
-            (market, region, indicatorKey, observationDate).
+            observationDate / value (rest optional). Re-import is safe — rows upsert on (market,
+            region, indicatorKey, observationDate).
           </p>
         </div>
         {banner ? <Badge tone={banner.tone}>{banner.text}</Badge> : null}

@@ -62,10 +62,14 @@ function buildFakeDb() {
         const key = `${args.where.promptHash_model.promptHash}:${args.where.promptHash_model.model}`;
         return rows.get(key) ?? null;
       },
-      async update(args: { where: { id: string }; data: { hitCount?: { increment: number }; lastHitAt?: Date } }) {
+      async update(args: {
+        where: { id: string };
+        data: { hitCount?: { increment: number }; lastHitAt?: Date };
+      }) {
         for (const row of rows.values()) {
           if (row.id !== args.where.id) continue;
-          if (args.data.hitCount?.increment !== undefined) row.hitCount += args.data.hitCount.increment;
+          if (args.data.hitCount?.increment !== undefined)
+            row.hitCount += args.data.hitCount.increment;
           if (args.data.lastHitAt) row.lastHitAt = args.data.lastHitAt;
           return row;
         }

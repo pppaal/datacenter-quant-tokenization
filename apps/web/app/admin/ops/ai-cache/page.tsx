@@ -2,10 +2,7 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import {
-  getAiCacheSummary,
-  getEmbeddingCorpusSummary
-} from '@/lib/services/ai/admin-stats';
+import { getAiCacheSummary, getEmbeddingCorpusSummary } from '@/lib/services/ai/admin-stats';
 import { formatDate, formatNumber } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
@@ -15,10 +12,7 @@ function shortenHash(hash: string) {
 }
 
 export default async function AiCacheConsolePage() {
-  const [cache, embeddings] = await Promise.all([
-    getAiCacheSummary(),
-    getEmbeddingCorpusSummary()
-  ]);
+  const [cache, embeddings] = await Promise.all([getAiCacheSummary(), getEmbeddingCorpusSummary()]);
 
   const totalSavedTokens = cache.estimatedSavedInputTokens + cache.estimatedSavedOutputTokens;
   const hitRatePct =
@@ -240,15 +234,7 @@ export default async function AiCacheConsolePage() {
   );
 }
 
-function StatCard({
-  label,
-  primary,
-  detail
-}: {
-  label: string;
-  primary: string;
-  detail: string;
-}) {
+function StatCard({ label, primary, detail }: { label: string; primary: string; detail: string }) {
   return (
     <Card className="space-y-2">
       <div className="fine-print">{label}</div>

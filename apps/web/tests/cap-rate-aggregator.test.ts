@@ -21,10 +21,30 @@ test('median returns 0 for an empty list', () => {
 });
 
 test('bucketKey distinguishes by every grouping field', () => {
-  const a = bucketKey({ market: 'KR', region: 'YEOUIDO', assetClass: 'OFFICE' as AssetClass, assetTier: 'PRIME' });
-  const b = bucketKey({ market: 'KR', region: 'YEOUIDO', assetClass: 'OFFICE' as AssetClass, assetTier: 'GRADE_A' });
-  const c = bucketKey({ market: 'KR', region: 'GANGNAM', assetClass: 'OFFICE' as AssetClass, assetTier: 'PRIME' });
-  const d = bucketKey({ market: 'JP', region: 'YEOUIDO', assetClass: 'OFFICE' as AssetClass, assetTier: 'PRIME' });
+  const a = bucketKey({
+    market: 'KR',
+    region: 'YEOUIDO',
+    assetClass: 'OFFICE' as AssetClass,
+    assetTier: 'PRIME'
+  });
+  const b = bucketKey({
+    market: 'KR',
+    region: 'YEOUIDO',
+    assetClass: 'OFFICE' as AssetClass,
+    assetTier: 'GRADE_A'
+  });
+  const c = bucketKey({
+    market: 'KR',
+    region: 'GANGNAM',
+    assetClass: 'OFFICE' as AssetClass,
+    assetTier: 'PRIME'
+  });
+  const d = bucketKey({
+    market: 'JP',
+    region: 'YEOUIDO',
+    assetClass: 'OFFICE' as AssetClass,
+    assetTier: 'PRIME'
+  });
   assert.notEqual(a, b);
   assert.notEqual(a, c);
   assert.notEqual(a, d);

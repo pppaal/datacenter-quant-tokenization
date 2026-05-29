@@ -150,15 +150,15 @@ Fund ─── Vehicle ─── Mandate
 
 ## 9. New Tier 1-5 모델 (최근 추가)
 
-| Model | 추가 시점 | 용도 |
-|---|---|---|
-| `Sponsor` / `SponsorPriorDeal` | T0 | sponsor track record |
-| `AssetMedia` | T0 | 자산 사진 / 도면 |
-| `DealFlowEntry` | T0 | proprietary deal flow |
-| `TenantDemand` | T0 | tenant-in-the-market |
-| `InsurancePolicy` | T4 | 보험 register |
-| `CarbonEmissionRecord` | T5 | Scope 1/2/3 측정값 |
-| `SideLetter` | T5 | LP 별 carve-out |
+| Model                          | 추가 시점 | 용도                  |
+| ------------------------------ | --------- | --------------------- |
+| `Sponsor` / `SponsorPriorDeal` | T0        | sponsor track record  |
+| `AssetMedia`                   | T0        | 자산 사진 / 도면      |
+| `DealFlowEntry`                | T0        | proprietary deal flow |
+| `TenantDemand`                 | T0        | tenant-in-the-market  |
+| `InsurancePolicy`              | T4        | 보험 register         |
+| `CarbonEmissionRecord`         | T5        | Scope 1/2/3 측정값    |
+| `SideLetter`                   | T5        | LP 별 carve-out       |
 
 ---
 

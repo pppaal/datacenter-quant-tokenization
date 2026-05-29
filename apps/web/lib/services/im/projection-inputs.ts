@@ -49,9 +49,7 @@ function asMacroPoints(series: unknown): MacroSeriesPoint[] {
  * sponsor's operating leverage. We use rent_growth_pct directly
  * (with fallback) so the IM can show provenance.
  */
-export function pickRevenueGrowthPct(
-  macroSeries: unknown
-): DerivedAssumption<number> {
+export function pickRevenueGrowthPct(macroSeries: unknown): DerivedAssumption<number> {
   const points = asMacroPoints(macroSeries);
   const rentGrowth = points.find((p) => p.seriesKey === 'rent_growth_pct');
   if (rentGrowth) {
@@ -78,9 +76,7 @@ export function pickDebtAmortizationPct(
   facilities: DebtFacilityLike[] | null | undefined
 ): DerivedAssumption<number> {
   const valid = (facilities ?? []).filter(
-    (f) =>
-      typeof f.amortizationTermMonths === 'number' &&
-      f.amortizationTermMonths! > 0
+    (f) => typeof f.amortizationTermMonths === 'number' && f.amortizationTermMonths! > 0
   );
   if (valid.length === 0) {
     return {
@@ -89,15 +85,12 @@ export function pickDebtAmortizationPct(
     };
   }
   // Weight by commitment when available, otherwise simple mean.
-  const totalWeight = valid.reduce(
-    (sum, f) => sum + (f.commitmentKrw ?? 1),
-    0
-  );
+  const totalWeight = valid.reduce((sum, f) => sum + (f.commitmentKrw ?? 1), 0);
   const weightedYearlyAmort =
     valid.reduce((sum, f) => {
       const balloon = f.balloonPct ?? 0;
       const termYears = (f.amortizationTermMonths ?? 84) / 12;
-      const yearlyAmort = (1 - balloon / 100) / termYears * 100;
+      const yearlyAmort = ((1 - balloon / 100) / termYears) * 100;
       const weight = f.commitmentKrw ?? 1;
       return sum + yearlyAmort * weight;
     }, 0) / totalWeight;
@@ -117,18 +110,12 @@ export function pickInterestRatePct(
   facilities: DebtFacilityLike[] | null | undefined,
   macroSeries: unknown
 ): DerivedAssumption<number> {
-  const validFacilities = (facilities ?? []).filter(
-    (f) => typeof f.interestRatePct === 'number'
-  );
+  const validFacilities = (facilities ?? []).filter((f) => typeof f.interestRatePct === 'number');
   if (validFacilities.length > 0) {
-    const totalWeight = validFacilities.reduce(
-      (sum, f) => sum + (f.commitmentKrw ?? 1),
-      0
-    );
+    const totalWeight = validFacilities.reduce((sum, f) => sum + (f.commitmentKrw ?? 1), 0);
     const weighted =
       validFacilities.reduce(
-        (sum, f) =>
-          sum + (f.interestRatePct ?? 0) * (f.commitmentKrw ?? 1),
+        (sum, f) => sum + (f.interestRatePct ?? 0) * (f.commitmentKrw ?? 1),
         0
       ) / totalWeight;
     return {

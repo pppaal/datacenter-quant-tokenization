@@ -32,11 +32,7 @@ const CARD_FIELDS: Record<string, RegExp[]> = {
     /^macro\.policy_rate_pct$/i
   ],
   // Capital structure (debt)
-  capitalStructure: [
-    /^debtFacilities$/i,
-    /^macro\.debt_cost_pct$/i,
-    /^macro\.credit_spread_bps$/i
-  ],
+  capitalStructure: [/^debtFacilities$/i, /^macro\.debt_cost_pct$/i, /^macro\.credit_spread_bps$/i],
   // Tenancy
   tenancy: [/^leaseCount$/i, /^macro\.rent_growth_pct$/i, /^macro\.vacancy_pct$/i],
   // Sources & Uses

@@ -73,9 +73,7 @@ export async function POST(request: Request) {
 
     // Dedup: only emit a notification when one hasn't already gone out
     // for this snapshot in the last NOTIFICATION_DEDUP_WINDOW_DAYS.
-    const dedupCutoff = new Date(
-      Date.now() - NOTIFICATION_DEDUP_WINDOW_DAYS * 24 * 60 * 60 * 1000
-    );
+    const dedupCutoff = new Date(Date.now() - NOTIFICATION_DEDUP_WINDOW_DAYS * 24 * 60 * 60 * 1000);
     const existing = await prisma.notification.findMany({
       where: {
         entityType: 'ResearchSnapshot',
@@ -137,9 +135,7 @@ export async function POST(request: Request) {
         id: d.id,
         title: d.title,
         snapshotDate: d.snapshotDate,
-        ageDays: Math.floor(
-          (Date.now() - d.snapshotDate.getTime()) / (24 * 60 * 60 * 1000)
-        ),
+        ageDays: Math.floor((Date.now() - d.snapshotDate.getTime()) / (24 * 60 * 60 * 1000)),
         alerted: !recentlyAlerted.has(d.id)
       }))
     });

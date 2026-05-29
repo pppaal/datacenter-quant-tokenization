@@ -9,11 +9,7 @@
  * by Revenue; otherwise equal-weighted as a fallback.
  */
 
-type Decimalish =
-  | number
-  | { toNumber: () => number }
-  | null
-  | undefined;
+type Decimalish = number | { toNumber: () => number } | null | undefined;
 
 function toNum(v: Decimalish): number | null {
   if (v === null || v === undefined) return null;
@@ -102,14 +98,11 @@ export function buildCounterpartyRollup(
         ? scoreEntries.reduce((s, r) => s + r.score * r.weight, 0) / totalWeight
         : scoreEntries.reduce((s, r) => s + r.score, 0) / scoreEntries.length;
 
-  const weightedLeverage =
-    totalEbitdaKrw > 0 ? totalDebtKrw / totalEbitdaKrw : null;
-  const weightedInterestCoverage =
-    totalInterestKrw > 0 ? totalEbitdaKrw / totalInterestKrw : null;
+  const weightedLeverage = totalEbitdaKrw > 0 ? totalDebtKrw / totalEbitdaKrw : null;
+  const weightedInterestCoverage = totalInterestKrw > 0 ? totalEbitdaKrw / totalInterestKrw : null;
 
-  const weakestCounterpartyName = scoreEntries
-    .slice()
-    .sort((a, b) => a.score - b.score)[0]?.name ?? null;
+  const weakestCounterpartyName =
+    scoreEntries.slice().sort((a, b) => a.score - b.score)[0]?.name ?? null;
 
   return {
     counterpartyCount: counterparties.length,

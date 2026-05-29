@@ -33,7 +33,7 @@ test('pickDebtAmortizationPct derives yearly amort from facility schedule', () =
       balloonPct: 15
     }
   ]);
-  assert.ok(Math.abs(r.value - (85 / 7)) < 0.01);
+  assert.ok(Math.abs(r.value - 85 / 7) < 0.01);
   assert.match(r.provenance, /facility schedule/);
 });
 
@@ -45,7 +45,7 @@ test('pickDebtAmortizationPct weights by commitment when multiple facilities', (
     { commitmentKrw: 100, amortizationTermMonths: 84, balloonPct: 15 },
     { commitmentKrw: 50, amortizationTermMonths: 60, balloonPct: 0 }
   ]);
-  const expected = (((85 / 7) * 100) + (20 * 50)) / 150;
+  const expected = ((85 / 7) * 100 + 20 * 50) / 150;
   assert.ok(Math.abs(r.value - expected) < 0.01);
 });
 

@@ -60,9 +60,7 @@ function bandFor(
   return { band: 'weak', tone: 'risk' };
 }
 
-export function buildEsgSummary(
-  snapshot: EnergySnapshotLike | null
-): EsgSummary | null {
+export function buildEsgSummary(snapshot: EnergySnapshotLike | null): EsgSummary | null {
   if (!snapshot) return null;
   const rows: EsgMetricRow[] = [];
 
@@ -193,16 +191,14 @@ const GENERATOR_KW = 8000; // typical 32MW DC generator bank
 const ASSUMED_TEST_HOURS_PER_YEAR = 12;
 const SCOPE3_T_CO2E_PER_100M_KRW = 1.2;
 
-export function buildEmissionsBreakdown(
-  options: {
-    powerCapacityMw: number | null;
-    pueTarget: number | null;
-    renewableSharePct: number | null;
-    backupFuelHours: number | null;
-    totalCapexKrw: number | null;
-    holdYears?: number;
-  }
-): EmissionsBreakdown {
+export function buildEmissionsBreakdown(options: {
+  powerCapacityMw: number | null;
+  pueTarget: number | null;
+  renewableSharePct: number | null;
+  backupFuelHours: number | null;
+  totalCapexKrw: number | null;
+  holdYears?: number;
+}): EmissionsBreakdown {
   const notes: string[] = [];
   let scope1 = null as number | null;
   let scope2 = null as number | null;
@@ -211,8 +207,7 @@ export function buildEmissionsBreakdown(
 
   // Scope 2: purchased grid electricity net of renewable share
   if (options.powerCapacityMw !== null && options.pueTarget !== null) {
-    const annualKwh =
-      options.powerCapacityMw * 1000 * (options.pueTarget) * 8760 * 0.7; // 70% utilization proxy
+    const annualKwh = options.powerCapacityMw * 1000 * options.pueTarget * 8760 * 0.7; // 70% utilization proxy
     const renewableFraction = (options.renewableSharePct ?? 0) / 100;
     const gridKwh = annualKwh * (1 - renewableFraction);
     scope2 = (gridKwh * KR_GRID_EMISSION_FACTOR) / 1000;
@@ -232,8 +227,7 @@ export function buildEmissionsBreakdown(
   }
   // Scope 3: embodied carbon, amortized over hold
   if (options.totalCapexKrw !== null && options.totalCapexKrw > 0) {
-    const totalEmbodied =
-      (options.totalCapexKrw / 100_000_000) * SCOPE3_T_CO2E_PER_100M_KRW;
+    const totalEmbodied = (options.totalCapexKrw / 100_000_000) * SCOPE3_T_CO2E_PER_100M_KRW;
     const holdYears = options.holdYears ?? 10;
     scope3 = totalEmbodied / holdYears;
     notes.push(
@@ -241,10 +235,9 @@ export function buildEmissionsBreakdown(
     );
   }
 
-  const totalAnnual =
-    [scope1, scope2, scope3].some((v) => v !== null)
-      ? (scope1 ?? 0) + (scope2 ?? 0) + (scope3 ?? 0)
-      : null;
+  const totalAnnual = [scope1, scope2, scope3].some((v) => v !== null)
+    ? (scope1 ?? 0) + (scope2 ?? 0) + (scope3 ?? 0)
+    : null;
 
   return {
     scope1tCO2e: scope1,

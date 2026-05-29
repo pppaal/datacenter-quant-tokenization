@@ -54,8 +54,7 @@ const outputs = [
   },
   {
     label: '실행 트레일',
-    detail:
-      '딜, 문서 해시, 검토 패킷, 레지스트리 앵커 참조를 각 투자건에 연결해 추적합니다.'
+    detail: '딜, 문서 해시, 검토 패킷, 레지스트리 앵커 참조를 각 투자건에 연결해 추적합니다.'
   }
 ];
 
@@ -295,13 +294,11 @@ export default async function LandingPage() {
         <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
           <Card>
             <div className="eyebrow">플랫폼 구성</div>
-            <h2 className="section-title mt-3">
-              분석, 메모 생성, 검토를 위한 하나의 제품.
-            </h2>
+            <h2 className="section-title mt-3">분석, 메모 생성, 검토를 위한 하나의 제품.</h2>
             <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-400">
               단일 Next.js 애플리케이션이 자산 인테이크, 보강, 수익 분석, IM 생성, 문서 워크플로를
-              모두 담당합니다. 프론트엔드는 운영 제품처럼 읽히고, 백엔드는 실제 서비스 레이어에
-              직접 연결되어 있습니다.
+              모두 담당합니다. 프론트엔드는 운영 제품처럼 읽히고, 백엔드는 실제 서비스 레이어에 직접
+              연결되어 있습니다.
             </p>
 
             <div className="mt-6 grid gap-3">
@@ -321,11 +318,7 @@ export default async function LandingPage() {
                   '/api/documents/upload',
                   'DD 파일, 추출 노트, 버전 이력을 저장합니다.'
                 ],
-                [
-                  'Inquiry API',
-                  '/api/inquiries',
-                  '데모/검토 문의를 동일 시스템 안에 기록합니다.'
-                ]
+                ['Inquiry API', '/api/inquiries', '데모/검토 문의를 동일 시스템 안에 기록합니다.']
               ].map(([label, route, detail]) => (
                 <div
                   key={route}

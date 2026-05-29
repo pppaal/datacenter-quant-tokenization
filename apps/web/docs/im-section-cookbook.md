@@ -9,10 +9,12 @@
 ### Step 1 — 데이터 출처 결정
 
 **질문**: 데이터가 이미 schema에 있는가?
+
 - **Yes** → Step 3로 (helper 작성).
 - **No** → Step 2 (schema 추가).
 
 예시 (Insurance):
+
 - 기존 schema에 `InsurancePolicy` 없음. → schema 추가 필요.
 
 ### Step 2 — Schema + migration (필요 시)
@@ -71,10 +73,7 @@ CREATE INDEX IF NOT EXISTS "InsurancePolicy_..." ON ...;
 export const assetBundleInclude = {
   // ... 기존 includes ...
   insurancePolicies: {
-    orderBy: [
-      { status: 'asc' as const },
-      { policyType: 'asc' as const }
-    ]
+    orderBy: [{ status: 'asc' as const }, { policyType: 'asc' as const }]
   }
 } satisfies Prisma.AssetInclude;
 ```
@@ -113,6 +112,7 @@ export function buildInsuranceSummary(
 ```
 
 **Convention**:
+
 - 입력 타입은 nullable optional fields (Prisma return shape에 충실)
 - 빈 입력은 `null` 반환 (카드 자동 hide)
 - 시간 의존이면 `now: Date = new Date()` 인자로 받기 (테스트 시 fixed date 주입 가능)
@@ -128,14 +128,27 @@ import { buildInsuranceSummary } from '@/lib/services/im/insurance';
 
 test('buildInsuranceSummary aggregates coverage + flags expiring', () => {
   const now = new Date('2026-04-30T00:00:00Z');
-  const summary = buildInsuranceSummary([
-    { policyType: 'PROPERTY', insurer: 'X', coverageKrw: 280_000_000_000,
-      premiumKrw: 980_000_000, status: 'ACTIVE',
-      expiresOn: new Date('2027-01-01') },
-    { policyType: 'BI', insurer: 'X', coverageKrw: 60_000_000_000,
-      premiumKrw: 320_000_000, status: 'ACTIVE',
-      expiresOn: new Date('2026-06-01') } // 90일 내 만기
-  ], now);
+  const summary = buildInsuranceSummary(
+    [
+      {
+        policyType: 'PROPERTY',
+        insurer: 'X',
+        coverageKrw: 280_000_000_000,
+        premiumKrw: 980_000_000,
+        status: 'ACTIVE',
+        expiresOn: new Date('2027-01-01')
+      },
+      {
+        policyType: 'BI',
+        insurer: 'X',
+        coverageKrw: 60_000_000_000,
+        premiumKrw: 320_000_000,
+        status: 'ACTIVE',
+        expiresOn: new Date('2026-06-01')
+      } // 90일 내 만기
+    ],
+    now
+  );
   assert.equal(summary!.totalCoverageKrw, 340_000_000_000);
   assert.equal(summary!.expiringSoonCount, 1);
 });
@@ -192,7 +205,7 @@ const insuranceSummary = buildInsuranceSummary(asset.insurancePolicies ?? []);
 ```ts
 const tocItems = [
   // ...
-  { id: 'im-insurance', label: 'Insurance', show: !!insuranceSummary },
+  { id: 'im-insurance', label: 'Insurance', show: !!insuranceSummary }
   // ...
 ];
 ```
@@ -242,7 +255,7 @@ const summary = buildXSummary(asset.xField);
 
 ```tsx
 const assumptions = readUnderwritingAssumptions(latestRun.assumptions);
-<section>{/* 6 tiles from assumptions.metrics */}</section>
+<section>{/* 6 tiles from assumptions.metrics */}</section>;
 ```
 
 ### Pattern D — proForma 기반 계산
@@ -251,7 +264,15 @@ const assumptions = readUnderwritingAssumptions(latestRun.assumptions);
 
 ```tsx
 const proForma = readStoredBaseCaseProForma(latestRun.assumptions);
-{proForma ? <section>{proForma.years.map(year => <tr>...</tr>)}</section> : null}
+{
+  proForma ? (
+    <section>
+      {proForma.years.map((year) => (
+        <tr>...</tr>
+      ))}
+    </section>
+  ) : null;
+}
 ```
 
 ### Pattern E — 다중 출처 fallback
@@ -265,9 +286,7 @@ const marketTxComps = asset.transactionComps?.length
       where: { assetId: null, market: asset.market },
       take: 8
     });
-const txCompsToShow = asset.transactionComps?.length
-  ? asset.transactionComps
-  : marketTxComps;
+const txCompsToShow = asset.transactionComps?.length ? asset.transactionComps : marketTxComps;
 ```
 
 ---

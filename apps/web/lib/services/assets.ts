@@ -73,10 +73,7 @@ export const assetBundleInclude = {
     },
     include: {
       financialStatements: {
-        orderBy: [
-          { fiscalYear: 'desc' as const },
-          { createdAt: 'desc' as const }
-        ],
+        orderBy: [{ fiscalYear: 'desc' as const }, { createdAt: 'desc' as const }],
         take: 5,
         include: {
           creditAssessments: {
@@ -221,22 +218,13 @@ export const assetBundleInclude = {
   },
   tokenization: true,
   insurancePolicies: {
-    orderBy: [
-      { status: 'asc' as const },
-      { policyType: 'asc' as const }
-    ]
+    orderBy: [{ status: 'asc' as const }, { policyType: 'asc' as const }]
   },
   carbonRecords: {
-    orderBy: [
-      { vintageYear: 'desc' as const },
-      { scope: 'asc' as const }
-    ]
+    orderBy: [{ vintageYear: 'desc' as const }, { scope: 'asc' as const }]
   },
   sideLetters: {
-    orderBy: [
-      { lpName: 'asc' as const },
-      { termCategory: 'asc' as const }
-    ]
+    orderBy: [{ lpName: 'asc' as const }, { termCategory: 'asc' as const }]
   },
   transactionComps: {
     orderBy: {
@@ -303,10 +291,7 @@ export const assetBundleInclude = {
     }
   },
   media: {
-    orderBy: [
-      { sortOrder: 'asc' as const },
-      { createdAt: 'asc' as const }
-    ]
+    orderBy: [{ sortOrder: 'asc' as const }, { createdAt: 'asc' as const }]
   }
 } satisfies Prisma.AssetInclude;
 

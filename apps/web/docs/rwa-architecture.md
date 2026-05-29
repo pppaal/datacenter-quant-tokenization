@@ -103,6 +103,7 @@ ValuationRun (DB)
 ### Replay 보호
 
 EIP-712 도메인:
+
 ```
 domain = {
   name: "NavAttestor",
@@ -293,16 +294,19 @@ await walletClient.writeContract({
 ## 7. v0 한계 (audit 전 해결할 것)
 
 ### Waterfall.sol
+
 - O(n) LP iteration in `_allocateLpPool` → 50+ LP 시 gas 폭발. **Merkle-claim 패턴**으로 마이그레이션 필요.
 - Vesting / clawback 미지원 — LPA-specific 조항.
 - GP catch-up 정적 공식 — LPA에 따라 dollar amount vs ratio targeting 다름.
 - Side-letter MFN 미강제 — `SideLetter` 테이블 읽는 sibling 컨트랙트 필요.
 
 ### NavAttestor (TODO)
+
 - 컨트랙트 자체는 아직 작성 안 됨 — TS attestation pipeline만 있음.
 - 다음 step: `NavAttestor.sol` 작성하여 EIP-712 verify + NavOracle.publish forward.
 
 ### 일반
+
 - 정식 audit 없음 (Halborn / Trail of Bits / OpenZeppelin)
 - 가스 최적화 안 됨 (LP pro-rata loop)
 - 모든 컨트랙트가 `pause` 가능 — 이건 좋지만 paused 동안 LP claim도 막힘 (의도 vs 부작용 검토 필요)
@@ -312,6 +316,7 @@ await walletClient.writeContract({
 ## 8. 다음 단계
 
 **Phase 1 — 3개월 (MVP testnet)**
+
 - [ ] `NavAttestor.sol` 작성 (EIP-712 verifier)
 - [ ] Base Sepolia 배포 + Etherscan 검증
 - [ ] Apps/web에서 attestation publish 자동화 (cron 또는 trigger)
@@ -319,11 +324,13 @@ await walletClient.writeContract({
 - [ ] 첫 외부 protocol 1곳에서 NAV consume 시도 (Pyth pull oracle 등록)
 
 **Phase 2 — 6개월 (audit + KR module)**
+
 - [ ] `KrHoldingLimitModule.sol` / `KrTransferRestrictionModule.sol`
 - [ ] OpenZeppelin / Halborn audit ($50-100K)
 - [ ] FSC 샌드박스 application (KR STO framework 성숙 시)
 
 **Phase 3 — 12개월 (mainnet pilot)**
+
 - [ ] Mainnet (Base / Arbitrum One) 배포
 - [ ] 첫 pilot 발행 (REIT vehicle 추천)
 - [ ] LayerZero / CCIP cross-chain 통합

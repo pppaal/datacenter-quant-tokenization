@@ -8,11 +8,7 @@
  * provenance under the table.
  */
 
-type Decimalish =
-  | number
-  | { toNumber: () => number }
-  | null
-  | undefined;
+type Decimalish = number | { toNumber: () => number } | null | undefined;
 
 function toNum(v: Decimalish): number | null {
   if (v === null || v === undefined) return null;
@@ -106,9 +102,7 @@ export function buildCashFlowSlice(inputs: CashFlowInputs): CashFlowSlice {
   const debtServiceKrw = (interest ?? 0) + principal;
   const cfadsDscr = debtServiceKrw > 0 ? cfadsKrw / debtServiceKrw : null;
   const netIncomeKrw =
-    ebitKrw !== null && interest !== null
-      ? (ebitKrw - interest) * (1 - taxRate)
-      : null;
+    ebitKrw !== null && interest !== null ? (ebitKrw - interest) * (1 - taxRate) : null;
 
   return {
     ebitdaKrw: ebitda,

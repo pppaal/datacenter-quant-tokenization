@@ -54,5 +54,8 @@ test('chunkText prefers sentence boundaries over hard cuts', () => {
   const head = 'A'.repeat(1100) + '. ';
   const tail = 'B'.repeat(1500);
   const chunks = chunkText(head + tail);
-  assert.ok(chunks[0]!.endsWith('.'), `first chunk should end at sentence: "${chunks[0]!.slice(-10)}"`);
+  assert.ok(
+    chunks[0]!.endsWith('.'),
+    `first chunk should end at sentence: "${chunks[0]!.slice(-10)}"`
+  );
 });

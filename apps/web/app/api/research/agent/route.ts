@@ -21,9 +21,7 @@ type AgentRequestBody = {
   maxToolCalls?: unknown;
 };
 
-function parseBody(
-  body: AgentRequestBody | null
-):
+function parseBody(body: AgentRequestBody | null):
   | {
       question: string;
       submarketLabel: string | null;

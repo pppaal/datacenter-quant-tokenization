@@ -261,7 +261,9 @@ function extractPublishedAt(html: string): Date | null {
   return null;
 }
 
-async function extractPdfText(buffer: ArrayBuffer): Promise<{ text: string; title: string | null }> {
+async function extractPdfText(
+  buffer: ArrayBuffer
+): Promise<{ text: string; title: string | null }> {
   // pdf-parse is loaded dynamically so the (relatively heavy) pdfjs-dist
   // dependency isn't pulled into routes that never touch PDFs. PDFParse
   // accepts a Uint8Array and exposes getText() / getInfo() methods.
@@ -289,12 +291,7 @@ async function httpFetchPage(url: string): Promise<ResearchFetchedPage> {
     timeoutMs: HTTP_TIMEOUT_MS,
     retries: 2,
     retryBackoffMs: 300,
-    acceptedContentTypes: [
-      'text/html',
-      'application/xhtml+xml',
-      'text/plain',
-      'application/pdf'
-    ],
+    acceptedContentTypes: ['text/html', 'application/xhtml+xml', 'text/plain', 'application/pdf'],
     headers: {
       'user-agent': 'DatacenterQuant-ResearchAgent/1.0 (+https://example.internal/bot)'
     }
@@ -348,7 +345,7 @@ async function tavilySearchNews(query: string, apiKey: string): Promise<VendorSe
     acceptedContentTypes: ['application/json'],
     headers: {
       'content-type': 'application/json',
-      'authorization': `Bearer ${apiKey}`
+      authorization: `Bearer ${apiKey}`
     },
     body: JSON.stringify({
       query,

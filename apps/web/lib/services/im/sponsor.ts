@@ -53,9 +53,7 @@ export async function getSponsorTrackByName(
   const multiples = closed
     .map((d) => d.equityMultiple)
     .filter((v): v is number => typeof v === 'number');
-  const irrs = closed
-    .map((d) => d.grossIrrPct)
-    .filter((v): v is number => typeof v === 'number');
+  const irrs = closed.map((d) => d.grossIrrPct).filter((v): v is number => typeof v === 'number');
   const vintages = deals.map((d) => d.vintageYear).sort((a, b) => a - b);
 
   return {
@@ -68,9 +66,7 @@ export async function getSponsorTrackByName(
     websiteUrl: sponsor.websiteUrl,
     priorDealCount: deals.length,
     averageEquityMultiple:
-      multiples.length === 0
-        ? null
-        : multiples.reduce((sum, v) => sum + v, 0) / multiples.length,
+      multiples.length === 0 ? null : multiples.reduce((sum, v) => sum + v, 0) / multiples.length,
     averageGrossIrrPct:
       irrs.length === 0 ? null : irrs.reduce((sum, v) => sum + v, 0) / irrs.length,
     oldestVintage: vintages[0] ?? null,

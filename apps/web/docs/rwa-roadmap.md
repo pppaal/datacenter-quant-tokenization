@@ -19,6 +19,7 @@ token/AssetToken.sol                  ─── ERC-3643 호환 보안토큰
 ```
 
 `apps/web/lib/blockchain/`:
+
 - ABI auto-export pipeline
 - Mock mode (`BLOCKCHAIN_MOCK_MODE`)
 - KycRecord bridge to off-chain providers
@@ -34,11 +35,13 @@ token/AssetToken.sol                  ─── ERC-3643 호환 보안토큰
 **개념**: 우리 valuation engine 출력을 EIP-712 서명된 attestation으로 multi-chain publish. 한국 부동산의 canonical NAV oracle 위치 확보.
 
 **왜**:
+
 - 이미 `NavOracle.sol` + `ValuationRun` 다 있음 → 통합만
 - 다른 RWA 프로토콜이 KR RE NAV consume 가능 → dependency moat
 - 추가 audit cost 적음
 
 **구현 단계**:
+
 1. `lib/blockchain/attestation.ts` — ValuationRun → EIP-712 typed data + ECDSA 서명
 2. `NavAttestor.sol` — 서명 검증 + on-chain publish (NavOracle.publish 호출)
 3. Base / Arbitrum sepolia testnet deploy
@@ -53,11 +56,13 @@ token/AssetToken.sol                  ─── ERC-3643 호환 보안토큰
 **개념**: KR 토큰증권 발행사들에게 ERC-3643 + KR FSC compliance 모듈 SaaS 제공.
 
 **왜**:
+
 - 2024-25 KR 토큰증권 가이드라인 → pilot 발행 100+ 예상
 - 우리 ERC-3643 stack 이미 호환
 - 첫 진입자 — Securitize (US), Tokeny (EU) 한국 카운터파트 없음
 
 **구현 단계**:
+
 1. KR-specific compliance modules:
    - `KrHoldingLimitModule.sol` — 자본시장법 보유한도
    - `KrTransferRestrictionModule.sol` — 양수도 제한 (1년 lockup 등)
@@ -76,11 +81,13 @@ token/AssetToken.sol                  ─── ERC-3643 호환 보안토큰
 **개념**: 우리 `waterfall.ts` 를 Solidity로 port. LP commitment / capital call / distribution / promote 모두 on-chain.
 
 **왜**:
+
 - 4-tier waterfall (capital return → preferred → catch-up → carry) 이미 helper 있음
 - LP 입장: promote 계산 투명성 = 강력한 상품성
 - side letter MFN 자동 enforce 가능
 
 **구현 단계**:
+
 1. `Waterfall.sol` — 4-tier 분배 로직, LP/GP 자동 split
 2. `Commitment.sol` — LP commitment + capital call NFT
 3. USDC native distribution (또는 KRW stablecoin)
@@ -96,6 +103,7 @@ token/AssetToken.sol                  ─── ERC-3643 호환 보안토큰
 **개념**: KR 부동산 자산을 multi-chain (EVM + Solana + TON) 토큰으로. Chain별 다른 컴플라이언스 layer.
 
 **구현 단계**:
+
 1. LayerZero / CCIP / Wormhole 통합
 2. Compliance proxy: chain별 다른 규제 매핑
 3. 단일 "asset record" → multi-chain mirror
@@ -132,32 +140,38 @@ Year 2+     Direction D: Cross-chain
 ## 4. 핵심 기술 투자
 
 ### Smart contract security
+
 - OpenZeppelin standards (이미 사용)
 - Foundry + Hardhat dual workflow
 - Slither / Mythril CI integration
 - **첫 audit 예산 $50-100K**: Halborn / Trail of Bits / OpenZeppelin
 
 ### Oracle infrastructure
+
 - 자체 NavOracle attestation publisher
 - Chainlink Functions / Pyth pull oracle 외부 통합
 - EIP-712 typed signatures
 
 ### Custody
+
 - Fireblocks / BitGo / Anchorage integration
 - Multi-sig governance (Safe / Gnosis)
 - Hardware-backed signers
 
 ### Compliance / KYC
+
 - Sumsub / Jumio (현재 mock → 실제 통합)
 - Chainalysis / TRM Labs (sanctions screening)
 - ERC-3643 + KR-specific modules
 
 ### Stablecoin / settlement
+
 - USDC native (Circle CCTP)
 - KRW stablecoin (Line / Kakao 협의)
 - Atomic DvP (settlement instant)
 
 ### Indexer / Data
+
 - The Graph / Goldsky for event indexing
 - 자체 indexer 확장 (이미 OnchainRecord 있음)
 
@@ -170,6 +184,7 @@ Year 2+     Direction D: Cross-chain
 > 우리 valuation engine output을 EIP-712 서명된 attestation으로 publish + Base testnet에 NavAttestor 컨트랙트 배포 + 외부 prototype consumer 1곳 확보
 
 이게 됐을 때:
+
 - "한국 부동산 NAV oracle"로 외부 protocol 들이 우리 데이터 consume
 - ERC-3643 stack 이미 있어서 같은 자산 토큰화도 즉시 가능
 - Audit 비용 minimum (publisher 컨트랙트만)
@@ -180,12 +195,14 @@ Year 2+     Direction D: Cross-chain
 ## 6. 솔직한 risk view
 
 **가장 큰 함정**:
+
 1. **규제 변경 리스크** — KR STO framework이 fade되면 Direction B 헛수고
 2. **Liquidity 부재** — 토큰화 자체보다 secondary market이 어려움. 기존 거래소 토큰증권 라인 활용 필요
 3. **Crypto stigma** — KR institutional 일부 "crypto = 도박" 인식. RWA 마케팅에 단어 신중 ("토큰증권" / "DLT" / "on-chain" 우선; "crypto" 후순위)
 4. **Tech-regulation mismatch** — build 속도 > 규제 명확화. 너무 멀리 가면 무용
 
 **가장 큰 기회**:
+
 - KR institutional RE = RWA 인프라 가장 부족한 카테고리
 - Underwriting + ERC-3643 stack 조합은 글로벌에 직접 비교군 거의 없음
 - "Korea valuation oracle" 포지션은 5년 후에도 우리 자리

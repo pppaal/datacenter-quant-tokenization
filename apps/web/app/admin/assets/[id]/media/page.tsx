@@ -6,11 +6,7 @@ import { AssetMediaManager } from '@/components/admin/asset-media-manager';
 
 export const dynamic = 'force-dynamic';
 
-export default async function AssetMediaPage({
-  params
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function AssetMediaPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const asset = await prisma.asset.findUnique({
     where: { id },

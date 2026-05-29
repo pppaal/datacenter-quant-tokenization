@@ -92,8 +92,7 @@ export function ComplianceModulesPanel({
         <div>
           <div className="eyebrow">Compliance modules</div>
           <h2 className="mt-2 text-2xl font-semibold text-white">
-            {assetName}{' '}
-            <span className="ml-2 text-sm font-normal text-slate-400">{assetCode}</span>
+            {assetName} <span className="ml-2 text-sm font-normal text-slate-400">{assetCode}</span>
           </h2>
           <div className="mt-1 font-mono text-xs text-slate-500">
             ModularCompliance {shortenHash(complianceAddress, 6)}
@@ -210,11 +209,7 @@ export function ComplianceModulesPanel({
                       )
                     }
                   >
-                    {busyKey === `country:${row.code}`
-                      ? '...'
-                      : row.blocked
-                        ? 'Unblock'
-                        : 'Block'}
+                    {busyKey === `country:${row.code}` ? '...' : row.blocked ? 'Unblock' : 'Block'}
                   </Button>
                 </li>
               ))}
@@ -276,8 +271,16 @@ export function ComplianceModulesPanel({
             void runPreflight();
           }}
         >
-          <Input value={previewFrom} onChange={(e) => setPreviewFrom(e.target.value)} placeholder="from 0x..." />
-          <Input value={previewTo} onChange={(e) => setPreviewTo(e.target.value)} placeholder="to 0x..." />
+          <Input
+            value={previewFrom}
+            onChange={(e) => setPreviewFrom(e.target.value)}
+            placeholder="from 0x..."
+          />
+          <Input
+            value={previewTo}
+            onChange={(e) => setPreviewTo(e.target.value)}
+            placeholder="to 0x..."
+          />
           <Input
             value={previewAmount}
             onChange={(e) => setPreviewAmount(e.target.value)}

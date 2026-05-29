@@ -126,15 +126,7 @@ export default async function TenantDemandPage() {
   );
 }
 
-function StatCard({
-  label,
-  primary,
-  detail
-}: {
-  label: string;
-  primary: string;
-  detail: string;
-}) {
+function StatCard({ label, primary, detail }: { label: string; primary: string; detail: string }) {
   return (
     <Card className="space-y-2">
       <div className="fine-print">{label}</div>

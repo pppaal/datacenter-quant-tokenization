@@ -121,8 +121,7 @@ export default async function DocumentsPage() {
                                 <div className="mt-2 text-sm text-slate-300">
                                   Revenue{' '}
                                   {formatNumber(statement.revenueKrw?.toNumber() ?? null, 0)} /
-                                  EBITDA{' '}
-                                  {formatNumber(statement.ebitdaKrw?.toNumber() ?? null, 0)}
+                                  EBITDA {formatNumber(statement.ebitdaKrw?.toNumber() ?? null, 0)}
                                 </div>
                                 {metrics ? (
                                   <div className="mt-2 text-xs text-slate-500">

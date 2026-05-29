@@ -11,7 +11,10 @@ test('resolvePythonScriptPath ends at the expected engine location', () => {
   delete process.env.VAL_PYTHON_SCRIPT_PATH;
   const resolved = resolvePythonScriptPath();
   assert.ok(path.isAbsolute(resolved), 'path should be absolute');
-  assert.ok(resolved.endsWith(SCRIPT_TAIL), `expected path to end with ${SCRIPT_TAIL}, got ${resolved}`);
+  assert.ok(
+    resolved.endsWith(SCRIPT_TAIL),
+    `expected path to end with ${SCRIPT_TAIL}, got ${resolved}`
+  );
   // It must land inside apps/web, derived from the module location.
   assert.ok(resolved.includes(path.join('apps', 'web', 'services', 'valuation_python')), resolved);
 });

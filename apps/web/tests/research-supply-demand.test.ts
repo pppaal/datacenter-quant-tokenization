@@ -136,8 +136,7 @@ test('DEFAULT_STAGE_COMPLETION_PROB is monotonic increasing', () => {
   ] as const;
   for (let i = 1; i < order.length; i += 1) {
     assert.ok(
-      DEFAULT_STAGE_COMPLETION_PROB[order[i]!] >=
-        DEFAULT_STAGE_COMPLETION_PROB[order[i - 1]!],
+      DEFAULT_STAGE_COMPLETION_PROB[order[i]!] >= DEFAULT_STAGE_COMPLETION_PROB[order[i - 1]!],
       `${order[i]} should be >= ${order[i - 1]}`
     );
   }

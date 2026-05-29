@@ -8,11 +8,7 @@
  * renders "—" for any cell that lacks the necessary inputs.
  */
 
-type Decimalish =
-  | number
-  | { toNumber: () => number }
-  | null
-  | undefined;
+type Decimalish = number | { toNumber: () => number } | null | undefined;
 
 function toNum(value: Decimalish): number | null {
   if (value === null || value === undefined) return null;
@@ -71,9 +67,7 @@ export function buildIncomeStatement(stmt: FinancialStatementLike): IncomeStatem
   const interestExpenseKrw = toNum(stmt.interestExpenseKrw);
   const ebitdaMarginPct = revenueKrw && ebitdaKrw ? (ebitdaKrw / revenueKrw) * 100 : null;
   const preTaxIncomeProxyKrw =
-    ebitdaKrw !== null && interestExpenseKrw !== null
-      ? ebitdaKrw - interestExpenseKrw
-      : null;
+    ebitdaKrw !== null && interestExpenseKrw !== null ? ebitdaKrw - interestExpenseKrw : null;
   return {
     revenueKrw,
     ebitdaKrw,
@@ -88,8 +82,7 @@ export function buildBalanceSheet(stmt: FinancialStatementLike): BalanceSheetSli
   const cashKrw = toNum(stmt.cashKrw);
   const totalDebtKrw = toNum(stmt.totalDebtKrw);
   const totalEquityKrw = toNum(stmt.totalEquityKrw);
-  const netDebtKrw =
-    totalDebtKrw !== null && cashKrw !== null ? totalDebtKrw - cashKrw : null;
+  const netDebtKrw = totalDebtKrw !== null && cashKrw !== null ? totalDebtKrw - cashKrw : null;
   const equityRatio = safeDiv(totalEquityKrw, totalAssetsKrw);
   const otherLiabilitiesKrw =
     totalAssetsKrw !== null && totalDebtKrw !== null && totalEquityKrw !== null
@@ -421,9 +414,7 @@ export function buildSensitivityMatrix(
       const leverage = safeDiv(bs.totalDebtKrw, ebitda);
       const coverage = interest > 0 ? safeDiv(ebitda, interest) : null;
       const passes =
-        leverage !== null && coverage !== null
-          ? leverage <= 4.0 && coverage >= 2.0
-          : null;
+        leverage !== null && coverage !== null ? leverage <= 4.0 && coverage >= 2.0 : null;
       return {
         ebitdaShockPct: es,
         rateShockBps: rs,
@@ -459,8 +450,7 @@ export function buildStressTest(
 
   const baseInterest = inc.interestExpenseKrw ?? 0;
   const debtRepricedPct = options.debtRepricedPct ?? 1.0;
-  const incrementalInterest =
-    bs.totalDebtKrw * debtRepricedPct * (options.rateShockBps / 10_000);
+  const incrementalInterest = bs.totalDebtKrw * debtRepricedPct * (options.rateShockBps / 10_000);
 
   const scenarios = [
     { label: 'Base case', ebitdaScale: 1.0, rateAdd: 0 },
@@ -487,9 +477,7 @@ export function buildStressTest(
     const leverage = safeDiv(bs.totalDebtKrw, ebitda);
     const coverage = interest > 0 ? safeDiv(ebitda, interest) : null;
     const passes =
-      leverage !== null && coverage !== null
-        ? leverage <= 4.0 && coverage >= 2.0
-        : null;
+      leverage !== null && coverage !== null ? leverage <= 4.0 && coverage >= 2.0 : null;
     return {
       scenario: s.label,
       ebitdaKrw: ebitda,

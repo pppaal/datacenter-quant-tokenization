@@ -1,6 +1,10 @@
 import type { MetadataRoute } from 'next';
 
-const publicRoutes: Array<{ path: string; priority: number; changeFrequency: 'monthly' | 'weekly' }> = [
+const publicRoutes: Array<{
+  path: string;
+  priority: number;
+  changeFrequency: 'monthly' | 'weekly';
+}> = [
   { path: '/', priority: 1.0, changeFrequency: 'weekly' },
   { path: '/product', priority: 0.9, changeFrequency: 'monthly' },
   { path: '/research', priority: 0.9, changeFrequency: 'monthly' },

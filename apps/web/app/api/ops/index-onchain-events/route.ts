@@ -10,10 +10,7 @@ import {
   transferAgentAbi
 } from '@/lib/blockchain/tokenization-abi';
 import { recordAuditEvent } from '@/lib/services/audit';
-import {
-  indexOnchainEvents,
-  type IndexerTarget
-} from '@/lib/services/onchain/event-indexer';
+import { indexOnchainEvents, type IndexerTarget } from '@/lib/services/onchain/event-indexer';
 import { prisma } from '@/lib/db/prisma';
 
 function isAuthorized(request: Request, expectedToken: string) {

@@ -162,7 +162,12 @@ function isPrivateIpv6(address: string): boolean {
     return true;
   }
   // fe80::/10 — link-local
-  if (lower.startsWith('fe8') || lower.startsWith('fe9') || lower.startsWith('fea') || lower.startsWith('feb')) {
+  if (
+    lower.startsWith('fe8') ||
+    lower.startsWith('fe9') ||
+    lower.startsWith('fea') ||
+    lower.startsWith('feb')
+  ) {
     return true;
   }
   // fc00::/7 — unique local
@@ -191,7 +196,9 @@ async function resolveSafeAddress(hostname: string): Promise<LookupAddress> {
     );
   }
   if (isPrivateIp(resolved.address)) {
-    throw new UnsafeUrlError(`Hostname ${hostname} resolved to private/disallowed IP ${resolved.address}.`);
+    throw new UnsafeUrlError(
+      `Hostname ${hostname} resolved to private/disallowed IP ${resolved.address}.`
+    );
   }
   return resolved;
 }
@@ -223,10 +230,7 @@ function ensureSafeUrl(rawUrl: string): URL {
   return parsed;
 }
 
-async function safeFetchOnce(
-  rawUrl: string,
-  options: SafeFetchOptions
-): Promise<Response> {
+async function safeFetchOnce(rawUrl: string, options: SafeFetchOptions): Promise<Response> {
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const maxRedirects = options.maxRedirects ?? DEFAULT_MAX_REDIRECTS;
   const headers = options.headers ?? {};
@@ -271,9 +275,9 @@ async function safeFetchOnce(
     if (!contentTypeMatches(response, options.acceptedContentTypes)) {
       const ct = response.headers.get('content-type') ?? '<missing>';
       throw new UnsafeUrlError(
-        `Content-Type "${ct}" is not in the accepted list [${(options.acceptedContentTypes ?? []).join(
-          ', '
-        )}].`
+        `Content-Type "${ct}" is not in the accepted list [${(
+          options.acceptedContentTypes ?? []
+        ).join(', ')}].`
       );
     }
     return response;

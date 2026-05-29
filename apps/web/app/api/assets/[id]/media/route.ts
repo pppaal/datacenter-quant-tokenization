@@ -38,10 +38,7 @@ function sanitizeName(name: string): string {
   return base.length > 0 ? base : 'upload.bin';
 }
 
-export async function GET(
-  request: Request,
-  context: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
   const actor = await resolveVerifiedAdminActorFromHeaders(request.headers, prisma, {
     allowBasic: false,
     requireActiveSeat: true
@@ -69,10 +66,7 @@ export async function GET(
   });
 }
 
-export async function POST(
-  request: Request,
-  context: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
   const actor = await resolveVerifiedAdminActorFromHeaders(request.headers, prisma, {
     allowBasic: false,
     requireActiveSeat: true
@@ -113,13 +107,12 @@ export async function POST(
     }
     const mimeType = (file.type || 'application/octet-stream').trim().toLowerCase();
     if (!ALLOWED_IMAGE_MIME.has(mimeType)) {
-      return NextResponse.json(
-        { error: `Unsupported image type: ${mimeType}` },
-        { status: 415 }
-      );
+      return NextResponse.json({ error: `Unsupported image type: ${mimeType}` }, { status: 415 });
     }
 
-    const rawKind = String(formData.get('kind') ?? 'PHOTO').toUpperCase().trim();
+    const rawKind = String(formData.get('kind') ?? 'PHOTO')
+      .toUpperCase()
+      .trim();
     const kind = ALLOWED_KINDS.has(rawKind) ? rawKind : 'PHOTO';
     const caption = String(formData.get('caption') ?? '').trim() || null;
     const sortOrderRaw = Number(formData.get('sortOrder') ?? 0);

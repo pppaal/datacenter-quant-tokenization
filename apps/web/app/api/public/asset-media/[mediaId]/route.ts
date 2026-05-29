@@ -6,10 +6,7 @@ import { createDocumentStorageFromEnv } from '@/lib/storage/local';
 // public marketing surface, so the photo gallery is too. Knowing the
 // mediaId is treated as proof of access — there is no listing endpoint
 // outside the authenticated admin API.
-export async function GET(
-  _request: Request,
-  context: { params: Promise<{ mediaId: string }> }
-) {
+export async function GET(_request: Request, context: { params: Promise<{ mediaId: string }> }) {
   const { mediaId } = await context.params;
   const media = await prisma.assetMedia.findUnique({ where: { id: mediaId } });
   if (!media) {

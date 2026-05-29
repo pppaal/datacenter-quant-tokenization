@@ -126,8 +126,7 @@ export default function PricingPage() {
           </div>
           <h1 className="mt-5 max-w-5xl text-5xl font-semibold leading-[0.95] tracking-[-0.05em] text-white md:text-6xl">
             AUM 규모에 맞춘
-            <br />
-            세 가지 플랜.
+            <br />세 가지 플랜.
           </h1>
           <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-300">
             시트 단위 SaaS가 아니라 운용사 단위 OS 라이선스입니다. AUM과 운용본부 규모, 필요한
@@ -222,8 +221,8 @@ export default function PricingPage() {
                 30분 데모로 시작하세요.
               </h2>
               <p className="mt-3 text-sm leading-7 text-slate-400">
-                실제 데이터 일부를 가져오시면 IM 자동 생성을 라이브로 시연합니다.
-                NDA 후 진행 가능합니다.
+                실제 데이터 일부를 가져오시면 IM 자동 생성을 라이브로 시연합니다. NDA 후 진행
+                가능합니다.
               </p>
             </div>
             <div className="flex gap-3">

@@ -1,6 +1,9 @@
 import { generateUnderwritingMemo } from '@/lib/ai/openai';
 import { applyCreditOverlay } from '@/lib/services/valuation/credit-overlay';
-import { buildOrderedScenarioOutputs, pickBaseScenario } from '@/lib/services/valuation/scenario-utils';
+import {
+  buildOrderedScenarioOutputs,
+  pickBaseScenario
+} from '@/lib/services/valuation/scenario-utils';
 import type {
   UnderwritingAnalysis,
   UnderwritingBundle,
@@ -68,14 +71,13 @@ function averageFinite(values: number[]): number | null {
  *   2. 공시지가-style fallback via asset.purchasePriceKrw ÷ area
  *   3. conservative regional fallback constant
  */
-function deriveLandValuePerSqm(
-  bundle: UnderwritingBundle,
-  areaSqm: number
-): LandValueDerivation {
+function deriveLandValuePerSqm(bundle: UnderwritingBundle, areaSqm: number): LandValueDerivation {
   // Tier 1a: explicit transaction comps with a per-sqm price.
   const txnPerSqm = (bundle.transactionComps ?? [])
     .map((comp) => comp.pricePerSqmKrw)
-    .filter((value): value is number => typeof value === 'number' && Number.isFinite(value) && value > 0);
+    .filter(
+      (value): value is number => typeof value === 'number' && Number.isFinite(value) && value > 0
+    );
 
   // Tier 1b: comparable set entries — derive per-sqm from valuationKrw ÷ floor area.
   const compEntryPerSqm = (bundle.comparableSet?.entries ?? [])
@@ -86,7 +88,9 @@ function deriveLandValuePerSqm(
         ? entry.valuationKrw / entry.grossFloorAreaSqm
         : null
     )
-    .filter((value): value is number => typeof value === 'number' && Number.isFinite(value) && value > 0);
+    .filter(
+      (value): value is number => typeof value === 'number' && Number.isFinite(value) && value > 0
+    );
 
   const comparablePerSqm = averageFinite([...txnPerSqm, ...compEntryPerSqm]);
   const comparableCount = txnPerSqm.length + compEntryPerSqm.length;

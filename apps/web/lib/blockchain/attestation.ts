@@ -125,8 +125,7 @@ export function buildNavAttestation(opts: {
   const navPerShare = (valueScaled * 10n ** 18n) / totalShares;
   const symbol = opts.quoteSymbol ?? 'KRW';
   const navTimestamp = BigInt(Math.floor(opts.valuationRun.createdAt.getTime() / 1000));
-  const nonce =
-    opts.valuationRun.nonce ?? BigInt(opts.valuationRun.createdAt.getTime());
+  const nonce = opts.valuationRun.nonce ?? BigInt(opts.valuationRun.createdAt.getTime());
   return {
     assetId: toBytes32Identifier(opts.asset.assetCode),
     quoteSymbol: symbolToBytes32(symbol),

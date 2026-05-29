@@ -70,10 +70,7 @@ test('renderTopTransactionsForPrompt: sorted by price desc, top 6', () => {
 });
 
 test('renderHouseViewBulletsForPrompt: empty input returns placeholder', () => {
-  assert.equal(
-    renderHouseViewBulletsForPrompt([]),
-    '(no approved house views this quarter)'
-  );
+  assert.equal(renderHouseViewBulletsForPrompt([]), '(no approved house views this quarter)');
 });
 
 test('renderHouseViewBulletsForPrompt: bullet format, top 8', () => {

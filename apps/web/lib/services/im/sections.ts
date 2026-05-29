@@ -126,8 +126,7 @@ export function computeLeaseRollSummary(leases: LeaseLike[]): WaltSummary {
       leaseCount: leases.length
     };
   }
-  const weightedTerm =
-    active.reduce((sum, l) => sum + l.termYears * l.leasedKw, 0) / totalLeasedKw;
+  const weightedTerm = active.reduce((sum, l) => sum + l.termYears * l.leasedKw, 0) / totalLeasedKw;
   const weightedRent =
     active.reduce((sum, l) => sum + l.baseRatePerKwKrw * l.leasedKw, 0) / totalLeasedKw;
   const mtmContributors = active.filter(
@@ -185,10 +184,8 @@ export function computeCapitalStructure(facilities: DebtFacilityLike[]): Capital
   const blendedRatePct =
     totalCommitmentKrw === 0
       ? 0
-      : facilities.reduce(
-          (sum, f) => sum + f.interestRatePct * (f.commitmentKrw ?? 0),
-          0
-        ) / totalCommitmentKrw;
+      : facilities.reduce((sum, f) => sum + f.interestRatePct * (f.commitmentKrw ?? 0), 0) /
+        totalCommitmentKrw;
 
   return {
     totalCommitmentKrw,
@@ -211,13 +208,15 @@ export type ReturnsSnapshot = {
   minDscr: number | null;
 };
 
-export function computeReturnsSnapshot(scenarios: Array<{
-  name: string;
-  valuationKrw: number;
-  impliedYieldPct: number | null;
-  exitCapRatePct: number | null;
-  debtServiceCoverage: number | null;
-}>): ReturnsSnapshot {
+export function computeReturnsSnapshot(
+  scenarios: Array<{
+    name: string;
+    valuationKrw: number;
+    impliedYieldPct: number | null;
+    exitCapRatePct: number | null;
+    debtServiceCoverage: number | null;
+  }>
+): ReturnsSnapshot {
   const find = (name: string) => scenarios.find((s) => s.name.toLowerCase().includes(name));
   const base = find('base') ?? scenarios[1] ?? scenarios[0];
   const bull = find('bull') ?? scenarios[0];
@@ -235,8 +234,7 @@ export function computeReturnsSnapshot(scenarios: Array<{
     baseValueKrw,
     bullValueKrw,
     bearValueKrw,
-    upsideToBullPct:
-      baseValueKrw > 0 ? ((bullValueKrw - baseValueKrw) / baseValueKrw) * 100 : null,
+    upsideToBullPct: baseValueKrw > 0 ? ((bullValueKrw - baseValueKrw) / baseValueKrw) * 100 : null,
     downsideToBearPct:
       baseValueKrw > 0 ? ((bearValueKrw - baseValueKrw) / baseValueKrw) * 100 : null,
     goingInYieldPct: base?.impliedYieldPct ?? null,

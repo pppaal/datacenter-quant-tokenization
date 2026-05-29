@@ -61,8 +61,7 @@ export function buildLiquidityLadder(
     const yearlyAmort =
       termYears && termYears > 0 ? (drawn * (1 - balloonPct / 100)) / termYears : null;
     const balloonKrw = balloonPct > 0 ? drawn * (balloonPct / 100) : null;
-    const balloonYear =
-      termYears !== null ? `${baseYear + Math.round(termYears)}` : null;
+    const balloonYear = termYears !== null ? `${baseYear + Math.round(termYears)}` : null;
     return {
       facilityKey: f.id ?? `f${idx}`,
       label: `${f.facilityType ?? 'Facility'}${f.lenderName ? ` · ${f.lenderName}` : ''}`,
@@ -89,8 +88,7 @@ export function buildLiquidityLadder(
 
   const liquidityCoverage =
     twelveMonthDebtService > 0 && options.cashKrw !== null
-      ? ((options.cashKrw + (options.estimatedAnnualCashFlowKrw ?? 0)) /
-          twelveMonthDebtService)
+      ? (options.cashKrw + (options.estimatedAnnualCashFlowKrw ?? 0)) / twelveMonthDebtService
       : null;
 
   // Find the year with the largest principal repayment (typically the
@@ -106,7 +104,10 @@ export function buildLiquidityLadder(
       { year: row.balloonYear, principal: row.balloonKrw }
     ];
     for (const c of candidates) {
-      if (c.principal !== null && (peakAnnualPrincipalKrw === null || c.principal > peakAnnualPrincipalKrw)) {
+      if (
+        c.principal !== null &&
+        (peakAnnualPrincipalKrw === null || c.principal > peakAnnualPrincipalKrw)
+      ) {
         peakAnnualPrincipalKrw = c.principal;
         peakYear = c.year;
       }

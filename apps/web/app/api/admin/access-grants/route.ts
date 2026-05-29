@@ -3,10 +3,7 @@ import { z } from 'zod';
 import { AdminAccessScopeType } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { withAdminApi } from '@/lib/security/with-admin-api';
-import {
-  grantAdminAccessScope,
-  listAdminAccessGrants
-} from '@/lib/security/admin-access';
+import { grantAdminAccessScope, listAdminAccessGrants } from '@/lib/security/admin-access';
 
 export const dynamic = 'force-dynamic';
 

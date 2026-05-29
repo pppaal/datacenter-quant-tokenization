@@ -140,8 +140,7 @@ test('land valuation values area x per-sqm via comparables with ordered scenario
   // Land-specific risks present.
   assert.ok(
     analysis.keyRisks.some(
-      (risk) =>
-        risk.toLowerCase().includes('entitlement') || risk.toLowerCase().includes('zoning')
+      (risk) => risk.toLowerCase().includes('entitlement') || risk.toLowerCase().includes('zoning')
     )
   );
 
