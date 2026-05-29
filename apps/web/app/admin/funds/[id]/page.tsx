@@ -8,6 +8,8 @@ import { canActorAccessScope } from '@/lib/security/admin-access';
 import { prisma } from '@/lib/db/prisma';
 import { resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
 import { buildFundDashboard, buildFundOperatorBriefs, getFundById } from '@/lib/services/capital';
+import { buildFundPcap } from '@/lib/services/investor-reports';
+import { formatPcapRow } from '@/lib/services/fund-nav-format';
 import { formatCurrency, formatDate } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
@@ -31,6 +33,9 @@ export default async function FundDetailPage({ params }: Props) {
 
   const dashboard = buildFundDashboard(fund);
   const briefs = buildFundOperatorBriefs(fund, dashboard);
+  const pcap = await buildFundPcap(id);
+  const pcapRows = pcap.investors.map(formatPcapRow);
+  const anyProRata = pcapRows.some((row) => row.proRataAllocated);
 
   return (
     <div className="space-y-8">
@@ -213,6 +218,78 @@ export default async function FundDetailPage({ params }: Props) {
 
         <InvestorReportReleasePanel reports={fund.investorReports} />
       </div>
+
+      <Card>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="eyebrow">LP Capital Accounts (PCAP)</div>
+          <div className="flex flex-wrap items-center gap-2">
+            {pcap.navUsedCostBasisFallback ? (
+              <Badge tone="warn" label="NAV uses cost-basis fallback" />
+            ) : null}
+            {anyProRata ? <Badge tone="warn" label="Cashflows pro-rata allocated" /> : null}
+          </div>
+        </div>
+        <p className="mt-3 text-xs text-slate-400">
+          Per-LP committed / called / distributed / unfunded, NAV share, and IRR / TVPI / DPI /
+          RVPI. Fund NAV {formatCurrency(pcap.navKrw)}
+          {pcap.navUsedCostBasisFallback
+            ? ` — includes cost-basis fallback for: ${pcap.navCostBasisFallbackAssets.join(', ')}.`
+            : '.'}
+        </p>
+        <div className="mt-4 overflow-x-auto">
+          <table className="w-full min-w-[860px] text-left text-sm">
+            <thead>
+              <tr className="fine-print border-b border-white/10 text-slate-400">
+                <th className="py-2 pr-3 font-normal">Investor</th>
+                <th className="py-2 pr-3 font-normal">Committed</th>
+                <th className="py-2 pr-3 font-normal">Called</th>
+                <th className="py-2 pr-3 font-normal">Distributed</th>
+                <th className="py-2 pr-3 font-normal">Unfunded</th>
+                <th className="py-2 pr-3 font-normal">NAV Share</th>
+                <th className="py-2 pr-3 font-normal">Share %</th>
+                <th className="py-2 pr-3 font-normal">IRR</th>
+                <th className="py-2 pr-3 font-normal">TVPI</th>
+                <th className="py-2 pr-3 font-normal">DPI</th>
+                <th className="py-2 pr-3 font-normal">RVPI</th>
+              </tr>
+            </thead>
+            <tbody>
+              {pcapRows.map((row) => (
+                <tr key={row.investorId} className="border-b border-white/5 text-slate-200">
+                  <td className="py-2 pr-3">
+                    <span className="font-medium text-white">{row.investorLabel}</span>
+                    {row.proRataAllocated ? (
+                      <span
+                        className="ml-2 text-[10px] uppercase tracking-[0.18em] text-amber-300"
+                        title="Cashflow timing allocated pro-rata by commitment"
+                      >
+                        pro-rata
+                      </span>
+                    ) : null}
+                  </td>
+                  <td className="py-2 pr-3">{row.committed}</td>
+                  <td className="py-2 pr-3">{row.called}</td>
+                  <td className="py-2 pr-3">{row.distributed}</td>
+                  <td className="py-2 pr-3">{row.unfunded}</td>
+                  <td className="py-2 pr-3">{row.navShare}</td>
+                  <td className="py-2 pr-3">{row.sharePct}</td>
+                  <td className="py-2 pr-3">{row.irr}</td>
+                  <td className="py-2 pr-3">{row.tvpi}</td>
+                  <td className="py-2 pr-3">{row.dpi}</td>
+                  <td className="py-2 pr-3">{row.rvpi}</td>
+                </tr>
+              ))}
+              {pcapRows.length === 0 ? (
+                <tr>
+                  <td className="py-3 text-slate-400" colSpan={11}>
+                    No commitments recorded for this fund yet.
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
+      </Card>
 
       <Card>
         <div className="eyebrow">Investor Reporting And DDQ</div>

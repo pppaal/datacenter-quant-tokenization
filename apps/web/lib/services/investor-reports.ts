@@ -1,6 +1,11 @@
 import type { PrismaClient } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
-import { buildPcap, computeFundNavDetail, type LpStatement } from '@/lib/services/fund-nav';
+import {
+  buildPcap,
+  computeFundNavDetail,
+  type LpStatement,
+  type PcapResult
+} from '@/lib/services/fund-nav';
 
 type InvestorReportSection = {
   title: string;
@@ -43,6 +48,85 @@ type InvestorReportBundle = {
 
 function formatKrwBillions(value: number) {
   return `₩${(value / 1_000_000_000).toFixed(1)}B`;
+}
+
+/**
+ * Build per-LP capital accounts (PCAP) for an entire fund in a single query.
+ * Returns the fund-level rollup plus one `LpStatement` per LP — the data the
+ * admin fund page renders as a capital-accounts table. Mirrors the loading
+ * logic in `buildInvestorReport` (allocations included so cashflow timing is
+ * per-LP when available; otherwise pro-rata, flagged on each statement).
+ */
+export async function buildFundPcap(
+  fundId: string,
+  db: PrismaClient = prisma
+): Promise<PcapResult> {
+  const fund = await db.fund.findUnique({
+    where: { id: fundId },
+    include: {
+      commitments: { include: { investor: true } },
+      capitalCalls: { include: { allocations: true } },
+      distributions: { include: { allocations: true } },
+      portfolio: {
+        include: {
+          assets: {
+            include: {
+              asset: {
+                select: {
+                  id: true,
+                  name: true,
+                  assetCode: true,
+                  purchasePriceKrw: true,
+                  valuations: {
+                    orderBy: { createdAt: 'desc' as const },
+                    take: 1,
+                    select: { baseCaseValueKrw: true, createdAt: true }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  });
+
+  if (!fund) throw new Error('Fund not found.');
+
+  const nav = computeFundNavDetail(fund);
+
+  return buildPcap({
+    commitments: fund.commitments.map((c) => ({
+      investorId: c.investorId,
+      investorCode: c.investor?.code ?? null,
+      investorName: c.investor?.name ?? null,
+      investorType: c.investor?.investorType ?? null,
+      commitmentKrw: c.commitmentKrw,
+      calledKrw: c.calledKrw,
+      distributedKrw: c.distributedKrw,
+      recallableKrw: c.recallableKrw,
+      signedAt: c.signedAt
+    })),
+    fundCapitalCalls: fund.capitalCalls.flatMap((c) =>
+      c.allocations.length > 0
+        ? c.allocations.map((a) => ({
+            date: c.callDate,
+            amountKrw: a.amountKrw,
+            investorId: a.investorId
+          }))
+        : [{ date: c.callDate, amountKrw: c.amountKrw }]
+    ),
+    fundDistributions: fund.distributions.flatMap((d) =>
+      d.allocations.length > 0
+        ? d.allocations.map((a) => ({
+            date: d.distributionDate,
+            amountKrw: a.amountKrw,
+            investorId: a.investorId
+          }))
+        : [{ date: d.distributionDate, amountKrw: d.amountKrw }]
+    ),
+    nav
+  });
 }
 
 export async function buildInvestorReport(

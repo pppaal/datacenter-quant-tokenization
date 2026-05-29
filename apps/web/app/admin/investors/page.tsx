@@ -1,11 +1,30 @@
+import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { listInvestors, type InvestorRecord } from '@/lib/services/capital';
-import { formatCurrency, formatNumber } from '@/lib/utils';
+import {
+  buildInvestorComplianceView,
+  type InvestorComplianceView
+} from '@/lib/services/aml/investor-compliance-view';
+import { formatCurrency, formatDate, formatNumber } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
+const REASON_LABELS: Record<string, string> = {
+  KYC_NOT_APPROVED: 'KYC not approved',
+  SANCTIONS_BLOCKED: 'Sanctions/PEP block',
+  NOT_SCREENED: 'Not screened',
+  NOT_ACCREDITED: 'Not accredited'
+};
+
 export default async function InvestorsPage() {
   const investors: InvestorRecord[] = await listInvestors();
+  const compliance = new Map<string, InvestorComplianceView | null>(
+    await Promise.all(
+      investors.map(
+        async (investor) => [investor.id, await buildInvestorComplianceView(investor.id)] as const
+      )
+    )
+  );
 
   return (
     <div className="space-y-8">
@@ -61,6 +80,74 @@ export default async function InvestorsPage() {
                 {formatNumber(investor.investorReports.length, 0)} recent reports /{' '}
                 {formatNumber(investor.ddqResponses.length, 0)} DDQ responses
               </div>
+
+              {(() => {
+                const view = compliance.get(investor.id) ?? null;
+                if (!view) return null;
+                const elig = view.eligibility;
+                return (
+                  <div className="mt-5 rounded-[20px] border border-white/10 bg-white/[0.02] p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="eyebrow">AML / Compliance</div>
+                      <Badge
+                        tone={elig.eligible ? 'good' : 'danger'}
+                        label={elig.eligible ? 'Eligible' : 'Blocked'}
+                      />
+                    </div>
+                    <div className="mt-3 grid gap-3 md:grid-cols-4">
+                      <div>
+                        <div className="fine-print">KYC</div>
+                        <div className="mt-1 text-sm text-white">{view.kycStatus ?? 'Unknown'}</div>
+                      </div>
+                      <div>
+                        <div className="fine-print">Screening</div>
+                        <div className="mt-1 text-sm text-white">
+                          {view.screening
+                            ? `${view.screening.status}${view.screening.isPep ? ' / PEP' : ''}`
+                            : 'Not screened'}
+                        </div>
+                        {view.screening?.rescreenDueAt ? (
+                          <div
+                            className={
+                              view.screening.rescreenOverdue
+                                ? 'mt-1 text-xs text-rose-300'
+                                : 'mt-1 text-xs text-slate-400'
+                            }
+                          >
+                            Re-screen {view.screening.rescreenOverdue ? 'overdue' : 'due'}{' '}
+                            {formatDate(view.screening.rescreenDueAt)}
+                          </div>
+                        ) : null}
+                      </div>
+                      <div>
+                        <div className="fine-print">AML Risk</div>
+                        <div className="mt-1 text-sm text-white">
+                          {view.riskRating
+                            ? `${view.riskRating.rating} (${view.riskRating.score})`
+                            : 'Unrated'}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="fine-print">Accreditation</div>
+                        <div className="mt-1 text-sm text-white">
+                          {view.accreditationStatus ?? 'Unassessed'}
+                        </div>
+                      </div>
+                    </div>
+                    {!elig.eligible && elig.reasons.length > 0 ? (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {elig.reasons.map((reason) => (
+                          <Badge
+                            key={reason}
+                            tone="danger"
+                            label={REASON_LABELS[reason] ?? reason}
+                          />
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })()}
             </Card>
           );
         })}
