@@ -58,7 +58,8 @@ const comparison = [
   {
     dimension: 'IC · 위원회 워크플로',
     legacy: 'IM · 메모 · 모델을 매번 재정렬. 위원 의견이 별도 채널에 흩어짐.',
-    nexus: '검토 게이팅 워크플로 위에서 평가 · 다운사이드 · DD가 묶여 readiness 메타데이터로 잠깁니다.'
+    nexus:
+      '검토 게이팅 워크플로 위에서 평가 · 다운사이드 · DD가 묶여 readiness 메타데이터로 잠깁니다.'
   },
   {
     dimension: '포트폴리오 · LP 리포팅',
@@ -99,13 +100,12 @@ export default function ProductOverviewPage() {
           </div>
           <h1 className="mt-5 max-w-5xl text-5xl font-semibold leading-[0.95] tracking-[-0.05em] text-white md:text-6xl">
             리서치 · 언더라이팅 · 포트폴리오를
-            <br />
-            한 워크플로 안에서.
+            <br />한 워크플로 안에서.
           </h1>
           <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-300">
             Nexus Seoul은 한국 부동산 투자팀을 위한 AI 네이티브 운영 시스템입니다. 투자 건을 열고,
-            레코드를 보강하고, 증거를 검토하고, 언더라이팅하고, 딜을 실행하고, 포트폴리오 ·
-            자본조달 워크플로까지 같은 애플리케이션에서 처리합니다.
+            레코드를 보강하고, 증거를 검토하고, 언더라이팅하고, 딜을 실행하고, 포트폴리오 · 자본조달
+            워크플로까지 같은 애플리케이션에서 처리합니다.
           </p>
           <p className="mt-4 max-w-3xl text-base leading-7 text-slate-400">
             데이터센터 · 오피스 · 산업/물류 · 랜드 자산군을 동일한 검토 게이팅 증거 모델 위에서

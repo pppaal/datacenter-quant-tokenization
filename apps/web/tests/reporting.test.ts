@@ -235,7 +235,7 @@ function makeAssetStub() {
         createdAt: new Date('2026-03-26T00:00:00.000Z'),
         updatedAt: new Date('2026-03-26T00:00:00.000Z'),
         engineVersion: 'v2.7.0',
-        confidenceScore: 68,
+        confidenceScore: 8.6,
         baseCaseValueKrw: 138_000_000_000,
         underwritingMemo:
           'Refinancing pressure and legal cleanup create a special situation entry point. Cash flow remains viable if permit and rollover issues are resolved quickly.',
@@ -455,7 +455,7 @@ function makeOfficeAssetStub() {
         createdAt: now,
         updatedAt: now,
         engineVersion: 'kr-office-v1',
-        confidenceScore: 72,
+        confidenceScore: 8.9,
         baseCaseValueKrw: 318000000000,
         underwritingMemo:
           'Office underwriting case built from approved leasing and legal evidence.',
@@ -586,4 +586,49 @@ test('office report bundle uses office-native sizing and checklist copy', async 
   assert.equal(bundle.assetClassLabel, 'Office');
   assert.equal(bundle.sizeLabel, 'Rentable Area');
   assert.ok(ddReport.sections.some((section) => section.title === 'Leasing, Rollover, And Market'));
+});
+
+test('report renders confidence on the 0-10 scale (not 0-100)', async () => {
+  const bundle = await buildReportBundleFromAsset(makeAssetStub() as never, {
+    fxRateToKrw: 1,
+    generatedAt: new Date('2026-03-26T00:00:00.000Z')
+  });
+  const report = buildDealReport(bundle, 'ic-memo');
+
+  const confidence = report.heroFacts.find((fact) => fact.label === 'Confidence');
+  assert.ok(confidence, 'hero facts must include a Confidence fact');
+  // confidenceScore is 8.6 on the 0-10 scale; render must read "/ 10".
+  assert.equal(confidence?.value, '8.6 / 10');
+  assert.match(confidence?.value ?? '', /\/ 10$/);
+  assert.doesNotMatch(confidence?.value ?? '', /\/ 100/);
+
+  // Risk-posture section mirrors the recommendation cutoffs: danger below 5.5.
+  const riskMemo = buildDealReport(bundle, 'risk-memo');
+  const riskPosture = riskMemo.sections.find((section) => section.id === 'risk-posture');
+  const riskConfidence = riskPosture?.facts?.find((fact) => fact.label === 'Confidence');
+  assert.ok(riskConfidence, 'risk posture must include a Confidence fact');
+  assert.equal(riskConfidence?.value, '8.6 / 10');
+  // 8.6 >= 5.5, so it is not danger.
+  assert.equal(riskConfidence?.tone, 'warn');
+});
+
+test('risk-posture confidence below 5.5 reads as danger on the 0-10 scale', async () => {
+  const stub = makeAssetStub() as unknown as {
+    valuations: Array<{ confidenceScore: number }>;
+  };
+  stub.valuations[0]!.confidenceScore = 4.5; // engine floor; further-diligence territory
+
+  const bundle = await buildReportBundleFromAsset(stub as never, {
+    fxRateToKrw: 1,
+    generatedAt: new Date('2026-03-26T00:00:00.000Z')
+  });
+  const report = buildDealReport(bundle, 'risk-memo');
+
+  const heroConfidence = report.heroFacts.find((fact) => fact.label === 'Confidence');
+  assert.equal(heroConfidence?.value, '4.5 / 10');
+
+  const riskPosture = report.sections.find((section) => section.id === 'risk-posture');
+  const riskConfidence = riskPosture?.facts?.find((fact) => fact.label === 'Confidence');
+  assert.equal(riskConfidence?.value, '4.5 / 10');
+  assert.equal(riskConfidence?.tone, 'danger');
 });

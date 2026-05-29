@@ -54,21 +54,13 @@ export function buildInsuranceSummary(
   if (policies.length === 0) return null;
   const ninetyDaysFromNow = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
 
-  const totalCoverageKrw = policies.reduce(
-    (s, p) => s + (p.coverageKrw ?? 0),
-    0
-  );
-  const totalPremiumKrw = policies.reduce(
-    (s, p) => s + (p.premiumKrw ?? 0),
-    0
-  );
+  const totalCoverageKrw = policies.reduce((s, p) => s + (p.coverageKrw ?? 0), 0);
+  const totalPremiumKrw = policies.reduce((s, p) => s + (p.premiumKrw ?? 0), 0);
   const deductibles = policies
     .map((p) => p.deductibleKrw)
     .filter((d): d is number => typeof d === 'number');
   const averageDeductibleKrw =
-    deductibles.length === 0
-      ? null
-      : deductibles.reduce((s, d) => s + d, 0) / deductibles.length;
+    deductibles.length === 0 ? null : deductibles.reduce((s, d) => s + d, 0) / deductibles.length;
 
   let expiringSoonCount = 0;
   const tilesByType = policies.map<CoverageTile>((p) => {

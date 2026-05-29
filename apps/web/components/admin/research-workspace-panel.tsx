@@ -382,15 +382,15 @@ export function ResearchWorkspacePanel({ data, activeTab, canApproveHouseView = 
 
       {activeTab === 'optimization' ? (
         <Card>
-          <div className="eyebrow">Optimization Lab</div>
+          <div className="eyebrow">Allocation Screening</div>
           <h2 className="mt-2 text-2xl font-semibold text-white">
-            Quantum-inspired portfolio search and scenario exploration
+            Portfolio allocation screening and scenario exploration
           </h2>
           <p className="mt-3 text-sm leading-7 text-slate-400">
-            This tab runs deterministic quantum-inspired search on current held portfolios using
-            operating KPIs, covenant pressure, research blockers, and official market signal
-            freshness. It is a classical research module for operator decision support, not quantum
-            hardware execution.
+            This tab runs a deterministic allocation screening heuristic on current held portfolios
+            using operating KPIs, covenant pressure, research blockers, and official market signal
+            freshness. It is a screening aid for operator decision support — it does not estimate
+            expected returns or portfolio risk, and is not a mean-variance optimizer.
           </p>
           <div className="mt-5 grid gap-4">
             {data.optimization.map((portfolio) => (

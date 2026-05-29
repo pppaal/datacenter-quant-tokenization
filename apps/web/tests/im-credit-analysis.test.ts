@@ -77,17 +77,18 @@ test('projectFinancials projects horizonYears+1 rows with growth', () => {
   // Year-1 revenue ≈ 27.06B × 1.05
   assert.ok(Math.abs(rows[1]!.revenueKrw! - 27_060_000_000 * 1.05) < 1);
   // Year-3 debt ≈ 34.44B × 0.96^3
-  assert.ok(
-    Math.abs(rows[3]!.totalDebtKrw! - 34_440_000_000 * Math.pow(0.96, 3)) < 1
-  );
+  assert.ok(Math.abs(rows[3]!.totalDebtKrw! - 34_440_000_000 * Math.pow(0.96, 3)) < 1);
 });
 
 test('projectFinancials returns empty when inputs are missing', () => {
-  const rows = projectFinancials({}, {
-    revenueGrowthPct: 5,
-    debtAmortizationPct: 4,
-    horizonYears: 3
-  });
+  const rows = projectFinancials(
+    {},
+    {
+      revenueGrowthPct: 5,
+      debtAmortizationPct: 4,
+      horizonYears: 3
+    }
+  );
   assert.deepEqual(rows, []);
 });
 
@@ -105,10 +106,7 @@ test('buildStressTest returns 4 scenarios with covenant pass/fail', () => {
 });
 
 test('buildStressTest returns empty when inputs are missing', () => {
-  assert.deepEqual(
-    buildStressTest({}, { ebitdaShockPct: 20, rateShockBps: 200 }),
-    []
-  );
+  assert.deepEqual(buildStressTest({}, { ebitdaShockPct: 20, rateShockBps: 200 }), []);
 });
 
 test('buildSensitivityMatrix returns 4x4 grid by default with covenant flags', () => {

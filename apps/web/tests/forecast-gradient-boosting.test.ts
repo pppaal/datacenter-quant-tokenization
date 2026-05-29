@@ -184,8 +184,10 @@ test('gradient boosting forecast predicts next-run drift when enough sequential 
 
   const current = run({
     id: 'current',
+    // Strictly AFTER all history endpoints so the leakage-free point-in-time
+    // split admits every fully-prior (run -> next) pair as training data.
     assetId: 'asset-z',
-    createdAt: '2026-03-01T00:00:00.000Z',
+    createdAt: '2026-06-01T00:00:00.000Z',
     baseCaseValueKrw: 108_000_000_000,
     confidenceScore: 76,
     occupancyPct: 93,

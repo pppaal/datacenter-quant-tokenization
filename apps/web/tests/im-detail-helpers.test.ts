@@ -149,10 +149,34 @@ test('pickMatrixRuns filters out non-MATRIX runs', () => {
 
 test('pickProvenanceForCard filters by field pattern', () => {
   const provenance = [
-    { field: 'capRatePct', sourceSystem: 'korea-macro-rates', value: 6.58, mode: 'fallback', freshnessLabel: 'fresh' },
-    { field: 'debtFacilities', sourceSystem: 'synthetic-project-finance', value: null, mode: 'manual', freshnessLabel: 'synthetic' },
-    { field: 'macro.cap_rate_pct', sourceSystem: 'seed-manual', value: 6.1, mode: 'api', freshnessLabel: '2026-04-01' },
-    { field: 'address', sourceSystem: 'manual-intake', value: 'Seoul', mode: 'manual', freshnessLabel: 'seed' }
+    {
+      field: 'capRatePct',
+      sourceSystem: 'korea-macro-rates',
+      value: 6.58,
+      mode: 'fallback',
+      freshnessLabel: 'fresh'
+    },
+    {
+      field: 'debtFacilities',
+      sourceSystem: 'synthetic-project-finance',
+      value: null,
+      mode: 'manual',
+      freshnessLabel: 'synthetic'
+    },
+    {
+      field: 'macro.cap_rate_pct',
+      sourceSystem: 'seed-manual',
+      value: 6.1,
+      mode: 'api',
+      freshnessLabel: '2026-04-01'
+    },
+    {
+      field: 'address',
+      sourceSystem: 'manual-intake',
+      value: 'Seoul',
+      mode: 'manual',
+      freshnessLabel: 'seed'
+    }
   ];
   const rates = pickProvenanceForCard(provenance, 'valuationRates');
   assert.equal(rates.length, 2);

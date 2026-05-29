@@ -101,7 +101,13 @@ export function SponsorForms({ sponsors }: { sponsors: Sponsor[] }) {
         return;
       }
       setBanner({ tone: 'good', text: `Prior deal ${dealForm.dealName} added.` });
-      setDealForm((p) => ({ ...p, dealName: '', equityKrw: '', equityMultiple: '', grossIrrPct: '' }));
+      setDealForm((p) => ({
+        ...p,
+        dealName: '',
+        equityKrw: '',
+        equityMultiple: '',
+        grossIrrPct: ''
+      }));
       startTransition(() => router.refresh());
     } finally {
       setBusy(false);
@@ -205,8 +211,8 @@ export function SponsorForms({ sponsors }: { sponsors: Sponsor[] }) {
             <div className="eyebrow">Add prior deal</div>
             <p className="mt-1 text-sm text-slate-400">
               One row per realized or active deal. EXITED deals with disclosed equity multiple +
-              gross IRR are what the IM averages — LIVE deals show on the timeline but don't
-              skew the track record.
+              gross IRR are what the IM averages — LIVE deals show on the timeline but don't skew
+              the track record.
             </p>
           </div>
           <form className="grid gap-3 md:grid-cols-2" onSubmit={submitDeal}>

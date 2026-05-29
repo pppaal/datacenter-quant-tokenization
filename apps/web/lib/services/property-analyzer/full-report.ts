@@ -16,7 +16,9 @@
 
 import type { AssetClass, MacroFactor } from '@prisma/client';
 import type { AutoAnalyzeResult } from '@/lib/services/property-analyzer/auto-analyze';
+import type { AnalysisProvenance } from '@/lib/services/property-analyzer/bundle-assembler';
 import type { ProFormaBaseCase, UnderwritingAnalysis } from '@/lib/services/valuation/types';
+import { buildTaxProfile } from '@/lib/services/valuation/inputs';
 import {
   computeReturnMetricsFromProForma,
   type ReturnMetrics
@@ -26,9 +28,11 @@ import {
   buildInterestRateSensitivity,
   buildMacroDrivenSensitivity,
   buildOccupancyRentSensitivity,
+  buildTornadoSensitivity,
   type MacroDrivenSensitivityMatrix,
   type OneWaySensitivityRow,
-  type SensitivityMatrix
+  type SensitivityMatrix,
+  type TornadoResult
 } from '@/lib/services/valuation/sensitivity';
 import { analyzeRefinancing, type RefinanceAnalysis } from '@/lib/services/valuation/refinancing';
 import { analyzeCovenants, type CovenantAnalysis } from '@/lib/services/valuation/covenants';
@@ -108,6 +112,7 @@ export type FullReport = {
     occupancyRent: SensitivityMatrix;
     interestRate: OneWaySensitivityRow[];
     macroDriven: MacroDrivenSensitivityMatrix;
+    tornado: TornadoResult;
   };
   refinancing: RefinanceAnalysis;
   macro: {
@@ -122,6 +127,13 @@ export type FullReport = {
   tenantCredit: RentDefaultProjection | null;
   prosCons: ProsConsReport;
   idiosyncraticRisk: IdiosyncraticRiskReport;
+  /**
+   * Data-quality / provenance summary for the material inputs: which came from
+   * LIVE/SEED connectors vs IMPUTED/FALLBACK assumptions or MOCK geocode, plus
+   * connector failures and a top-level trust hint. Optional + additive so it is
+   * backward-compatible; mirrors `autoAnalyze.provenance`.
+   */
+  assumptionsQuality?: AnalysisProvenance;
 };
 
 export type BuildFullReportOptions = {
@@ -296,13 +308,33 @@ export async function buildFullReport(
   const interestRatePct = bundle.asset.financingRatePct ?? 5.4;
   const exitCapRatePct = baseScenario.exitCapRatePct || 6.0;
   const capRatePct = baseScenario.impliedYieldPct || exitCapRatePct;
-  const year1Noi = Math.round((primary.baseCaseValueKrw * capRatePct) / 100);
+
+  // Two-model fix: prefer the REAL NOI the strategy already computed over
+  // re-deriving year1Noi = baseCaseValueKrw × capRate.
+  //   1. lease-level strategies (data-center) expose a full year-by-year
+  //      `leaseDcf` → drive the pro-forma NOI vector off it (rollover-aware).
+  //   2. income (stabilized) strategies expose `stabilizedNoiKrw` → use it as
+  //      year-1 NOI directly (no value→NOI back-solve).
+  //   3. otherwise fall back to the prior synthetic derivation (bit-for-bit).
+  const leaseDcf = primary.leaseDcf;
+  const leaseNoiVector =
+    leaseDcf && leaseDcf.years.length > 0 ? leaseDcf.years.map((y) => y.noiKrw) : null;
+  const year1Noi = leaseNoiVector
+    ? Math.round(leaseNoiVector[0]!)
+    : typeof primary.stabilizedNoiKrw === 'number' && Number.isFinite(primary.stabilizedNoiKrw)
+      ? Math.round(primary.stabilizedNoiKrw)
+      : Math.round((primary.baseCaseValueKrw * capRatePct) / 100);
 
   const macroMicro = auto.publicData.macroMicro as MacroMicroSnapshot;
   const growthPct = macroMicro.submarketRentGrowthPct ?? 2;
   const opexRatio = OPEX_RATIO[primary.asset.assetClass] ?? 0.3;
   const landValuePct = LAND_VALUE_PCT[primary.asset.assetClass] ?? 30;
   const depreciationYears = DEPRECIATION_YEARS[primary.asset.assetClass] ?? 40;
+
+  // Use the Korea-tax-aware resolved rates (취득세 중과세, corporate/exit, and
+  // REIT/펀드 pass-through relief) instead of flat placeholders so the synthetic
+  // pro-forma reflects the same tax reality as the equity-waterfall path.
+  const taxProfile = buildTaxProfile(bundle);
 
   const proFormaInputs: ProFormaInputs = {
     purchasePriceKrw: purchasePrice,
@@ -316,14 +348,18 @@ export async function buildFullReport(
     opexRatio,
     propertyTaxPct: 0.25,
     insurancePct: 0.08,
-    corpTaxPct: 22,
-    exitTaxPct: 22,
-    acquisitionTaxPct: 4.6,
+    corpTaxPct: taxProfile.corporateTaxPct,
+    exitTaxPct: taxProfile.exitTaxPct,
+    acquisitionTaxPct: taxProfile.acquisitionTaxPct,
     landValuePct,
     depreciationYears,
     exitCostPct: 1.5,
     propertyTaxGrowthPct: Math.max(growthPct, 3),
-    assetClass: String(primary.asset.assetClass)
+    assetClass: String(primary.asset.assetClass),
+    // When a lease-level DCF is available (data-center), feed its real
+    // year-by-year NOI so rollover/downtime years are NOT flattened into one
+    // growth rate. Omitted (undefined) for every other path ⇒ unchanged.
+    ...(leaseNoiVector ? { noiByYearKrw: leaseNoiVector } : {})
   };
   const { proForma, extras: proFormaExtras } = buildSyntheticProForma(proFormaInputs);
 
@@ -335,12 +371,31 @@ export async function buildFullReport(
   const occupancyPct =
     bundle.asset.stabilizedOccupancyPct ?? bundle.asset.occupancyAssumptionPct ?? 85;
 
+  // Mid-year discounting convention: operating distributions are spread across
+  // the year, so we treat them as arriving mid-period. This is the institutional
+  // standard and lifts levered IRR slightly relative to the end-of-year default
+  // retained elsewhere in the codebase.
   const returnMetrics = computeReturnMetricsFromProForma(
     proForma,
     totalCapex,
     initialDebt,
     netExit,
-    terminalValue
+    terminalValue,
+    true
+  );
+
+  // End-of-year recompute off the SAME pro-forma, used ONLY for the memo's
+  // base-vs-MC-base consistency flag (FIX 2). The MC base case is end-of-year,
+  // so comparing the mid-year headline against it conflated the discounting
+  // convention with real model drift and tripped the warning on high-IRR deals.
+  // The displayed headline stays mid-year (`returnMetrics`).
+  const returnMetricsEndOfYear = computeReturnMetricsFromProForma(
+    proForma,
+    totalCapex,
+    initialDebt,
+    netExit,
+    terminalValue,
+    false
   );
 
   const monteCarlo = runMonteCarlo(proFormaInputs, { iterations: 1000, seed: 42 });
@@ -376,6 +431,18 @@ export async function buildFullReport(
     baseOccupancyPct: occupancyPct,
     terminalValueKrw: terminalValue,
     scenarios: STRESS_SCENARIOS
+  });
+  const tornado = buildTornadoSensitivity({
+    proForma,
+    totalCapexKrw: totalCapex,
+    initialDebtFundingKrw: initialDebt,
+    baseCapRatePct: capRatePct,
+    baseExitCapRatePct: exitCapRatePct,
+    baseInterestRatePct: interestRatePct,
+    baseOccupancyPct: occupancyPct,
+    growthPct,
+    stabilizedNoiKrw: year1Noi,
+    terminalValueKrw: terminalValue
   });
 
   const refinancing = analyzeRefinancing(proForma.years, interestRatePct, 180);
@@ -504,7 +571,15 @@ export async function buildFullReport(
     dealExposure,
     macroRegimeLabel: regimeBlock.label,
     debtCovenantBreachYears: yearsBelowFloor,
-    prosCons
+    prosCons,
+    // Provenance for the deterministic assumption-audit, and the MC base IRR
+    // (end-of-year convention, shares one pro-forma base with the headline) for
+    // the reconciliation table's consistency check.
+    assumptionsQuality: auto.provenance,
+    monteCarloBaseLeveredIrrPct: monteCarlo.baseLeveredIrr,
+    // Convention-matched (end-of-year) headline IRR for the consistency flag, so
+    // it measures real drift vs the end-of-year MC base, not the mid-year gap.
+    headlineEndOfYearLeveredIrrPct: returnMetricsEndOfYear.equityIrr
   });
 
   return {
@@ -520,7 +595,8 @@ export async function buildFullReport(
       capRateExit,
       occupancyRent,
       interestRate,
-      macroDriven
+      macroDriven,
+      tornado
     },
     refinancing,
     macro: {
@@ -534,6 +610,9 @@ export async function buildFullReport(
     debtSourcing,
     tenantCredit,
     prosCons,
-    idiosyncraticRisk
+    idiosyncraticRisk,
+    // Surface the provenance captured during bundle assembly. Optional on the
+    // type so older callers/serialized reports remain valid.
+    assumptionsQuality: auto.provenance
   };
 }

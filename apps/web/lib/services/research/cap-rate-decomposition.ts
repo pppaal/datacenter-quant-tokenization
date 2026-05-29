@@ -51,13 +51,7 @@ export type CapRateInputs = {
 };
 
 export type CapRateComponent = {
-  key:
-    | 'riskFree'
-    | 'sectorPremium'
-    | 'submarketSpread'
-    | 'growth'
-    | 'liquidity'
-    | 'obsolescence';
+  key: 'riskFree' | 'sectorPremium' | 'submarketSpread' | 'growth' | 'liquidity' | 'obsolescence';
   label: string;
   pct: number;
   /** Direction in the additive equation. */
@@ -181,9 +175,11 @@ export type SubmarketSpreadInput = {
   minComps?: number;
 };
 
-export function estimateSubmarketSpread(
-  input: SubmarketSpreadInput
-): { spreadPct: number; targetCount: number; krMeanPct: number } {
+export function estimateSubmarketSpread(input: SubmarketSpreadInput): {
+  spreadPct: number;
+  targetCount: number;
+  krMeanPct: number;
+} {
   const minComps = input.minComps ?? 3;
   const valid = input.comps.filter(
     (c): c is { submarket: string | null; capRatePct: number } =>
@@ -197,8 +193,7 @@ export function estimateSubmarketSpread(
   if (targetRows.length === 0) {
     return { spreadPct: 0, targetCount: 0, krMeanPct: round2(krMean) };
   }
-  const targetMean =
-    targetRows.reduce((s, c) => s + c.capRatePct, 0) / targetRows.length;
+  const targetMean = targetRows.reduce((s, c) => s + c.capRatePct, 0) / targetRows.length;
   // Shrink toward 0 spread when count below threshold.
   const shrinkage = Math.min(targetRows.length / minComps, 1);
   const spread = (targetMean - krMean) * shrinkage;

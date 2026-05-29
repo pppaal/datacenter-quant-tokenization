@@ -119,8 +119,8 @@ export default function ChangelogPage() {
             제품은 매주 자랍니다.
           </h1>
           <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-300">
-            기관 운용사에게 OS는 곧 일정과 운영 안정성입니다. 새 기능, quant 모듈, 보안
-            업데이트, 인프라 변경을 일자별로 공개합니다.
+            기관 운용사에게 OS는 곧 일정과 운영 안정성입니다. 새 기능, quant 모듈, 보안 업데이트,
+            인프라 변경을 일자별로 공개합니다.
           </p>
         </div>
       </section>

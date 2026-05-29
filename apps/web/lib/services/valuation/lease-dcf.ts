@@ -4,9 +4,73 @@ import type {
   LeaseCashFlowYear,
   LeaseDcfResult,
   PreparedUnderwritingInputs,
-  ScenarioInput
+  ScenarioInput,
+  TerminalValueCrossCheck
 } from '@/lib/services/valuation/types';
 import { clamp, discountValue, ensureNumber } from '@/lib/services/valuation/utils';
+
+/**
+ * Reconcile the primary exit-cap terminal value against a Gordon-growth
+ * perpetuity cross-check, and flag divergence + an implied terminal-cap-spread
+ * sanity check vs the going-in cap rate.
+ */
+export function buildTerminalValueCrossCheck(params: {
+  forwardNoiKrw: number;
+  exitCapTerminalValueKrw: number;
+  exitCapRatePct: number;
+  goingInCapRatePct: number;
+  discountRatePct: number;
+  growthPct: number;
+  divergenceThresholdPct?: number;
+}): TerminalValueCrossCheck {
+  const {
+    forwardNoiKrw,
+    exitCapTerminalValueKrw,
+    exitCapRatePct,
+    goingInCapRatePct,
+    discountRatePct,
+    growthPct,
+    divergenceThresholdPct = 10
+  } = params;
+
+  // Gordon growth perpetuity: TV = NOI_{n+1} / (r - g). Requires r > g.
+  const r = discountRatePct / 100;
+  const g = growthPct / 100;
+  const spreadFraction = r - g;
+  const gordonValid = spreadFraction > 0.0025; // need a meaningful positive spread
+  const gordonTerminalValueKrw = gordonValid ? forwardNoiKrw / spreadFraction : null;
+
+  const divergencePct =
+    gordonTerminalValueKrw !== null && exitCapTerminalValueKrw !== 0
+      ? Number(
+          (
+            ((gordonTerminalValueKrw - exitCapTerminalValueKrw) /
+              Math.abs(exitCapTerminalValueKrw)) *
+            100
+          ).toFixed(2)
+        )
+      : null;
+  const divergesBeyondThreshold =
+    divergencePct !== null && Math.abs(divergencePct) > divergenceThresholdPct;
+
+  // Sanity: exit cap should sit at or above going-in (positive terminal spread is
+  // the conservative/normal case). A negative spread (exit cap < going-in) implies
+  // cap-rate compression at exit and is flagged for reviewer attention.
+  const terminalCapSpreadBps = Number(((exitCapRatePct - goingInCapRatePct) * 100).toFixed(1));
+  const terminalSpreadInverted = terminalCapSpreadBps < 0;
+
+  return {
+    exitCapTerminalValueKrw: Math.round(exitCapTerminalValueKrw),
+    gordonTerminalValueKrw:
+      gordonTerminalValueKrw !== null ? Math.round(gordonTerminalValueKrw) : null,
+    divergencePct,
+    divergesBeyondThreshold,
+    divergenceThresholdPct,
+    terminalCapSpreadBps,
+    terminalSpreadInverted,
+    gordonValid
+  };
+}
 
 type LeaseYearContribution = {
   kw: number;
@@ -693,8 +757,12 @@ function buildLeaseCashFlowYear(
 
 export function computeLeaseDcf(
   prepared: PreparedUnderwritingInputs,
-  scenario: ScenarioInput
+  scenario: ScenarioInput,
+  options: { midYear?: boolean } = {}
 ): LeaseDcfResult {
+  // Default end-of-year to preserve every existing caller's result; opt in to the
+  // institutional mid-year convention via options.midYear.
+  const midYear = options.midYear ?? false;
   const horizonYears = 10;
   const annualGrowthPct = prepared.annualGrowthPct;
   const exitCapRatePct = Math.max(prepared.baseCapRatePct + scenario.capRateShiftPct, 4.5);
@@ -747,21 +815,47 @@ export function computeLeaseDcf(
     prepared.floodPenalty *
     prepared.wildfirePenalty *
     prepared.locationPremium;
+  // Periodic operating flows: mid-year (exponent year-0.5) when requested, else
+  // end-of-year. Terminal value is a point-in-time exit event at the horizon and
+  // is always discounted at the full end-of-period exponent.
   const discountedCashflowsKrw = years.reduce(
-    (sum, year) => sum + discountValue(year.cfadsBeforeDebtKrw, discountRatePct, year.year),
+    (sum, year) =>
+      sum + discountValue(year.cfadsBeforeDebtKrw, discountRatePct, year.year, midYear),
     0
   );
-  const terminalValueKrw =
-    (Math.max(
-      stabilizedNoiKrw * (1 + annualGrowthPct / 100),
-      prepared.capexBreakdown.totalCapexKrw * 0.01
-    ) /
-      (Math.max(exitCapRatePct + 0.2, 4.8) / 100)) *
+
+  // Forward (Y+1) terminal NOI = stabilized NOI grown one period. Floor against a
+  // small fraction of total capex so a degenerate (near-zero / suppressed) NOI
+  // can't collapse the exit value to ~0; the floor is the conservative downside
+  // anchor, NOT a typical-case adjustment.
+  const TERMINAL_NOI_FLOOR_RATIO = 0.01;
+  const forwardTerminalNoiKrw = Math.max(
+    stabilizedNoiKrw * (1 + annualGrowthPct / 100),
+    prepared.capexBreakdown.totalCapexKrw * TERMINAL_NOI_FLOOR_RATIO
+  );
+  // Exit cap is going-in (baseCapRatePct + shift) widened by a +20bps terminal
+  // spread, floored at 4.8% to avoid an unrealistically rich perpetuity.
+  const exitCapForTerminalPct = Math.max(exitCapRatePct + 0.2, 4.8);
+  const qualityAdjustment =
     prepared.stageFactor *
     prepared.permitPenalty *
     prepared.floodPenalty *
     prepared.wildfirePenalty *
     prepared.locationPremium;
+  const terminalValueKrw =
+    (forwardTerminalNoiKrw / (exitCapForTerminalPct / 100)) * qualityAdjustment;
+
+  // Gordon-growth perpetuity cross-check (institutional sanity rule). Quality-
+  // adjust the Gordon TV the same way so the comparison is apples-to-apples.
+  const rawGordonCheck = buildTerminalValueCrossCheck({
+    forwardNoiKrw: forwardTerminalNoiKrw * qualityAdjustment,
+    exitCapTerminalValueKrw: terminalValueKrw,
+    exitCapRatePct: exitCapForTerminalPct,
+    goingInCapRatePct: prepared.baseCapRatePct,
+    discountRatePct,
+    growthPct: annualGrowthPct
+  });
+
   const leaseDrivenValueKrw =
     discountedCashflowsKrw + discountValue(terminalValueKrw, discountRatePct, horizonYears);
 
@@ -773,6 +867,7 @@ export function computeLeaseDcf(
     incomeApproachValueKrw,
     leaseDrivenValueKrw,
     terminalValueKrw,
-    terminalYear: horizonYears
+    terminalYear: horizonYears,
+    terminalValueCrossCheck: rawGordonCheck
   };
 }

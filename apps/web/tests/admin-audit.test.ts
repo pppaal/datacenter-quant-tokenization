@@ -43,6 +43,9 @@ test('recordAuditEvent persists normalized audit metadata', async () => {
   let created: any;
   const fakeDb = {
     auditEvent: {
+      async findFirst() {
+        return null; // empty chain: this is the first event
+      },
       async create(args: any) {
         created = args.data;
         return {
@@ -71,7 +74,10 @@ test('recordAuditEvent persists normalized audit metadata', async () => {
   assert.equal(created.actorIdentifier, 'analyst');
   assert.equal(created.entityType, 'valuation_run');
   assert.deepEqual(created.metadata, { runLabel: 'Base case' });
-  assert.equal(result.id, 'audit_1');
+  // recordAuditEvent now generates its own id + hash-chain fields.
+  assert.equal(result.id, created.id);
+  assert.equal(typeof created.recordHash, 'string');
+  assert.equal(created.prevHash, null);
 });
 
 test('document storage readiness surfaces local, partial, and external states', () => {

@@ -19,10 +19,9 @@ test('fitHedonic returns null on empty input', () => {
 
 test('fitHedonic returns null when n <= p (under-identified)', () => {
   // Two comps but ~3+ params (intercept, ln_size, vintage_delta) → null
-  const result = fitHedonic(
-    [comp({ pricePerSqmKrw: 1_000_000, sizeSqm: 1000 })],
-    { sizeSqm: 1500 }
-  );
+  const result = fitHedonic([comp({ pricePerSqmKrw: 1_000_000, sizeSqm: 1000 })], {
+    sizeSqm: 1500
+  });
   assert.equal(result, null);
 });
 
@@ -57,7 +56,9 @@ test('fitHedonic distinguishes submarket dummies', () => {
   const rows: CompRow[] = [];
   for (let i = 1; i <= 15; i += 1) {
     rows.push(comp({ sizeSqm: i * 500, pricePerSqmKrw: 1_500_000, submarket: 'CBD', tier: 'A' }));
-    rows.push(comp({ sizeSqm: i * 500, pricePerSqmKrw: 1_000_000, submarket: 'YEOUIDO', tier: 'A' }));
+    rows.push(
+      comp({ sizeSqm: i * 500, pricePerSqmKrw: 1_000_000, submarket: 'YEOUIDO', tier: 'A' })
+    );
   }
   const cbdFit = fitHedonic(rows, { sizeSqm: 3000, submarket: 'CBD', tier: 'A' });
   const yeouidoFit = fitHedonic(rows, { sizeSqm: 3000, submarket: 'YEOUIDO', tier: 'A' });

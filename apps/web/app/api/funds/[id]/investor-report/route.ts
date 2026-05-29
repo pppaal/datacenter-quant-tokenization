@@ -31,14 +31,17 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
   await assertActorScopeAccess(actor, AdminAccessScopeType.FUND, id, prisma);
 
+  const url = new URL(request.url);
+  const investorId = url.searchParams.get('investorId') ?? undefined;
+
   let report;
   try {
-    report = await buildInvestorReport(id, {}, prisma);
+    report = await buildInvestorReport(id, { investorId }, prisma);
   } catch {
     return NextResponse.json({ error: 'Fund not found.' }, { status: 404 });
   }
 
-  const format = new URL(request.url).searchParams.get('format')?.toLowerCase() ?? 'md';
+  const format = url.searchParams.get('format')?.toLowerCase() ?? 'md';
 
   if (format === 'json') {
     return new Response(JSON.stringify(report, null, 2), {

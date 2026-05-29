@@ -58,9 +58,7 @@ export function buildSensitivityGrid(run: SensitivityRunLike): SensitivityGrid |
   const columnAxisLabel =
     typeof summary?.columnAxisLabel === 'string' ? summary.columnAxisLabel : '';
 
-  const cells: SensitivityGrid['cells'] = Array(rowLabels.length * columnLabels.length).fill(
-    null
-  );
+  const cells: SensitivityGrid['cells'] = Array(rowLabels.length * columnLabels.length).fill(null);
   for (const point of run.points) {
     // shockLabel is "<rowLabel> / <columnLabel>"
     const slash = point.shockLabel.indexOf(' / ');

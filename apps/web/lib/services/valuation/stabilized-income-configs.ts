@@ -169,10 +169,13 @@ export function buildOfficeValuationConfig(): ValuationConfig {
     vacancyAllowancePct: (state) =>
       state.bundle.officeDetail?.vacancyAllowancePct ??
       Math.max(100 - state.adjustedOccupancyPct, 4),
+    // EGI applies the occupancy/vacancy haircut EXACTLY ONCE via
+    // adjustedOccupancyPct; only the credit-loss term is layered on top.
+    // (vacancyAllowancePct is retained for assumptions surfacing only.)
     effectiveRentalRevenueKrw: (state) =>
       state.grossPotentialRentKrw *
       Math.max(0.45, state.adjustedOccupancyPct / 100) *
-      Math.max(0.7, 1 - (state.vacancyAllowancePct + state.creditLossPct) / 100),
+      Math.max(0.7, 1 - state.creditLossPct / 100),
     otherIncomeKrw: (state) =>
       state.bundle.officeDetail?.otherIncomeKrw ?? state.grossPotentialRentKrw * 0.02,
     annualOpexKrw: (state) =>
@@ -256,10 +259,12 @@ export function buildIndustrialValuationConfig(): ValuationConfig {
       ),
     creditLossPct: () => 1.2,
     vacancyAllowancePct: (state) => Math.max(100 - state.adjustedOccupancyPct, 4),
+    // EGI applies the occupancy/vacancy haircut EXACTLY ONCE via
+    // adjustedOccupancyPct; only the credit-loss term is layered on top.
     effectiveRentalRevenueKrw: (state) =>
       state.grossPotentialRentKrw *
       Math.max(0.55, state.adjustedOccupancyPct / 100) *
-      Math.max(0.78, 1 - (state.vacancyAllowancePct + state.creditLossPct) / 100),
+      Math.max(0.78, 1 - state.creditLossPct / 100),
     otherIncomeKrw: (state) => state.grossPotentialRentKrw * 0.015,
     annualOpexKrw: (state) =>
       state.bundle.asset.opexAssumptionKrw ?? state.grossPotentialRentKrw * 0.16,
@@ -329,15 +334,21 @@ export function buildRetailValuationConfig(): ValuationConfig {
       stabilizedOccupancyBonus: 0.25
     },
     scenarioInputs: retailScenarioInputs,
+    // Prioritize real rent evidence; back-solved rent is the fallback floor.
     monthlyRentPerSqmKrw: (state) =>
-      (state.purchasePriceKrw * (state.capRatePct / 100)) /
-      Math.max(state.rentableAreaSqm * 12 * Math.max(state.adjustedOccupancyPct / 100, 0.55), 1),
+      Math.max(
+        state.marketEvidence.averageMonthlyRentPerSqmKrw ?? 0,
+        (state.purchasePriceKrw * (state.capRatePct / 100)) /
+          Math.max(state.rentableAreaSqm * 12 * Math.max(state.adjustedOccupancyPct / 100, 0.55), 1)
+      ),
     creditLossPct: () => 1.8,
     vacancyAllowancePct: (state) => Math.max(100 - state.adjustedOccupancyPct, 5),
+    // EGI applies the occupancy/vacancy haircut EXACTLY ONCE via
+    // adjustedOccupancyPct; only the credit-loss term is layered on top.
     effectiveRentalRevenueKrw: (state) =>
       state.grossPotentialRentKrw *
       Math.max(0.5, state.adjustedOccupancyPct / 100) *
-      Math.max(0.72, 1 - (state.vacancyAllowancePct + state.creditLossPct) / 100),
+      Math.max(0.72, 1 - state.creditLossPct / 100),
     otherIncomeKrw: (state) => state.grossPotentialRentKrw * 0.03,
     annualOpexKrw: (state) =>
       state.bundle.asset.opexAssumptionKrw ?? state.grossPotentialRentKrw * 0.22,
@@ -407,16 +418,68 @@ export function buildMultifamilyValuationConfig(): ValuationConfig {
       stabilizedOccupancyBonus: 0.25
     },
     scenarioInputs: multifamilyScenarioInputs,
+    // Prioritize real rent evidence; back-solved rent is the fallback floor.
     monthlyRentPerSqmKrw: (state) =>
-      (state.purchasePriceKrw * (state.capRatePct / 100)) /
-      Math.max(state.rentableAreaSqm * 12 * Math.max(state.adjustedOccupancyPct / 100, 0.75), 1),
+      Math.max(
+        state.marketEvidence.averageMonthlyRentPerSqmKrw ?? 0,
+        (state.purchasePriceKrw * (state.capRatePct / 100)) /
+          Math.max(state.rentableAreaSqm * 12 * Math.max(state.adjustedOccupancyPct / 100, 0.75), 1)
+      ),
     creditLossPct: () => 0.8,
     vacancyAllowancePct: (state) => Math.max(100 - state.adjustedOccupancyPct, 3),
+    // EGI applies the occupancy/vacancy haircut EXACTLY ONCE via
+    // adjustedOccupancyPct; only the credit-loss term is layered on top.
     effectiveRentalRevenueKrw: (state) =>
       state.grossPotentialRentKrw *
       Math.max(0.75, state.adjustedOccupancyPct / 100) *
-      Math.max(0.84, 1 - (state.vacancyAllowancePct + state.creditLossPct) / 100),
-    otherIncomeKrw: (state) => state.grossPotentialRentKrw * 0.025,
+      Math.max(0.84, 1 - state.creditLossPct / 100),
+    // 전세/월세 (jeonse/wolse) IMPUTED DEPOSIT INCOME.
+    // Korean residential is dominated by 전세 (large refundable deposit, ~no
+    // monthly rent) and 월세 (smaller deposit + monthly rent). The monthly-rent
+    // model above captures 월세 cashflow but ignores the economic income a
+    // landlord earns on the refundable deposit. We impute it here as additive
+    // other-income so residential value reflects deposit economics.
+    //
+    // No deposit datum exists in the data model (confirmed), so we derive a
+    // conservative imputed deposit basis from the asset value basis and convert
+    // it at the BOK-published 전월세전환율 (jeonse-to-monthly conversion rate).
+    //
+    // TODO(prisma): replace the imputed deposit basis with a real asset/lease
+    // deposit amount + lease 전세/월세 type field once the schema carries them.
+    // This wolse-intensity-scaled basis is a screening approximation only.
+    otherIncomeKrw: (state) => {
+      // 전월세전환율: ~5.5%/yr sits within the BOK-published conversion-rate band
+      // for Korean residential (typically ~5-6%). Income on a held deposit.
+      const JEONSE_CONVERSION_RATE = 0.055;
+      // Maximum deposit basis share, reached only for a (near-)pure 전세 asset
+      // with little monthly rent. We pick the low end of a 40-60% range because
+      // no deposit datum exists.
+      const MAX_DEPOSIT_BASIS_SHARE = 0.45;
+      const valueBasisKrw =
+        state.marketValueProxyKrw ?? state.purchasePriceKrw ?? state.grossPotentialRentKrw;
+      // 전세/월세 are a SUBSTITUTION spectrum: more monthly rent ⇒ smaller
+      // deposit. The monthly-rent stream is already captured in
+      // effectiveRentalRevenueKrw, so imputing a full deposit on top of full
+      // monthly rent double-counts the same economic income. Scale the deposit
+      // basis DOWN by the observed 월세 intensity — the share of full
+      // monetization (valueBasis × cap) already earned as monthly rent.
+      const fullMonetizationIncomeKrw = valueBasisKrw * (state.capRatePct / 100);
+      const wolseIntensity = Math.min(
+        1,
+        Math.max(0, state.grossPotentialRentKrw / Math.max(fullMonetizationIncomeKrw, 1))
+      );
+      const depositBasisShare = MAX_DEPOSIT_BASIS_SHARE * (1 - wolseIntensity);
+      const imputedDepositKrw = valueBasisKrw * depositBasisShare;
+      const imputedDepositIncomeKrw = imputedDepositKrw * JEONSE_CONVERSION_RATE;
+      // Retain the prior ancillary other-income line (parking, fees, etc).
+      const ancillaryOtherIncomeKrw = state.grossPotentialRentKrw * 0.025;
+      // NOTE: there is currently no multifamily assumption-extras builder (cf.
+      // buildOfficeAssumptionExtras) wired into the engine, and we must NOT
+      // touch the engine. The imputed deposit, conversion rate (5.5%), and the
+      // wolse-intensity-scaled basis share are documented here; surface them via
+      // an extras builder when one is added for the multifamily strategy.
+      return ancillaryOtherIncomeKrw + imputedDepositIncomeKrw;
+    },
     annualOpexKrw: (state) =>
       state.bundle.asset.opexAssumptionKrw ?? state.grossPotentialRentKrw * 0.17,
     annualCapexReserveKrw: (state) =>

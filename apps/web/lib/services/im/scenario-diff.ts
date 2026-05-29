@@ -49,7 +49,9 @@ export function buildScenarioDiff(scenarios: ScenarioLike[]): ScenarioDiffRow[] 
     .map(({ key, row }) => {
       const r = row!;
       const valueDeltaPct =
-        base.valuationKrw > 0 ? ((r.valuationKrw - base.valuationKrw) / base.valuationKrw) * 100 : 0;
+        base.valuationKrw > 0
+          ? ((r.valuationKrw - base.valuationKrw) / base.valuationKrw) * 100
+          : 0;
       const impliedYieldDeltaBps =
         r.impliedYieldPct !== null && base.impliedYieldPct !== null
           ? Math.round((r.impliedYieldPct - base.impliedYieldPct) * 100)

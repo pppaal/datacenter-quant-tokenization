@@ -42,8 +42,8 @@ export default async function DealFlowPage() {
           <p className="mt-2 max-w-3xl text-sm text-slate-400">
             Proprietary log of deals seen in the market — sale processes, refis, JVs, recaps,
             developments. Distinct from our own pipeline (the Deal table). The signal here is what
-            REB / MOLIT can&apos;t see: capital being deployed by everyone else, sponsor mix
-            shifts, cap-rate clearing levels disclosed by closed comps.
+            REB / MOLIT can&apos;t see: capital being deployed by everyone else, sponsor mix shifts,
+            cap-rate clearing levels disclosed by closed comps.
           </p>
         </div>
         <Link href="/admin/research">
@@ -64,10 +64,7 @@ export default async function DealFlowPage() {
         />
         <StatCard
           label="Distinct sponsors"
-          primary={formatNumber(
-            new Set(rows.map((r) => r.sponsor).filter(Boolean)).size,
-            0
-          )}
+          primary={formatNumber(new Set(rows.map((r) => r.sponsor).filter(Boolean)).size, 0)}
           detail="By sponsor name"
         />
       </section>
@@ -79,8 +76,10 @@ export default async function DealFlowPage() {
           <div className="eyebrow">Deal flow log</div>
           <p className="mt-1 text-sm text-slate-400">
             LIVE deals first, then most recently observed. Use the filter URL pattern (e.g.
-            <code className="mx-1 rounded bg-white/5 px-1.5 py-0.5">?market=KR&amp;dealType=SALE</code>)
-            to narrow — this initial cut renders all rows.
+            <code className="mx-1 rounded bg-white/5 px-1.5 py-0.5">
+              ?market=KR&amp;dealType=SALE
+            </code>
+            ) to narrow — this initial cut renders all rows.
           </p>
         </div>
         {rows.length === 0 ? (
@@ -127,9 +126,7 @@ export default async function DealFlowPage() {
                     <td className="px-3 py-2">
                       <Badge tone={STATUS_TONES[row.status] ?? 'warn'}>{row.status}</Badge>
                     </td>
-                    <td className="px-3 py-2 text-xs text-slate-400">
-                      {row.brokerSource ?? '—'}
-                    </td>
+                    <td className="px-3 py-2 text-xs text-slate-400">{row.brokerSource ?? '—'}</td>
                     <td className="px-3 py-2 text-xs text-slate-500">
                       {formatDate(row.observedAt)} ·{' '}
                       {row.recordedBy?.name ?? row.recordedBy?.email ?? 'system'}
@@ -145,15 +142,7 @@ export default async function DealFlowPage() {
   );
 }
 
-function StatCard({
-  label,
-  primary,
-  detail
-}: {
-  label: string;
-  primary: string;
-  detail: string;
-}) {
+function StatCard({ label, primary, detail }: { label: string; primary: string; detail: string }) {
   return (
     <Card className="space-y-2">
       <div className="fine-print">{label}</div>

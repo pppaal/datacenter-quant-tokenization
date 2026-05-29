@@ -65,14 +65,16 @@ function bucketKey(row: {
   return [row.market, row.region ?? '', row.assetClass ?? '', row.assetTier ?? ''].join('|');
 }
 
-function rollup<TRow extends {
-  market: string;
-  region: string | null;
-  assetClass: AssetClass | null;
-  assetTier: string | null;
-  capRate: number;
-  observedAt: Date | null;
-}>(rows: TRow[]): CapRateBucket[] {
+function rollup<
+  TRow extends {
+    market: string;
+    region: string | null;
+    assetClass: AssetClass | null;
+    assetTier: string | null;
+    capRate: number;
+    observedAt: Date | null;
+  }
+>(rows: TRow[]): CapRateBucket[] {
   const groups = new Map<GroupKey, TRow[]>();
   for (const row of rows) {
     const key = bucketKey(row);

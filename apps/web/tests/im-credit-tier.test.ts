@@ -113,8 +113,16 @@ test('buildCovenantHeadroom returns headroom + first-breach-year for both covena
 
 test('buildCovenantHeadroom returns no breach when path stays inside band', () => {
   const out = buildCovenantHeadroom([
-    { year: '2026A', revenueKrw: 100, ebitdaKrw: 32, ebitdaMarginPct: 32,
-      interestExpenseKrw: 8, totalDebtKrw: 100, leverage: 3.0, interestCoverage: 4.0 }
+    {
+      year: '2026A',
+      revenueKrw: 100,
+      ebitdaKrw: 32,
+      ebitdaMarginPct: 32,
+      interestExpenseKrw: 8,
+      totalDebtKrw: 100,
+      leverage: 3.0,
+      interestCoverage: 4.0
+    }
   ]);
   for (const r of out) {
     assert.equal(r.firstBreachYear, null);
@@ -161,10 +169,7 @@ test('buildWaterfall returns 4-tier waterfall with hurdle and promote', () => {
 });
 
 test('buildWaterfall gives 100% to LP when IRR ≤ hurdle', () => {
-  const w = buildWaterfall(
-    { promoteThresholdPct: 10, promoteSharePct: 15 },
-    8.0
-  );
+  const w = buildWaterfall({ promoteThresholdPct: 10, promoteSharePct: 15 }, 8.0);
   assert.equal(w.lpTakePct, 100);
   assert.equal(w.gpTakePct, 0);
 });
@@ -199,9 +204,7 @@ test('buildLiquidityLadder computes 12-month debt service and coverage', () => {
   // 12mo debt service = 11.9B + 5.292B = 17.192B
   const expectedAmort = (98_000_000_000 * 0.85) / 7;
   const expectedInterest = 98_000_000_000 * 0.054;
-  assert.ok(
-    Math.abs(lad.twelveMonthDebtServiceKrw - (expectedAmort + expectedInterest)) < 1
-  );
+  assert.ok(Math.abs(lad.twelveMonthDebtServiceKrw - (expectedAmort + expectedInterest)) < 1);
   // coverage = (5B + 8B) / 17.192B ≈ 0.756x
   assert.ok(lad.liquidityCoverage! < 1);
   // balloon year = 2026 + 7 = 2033

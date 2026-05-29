@@ -17,19 +17,10 @@ type TaxAssumptionLike = {
   insurancePct?: number | null;
 };
 
-export type InvestmentBasisSource =
-  | 'purchase_price'
-  | 'capex_total'
-  | 'unknown';
+export type InvestmentBasisSource = 'purchase_price' | 'capex_total' | 'unknown';
 
 export type TaxWalkRow = {
-  category:
-    | 'acquisition'
-    | 'property'
-    | 'corporate'
-    | 'exit'
-    | 'withholding'
-    | 'insurance';
+  category: 'acquisition' | 'property' | 'corporate' | 'exit' | 'withholding' | 'insurance';
   label: string;
   ratePct: number;
   /** Base value the rate applies to (e.g. purchase price, cumulative NOI). */
@@ -97,8 +88,7 @@ export function buildTaxWalk(
     });
   }
   if (typeof taxes.propertyTaxPct === 'number' && inputs.holdYears > 0) {
-    const cash =
-      inputs.purchasePriceKrw * (taxes.propertyTaxPct / 100) * inputs.holdYears;
+    const cash = inputs.purchasePriceKrw * (taxes.propertyTaxPct / 100) * inputs.holdYears;
     rows.push({
       category: 'property',
       label: `Property tax (${inputs.holdYears}y hold)`,
@@ -113,8 +103,7 @@ export function buildTaxWalk(
     });
   }
   if (typeof taxes.insurancePct === 'number' && inputs.holdYears > 0) {
-    const cash =
-      inputs.purchasePriceKrw * (taxes.insurancePct / 100) * inputs.holdYears;
+    const cash = inputs.purchasePriceKrw * (taxes.insurancePct / 100) * inputs.holdYears;
     rows.push({
       category: 'insurance',
       label: `Insurance premium (${inputs.holdYears}y hold)`,
@@ -155,8 +144,7 @@ export function buildTaxWalk(
   if (typeof taxes.withholdingTaxPct === 'number' && inputs.cumulativeNoiKrw > 0) {
     // Withholding generally applies to cross-border distributions;
     // we proxy to cumulative NOI as a directional figure.
-    const cash =
-      inputs.cumulativeNoiKrw * 0.5 * (taxes.withholdingTaxPct / 100); // rough — half of NOI distributed
+    const cash = inputs.cumulativeNoiKrw * 0.5 * (taxes.withholdingTaxPct / 100); // rough — half of NOI distributed
     rows.push({
       category: 'withholding',
       label: 'Withholding tax (cross-border)',
@@ -173,8 +161,7 @@ export function buildTaxWalk(
   // This is what an LP feels on equity returns, not a flow+stock blend.
   const grossProfitKrw =
     inputs.cumulativeNoiKrw + Math.max(0, inputs.exitValueKrw - inputs.purchasePriceKrw);
-  const effectiveDragOnGrossPct =
-    grossProfitKrw > 0 ? (total / grossProfitKrw) * 100 : null;
+  const effectiveDragOnGrossPct = grossProfitKrw > 0 ? (total / grossProfitKrw) * 100 : null;
 
   const basisSource = inputs.basisSource ?? 'purchase_price';
   const basisCaveat =

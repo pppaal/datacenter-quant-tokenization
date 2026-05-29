@@ -17,14 +17,26 @@ export type PropertyMapMarker = {
   mapPosition: { leftPct: number; topPct: number };
 };
 
+export type MapCoordinate = { latitude: number; longitude: number };
+
 type Props = {
   markers: PropertyMapMarker[];
   selectedId: string | null;
   onSelect: (id: string) => void;
   config: MapProviderConfig;
+  /** Fires with the geographic coordinate when the user clicks the map surface. */
+  onMapClick?: (coord: MapCoordinate) => void;
+  /** Center used when there are no markers to fit (e.g. the standalone analyzer). */
+  defaultCenter?: MapCoordinate;
+  /** Optional pin marking the user's last clicked coordinate. */
+  clickedPoint?: MapCoordinate | null;
 };
 
 type PixelPoint = { x: number; y: number };
+
+const CLICKED_KEY = '__clicked__';
+// Seoul City Hall — neutral starting view when no markers are supplied.
+const FALLBACK_CENTER: MapCoordinate = { latitude: 37.5665, longitude: 126.978 };
 
 // Cached SDK loaders. We inject the third-party script once per page; repeated
 // mounts reuse the same in-flight promise instead of appending more tags.
@@ -116,12 +128,28 @@ function markerTone(assetClass: AssetClass, hasLiveDossier: boolean) {
   return 'border-amber-300 bg-amber-400/30 text-amber-100';
 }
 
-export function PropertyMap({ markers, selectedId, onSelect, config }: Props) {
+export function PropertyMap({
+  markers,
+  selectedId,
+  onSelect,
+  config,
+  onMapClick,
+  defaultCenter,
+  clickedPoint
+}: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapInstanceRef = useRef<{ destroy: () => void } | null>(null);
   const projectRef = useRef<((lat: number, lng: number) => PixelPoint | null) | null>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'failed'>('loading');
   const [pixelPositions, setPixelPositions] = useState<Record<string, PixelPoint>>({});
+
+  // Read clicks / map-click handler from refs so the projection callback and the
+  // init effect stay referentially stable — otherwise every click would tear
+  // down and rebuild the map instance.
+  const clickedRef = useRef<MapCoordinate | null>(clickedPoint ?? null);
+  clickedRef.current = clickedPoint ?? null;
+  const onMapClickRef = useRef<Props['onMapClick']>(onMapClick);
+  onMapClickRef.current = onMapClick;
 
   const selected = useMemo(
     () => markers.find((marker) => marker.id === selectedId) ?? markers[0] ?? null,
@@ -138,13 +166,25 @@ export function PropertyMap({ markers, selectedId, onSelect, config }: Props) {
         next[marker.id] = point;
       }
     }
+    const clicked = clickedRef.current;
+    if (clicked) {
+      const point = project(clicked.latitude, clicked.longitude);
+      if (point && Number.isFinite(point.x) && Number.isFinite(point.y)) {
+        next[CLICKED_KEY] = point;
+      }
+    }
     setPixelPositions(next);
   }, [markers]);
+
+  // Re-project (cheaply) when the clicked pin moves, without re-initialising the map.
+  useEffect(() => {
+    reproject();
+  }, [clickedPoint, reproject]);
 
   useEffect(() => {
     let cancelled = false;
     const container = containerRef.current;
-    if (!container || markers.length === 0) return;
+    if (!container) return;
 
     setStatus('loading');
 
@@ -168,6 +208,8 @@ export function PropertyMap({ markers, selectedId, onSelect, config }: Props) {
       }
     }
 
+    const center = defaultCenter ?? markers[0] ?? FALLBACK_CENTER;
+
     async function initLeaflet(target: HTMLDivElement) {
       const L = (await loadLeaflet()) as any;
       if (cancelled) return;
@@ -180,13 +222,22 @@ export function PropertyMap({ markers, selectedId, onSelect, config }: Props) {
         maxZoom: 19,
         attribution: '&copy; OpenStreetMap contributors'
       }).addTo(map);
-      const bounds = L.latLngBounds(markers.map((marker) => [marker.latitude, marker.longitude]));
-      map.fitBounds(bounds, { padding: [56, 56], maxZoom: 14 });
+      if (markers.length > 0) {
+        const bounds = L.latLngBounds(markers.map((marker) => [marker.latitude, marker.longitude]));
+        map.fitBounds(bounds, { padding: [56, 56], maxZoom: 14 });
+      } else {
+        map.setView([center.latitude, center.longitude], 12);
+      }
       projectRef.current = (lat, lng) => {
         const point = map.latLngToContainerPoint([lat, lng]);
         return { x: point.x, y: point.y };
       };
       map.on('move zoom resize zoomend moveend', reproject);
+      if (onMapClickRef.current) {
+        map.on('click', (e: any) => {
+          onMapClickRef.current?.({ latitude: e.latlng.lat, longitude: e.latlng.lng });
+        });
+      }
       mapInstanceRef.current = {
         destroy: () => {
           map.off();
@@ -199,14 +250,16 @@ export function PropertyMap({ markers, selectedId, onSelect, config }: Props) {
       const kakao = (await loadKakao(config.provider === 'kakao' ? config.kakaoApiKey : '')) as any;
       if (cancelled) return;
       const map = new kakao.maps.Map(target, {
-        center: new kakao.maps.LatLng(markers[0].latitude, markers[0].longitude),
-        level: 9
+        center: new kakao.maps.LatLng(center.latitude, center.longitude),
+        level: markers.length > 0 ? 9 : 6
       });
-      const bounds = new kakao.maps.LatLngBounds();
-      for (const marker of markers) {
-        bounds.extend(new kakao.maps.LatLng(marker.latitude, marker.longitude));
+      if (markers.length > 0) {
+        const bounds = new kakao.maps.LatLngBounds();
+        for (const marker of markers) {
+          bounds.extend(new kakao.maps.LatLng(marker.latitude, marker.longitude));
+        }
+        map.setBounds(bounds);
       }
-      map.setBounds(bounds);
       projectRef.current = (lat, lng) => {
         const projection = map.getProjection();
         const point = projection.containerPointFromCoords(new kakao.maps.LatLng(lat, lng));
@@ -215,6 +268,12 @@ export function PropertyMap({ markers, selectedId, onSelect, config }: Props) {
       kakao.maps.event.addListener(map, 'center_changed', reproject);
       kakao.maps.event.addListener(map, 'zoom_changed', reproject);
       kakao.maps.event.addListener(map, 'bounds_changed', reproject);
+      if (onMapClickRef.current) {
+        kakao.maps.event.addListener(map, 'click', (mouseEvent: any) => {
+          const latlng = mouseEvent.latLng;
+          onMapClickRef.current?.({ latitude: latlng.getLat(), longitude: latlng.getLng() });
+        });
+      }
       mapInstanceRef.current = {
         destroy: () => {
           target.innerHTML = '';
@@ -235,7 +294,7 @@ export function PropertyMap({ markers, selectedId, onSelect, config }: Props) {
       mapInstanceRef.current?.destroy();
       mapInstanceRef.current = null;
     };
-  }, [config, markers, reproject]);
+  }, [config, markers, reproject, defaultCenter]);
 
   const providerLabel =
     status === 'ready'
@@ -284,6 +343,23 @@ export function PropertyMap({ markers, selectedId, onSelect, config }: Props) {
           />
         );
       })}
+
+      {pixelPositions[CLICKED_KEY] ? (
+        <div
+          className="pointer-events-none absolute z-20 h-4 w-4 -translate-x-1/2 -translate-y-1/2 animate-pulse rounded-full border-2 border-white bg-rose-500 shadow-[0_0_0_6px_rgba(244,63,94,0.35)]"
+          style={{
+            left: `${pixelPositions[CLICKED_KEY]!.x}px`,
+            top: `${pixelPositions[CLICKED_KEY]!.y}px`
+          }}
+          aria-hidden="true"
+        />
+      ) : null}
+
+      {onMapClick && status === 'ready' ? (
+        <div className="pointer-events-none absolute right-6 top-6 z-20 rounded-full border border-white/10 bg-slate-950/70 px-3 py-2 text-[10px] uppercase tracking-[0.22em] text-slate-300">
+          Click any point to analyze
+        </div>
+      ) : null}
 
       {selected ? (
         <div className="pointer-events-none absolute bottom-6 left-6 right-6 z-20 grid gap-3 rounded-[24px] border border-white/10 bg-slate-950/80 p-4 backdrop-blur">

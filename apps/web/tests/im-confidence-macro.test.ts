@@ -84,8 +84,5 @@ test('readMacroGuidance returns null on missing entry', () => {
 });
 
 test('readMacroGuidance returns null on malformed JSON string', () => {
-  assert.equal(
-    readMacroGuidance([{ field: 'macro.guidance', value: 'not-json{' }]),
-    null
-  );
+  assert.equal(readMacroGuidance([{ field: 'macro.guidance', value: 'not-json{' }]), null);
 });

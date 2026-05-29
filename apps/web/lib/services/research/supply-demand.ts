@@ -32,11 +32,11 @@ export type PipelineStageLabel =
  * submarket has materially different historic completion rates.
  */
 export const DEFAULT_STAGE_COMPLETION_PROB: Record<PipelineStageLabel, number> = {
-  ANNOUNCED: 0.30,
+  ANNOUNCED: 0.3,
   FEASIBILITY: 0.45,
   PERMITTED: 0.65,
   PRE_CONSTRUCTION: 0.75,
-  UNDER_CONSTRUCTION: 0.90,
+  UNDER_CONSTRUCTION: 0.9,
   TOPPING_OUT: 0.95,
   COMMISSIONING: 0.98,
   DELIVERED: 1.0
@@ -155,10 +155,7 @@ export function buildSupplyForecast(
     if (yr < baseYear || yr > baseYear + horizon) continue;
     const stage = normalizeStage(p.stageLabel ?? null) ?? 'ANNOUNCED';
     const prob = probs[stage] ?? DEFAULT_STAGE_COMPLETION_PROB[stage] ?? 0.5;
-    const cap =
-      options.unit === 'MW'
-        ? p.expectedPowerMw ?? 0
-        : p.expectedAreaSqm ?? 0;
+    const cap = options.unit === 'MW' ? (p.expectedPowerMw ?? 0) : (p.expectedAreaSqm ?? 0);
     if (cap <= 0) continue;
     const row = buckets.get(yr)!;
     row.nameplate += cap;
@@ -204,9 +201,7 @@ export function buildSupplyDemand(
       Math.pow(1 + options.demand.growthPct / 100, yearsFromDemandBase);
     const net = expectedDemand - cumulative;
     const impliedVacancy =
-      cumulative > 0
-        ? Math.max(0, Math.min(1, 1 - expectedDemand / cumulative))
-        : 0;
+      cumulative > 0 ? Math.max(0, Math.min(1, 1 - expectedDemand / cumulative)) : 0;
     supplyDemand.push({
       year: yr,
       expectedSupplyDelta: round2(delta),

@@ -109,6 +109,11 @@ const envSchema = z.object({
   SENTRY_ORG: optionalString,
   SENTRY_PROJECT: optionalString,
 
+  // AML / CDD
+  SANCTIONS_DENYLIST_JSON: optionalString,
+  AML_RESCREEN_INTERVAL_DAYS: optionalNumber('AML_RESCREEN_INTERVAL_DAYS'),
+  AUDIT_ALLOW_HARD_DELETE: optionalBool,
+
   // Audit retention
   AUDIT_RETENTION_DAYS: optionalNumber('AUDIT_RETENTION_DAYS'),
   OPS_ALERT_DELIVERY_RETENTION_DAYS: optionalNumber('OPS_ALERT_DELIVERY_RETENTION_DAYS'),

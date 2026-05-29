@@ -89,8 +89,20 @@ test('computeLeaseRollSummary computes WALT + weighted rent + MTM gap', () => {
 
 test('computeCapitalStructure: weighted rate by commitment + drawn pct', () => {
   const cs = computeCapitalStructure([
-    { facilityType: 'SENIOR', lenderName: 'A', commitmentKrw: 100, drawnAmountKrw: 80, interestRatePct: 4 },
-    { facilityType: 'MEZZ', lenderName: 'B', commitmentKrw: 50, drawnAmountKrw: 50, interestRatePct: 8 }
+    {
+      facilityType: 'SENIOR',
+      lenderName: 'A',
+      commitmentKrw: 100,
+      drawnAmountKrw: 80,
+      interestRatePct: 4
+    },
+    {
+      facilityType: 'MEZZ',
+      lenderName: 'B',
+      commitmentKrw: 50,
+      drawnAmountKrw: 50,
+      interestRatePct: 8
+    }
   ]);
   assert.equal(cs.totalCommitmentKrw, 150);
   assert.equal(cs.totalDrawnKrw, 130);
@@ -102,9 +114,27 @@ test('computeCapitalStructure: weighted rate by commitment + drawn pct', () => {
 
 test('computeReturnsSnapshot: pulls base/bull/bear and computes upside/downside', () => {
   const r = computeReturnsSnapshot([
-    { name: 'Bull Case', valuationKrw: 110, impliedYieldPct: 5.0, exitCapRatePct: 4.5, debtServiceCoverage: 1.6 },
-    { name: 'Base Case', valuationKrw: 100, impliedYieldPct: 5.5, exitCapRatePct: 5.0, debtServiceCoverage: 1.4 },
-    { name: 'Bear Case', valuationKrw: 88, impliedYieldPct: 6.0, exitCapRatePct: 5.5, debtServiceCoverage: 1.1 }
+    {
+      name: 'Bull Case',
+      valuationKrw: 110,
+      impliedYieldPct: 5.0,
+      exitCapRatePct: 4.5,
+      debtServiceCoverage: 1.6
+    },
+    {
+      name: 'Base Case',
+      valuationKrw: 100,
+      impliedYieldPct: 5.5,
+      exitCapRatePct: 5.0,
+      debtServiceCoverage: 1.4
+    },
+    {
+      name: 'Bear Case',
+      valuationKrw: 88,
+      impliedYieldPct: 6.0,
+      exitCapRatePct: 5.5,
+      debtServiceCoverage: 1.1
+    }
   ]);
   assert.equal(r.baseValueKrw, 100);
   assert.equal(r.upsideToBullPct, 10);
@@ -117,7 +147,12 @@ test('computeReturnsSnapshot: pulls base/bull/bear and computes upside/downside'
 test('rollupTenantCredit: average score, risk mix, high-risk names', () => {
   const out = rollupTenantCredit([
     { counterparty: { name: 'Samsung', role: 'TENANT' }, score: 80, riskLevel: 'LOW', summary: '' },
-    { counterparty: { name: 'Hyundai', role: 'TENANT' }, score: 60, riskLevel: 'MODERATE', summary: '' },
+    {
+      counterparty: { name: 'Hyundai', role: 'TENANT' },
+      score: 60,
+      riskLevel: 'MODERATE',
+      summary: ''
+    },
     { counterparty: { name: 'WeakCo', role: 'TENANT' }, score: 30, riskLevel: 'HIGH', summary: '' }
   ]);
   assert.equal(out.count, 3);

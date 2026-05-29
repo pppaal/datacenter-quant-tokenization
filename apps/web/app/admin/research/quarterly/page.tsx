@@ -69,62 +69,63 @@ export default async function QuarterlyResearchPage(props: {
 
   if (!quarter) notFound();
 
-  const [aggregation, transactions, houseViews, marketUniverses, pendingHouseViews] = await Promise.all([
-    aggregateCapRates({ since: quarter.start }),
-    prisma.transactionComp.findMany({
-      where: {
-        capRatePct: { not: null },
-        OR: [
-          { transactionDate: null },
-          { transactionDate: { gte: quarter.start, lte: quarter.end } }
-        ]
-      },
-      orderBy: { transactionDate: 'desc' },
-      take: 30,
-      include: { asset: { select: { assetCode: true, name: true } } }
-    }),
-    prisma.researchSnapshot.findMany({
-      where: {
-        viewType: 'HOUSE',
-        approvalStatus: 'APPROVED',
-        snapshotDate: { gte: quarter.start, lte: quarter.end }
-      },
-      orderBy: { snapshotDate: 'desc' },
-      include: {
-        marketUniverse: { select: { label: true } },
-        submarket: { select: { label: true } },
-        asset: { select: { assetCode: true, name: true } },
-        approvedBy: { select: { name: true, email: true } }
-      }
-    }),
-    prisma.marketUniverse.count(),
-    // Visibility on the gate: surface DRAFT house views for the same
-    // window so the operator sees what the publication is excluding
-    // and has a one-click path to approve (or explicitly deny).
-    prisma.researchSnapshot.findMany({
-      where: {
-        viewType: 'HOUSE',
-        approvalStatus: 'DRAFT',
-        snapshotDate: { gte: quarter.start, lte: quarter.end }
-      },
-      orderBy: { snapshotDate: 'desc' },
-      take: 12,
-      include: {
-        marketUniverse: { select: { label: true } },
-        submarket: { select: { label: true } },
-        asset: { select: { assetCode: true, name: true } }
-      }
-    })
-  ]);
-
+  const [aggregation, transactions, houseViews, marketUniverses, pendingHouseViews] =
+    await Promise.all([
+      aggregateCapRates({ since: quarter.start }),
+      prisma.transactionComp.findMany({
+        where: {
+          capRatePct: { not: null },
+          OR: [
+            { transactionDate: null },
+            { transactionDate: { gte: quarter.start, lte: quarter.end } }
+          ]
+        },
+        orderBy: { transactionDate: 'desc' },
+        take: 30,
+        include: { asset: { select: { assetCode: true, name: true } } }
+      }),
+      prisma.researchSnapshot.findMany({
+        where: {
+          viewType: 'HOUSE',
+          approvalStatus: 'APPROVED',
+          snapshotDate: { gte: quarter.start, lte: quarter.end }
+        },
+        orderBy: { snapshotDate: 'desc' },
+        include: {
+          marketUniverse: { select: { label: true } },
+          submarket: { select: { label: true } },
+          asset: { select: { assetCode: true, name: true } },
+          approvedBy: { select: { name: true, email: true } }
+        }
+      }),
+      prisma.marketUniverse.count(),
+      // Visibility on the gate: surface DRAFT house views for the same
+      // window so the operator sees what the publication is excluding
+      // and has a one-click path to approve (or explicitly deny).
+      prisma.researchSnapshot.findMany({
+        where: {
+          viewType: 'HOUSE',
+          approvalStatus: 'DRAFT',
+          snapshotDate: { gte: quarter.start, lte: quarter.end }
+        },
+        orderBy: { snapshotDate: 'desc' },
+        take: 12,
+        include: {
+          marketUniverse: { select: { label: true } },
+          submarket: { select: { label: true } },
+          asset: { select: { assetCode: true, name: true } }
+        }
+      })
+    ]);
 
   // Editorial narrative is best-effort: when OPENAI_API_KEY is absent
   // the helper returns null and the page falls back to a "no narrative
   // generated" badge instead of crashing.
   const narrativeInputs = buildQuarterlyNarrativeInputs({
-    buckets: aggregation.fromTransactions.length > 0
-      ? aggregation.fromTransactions
-      : aggregation.fromIndicators,
+    buckets:
+      aggregation.fromTransactions.length > 0
+        ? aggregation.fromTransactions
+        : aggregation.fromIndicators,
     transactions,
     houseViews: houseViews.map((row) => ({ title: row.title, summary: row.summary }))
   });
@@ -145,8 +146,8 @@ export default async function QuarterlyResearchPage(props: {
           </h2>
           <p className="mt-2 max-w-3xl text-sm text-slate-400">
             Print-friendly quarterly research report. Cmd-P (or
-            <span className="mx-1 font-mono text-xs">Print</span>) to save as PDF. Edit the
-            URL parameter <code className="ml-1 rounded bg-white/5 px-1.5 py-0.5">?quarter=2026Q1</code>
+            <span className="mx-1 font-mono text-xs">Print</span>) to save as PDF. Edit the URL
+            parameter <code className="ml-1 rounded bg-white/5 px-1.5 py-0.5">?quarter=2026Q1</code>
             to render a different quarter.
           </p>
         </div>
@@ -170,14 +171,14 @@ export default async function QuarterlyResearchPage(props: {
           {quarter.label}
         </h1>
         <p className="mt-6 max-w-3xl text-base leading-7 text-slate-300">
-          Internal research view assembled from approved HOUSE-view ResearchSnapshots, the
-          submarket × tier cap-rate aggregator, and transaction comps recorded between{' '}
+          Internal research view assembled from approved HOUSE-view ResearchSnapshots, the submarket
+          × tier cap-rate aggregator, and transaction comps recorded between{' '}
           {formatDate(quarter.start)} and {formatDate(quarter.end)}. Every claim cites the
           underlying ResearchSnapshot or TransactionComp row.
         </p>
         <p className="mt-4 max-w-3xl text-sm text-slate-500">
-          This is an internal IC document — not a public-distribution research piece. Numbers in
-          the matrix below are MEDIANS across the bucket; tail behavior is in the
+          This is an internal IC document — not a public-distribution research piece. Numbers in the
+          matrix below are MEDIANS across the bucket; tail behavior is in the
           <code className="mx-1 rounded bg-white/5 px-1.5 py-0.5">/admin/research/comps</code>
           deep-dive.
         </p>
@@ -206,8 +207,8 @@ export default async function QuarterlyResearchPage(props: {
         ) : (
           <div className="rounded-[18px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
             Narrative generator skipped: no OPENAI_API_KEY in this environment. The publication
-            still renders the matrices, transactions, and approved house views below — the
-            narrative is editorial scaffolding, not a primary data source.
+            still renders the matrices, transactions, and approved house views below — the narrative
+            is editorial scaffolding, not a primary data source.
           </div>
         )}
       </section>
@@ -277,19 +278,17 @@ export default async function QuarterlyResearchPage(props: {
                     <td className="px-3 py-2 text-xs text-slate-400">
                       {row.transactionDate ? formatDate(row.transactionDate) : '—'}
                     </td>
-                    <td className="px-3 py-2 text-xs">{row.market}/{row.region}</td>
+                    <td className="px-3 py-2 text-xs">
+                      {row.market}/{row.region}
+                    </td>
                     <td className="px-3 py-2 text-xs">
                       {row.assetClass ?? '—'} / {row.assetTier ?? 'Untiered'}
                     </td>
-                    <td className="px-3 py-2 text-right text-xs">
-                      {formatPriceKrw(row.priceKrw)}
-                    </td>
+                    <td className="px-3 py-2 text-right text-xs">{formatPriceKrw(row.priceKrw)}</td>
                     <td className="px-3 py-2 text-right font-mono text-xs">
                       {row.capRatePct ? formatCap(row.capRatePct) : '—'}
                     </td>
-                    <td className="px-3 py-2 text-xs">
-                      {row.asset?.assetCode ?? '—'}
-                    </td>
+                    <td className="px-3 py-2 text-xs">{row.asset?.assetCode ?? '—'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -307,8 +306,8 @@ export default async function QuarterlyResearchPage(props: {
           ) : null}
         </div>
         <p className="text-sm text-slate-400">
-          ResearchSnapshot rows with viewType=HOUSE and approvalStatus=APPROVED, dated within
-          the quarter. Editorial commentary the operator promoted from draft. Approved-by name +
+          ResearchSnapshot rows with viewType=HOUSE and approvalStatus=APPROVED, dated within the
+          quarter. Editorial commentary the operator promoted from draft. Approved-by name +
           approval timestamp render so the IC reader can see who signed off.
         </p>
         {houseViews.length === 0 ? (
@@ -395,8 +394,8 @@ export default async function QuarterlyResearchPage(props: {
       ) : null}
 
       <footer className="rounded-[18px] border border-white/10 bg-white/[0.03] px-5 py-4 text-xs text-slate-500">
-        Generated {formatDate(new Date())} · {quarter.label} window
-        {' '}{formatDate(quarter.start)} – {formatDate(quarter.end)} · Internal use only.
+        Generated {formatDate(new Date())} · {quarter.label} window {formatDate(quarter.start)} –{' '}
+        {formatDate(quarter.end)} · Internal use only.
       </footer>
     </main>
   );

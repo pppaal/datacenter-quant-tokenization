@@ -247,9 +247,9 @@ a {
     page-break-inside: avoid;
   }
   /* Hide interactive chrome inside the IM during print. */
-  main nav[aria-label="IM table of contents"],
+  main nav[aria-label='IM table of contents'],
   main button,
-  main a[href^="/admin"] {
+  main a[href^='/admin'] {
     display: none !important;
   }
 
@@ -381,7 +381,7 @@ section[id^='im-'] {
 /* Print mode: when ?print=1 is set, the page renders without the
    sticky TOC and triggers window.print() on load. The :root.im-print
    class is added by the ImPrintMode client component. */
-:root.im-print nav[aria-label="IM table of contents"],
+:root.im-print nav[aria-label='IM table of contents'],
 :root.im-print [data-im-print-hidden] {
   display: none !important;
 }

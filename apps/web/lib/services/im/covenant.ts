@@ -47,17 +47,11 @@ function headroomFor(
   return ((value - benchmark) / benchmark) * 100;
 }
 
-function isBreach(
-  value: number,
-  benchmark: number,
-  preferred: 'higher' | 'lower'
-): boolean {
+function isBreach(value: number, benchmark: number, preferred: 'higher' | 'lower'): boolean {
   return preferred === 'lower' ? value > benchmark : value < benchmark;
 }
 
-export function buildCovenantHeadroom(
-  projection: ProjectionRow[]
-): CovenantHeadroom[] {
+export function buildCovenantHeadroom(projection: ProjectionRow[]): CovenantHeadroom[] {
   const out: CovenantHeadroom[] = [];
 
   (Object.keys(COVENANTS) as Array<keyof typeof COVENANTS>).forEach((key) => {
@@ -120,9 +114,7 @@ export type CovenantAlert = {
  * pipeline (when wired) to surface deals that need refinancing
  * provisions or covenant relief in the term sheet before close.
  */
-export function buildCovenantAlerts(
-  headroom: CovenantHeadroom[]
-): CovenantAlert[] {
+export function buildCovenantAlerts(headroom: CovenantHeadroom[]): CovenantAlert[] {
   const alerts: CovenantAlert[] = [];
   for (const h of headroom) {
     if (h.headroomPct === null) continue;

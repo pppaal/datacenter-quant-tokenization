@@ -16,7 +16,15 @@
  */
 import { AssetClass } from '@prisma/client';
 
-export type AssetTier = 'PRIME' | 'GRADE_A' | 'GRADE_B' | 'STRATA' | 'PREMIUM' | 'STANDARD' | 'TIER_III' | 'TIER_II';
+export type AssetTier =
+  | 'PRIME'
+  | 'GRADE_A'
+  | 'GRADE_B'
+  | 'STRATA'
+  | 'PREMIUM'
+  | 'STANDARD'
+  | 'TIER_III'
+  | 'TIER_II';
 
 export type TierClassifierInput = {
   /** Free-text from intake (e.g. comparableType). */
@@ -32,7 +40,12 @@ export type TierClassifierInput = {
 };
 
 const PRIME_PATTERNS = [/prime/i, /\bAAA\b/, /프라임/];
-const GRADE_A_PATTERNS = [/\bgrade\s*a\b/i, /\bclass\s*a\b/i, /\bA[\s-]?(?:급|class|grade)\b/i, /오피스\s*A급/];
+const GRADE_A_PATTERNS = [
+  /\bgrade\s*a\b/i,
+  /\bclass\s*a\b/i,
+  /\bA[\s-]?(?:급|class|grade)\b/i,
+  /오피스\s*A급/
+];
 const GRADE_B_PATTERNS = [/\bgrade\s*b\b/i, /\bclass\s*b\b/i, /\bB[\s-]?(?:급|class|grade)\b/i];
 const STRATA_PATTERNS = [/\bstrata\b/i, /구분소유/, /구분\s*오피스/];
 const PREMIUM_PATTERNS = [/premium/i, /프리미엄/];

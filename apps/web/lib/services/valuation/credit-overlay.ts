@@ -1,7 +1,40 @@
+import { type ConfidenceBounds, clampConfidence } from '@/lib/services/valuation/stabilized-income';
 import type { UnderwritingAnalysis, UnderwritingBundle } from '@/lib/services/valuation/types';
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
+}
+
+/**
+ * Engine-wide confidence range, used only as a fallback for strategies that do
+ * not declare their own bounds (e.g. the land and data-center derivations).
+ * Strategies that *do* declare bounds must thread them in so the overlay's
+ * post-delta clamp respects the same `[floor, ceiling]` the strategy used for
+ * the base score, instead of silently widening it.
+ */
+const DEFAULT_CONFIDENCE_BOUNDS: ConfidenceBounds = { floor: 4.5, ceiling: 9.9 };
+
+/**
+ * Resolve the confidence bounds the overlay should clamp to. Prefers explicitly
+ * threaded bounds, then bounds carried on `analysis.assumptions.confidenceBounds`
+ * (written by the income engine), and finally the engine-wide default.
+ */
+function resolveConfidenceBounds(
+  analysis: UnderwritingAnalysis,
+  bounds?: ConfidenceBounds
+): ConfidenceBounds {
+  if (bounds) return bounds;
+  const carried = (analysis.assumptions as { confidenceBounds?: unknown } | undefined)
+    ?.confidenceBounds;
+  if (
+    carried &&
+    typeof carried === 'object' &&
+    typeof (carried as ConfidenceBounds).floor === 'number' &&
+    typeof (carried as ConfidenceBounds).ceiling === 'number'
+  ) {
+    return carried as ConfidenceBounds;
+  }
+  return DEFAULT_CONFIDENCE_BOUNDS;
 }
 
 type CreditMetrics = {
@@ -25,10 +58,13 @@ function riskLevelFromSignal(score: number) {
 
 export function applyCreditOverlay(
   analysis: UnderwritingAnalysis,
-  bundle: UnderwritingBundle
+  bundle: UnderwritingBundle,
+  confidenceBounds?: ConfidenceBounds
 ): UnderwritingAnalysis {
   const assessments = bundle.creditAssessments ?? [];
   if (assessments.length === 0) return analysis;
+
+  const bounds = resolveConfidenceBounds(analysis, confidenceBounds);
 
   const averageScore =
     assessments.reduce((sum, assessment) => sum + assessment.score, 0) /
@@ -98,9 +134,10 @@ export function applyCreditOverlay(
     -0.9,
     0.65
   );
-  const adjustedConfidence = Number(
-    clamp(analysis.confidenceScore + confidenceDelta, 4.5, 9.9).toFixed(1)
-  );
+  // Re-clamp to the *strategy's* declared bounds (not a wider engine-wide range)
+  // so the overlay's directional delta can never push the score past the
+  // ceiling or below the floor the strategy already enforced on the base score.
+  const adjustedConfidence = clampConfidence(analysis.confidenceScore + confidenceDelta, bounds);
 
   const creditRiskNotes = [
     highRiskAssessments.length > 0

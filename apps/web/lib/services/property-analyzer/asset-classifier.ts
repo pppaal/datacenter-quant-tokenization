@@ -106,8 +106,24 @@ const MAIN_USE_HINTS: Array<{ pattern: RegExp; cls: AssetClass }> = [
   { pattern: /공동주택|아파트|다세대|다가구/, cls: AssetClass.MULTIFAMILY },
   { pattern: /숙박|호텔|관광/, cls: AssetClass.HOTEL },
   { pattern: /공장|창고|물류/, cls: AssetClass.INDUSTRIAL },
-  { pattern: /발전|전기|전산/, cls: AssetClass.DATA_CENTER }
+  { pattern: /발전|전기|전산|데이터|데이타|IDC/i, cls: AssetClass.DATA_CENTER }
 ];
+
+// Per-class specificity rank used only as a deterministic tie-break in the
+// final sort. Higher = more specific / less generic. A genuine DATA_CENTER
+// must never be silently lost to a generic OFFICE on an equal score
+// (e.g. in INDUSTRIAL_QUASI / 준공업지역 where OFFICE and a DC-boosted
+// candidate can land on the same score).
+const SPECIFICITY_RANK: Partial<Record<AssetClass, number>> = {
+  [AssetClass.DATA_CENTER]: 5,
+  [AssetClass.MULTIFAMILY]: 3,
+  [AssetClass.INDUSTRIAL]: 3,
+  [AssetClass.RETAIL]: 2,
+  [AssetClass.HOTEL]: 2,
+  [AssetClass.MIXED_USE]: 1,
+  [AssetClass.OFFICE]: 1,
+  [AssetClass.LAND]: 0
+};
 
 function buildRationale(
   zone: UseZone,
@@ -136,17 +152,28 @@ export function classifyAsset(
   const candidates = source.map((c) => ({ ...c }));
 
   // Boost candidate whose class matches the current building's main-use.
+  // A matched DATA_CENTER hint (발전/전산/데이터 …) is a strong, explicit
+  // signal — give it a decisive boost so a real datacenter is not merely
+  // tied with (and then beaten by) a generic OFFICE base in zones like
+  // 준공업/INDUSTRIAL_QUASI where OFFICE outscores DC by default.
   const hint = MAIN_USE_HINTS.find((h) => h.pattern.test(mainUse));
   if (hint) {
+    const boost = hint.cls === AssetClass.DATA_CENTER ? 0.2 : 0.1;
     const match = candidates.find((c) => c.cls === hint.cls);
     if (match) {
-      match.score = Math.min(1, match.score + 0.1);
+      match.score = Math.min(1, match.score + boost);
     } else {
-      candidates.push({ cls: hint.cls, feasibility: 'VIABLE', score: 0.55 });
+      candidates.push({ cls: hint.cls, feasibility: 'VIABLE', score: 0.55 + boost });
     }
   }
 
-  candidates.sort((a, b) => b.score - a.score);
+  // Sort by score desc; break ties deterministically by class specificity
+  // (more-specific class wins) so iteration/array order can never silently
+  // demote a DATA_CENTER below a generic OFFICE.
+  candidates.sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    return (SPECIFICITY_RANK[b.cls] ?? 0) - (SPECIFICITY_RANK[a.cls] ?? 0);
+  });
 
   const [first, ...rest] = candidates;
   const primary: AssetClassCandidate = {

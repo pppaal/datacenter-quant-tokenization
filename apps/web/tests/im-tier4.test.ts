@@ -15,10 +15,7 @@ test('pickSectorKey routes all asset classes', () => {
 });
 
 test('buildPeerComparison covers all 8 ratios in the office set', () => {
-  const r = buildPeerComparison(
-    { leverage: 4.0, ebitdaMargin: 50, roeProxy: 0.20 },
-    'KR_OFFICE'
-  );
+  const r = buildPeerComparison({ leverage: 4.0, ebitdaMargin: 50, roeProxy: 0.2 }, 'KR_OFFICE');
   assert.equal(r.comparisons.length, 8);
   assert.match(r.sectorLabel, /office/);
 });

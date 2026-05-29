@@ -77,6 +77,29 @@ test('main-use hint boosts matching candidate score', () => {
   assert.equal(retailResult.primary.assetClass, AssetClass.RETAIL);
 });
 
+test('industrial-quasi zone with DC indicators classifies as DATA_CENTER not OFFICE', () => {
+  const zone = makeZone('INDUSTRIAL_QUASI', '준공업지역');
+  for (const indicator of ['발전소', '전산센터', '데이터센터']) {
+    const building = makeBuilding(indicator);
+    const result = classifyAsset(zone, building);
+    assert.equal(
+      result.primary.assetClass,
+      AssetClass.DATA_CENTER,
+      `expected DATA_CENTER for main-use "${indicator}", got ${result.primary.assetClass}`
+    );
+  }
+});
+
+test('industrial-quasi zone with a plain office building still classifies as OFFICE', () => {
+  const zone = makeZone('INDUSTRIAL_QUASI', '준공업지역');
+  const building = makeBuilding('업무시설');
+  const result = classifyAsset(zone, building);
+  assert.equal(result.primary.assetClass, AssetClass.OFFICE);
+  const dc = result.alternatives.find((a) => a.assetClass === AssetClass.DATA_CENTER);
+  assert.ok(dc, 'DATA_CENTER should still appear as a viable alternative');
+  assert.notEqual(dc.feasibility, 'EXCLUDED');
+});
+
 test('unknown zone falls back to OFFICE with VIABLE feasibility', () => {
   const zone = makeZone('UNKNOWN', '미지정');
   const result = classifyAsset(zone, null);

@@ -65,9 +65,7 @@ export function buildCapitalCallSchedule(
   });
   // Reserve top-up call when reserve contributions are positive in the
   // first 3 years.
-  const reserveTopUp = proFormaYears
-    .slice(0, 3)
-    .reduce((s, y) => s + y.reserveContributionKrw, 0);
+  const reserveTopUp = proFormaYears.slice(0, 3).reduce((s, y) => s + y.reserveContributionKrw, 0);
   if (reserveTopUp > 0) {
     cumulative += reserveTopUp;
     rows.push({
@@ -75,8 +73,7 @@ export function buildCapitalCallSchedule(
       yearLabel: `${options.baseYear + 2} · reserve top-up`,
       amountKrw: reserveTopUp,
       cumulativeKrw: cumulative,
-      cumulativePctOfCommitment:
-        (cumulative / options.initialEquityCommitmentKrw) * 100,
+      cumulativePctOfCommitment: (cumulative / options.initialEquityCommitmentKrw) * 100,
       purpose: 'Debt-service reserve build per facility covenant'
     });
   }

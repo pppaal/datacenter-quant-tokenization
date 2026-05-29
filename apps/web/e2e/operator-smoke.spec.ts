@@ -142,7 +142,7 @@ test.describe('seeded operator smoke flows', () => {
 
     await page.getByRole('link', { name: 'Optimization Lab', exact: true }).click();
     await expect(
-      page.getByText('Quantum-inspired portfolio search and scenario exploration')
+      page.getByText('Portfolio allocation screening and scenario exploration')
     ).toBeVisible();
   });
 

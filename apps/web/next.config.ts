@@ -14,9 +14,7 @@ const nextConfig: NextConfig = {
 // SENTRY_PROJECT are present, this uploads source maps and tags the
 // release. Without those env vars it leaves the build untouched.
 const sentryEnabled =
-  !!process.env.SENTRY_AUTH_TOKEN &&
-  !!process.env.SENTRY_ORG &&
-  !!process.env.SENTRY_PROJECT;
+  !!process.env.SENTRY_AUTH_TOKEN && !!process.env.SENTRY_ORG && !!process.env.SENTRY_PROJECT;
 
 export default sentryEnabled
   ? withSentryConfig(nextConfig, {

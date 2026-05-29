@@ -171,7 +171,12 @@ export async function buildDataCenterValuationAnalysis(
       (evaluation) => buildScenarioValue(evaluation).approaches
     ),
     provenance: buildDataCenterProvenance(prepared),
-    scenarios: sortScenariosByOrder(scenarios)
+    scenarios: sortScenariosByOrder(scenarios),
+    // Expose the Base-case lease-level DCF (rollover / downtime / TI-LC / forward
+    // terminal) so the analyzer drives the headline pro-forma + return metrics off
+    // the real year-by-year NOI vector instead of growing one aggregate NOI.
+    leaseDcf: baseScenario.leaseDcf,
+    stabilizedNoiKrw: baseScenario.leaseDcf.stabilizedNoiKrw
   };
 
   const finalized = applyCreditOverlay(analysis, bundle);

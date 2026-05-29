@@ -70,11 +70,78 @@ function createDeterministicRng(seedInput: string) {
   };
 }
 
-function roundWeightVector(weights: number[]) {
+// Lower/upper weight bounds (in whole percent, multiples of 5) for a portfolio
+// of `assetCount` holdings. The lower bound is adaptive: with more than 10
+// assets a flat 10% floor is infeasible (11 * 10 > 100), so we shrink the floor
+// to the largest multiple of 5 that keeps the feasible region non-empty while
+// still leaving headroom for the rebalancing moves.
+function getWeightBounds(assetCount: number) {
+  if (assetCount <= 0) {
+    return { minWeight: 0, maxWeight: 100 };
+  }
+  // Largest multiple of 5 such that assetCount * minWeight <= 100.
+  const feasibleFloor = Math.floor(100 / assetCount / 5) * 5;
+  const minWeight = Math.max(0, Math.min(10, feasibleFloor));
+  // The cap must also be feasible: a single asset has to be allowed to reach
+  // 100%, so the upper bound is at least the smallest multiple of 5 that lets
+  // `assetCount` holdings sum to 100 (ceil(100/assetCount) rounded up to 5).
+  const feasibleCeil = Math.ceil(100 / assetCount / 5) * 5;
+  const maxWeight = Math.max(minWeight, 70, feasibleCeil);
+  return { minWeight, maxWeight };
+}
+
+// Round each weight to the nearest multiple of 5 and reconcile the rounding
+// residual so the vector still sums to exactly 100 while keeping every element
+// inside [minWeight, maxWeight]. The residual is applied 5 points at a time to
+// the element that has the most room (largest-remainder / Hamilton style),
+// rather than dumping the whole residual onto the first element.
+function roundWeightVector(weights: number[], assetCount = weights.length) {
   const rounded = weights.map((weight) => Math.round(weight / 5) * 5);
-  const total = sum(rounded);
   if (rounded.length === 0) return rounded;
-  rounded[0] += 100 - total;
+
+  const { minWeight, maxWeight } = getWeightBounds(assetCount);
+
+  // First, clamp every element into bounds so no single weight is out of band.
+  for (let index = 0; index < rounded.length; index += 1) {
+    rounded[index] = clamp(rounded[index], minWeight, maxWeight);
+  }
+
+  // Reconcile the total back to 100 by nudging elements with available room,
+  // in 5-point steps, preferring the largest-room element each pass.
+  const maxSteps = rounded.length * 40 + 40;
+  for (let step = 0; step < maxSteps; step += 1) {
+    const total = sum(rounded);
+    const diff = 100 - total;
+    if (diff === 0) break;
+    if (diff > 0) {
+      // Need to add weight: pick the element furthest below its max.
+      let target = -1;
+      let bestRoom = 0;
+      for (let index = 0; index < rounded.length; index += 1) {
+        const room = maxWeight - rounded[index];
+        if (room > bestRoom) {
+          bestRoom = room;
+          target = index;
+        }
+      }
+      if (target < 0) break;
+      rounded[target] += Math.min(5, diff, maxWeight - rounded[target]);
+    } else {
+      // Need to remove weight: pick the element furthest above its min.
+      let target = -1;
+      let bestRoom = 0;
+      for (let index = 0; index < rounded.length; index += 1) {
+        const room = rounded[index] - minWeight;
+        if (room > bestRoom) {
+          bestRoom = room;
+          target = index;
+        }
+      }
+      if (target < 0) break;
+      rounded[target] -= Math.min(5, -diff, rounded[target] - minWeight);
+    }
+  }
+
   return rounded;
 }
 
@@ -233,8 +300,7 @@ function runAnnealingAllocation(
     }
 
     const mutated = [...candidateWeights];
-    const minWeight = 10;
-    const maxWeight = 70;
+    const { minWeight, maxWeight } = getWeightBounds(candidateWeights.length);
     if (mutated[fromIndex] - 5 < minWeight || mutated[toIndex] + 5 > maxWeight) {
       continue;
     }
@@ -431,9 +497,9 @@ export function buildPortfolioOptimizationLab(
   const scenarioRows = buildScenarioRows(portfolio, assetRows, signalsByAssetId);
 
   return {
-    methodologyLabel: 'Quantum-inspired discrete search',
+    methodologyLabel: 'Allocation screening heuristic',
     objectiveScorePct,
-    summary: `${portfolio.name} optimization lab reweights current holdings using a deterministic annealing-style search over income quality, leverage, rollover, covenant pressure, and research coverage. This is a classical quantum-inspired heuristic, not quantum hardware execution.`,
+    summary: `${portfolio.name} allocation screening reweights current holdings using a deterministic annealing-style search over an ad-hoc score combining income quality, leverage, rollover, covenant pressure, and research coverage. This is a screening heuristic, not a returns/covariance/risk-model optimization — it does not estimate expected returns or portfolio risk.`,
     topMove,
     defensiveMove: defensiveMove
       ? `${defensiveMove.assetName} is the main defensive trim candidate because stress load is ${defensiveMove.stressPenaltyPct.toFixed(0)}%.`
@@ -442,6 +508,13 @@ export function buildPortfolioOptimizationLab(
     scenarioRows
   };
 }
+
+export const __testing = {
+  getWeightBounds,
+  roundWeightVector,
+  runAnnealingAllocation,
+  buildObjective
+};
 
 export function buildPortfolioOptimizationWorkspaceItem(portfolio: PortfolioRecord) {
   const lab = buildPortfolioOptimizationLab(portfolio);

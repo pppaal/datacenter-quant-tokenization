@@ -15,7 +15,15 @@ type MediaItem = {
   sizeBytes: number;
 };
 
-const KINDS = ['HERO', 'EXTERIOR', 'INTERIOR', 'SITE_PLAN', 'FLOORPLAN', 'RENDER', 'DRONE'] as const;
+const KINDS = [
+  'HERO',
+  'EXTERIOR',
+  'INTERIOR',
+  'SITE_PLAN',
+  'FLOORPLAN',
+  'RENDER',
+  'DRONE'
+] as const;
 
 export function AssetMediaManager({
   assetId,
@@ -55,14 +63,17 @@ export function AssetMediaManager({
       }
       const created = (await res.json()) as MediaItem & { ok: true };
       setItems((prev) =>
-        [...prev, {
-          id: created.id,
-          kind: created.kind,
-          caption: created.caption,
-          sortOrder: created.sortOrder,
-          mimeType: created.mimeType,
-          sizeBytes: created.sizeBytes
-        }].sort((a, b) => a.sortOrder - b.sortOrder)
+        [
+          ...prev,
+          {
+            id: created.id,
+            kind: created.kind,
+            caption: created.caption,
+            sortOrder: created.sortOrder,
+            mimeType: created.mimeType,
+            sizeBytes: created.sizeBytes
+          }
+        ].sort((a, b) => a.sortOrder - b.sortOrder)
       );
       setBanner({ tone: 'good', text: 'Uploaded.' });
       setFile(null);
@@ -131,7 +142,11 @@ export function AssetMediaManager({
         </label>
         <label className="flex flex-col gap-1 text-xs text-slate-400">
           Caption
-          <Input value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="optional" />
+          <Input
+            value={caption}
+            onChange={(e) => setCaption(e.target.value)}
+            placeholder="optional"
+          />
         </label>
         <label className="flex flex-col gap-1 text-xs text-slate-400">
           Sort order
@@ -188,9 +203,7 @@ export function AssetMediaManager({
                     {(m.sizeBytes / 1024).toFixed(0)} KB
                   </span>
                 </div>
-                {m.caption ? (
-                  <p className="text-sm text-slate-300">{m.caption}</p>
-                ) : null}
+                {m.caption ? <p className="text-sm text-slate-300">{m.caption}</p> : null}
                 <button
                   onClick={() => remove(m.id)}
                   disabled={busy}

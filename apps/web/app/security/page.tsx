@@ -55,19 +55,23 @@ const layers = [
 const compliance = [
   {
     standard: '한국 개인정보보호법 (PIPA)',
-    posture: '투자자 PII는 admin 콘솔 안에서만 접근 가능, RBAC 필터링 + 감사 로그 + 보존기간 자동 정리.'
+    posture:
+      '투자자 PII는 admin 콘솔 안에서만 접근 가능, RBAC 필터링 + 감사 로그 + 보존기간 자동 정리.'
   },
   {
     standard: '자본시장법 (집합투자업)',
-    posture: '약정 · 캐피털콜 · 배당 · 분배 워크플로가 결정론적 재계산 가능. 감사 시 같은 입력으로 같은 출력 재현.'
+    posture:
+      '약정 · 캐피털콜 · 배당 · 분배 워크플로가 결정론적 재계산 가능. 감사 시 같은 입력으로 같은 출력 재현.'
   },
   {
     standard: 'SOC2 Type II (지향)',
-    posture: '접근통제 · 변경관리 · 모니터링 · 사고대응 로그가 모두 코드 수준 헬퍼로 통합. 외부 감사 시 추가 도구 불필요.'
+    posture:
+      '접근통제 · 변경관리 · 모니터링 · 사고대응 로그가 모두 코드 수준 헬퍼로 통합. 외부 감사 시 추가 도구 불필요.'
   },
   {
     standard: 'GDPR (역외 LP)',
-    posture: 'right-to-erasure 대응 가능 — 투자자 셸 삭제 시 연관 PII가 cascade로 정리되도록 스키마 설계.'
+    posture:
+      'right-to-erasure 대응 가능 — 투자자 셸 삭제 시 연관 PII가 cascade로 정리되도록 스키마 설계.'
   }
 ];
 
@@ -184,8 +188,8 @@ export default function SecurityPage() {
             탐지 → 격리 → 분석 → 통지 4단계.
           </h2>
           <p className="mt-3 text-sm leading-7 text-slate-400">
-            모든 단계가 시스템 내부 헬퍼(감사 로그, request-id, 운영 웹훅) 위에서 실행됩니다.
-            별도 외부 도구 없이도 사고 보고서를 만들 수 있도록 설계되었습니다.
+            모든 단계가 시스템 내부 헬퍼(감사 로그, request-id, 운영 웹훅) 위에서 실행됩니다. 별도
+            외부 도구 없이도 사고 보고서를 만들 수 있도록 설계되었습니다.
           </p>
         </div>
         <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
@@ -210,8 +214,8 @@ export default function SecurityPage() {
                 실사팀 검토용 풀 패키지 제공.
               </h2>
               <p className="mt-3 text-sm leading-7 text-slate-400">
-                아키텍처 다이어그램, 위협 모델, 환경변수 분리 정책, 펜테스트 결과,
-                감사 로그 샘플을 NDA 후 제공합니다.
+                아키텍처 다이어그램, 위협 모델, 환경변수 분리 정책, 펜테스트 결과, 감사 로그 샘플을
+                NDA 후 제공합니다.
               </p>
             </div>
             <Link href="/contact">

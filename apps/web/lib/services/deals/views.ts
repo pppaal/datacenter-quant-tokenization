@@ -949,4 +949,3 @@ export function buildDealCloseProbabilityHistory(
 
   return currentMatchesLatest ? persisted : [currentPoint, ...persisted];
 }
-

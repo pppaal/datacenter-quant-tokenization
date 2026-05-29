@@ -53,9 +53,7 @@ export function buildFxExposure(
 
   const spotKrwPerUnit =
     options.spotRate ??
-    (FOREIGN_LP_BASES[lpBaseCurrency]
-      ? 1 / FOREIGN_LP_BASES[lpBaseCurrency]!
-      : 1380);
+    (FOREIGN_LP_BASES[lpBaseCurrency] ? 1 / FOREIGN_LP_BASES[lpBaseCurrency]! : 1380);
 
   const baseValueAtSpot = assetValueKrw / spotKrwPerUnit;
   const sensitivity: FxSensitivityRow[] = [-20, -10, 0, 10, 20].map((shock) => ({
@@ -81,7 +79,8 @@ export function buildFxExposure(
     assetCurrency,
     lpBaseCurrency,
     spotRate: spotKrwPerUnit,
-    spotRateLabel: options.spotRateLabel ?? `${spotKrwPerUnit.toFixed(0)} ${assetCurrency}/${lpBaseCurrency}`,
+    spotRateLabel:
+      options.spotRateLabel ?? `${spotKrwPerUnit.toFixed(0)} ${assetCurrency}/${lpBaseCurrency}`,
     baseValueAtSpot,
     sensitivity,
     exposureBand,

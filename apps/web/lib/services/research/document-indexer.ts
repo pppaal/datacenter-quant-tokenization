@@ -198,4 +198,3 @@ export async function semanticSearch(
     similarity: Number(row.similarity)
   }));
 }
-

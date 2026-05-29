@@ -88,8 +88,8 @@ export default function ContactPage() {
           <Card className="min-h-[460px]">
             <div className="eyebrow">데모 요청</div>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-400">
-              운용본부 · AUM · 자산군 · 현재 도구를 적어주시면 30분 안에 무엇을 시연할지 미리
-              준비해 미팅을 잡습니다.
+              운용본부 · AUM · 자산군 · 현재 도구를 적어주시면 30분 안에 무엇을 시연할지 미리 준비해
+              미팅을 잡습니다.
             </p>
             <div className="mt-6">
               <InquiryForm />

@@ -950,4 +950,3 @@ export async function syncAssetAndMarketResearch(db: PrismaClient, topology: Res
     openCoverageTaskCount
   };
 }
-

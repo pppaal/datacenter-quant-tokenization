@@ -14,7 +14,8 @@ jobs:
         working-directory: apps/web
     services:
       postgres:
-        image: postgres:16
+        # pgvector image so the CREATE EXTENSION vector / HNSW migrations apply.
+        image: pgvector/pgvector:pg16
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres

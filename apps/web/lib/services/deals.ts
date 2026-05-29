@@ -455,7 +455,6 @@ export type DealDetailRecord = Prisma.DealGetPayload<{
 export { buildDealTimeline } from './deals/timeline';
 export type { DealTimelineEvent } from './deals/timeline';
 
-
 export type DealDiligenceWorkpaperFact = {
   label: string;
   value: string;
@@ -643,7 +642,6 @@ export function serializeDealDiligenceWorkpaperToMarkdown(workpaper: DealDiligen
   return lines.join('\n');
 }
 
-
 function assertValidStageTransition(from: DealStage, to: DealStage) {
   if (from === to) return;
 
@@ -688,7 +686,6 @@ function getDefaultNextAction(stage: DealStage) {
 function formatStageLabel(stage: DealStage) {
   return stage.toLowerCase().replaceAll('_', ' ');
 }
-
 
 function maxDate(left: Date | null, right: Date | null) {
   if (!left) return right;
@@ -1815,7 +1812,6 @@ export function getDealMaterialUpdatedAt(
     ]) ?? deal.updatedAt
   );
 }
-
 
 export async function createDealBidRevision(
   dealId: string,

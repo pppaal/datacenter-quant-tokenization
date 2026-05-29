@@ -13,8 +13,8 @@ export default function TimeseriesImportPage() {
           <div className="eyebrow">Research</div>
           <h2 className="mt-2 text-3xl font-semibold text-white">Time-series import</h2>
           <p className="mt-2 max-w-3xl text-sm text-slate-400">
-            Manual backfill path for the 5-year history that CBRE-style cap-rate matrices need.
-            The KOSIS / BOK / REB / MOLIT adapters cover ongoing collection, but historical depth
+            Manual backfill path for the 5-year history that CBRE-style cap-rate matrices need. The
+            KOSIS / BOK / REB / MOLIT adapters cover ongoing collection, but historical depth
             usually arrives as REB quarterly Excels or operator-tracked rate sheets — paste those
             here as CSV. Dry-run validates the parse before any DB writes.
           </p>
@@ -32,8 +32,8 @@ export default function TimeseriesImportPage() {
             <span className="font-mono"> target=macro</span> writes
             <span className="font-mono"> MacroSeries</span>;
             <span className="font-mono"> target=market</span> writes
-            <span className="font-mono"> MarketIndicatorSeries</span> with optional
-            assetClass + assetTier.
+            <span className="font-mono"> MarketIndicatorSeries</span> with optional assetClass +
+            assetTier.
           </p>
         </div>
         <ul className="grid gap-2 text-xs text-slate-400 md:grid-cols-2">
@@ -44,7 +44,8 @@ export default function TimeseriesImportPage() {
             <span className="font-mono text-white">market</span> · KR / JP / HK / US
           </li>
           <li>
-            <span className="font-mono text-white">indicatorKey</span> · canonical key (kr.cpi_yoy_pct, office.cap_rate_pct)
+            <span className="font-mono text-white">indicatorKey</span> · canonical key
+            (kr.cpi_yoy_pct, office.cap_rate_pct)
           </li>
           <li>
             <span className="font-mono text-white">observationDate</span> · YYYY-MM-DD
@@ -53,12 +54,15 @@ export default function TimeseriesImportPage() {
             <span className="font-mono text-white">value</span> · finite number
           </li>
           <li>
-            <span className="font-mono text-white">region / assetClass / assetTier / unit / sourceSystem / label</span> · optional
+            <span className="font-mono text-white">
+              region / assetClass / assetTier / unit / sourceSystem / label
+            </span>{' '}
+            · optional
           </li>
         </ul>
         <p className="text-xs text-slate-500">
-          Re-import is safe — rows upsert on (market, region, indicatorKey, observationDate),
-          so re-running a corrected CSV updates in place rather than duplicating.
+          Re-import is safe — rows upsert on (market, region, indicatorKey, observationDate), so
+          re-running a corrected CSV updates in place rather than duplicating.
         </p>
       </Card>
 

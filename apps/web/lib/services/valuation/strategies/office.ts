@@ -53,10 +53,13 @@ export async function buildOfficeValuationAnalysis(
       valuation,
       buildOfficeProvenanceConfig(bundle, valuation)
     ),
-    scenarios: valuation.scenarios
+    scenarios: valuation.scenarios,
+    // Expose the strategy's REAL stabilized NOI (the figure behind baseCaseValueKrw)
+    // so the analyzer drives the pro-forma off it instead of back-solving value×cap.
+    stabilizedNoiKrw: valuation.stabilizedNoiKrw
   };
 
-  const finalized = applyCreditOverlay(analysis, bundle);
+  const finalized = applyCreditOverlay(analysis, bundle, valuation.confidenceBounds);
   finalized.underwritingMemo = await generateUnderwritingMemo(finalized);
 
   return finalized;

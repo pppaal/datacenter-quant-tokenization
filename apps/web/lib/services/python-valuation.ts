@@ -1,14 +1,34 @@
 import { access } from 'node:fs/promises';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
 import type { UnderwritingAnalysis, UnderwritingBundle } from '@/lib/services/valuation-engine';
+import { logger } from '@/lib/observability/logger';
 
 type PythonValuationResult = Pick<
   UnderwritingAnalysis,
   'baseCaseValueKrw' | 'confidenceScore' | 'keyRisks' | 'ddChecklist' | 'assumptions' | 'scenarios'
 >;
 
-const PYTHON_SCRIPT_PATH = path.resolve(process.cwd(), 'services/valuation_python/engine.py');
+/**
+ * Resolve the cross-check engine script RELATIVE TO THIS MODULE, never via
+ * `process.cwd()`. On serverless / monorepo deploys the process cwd is the
+ * repo root (or an opaque lambda root), so a cwd-relative path silently fails
+ * `scriptExists()` and the cross-check no-ops forever. This module lives at
+ * `apps/web/lib/services/python-valuation.ts`; the engine ships at
+ * `apps/web/services/valuation_python/engine.py`, two directories up.
+ *
+ * `VAL_PYTHON_SCRIPT_PATH` provides a stable override for non-standard
+ * layouts (e.g. a bundled lambda that relocates the script).
+ */
+export function resolvePythonScriptPath(): string {
+  const override = process.env.VAL_PYTHON_SCRIPT_PATH?.trim();
+  if (override) return path.resolve(override);
+
+  const moduleDir = path.dirname(fileURLToPath(import.meta.url));
+  // moduleDir = .../apps/web/lib/services → engine at .../apps/web/services/...
+  return path.resolve(moduleDir, '..', '..', 'services', 'valuation_python', 'engine.py');
+}
 
 function resolvePythonCommand() {
   const explicit = process.env.VAL_PYTHON_EXECUTABLE?.trim();
@@ -16,9 +36,9 @@ function resolvePythonCommand() {
   return process.platform === 'win32' ? 'python' : 'python3';
 }
 
-async function scriptExists() {
+async function scriptExists(scriptPath: string) {
   try {
-    await access(PYTHON_SCRIPT_PATH);
+    await access(scriptPath);
     return true;
   } catch {
     return false;
@@ -144,19 +164,31 @@ function normalizeBundle(bundle: UnderwritingBundle) {
 }
 
 export async function canUsePythonValuation() {
-  return scriptExists();
+  return scriptExists(resolvePythonScriptPath());
 }
 
 export async function runPythonValuation(
   bundle: UnderwritingBundle
 ): Promise<PythonValuationResult | null> {
-  if (!(await scriptExists())) return null;
+  const scriptPath = resolvePythonScriptPath();
+  if (!(await scriptExists(scriptPath))) {
+    // Make the misconfiguration observable instead of silently no-opping.
+    // `python` mode (in valuation-runner) surfaces this differently by
+    // re-throwing on cross-check failure; in `auto` mode the null return is
+    // expected behavior, but the missing script almost always indicates a
+    // deploy/path issue rather than an intentional opt-out.
+    logger.warn('python_valuation_script_missing', {
+      scriptPath,
+      hint: 'set VAL_PYTHON_SCRIPT_PATH or ship services/valuation_python/engine.py with the bundle'
+    });
+    return null;
+  }
 
   const pythonCommand = resolvePythonCommand();
   const payload = JSON.stringify(normalizeBundle(bundle));
 
   return new Promise((resolve, reject) => {
-    const child = spawn(pythonCommand, [PYTHON_SCRIPT_PATH], {
+    const child = spawn(pythonCommand, [scriptPath], {
       cwd: process.cwd(),
       env: process.env
     });

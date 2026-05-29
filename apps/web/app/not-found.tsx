@@ -20,8 +20,8 @@ export default function NotFound() {
             존재하지 않습니다.
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-300">
-            요청하신 경로는 이동되었거나 삭제되었습니다. 아래에서 자주 찾는 페이지로 이동하실
-            수 있습니다.
+            요청하신 경로는 이동되었거나 삭제되었습니다. 아래에서 자주 찾는 페이지로 이동하실 수
+            있습니다.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link href="/">

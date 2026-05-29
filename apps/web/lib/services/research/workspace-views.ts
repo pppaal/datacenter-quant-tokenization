@@ -31,9 +31,7 @@ import { listPortfolios } from '@/lib/services/portfolio';
 import { buildPortfolioOptimizationWorkspaceItem } from '@/lib/services/portfolio-optimization';
 import { buildAssetResearchDossier } from '@/lib/services/research/dossier';
 import { getFreshnessTone } from '@/lib/services/research/freshness';
-import {
-  type AssetResearchObservedInput
-} from '@/lib/services/research/workspace-sync';
+import { type AssetResearchObservedInput } from '@/lib/services/research/workspace-sync';
 import { listKoreaPublicDatasetDefinitions } from '@/lib/sources/adapters/korea-public';
 import {
   computeThesisAgeDays,
@@ -82,8 +80,6 @@ export type ResearchSyncRunSurface = {
   refreshedByActor: string | null;
   errorSummary: string | null;
 };
-
-
 
 export function shouldRefreshResearchWorkspace(status: WorkspaceSyncSnapshot) {
   return (

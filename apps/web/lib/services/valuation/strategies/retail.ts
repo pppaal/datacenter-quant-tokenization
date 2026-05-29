@@ -47,10 +47,11 @@ export async function buildRetailValuationAnalysis(
       bundle.comparableSet?.entries.length ?? 0
     ),
     provenance: buildStabilizedIncomeProvenance(bundle, valuation, retailProvenanceConfig),
-    scenarios: valuation.scenarios
+    scenarios: valuation.scenarios,
+    stabilizedNoiKrw: valuation.stabilizedNoiKrw
   };
 
-  const finalized = applyCreditOverlay(analysis, bundle);
+  const finalized = applyCreditOverlay(analysis, bundle, valuation.confidenceBounds);
   finalized.underwritingMemo = await generateUnderwritingMemo(finalized);
 
   return finalized;

@@ -24,18 +24,33 @@ export type ReturnMetrics = {
 // IRR via Newton-Raphson
 // ---------------------------------------------------------------------------
 
-function npv(cashFlows: number[], rate: number): number {
+/**
+ * Period exponent for cash-flow index `i`.
+ *  - End-of-year: index 0 is at t=0 (initial outlay), index k at t=k.
+ *  - Mid-year: index 0 stays at t=0 (initial outlay arrives up front), but each
+ *    operating flow at index k≥1 is discounted at `k - 0.5` (arrives mid-period).
+ *    The terminal/exit lump is baked into the last index's cash flow and is
+ *    therefore discounted at the same mid-year exponent here; callers that need
+ *    end-of-period terminal handling discount it separately (see lease-dcf).
+ */
+function periodExponent(i: number, midYear: boolean): number {
+  if (i === 0) return 0;
+  return midYear ? i - 0.5 : i;
+}
+
+function npv(cashFlows: number[], rate: number, midYear = false): number {
   let result = 0;
   for (let i = 0; i < cashFlows.length; i++) {
-    result += cashFlows[i]! / (1 + rate) ** i;
+    result += cashFlows[i]! / (1 + rate) ** periodExponent(i, midYear);
   }
   return result;
 }
 
-function npvDerivative(cashFlows: number[], rate: number): number {
+function npvDerivative(cashFlows: number[], rate: number, midYear = false): number {
   let result = 0;
   for (let i = 1; i < cashFlows.length; i++) {
-    result -= (i * cashFlows[i]!) / (1 + rate) ** (i + 1);
+    const t = periodExponent(i, midYear);
+    result -= (t * cashFlows[i]!) / (1 + rate) ** (t + 1);
   }
   return result;
 }
@@ -43,7 +58,8 @@ function npvDerivative(cashFlows: number[], rate: number): number {
 export function computeIrr(
   cashFlows: number[],
   maxIterations = 200,
-  tolerance = 1e-8
+  tolerance = 1e-8,
+  midYear = false
 ): number | null {
   if (cashFlows.length < 2) return null;
 
@@ -54,8 +70,8 @@ export function computeIrr(
   let rate = 0.1;
 
   for (let i = 0; i < maxIterations; i++) {
-    const f = npv(cashFlows, rate);
-    const fPrime = npvDerivative(cashFlows, rate);
+    const f = npv(cashFlows, rate, midYear);
+    const fPrime = npvDerivative(cashFlows, rate, midYear);
 
     if (Math.abs(fPrime) < 1e-14) break;
 
@@ -74,11 +90,11 @@ export function computeIrr(
   // Fallback: bisection if Newton didn't converge
   let lo = -0.99;
   let hi = 5.0;
-  let fLo = npv(cashFlows, lo);
+  let fLo = npv(cashFlows, lo, midYear);
 
   for (let i = 0; i < 200; i++) {
     const mid = (lo + hi) / 2;
-    const fMid = npv(cashFlows, mid);
+    const fMid = npv(cashFlows, mid, midYear);
 
     if (Math.abs(fMid) < tolerance || (hi - lo) / 2 < tolerance) {
       return Number((mid * 100).toFixed(4));
@@ -103,12 +119,15 @@ export function computeReturnMetrics({
   leaseDcf,
   debtSchedule,
   equityWaterfall,
-  totalCapexKrw
+  totalCapexKrw,
+  midYear = false
 }: {
   leaseDcf: LeaseDcfResult;
   debtSchedule: DebtScheduleResult;
   equityWaterfall: EquityWaterfallResult;
   totalCapexKrw: number;
+  /** Discount periodic flows mid-period (institutional convention). Default end-of-year. */
+  midYear?: boolean;
 }): ReturnMetrics {
   const initialEquityKrw = totalCapexKrw - debtSchedule.initialDebtFundingKrw;
 
@@ -136,8 +155,8 @@ export function computeReturnMetrics({
     unleveragedCashFlows.push(cf);
   }
 
-  const equityIrr = computeIrr(leveredCashFlows);
-  const unleveragedIrr = computeIrr(unleveragedCashFlows);
+  const equityIrr = computeIrr(leveredCashFlows, 200, 1e-8, midYear);
+  const unleveragedIrr = computeIrr(unleveragedCashFlows, 200, 1e-8, midYear);
 
   // Leveraged IRR = same as equity IRR in this context (standard RE terminology)
   const leveragedIrr = equityIrr;
@@ -206,7 +225,9 @@ export function computeReturnMetricsFromProForma(
   totalCapexKrw: number,
   initialDebtFundingKrw: number,
   netExitProceedsKrw: number,
-  terminalValueKrw: number
+  terminalValueKrw: number,
+  /** Discount periodic flows mid-period (institutional convention). Default end-of-year. */
+  midYear = false
 ): ReturnMetrics {
   const initialEquityKrw = totalCapexKrw - initialDebtFundingKrw;
   const years = proForma.years;
@@ -227,8 +248,8 @@ export function computeReturnMetricsFromProForma(
     unleveragedCashFlows.push(cf);
   }
 
-  const equityIrr = computeIrr(leveredCashFlows);
-  const unleveragedIrr = computeIrr(unleveragedCashFlows);
+  const equityIrr = computeIrr(leveredCashFlows, 200, 1e-8, midYear);
+  const unleveragedIrr = computeIrr(unleveragedCashFlows, 200, 1e-8, midYear);
 
   const totalDistributions = years.reduce((sum, y) => sum + y.afterTaxDistributionKrw, 0);
   const totalReturn = totalDistributions + netExitProceedsKrw;

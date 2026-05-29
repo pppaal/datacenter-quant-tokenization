@@ -6,6 +6,8 @@ import { buildFullReport } from '@/lib/services/property-analyzer/full-report';
 import { createRateLimiter, RateLimitError } from '@/lib/security/rate-limit';
 import { recordAuditEvent } from '@/lib/services/audit';
 import { LruCache, hashCacheKey } from '@/lib/services/property-analyzer/report-cache';
+import { persistAnalysisSnapshot } from '@/lib/services/property-analyzer/snapshot';
+import { logger } from '@/lib/observability/logger';
 import type { FullReport } from '@/lib/services/property-analyzer/full-report';
 
 const reportCache = new LruCache<FullReport>({ max: 64, ttlMs: 10 * 60_000 });
@@ -91,6 +93,20 @@ export async function POST(request: Request) {
     const report = await buildFullReport(auto);
     reportCache.set(cacheKey, report);
 
+    // Persist an immutable system-of-record snapshot of this analysis. Done
+    // before the response so the returned `snapshotId` is a stable URL, but
+    // never allowed to fail the request — a persistence outage degrades to the
+    // prior ephemeral behavior.
+    let snapshotId: string | null = null;
+    try {
+      const persisted = await persistAnalysisSnapshot(report);
+      snapshotId = persisted.id;
+    } catch (persistError) {
+      logger.error('property-analyze snapshot persist failed', {
+        error: persistError instanceof Error ? persistError.message : 'unknown'
+      });
+    }
+
     recordAuditEvent({
       action: 'property.analyze',
       entityType: 'PropertyAnalysis',
@@ -103,11 +119,12 @@ export async function POST(request: Request) {
         hasAddress: Boolean(parsedBody.address),
         hasLocation: Boolean(parsedBody.location),
         includeAlternatives: parsedBody.includeAlternatives ?? 0,
-        overrideAssetClass: parsedBody.overrideAssetClass ?? null
+        overrideAssetClass: parsedBody.overrideAssetClass ?? null,
+        snapshotId
       }
     }).catch(() => {});
 
-    return NextResponse.json(report, { headers: { 'x-cache': 'miss' } });
+    return NextResponse.json({ ...report, snapshotId }, { headers: { 'x-cache': 'miss' } });
   } catch (error) {
     console.error('[property-analyze] failure', error);
     recordAuditEvent({

@@ -64,7 +64,13 @@ export function DealFlowForm() {
         tone: 'good',
         text: `Logged ${form.dealType} · ${form.assetName || form.region || form.market}.`
       });
-      setForm((p) => ({ ...p, assetName: '', notes: '', estimatedSizeKrw: '', estimatedCapPct: '' }));
+      setForm((p) => ({
+        ...p,
+        assetName: '',
+        notes: '',
+        estimatedSizeKrw: '',
+        estimatedCapPct: ''
+      }));
       startTransition(() => router.refresh());
     } finally {
       setBusy(false);
@@ -78,8 +84,8 @@ export function DealFlowForm() {
           <div className="eyebrow">Log a deal</div>
           <p className="mt-1 text-sm text-slate-400">
             Capture a deal you saw in the market — sale process, refi, JV, or development. Status
-            defaults to LIVE; flip to LOST if a third party closed it (still useful as comp once
-            the cap rate is disclosed).
+            defaults to LIVE; flip to LOST if a third party closed it (still useful as comp once the
+            cap rate is disclosed).
           </p>
         </div>
         {banner ? <Badge tone={banner.tone}>{banner.text}</Badge> : null}
@@ -113,7 +119,10 @@ export function DealFlowForm() {
           <Select
             value={form.assetClass}
             onChange={(v) => setForm((p) => ({ ...p, assetClass: v }))}
-            options={[['', '—'], ...Object.values(AssetClass).map((v) => [v, v] as [string, string])]}
+            options={[
+              ['', '—'],
+              ...Object.values(AssetClass).map((v) => [v, v] as [string, string])
+            ]}
           />
         </div>
         <div>

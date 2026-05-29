@@ -15,7 +15,9 @@ jobs:
         working-directory: apps/web
     services:
       postgres:
-        image: postgres:16
+        # pgvector image so the `CREATE EXTENSION vector` migration (and the
+        # HNSW index on DocumentEmbedding) applies during `migrate deploy`.
+        image: pgvector/pgvector:pg16
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -64,11 +66,26 @@ jobs:
 
       - name: Schema-migration drift guard
         run: |
-          npx prisma migrate diff \
+          DIFF=$(npx prisma migrate diff \
             --from-migrations ./prisma/migrations \
             --to-schema-datamodel ./prisma/schema.prisma \
             --shadow-database-url "${DATABASE_URL/ci_check/ci_shadow}" \
-            --exit-code
+            --script)
+          # Prisma 5 cannot represent the pgvector HNSW index on the
+          # Unsupported("vector(...)") column, so `migrate diff` always emits a
+          # spurious DROP for DocumentEmbedding_embedding_hnsw_idx. Strip that one
+          # known statement plus SQL comments/blank lines; ANY remaining
+          # statement is real drift and fails the gate.
+          RESIDUAL=$(printf '%s\n' "$DIFF" \
+            | grep -vE '^\s*--' \
+            | grep -vE 'DocumentEmbedding_embedding_hnsw_idx' \
+            | grep -vE '^\s*$' || true)
+          if [ -n "$RESIDUAL" ]; then
+            echo "Unexpected schema drift:"
+            echo "$RESIDUAL"
+            exit 1
+          fi
+          echo "No schema drift (pgvector HNSW false-positive ignored)."
 
       - name: Registry ABI drift guard
         run: npx tsx scripts/check-registry-abi.ts

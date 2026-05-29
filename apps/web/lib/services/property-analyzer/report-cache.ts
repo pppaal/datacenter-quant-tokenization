@@ -63,13 +63,14 @@ export class LruCache<V> {
   }
 }
 
-// djb2 — deterministic, collision-acceptable for a cache key (we tolerate
-// the ~1-in-4B collision rate vs. importing node:crypto into edge bundles).
+import { createHash } from 'node:crypto';
+
+// SHA-256 (hex) — a 32-bit djb2 key carries a ~1-in-4B collision risk, which
+// for a financial artifact means one property's cached full report could be
+// returned for a different property. That is unacceptable, so we use a
+// cryptographic hash where collisions are computationally infeasible. The
+// property-analyze route runs on the Node runtime, so node:crypto is available.
 export function hashCacheKey(parts: Array<string | number | null | undefined>): string {
   const joined = parts.map((p) => (p === null || p === undefined ? '∅' : String(p))).join('|');
-  let h = 5381;
-  for (let i = 0; i < joined.length; i++) {
-    h = ((h << 5) + h + joined.charCodeAt(i)) | 0;
-  }
-  return (h >>> 0).toString(36);
+  return createHash('sha256').update(joined, 'utf8').digest('hex');
 }

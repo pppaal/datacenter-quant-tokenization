@@ -23,10 +23,10 @@ const BENCHMARKS: Record<string, PeerBenchmark[]> = {
     { ratioKey: 'netLeverage', median: 3.8, pct25: 4.5, pct75: 3.1, preferred: 'lower' },
     { ratioKey: 'interestCoverage', median: 2.8, pct25: 2.0, pct75: 3.5, preferred: 'higher' },
     { ratioKey: 'debtToEquity', median: 1.4, pct25: 1.8, pct75: 1.0, preferred: 'lower' },
-    { ratioKey: 'cashToDebt', median: 0.12, pct25: 0.06, pct75: 0.20, preferred: 'higher' },
+    { ratioKey: 'cashToDebt', median: 0.12, pct25: 0.06, pct75: 0.2, preferred: 'higher' },
     { ratioKey: 'ebitdaMargin', median: 31, pct25: 26, pct75: 38, preferred: 'higher' },
-    { ratioKey: 'roeProxy', median: 0.22, pct25: 0.16, pct75: 0.30, preferred: 'higher' },
-    { ratioKey: 'roaProxy', median: 0.10, pct25: 0.07, pct75: 0.14, preferred: 'higher' }
+    { ratioKey: 'roeProxy', median: 0.22, pct25: 0.16, pct75: 0.3, preferred: 'higher' },
+    { ratioKey: 'roaProxy', median: 0.1, pct25: 0.07, pct75: 0.14, preferred: 'higher' }
   ],
   KR_OFFICE: [
     { ratioKey: 'leverage', median: 4.5, pct25: 5.5, pct75: 3.8, preferred: 'lower' },
@@ -56,7 +56,7 @@ const BENCHMARKS: Record<string, PeerBenchmark[]> = {
     { ratioKey: 'cashToDebt', median: 0.06, pct25: 0.03, pct75: 0.12, preferred: 'higher' },
     { ratioKey: 'ebitdaMargin', median: 42, pct25: 35, pct75: 48, preferred: 'higher' },
     { ratioKey: 'roeProxy', median: 0.16, pct25: 0.11, pct75: 0.22, preferred: 'higher' },
-    { ratioKey: 'roaProxy', median: 0.07, pct25: 0.04, pct75: 0.10, preferred: 'higher' }
+    { ratioKey: 'roaProxy', median: 0.07, pct25: 0.04, pct75: 0.1, preferred: 'higher' }
   ]
 };
 
@@ -88,10 +88,7 @@ export type PeerBenchmarkSummary = {
   comparisons: PeerComparison[];
 };
 
-function classifyBand(
-  value: number,
-  bench: PeerBenchmark
-): 'top' | 'mid' | 'bottom' {
+function classifyBand(value: number, bench: PeerBenchmark): 'top' | 'mid' | 'bottom' {
   if (bench.preferred === 'higher') {
     if (value >= bench.pct75) return 'top';
     if (value >= bench.median) return 'mid';

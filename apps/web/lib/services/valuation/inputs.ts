@@ -3,6 +3,7 @@ import type {
   CapexBreakdown,
   ComparableCalibration,
   BundleFeatureSnapshot,
+  KoreanEntityType,
   PreparedUnderwritingInputs,
   SpvProfile,
   TaxProfile,
@@ -127,15 +128,247 @@ function buildCapexBreakdown(
   };
 }
 
-function buildTaxProfile(bundle: UnderwritingBundle): TaxProfile {
+// ───────────────────────────────────────────────────────────────────────────
+// Korea-specific tax-rate resolution
+//
+// These helpers replace the previous flat-rate placeholders (취득세 4.6%, 양도/
+// exit 1%, 법인세 24.2% applied to every vehicle) with rates derived from the
+// owning-entity type, location (과밀억제권역) and asset class. Everything here is
+// an *underwriting estimate*, NOT a tax opinion — heavy comments cite the rule
+// each rate comes from. All inference is from existing free-text fields; there
+// are no new Prisma columns (see TODOs).
+// ───────────────────────────────────────────────────────────────────────────
+
+/**
+ * Infer the owning-entity tax class from the free-text `legalStructure`.
+ *
+ * Korea taxes 법인 / 개인 / 리츠 / 부동산펀드 / PFV very differently. We key off
+ * common Korean + English tokens. Default is CORPORATION because the platform
+ * underwrites SPV (법인) acquisitions by default.
+ */
+export function inferKoreanEntityType(legalStructure: string | null | undefined): KoreanEntityType {
+  const s = (legalStructure ?? '').toLowerCase();
+  // 위탁관리 / 자기관리 / 기업구조조정 리츠 — REIT (부동산투자회사)
+  if (s.includes('reit') || s.includes('리츠') || s.includes('부동산투자회사')) return 'REIT';
+  // 부동산집합투자기구 / 사모·공모 부동산펀드
+  if (
+    s.includes('fund') ||
+    s.includes('펀드') ||
+    s.includes('집합투자') ||
+    s.includes('ref') /* real-estate fund */
+  ) {
+    return 'FUND';
+  }
+  // 프로젝트금융투자회사 (PFV) — flow-through with 90% distribution deduction.
+  if (s.includes('pfv') || s.includes('프로젝트금융') || s.includes('project financing vehicle')) {
+    return 'PFV';
+  }
+  // 개인 / individual / sole proprietor
+  if (s.includes('개인') || s.includes('individual') || s.includes('sole')) return 'INDIVIDUAL';
+  return 'CORPORATION';
+}
+
+/**
+ * Infer 과밀억제권역 (Seoul metropolitan over-concentration zone) membership from
+ * free-text market / metro-region strings. The statutory zone covers Seoul, most
+ * of 경기 (excluding designated growth/natural zones) and parts of 인천. Without a
+ * first-class region flag we use a conservative keyword heuristic: any Seoul /
+ * 수도권 / 경기 / 인천 token trips the 중과 bracket. False positives only *raise*
+ * the modeled 취득세, which is the conservative direction for a buyer.
+ */
+export function inferCongestedZone(...locationStrings: Array<string | null | undefined>): boolean {
+  const joined = locationStrings
+    .filter((v): v is string => typeof v === 'string')
+    .join(' ')
+    .toLowerCase();
+  return (
+    joined.includes('seoul') ||
+    joined.includes('서울') ||
+    joined.includes('수도권') ||
+    joined.includes('경기') ||
+    joined.includes('gyeonggi') ||
+    joined.includes('인천') ||
+    joined.includes('incheon')
+  );
+}
+
+// 취득세 brackets (2024 지방세법 기준, underwriting simplification).
+//
+//  - Standard commercial/business real estate (일반 부동산):
+//      취득세 4.0% + 농어촌특별세 0.2% + 지방교육세 0.4% ≈ 4.6%.
+//  - 법인 본점/주사무소가 과밀억제권역 내인 경우 일반 부동산 취득세 중과:
+//      취득세율이 표준세율 + 중과기준세율(2%)×2 = 8.0% 로 가산되고, 부가세 포함
+//      유효세율 ≈ 9.4% (8.0% + 농특세 0.2% + 지방교육세 가산분). 산업통상·실무
+//      통용 9.4% 사용.
+//  - 법인의 주택 취득(조정대상지역 등) 중과: 12% + 농특세/교육세 ≈ 13.4%.
+//      개인 다주택과 달리 법인은 사실상 일률 12% 중과.
+//  - 개인 일반 부동산은 중과 없이 4.6% (주택 1주택 1~3% 별도이나 본 엔진은
+//      상업용 데이터센터 위주라 4.6% 표준 사용).
+const ACQ_TAX_STANDARD_PCT = 4.6;
+const ACQ_TAX_CORP_CONGESTED_COMMERCIAL_PCT = 9.4;
+const ACQ_TAX_CORP_RESIDENTIAL_HEAVY_PCT = 13.4;
+
+/**
+ * Resolve the effective 취득세율 (acquisition-tax rate, %).
+ *
+ * Bracket logic (see ACQ_TAX_* constants for rate sources):
+ *   - explicit `overridePct` (real `taxAssumption` data) always wins.
+ *   - 법인 주택(MULTIFAMILY) ⇒ ~13.4% (법인 주택 중과).
+ *   - 법인 + 과밀억제권역 + 상업/업무용 ⇒ ~9.4% (대도시 법인 중과).
+ *   - everything else ⇒ 4.6% 표준.
+ *
+ * 리츠/펀드/PFV are treated like 법인 for 취득세 (no general 취득세 exemption in this
+ * model; some 리츠 enjoy 감면 but it is conditional — conservatively NOT applied).
+ */
+export function resolveAcquisitionTaxPct(args: {
+  entityType: KoreanEntityType;
+  inCongestedZone: boolean;
+  assetClass: string;
+  overridePct?: number | null;
+}): { ratePct: number; isOverride: boolean } {
+  const { entityType, inCongestedZone, assetClass, overridePct } = args;
+  if (typeof overridePct === 'number' && Number.isFinite(overridePct)) {
+    return { ratePct: overridePct, isOverride: true };
+  }
+
+  const isCorporateFamily =
+    entityType === 'CORPORATION' ||
+    entityType === 'REIT' ||
+    entityType === 'FUND' ||
+    entityType === 'PFV';
+
+  // 법인 주택 중과 (residential held by a corporation).
+  if (isCorporateFamily && assetClass === 'MULTIFAMILY') {
+    return { ratePct: ACQ_TAX_CORP_RESIDENTIAL_HEAVY_PCT, isOverride: false };
+  }
+
+  // 대도시(과밀억제권역) 법인 일반 부동산 중과.
+  if (isCorporateFamily && inCongestedZone && assetClass !== 'LAND') {
+    return { ratePct: ACQ_TAX_CORP_CONGESTED_COMMERCIAL_PCT, isOverride: false };
+  }
+
+  return { ratePct: ACQ_TAX_STANDARD_PCT, isOverride: false };
+}
+
+/**
+ * Resolve the disposition / exit tax rate (%).
+ *
+ * The previous flat 1% placeholder was wrong for a 법인: a corporation's
+ * disposal gain is folded into 각 사업연도 소득 and taxed at the 법인세율
+ * (~24.2% incl. 지방소득세). Non-business land (비사업용 토지) carries an
+ * additional +10~20%p 토지 등 양도소득 추가과세 surtax. We apply the corporate
+ * rate as the base, plus an optional +20%p surtax when the asset is flagged as
+ * non-business land.
+ *
+ *   - explicit `overridePct` (real data) always wins.
+ *   - 개인 ⇒ 양도소득세 progressive; we cannot model brackets here without basis
+ *     detail, so we fall back to the supplied `corporateTaxPct` proxy as a
+ *     conservative single rate (documented limitation).
+ *   - 법인/리츠/펀드/PFV ⇒ corporate rate (+ land surtax if applicable).
+ *
+ * Note: REIT/펀드 dispositions are largely sheltered at vehicle level by the 90%
+ * distribution deduction, but we keep the gross corp rate here so the exit-tax
+ * line is conservative; the pass-through relief is reflected in
+ * `effectiveCorporateTaxPct` for *operating* income.
+ */
+const NON_BUSINESS_LAND_SURTAX_PCT = 20;
+
+export function resolveExitTaxPct(args: {
+  entityType: KoreanEntityType;
+  corporateTaxPct: number;
+  isNonBusinessLand?: boolean;
+  overridePct?: number | null;
+}): { ratePct: number; isOverride: boolean } {
+  const { corporateTaxPct, isNonBusinessLand = false, overridePct } = args;
+  if (typeof overridePct === 'number' && Number.isFinite(overridePct)) {
+    return { ratePct: overridePct, isOverride: true };
+  }
+  const surtax = isNonBusinessLand ? NON_BUSINESS_LAND_SURTAX_PCT : 0;
+  return { ratePct: corporateTaxPct + surtax, isOverride: false };
+}
+
+/**
+ * REIT / 부동산펀드 / PFV vehicle-level 법인세 treatment.
+ *
+ * Under 법인세법 §51-2 / 자본시장법, a 위탁관리리츠·기업구조조정리츠·부동산집합
+ * 투자기구·PFV that distributes 90%+ of distributable profit deducts that
+ * distribution from taxable income, leaving vehicle-level 법인세 ≈ 0 (income is
+ * taxed once, in investors' hands). We model the simplifying assumption that the
+ * vehicle meets the 90% distribution test, so its effective corporate rate is 0.
+ * Self-managed REITs (자기관리리츠) do NOT get this — but we cannot distinguish
+ * them from text, so 위탁관리 is assumed (the common institutional structure).
+ */
+export function resolveEffectiveCorporateTaxPct(args: {
+  entityType: KoreanEntityType;
+  corporateTaxPct: number;
+}): { ratePct: number; isPassThrough: boolean } {
+  const { entityType, corporateTaxPct } = args;
+  const isPassThrough = entityType === 'REIT' || entityType === 'FUND' || entityType === 'PFV';
+  return { ratePct: isPassThrough ? 0 : corporateTaxPct, isPassThrough };
+}
+
+export function buildTaxProfile(bundle: UnderwritingBundle): TaxProfile {
+  const corporateTaxPct = ensureNumber(bundle.taxAssumption?.corporateTaxPct, 24.2);
+  const assetClass = bundle.asset.assetClass;
+
+  const entityType = inferKoreanEntityType(bundle.spvStructure?.legalStructure);
+  const inCongestedZone = inferCongestedZone(
+    bundle.asset.market,
+    bundle.marketSnapshot?.metroRegion,
+    bundle.address?.city
+  );
+
+  // 취득세: keep the explicit override when present (don't clobber real data).
+  const acq = resolveAcquisitionTaxPct({
+    entityType,
+    inCongestedZone,
+    assetClass,
+    overridePct: bundle.taxAssumption?.acquisitionTaxPct
+  });
+
+  // exit tax: reuse the corporate rate for a 법인 instead of the 1% placeholder.
+  // LAND held by a corporation is treated as non-business land ⇒ +20%p surtax.
+  const isNonBusinessLand = assetClass === 'LAND';
+  const exit = resolveExitTaxPct({
+    entityType,
+    corporateTaxPct,
+    isNonBusinessLand,
+    overridePct: bundle.taxAssumption?.exitTaxPct
+  });
+
+  // REIT/펀드/PFV pass-through: vehicle-level 법인세 ≈ 0.
+  const eff = resolveEffectiveCorporateTaxPct({ entityType, corporateTaxPct });
+
+  const rateRationale = [
+    `entity=${entityType}`,
+    `과밀억제권역=${inCongestedZone}`,
+    `취득세=${acq.ratePct}%${acq.isOverride ? '(override)' : ''}`,
+    `exit=${exit.ratePct}%${exit.isOverride ? '(override)' : isNonBusinessLand ? '(corp+land surtax)' : '(corp rate)'}`,
+    `법인세(vehicle)=${eff.ratePct}%${eff.isPassThrough ? '(pass-through)' : ''}`
+  ].join('; ');
+
   return {
-    acquisitionTaxPct: ensureNumber(bundle.taxAssumption?.acquisitionTaxPct, 4.6),
+    // Public-facing acquisition/exit rates now carry the resolved 중과/corp values
+    // so downstream consumers (synthetic-pro-forma, equity-waterfall) pick them up
+    // without any change on their side.
+    acquisitionTaxPct: acq.ratePct,
     vatRecoveryPct: ensureNumber(bundle.taxAssumption?.vatRecoveryPct, 90),
     propertyTaxPct: ensureNumber(bundle.taxAssumption?.propertyTaxPct, 0.35),
     insurancePct: ensureNumber(bundle.taxAssumption?.insurancePct, 0.12),
-    corporateTaxPct: ensureNumber(bundle.taxAssumption?.corporateTaxPct, 24.2),
+    // corporateTaxPct now reflects pass-through relief for REIT/펀드/PFV so that
+    // equity-waterfall's vehicle-level 법인세 ≈ 0 for those structures.
+    corporateTaxPct: eff.ratePct,
     withholdingTaxPct: ensureNumber(bundle.taxAssumption?.withholdingTaxPct, 15.4),
-    exitTaxPct: ensureNumber(bundle.taxAssumption?.exitTaxPct, 1)
+    exitTaxPct: exit.ratePct,
+    entityType,
+    inCongestedZone,
+    isPassThroughVehicle: eff.isPassThrough,
+    effectiveCorporateTaxPct: eff.ratePct,
+    resolvedAcquisitionTaxPct: acq.ratePct,
+    acquisitionTaxIsOverride: acq.isOverride,
+    resolvedExitTaxPct: exit.ratePct,
+    exitTaxIsOverride: exit.isOverride,
+    rateRationale
   };
 }
 

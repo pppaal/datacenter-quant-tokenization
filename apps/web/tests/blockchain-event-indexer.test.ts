@@ -87,10 +87,7 @@ function buildFakeDb() {
   };
 }
 
-function buildFakePublicClient(opts: {
-  blockNumber: bigint;
-  logs: unknown[];
-}): PublicClient {
+function buildFakePublicClient(opts: { blockNumber: bigint; logs: unknown[] }): PublicClient {
   return {
     getBlockNumber: async () => opts.blockNumber,
     getLogs: async () => opts.logs
@@ -107,7 +104,7 @@ test('event indexer drains a fresh range and bumps cursor', async () => {
       transactionHash: '0x' + 'a'.repeat(64),
       logIndex: 0,
       address: contract,
-      data: '0x' + (1234n).toString(16).padStart(64, '0'),
+      data: '0x' + 1234n.toString(16).padStart(64, '0'),
       topics: [
         TRANSFER_TOPIC,
         '0x' + '00'.repeat(12) + '11'.repeat(20),
@@ -147,7 +144,7 @@ test('event indexer is idempotent on re-run with same logs', async () => {
       transactionHash: '0x' + 'd'.repeat(64),
       logIndex: 3,
       address: contract,
-      data: '0x' + (7n).toString(16).padStart(64, '0'),
+      data: '0x' + 7n.toString(16).padStart(64, '0'),
       topics: [
         TRANSFER_TOPIC,
         '0x' + '00'.repeat(12) + '33'.repeat(20),

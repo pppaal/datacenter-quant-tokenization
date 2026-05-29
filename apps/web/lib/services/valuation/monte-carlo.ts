@@ -1,22 +1,52 @@
 /**
  * Monte Carlo wrapper around the synthetic pro-forma.
  *
- * Draws correlated truncated-normal samples on the four drivers that swing
- * IRR most (entry cap, exit cap, rent growth, interest rate), rebuilds the
- * 10-year pro-forma per draw, and collects the resulting return distributions.
+ * Draws correlated samples on the six drivers that swing IRR most
+ * (entry cap, exit cap, rent growth, interest rate, occupancy, opex ratio),
+ * rebuilds the 10-year pro-forma per draw, and collects the resulting return
+ * distributions.
+ *
+ * Distribution choices (per driver) — see "Stochastic realism" below:
+ *   - Entry cap, exit cap, interest rate: LOGNORMAL (right-skewed). Cap-rate
+ *     widening and rate spikes are empirically right-skewed (the bad tail is
+ *     fatter than the good tail). A lognormal with median == base reproduces
+ *     this: the upper tail is heavier than the lower, and the draw is strictly
+ *     positive so no hard clamp is needed.
+ *   - Rent growth, occupancy, opex ratio: roughly SYMMETRIC normal, but with a
+ *     SOFT (smooth) bound rather than a hard clamp so tail mass is not piled at
+ *     the boundary (which would corrupt ES95/p1).
  *
  * Correlation (empirical RE literature, approximate):
  *   rate ↔ entry cap    +0.70    rates up → caps expand
  *   rate ↔ exit cap     +0.75    even stronger at exit
  *   rate ↔ growth       -0.35    high rates dampen rent growth
- *   entry ↔ exit cap    +0.85    both track the same spread to risk-free
- *   entry cap ↔ growth  -0.40    cap compression co-occurs with strong growth
- *   exit cap ↔ growth   -0.50    same, stronger at exit
+ *   entry ↔ exit cap     +0.85    both track the same spread to risk-free
+ *   entry cap ↔ growth   -0.40    cap compression co-occurs with strong growth
+ *   exit cap ↔ growth    -0.50    same, stronger at exit
+ *   occupancy ↔ entry cap -0.45   soft markets => higher caps AND lower occupancy
+ *   occupancy ↔ exit cap  -0.45
+ *   occupancy ↔ growth    +0.45   strong demand lifts both rents and occupancy
+ *   occupancy ↔ rate      -0.25   tighter financing conditions soften demand
+ *   opex ↔ rate           +0.30   opex (utilities, wages) tracks inflation/rates
+ *   opex ↔ growth         +0.20   inflationary periods push both rents and costs
+ *   opex ↔ occupancy      -0.15   fuller buildings amortise fixed opex => lower ratio
  *
- * Implemented via Cholesky decomposition of the correlation matrix → apply
- * to four independent N(0,1) draws → scale by σ → add base → clamp to
- * realistic bounds. Clamping slightly biases the tails but only bites for
- * pathological σ.
+ * The correlation acts on the underlying standard normals via a Cholesky
+ * factor; the per-driver marginal transform (lognormal vs soft-bounded normal)
+ * is applied AFTER correlating, which preserves the rank/monotone correlation
+ * structure (Gaussian copula).
+ *
+ * Variance reduction: ANTITHETIC VARIATES. Each correlated standard-normal
+ * vector z is evaluated together with its mirror −z. Because the IRR response
+ * is close to monotone in the drivers, the paired estimates are negatively
+ * correlated, which roughly halves the variance of the mean/tail estimators at
+ * the same iteration count. Pairing keeps the run fully deterministic.
+ *
+ * IMPORTANT INVARIANT: the deterministic base case (baseLeveredIrr /
+ * baseUnleveredIrr / baseMoic) is a pure point estimate computed from
+ * `baseInputs` with NO randomness. It is bit-for-bit independent of the
+ * stochastic-draw machinery below and must stay so — other code relies on
+ * "MC base == headline IRR".
  */
 import {
   buildSyntheticProForma,
@@ -70,9 +100,15 @@ export type DriverSummary = {
   minDrawnPct: number;
   maxDrawnPct: number;
   meanDrawnPct: number;
+  /**
+   * Sample skewness of the realized draw distribution (Fisher–Pearson moment
+   * coefficient g1). Positive => right-skewed (fatter upper tail). For the
+   * lognormal drivers (cap rates, interest rate) this is expected to be > 0.
+   */
+  skewness: number;
 };
 
-export type CorrelationMatrix = number[][]; // 4x4
+export type CorrelationMatrix = number[][]; // NxN (N = driver count)
 
 export type MonteCarloResult = {
   iterations: number;
@@ -88,7 +124,14 @@ export type MonteCarloResult = {
   baseMoic: number;
   correlationMatrix: CorrelationMatrix;
   driverOrder: string[];
-  realizedCorrelation: CorrelationMatrix; // post-clamp correlation actually observed
+  realizedCorrelation: CorrelationMatrix; // post-transform correlation actually observed
+  /**
+   * Raw per-driver realized draws, in `driverOrder`, populated only when
+   * `collectDriverDraws` is set. Off by default to keep the result lightweight;
+   * used by tests/diagnostics that need the full sample (e.g. skewness, no
+   * clamp pile-up checks).
+   */
+  driverDraws?: number[][];
 };
 
 export type MonteCarloOptions = {
@@ -100,21 +143,49 @@ export type MonteCarloOptions = {
     exitCapRatePp?: number;
     growthPp?: number;
     interestRatePp?: number;
+    occupancyPp?: number;
+    opexRatioPp?: number;
   };
   correlation?: CorrelationMatrix;
+  /** Antithetic variates on by default; disable for variance-comparison tests. */
+  antithetic?: boolean;
+  /** Populate `driverDraws` with the full raw sample per driver. Default false. */
+  collectDriverDraws?: boolean;
 };
 
 // Driver index order — used consistently across σ, correlation matrix,
-// Cholesky factor, and clamping bounds.
-const DRIVER_ORDER = ['Entry Cap Rate', 'Exit Cap Rate', 'Rent Growth', 'Interest Rate'];
+// Cholesky factor, marginal transforms, and summaries.
+const DRIVER_ORDER = [
+  'Entry Cap Rate',
+  'Exit Cap Rate',
+  'Rent Growth',
+  'Interest Rate',
+  'Occupancy',
+  'Opex Ratio'
+];
+const DRIVER_COUNT = DRIVER_ORDER.length;
 
-// Default correlation matrix — empirically motivated, PSD-verified.
+// Per-driver marginal family. 'lognormal' => right-skewed, strictly positive,
+// median == base. 'normal-soft' => symmetric draw with a smooth soft bound.
+const DRIVER_FAMILY: ('lognormal' | 'normal-soft')[] = [
+  'lognormal', // entry cap
+  'lognormal', // exit cap
+  'normal-soft', // rent growth
+  'lognormal', // interest rate
+  'normal-soft', // occupancy
+  'normal-soft' // opex ratio (expressed as percentage points of ratio*100)
+];
+
+// Default correlation matrix — empirically motivated, PSD-verified (the
+// Cholesky factorization below re-verifies positive-definiteness at runtime).
+//          entry  exit  growth  rate   occ    opex
 const DEFAULT_CORRELATION: CorrelationMatrix = [
-  //  entry  exit  growth  rate
-  [1.0, 0.85, -0.4, 0.7],
-  [0.85, 1.0, -0.5, 0.75],
-  [-0.4, -0.5, 1.0, -0.35],
-  [0.7, 0.75, -0.35, 1.0]
+  [1.0, 0.85, -0.4, 0.7, -0.45, 0.05], // entry cap
+  [0.85, 1.0, -0.5, 0.75, -0.45, 0.05], // exit cap
+  [-0.4, -0.5, 1.0, -0.35, 0.45, 0.2], // rent growth
+  [0.7, 0.75, -0.35, 1.0, -0.25, 0.3], // interest rate
+  [-0.45, -0.45, 0.45, -0.25, 1.0, -0.15], // occupancy
+  [0.05, 0.05, 0.2, 0.3, -0.15, 1.0] // opex ratio
 ];
 
 // ---------------------------------------------------------------------------
@@ -177,8 +248,61 @@ function applyCholesky(L: number[][], z: number[]): number[] {
   return x;
 }
 
-function clamp(v: number, lo: number, hi: number): number {
-  return Math.min(hi, Math.max(lo, v));
+// ---------------------------------------------------------------------------
+// Soft bound: a smooth, monotone, infinitely-differentiable squashing that
+// asymptotically respects (lo, hi) without piling tail mass at the boundary.
+// Values comfortably inside the band pass through essentially unchanged; only
+// extreme draws are compressed, and they approach but NEVER reach the edge —
+// so ES95/p1 reflect the true tail instead of a clamp artifact.
+//
+// Built from the smooth-max / smooth-min (LogSumExp) operators:
+//   smoothMax(v, lo) = lo + softness·log(1 + exp((v - lo)/softness))   (> lo)
+//   smoothMin(·, hi) = hi - softness·log(1 + exp((hi - ·)/softness))   (< hi)
+// `softness` (in the same units as v) sets how gently the edge is approached.
+// As softness → 0 this converges to the hard clamp; we keep it modest so the
+// transform is near-identity well inside the band.
+// ---------------------------------------------------------------------------
+function softBound(v: number, lo: number, hi: number, softness: number): number {
+  const s = Math.max(1e-9, softness);
+  // softplus that avoids overflow for large arguments.
+  const softplus = (t: number): number => (t > 30 ? t : Math.log1p(Math.exp(t)));
+  // Smooth lower bound: strictly greater than lo, ≈ v when v ≫ lo.
+  const lower = lo + s * softplus((v - lo) / s);
+  // Smooth upper bound applied to the lower-bounded value: strictly less than
+  // hi, ≈ lower when lower ≪ hi.
+  return hi - s * softplus((hi - lower) / s);
+}
+
+// Marginal transform for one correlated standard-normal component `x`.
+//  - lognormal: median == base, right-skewed; sigmaLog calibrated from the pp
+//    sigma so that a 1σ move ≈ ±sigmaPp near the base, with a fatter upper tail.
+//    Strictly positive => no clamp needed (soft positivity is intrinsic).
+//  - normal-soft: base + sigmaPp*x, then soft-bounded inside [lo, hi].
+function transformDriver(
+  family: 'lognormal' | 'normal-soft',
+  base: number,
+  sigmaPp: number,
+  x: number,
+  lo: number,
+  hi: number
+): number {
+  if (family === 'lognormal') {
+    // sigmaLog set so exp(sigmaLog) - 1 ≈ sigmaPp/base near the mean: a 1σ
+    // upward move scales `base` by ~ (1 + sigmaPp/base). Median == base exactly
+    // (exp(0) = 1). Upper tail strictly fatter than lower => right skew.
+    const rel = base > 0 ? sigmaPp / base : 0;
+    const sigmaLog = Math.log1p(Math.max(0, rel));
+    const value = base * Math.exp(sigmaLog * x);
+    // Strictly positive already; apply a gentle soft-bound only to keep truly
+    // pathological draws (|x| ≫ 4) finite and inside the model's domain. The
+    // softness is small relative to the band so the transform is near-identity
+    // (median == base, full right skew preserved) until the extreme tail.
+    return softBound(value, lo, hi, Math.max(sigmaPp, base * 0.02));
+  }
+  const raw = base + sigmaPp * x;
+  // Softness ≪ band width so the draw is effectively unbounded near the centre
+  // and only the deep tail is gently compressed (no clamp pile-up).
+  return softBound(raw, lo, hi, Math.max(sigmaPp * 0.5, 0.1));
 }
 
 // ---------------------------------------------------------------------------
@@ -296,6 +420,24 @@ function summarize(values: number[], bins = 12, downsideTarget = 0): MonteCarloD
   };
 }
 
+// Fisher–Pearson sample skewness (g1). Positive => right-skewed.
+function sampleSkewness(xs: number[]): number {
+  const n = xs.length;
+  if (n < 3) return 0;
+  const mean = xs.reduce((s, v) => s + v, 0) / n;
+  let m2 = 0;
+  let m3 = 0;
+  for (const v of xs) {
+    const d = v - mean;
+    m2 += d * d;
+    m3 += d * d * d;
+  }
+  m2 /= n;
+  m3 /= n;
+  const denom = Math.pow(m2, 1.5);
+  return denom > 1e-12 ? Number((m3 / denom).toFixed(4)) : 0;
+}
+
 function pearson(xs: number[], ys: number[]): number {
   const n = Math.min(xs.length, ys.length);
   if (n < 2) return 0;
@@ -331,15 +473,26 @@ export function runMonteCarlo(
   const iterations = Math.max(50, Math.min(10000, options.iterations ?? 1000));
   const seed = options.seed ?? 42;
   const targets = options.targetIrrs ?? [8, 10, 12, 15];
+  const useAntithetic = options.antithetic ?? true;
   const sigma = {
     capRatePp: options.sigma?.capRatePp ?? 0.5,
     exitCapRatePp: options.sigma?.exitCapRatePp ?? 0.75,
     growthPp: options.sigma?.growthPp ?? 1.0,
-    interestRatePp: options.sigma?.interestRatePp ?? 0.5
+    interestRatePp: options.sigma?.interestRatePp ?? 0.5,
+    occupancyPp: options.sigma?.occupancyPp ?? 4.0,
+    // opex ratio σ expressed in percentage points of (ratio × 100): e.g. 3.0 pp.
+    opexRatioPp: options.sigma?.opexRatioPp ?? 3.0
   };
-  const sigmaArr = [sigma.capRatePp, sigma.exitCapRatePp, sigma.growthPp, sigma.interestRatePp];
+  const sigmaArr = [
+    sigma.capRatePp,
+    sigma.exitCapRatePp,
+    sigma.growthPp,
+    sigma.interestRatePp,
+    sigma.occupancyPp,
+    sigma.opexRatioPp
+  ];
   const correlation = options.correlation ?? DEFAULT_CORRELATION;
-  const L = cholesky(correlation);
+  const L = cholesky(correlation); // re-verifies PSD for the 6×6 matrix.
 
   const rng = mulberry32(seed);
 
@@ -347,21 +500,34 @@ export function runMonteCarlo(
   const unleveredIrrs: number[] = [];
   const moics: number[] = [];
 
-  const draws: number[][] = [[], [], [], []]; // cap, exitCap, growth, rate
+  // Per-driver realistic domains. Lognormal drivers stay positive by
+  // construction; bounds here only soft-cap pathological draws. Occupancy is a
+  // percentage (≈ base occupancy); opex ratio is carried as ratio × 100 (pp).
+  const baseOccupancyPct = 100; // base draw centres on full effective occupancy
+  const baseOpexPp = baseInputs.opexRatio * 100;
   const bounds = [
-    [1, 20], // entry cap
-    [1, 20], // exit cap
+    [0.5, 20], // entry cap
+    [0.5, 20], // exit cap
     [-5, 15], // growth
-    [0, 15] // rate
+    [0.25, 18], // rate
+    // Occupancy carried as an effective-demand factor centred on base (=100).
+    // Band brackets base symmetrically so the soft bound stays near-identity
+    // around the centre; values >100 represent demand upside (overflow/escalation).
+    [40, 115], // occupancy %
+    [5, 70] // opex ratio (pp of ratio×100)
   ];
   const bases = [
     baseInputs.capRatePct,
     baseInputs.exitCapRatePct,
     baseInputs.growthPct,
-    baseInputs.interestRatePct
+    baseInputs.interestRatePct,
+    baseOccupancyPct,
+    baseOpexPp
   ];
 
-  // Baseline values for comparison
+  // Baseline values for comparison — PURE point estimate, no randomness.
+  // This block is intentionally independent of the stochastic machinery so the
+  // "MC base == headline IRR" invariant holds bit-for-bit.
   const baseBuilt = buildSyntheticProForma(baseInputs);
   const baseMetrics = computeReturnMetricsFromProForma(
     baseBuilt.proForma,
@@ -371,31 +537,50 @@ export function runMonteCarlo(
     baseBuilt.proForma.summary.terminalValueKrw
   );
 
+  const draws: number[][] = Array.from({ length: DRIVER_COUNT }, () => []);
   let validIterations = 0;
 
-  for (let i = 0; i < iterations; i++) {
-    const z = [standardNormal(rng), standardNormal(rng), standardNormal(rng), standardNormal(rng)];
-    const x = applyCholesky(L, z);
+  // Evaluate one sampled driver vector → push metrics + record draws.
+  const evaluateSample = (sampled: number[]): void => {
+    for (let k = 0; k < DRIVER_COUNT; k++) draws[k]!.push(sampled[k]!);
 
-    const sampled: number[] = [];
-    for (let k = 0; k < 4; k++) {
-      sampled.push(clamp(bases[k]! + sigmaArr[k]! * x[k]!, bounds[k]![0]!, bounds[k]![1]!));
-    }
-    for (let k = 0; k < 4; k++) draws[k]!.push(sampled[k]!);
+    const capRatePct = sampled[0]!;
+    const exitCapRatePct = sampled[1]!;
+    const growthPct = sampled[2]!;
+    const interestRatePct = sampled[3]!;
+    const occupancyPct = sampled[4]!;
+    const opexPp = sampled[5]!;
+    const opexRatio = Math.min(0.95, Math.max(0.01, opexPp / 100));
 
-    const [capRatePct, exitCapRatePct, growthPct, interestRatePct] = sampled;
-
-    // Rebuild year1 NOI from the sampled cap rate so entry yield stays consistent.
+    // Rebuild year1 NOI from the sampled cap rate so entry yield stays
+    // consistent, then scale by the occupancy factor relative to base.
     const purchase = baseInputs.purchasePriceKrw;
-    const year1Noi = Math.round((purchase * capRatePct!) / 100);
+    const occFactor = baseOccupancyPct > 0 ? occupancyPct / baseOccupancyPct : 1;
+    const year1Noi = Math.round((purchase * capRatePct * occFactor) / 100);
+
+    // Data-center path supplies a real NOI vector, which buildSyntheticProForma
+    // would otherwise use VERBATIM — silencing the sampled occupancy / rent-
+    // growth shocks (FIX 1). Pass the shock factors so they modulate the vector:
+    //   - occupancy: flat multiplicative scale = sampledOcc / baseOcc (= occFactor)
+    //   - growth:    per-year compounding DIVERGENCE from base (0 at base draw)
+    // These are vector-only inside buildSyntheticProForma (the no-vector path
+    // already injects occupancy via year1Noi and grows at the sampled growthPct).
+    const growthDivergencePct = growthPct - baseInputs.growthPct;
+    // Opex deviation from base haircuts NOI in BOTH paths (FIX 3): revenue =
+    // NOI/(1−opexRatio) made opexRatio cancel out, so the driver never moved NOI.
+    const opexHaircut = opexRatio - baseInputs.opexRatio;
 
     const draw: ProFormaInputs = {
       ...baseInputs,
-      capRatePct: capRatePct!,
-      exitCapRatePct: exitCapRatePct!,
-      growthPct: growthPct!,
-      interestRatePct: interestRatePct!,
-      year1Noi
+      capRatePct,
+      exitCapRatePct,
+      growthPct,
+      interestRatePct,
+      opexRatio,
+      year1Noi,
+      noiVectorOccupancyScale: occFactor,
+      noiVectorGrowthDivergencePct: growthDivergencePct,
+      noiOpexHaircut: opexHaircut
     };
 
     try {
@@ -414,6 +599,51 @@ export function runMonteCarlo(
       validIterations++;
     } catch {
       // skip failed iteration
+    }
+  };
+
+  // Map a correlated standard-normal vector to driver values via per-driver
+  // marginal transforms (Gaussian copula).
+  const toSample = (zVec: number[]): number[] => {
+    const x = applyCholesky(L, zVec);
+    const sampled: number[] = new Array(DRIVER_COUNT);
+    for (let k = 0; k < DRIVER_COUNT; k++) {
+      sampled[k] = transformDriver(
+        DRIVER_FAMILY[k]!,
+        bases[k]!,
+        sigmaArr[k]!,
+        x[k]!,
+        bounds[k]![0]!,
+        bounds[k]![1]!
+      );
+    }
+    return sampled;
+  };
+
+  // Antithetic variates: draw z for the "primary" iteration and reuse −z for
+  // its partner. With antithetic on we draw ceil(iterations/2) base vectors and
+  // emit each plus its mirror, capped at `iterations` total evaluations. With
+  // it off, every iteration draws a fresh independent z. Either way the RNG is
+  // consumed deterministically.
+  if (useAntithetic) {
+    let emitted = 0;
+    const pairs = Math.ceil(iterations / 2);
+    for (let p = 0; p < pairs && emitted < iterations; p++) {
+      const z: number[] = new Array(DRIVER_COUNT);
+      for (let k = 0; k < DRIVER_COUNT; k++) z[k] = standardNormal(rng);
+      evaluateSample(toSample(z));
+      emitted++;
+      if (emitted < iterations) {
+        const zNeg = z.map((v) => -v);
+        evaluateSample(toSample(zNeg));
+        emitted++;
+      }
+    }
+  } else {
+    for (let i = 0; i < iterations; i++) {
+      const z: number[] = new Array(DRIVER_COUNT);
+      for (let k = 0; k < DRIVER_COUNT; k++) z[k] = standardNormal(rng);
+      evaluateSample(toSample(z));
     }
   }
 
@@ -439,19 +669,18 @@ export function runMonteCarlo(
       stdDevPct: Number(stdPp.toFixed(3)),
       minDrawnPct: ds.length ? Number(Math.min(...ds).toFixed(3)) : basePct,
       maxDrawnPct: ds.length ? Number(Math.max(...ds).toFixed(3)) : basePct,
-      meanDrawnPct: Number(mean.toFixed(3))
+      meanDrawnPct: Number(mean.toFixed(3)),
+      skewness: ds.length ? sampleSkewness(ds) : 0
     };
   };
 
-  // Realized correlation (post-clamp) for diagnostic
-  const realized: CorrelationMatrix = [
-    [1, 0, 0, 0],
-    [0, 1, 0, 0],
-    [0, 0, 1, 0],
-    [0, 0, 0, 1]
-  ];
-  for (let i = 0; i < 4; i++) {
-    for (let j = 0; j < 4; j++) {
+  // Realized correlation (post-transform) for diagnostic — should track the
+  // target correlation under the Gaussian-copula mapping.
+  const realized: CorrelationMatrix = Array.from({ length: DRIVER_COUNT }, (_, i) =>
+    Array.from({ length: DRIVER_COUNT }, (__, j) => (i === j ? 1 : 0))
+  );
+  for (let i = 0; i < DRIVER_COUNT; i++) {
+    for (let j = 0; j < DRIVER_COUNT; j++) {
       if (i === j) continue;
       realized[i]![j] = pearson(draws[i]!, draws[j]!);
     }
@@ -470,13 +699,16 @@ export function runMonteCarlo(
       driverSummary('Entry Cap Rate', baseInputs.capRatePct, sigma.capRatePp, draws[0]!),
       driverSummary('Exit Cap Rate', baseInputs.exitCapRatePct, sigma.exitCapRatePp, draws[1]!),
       driverSummary('Rent Growth', baseInputs.growthPct, sigma.growthPp, draws[2]!),
-      driverSummary('Interest Rate', baseInputs.interestRatePct, sigma.interestRatePp, draws[3]!)
+      driverSummary('Interest Rate', baseInputs.interestRatePct, sigma.interestRatePp, draws[3]!),
+      driverSummary('Occupancy', baseOccupancyPct, sigma.occupancyPp, draws[4]!),
+      driverSummary('Opex Ratio', baseOpexPp, sigma.opexRatioPp, draws[5]!)
     ],
     baseLeveredIrr: baseMetrics.equityIrr,
     baseUnleveredIrr: baseMetrics.unleveragedIrr,
     baseMoic: baseMetrics.equityMultiple,
     correlationMatrix: correlation,
     driverOrder: [...DRIVER_ORDER],
-    realizedCorrelation: realized
+    realizedCorrelation: realized,
+    ...(options.collectDriverDraws ? { driverDraws: draws.map((d) => [...d]) } : {})
   };
 }

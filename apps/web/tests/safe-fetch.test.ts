@@ -104,7 +104,11 @@ function stubFetch(responses: StubResponse[]): { restore: () => void; calls: () 
 }
 
 test('safeFetch retries on 503 then succeeds', async () => {
-  const stub = stubFetch([{ status: 503 }, { status: 503 }, { status: 200, contentType: 'text/html' }]);
+  const stub = stubFetch([
+    { status: 503 },
+    { status: 503 },
+    { status: 200, contentType: 'text/html' }
+  ]);
   try {
     const res = await safeFetch('https://1.1.1.1/', { retries: 3, retryBackoffMs: 1 });
     assert.equal(res.status, 200);

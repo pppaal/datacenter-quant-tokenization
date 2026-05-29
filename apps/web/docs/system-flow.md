@@ -25,6 +25,7 @@
 **화면**: `/admin/assets/new`
 
 **입력**:
+
 - assetCode / name / description / sponsorName
 - 주소 (Address) — Juso adapter로 자동 normalize 가능
 - 기본 underwriting 가정 (occupancy / capex / 금융 LTV / hold years)
@@ -40,11 +41,13 @@
 **화면**: `/admin/assets/[id]` "Enrich" 버튼 + per-section forms.
 
 **Workflow**:
+
 - Manual entry: SiteProfile / EnergySnapshot / MarketSnapshot 입력 → `reviewStatus = PENDING`
 - Adapter pull: 외부 source에서 `SourceCache`에 저장
 - Document upload: `Document` row + `DocumentVersion`. AI summary는 OPENAI_API_KEY 있을 때만.
 
 **Adapters** (`lib/sources/adapters/`):
+
 - juso (주소 normalize)
 - kosis (macro 시계열)
 - nasa-power (기후 climatology)
@@ -60,12 +63,14 @@
 **화면**: `/admin/review` + 자산 상세 페이지의 review 패널.
 
 **규칙** ([CLAUDE.md](../../CLAUDE.md) 참조):
+
 - Manual micro / legal / lease 행은 `PENDING`으로 저장
 - ANALYST+ 권한이 APPROVED / REJECTED 결정
 - **`APPROVED` 행만** 다음 단계의 curated feature snapshot에 promoted
 - 미승인 행은 valuation에 들어가도 `synthetic ramp` / `fallback`으로 라벨
 
 **모델**:
+
 - `ReviewStatus` enum: PENDING / APPROVED / REJECTED
 - 적용 모델: Lease, PlanningConstraint, OwnershipRecord, EncumbranceRecord 등
 
@@ -100,6 +105,7 @@ Persist: ValuationRun + ValuationScenario + SensitivityRun + SensitivityPoint
 ```
 
 **저장**:
+
 - `ValuationRun.assumptions` — metrics / taxes / spv / debt / capex / proForma 등 (data-model-cheatsheet 참조)
 - `ValuationRun.provenance` — field별 출처 trace array
 - `approvalStatus` 처음엔 `PENDING_REVIEW`
@@ -119,6 +125,7 @@ Persist: ValuationRun + ValuationScenario + SensitivityRun + SensitivityPoint
 **화면**: `/admin/ic` 또는 `/admin/portfolio` 의 Committee 탭.
 
 **Workflow**:
+
 - ANALYST가 ValuationRun을 pick → IC packet 생성 (`InvestmentCommitteePacket`)
 - packetCode 자동 부여 (예: `ICPKT-SEOUL-GANGSEO-2026Q2`)
 - `status = DRAFT` → `LOCKED` (수정 금지) → `RELEASED`
@@ -152,6 +159,7 @@ LP가 IM에서 보는 모든 숫자는 비슷한 6단계를 따라가면 원천 
 ## 운영 / Cron
 
 `scripts/run-ops-worker.ts` — 백그라운드 워커:
+
 - ResearchSnapshot stale 감지 (`stale_drafts.scan`)
 - TransactionComp 자동 tier 분류 (`tier-classifier.backfill`)
 - AI cache TTL 만료 (`ai-cache.evict.scheduled`)
@@ -163,6 +171,7 @@ LP가 IM에서 보는 모든 숫자는 비슷한 6단계를 따라가면 원천 
 ## Onchain (선택적)
 
 `/admin/registry` 또는 자산 readiness 페이지에서:
+
 - `RwaProject` 생성 → 등록 준비
 - `OnchainRecord` 로 document hash 앵커링
 - `TokenizedAsset` 으로 ERC-3643 호환 토큰 (IdentityRegistry / Compliance)

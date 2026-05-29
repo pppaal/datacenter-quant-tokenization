@@ -38,9 +38,7 @@ export type AiCacheSummary = {
   }>;
 };
 
-export async function getAiCacheSummary(
-  db: PrismaClient = defaultPrisma
-): Promise<AiCacheSummary> {
+export async function getAiCacheSummary(db: PrismaClient = defaultPrisma): Promise<AiCacheSummary> {
   const now = new Date();
   const [rows, recent] = await Promise.all([
     db.aiResponseCache.findMany({

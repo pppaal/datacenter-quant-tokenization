@@ -1,5 +1,7 @@
+import type { MacroSeries } from '@prisma/client';
 import type { DealMacroExposureDimension } from '@/lib/services/macro/deal-risk';
 import type { MacroFactorDirection } from '@/lib/services/macro/factors';
+import { estimateFactorCovariance } from '@/lib/services/macro/covariance';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -13,19 +15,25 @@ export type CorrelationPenalty = {
 };
 
 // ---------------------------------------------------------------------------
-// Known correlated stress pairs
+// Factor co-stress heuristic — named pairs with expert-set amplifiers
 // ---------------------------------------------------------------------------
-// When these factor pairs are both NEGATIVE simultaneously, the combined
-// impact is worse than the sum of individual scores.
+// METHODOLOGY: This is a heuristic stress amplifier, NOT a statistical
+// correlation/covariance estimate. When a named factor pair is both NEGATIVE
+// simultaneously, we add a hand-tuned amplification percentage on the premise
+// that combined headwinds hurt more than the sum of individual scores. The
+// `amplificationPct` values below are expert-set constants, not correlation
+// coefficients estimated from data.
 
 type StressPair = {
   factorA: string;
   factorB: string;
   label: string;
+  // Expert-set amplification constant (percentage points), not an estimated
+  // correlation coefficient.
   amplificationPct: number;
 };
 
-const CORRELATED_STRESS_PAIRS: StressPair[] = [
+const CO_STRESS_PAIRS: StressPair[] = [
   {
     factorA: 'rate',
     factorB: 'credit',
@@ -65,6 +73,45 @@ const CORRELATED_STRESS_PAIRS: StressPair[] = [
 ];
 
 // ---------------------------------------------------------------------------
+// Factor → representative MacroSeries key.
+// Each co-stress factor is proxied by one observable MacroSeries so the
+// estimated correlation between two series stands in for the correlation
+// between the two factors. `leverage` has no direct macro series, so pairs
+// involving it always use the expert constant.
+// ---------------------------------------------------------------------------
+const FACTOR_SERIES_KEY: Record<string, string | null> = {
+  rate: 'policy_rate_pct',
+  credit: 'credit_spread_bps',
+  liquidity: 'transaction_volume_index',
+  demand: 'vacancy_pct',
+  construction: 'construction_cost_index',
+  leverage: null
+};
+
+// ---------------------------------------------------------------------------
+// Data-driven amplification mapping.
+//
+// Given the ESTIMATED correlation ρ between a factor pair's representative
+// series, amplification scales with |ρ|: two factors that genuinely co-move
+// (high |ρ|) deserve a larger co-stress amplifier than two that are nearly
+// independent. We anchor the scale to the expert constants: a "fully
+// correlated" pair (|ρ| = 1) earns the pair's legacy expert amplifier, and a
+// pair near |ρ| = REF_CORRELATION earns roughly that same value, so the
+// data-driven path is calibrated to — not divergent from — prior judgement.
+//
+//   amplificationPct = expertPct · clamp(|ρ| / REF_CORRELATION, 0, 1)
+//
+// Liquidity/credit/rate pairs are expected to co-move strongly; REF anchors
+// the expert value to a realistic-but-not-perfect correlation.
+// ---------------------------------------------------------------------------
+const REF_CORRELATION = 0.6;
+
+function deriveAmplificationPct(expertPct: number, estimatedCorrelation: number): number {
+  const scale = Math.min(1, Math.abs(estimatedCorrelation) / REF_CORRELATION);
+  return Number((expertPct * scale).toFixed(2));
+}
+
+// ---------------------------------------------------------------------------
 // Triple-headwind cascade
 // ---------------------------------------------------------------------------
 
@@ -72,13 +119,71 @@ const TRIPLE_HEADWIND_THRESHOLD = 3;
 const TRIPLE_HEADWIND_EXTRA_PCT = 8;
 
 // ---------------------------------------------------------------------------
-// Core: compute correlation-based stress amplification
+// Optional history input for the data-driven path.
 // ---------------------------------------------------------------------------
+export type CorrelationStressOptions = {
+  /** MacroSeries history used to estimate pairwise correlations. */
+  series?: MacroSeries[];
+  /** Optional market filter applied to the history. */
+  market?: string;
+};
+
+type PairAmplifier = {
+  amplificationPct: number;
+  /** true when derived from estimated correlation, false when expert fallback */
+  dataDriven: boolean;
+};
+
+/**
+ * Resolve per-pair amplifiers. When sufficient aligned history exists for a
+ * pair's two representative series (>= MIN_CHANGE_OBSERVATIONS change
+ * observations), amplification is derived from the estimated correlation;
+ * otherwise the legacy expert constant is used unchanged. With NO history this
+ * is a no-op and every pair keeps its expert constant — identical to the
+ * legacy heuristic.
+ */
+function resolvePairAmplifiers(options?: CorrelationStressOptions): Map<string, PairAmplifier> {
+  const result = new Map<string, PairAmplifier>();
+  for (const pair of CO_STRESS_PAIRS) {
+    result.set(pair.label, { amplificationPct: pair.amplificationPct, dataDriven: false });
+  }
+
+  const series = options?.series;
+  if (!series || series.length === 0) return result;
+
+  for (const pair of CO_STRESS_PAIRS) {
+    const keyA = FACTOR_SERIES_KEY[pair.factorA];
+    const keyB = FACTOR_SERIES_KEY[pair.factorB];
+    if (!keyA || !keyB) continue; // e.g. leverage has no series → keep expert
+
+    const estimate = estimateFactorCovariance(series, [keyA, keyB], options?.market);
+    if (!estimate.sufficient) continue; // insufficient history → keep expert
+
+    const rho = estimate.correlation[0]?.[1] ?? 0;
+    result.set(pair.label, {
+      amplificationPct: deriveAmplificationPct(pair.amplificationPct, rho),
+      dataDriven: true
+    });
+  }
+
+  return result;
+}
+
+// ---------------------------------------------------------------------------
+// Core: compute co-stress amplification.
+// ---------------------------------------------------------------------------
+// For every co-stressed pair, adds an amplifier that is data-driven (scaled by
+// the estimated correlation between the pair's representative series) when
+// sufficient history is supplied, and falls back to the expert constant
+// otherwise. With no history this reproduces the legacy heuristic exactly.
 
 export function computeCorrelationPenalty(
   dimensions: DealMacroExposureDimension[],
-  factorDirections: Record<string, MacroFactorDirection>
+  factorDirections: Record<string, MacroFactorDirection>,
+  options?: CorrelationStressOptions
 ): CorrelationPenalty {
+  const pairAmplifiers = resolvePairAmplifiers(options);
+  const usedDataDriven = [...pairAmplifiers.values()].some((p) => p.dataDriven);
   const headwindKeys = new Set<string>();
 
   // A dimension is in "headwind" if its score >= 50
@@ -106,10 +211,10 @@ export function computeCorrelationPenalty(
   let totalPenalty = 0;
   const activePairs: string[] = [];
 
-  // Check correlated pairs
-  for (const pair of CORRELATED_STRESS_PAIRS) {
+  // Check co-stressed pairs
+  for (const pair of CO_STRESS_PAIRS) {
     if (factorToHeadwind[pair.factorA] && factorToHeadwind[pair.factorB]) {
-      totalPenalty += pair.amplificationPct;
+      totalPenalty += pairAmplifiers.get(pair.label)!.amplificationPct;
       activePairs.push(pair.label);
     }
   }
@@ -120,18 +225,27 @@ export function computeCorrelationPenalty(
     activePairs.push(`${headwindCount}-factor cascade`);
   }
 
-  // Cap total penalty at 40% to avoid extreme distortion
-  totalPenalty = Math.min(totalPenalty, 40);
+  // Cap total penalty at 40% to avoid extreme distortion. Round to 1 decimal:
+  // legacy expert constants are integers (so this is a no-op for the fallback
+  // path) while data-driven values keep a single fractional digit.
+  totalPenalty = Number(Math.min(totalPenalty, 40).toFixed(1));
+
+  const method = usedDataDriven
+    ? 'Amplifiers data-driven from estimated factor-change correlations.'
+    : 'Amplifiers from expert constants (insufficient history).';
 
   let commentary: string;
   if (totalPenalty === 0) {
-    commentary = 'No correlated stress amplification. Headwinds are isolated.';
+    commentary =
+      activePairs.length > 0
+        ? `No material co-stress amplification: co-stressed pairs (${activePairs.join(', ')}) show negligible estimated correlation. ${method}`
+        : 'No co-stress amplification. Headwinds are isolated.';
   } else if (totalPenalty <= 15) {
-    commentary = `Mild correlation stress (+${totalPenalty}% penalty). ${activePairs.join(', ')} detected.`;
+    commentary = `Mild co-stress amplifier (+${totalPenalty}% penalty). ${activePairs.join(', ')} detected. ${method}`;
   } else if (totalPenalty <= 30) {
-    commentary = `Significant correlation stress (+${totalPenalty}% penalty). Multiple correlated headwinds: ${activePairs.join(', ')}.`;
+    commentary = `Significant co-stress amplifier (+${totalPenalty}% penalty). Multiple simultaneous headwinds: ${activePairs.join(', ')}. ${method}`;
   } else {
-    commentary = `Severe correlation stress (+${totalPenalty}% penalty). Systemic risk conditions: ${activePairs.join(', ')}. Consider defensive positioning.`;
+    commentary = `Severe co-stress amplifier (+${totalPenalty}% penalty). Systemic risk conditions: ${activePairs.join(', ')}. Consider defensive positioning. ${method}`;
   }
 
   return {
@@ -148,7 +262,8 @@ export function computeCorrelationPenalty(
 
 export function applyCorrelationPenalty(baseScore: number, penalty: CorrelationPenalty): number {
   if (penalty.appliedPenaltyPct === 0) return baseScore;
-  // Penalty shifts the score toward 100, proportional to remaining headroom
+  // The heuristic amplifier shifts the score toward 100, proportional to
+  // remaining headroom.
   const headroom = 100 - baseScore;
   const boost = headroom * (penalty.appliedPenaltyPct / 100);
   return Math.min(100, Math.round(baseScore + boost));

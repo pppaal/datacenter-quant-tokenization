@@ -33,9 +33,7 @@ function formatPriceKrw(value: number | null) {
   return formatNumber(value, 0);
 }
 
-export default async function ResearchCompsPage(props: {
-  searchParams: Promise<SearchParams>;
-}) {
+export default async function ResearchCompsPage(props: { searchParams: Promise<SearchParams> }) {
   const sp = await props.searchParams;
   const filters = {
     market: sp.market || undefined,
@@ -72,8 +70,8 @@ export default async function ResearchCompsPage(props: {
           </h2>
           <p className="mt-2 max-w-3xl text-sm text-slate-400">
             Submarket × asset-class × tier cap-rate aggregation built from
-            <code className="mx-1 rounded bg-white/5 px-1.5 py-0.5">TransactionComp</code> (deal-level
-            ground truth) and
+            <code className="mx-1 rounded bg-white/5 px-1.5 py-0.5">TransactionComp</code>{' '}
+            (deal-level ground truth) and
             <code className="mx-1 rounded bg-white/5 px-1.5 py-0.5">MarketIndicatorSeries</code>
             (REB / MOLIT published series). Divergence between the two columns is itself a useful
             repricing signal.
@@ -149,7 +147,10 @@ export default async function ResearchCompsPage(props: {
             Untiered rows surface together at the bottom of each market.
           </p>
         </div>
-        <CapRateTable buckets={aggregation.fromTransactions} emptyLabel="No deal-level cap rates yet for this filter." />
+        <CapRateTable
+          buckets={aggregation.fromTransactions}
+          emptyLabel="No deal-level cap rates yet for this filter."
+        />
       </Card>
 
       <Card className="space-y-4">
@@ -157,11 +158,14 @@ export default async function ResearchCompsPage(props: {
           <div className="eyebrow">Cap-rate matrix · published market series</div>
           <p className="mt-1 text-sm text-slate-400">
             REB / MOLIT-published cap-rate observations grouped the same way. Compare against the
-            deal-level table above — a published-vs-deal gap above 50 bps usually signals
-            repricing or selection bias.
+            deal-level table above — a published-vs-deal gap above 50 bps usually signals repricing
+            or selection bias.
           </p>
         </div>
-        <CapRateTable buckets={aggregation.fromIndicators} emptyLabel="No published cap-rate series for this filter." />
+        <CapRateTable
+          buckets={aggregation.fromIndicators}
+          emptyLabel="No published cap-rate series for this filter."
+        />
       </Card>
 
       <Card className="space-y-4">
@@ -262,18 +266,24 @@ function CapRateTable({
         </thead>
         <tbody className="divide-y divide-white/5 text-slate-200">
           {buckets.map((bucket, index) => (
-            <tr key={`${bucket.market}-${bucket.region}-${bucket.assetClass}-${bucket.assetTier}-${index}`}>
+            <tr
+              key={`${bucket.market}-${bucket.region}-${bucket.assetClass}-${bucket.assetTier}-${index}`}
+            >
               <td className="px-4 py-3 text-xs">{bucket.market}</td>
               <td className="px-4 py-3 text-xs text-slate-400">{bucket.region ?? '—'}</td>
               <td className="px-4 py-3 text-xs">
                 {bucket.assetClass ?? '—'} / {bucket.assetTier ?? 'Untiered'}
               </td>
               <td className="px-4 py-3 text-right text-xs">{bucket.count}</td>
-              <td className="px-4 py-3 text-right font-mono text-xs">{formatCapPct(bucket.minPct)}</td>
+              <td className="px-4 py-3 text-right font-mono text-xs">
+                {formatCapPct(bucket.minPct)}
+              </td>
               <td className="px-4 py-3 text-right font-mono text-xs font-semibold text-white">
                 {formatCapPct(bucket.medianPct)}
               </td>
-              <td className="px-4 py-3 text-right font-mono text-xs">{formatCapPct(bucket.maxPct)}</td>
+              <td className="px-4 py-3 text-right font-mono text-xs">
+                {formatCapPct(bucket.maxPct)}
+              </td>
               <td className="px-4 py-3 text-xs text-slate-500">
                 {bucket.latestObservedAt ? formatDate(bucket.latestObservedAt) : '—'}
               </td>

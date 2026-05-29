@@ -137,6 +137,24 @@ export type UnderwritingAnalysis = {
   assumptions: Record<string, unknown>;
   provenance: ProvenanceEntry[];
   scenarios: UnderwritingScenario[];
+  /**
+   * The strategy's REAL stabilized (year-1) NOI for the Base case, exposed so
+   * the downstream analyzer (full-report) can drive the headline pro-forma off
+   * the figure the strategy actually computed instead of back-solving
+   * `baseCaseValueKrw × capRate`. Populated by the income (stabilized) strategies
+   * from the value they already produced. Optional + additive: strategies that
+   * do not produce a single stabilized NOI (e.g. LAND) leave it unset, and the
+   * analyzer falls back to its prior synthetic derivation.
+   */
+  stabilizedNoiKrw?: number;
+  /**
+   * The strategy's rigorous year-by-year lease DCF (rollover / downtime /
+   * TI-LC / forward terminal) for the Base case. Populated by lease-level
+   * strategies (data-center). When present the analyzer drives the pro-forma's
+   * NOI vector and headline return metrics off this real lease-level series
+   * rather than growing one aggregate NOI at one rate. Optional + additive.
+   */
+  leaseDcf?: LeaseDcfResult;
   threeApproach?: {
     methodology: string;
     reconciledValueKrw: number | null;
@@ -189,7 +207,42 @@ export type TaxProfile = {
   corporateTaxPct: number;
   withholdingTaxPct: number;
   exitTaxPct: number;
+  /**
+   * Korea-tax correctness metadata (derived, in-memory only — NOT persisted).
+   *
+   * `entityType` / `inCongestedZone` are *inferred* from free-text fields
+   * (`spvStructure.legalStructure`, `asset.market`, `marketSnapshot.metroRegion`)
+   * because there are no first-class Prisma columns yet.
+   * TODO(tax): add first-class `SpvStructure.entityType` and an asset/region
+   * `과밀억제권역` boolean so these no longer rely on string heuristics.
+   *
+   * Optional so existing literal constructors (scripts/tests that build a bare
+   * TaxProfile) keep compiling; `buildTaxProfile` always populates them.
+   */
+  entityType?: KoreanEntityType;
+  /** true ⇒ 과밀억제권역 (Seoul metropolitan concentration zone) for 취득세 중과. */
+  inCongestedZone?: boolean;
+  /** true ⇒ vehicle is a flow-through (REIT/펀드/PFV) ⇒ vehicle-level 법인세 ≈ 0. */
+  isPassThroughVehicle?: boolean;
+  /** Pass-through 법인세 rate actually applied to the vehicle (0 for REIT/펀드). */
+  effectiveCorporateTaxPct?: number;
+  /** Resolved 취득세율 actually used (after 중과 brackets / explicit override). */
+  resolvedAcquisitionTaxPct?: number;
+  /** true when `taxAssumption.acquisitionTaxPct` was supplied (real data wins). */
+  acquisitionTaxIsOverride?: boolean;
+  /** Resolved exit-disposition tax rate (corp rate +옵션 land surtax, or override). */
+  resolvedExitTaxPct?: number;
+  /** true when `taxAssumption.exitTaxPct` was supplied (real data wins). */
+  exitTaxIsOverride?: boolean;
+  /** Human-readable note on how each Korea-tax rate was derived. */
+  rateRationale?: string;
 };
+
+/**
+ * Inferred owning-entity tax classification. Korea taxes 법인/개인/리츠/펀드
+ * very differently, especially for 취득세 중과 and vehicle-level 법인세.
+ */
+export type KoreanEntityType = 'CORPORATION' | 'INDIVIDUAL' | 'REIT' | 'FUND' | 'PFV';
 
 export type SpvProfile = {
   legalStructure: string;
@@ -354,6 +407,24 @@ export type LeaseCashFlowYear = {
   weightedRenewalRatePerKwKrw: number | null;
 };
 
+export type TerminalValueCrossCheck = {
+  /** Primary terminal value from exit-cap method (NOI_{n+1} / exitCap). */
+  exitCapTerminalValueKrw: number;
+  /** Cross-check terminal value from Gordon-growth perpetuity (NOI_{n+1}/(r-g)). */
+  gordonTerminalValueKrw: number | null;
+  /** (gordon - exitCap) / |exitCap| × 100. Null when Gordon is undefined. */
+  divergencePct: number | null;
+  /** True when |divergencePct| exceeds the threshold. */
+  divergesBeyondThreshold: boolean;
+  divergenceThresholdPct: number;
+  /** Exit cap minus going-in cap, in bps (positive = conservative exit). */
+  terminalCapSpreadBps: number;
+  /** True when exit cap < going-in cap (cap compression at exit — flag). */
+  terminalSpreadInverted: boolean;
+  /** False when (r - g) is not a meaningful positive spread (Gordon undefined). */
+  gordonValid: boolean;
+};
+
 export type LeaseDcfResult = {
   years: LeaseCashFlowYear[];
   annualRevenueKrw: number;
@@ -363,6 +434,7 @@ export type LeaseDcfResult = {
   leaseDrivenValueKrw: number;
   terminalValueKrw: number;
   terminalYear: number;
+  terminalValueCrossCheck?: TerminalValueCrossCheck;
 };
 
 export type DebtScheduleYear = {

@@ -22,7 +22,10 @@ test('formatOfficialMetricValue formats by unit', () => {
   assert.equal(formatOfficialMetricValue({ value: 5.234, unit: 'pct' }), '5.2%');
   assert.equal(formatOfficialMetricValue({ value: 215, unit: 'bps' }), '215 bps');
   assert.equal(formatOfficialMetricValue({ value: 12345.6, unit: 'sqm' }), '12,346 sqm');
-  assert.equal(formatOfficialMetricValue({ value: 9_500_000, unit: 'krw_per_sqm' }), '9,500,000 KRW/sqm');
+  assert.equal(
+    formatOfficialMetricValue({ value: 9_500_000, unit: 'krw_per_sqm' }),
+    '9,500,000 KRW/sqm'
+  );
   assert.equal(formatOfficialMetricValue({ value: 4.2, unit: 'kwh_per_sqm' }), '4.2 kWh/sqm');
   assert.equal(formatOfficialMetricValue({ value: 100, unit: 'count' }), '100');
   assert.equal(formatOfficialMetricValue({ value: 100.5, unit: 'count' }), '100.5');
@@ -91,10 +94,7 @@ test('inferObservationDateFromPayload prefers known date fields', () => {
   );
   assert.equal(date.toISOString(), '2026-04-15T00:00:00.000Z');
 
-  const date2 = inferObservationDateFromPayload(
-    { foo: 'bar', asOfDate: '2026-03-01' },
-    fallback
-  );
+  const date2 = inferObservationDateFromPayload({ foo: 'bar', asOfDate: '2026-03-01' }, fallback);
   assert.equal(date2.toISOString(), '2026-03-01T00:00:00.000Z');
 
   const date3 = inferObservationDateFromPayload({ foo: 'bar' }, fallback);
@@ -111,10 +111,7 @@ test('inferSnapshotViewType maps snapshotType to SOURCE/HOUSE', () => {
 
 test('inferApprovalStatus prefers explicit value, otherwise derives from view type', () => {
   assert.equal(inferApprovalStatus({ approvalStatus: 'SUPERSEDED' }), 'SUPERSEDED');
-  assert.equal(
-    inferApprovalStatus({ snapshotType: 'official-source' }),
-    'APPROVED'
-  );
+  assert.equal(inferApprovalStatus({ snapshotType: 'official-source' }), 'APPROVED');
   assert.equal(inferApprovalStatus({ snapshotType: 'house' }), 'DRAFT');
 });
 

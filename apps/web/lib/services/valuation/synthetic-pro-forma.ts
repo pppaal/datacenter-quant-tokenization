@@ -1,5 +1,13 @@
-import { computeAnnualJongbuseKrw } from '@/lib/services/valuation/jongbuse';
-import type { ProFormaBaseCase, ProFormaYear } from '@/lib/services/valuation/types';
+import {
+  computeAnnualJongbuseKrw,
+  DEFAULT_FAIR_MARKET_RATIO
+} from '@/lib/services/valuation/jongbuse';
+import { buildTerminalValueCrossCheck } from '@/lib/services/valuation/lease-dcf';
+import type {
+  ProFormaBaseCase,
+  ProFormaYear,
+  TerminalValueCrossCheck
+} from '@/lib/services/valuation/types';
 
 export const HOLDING_YEARS = 10;
 
@@ -34,6 +42,13 @@ export type ProFormaInputs = {
    */
   propertyTaxFairMarketRatio?: number;
   /**
+   * 공정시장가액비율 for 종부세 (separate from 재산세's ratio above). 토지·법인 주택
+   * default 0.6 under 종합부동산세법. Applied inside computeAnnualJongbuseKrw to the
+   * taxable base AFTER the statutory deduction. The 재산세 ratio (~0.7) and 종부세
+   * ratio (~0.6) are intentionally distinct rates in Korean law.
+   */
+  jongbuseFairMarketRatio?: number;
+  /**
    * 매입부가세 환급. Commercial acquisitions incur 10% VAT on the building
    * portion which is recoverable within ~6 months for a VAT-registered SPV.
    * Non-recoverable for residential (주택) by default.
@@ -45,6 +60,43 @@ export type ProFormaInputs = {
    * 1-2% (industrial), 4-5% (hotel), 1.5% (DC has its own capex cycle).
    */
   capexReservePct?: number;
+  /**
+   * Optional REAL year-by-year NOI vector (length up to HOLDING_YEARS) sourced
+   * from a strategy's rigorous lease-level DCF (e.g. data-center rollover /
+   * downtime / TI-LC). When present, each year's NOI is taken from this vector
+   * (revenue back-derived via `opexRatio`) INSTEAD of growing `year1Noi` at one
+   * flat `growthPct`, so rollover years differ from a flat-grown synthetic.
+   * Years beyond the vector fall back to flat growth off the last supplied NOI.
+   * Backward-compatible: omit it to reproduce the prior synthetic behavior
+   * bit-for-bit.
+   */
+  noiByYearKrw?: number[];
+  /**
+   * Monte-Carlo NOI shock factors (default to the no-op identity so the base
+   * case stays bit-for-bit). They let per-draw occupancy / rent-growth / opex
+   * shocks actually move NOI for the `noiByYearKrw` (data-center) path, where
+   * the supplied vector would otherwise be used verbatim and silence those
+   * drivers (FIX 1 & FIX 3).
+   *
+   * - `noiVectorOccupancyScale` (default 1): multiplicative scale applied to
+   *   every vector year, = sampledOccupancy / baseOccupancy. VECTOR-PATH ONLY —
+   *   the no-vector path already injects occupancy through `year1Noi`, so we do
+   *   NOT re-apply it there (would double-count). Ignored when no vector.
+   * - `noiVectorGrowthDivergencePct` (default 0): the per-draw rent-growth
+   *   DEVIATION from base (sampledGrowthPct − baseGrowthPct, in pp). Year y NOI
+   *   is scaled by (1 + dev/100)^y so a draw above base compounds upside and a
+   *   draw below base compounds downside, while the vector's rollover SHAPE is
+   *   preserved. VECTOR-PATH ONLY — the no-vector path already grows at the
+   *   sampled `growthPct`. Ignored when no vector.
+   * - `noiOpexHaircut` (default 0): sampledOpexRatio − baseOpexRatio. NOI is
+   *   scaled by (1 − haircut) so higher opex lowers NOI (FIX 3). Applied to
+   *   BOTH paths because revenue = NOI/(1−opexRatio) ⇒ opexRatio alone never
+   *   moved NOI. Clamped to keep the factor in a sane band. At the base draw
+   *   the haircut is 0 ⇒ factor 1 ⇒ byte-identical.
+   */
+  noiVectorOccupancyScale?: number;
+  noiVectorGrowthDivergencePct?: number;
+  noiOpexHaircut?: number;
 };
 
 export type ProFormaExtras = {
@@ -63,6 +115,8 @@ export type ProFormaExtras = {
   releasedReservesAtExitKrw: number;
   inPlaceTerminalNoiKrw: number;
   forwardTerminalNoiKrw: number;
+  /** Exit-cap-vs-Gordon-growth terminal-value reconciliation + sanity flags. */
+  terminalValueCrossCheck: TerminalValueCrossCheck;
 };
 
 /** Per-asset-class capex reserve as pct of revenue (major systems refresh). */
@@ -165,6 +219,7 @@ export function buildSyntheticProForma(inputs: ProFormaInputs): {
     ltvPct,
     interestRatePct,
     amortTermMonths,
+    capRatePct,
     exitCapRatePct,
     year1Noi,
     growthPct,
@@ -181,9 +236,19 @@ export function buildSyntheticProForma(inputs: ProFormaInputs): {
     assetClass = 'OFFICE',
     assessmentRatio = 0.65,
     propertyTaxFairMarketRatio = 0.7,
+    jongbuseFairMarketRatio = DEFAULT_FAIR_MARKET_RATIO,
     vatRefundablePortionPct,
-    capexReservePct
+    capexReservePct,
+    noiByYearKrw,
+    noiVectorOccupancyScale = 1,
+    noiVectorGrowthDivergencePct = 0,
+    noiOpexHaircut = 0
   } = inputs;
+
+  const hasVector = !!(noiByYearKrw && noiByYearKrw.length > 0);
+  // Opex haircut bites on NOI in BOTH paths (FIX 3). Clamp the multiplier to a
+  // sane band so a pathological opex draw cannot drive NOI negative or balloon.
+  const opexNoiFactor = Math.min(1.5, Math.max(0.5, 1 - noiOpexHaircut));
 
   const acquisitionTax = Math.round(purchasePriceKrw * (acquisitionTaxPct / 100));
   const totalBasis = purchasePriceKrw + acquisitionTax;
@@ -193,13 +258,27 @@ export function buildSyntheticProForma(inputs: ProFormaInputs): {
     assetClass,
     purchasePriceKrw,
     landValuePct,
-    assessmentRatio
+    assessmentRatio,
+    fairMarketRatio: jongbuseFairMarketRatio
   });
   const year1JongbuseKrw = jongbuse.annualJongbuseKrw;
 
   // ─ 매입부가세. Commercial acquisitions: 10% VAT on the building portion is
   // recoverable by a VAT-registered SPV. Residential (주택) is exempt from VAT
   // entirely (면세). Default to asset-class-driven recoverability, allow override.
+  //
+  // NOTE (VAT double-tracking, fix #5): `TaxProfile.vatRecoveryPct` (default 90,
+  // in inputs.ts) and this `vatRefundablePortionPct` measure DIFFERENT things and
+  // are intentionally kept separate:
+  //   - `vatRefundablePortionPct` here = the VAT *rate* applied to the building
+  //     portion of the purchase (10% statutory 부가가치세), i.e. how much VAT is
+  //     incurred & refundable on acquisition.
+  //   - `TaxProfile.vatRecoveryPct` = the *share* of that incurred VAT the SPV
+  //     expects to actually recover (timing/registration haircut), used by the
+  //     ledger layer, not here.
+  // They are not redundant; reconciling them into one field would conflate "VAT
+  // rate" with "recovery efficiency", so we leave both. TODO(tax): if a future
+  // model wants net VAT cash, multiply the two explicitly at the call site.
   const defaultRefundablePct = assetClass === 'MULTIFAMILY' || assetClass === 'LAND' ? 0 : 10;
   const effectiveVatPct = vatRefundablePortionPct ?? defaultRefundablePct;
   const buildingPortion = Math.max(0, 1 - landValuePct / 100);
@@ -234,7 +313,29 @@ export function buildSyntheticProForma(inputs: ProFormaInputs): {
 
   for (let i = 0; i < HOLDING_YEARS; i++) {
     const yearNum = i + 1;
-    const revenue = Math.round((year1Noi / (1 - opexRatio)) * Math.pow(1 + growthPct / 100, i));
+    // Real lease-level NOI vector (e.g. data-center rollover) takes priority over
+    // flat single-rate growth when supplied. Years past the vector flat-grow off
+    // its last supplied entry so the hold always covers HOLDING_YEARS.
+    let baseNoiThisYear: number;
+    if (hasVector) {
+      if (i < noiByYearKrw!.length) {
+        baseNoiThisYear = noiByYearKrw![i]!;
+      } else {
+        const last = noiByYearKrw![noiByYearKrw!.length - 1]!;
+        baseNoiThisYear = last * Math.pow(1 + growthPct / 100, i - (noiByYearKrw!.length - 1));
+      }
+      // FIX 1: let per-draw occupancy / rent-growth shocks bite on the vector
+      // instead of using it verbatim. Occupancy is a flat multiplicative scale;
+      // rent-growth divergence compounds over the hold (0 at base). Both default
+      // to the identity so the base draw leaves the vector unchanged.
+      baseNoiThisYear *=
+        noiVectorOccupancyScale * Math.pow(1 + noiVectorGrowthDivergencePct / 100, i);
+    } else {
+      baseNoiThisYear = year1Noi * Math.pow(1 + growthPct / 100, i);
+    }
+    // FIX 3: opex deviation from base actually moves NOI (factor 1 at base).
+    baseNoiThisYear *= opexNoiFactor;
+    const revenue = Math.round(baseNoiThisYear / (1 - opexRatio));
     const opex = Math.round(revenue * opexRatio);
     const noi = revenue - opex;
     const cfads = noi;
@@ -349,6 +450,20 @@ export function buildSyntheticProForma(inputs: ProFormaInputs): {
   const grossExit =
     exitCapRatePct > 0 ? Math.round(forwardTerminalNoi / (exitCapRatePct / 100)) : 0;
 
+  // Terminal-value cross-check: reconcile the exit-cap TV against a Gordon-growth
+  // perpetuity. No explicit discount rate is carried in ProFormaInputs, so we use
+  // the standard cap-rate identity r ≈ going-in cap + growth as the discount-rate
+  // proxy (cap = r - g). Surfaced for reviewers; exit-cap stays primary.
+  const terminalDiscountRatePct = capRatePct + growthPct;
+  const terminalValueCrossCheck = buildTerminalValueCrossCheck({
+    forwardNoiKrw: forwardTerminalNoi,
+    exitCapTerminalValueKrw: grossExit,
+    exitCapRatePct,
+    goingInCapRatePct: capRatePct,
+    discountRatePct: terminalDiscountRatePct,
+    growthPct
+  });
+
   const adjustedBasis = Math.max(0, totalBasis - cumulativeDepreciation);
   const realizedGain = Math.max(0, grossExit - adjustedBasis);
   const exitTax = Math.round(realizedGain * (exitTaxPct / 100));
@@ -415,7 +530,8 @@ export function buildSyntheticProForma(inputs: ProFormaInputs): {
       totalOperatingReserveKrw: cumulativeOperatingReserve,
       releasedReservesAtExitKrw: releasedReservesKrw,
       inPlaceTerminalNoiKrw: inPlaceTerminalNoi,
-      forwardTerminalNoiKrw: forwardTerminalNoi
+      forwardTerminalNoiKrw: forwardTerminalNoi,
+      terminalValueCrossCheck
     }
   };
 }

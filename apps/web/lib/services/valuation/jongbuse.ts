@@ -31,6 +31,14 @@
  * `공시가격현실화율` 은 유형·지역별로 다르나 약 60~70% 범위. 본 모듈은 기본 0.65
  * 를 쓰고 옵션으로 override 허용.
  *
+ * `공정시장가액비율` (fair-market-value ratio): 종부세 과세표준은 공시가격에서
+ * 공제액을 뺀 뒤 다시 **공정시장가액비율** 을 곱해 산출한다 (종합부동산세법
+ * §8·§13). 토지(종합·별도합산) 및 법인 주택은 약 60%. 기존 모듈은 재산세에는
+ * 이 비율을 반영하면서 종부세에는 누락하여 과세표준을 과대계상했다. 본 수정에서
+ * `fairMarketRatio` (기본 0.6) 를 과세표준에 곱해 보정한다. 주의: 공정시장가액
+ * 비율은 공제 *이후* 과세표준에 적용된다 (법인 주택은 기본공제가 없어 공시가격
+ * 전액 × 비율).
+ *
  * 주의: 이 모듈은 underwriting-level 추정치이지 세무 의견서가 아님. 실거래 들어갈
  * 때는 공시가격을 직접 조회하고 세무법인 검토를 받아야 한다.
  */
@@ -40,6 +48,16 @@ export type JongbuseInputs = {
   purchasePriceKrw: number;
   landValuePct: number;
   assessmentRatio?: number;
+  /**
+   * 공정시장가액비율. Applied to the taxable base AFTER the statutory deduction
+   * (토지) or to the assessed value (법인 주택, which has no basic deduction).
+   *
+   * Defaults to 1 (no-op) so the standalone module's historical contract is
+   * preserved; the underwriting path (synthetic-pro-forma.ts) explicitly passes
+   * the statutory ~0.6 ratio (`DEFAULT_FAIR_MARKET_RATIO`) so 종부세 과세표준 is
+   * correctly haircut there. Pass 0.6 here to model the real base directly.
+   */
+  fairMarketRatio?: number;
   overrideAnnualKrw?: number;
 };
 
@@ -52,6 +70,9 @@ export type JongbuseResult = {
 };
 
 const RESIDENTIAL_CORP_RATE_PCT = 2.7;
+
+/** 공정시장가액비율 default for 토지·법인 주택 (2024). Applied to the taxable base. */
+export const DEFAULT_FAIR_MARKET_RATIO = 0.6;
 
 type ProgressiveBracket = { upperKrw: number | null; ratePct: number };
 
@@ -88,6 +109,9 @@ export function computeAnnualJongbuseKrw(inputs: JongbuseInputs): JongbuseResult
     purchasePriceKrw,
     landValuePct,
     assessmentRatio = 0.65,
+    // Default 1 (identity) keeps the standalone module backward-compatible;
+    // synthetic-pro-forma supplies DEFAULT_FAIR_MARKET_RATIO (0.6) explicitly.
+    fairMarketRatio = 1,
     overrideAnnualKrw
   } = inputs;
 
@@ -104,12 +128,14 @@ export function computeAnnualJongbuseKrw(inputs: JongbuseInputs): JongbuseResult
   const assessedValueKrw = Math.round(purchasePriceKrw * assessmentRatio);
 
   if (assetClass === 'MULTIFAMILY') {
+    // 법인 주택은 기본공제 없음 → 공시가격 전액 × 공정시장가액비율 = 과세표준.
+    const taxableBasis = Math.round(assessedValueKrw * fairMarketRatio);
     return {
-      annualJongbuseKrw: Math.round(assessedValueKrw * (RESIDENTIAL_CORP_RATE_PCT / 100)),
+      annualJongbuseKrw: Math.round(taxableBasis * (RESIDENTIAL_CORP_RATE_PCT / 100)),
       assessedValueKrw,
-      taxableBasisKrw: assessedValueKrw,
+      taxableBasisKrw: taxableBasis,
       method: 'RESIDENTIAL_CORP',
-      note: `법인 보유 주택 공시가격 전액에 ${RESIDENTIAL_CORP_RATE_PCT}% 일률 적용`
+      note: `법인 보유 주택 공시가격 × 공정시장가액비율 ${fairMarketRatio} 에 ${RESIDENTIAL_CORP_RATE_PCT}% 일률 적용`
     };
   }
 
@@ -125,24 +151,30 @@ export function computeAnnualJongbuseKrw(inputs: JongbuseInputs): JongbuseResult
 
   if (assetClass === 'LAND') {
     const landAssessed = Math.round(assessedValueKrw * (landValuePct / 100));
-    const taxable = Math.max(0, landAssessed - GENERAL_LAND_EXEMPTION_KRW);
+    // 과세표준 = (공시가격 토지분 − 공제) × 공정시장가액비율.
+    const taxable = Math.round(
+      Math.max(0, landAssessed - GENERAL_LAND_EXEMPTION_KRW) * fairMarketRatio
+    );
     return {
       annualJongbuseKrw: applyProgressive(taxable, GENERAL_LAND_BRACKETS),
       assessedValueKrw,
       taxableBasisKrw: taxable,
       method: 'GENERAL_LAND',
-      note: '종합합산토지 — 5억 공제 후 1.0~3.0% progressive'
+      note: `종합합산토지 — 5억 공제 후 공정시장가액비율 ${fairMarketRatio}, 1.0~3.0% progressive`
     };
   }
 
   // OFFICE / RETAIL / HOTEL / DATA_CENTER / MIXED_USE — 별도합산토지
   const landAssessed = Math.round(assessedValueKrw * (landValuePct / 100));
-  const taxable = Math.max(0, landAssessed - SEPARATE_LAND_EXEMPTION_KRW);
+  // 과세표준 = (공시가격 토지분 − 80억 공제) × 공정시장가액비율.
+  const taxable = Math.round(
+    Math.max(0, landAssessed - SEPARATE_LAND_EXEMPTION_KRW) * fairMarketRatio
+  );
   return {
     annualJongbuseKrw: applyProgressive(taxable, SEPARATE_LAND_BRACKETS),
     assessedValueKrw,
     taxableBasisKrw: taxable,
     method: 'SEPARATE_LAND',
-    note: '별도합산토지 — 80억 공제 후 0.5~0.7% progressive (건물분 제외)'
+    note: `별도합산토지 — 80억 공제 후 공정시장가액비율 ${fairMarketRatio}, 0.5~0.7% progressive (건물분 제외)`
   };
 }

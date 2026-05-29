@@ -60,6 +60,13 @@ export type StabilizedIncomeValuation = StrategyStateWithExpenses & {
   debtPrincipalKrw: number;
   annualDebtServiceKrw: number;
   confidenceScore: number;
+  /**
+   * The strategy's declared confidence bounds. These travel with the valuation
+   * so any downstream adjustment (e.g. the credit overlay) can re-clamp the
+   * score to the same `[floor, ceiling]` the strategy declared, rather than a
+   * separate, wider engine-wide range. See `clampConfidence`.
+   */
+  confidenceBounds: ConfidenceBounds;
   scenarios: UnderwritingScenario[];
 };
 
@@ -201,6 +208,25 @@ type CapRateConfig = {
   fallbackPct: number;
   scenarioFloorPct: number;
 };
+
+/**
+ * A strategy's declared confidence range on the 0-10 scale. The income engine
+ * and every downstream adjustment must clamp to the *same* bounds so they never
+ * contradict each other.
+ */
+export type ConfidenceBounds = {
+  floor: number;
+  ceiling: number;
+};
+
+/**
+ * Single source of truth for clamping a confidence score to a strategy's
+ * declared `[floor, ceiling]`. Used both for the engine's base score and by the
+ * credit overlay's post-delta clamp so the two can never disagree.
+ */
+export function clampConfidence(value: number, bounds: ConfidenceBounds): number {
+  return Number(Math.min(bounds.ceiling, Math.max(bounds.floor, value)).toFixed(1));
+}
 
 type ConfidenceConfig = {
   floor: number;
@@ -490,23 +516,22 @@ export function buildStabilizedIncomeValuation(
     1
   );
 
-  const confidenceScore = Number(
-    Math.min(
-      config.confidence.ceiling,
-      Math.max(
-        config.confidence.floor,
-        config.confidence.base +
-          (bundle.marketSnapshot ? 0.8 : 0) +
-          ((bundle.comparableSet?.entries.length ?? 0) >= config.confidence.comparableThreshold
-            ? config.confidence.comparableBonus
-            : 0) +
-          (marketEvidence.transactionCompCount >= 2 ? config.confidence.transactionCompBonus : 0) +
-          (marketEvidence.rentCompCount >= 2 ? config.confidence.rentCompBonus : 0) +
-          (bundle.asset.purchasePriceKrw ? config.confidence.purchaseBonus : 0) +
-          (bundle.asset.stabilizedOccupancyPct ? config.confidence.stabilizedOccupancyBonus : 0) +
-          (config.confidence.extraBonus ? config.confidence.extraBonus(stateWithExpenses) : 0)
-      )
-    ).toFixed(1)
+  const confidenceBounds: ConfidenceBounds = {
+    floor: config.confidence.floor,
+    ceiling: config.confidence.ceiling
+  };
+  const confidenceScore = clampConfidence(
+    config.confidence.base +
+      (bundle.marketSnapshot ? 0.8 : 0) +
+      ((bundle.comparableSet?.entries.length ?? 0) >= config.confidence.comparableThreshold
+        ? config.confidence.comparableBonus
+        : 0) +
+      (marketEvidence.transactionCompCount >= 2 ? config.confidence.transactionCompBonus : 0) +
+      (marketEvidence.rentCompCount >= 2 ? config.confidence.rentCompBonus : 0) +
+      (bundle.asset.purchasePriceKrw ? config.confidence.purchaseBonus : 0) +
+      (bundle.asset.stabilizedOccupancyPct ? config.confidence.stabilizedOccupancyBonus : 0) +
+      (config.confidence.extraBonus ? config.confidence.extraBonus(stateWithExpenses) : 0),
+    confidenceBounds
   );
 
   const valuation: StabilizedIncomeValuation = {
@@ -516,6 +541,7 @@ export function buildStabilizedIncomeValuation(
     debtPrincipalKrw,
     annualDebtServiceKrw,
     confidenceScore,
+    confidenceBounds,
     scenarios: []
   };
 

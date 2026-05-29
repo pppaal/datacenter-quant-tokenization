@@ -72,7 +72,8 @@ export function readMacroGuidance(provenance: unknown): MacroGuidance | null {
       growthShiftPct: num(parsed.growthShiftPct),
       replacementCostShiftPct: num(parsed.replacementCostShiftPct)
     },
-    weightLine: typeof guidanceEntry.freshnessLabel === 'string' ? guidanceEntry.freshnessLabel : '',
+    weightLine:
+      typeof guidanceEntry.freshnessLabel === 'string' ? guidanceEntry.freshnessLabel : '',
     summary: summaryArr
   };
 }

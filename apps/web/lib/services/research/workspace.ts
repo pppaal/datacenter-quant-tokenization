@@ -12,13 +12,8 @@ import {
   syncAssetAndMarketResearch,
   syncOfficialSourceResearch
 } from '@/lib/services/research/workspace-sync';
-import {
-  flattenNumericMetrics,
-  type SnapshotApprovalStatus
-} from './workspace-formatting';
-import {
-  getResearchWorkspaceSyncSnapshot
-} from './workspace-views';
+import { flattenNumericMetrics, type SnapshotApprovalStatus } from './workspace-formatting';
+import { getResearchWorkspaceSyncSnapshot } from './workspace-views';
 
 export type ResearchWorkspaceTab =
   | 'macro'
@@ -190,9 +185,6 @@ export type ResearchWorkspaceData = {
   }>;
 };
 
-
-
-
 /**
  * Sync scope selector. Lets the cron layer pick which slice of the research
  * graph to refresh:
@@ -285,4 +277,3 @@ export async function runResearchWorkspaceSync(
     throw error;
   }
 }
-

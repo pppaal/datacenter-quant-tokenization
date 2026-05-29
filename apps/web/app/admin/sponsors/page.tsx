@@ -96,7 +96,9 @@ export default async function SponsorsPage() {
                     {avgMultiple !== null ? (
                       <Badge tone="good">avg {avgMultiple.toFixed(2)}x</Badge>
                     ) : null}
-                    {avgIrr !== null ? <Badge tone="good">avg IRR {avgIrr.toFixed(1)}%</Badge> : null}
+                    {avgIrr !== null ? (
+                      <Badge tone="good">avg IRR {avgIrr.toFixed(1)}%</Badge>
+                    ) : null}
                     <Badge>
                       {s.priorDeals.length} prior · {closedDeals.length} exited
                     </Badge>
@@ -163,15 +165,7 @@ export default async function SponsorsPage() {
   );
 }
 
-function StatCard({
-  label,
-  primary,
-  detail
-}: {
-  label: string;
-  primary: string;
-  detail: string;
-}) {
+function StatCard({ label, primary, detail }: { label: string; primary: string; detail: string }) {
   return (
     <Card className="space-y-2">
       <div className="fine-print">{label}</div>

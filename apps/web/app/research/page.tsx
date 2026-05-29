@@ -50,10 +50,22 @@ const pillars = [
 ];
 
 const dataSources = [
-  { tier: 'Tier 1 — 권위', label: '국토교통부 RTMS · KEPCO 부하 데이터 · BOK ECOS', cadence: '실시간 / 일별' },
+  {
+    tier: 'Tier 1 — 권위',
+    label: '국토교통부 RTMS · KEPCO 부하 데이터 · BOK ECOS',
+    cadence: '실시간 / 일별'
+  },
   { tier: 'Tier 1 — 권위', label: '서울시 인허가 · 토지대장 · 건축물대장', cadence: '주별' },
-  { tier: 'Tier 2 — 시장', label: 'CBRE / JLL / Savills 분기 보고서, 한국감정원 시계열', cadence: '분기' },
-  { tier: 'Tier 3 — 마이크로', label: '문서 인테이크 (PDF · 이미지 · CSV → OCR + 추출)', cadence: '온디맨드' }
+  {
+    tier: 'Tier 2 — 시장',
+    label: 'CBRE / JLL / Savills 분기 보고서, 한국감정원 시계열',
+    cadence: '분기'
+  },
+  {
+    tier: 'Tier 3 — 마이크로',
+    label: '문서 인테이크 (PDF · 이미지 · CSV → OCR + 추출)',
+    cadence: '온디맨드'
+  }
 ];
 
 const moats = [
@@ -96,9 +108,9 @@ export default function ResearchDeskPage() {
             모델을 IC 의사결정으로.
           </h1>
           <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-300">
-            대부분의 부동산 운용사는 평가의 절반을 "감"으로 채웁니다. Nexus Seoul은 리서치
-            데이터 → 회귀 적합 → IM 셀까지의 경로를 결정론적으로 묶어, 같은 가정 입력이면
-            언제 다시 돌려도 같은 숫자가 나오도록 합니다.
+            대부분의 부동산 운용사는 평가의 절반을 "감"으로 채웁니다. Nexus Seoul은 리서치 데이터 →
+            회귀 적합 → IM 셀까지의 경로를 결정론적으로 묶어, 같은 가정 입력이면 언제 다시 돌려도
+            같은 숫자가 나오도록 합니다.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Link href="/sample-report">
@@ -118,9 +130,9 @@ export default function ResearchDeskPage() {
             가격을 구성요소 단위로 분해합니다.
           </h2>
           <p className="mt-3 text-sm leading-7 text-slate-400">
-            세 개의 pure function — 헤도닉 회귀, 캡레이트 분해, 단계별 확률가중 공급-수요 —
-            가 IM의 quant 백본을 이룹니다. 모든 모듈은 DB 의존 없이 단위테스트로 검증되며,
-            결과는 자산 IM 카드로 즉시 surfacing됩니다.
+            세 개의 pure function — 헤도닉 회귀, 캡레이트 분해, 단계별 확률가중 공급-수요 — 가 IM의
+            quant 백본을 이룹니다. 모든 모듈은 DB 의존 없이 단위테스트로 검증되며, 결과는 자산 IM
+            카드로 즉시 surfacing됩니다.
           </p>
         </div>
         <div className="grid gap-5 lg:grid-cols-3">
@@ -152,8 +164,8 @@ export default function ResearchDeskPage() {
             권위 있는 1차 데이터부터 마이크로 증거까지.
           </h2>
           <p className="mt-3 text-sm leading-7 text-slate-400">
-            모든 데이터는 신선도, 출처(provenance), 폴백 사용 여부, 리뷰 상태가 같이 적재됩니다.
-            IM 한 셀의 숫자가 어느 소스에서 왔는지 항상 추적 가능합니다.
+            모든 데이터는 신선도, 출처(provenance), 폴백 사용 여부, 리뷰 상태가 같이 적재됩니다. IM
+            한 셀의 숫자가 어느 소스에서 왔는지 항상 추적 가능합니다.
           </p>
         </div>
         <div className="overflow-hidden rounded-3xl border border-white/10 bg-slate-950/40">
@@ -186,9 +198,9 @@ export default function ResearchDeskPage() {
             출처 추적 + 결정론 + Pure function.
           </h2>
           <p className="mt-3 text-sm leading-7 text-slate-400">
-            한국 부동산 운용사의 리서치 산출물은 보통 두 가지 문제를 안고 있습니다 —
-            "이 숫자 어디서 왔지?"와 "같은 가정 다시 돌리면 다른 결과가 나오네". 우리는 그
-            두 가지를 데이터 모델 단에서 차단합니다.
+            한국 부동산 운용사의 리서치 산출물은 보통 두 가지 문제를 안고 있습니다 — "이 숫자 어디서
+            왔지?"와 "같은 가정 다시 돌리면 다른 결과가 나오네". 우리는 그 두 가지를 데이터 모델
+            단에서 차단합니다.
           </p>
         </div>
         <div className="grid gap-5 lg:grid-cols-2">
@@ -210,9 +222,9 @@ export default function ResearchDeskPage() {
                 3개 모듈이 IM 어디에 들어가는지 직접 확인하세요.
               </h2>
               <p className="mt-3 text-sm leading-7 text-slate-400">
-                Underwriting Assumptions의 캡레이트 분해 카드, Comparable Transactions의
-                헤도닉 적합값 타일, Outcomes & Pipeline 뒤의 5년 supply-demand 표 —
-                모두 같은 quant 코어에서 도출됩니다.
+                Underwriting Assumptions의 캡레이트 분해 카드, Comparable Transactions의 헤도닉
+                적합값 타일, Outcomes & Pipeline 뒤의 5년 supply-demand 표 — 모두 같은 quant
+                코어에서 도출됩니다.
               </p>
             </div>
             <div className="flex gap-3">

@@ -1,5 +1,6 @@
 import type { PrismaClient } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
+import { computeFundNavDetail } from '@/lib/services/fund-nav';
 
 export type FundWaterfallInvestorRow = {
   investorId: string;
@@ -29,6 +30,9 @@ export type FundWaterfallTotals = {
   distributedKrw: number;
   remainingCommitmentKrw: number;
   navKrw: number;
+  /** True when NAV relied on a cost-basis fallback for one or more assets (not fully marked). */
+  navUsedCostBasisFallback: boolean;
+  rvpiMultiple: number;
   dpiMultiple: number;
   tvpiMultiple: number;
   capitalCallCount: number;
@@ -56,6 +60,7 @@ export type FundWaterfallData = {
 
 const HURDLE_RATE_PCT = 8;
 const CARRIED_INTEREST_PCT = 20;
+const MS_PER_YEAR = 365.25 * 24 * 60 * 60 * 1000;
 
 function toNumber(value: unknown): number {
   if (typeof value === 'number') return value;
@@ -64,6 +69,177 @@ function toNumber(value: unknown): number {
   if (typeof maybe.toNumber === 'function') return maybe.toNumber();
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
+}
+
+export type FundWaterfallTierResult = {
+  returnOfCapitalAmount: number;
+  preferredReturnAmount: number;
+  accruedPreferredReturn: number;
+  gpCatchUpAmount: number;
+  carryLpAmount: number;
+  carryGpAmount: number;
+  /** True when the elapsed-time accrual of the preferred return is time-weighted. */
+  prefIsTimeWeighted: boolean;
+};
+
+type DatedCashflow = { date: Date; amountKrw: number };
+
+/**
+ * Accrue the LP preferred return on *unreturned* called capital, compounding at
+ * `hurdleRatePct` per annum, mirroring the European-style convention in
+ * `valuation/lp-gp-waterfall.ts`.
+ *
+ * Unlike the pro-forma calculator (which works on equal annual periods), here we
+ * only have aggregate called/distributed figures plus dated capital-call and
+ * distribution events. We therefore walk the merged event timeline, accruing
+ * compounding pref on the running unreturned-capital balance between consecutive
+ * dates. Capital calls raise the balance; distributions first return capital
+ * (Tier 1) and the remainder pays down accrued pref (Tier 2).
+ *
+ * When no dated events are available we cannot establish a time dimension, so we
+ * fall back to a single-period accrual of `calledKrw * rate` (one year). This is
+ * still bounded by actual distributions downstream and is documented as a
+ * limitation in the returned `prefIsTimeWeighted` flag.
+ */
+function accruePreferredReturn(
+  calledKrw: number,
+  capitalCalls: DatedCashflow[],
+  distributions: DatedCashflow[],
+  hurdleRatePct: number,
+  asOf: Date
+): { accrued: number; timeWeighted: boolean } {
+  const rate = hurdleRatePct / 100;
+
+  const datedCalls = capitalCalls.filter((c) => c.amountKrw > 0 && !Number.isNaN(c.date.getTime()));
+  const datedDistros = distributions.filter(
+    (d) => d.amountKrw > 0 && !Number.isNaN(d.date.getTime())
+  );
+
+  // Without dated events we have no time dimension. Fall back to a one-year
+  // accrual on called capital so the figure is non-zero and conservative.
+  if (datedCalls.length === 0) {
+    return { accrued: calledKrw * rate, timeWeighted: false };
+  }
+
+  type Event = { date: Date; calls: number; distros: number };
+  const byDate = new Map<number, Event>();
+  const push = (date: Date, calls: number, distros: number) => {
+    const key = date.getTime();
+    const existing = byDate.get(key);
+    if (existing) {
+      existing.calls += calls;
+      existing.distros += distros;
+    } else {
+      byDate.set(key, { date, calls, distros });
+    }
+  };
+  for (const c of datedCalls) push(c.date, c.amountKrw, 0);
+  for (const d of datedDistros) push(d.date, 0, d.amountKrw);
+
+  const events = Array.from(byDate.values()).sort((a, b) => a.date.getTime() - b.date.getTime());
+
+  let unreturnedCapital = 0;
+  let accruedPref = 0;
+  let prevDate = events[0]!.date;
+
+  const accrueTo = (date: Date) => {
+    const years = (date.getTime() - prevDate.getTime()) / MS_PER_YEAR;
+    if (years > 0 && unreturnedCapital + accruedPref > 0) {
+      // Compound annually on (unreturned capital + previously accrued pref).
+      const growth = (unreturnedCapital + accruedPref) * (Math.pow(1 + rate, years) - 1);
+      accruedPref += growth;
+    }
+    prevDate = date;
+  };
+
+  for (const event of events) {
+    accrueTo(event.date);
+    // Capital calls raise unreturned capital.
+    unreturnedCapital += event.calls;
+    // Distributions return capital first (Tier 1), then pay accrued pref (Tier 2).
+    let remaining = event.distros;
+    const roc = Math.min(remaining, unreturnedCapital);
+    unreturnedCapital -= roc;
+    remaining -= roc;
+    const prefPaid = Math.min(remaining, accruedPref);
+    accruedPref -= prefPaid;
+  }
+
+  // Accrue from the final event up to the valuation date.
+  if (!Number.isNaN(asOf.getTime())) {
+    accrueTo(asOf);
+  }
+
+  return { accrued: Math.max(0, Math.round(accruedPref)), timeWeighted: true };
+}
+
+/**
+ * Pure, DB-free waterfall tier calculation. Splits cumulative distributions into
+ * the four European-style tiers using the corrected conventions:
+ *
+ *   1. Return of capital — LP, up to called capital.
+ *   2. Preferred return  — LP, up to the time-weighted compounding accrual.
+ *   3. GP catch-up       — GP, until GP's share of *profit above return of
+ *                          capital* equals the carry percentage.
+ *   4. Carried interest  — remainder split LP/GP per the carry percentage.
+ */
+export function computeFundWaterfallTiers(params: {
+  calledKrw: number;
+  distributedKrw: number;
+  capitalCalls: DatedCashflow[];
+  distributions: DatedCashflow[];
+  hurdleRatePct?: number;
+  carriedInterestPct?: number;
+  asOf?: Date;
+}): FundWaterfallTierResult {
+  const hurdleRatePct = params.hurdleRatePct ?? HURDLE_RATE_PCT;
+  const carriedInterestPct = params.carriedInterestPct ?? CARRIED_INTEREST_PCT;
+  const { calledKrw, distributedKrw } = params;
+  const asOf = params.asOf ?? new Date();
+
+  const { accrued: accruedPreferredReturn, timeWeighted } = accruePreferredReturn(
+    calledKrw,
+    params.capitalCalls,
+    params.distributions,
+    hurdleRatePct,
+    asOf
+  );
+
+  // Tier 1 — return of capital.
+  const returnOfCapitalAmount = Math.min(distributedKrw, calledKrw);
+  const remainingAfterRoc = Math.max(distributedKrw - returnOfCapitalAmount, 0);
+
+  // Tier 2 — preferred return, capped at the accrued amount.
+  const preferredReturnAmount = Math.min(accruedPreferredReturn, remainingAfterRoc);
+  const remainingAfterPref = Math.max(remainingAfterRoc - preferredReturnAmount, 0);
+
+  // Tier 3 — GP catch-up. Bring GP up to its carry share of *total profit above
+  // return of capital* (pref + catch-up + future carry), not of the pref slice.
+  // At the end of catch-up: gpCatchUp / (preferredReturnAmount + gpCatchUp) = carry%.
+  // => gpCatchUp = preferredReturnAmount * carry / (100 - carry).
+  // Distributions beyond that point are split per the carry percentage so the GP
+  // share converges to carry% of all profit.
+  const carryFraction = carriedInterestPct / 100;
+  const catchUpTarget =
+    carryFraction < 1
+      ? (preferredReturnAmount * carriedInterestPct) / (100 - carriedInterestPct)
+      : Number.POSITIVE_INFINITY;
+  const gpCatchUpAmount = Math.min(catchUpTarget, remainingAfterPref);
+  const remainingAfterCatchUp = Math.max(remainingAfterPref - gpCatchUpAmount, 0);
+
+  // Tier 4 — carried interest split on the residual.
+  const carryLpAmount = (remainingAfterCatchUp * (100 - carriedInterestPct)) / 100;
+  const carryGpAmount = (remainingAfterCatchUp * carriedInterestPct) / 100;
+
+  return {
+    returnOfCapitalAmount,
+    preferredReturnAmount,
+    accruedPreferredReturn,
+    gpCatchUpAmount,
+    carryLpAmount,
+    carryGpAmount,
+    prefIsTimeWeighted: timeWeighted
+  };
 }
 
 export async function buildFundWaterfall(
@@ -80,7 +256,28 @@ export async function buildFundWaterfall(
         }
       },
       capitalCalls: true,
-      distributions: true
+      distributions: true,
+      portfolio: {
+        include: {
+          assets: {
+            include: {
+              asset: {
+                select: {
+                  id: true,
+                  name: true,
+                  assetCode: true,
+                  purchasePriceKrw: true,
+                  valuations: {
+                    orderBy: { createdAt: 'desc' as const },
+                    take: 1,
+                    select: { baseCaseValueKrw: true, createdAt: true }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   });
 
@@ -90,9 +287,13 @@ export async function buildFundWaterfall(
   const calledKrw = fund.commitments.reduce((sum, c) => sum + toNumber(c.calledKrw), 0);
   const distributedKrw = fund.commitments.reduce((sum, c) => sum + toNumber(c.distributedKrw), 0);
   const remainingCommitmentKrw = Math.max(committedKrw - calledKrw, 0);
-  const navKrw = Math.max(calledKrw - distributedKrw, 0);
+
+  // Fair-value NAV = sum of latest asset valuations (cost-basis fallback flagged).
+  const nav = computeFundNavDetail(fund);
+  const navKrw = nav.navKrw;
 
   const dpiMultiple = calledKrw > 0 ? Number((distributedKrw / calledKrw).toFixed(2)) : 0;
+  const rvpiMultiple = calledKrw > 0 ? Number((navKrw / calledKrw).toFixed(2)) : 0;
   const tvpiMultiple =
     calledKrw > 0 ? Number(((distributedKrw + navKrw) / calledKrw).toFixed(2)) : 0;
 
@@ -116,19 +317,28 @@ export async function buildFundWaterfall(
     })
     .sort((a, b) => b.committedKrw - a.committedKrw);
 
-  const hurdlePreferredReturn = (calledKrw * HURDLE_RATE_PCT) / 100;
-  const returnOfCapitalAmount = Math.min(distributedKrw, calledKrw);
-  const remainingAfterRoc = Math.max(distributedKrw - returnOfCapitalAmount, 0);
-  const preferredReturnAmount = Math.min(hurdlePreferredReturn, remainingAfterRoc);
-  const remainingAfterPref = Math.max(remainingAfterRoc - preferredReturnAmount, 0);
+  const {
+    returnOfCapitalAmount,
+    preferredReturnAmount,
+    gpCatchUpAmount,
+    carryLpAmount,
+    carryGpAmount
+  } = computeFundWaterfallTiers({
+    calledKrw,
+    distributedKrw,
+    capitalCalls: fund.capitalCalls.map((c) => ({
+      date: c.callDate,
+      amountKrw: toNumber(c.amountKrw)
+    })),
+    distributions: fund.distributions.map((d) => ({
+      date: d.distributionDate,
+      amountKrw: toNumber(d.amountKrw)
+    })),
+    hurdleRatePct: HURDLE_RATE_PCT,
+    carriedInterestPct: CARRIED_INTEREST_PCT
+  });
 
-  const catchUpTarget =
-    (preferredReturnAmount * CARRIED_INTEREST_PCT) / (100 - CARRIED_INTEREST_PCT);
-  const gpCatchUpAmount = Math.min(catchUpTarget, remainingAfterPref);
-  const remainingAfterCatchUp = Math.max(remainingAfterPref - gpCatchUpAmount, 0);
-
-  const carryLpAmount = (remainingAfterCatchUp * (100 - CARRIED_INTEREST_PCT)) / 100;
-  const carryGpAmount = (remainingAfterCatchUp * CARRIED_INTEREST_PCT) / 100;
+  const remainingAfterCatchUp = carryLpAmount + carryGpAmount;
 
   const tierTotal = (amt: number) => (distributedKrw > 0 ? (amt / distributedKrw) * 100 : 0);
 
@@ -182,6 +392,8 @@ export async function buildFundWaterfall(
       distributedKrw,
       remainingCommitmentKrw,
       navKrw,
+      navUsedCostBasisFallback: nav.usedCostBasisFallback,
+      rvpiMultiple,
       dpiMultiple,
       tvpiMultiple,
       capitalCallCount: fund.capitalCalls.length,

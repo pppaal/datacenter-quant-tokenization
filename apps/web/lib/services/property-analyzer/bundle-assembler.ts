@@ -17,6 +17,60 @@ import type {
   UseZone
 } from '@/lib/services/public-data/types';
 import type { UnderwritingBundle } from '@/lib/services/valuation/types';
+import { classifyFreshness, type FreshnessBand } from '@/lib/services/im/freshness';
+
+/**
+ * Provenance tier for a single material input. Ordered roughly by trust:
+ *   LIVE     — fetched from a live upstream connector (MOLIT / RTMS / KEPCO …)
+ *   SEED     — deterministic mock connector standing in for a real source
+ *   IMPUTED  — derived/estimated from other real inputs (e.g. occupancy from comps)
+ *   FALLBACK — hard-coded constant used because no evidence was available
+ *   MOCK     — synthetic geocode (no real address resolution happened)
+ */
+export type ProvenanceTier = 'LIVE' | 'SEED' | 'IMPUTED' | 'FALLBACK' | 'MOCK';
+
+/** Tiers that mean "this number is not grounded in observed data". */
+export const ESTIMATED_TIERS: ReadonlySet<ProvenanceTier> = new Set<ProvenanceTier>([
+  'IMPUTED',
+  'FALLBACK',
+  'MOCK'
+]);
+
+export type ProvenanceField = {
+  /** Stable machine key, e.g. "occupancy", "capRate". */
+  field: string;
+  /** Human label for the UI. */
+  label: string;
+  /** Resolved value as used by the engine (already formatted as a string). */
+  value: string;
+  tier: ProvenanceTier;
+  /** Source-system label, e.g. "rent-comps (live)", "fallback-constant". */
+  source: string;
+  /** Optional asOf timestamp when known (drives freshness band). */
+  asOf?: string | null;
+  /** Optional freshness band derived from asOf. */
+  freshness?: FreshnessBand | null;
+  /** Short note explaining why this tier was assigned. */
+  note: string;
+};
+
+export type ConnectorFailure = {
+  label: string;
+  message: string;
+};
+
+export type AnalysisProvenance = {
+  fields: ProvenanceField[];
+  connectorFailures: ConnectorFailure[];
+  /** Number of material inputs that are estimated (IMPUTED/FALLBACK/MOCK). */
+  estimatedCount: number;
+  /** Total number of material inputs tracked. */
+  totalCount: number;
+  /** "N of M key inputs are estimated …" trust hint. */
+  trustHint: string;
+  /** Overall confidence band derived from the estimated ratio. */
+  confidence: 'high' | 'medium' | 'low';
+};
 
 type AssemblerInput = {
   addressInput: string;
@@ -141,6 +195,297 @@ function estimateAnnualRevenue(input: AssemblerInput): number {
     return Math.round(avgSqmRent * gfa * 12 * occ);
   }
   return Math.round(gfa * 60_000 * 12 * occ); // fallback
+}
+
+/** Per-connector live/mock mode, as resolved by the public-data registry. */
+export type ConnectorModeMap = {
+  buildingRegistry?: 'live' | 'mock';
+  useZone?: 'live' | 'mock';
+  landPricing?: 'live' | 'mock';
+  rentComps?: 'live' | 'mock';
+  grid?: 'live' | 'mock';
+  macroMicro?: 'live' | 'mock';
+};
+
+export type ProvenanceContext = {
+  /** True when the address could not be resolved by a real geocoder. */
+  mockGeocode: boolean;
+  /** Live/mock mode for each connector (defaults to 'mock' when omitted). */
+  connectorModes?: ConnectorModeMap;
+  /** Connector failures surfaced from auto-analyze (previously only console.warn'd). */
+  connectorFailures?: ConnectorFailure[];
+};
+
+/**
+ * Map a connector mode to the tier used when that connector DID return data.
+ * A live connector that returned a value is LIVE; a mock one is SEED.
+ */
+function connectorTier(mode: 'live' | 'mock' | undefined): ProvenanceTier {
+  return mode === 'live' ? 'LIVE' : 'SEED';
+}
+
+function withFreshness(field: Omit<ProvenanceField, 'freshness'>): ProvenanceField {
+  const { band } = classifyFreshness(field.asOf ?? null);
+  return { ...field, freshness: band };
+}
+
+/**
+ * Inspect the assembled inputs and classify each material input by provenance
+ * tier. This is surfacing-only: it never changes a single value the valuation
+ * engine consumes; it only records WHERE each value came from.
+ */
+export function buildAnalysisProvenance(
+  input: AssemblerInput,
+  ctx: ProvenanceContext
+): AnalysisProvenance {
+  const modes = ctx.connectorModes ?? {};
+  const fields: ProvenanceField[] = [];
+
+  // --- address / geocode -------------------------------------------------
+  fields.push(
+    withFreshness(
+      ctx.mockGeocode
+        ? {
+            field: 'geocode',
+            label: 'Address / geocode',
+            value: input.parcel.roadAddress ?? input.parcel.jibunAddress,
+            tier: 'MOCK',
+            source: 'mock-geocode',
+            asOf: null,
+            note: 'Coordinates synthesized; no live address resolution.'
+          }
+        : {
+            field: 'geocode',
+            label: 'Address / geocode',
+            value: input.parcel.roadAddress ?? input.parcel.jibunAddress,
+            tier: 'LIVE',
+            source: 'korea-geocode',
+            asOf: null,
+            note: 'Resolved against geocoder.'
+          }
+    )
+  );
+
+  // --- zoning ------------------------------------------------------------
+  fields.push(
+    withFreshness({
+      field: 'zoning',
+      label: 'Use zone',
+      value: input.zone.primaryZone,
+      tier: connectorTier(modes.useZone),
+      source: `use-zone (${modes.useZone ?? 'mock'})`,
+      asOf: null,
+      note:
+        modes.useZone === 'live'
+          ? 'Live zoning lookup.'
+          : 'Seed zoning connector (no live VWorld adapter wired).'
+    })
+  );
+
+  // --- land price --------------------------------------------------------
+  const landTxn = input.landPricing?.recentTransactionKrwPerSqm ?? null;
+  const landOfficial = input.landPricing?.officialLandPriceKrwPerSqm ?? null;
+  if (landTxn != null) {
+    fields.push(
+      withFreshness({
+        field: 'landPrice',
+        label: 'Land price',
+        value: `${Math.round(landTxn).toLocaleString()} KRW/㎡ (실거래)`,
+        tier: connectorTier(modes.landPricing),
+        source: `land-pricing (${modes.landPricing ?? 'mock'})`,
+        asOf: input.landPricing?.recentTransactionDate ?? null,
+        note: 'Recent transaction price used as basis.'
+      })
+    );
+  } else if (landOfficial != null) {
+    fields.push(
+      withFreshness({
+        field: 'landPrice',
+        label: 'Land price',
+        value: `${Math.round(landOfficial).toLocaleString()} KRW/㎡ (공시지가)`,
+        tier: 'IMPUTED',
+        source: `land-pricing (${modes.landPricing ?? 'mock'})`,
+        asOf: input.landPricing ? `${input.landPricing.officialLandPriceYear}-01-01` : null,
+        note: 'No 실거래; official 공시지가 used as a proxy for market value.'
+      })
+    );
+  } else {
+    fields.push(
+      withFreshness({
+        field: 'landPrice',
+        label: 'Land price',
+        value: '2,000,000 KRW/㎡',
+        tier: 'FALLBACK',
+        source: 'fallback-constant',
+        asOf: null,
+        note: 'No land-price evidence; default 2.0M KRW/㎡ applied.'
+      })
+    );
+  }
+
+  // --- rent / cap evidence ----------------------------------------------
+  const haveRentComps = input.rentComps.length > 0;
+  const compAsOf =
+    input.rentComps
+      .map((c) => c.transactionDate)
+      .filter((d): d is string => typeof d === 'string')
+      .sort()
+      .at(-1) ?? null;
+  if (haveRentComps) {
+    fields.push(
+      withFreshness({
+        field: 'rentEvidence',
+        label: 'Rent evidence',
+        value: `${input.rentComps.length} comp(s)`,
+        tier: connectorTier(modes.rentComps),
+        source: `rent-comps (${modes.rentComps ?? 'mock'})`,
+        asOf: compAsOf,
+        note: 'Revenue derived from observed rent comparables.'
+      })
+    );
+  } else {
+    fields.push(
+      withFreshness({
+        field: 'rentEvidence',
+        label: 'Rent / revenue',
+        value: 'GFA × 60,000 KRW/㎡/mo',
+        tier: 'FALLBACK',
+        source: 'fallback-constant',
+        asOf: null,
+        note: 'No rent comps; revenue floored at GFA × 60,000 KRW/㎡/mo.'
+      })
+    );
+  }
+
+  // --- cap rate ----------------------------------------------------------
+  const compCap = weightedAvg(input.rentComps, (c) => c.capRatePct);
+  if (compCap != null) {
+    fields.push(
+      withFreshness({
+        field: 'capRate',
+        label: 'Cap rate',
+        value: `${compCap.toFixed(2)}%`,
+        tier: connectorTier(modes.rentComps),
+        source: `rent-comps (${modes.rentComps ?? 'mock'})`,
+        asOf: compAsOf,
+        note: 'Cap rate from comparable transactions.'
+      })
+    );
+  } else if (input.macroMicro.submarketCapRatePct != null) {
+    fields.push(
+      withFreshness({
+        field: 'capRate',
+        label: 'Cap rate',
+        value: `${input.macroMicro.submarketCapRatePct.toFixed(2)}%`,
+        tier: 'IMPUTED',
+        source: `macro-micro (${modes.macroMicro ?? 'mock'})`,
+        asOf: null,
+        note: 'No comp cap rate; submarket cap rate used.'
+      })
+    );
+  } else {
+    fields.push(
+      withFreshness({
+        field: 'capRate',
+        label: 'Cap rate',
+        value: '6.00%',
+        tier: 'FALLBACK',
+        source: 'fallback-constant',
+        asOf: null,
+        note: 'No cap-rate evidence; default 6.0% applied.'
+      })
+    );
+  }
+
+  // --- occupancy ---------------------------------------------------------
+  const compOcc = weightedAvg(input.rentComps, (c) => c.occupancyPct);
+  if (compOcc != null) {
+    fields.push(
+      withFreshness({
+        field: 'occupancy',
+        label: 'Occupancy',
+        value: `${Math.round(compOcc)}%`,
+        tier: connectorTier(modes.rentComps),
+        source: `rent-comps (${modes.rentComps ?? 'mock'})`,
+        asOf: compAsOf,
+        note: 'Occupancy from comparables.'
+      })
+    );
+  } else if (input.macroMicro.submarketVacancyPct != null) {
+    fields.push(
+      withFreshness({
+        field: 'occupancy',
+        label: 'Occupancy',
+        value: `${100 - input.macroMicro.submarketVacancyPct}%`,
+        tier: 'IMPUTED',
+        source: `macro-micro (${modes.macroMicro ?? 'mock'})`,
+        asOf: null,
+        note: 'Occupancy = 100% − submarket vacancy.'
+      })
+    );
+  } else {
+    fields.push(
+      withFreshness({
+        field: 'occupancy',
+        label: 'Occupancy',
+        value: '85%',
+        tier: 'FALLBACK',
+        source: 'fallback-constant',
+        asOf: null,
+        note: 'No occupancy evidence; default 85% applied (also used in revenue).'
+      })
+    );
+  }
+
+  // --- financing rate ----------------------------------------------------
+  // The assembler hard-codes 5.4% with no live debt-cost connector today.
+  fields.push(
+    withFreshness({
+      field: 'financingRate',
+      label: 'Financing rate',
+      value: '5.40%',
+      tier: 'FALLBACK',
+      source: 'fallback-constant',
+      asOf: null,
+      note: 'No live debt-cost feed; financing rate fixed at 5.4%.'
+    })
+  );
+
+  // --- jeonse / deposit --------------------------------------------------
+  // Multifamily underwriting assumes an imputed 전세 deposit when no lease
+  // data is available. We surface it as IMPUTED for the relevant classes.
+  if (input.assetClass === AssetClass.MULTIFAMILY) {
+    fields.push(
+      withFreshness({
+        field: 'deposit',
+        label: '전세 / deposit',
+        value: 'imputed',
+        tier: 'IMPUTED',
+        source: 'assumption',
+        asOf: null,
+        note: 'No lease/deposit data; 전세 deposit imputed from rent.'
+      })
+    );
+  }
+
+  const estimatedCount = fields.filter((f) => ESTIMATED_TIERS.has(f.tier)).length;
+  const totalCount = fields.length;
+  const ratio = totalCount > 0 ? estimatedCount / totalCount : 0;
+  const confidence: AnalysisProvenance['confidence'] =
+    ratio >= 0.5 ? 'low' : ratio >= 0.25 ? 'medium' : 'high';
+  const trustHint =
+    estimatedCount === 0
+      ? `All ${totalCount} key inputs are grounded in observed data.`
+      : `${estimatedCount} of ${totalCount} key inputs are imputed/fallback — treat as screening only.`;
+
+  return {
+    fields,
+    connectorFailures: ctx.connectorFailures ?? [],
+    estimatedCount,
+    totalCount,
+    trustHint,
+    confidence
+  };
 }
 
 export function assembleBundle(input: AssemblerInput): UnderwritingBundle {

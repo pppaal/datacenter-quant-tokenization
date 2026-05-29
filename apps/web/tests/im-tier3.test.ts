@@ -199,8 +199,5 @@ test('buildFxExposure builds 5-row sensitivity for foreign LP base', () => {
 });
 
 test('buildFxExposure returns null when base = asset currency', () => {
-  assert.equal(
-    buildFxExposure(100, { assetCurrency: 'KRW', lpBaseCurrency: 'KRW' }),
-    null
-  );
+  assert.equal(buildFxExposure(100, { assetCurrency: 'KRW', lpBaseCurrency: 'KRW' }), null);
 });

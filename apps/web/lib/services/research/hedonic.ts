@@ -154,7 +154,8 @@ function buildFeatureNames(
   if (includeVintage) names.push('vintage_delta');
   for (let i = 1; i < submarkets.length; i += 1) names.push(`submarket=${submarkets[i]}`);
   for (let i = 1; i < tiers.length; i += 1) names.push(`tier=${tiers[i]}`);
-  for (let i = 1; i < dealStructures.length; i += 1) names.push(`dealStructure=${dealStructures[i]}`);
+  for (let i = 1; i < dealStructures.length; i += 1)
+    names.push(`dealStructure=${dealStructures[i]}`);
   return names;
 }
 
@@ -163,10 +164,7 @@ function buildFeatureNames(
  * log-price for `query`.  Returns null when the comp set is too
  * thin to fit (fewer rows than parameters or zero variance in y).
  */
-export function fitHedonic(
-  comps: CompRow[],
-  query: HedonicQuery
-): HedonicFit | null {
+export function fitHedonic(comps: CompRow[], query: HedonicQuery): HedonicFit | null {
   // Filter to rows with enough info.
   const valid = comps.filter(
     (r) =>
@@ -193,9 +191,7 @@ export function fitHedonic(
   // Detect whether vintage carries any signal — if all rows have the
   // same year (or none have a year), the delta column is identically
   // zero and would make XᵀX singular. Skip it in that case.
-  const includeVintage =
-    vintageVals.length >= 2 &&
-    vintageVals.some((v) => v !== vintageVals[0]);
+  const includeVintage = vintageVals.length >= 2 && vintageVals.some((v) => v !== vintageVals[0]);
 
   // Build X (n × p) and y.
   const X: number[][] = [];
@@ -261,10 +257,7 @@ export function fitHedonic(
     ssTot += tot * tot;
   }
   const rSquared = ssTot > 0 ? 1 - ssRes / ssTot : 0;
-  const adjusted =
-    n - p > 0 && ssTot > 0
-      ? 1 - ((1 - rSquared) * (n - 1)) / (n - p)
-      : rSquared;
+  const adjusted = n - p > 0 && ssTot > 0 ? 1 - ((1 - rSquared) * (n - 1)) / (n - p) : rSquared;
   const residualStdErr = n - p > 0 ? Math.sqrt(ssRes / (n - p)) : 0;
 
   // Predict at query
