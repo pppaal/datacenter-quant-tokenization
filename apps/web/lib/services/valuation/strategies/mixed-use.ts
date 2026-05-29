@@ -217,7 +217,8 @@ export async function buildMixedUseValuationAnalysis(
       bundle.comparableSet?.entries.length ?? 0
     ),
     provenance: buildStabilizedIncomeProvenance(bundle, valuation, mixedUseProvenanceConfig),
-    scenarios: valuation.scenarios
+    scenarios: valuation.scenarios,
+    stabilizedNoiKrw: valuation.stabilizedNoiKrw
   };
 
   const finalized = applyCreditOverlay(analysis, bundle, valuation.confidenceBounds);

@@ -60,6 +60,17 @@ export type ProFormaInputs = {
    * 1-2% (industrial), 4-5% (hotel), 1.5% (DC has its own capex cycle).
    */
   capexReservePct?: number;
+  /**
+   * Optional REAL year-by-year NOI vector (length up to HOLDING_YEARS) sourced
+   * from a strategy's rigorous lease-level DCF (e.g. data-center rollover /
+   * downtime / TI-LC). When present, each year's NOI is taken from this vector
+   * (revenue back-derived via `opexRatio`) INSTEAD of growing `year1Noi` at one
+   * flat `growthPct`, so rollover years differ from a flat-grown synthetic.
+   * Years beyond the vector fall back to flat growth off the last supplied NOI.
+   * Backward-compatible: omit it to reproduce the prior synthetic behavior
+   * bit-for-bit.
+   */
+  noiByYearKrw?: number[];
 };
 
 export type ProFormaExtras = {
@@ -201,7 +212,8 @@ export function buildSyntheticProForma(inputs: ProFormaInputs): {
     propertyTaxFairMarketRatio = 0.7,
     jongbuseFairMarketRatio = DEFAULT_FAIR_MARKET_RATIO,
     vatRefundablePortionPct,
-    capexReservePct
+    capexReservePct,
+    noiByYearKrw
   } = inputs;
 
   const acquisitionTax = Math.round(purchasePriceKrw * (acquisitionTaxPct / 100));
@@ -267,7 +279,21 @@ export function buildSyntheticProForma(inputs: ProFormaInputs): {
 
   for (let i = 0; i < HOLDING_YEARS; i++) {
     const yearNum = i + 1;
-    const revenue = Math.round((year1Noi / (1 - opexRatio)) * Math.pow(1 + growthPct / 100, i));
+    // Real lease-level NOI vector (e.g. data-center rollover) takes priority over
+    // flat single-rate growth when supplied. Years past the vector flat-grow off
+    // its last supplied entry so the hold always covers HOLDING_YEARS.
+    let baseNoiThisYear: number;
+    if (noiByYearKrw && noiByYearKrw.length > 0) {
+      if (i < noiByYearKrw.length) {
+        baseNoiThisYear = noiByYearKrw[i]!;
+      } else {
+        const last = noiByYearKrw[noiByYearKrw.length - 1]!;
+        baseNoiThisYear = last * Math.pow(1 + growthPct / 100, i - (noiByYearKrw.length - 1));
+      }
+    } else {
+      baseNoiThisYear = year1Noi * Math.pow(1 + growthPct / 100, i);
+    }
+    const revenue = Math.round(baseNoiThisYear / (1 - opexRatio));
     const opex = Math.round(revenue * opexRatio);
     const noi = revenue - opex;
     const cfads = noi;

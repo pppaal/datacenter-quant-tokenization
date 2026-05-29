@@ -308,7 +308,22 @@ export async function buildFullReport(
   const interestRatePct = bundle.asset.financingRatePct ?? 5.4;
   const exitCapRatePct = baseScenario.exitCapRatePct || 6.0;
   const capRatePct = baseScenario.impliedYieldPct || exitCapRatePct;
-  const year1Noi = Math.round((primary.baseCaseValueKrw * capRatePct) / 100);
+
+  // Two-model fix: prefer the REAL NOI the strategy already computed over
+  // re-deriving year1Noi = baseCaseValueKrw × capRate.
+  //   1. lease-level strategies (data-center) expose a full year-by-year
+  //      `leaseDcf` → drive the pro-forma NOI vector off it (rollover-aware).
+  //   2. income (stabilized) strategies expose `stabilizedNoiKrw` → use it as
+  //      year-1 NOI directly (no value→NOI back-solve).
+  //   3. otherwise fall back to the prior synthetic derivation (bit-for-bit).
+  const leaseDcf = primary.leaseDcf;
+  const leaseNoiVector =
+    leaseDcf && leaseDcf.years.length > 0 ? leaseDcf.years.map((y) => y.noiKrw) : null;
+  const year1Noi = leaseNoiVector
+    ? Math.round(leaseNoiVector[0]!)
+    : typeof primary.stabilizedNoiKrw === 'number' && Number.isFinite(primary.stabilizedNoiKrw)
+      ? Math.round(primary.stabilizedNoiKrw)
+      : Math.round((primary.baseCaseValueKrw * capRatePct) / 100);
 
   const macroMicro = auto.publicData.macroMicro as MacroMicroSnapshot;
   const growthPct = macroMicro.submarketRentGrowthPct ?? 2;
@@ -340,7 +355,11 @@ export async function buildFullReport(
     depreciationYears,
     exitCostPct: 1.5,
     propertyTaxGrowthPct: Math.max(growthPct, 3),
-    assetClass: String(primary.asset.assetClass)
+    assetClass: String(primary.asset.assetClass),
+    // When a lease-level DCF is available (data-center), feed its real
+    // year-by-year NOI so rollover/downtime years are NOT flattened into one
+    // growth rate. Omitted (undefined) for every other path ⇒ unchanged.
+    ...(leaseNoiVector ? { noiByYearKrw: leaseNoiVector } : {})
   };
   const { proForma, extras: proFormaExtras } = buildSyntheticProForma(proFormaInputs);
 

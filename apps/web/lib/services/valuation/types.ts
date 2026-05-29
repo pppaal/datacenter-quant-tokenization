@@ -137,6 +137,24 @@ export type UnderwritingAnalysis = {
   assumptions: Record<string, unknown>;
   provenance: ProvenanceEntry[];
   scenarios: UnderwritingScenario[];
+  /**
+   * The strategy's REAL stabilized (year-1) NOI for the Base case, exposed so
+   * the downstream analyzer (full-report) can drive the headline pro-forma off
+   * the figure the strategy actually computed instead of back-solving
+   * `baseCaseValueKrw × capRate`. Populated by the income (stabilized) strategies
+   * from the value they already produced. Optional + additive: strategies that
+   * do not produce a single stabilized NOI (e.g. LAND) leave it unset, and the
+   * analyzer falls back to its prior synthetic derivation.
+   */
+  stabilizedNoiKrw?: number;
+  /**
+   * The strategy's rigorous year-by-year lease DCF (rollover / downtime /
+   * TI-LC / forward terminal) for the Base case. Populated by lease-level
+   * strategies (data-center). When present the analyzer drives the pro-forma's
+   * NOI vector and headline return metrics off this real lease-level series
+   * rather than growing one aggregate NOI at one rate. Optional + additive.
+   */
+  leaseDcf?: LeaseDcfResult;
   threeApproach?: {
     methodology: string;
     reconciledValueKrw: number | null;
