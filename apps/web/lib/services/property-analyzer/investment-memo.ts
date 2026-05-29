@@ -15,6 +15,38 @@ import type { ImpliedBidSet } from '@/lib/services/valuation/implied-bid';
 import type { RefinanceAnalysis } from '@/lib/services/valuation/refinancing';
 import type { DealMacroExposure } from '@/lib/services/macro/deal-risk';
 import type { ProsConsReport } from '@/lib/services/valuation/pros-cons';
+import type { AnalysisProvenance } from '@/lib/services/property-analyzer/bundle-assembler';
+
+/**
+ * One row of the deterministic assumption-audit: a key modeling input, its
+ * resolved value, and the provenance tier that says whether it was modeled
+ * from real data (LIVE/SEED) or guessed (IMPUTED/FALLBACK/MOCK).
+ */
+export type AssumptionAuditRow = {
+  field: string;
+  label: string;
+  value: string;
+  tier: string;
+  source: string;
+};
+
+/**
+ * Reconciliation of the four IRR vantage points that SHOULD agree on the base
+ * case (modulo a known discounting-convention gap). Surfacing them side by side
+ * is a built-in consistency check: a large divergence means the deterministic
+ * base and the MC base have drifted apart.
+ */
+export type IrrReconciliation = {
+  baseLeveredIrrPct: number | null; // returnMetrics (headline, mid-year convention)
+  monteCarloMeanIrrPct: number | null; // MC mean
+  monteCarloP50IrrPct: number | null; // MC median
+  monteCarloBaseIrrPct: number | null; // MC base case (end-of-year, shares one base with headline)
+  impliedBidBaseIrrPct: number | null; // implied-bid solver's base IRR at current price
+  /** Max absolute divergence (pp) between base levered IRR and the MC base case. */
+  baseVsMcBaseDivergencePp: number | null;
+  /** True when base vs MC-base diverge by more than the tolerance (consistency flag). */
+  flagged: boolean;
+};
 
 export type InvestmentMemo = {
   headline: string;
@@ -23,6 +55,14 @@ export type InvestmentMemo = {
   downsideNarrative: string;
   negotiationPlaybook: string[];
   recommendedAction: string;
+  /**
+   * Deterministic assumption-audit: every key assumption + its provenance
+   * label. Always present (computed offline, identical in LLM + offline paths).
+   * Empty array when no provenance was supplied.
+   */
+  assumptionAudit: AssumptionAuditRow[];
+  /** Deterministic IRR reconciliation table (base vs MC vs implied-bid). */
+  reconciliation: IrrReconciliation;
   generatedBy: string;
   promptTokens: number | null;
   completionTokens: number | null;
@@ -43,7 +83,24 @@ export type InvestmentMemoInputs = {
   macroRegimeLabel: string | null;
   debtCovenantBreachYears: number[];
   prosCons?: ProsConsReport;
+  /**
+   * Optional data-quality / provenance summary (from `auto.provenance` /
+   * `assumptionsQuality`). When supplied, the memo includes a deterministic
+   * assumption-audit listing each key input with its LIVE/SEED/IMPUTED/
+   * FALLBACK/MOCK label. Additive + backward-compatible.
+   */
+  assumptionsQuality?: AnalysisProvenance;
+  /**
+   * Optional MC-base / end-of-year-base levered IRR shared with the headline
+   * (from `monteCarlo.baseLeveredIrr`). Surfaced in the reconciliation table
+   * to make the deterministic-vs-MC consistency check explicit. The mean/p50
+   * are read directly off `monteCarlo`, so only the base IRR needs wiring.
+   */
+  monteCarloBaseLeveredIrrPct?: number | null;
 };
+
+/** Base-vs-MC-base IRR divergence (pp) above which we flag a consistency issue. */
+const RECONCILIATION_DIVERGENCE_TOLERANCE_PP = 1.5;
 
 const LLM_TIMEOUT_MS = 25_000;
 const LLM_MAX_ATTEMPTS = 3;
@@ -105,6 +162,103 @@ function krwShort(v: number): string {
 
 function pctShort(v: number | null, d = 2): string {
   return v === null ? 'N/A' : `${v.toFixed(d)}%`;
+}
+
+// ---------------------------------------------------------------------------
+// Deterministic assumption-audit + IRR reconciliation. Computed identically in
+// the offline and LLM paths so a reviewer always sees what was modeled-from-real
+// vs guessed, and whether the deterministic base and the MC base agree.
+// ---------------------------------------------------------------------------
+
+/** The material inputs worth surfacing in the audit, in display order. */
+const AUDIT_KEY_FIELDS = [
+  'capRate',
+  'exitCapRate',
+  'rentGrowth',
+  'occupancy',
+  'noi',
+  'stabilizedNoi',
+  'interestRate',
+  'ltv',
+  'geocode',
+  'value',
+  'baseValue'
+];
+
+function buildAssumptionAudit(provenance?: AnalysisProvenance): AssumptionAuditRow[] {
+  if (!provenance || provenance.fields.length === 0) return [];
+  const byKey = new Map(provenance.fields.map((f) => [f.field, f]));
+  const ordered: typeof provenance.fields = [];
+  // Key fields first (in our preferred order), then any remaining fields so the
+  // audit is exhaustive — we never silently drop a tracked input.
+  for (const key of AUDIT_KEY_FIELDS) {
+    const f = byKey.get(key);
+    if (f) {
+      ordered.push(f);
+      byKey.delete(key);
+    }
+  }
+  for (const f of provenance.fields) {
+    if (byKey.has(f.field)) {
+      ordered.push(f);
+      byKey.delete(f.field);
+    }
+  }
+  return ordered.map((f) => ({
+    field: f.field,
+    label: f.label,
+    value: f.value,
+    tier: f.tier,
+    source: f.source
+  }));
+}
+
+function buildReconciliation(inputs: InvestmentMemoInputs): IrrReconciliation {
+  const baseLeveredIrrPct = inputs.returnMetrics.equityIrr;
+  const monteCarloMeanIrrPct = inputs.monteCarlo.leveredIrr.mean;
+  const monteCarloP50IrrPct = inputs.monteCarlo.leveredIrr.p50;
+  const monteCarloBaseIrrPct =
+    inputs.monteCarloBaseLeveredIrrPct ?? inputs.monteCarlo.baseLeveredIrr ?? null;
+  const impliedBidBaseIrrPct = inputs.impliedBid.baseBaseIrrPct ?? null;
+
+  const baseVsMcBaseDivergencePp =
+    baseLeveredIrrPct !== null && monteCarloBaseIrrPct !== null
+      ? Number(Math.abs(baseLeveredIrrPct - monteCarloBaseIrrPct).toFixed(4))
+      : null;
+  const flagged =
+    baseVsMcBaseDivergencePp !== null &&
+    baseVsMcBaseDivergencePp > RECONCILIATION_DIVERGENCE_TOLERANCE_PP;
+
+  return {
+    baseLeveredIrrPct,
+    monteCarloMeanIrrPct,
+    monteCarloP50IrrPct,
+    monteCarloBaseIrrPct,
+    impliedBidBaseIrrPct,
+    baseVsMcBaseDivergencePp,
+    flagged
+  };
+}
+
+/** Render the audit + reconciliation as compact Korean text lines (for prompt + offline narrative grounding). */
+function reconciliationLines(rec: IrrReconciliation): string[] {
+  const lines: string[] = [];
+  lines.push(
+    `- 베이스 레버드 IRR(결정론): ${pctShort(rec.baseLeveredIrrPct)} · MC 평균: ${pctShort(rec.monteCarloMeanIrrPct)} · MC P50: ${pctShort(rec.monteCarloP50IrrPct)} · MC 베이스: ${pctShort(rec.monteCarloBaseIrrPct)} · Implied-bid 베이스: ${pctShort(rec.impliedBidBaseIrrPct)}`
+  );
+  lines.push(
+    rec.baseVsMcBaseDivergencePp === null
+      ? '- 베이스 대비 MC-베이스 정합성: 비교 불가 (IRR 미산출)'
+      : rec.flagged
+        ? `- 베이스 대비 MC-베이스 괴리 ${rec.baseVsMcBaseDivergencePp.toFixed(2)}pp — 허용치(${RECONCILIATION_DIVERGENCE_TOLERANCE_PP}pp) 초과, 모델 불일치 점검 필요`
+        : `- 베이스 대비 MC-베이스 괴리 ${rec.baseVsMcBaseDivergencePp.toFixed(2)}pp — 허용치 이내 (할인 컨벤션 차이로 설명됨)`
+  );
+  return lines;
+}
+
+function auditLines(audit: AssumptionAuditRow[]): string[] {
+  if (audit.length === 0) return ['- (프로비넌스 데이터 없음)'];
+  return audit.map((r) => `- ${r.label}: ${r.value} [${r.tier}] (출처: ${r.source})`);
 }
 
 // ---------------------------------------------------------------------------
@@ -177,13 +331,24 @@ function buildOfflineMemo(inputs: InvestmentMemoInputs): InvestmentMemo {
         ? `조건부 진행: 위 협상 포인트를 충족하면 매입 검토. 충족 불가 시 보류.`
         : `현 호가 ${krwShort(inputs.basePriceKrw)} 기준으로는 허들 미달. ${krwShort(impliedBid.atTargetIrr.bidPriceKrw)} 이하로 가격이 조정되지 않는 한 PASS.`;
 
+  const assumptionAudit = buildAssumptionAudit(inputs.assumptionsQuality);
+  const reconciliation = buildReconciliation(inputs);
+
+  // Surface the consistency check in the downside narrative so the offline memo
+  // also reads as "grounded": if base vs MC-base diverged, say so explicitly.
+  const reconciliationNote = reconciliation.flagged
+    ? ` [정합성 경고] 결정론 베이스 IRR ${pctShort(reconciliation.baseLeveredIrrPct)}와 MC 베이스 ${pctShort(reconciliation.monteCarloBaseIrrPct)} 간 괴리 ${reconciliation.baseVsMcBaseDivergencePp?.toFixed(2)}pp — 허용치 초과.`
+    : ` 결정론 베이스 IRR ${pctShort(reconciliation.baseLeveredIrrPct)} ≈ MC 베이스 ${pctShort(reconciliation.monteCarloBaseIrrPct)} (정합).`;
+
   return {
     headline,
     executiveSummary,
     baseCaseNarrative,
-    downsideNarrative,
+    downsideNarrative: downsideNarrative + reconciliationNote,
     negotiationPlaybook,
     recommendedAction,
+    assumptionAudit,
+    reconciliation,
     generatedBy: 'offline-template',
     promptTokens: null,
     completionTokens: null
@@ -305,6 +470,17 @@ function buildPrompt(inputs: InvestmentMemoInputs): string {
     }
     lines.push('');
   }
+  // Assumption-audit + reconciliation: ground the narrative in WHAT was modeled
+  // from real data vs guessed, and whether the deterministic base and MC base agree.
+  const audit = buildAssumptionAudit(inputs.assumptionsQuality);
+  const rec = buildReconciliation(inputs);
+  lines.push('## 가정 감사 (Assumption Audit — 프로비넌스)');
+  lines.push('각 핵심 가정의 값과 출처 등급(LIVE/SEED는 실데이터, IMPUTED/FALLBACK/MOCK은 추정):');
+  for (const l of auditLines(audit)) lines.push(l);
+  lines.push('');
+  lines.push('## IRR 정합성 (Reconciliation — 결정론 베이스 vs 몬테카를로 vs Implied-bid)');
+  for (const l of reconciliationLines(rec)) lines.push(l);
+  lines.push('');
   lines.push('## 출력 포맷');
   lines.push('아래 JSON 객체 하나만 반환. 프로즈/마크다운 래퍼 금지.');
   lines.push('{');
@@ -328,7 +504,10 @@ function buildPrompt(inputs: InvestmentMemoInputs): string {
 
 function parseModelResponse(
   raw: string
-): Omit<InvestmentMemo, 'generatedBy' | 'promptTokens' | 'completionTokens'> {
+): Omit<
+  InvestmentMemo,
+  'generatedBy' | 'promptTokens' | 'completionTokens' | 'assumptionAudit' | 'reconciliation'
+> {
   let text = raw.trim();
   const fence = /^```(?:json)?\s*([\s\S]+?)\s*```$/.exec(text);
   if (fence) text = fence[1]!.trim();
@@ -394,6 +573,10 @@ export async function generateInvestmentMemo(
       const parsed = parseModelResponse(first.text);
       return {
         ...parsed,
+        // Audit + reconciliation are DETERMINISTIC — never sourced from the LLM,
+        // so the facts are identical regardless of the generation path.
+        assumptionAudit: buildAssumptionAudit(inputs.assumptionsQuality),
+        reconciliation: buildReconciliation(inputs),
         generatedBy: attempt === 1 ? model : `${model} (attempt ${attempt})`,
         promptTokens: response.usage?.input_tokens ?? null,
         completionTokens: response.usage?.output_tokens ?? null

@@ -557,7 +557,12 @@ export async function buildFullReport(
     dealExposure,
     macroRegimeLabel: regimeBlock.label,
     debtCovenantBreachYears: yearsBelowFloor,
-    prosCons
+    prosCons,
+    // Provenance for the deterministic assumption-audit, and the MC base IRR
+    // (end-of-year convention, shares one pro-forma base with the headline) for
+    // the reconciliation table's consistency check.
+    assumptionsQuality: auto.provenance,
+    monteCarloBaseLeveredIrrPct: monteCarlo.baseLeveredIrr
   });
 
   return {
