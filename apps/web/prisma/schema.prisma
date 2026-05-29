@@ -1717,6 +1717,52 @@ model RealizedOutcome {
   @@index([assetId, observationDate])
 }
 
+/// Immutable system-of-record for click-to-analyze property analyses.
+///
+/// The `/api/property-analyze` pipeline returns an in-memory `FullReport`
+/// and previously persisted nothing (only an audit-log line). Each
+/// successful analysis now writes ONE row here. Rows are append-only: a
+/// re-analysis of the same address produces a NEW row (distinguished by
+/// `inputsHash` / `createdAt`), never an update. This preserves a complete,
+/// point-in-time-honest history for the realized-price backtest harness in
+/// `lib/services/property-analyzer/analysis-backtest.ts`.
+///
+/// Unlike `ValuationRun`, these analyses are NOT tied to a managed `Asset`
+/// (they are ad-hoc analyses of arbitrary parcels keyed by PNU/address), so
+/// there is no foreign key to `Asset`.
+model PropertyAnalysisSnapshot {
+  id               String     @id @default(cuid())
+  /// SHA-256 over (engineVersion, frozen inputs) reusing the same hashing
+  /// primitive as `ValuationRun.inputsHash`. Identical hash ⇒ identical
+  /// engine + inputs ⇒ should yield an identical report; mismatch exposes
+  /// engine drift. NOT unique: re-runs are intentionally retained.
+  inputsHash       String
+  /// Resolved parcel identifier (19-digit PNU) and addresses from geocode.
+  pnu              String
+  jibunAddress     String
+  roadAddress      String?
+  districtName     String
+  latitude         Float
+  longitude        Float
+  /// The asset class the analysis was priced as (classifier or override).
+  assetClass       AssetClass
+  /// Headline income valuation (entry price) the report was built around.
+  baseCaseValueKrw Float
+  /// 5-tier investment verdict (STRONG_BUY/BUY/CONDITIONAL/PASS/AVOID).
+  verdictTier      String
+  /// Engine version that produced the analysis (drift tracking).
+  engineVersion    String
+  /// Snapshot serialization schema version, bumped when `report` shape changes.
+  schemaVersion    Int        @default(1)
+  /// The full serialized `FullReport` JSON (the system-of-record artifact).
+  report           Json
+  createdAt        DateTime   @default(now())
+
+  @@index([pnu, createdAt])
+  @@index([assetClass, createdAt])
+  @@index([inputsHash])
+}
+
 model MacroProfileOverride {
   id                          String      @id @default(cuid())
   assetClass                  AssetClass?
