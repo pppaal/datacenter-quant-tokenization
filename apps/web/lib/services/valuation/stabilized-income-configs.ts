@@ -444,30 +444,40 @@ export function buildMultifamilyValuationConfig(): ValuationConfig {
     // conservative imputed deposit basis from the asset value basis and convert
     // it at the BOK-published 전월세전환율 (jeonse-to-monthly conversion rate).
     //
-    // TODO(prisma): replace MULTIFAMILY_DEPOSIT_BASIS_SHARE with a real
-    // asset/lease deposit amount + lease 전세/월세 type field once the schema
-    // carries them. This imputed basis is a screening approximation only.
+    // TODO(prisma): replace the imputed deposit basis with a real asset/lease
+    // deposit amount + lease 전세/월세 type field once the schema carries them.
+    // This wolse-intensity-scaled basis is a screening approximation only.
     otherIncomeKrw: (state) => {
       // 전월세전환율: ~5.5%/yr sits within the BOK-published conversion-rate band
       // for Korean residential (typically ~5-6%). Income on a held deposit.
       const JEONSE_CONVERSION_RATE = 0.055;
-      // Deposit basis share: assume a conservative 45% of the asset value basis
-      // is held as a refundable deposit. We deliberately pick the low end of a
-      // 40-60% range because (a) no deposit datum exists and (b) substantial
-      // 월세 monthly rent (already captured above) implies a smaller deposit, so
-      // a modest share avoids double-counting the monthly-rent stream.
-      const MULTIFAMILY_DEPOSIT_BASIS_SHARE = 0.45;
+      // Maximum deposit basis share, reached only for a (near-)pure 전세 asset
+      // with little monthly rent. We pick the low end of a 40-60% range because
+      // no deposit datum exists.
+      const MAX_DEPOSIT_BASIS_SHARE = 0.45;
       const valueBasisKrw =
         state.marketValueProxyKrw ?? state.purchasePriceKrw ?? state.grossPotentialRentKrw;
-      const imputedDepositKrw = valueBasisKrw * MULTIFAMILY_DEPOSIT_BASIS_SHARE;
+      // 전세/월세 are a SUBSTITUTION spectrum: more monthly rent ⇒ smaller
+      // deposit. The monthly-rent stream is already captured in
+      // effectiveRentalRevenueKrw, so imputing a full deposit on top of full
+      // monthly rent double-counts the same economic income. Scale the deposit
+      // basis DOWN by the observed 월세 intensity — the share of full
+      // monetization (valueBasis × cap) already earned as monthly rent.
+      const fullMonetizationIncomeKrw = valueBasisKrw * (state.capRatePct / 100);
+      const wolseIntensity = Math.min(
+        1,
+        Math.max(0, state.grossPotentialRentKrw / Math.max(fullMonetizationIncomeKrw, 1))
+      );
+      const depositBasisShare = MAX_DEPOSIT_BASIS_SHARE * (1 - wolseIntensity);
+      const imputedDepositKrw = valueBasisKrw * depositBasisShare;
       const imputedDepositIncomeKrw = imputedDepositKrw * JEONSE_CONVERSION_RATE;
       // Retain the prior ancillary other-income line (parking, fees, etc).
       const ancillaryOtherIncomeKrw = state.grossPotentialRentKrw * 0.025;
       // NOTE: there is currently no multifamily assumption-extras builder (cf.
       // buildOfficeAssumptionExtras) wired into the engine, and we must NOT
-      // touch the engine. The imputed deposit, conversion rate (5.5%), and basis
-      // share (45%) are documented here; surface them via an extras builder when
-      // one is added for the multifamily strategy.
+      // touch the engine. The imputed deposit, conversion rate (5.5%), and the
+      // wolse-intensity-scaled basis share are documented here; surface them via
+      // an extras builder when one is added for the multifamily strategy.
       return ancillaryOtherIncomeKrw + imputedDepositIncomeKrw;
     },
     annualOpexKrw: (state) =>

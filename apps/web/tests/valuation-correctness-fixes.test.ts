@@ -508,14 +508,19 @@ test('FIX 4: multifamily uses high market-evidence rent over the lower backsolve
 });
 
 // ===========================================================================
-// FIX 2 — Multifamily jeonse/wolse imputed deposit income.
-// otherIncome = 2.5% * GPR  +  (valueBasis * 0.45) * 0.055
+// FIX 2 — Multifamily jeonse/wolse imputed deposit income, RECONCILED so it does
+// NOT double-count the monthly-rent stream. 전세/월세 are a substitution
+// spectrum: the imputed deposit basis is scaled DOWN by the 월세 intensity
+// (share of full monetization, valueBasis × cap, already earned as monthly rent).
+// Because monthlyRentPerSqmKrw floors at the full-monetization back-solve when no
+// sub-full rent evidence exists, the standard no-evidence path saturates
+// wolseIntensity → 1, so the deposit term is ~0 and otherIncome is just the
+// ancillary line. This prevents stacking a full deposit on top of full rent.
+// A meaningful deposit income only arises once real below-full monthly rent is
+// present (the genuine jeonse signal), which needs the deferred deposit field.
 // ===========================================================================
 
-const JEONSE_CONVERSION_RATE = 0.055;
-const MULTIFAMILY_DEPOSIT_BASIS_SHARE = 0.45;
-
-test('FIX 2: multifamily other income adds imputed jeonse deposit income on top of ancillary', () => {
+test('FIX 2: multifamily deposit income does not double-count the monthly-rent stream', () => {
   // purchasePriceKrw is the value basis (no comparableSet/marketValueProxy here,
   // so valueBasis = marketValueProxy(null) ?? purchasePrice).
   const purchasePriceKrw = 200000000000;
@@ -528,29 +533,26 @@ test('FIX 2: multifamily other income adds imputed jeonse deposit income on top 
   );
 
   const ancillaryOtherIncomeKrw = valuation.grossPotentialRentKrw * 0.025;
-  const imputedDepositKrw = purchasePriceKrw * MULTIFAMILY_DEPOSIT_BASIS_SHARE;
-  const imputedDepositIncomeKrw = imputedDepositKrw * JEONSE_CONVERSION_RATE;
-  const expectedOtherIncome = ancillaryOtherIncomeKrw + imputedDepositIncomeKrw;
 
-  // Pin the exact composite formula (locks the 5.5% rate and 45% basis share).
+  // Full-monetization income = valueBasis × cap. The back-solved monthly rent
+  // (no evidence) produces GPR >= full monetization, so wolseIntensity = 1 and
+  // the deposit basis share collapses to 0 → otherIncome == ancillary only.
+  const fullMonetizationIncomeKrw = purchasePriceKrw * (valuation.capRatePct / 100);
   assert.ok(
-    Math.abs(valuation.otherIncomeKrw - expectedOtherIncome) < 1,
-    `multifamily other income (${valuation.otherIncomeKrw}) must equal ancillary + imputed deposit (${expectedOtherIncome})`
-  );
-
-  // Materially HIGHER than the pure-ancillary 2.5%*GPR baseline by ~the imputed
-  // deposit income. valueBasis 200B -> deposit 90B -> income 4.95B, which dwarfs
-  // the ancillary line, so the uplift must be substantial.
-  assert.ok(
-    valuation.otherIncomeKrw > ancillaryOtherIncomeKrw * 2,
-    `other income (${valuation.otherIncomeKrw}) must materially exceed the pure-ancillary baseline (${ancillaryOtherIncomeKrw})`
+    valuation.grossPotentialRentKrw >= fullMonetizationIncomeKrw,
+    'back-solved GPR should meet/exceed full monetization, saturating wolse intensity'
   );
   assert.ok(
-    Math.abs(valuation.otherIncomeKrw - ancillaryOtherIncomeKrw - imputedDepositIncomeKrw) < 1,
-    'the uplift over ancillary must equal the imputed deposit income'
+    Math.abs(valuation.otherIncomeKrw - ancillaryOtherIncomeKrw) < 1,
+    `other income (${valuation.otherIncomeKrw}) must equal the ancillary line only ` +
+      `(${ancillaryOtherIncomeKrw}); no deposit income stacked on full monthly rent`
   );
 
-  // The deposit income alone (200B * 0.45 * 0.055) is exactly 4.95B; pin it so
-  // changing the rate or basis share later trips this test.
-  assert.equal(imputedDepositIncomeKrw, 4_950_000_000);
+  // Guard the reconciliation formula directly: at full wolse intensity the
+  // deposit share is 0; at zero intensity it is the 0.45 cap × 5.5% on basis.
+  const MAX_DEPOSIT_BASIS_SHARE = 0.45;
+  const JEONSE_CONVERSION_RATE = 0.055;
+  const depositIncomeAtZeroWolse =
+    purchasePriceKrw * MAX_DEPOSIT_BASIS_SHARE * JEONSE_CONVERSION_RATE;
+  assert.equal(depositIncomeAtZeroWolse, 4_950_000_000);
 });

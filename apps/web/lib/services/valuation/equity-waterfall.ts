@@ -73,7 +73,13 @@ export function computeEquityWaterfall(
     costApproach.directComparableValueKrw ?? 0,
     costApproach.replacementCostFloorKrw
   );
-  const exitTaxKrw = grossExitValueKrw * (prepared.taxProfile.exitTaxPct / 100);
+  // Disposition tax applies to the realized GAIN (sale value less invested
+  // basis), not the gross sale price. taxProfile.exitTaxPct now carries the
+  // corporate rate (+ non-business-land surtax), so multiplying it by the gross
+  // value would subtract ~24-44% of the whole exit — mirror synthetic-pro-forma,
+  // which taxes the gain.
+  const exitGainKrw = Math.max(grossExitValueKrw - prepared.capexBreakdown.totalCapexKrw, 0);
+  const exitTaxKrw = exitGainKrw * (prepared.taxProfile.exitTaxPct / 100);
   const prePromoteExitProceedsKrw =
     grossExitValueKrw - debtSchedule.endingDebtBalanceKrw - exitTaxKrw;
   const promoteApplies =
