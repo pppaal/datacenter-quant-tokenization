@@ -17,7 +17,7 @@
     "prisma:seed": "tsx prisma/seed.ts",
     "db:e2e:up": "docker compose -f compose.e2e.yml up -d",
     "db:e2e:down": "docker compose -f compose.e2e.yml down -v",
-    "test": "tsx --test tests/**/*.test.ts",
+    "test": "bash -c 'shopt -s globstar; tsx --test tests/**/*.test.ts'",
     "lint": "eslint .",
     "lint:strict": "eslint . --max-warnings=0",
     "lint:fix": "eslint . --fix",
