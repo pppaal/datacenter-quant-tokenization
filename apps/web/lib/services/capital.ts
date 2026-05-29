@@ -1,6 +1,7 @@
 import type { Prisma, PrismaClient } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { buildAssetResearchDossier } from '@/lib/services/research/dossier';
+import { computeFundNavDetail } from '@/lib/services/fund-nav';
 
 export const fundInclude = {
   portfolio: {
@@ -152,7 +153,8 @@ export function buildCommitmentMath(
     | 'committedCapitalKrw'
     | 'investedCapitalKrw'
     | 'dryPowderKrw'
-  >
+  > &
+    Partial<Pick<FundBundle, 'portfolio'>>
 ) {
   const totalCommitmentKrw = fund.commitments.reduce(
     (total, item) => total + item.commitmentKrw,
@@ -170,12 +172,21 @@ export function buildCommitmentMath(
     .filter((item) => item.status === 'PLANNED' || item.status === 'ISSUED')
     .reduce((total, item) => total + item.amountKrw, 0);
 
+  // Fair-value NAV = sum of latest asset valuations (cost-basis fallback flagged).
+  // Falls back to 0 when the caller did not load the portfolio relation.
+  const nav = fund.portfolio
+    ? computeFundNavDetail({ portfolio: fund.portfolio })
+    : { navKrw: 0, usedCostBasisFallback: false, costBasisFallbackAssets: [] as string[] };
+
   return {
     totalCommitmentKrw,
     totalCalledKrw,
     totalDistributedKrw,
     unfundedCommitmentKrw: totalCommitmentKrw - totalCalledKrw,
     netInvestedKrw: totalCalledKrw - totalDistributedKrw,
+    /** Fair-value NAV (sum of latest asset valuations). 0 when portfolio not loaded. */
+    navKrw: nav.navKrw,
+    navUsedCostBasisFallback: nav.usedCostBasisFallback,
     pendingCallsKrw,
     pendingDistributionsKrw,
     targetSizeKrw: fund.targetSizeKrw ?? null,

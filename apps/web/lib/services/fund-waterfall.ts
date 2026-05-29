@@ -1,5 +1,6 @@
 import type { PrismaClient } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
+import { computeFundNavDetail } from '@/lib/services/fund-nav';
 
 export type FundWaterfallInvestorRow = {
   investorId: string;
@@ -29,6 +30,9 @@ export type FundWaterfallTotals = {
   distributedKrw: number;
   remainingCommitmentKrw: number;
   navKrw: number;
+  /** True when NAV relied on a cost-basis fallback for one or more assets (not fully marked). */
+  navUsedCostBasisFallback: boolean;
+  rvpiMultiple: number;
   dpiMultiple: number;
   tvpiMultiple: number;
   capitalCallCount: number;
@@ -252,7 +256,28 @@ export async function buildFundWaterfall(
         }
       },
       capitalCalls: true,
-      distributions: true
+      distributions: true,
+      portfolio: {
+        include: {
+          assets: {
+            include: {
+              asset: {
+                select: {
+                  id: true,
+                  name: true,
+                  assetCode: true,
+                  purchasePriceKrw: true,
+                  valuations: {
+                    orderBy: { createdAt: 'desc' as const },
+                    take: 1,
+                    select: { baseCaseValueKrw: true, createdAt: true }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   });
 
@@ -262,9 +287,13 @@ export async function buildFundWaterfall(
   const calledKrw = fund.commitments.reduce((sum, c) => sum + toNumber(c.calledKrw), 0);
   const distributedKrw = fund.commitments.reduce((sum, c) => sum + toNumber(c.distributedKrw), 0);
   const remainingCommitmentKrw = Math.max(committedKrw - calledKrw, 0);
-  const navKrw = Math.max(calledKrw - distributedKrw, 0);
+
+  // Fair-value NAV = sum of latest asset valuations (cost-basis fallback flagged).
+  const nav = computeFundNavDetail(fund);
+  const navKrw = nav.navKrw;
 
   const dpiMultiple = calledKrw > 0 ? Number((distributedKrw / calledKrw).toFixed(2)) : 0;
+  const rvpiMultiple = calledKrw > 0 ? Number((navKrw / calledKrw).toFixed(2)) : 0;
   const tvpiMultiple =
     calledKrw > 0 ? Number(((distributedKrw + navKrw) / calledKrw).toFixed(2)) : 0;
 
@@ -363,6 +392,8 @@ export async function buildFundWaterfall(
       distributedKrw,
       remainingCommitmentKrw,
       navKrw,
+      navUsedCostBasisFallback: nav.usedCostBasisFallback,
+      rvpiMultiple,
       dpiMultiple,
       tvpiMultiple,
       capitalCallCount: fund.capitalCalls.length,

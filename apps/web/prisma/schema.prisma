@@ -3010,6 +3010,8 @@ model Investor {
   commitments   Commitment[]
   investorReports InvestorReport[]
   ddqResponses  DdqResponse[]
+  capitalCallAllocations CapitalCallAllocation[]
+  distributionAllocations DistributionAllocation[]
 
   @@index([investorType, domicile])
 }
@@ -3050,6 +3052,7 @@ model CapitalCall {
   updatedAt   DateTime          @updatedAt
   fund        Fund              @relation(fields: [fundId], references: [id], onDelete: Cascade)
   vehicle     Vehicle?          @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+  allocations CapitalCallAllocation[]
 
   @@index([fundId, callDate, status])
 }
@@ -3067,8 +3070,41 @@ model Distribution {
   updatedAt   DateTime           @updatedAt
   fund        Fund               @relation(fields: [fundId], references: [id], onDelete: Cascade)
   vehicle     Vehicle?           @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+  allocations DistributionAllocation[]
 
   @@index([fundId, distributionDate, status])
+}
+
+/// Optional per-LP allocation of a fund-level capital call. When present, per-LP
+/// capital-account math (PCAP) uses these dated amounts directly instead of the
+/// pro-rata-by-commitment interim. Additive; absence preserves legacy behaviour.
+model CapitalCallAllocation {
+  id            String      @id @default(cuid())
+  capitalCallId String
+  investorId    String
+  amountKrw     Float
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  capitalCall   CapitalCall @relation(fields: [capitalCallId], references: [id], onDelete: Cascade)
+  investor      Investor    @relation(fields: [investorId], references: [id], onDelete: Cascade)
+
+  @@unique([capitalCallId, investorId])
+  @@index([investorId])
+}
+
+/// Optional per-LP allocation of a fund-level distribution. See CapitalCallAllocation.
+model DistributionAllocation {
+  id             String       @id @default(cuid())
+  distributionId String
+  investorId     String
+  amountKrw      Float
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  distribution   Distribution @relation(fields: [distributionId], references: [id], onDelete: Cascade)
+  investor       Investor     @relation(fields: [investorId], references: [id], onDelete: Cascade)
+
+  @@unique([distributionId, investorId])
+  @@index([investorId])
 }
 
 model InvestorReport {
