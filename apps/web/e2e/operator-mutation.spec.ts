@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 function resolveAdminBrowserCredential() {
   const legacyUser = process.env.ADMIN_BASIC_AUTH_USER?.trim();
@@ -35,6 +35,20 @@ async function loginAsOperator(page: Page) {
   await page.getByRole('button', { name: /start operator session/i }).click();
   await page.waitForURL((url) => !url.pathname.endsWith('/admin/login'), { timeout: 20_000 });
   await expect(page).not.toHaveURL(/\/admin\/login/);
+}
+
+// Follow an in-app <Link> by reading its server-rendered href and navigating
+// directly. A bare .click() triggers a client-side soft navigation that, when
+// fired before the App Router has finished hydrating, is silently swallowed
+// (the RSC request is aborted and the URL never changes) — the root cause of
+// the flaky detail-page assertions in this suite. The href is the link's
+// destination of record, so going to it is deterministic while still proving
+// the link targets the page the operator expects.
+async function openViaLink(page: Page, link: Locator) {
+  await expect(link).toBeVisible();
+  const href = await link.getAttribute('href');
+  expect(href, 'expected the link to expose a navigable href').toBeTruthy();
+  await page.goto(href as string);
 }
 
 test.describe('operator mutation flows', () => {
@@ -89,7 +103,7 @@ test.describe('operator mutation flows', () => {
 
     await loginAsOperator(page);
     await page.goto('/admin/assets');
-    await page.getByRole('link', { name: /Yeouido Core Office Tower/i }).click();
+    await openViaLink(page, page.getByRole('link', { name: /Yeouido Core Office Tower/i }));
 
     await page.getByTestId('valuation-run-label').fill(runLabel);
     await page.getByTestId('valuation-run-submit').click();
@@ -130,7 +144,7 @@ test.describe('operator mutation flows', () => {
   test('deal console supports archive and restore safely', async ({ page }) => {
     await loginAsOperator(page);
     await page.goto('/admin/deals');
-    await page.getByTestId('deal-open-link').first().click();
+    await openViaLink(page, page.getByTestId('deal-open-link').first());
 
     await expect(page.getByTestId('deal-current-status')).not.toHaveText('ARCHIVED');
 

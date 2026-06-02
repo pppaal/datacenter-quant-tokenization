@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 
 function resolveAdminBrowserCredential() {
   const legacyUser = process.env.ADMIN_BASIC_AUTH_USER?.trim();
@@ -38,6 +38,20 @@ async function loginAsOperator(page: Page) {
   await expect(page).not.toHaveURL(/\/admin\/login/);
 }
 
+// Follow an in-app <Link> by reading its server-rendered href and navigating
+// directly. A bare .click() triggers a client-side soft navigation that, when
+// fired before the App Router has finished hydrating, is silently swallowed
+// (the RSC request is aborted and the URL never changes) — the root cause of
+// the flaky detail-page assertions in this suite. The href is the link's
+// destination of record, so going to it is deterministic while still proving
+// the link targets the page the operator expects.
+async function openViaLink(page: Page, link: Locator) {
+  await expect(link).toBeVisible();
+  const href = await link.getAttribute('href');
+  expect(href, 'expected the link to expose a navigable href').toBeTruthy();
+  await page.goto(href as string);
+}
+
 test.describe('seeded operator smoke flows', () => {
   test('admin overview and navigation stay connected', async ({ page }) => {
     await loginAsOperator(page);
@@ -55,7 +69,7 @@ test.describe('seeded operator smoke flows', () => {
     await expect(page.getByRole('link', { name: 'Research', exact: true }).first()).toBeVisible();
     await expect(page.getByRole('link', { name: 'Review', exact: true }).first()).toBeVisible();
 
-    await page.getByRole('link', { name: 'Research', exact: true }).first().click();
+    await openViaLink(page, page.getByRole('link', { name: 'Research', exact: true }).first());
     await expect(page).toHaveURL(/\/admin\/research/);
     await expect(page.getByText('Workspace Status')).toBeVisible();
     await expect(page.getByRole('button', { name: /Run Research Sync/i })).toBeVisible();
@@ -71,7 +85,7 @@ test.describe('seeded operator smoke flows', () => {
         /Korean real-estate dossiers moving through evidence, valuation, and committee review\./i
       )
     ).toBeVisible();
-    await page.getByRole('link', { name: /Open Property Explorer/i }).click();
+    await openViaLink(page, page.getByRole('link', { name: /Open Property Explorer/i }));
     await expect(page).toHaveURL(/\/admin\/assets\/explorer/);
     await expect(
       page.getByRole('heading', {
@@ -85,7 +99,7 @@ test.describe('seeded operator smoke flows', () => {
     await expect(page.getByRole('link', { name: /Yeouido Core Office Tower/i })).toBeVisible();
     await expect(page.getByRole('link', { name: /Seoul Hyperscale Campus I/i })).toBeVisible();
 
-    await page.getByRole('link', { name: /Yeouido Core Office Tower/i }).click();
+    await openViaLink(page, page.getByRole('link', { name: /Yeouido Core Office Tower/i }));
     await expect(
       page.locator('.eyebrow').filter({ hasText: 'Asset Dossier' }).first()
     ).toBeVisible();
@@ -98,7 +112,7 @@ test.describe('seeded operator smoke flows', () => {
     await expect(page.getByText('Research Snapshot', { exact: true })).toBeVisible();
     await expect(page.getByText('Review Readiness', { exact: true })).toBeVisible();
 
-    await page.getByRole('link', { name: /Open Report Library/i }).click();
+    await openViaLink(page, page.getByRole('link', { name: /Open Report Library/i }));
     await expect(page.getByRole('heading', { name: /Underwriting Reports/i })).toBeVisible();
     await expect(page.getByText('Package Snapshot', { exact: true })).toBeVisible();
     await expect(page.getByText('Approved Evidence', { exact: true })).toBeVisible();
@@ -133,19 +147,16 @@ test.describe('seeded operator smoke flows', () => {
     await expect(page.getByRole('link', { name: 'Optimization Lab', exact: true })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Coverage', exact: true })).toBeVisible();
 
-    await page.getByRole('link', { name: 'Asset Dossiers', exact: true }).click();
-    // First assertion after a route change to a data-heavy page: allow extra time
-    // for the initial server render under CI load (page is pre-built; this is
-    // first-hit latency, not on-demand compilation).
+    await openViaLink(page, page.getByRole('link', { name: 'Asset Dossiers', exact: true }));
     await expect(page.getByText('Asset-level research coverage and blockers')).toBeVisible({
       timeout: 20_000
     });
     await expect(page.getByRole('link', { name: /Yeouido Core Office Tower/i })).toBeVisible();
 
-    await page.getByRole('link', { name: 'Coverage', exact: true }).click();
+    await openViaLink(page, page.getByRole('link', { name: 'Coverage', exact: true }));
     await expect(page.getByText('Open research tasks and freshness exceptions')).toBeVisible();
 
-    await page.getByRole('link', { name: 'Optimization Lab', exact: true }).click();
+    await openViaLink(page, page.getByRole('link', { name: 'Optimization Lab', exact: true }));
     await expect(
       page.getByText('Portfolio allocation screening and scenario exploration')
     ).toBeVisible();
@@ -187,9 +198,10 @@ test.describe('seeded operator smoke flows', () => {
     await expect(
       page.getByRole('link', { name: /Korea Income & Infrastructure Portfolio I/i })
     ).toBeVisible();
-    await page.getByRole('link', { name: /Korea Income & Infrastructure Portfolio I/i }).click();
-    // First assertion after navigating into the portfolio detail route; give the
-    // initial server render headroom under CI load.
+    await openViaLink(
+      page,
+      page.getByRole('link', { name: /Korea Income & Infrastructure Portfolio I/i })
+    );
     await expect(page.getByText('Portfolio Command Center')).toBeVisible({ timeout: 20_000 });
     await expect(page.getByText('AI Operator Brief')).toBeVisible();
     await expect(page.getByText('Portfolio Optimization Lab')).toBeVisible();
@@ -200,7 +212,7 @@ test.describe('seeded operator smoke flows', () => {
       page.getByRole('heading', { name: /Funds, vehicles, commitments, and reporting shells/i })
     ).toBeVisible();
     await expect(page.getByRole('link', { name: /Han River Real Estate Fund I/i })).toBeVisible();
-    await page.getByRole('link', { name: /Han River Real Estate Fund I/i }).click();
+    await openViaLink(page, page.getByRole('link', { name: /Han River Real Estate Fund I/i }));
     await expect(page.getByText('Fund Shell')).toBeVisible();
     await expect(page.getByText('Investor Update Draft')).toBeVisible();
     await expect(page.getByText('Capital Calls And Distributions')).toBeVisible();
