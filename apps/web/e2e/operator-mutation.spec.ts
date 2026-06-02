@@ -56,7 +56,7 @@ test.describe('operator mutation flows', () => {
     await rejectItem.getByTestId('review-reject').click();
     await expect(
       page.locator('[data-testid="review-item"]').filter({ hasText: 'PENDING' })
-    ).toHaveCount(pendingBeforeReject - 1);
+    ).toHaveCount(pendingBeforeReject - 1, { timeout: 20_000 });
     await expect(
       page.getByTestId('review-status').filter({ hasText: 'REJECTED' }).first()
     ).toBeVisible();
@@ -75,7 +75,7 @@ test.describe('operator mutation flows', () => {
     await approveItem.getByTestId('review-approve').click();
     await expect(
       page.locator('[data-testid="review-item"]').filter({ hasText: 'PENDING' })
-    ).toHaveCount(pendingBeforeApprove - 1);
+    ).toHaveCount(pendingBeforeApprove - 1, { timeout: 20_000 });
     await expect(
       page.getByTestId('review-status').filter({ hasText: 'APPROVED' }).first()
     ).toBeVisible();

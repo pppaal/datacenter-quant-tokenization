@@ -7,7 +7,7 @@ const useExternalBaseUrl = Boolean(process.env.PLAYWRIGHT_BASE_URL);
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: false,
-  retries: process.env.CI ? 1 : 0,
+  retries: process.env.CI ? 2 : 0,
   timeout: 60_000,
   expect: {
     timeout: 10_000

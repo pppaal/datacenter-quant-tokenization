@@ -219,6 +219,15 @@ export function computeFundWaterfallTiers(params: {
   // => gpCatchUp = preferredReturnAmount * carry / (100 - carry).
   // Distributions beyond that point are split per the carry percentage so the GP
   // share converges to carry% of all profit.
+  //
+  // Convention note: this is the single-period equivalent of the EUROPEAN
+  // whole-fund catch-up in valuation/waterfall-european.ts — at a point-in-time
+  // NAV cut, cumulative LP profit collapses to the accrued preferred return, so
+  // `pref * carry/(100-carry)` here matches that engine's
+  // `cumLpProfit * promote/(100-promote)`. The AMERICAN sibling
+  // (valuation/waterfall-american.ts) keeps a deliberately different deal-by-deal
+  // catch-up (`cumLpPrefPaid * gpSplit/lpSplit`). The three are intentionally NOT
+  // reconciled into one formula; see fund-waterfall.test.ts for the locked-in math.
   const carryFraction = carriedInterestPct / 100;
   const catchUpTarget =
     carryFraction < 1
