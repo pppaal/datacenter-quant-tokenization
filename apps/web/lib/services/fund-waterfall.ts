@@ -87,7 +87,7 @@ type DatedCashflow = { date: Date; amountKrw: number };
 /**
  * Accrue the LP preferred return on *unreturned* called capital, compounding at
  * `hurdleRatePct` per annum, mirroring the European-style convention in
- * `valuation/lp-gp-waterfall.ts`.
+ * `valuation/waterfall-european.ts`.
  *
  * Unlike the pro-forma calculator (which works on equal annual periods), here we
  * only have aggregate called/distributed figures plus dated capital-call and

@@ -59,7 +59,7 @@ import {
   computeGpLpWaterfall,
   DEFAULT_WATERFALL_CONFIG,
   type GpLpWaterfallResult
-} from '@/lib/services/valuation/gp-lp-waterfall';
+} from '@/lib/services/valuation/waterfall-american';
 import {
   generateInvestmentMemo,
   type InvestmentMemo

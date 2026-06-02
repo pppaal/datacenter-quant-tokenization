@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { runLpGpWaterfall } from '@/lib/services/valuation/lp-gp-waterfall';
+import { runLpGpWaterfall } from '@/lib/services/valuation/waterfall-european';
 
 test('all LP when no excess above pref — no promote', () => {
   const result = runLpGpWaterfall(
