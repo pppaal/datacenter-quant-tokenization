@@ -159,9 +159,9 @@ function main(): void {
     'PLAYWRIGHT_ALLOW_HOSTED_MUTATIONS=true exposes destructive E2E flows; must be off in production.'
   );
   forbid(
-    'ALLOW_LOCAL_DOCUMENT_STORAGE',
+    'E2E_PRODUCTION_BUILD',
     issues,
-    'ALLOW_LOCAL_DOCUMENT_STORAGE=true stores documents on the (non-durable) local filesystem; it is an E2E-only escape hatch and must be off in production.'
+    'E2E_PRODUCTION_BUILD=true disables production-only hard-blocks (mock blockchain writes, local document storage); it is an E2E-only escape hatch and must be off in production.'
   );
 
   // 7. IP / WAF posture

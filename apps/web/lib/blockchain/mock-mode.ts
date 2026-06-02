@@ -1,17 +1,18 @@
 import { createHash } from 'node:crypto';
 import type { Hex } from 'viem';
+import { isRealProduction } from '@/lib/runtime-env';
 
 /**
  * Returns true when the deployment is allowed to short-circuit chain writes
- * through deterministic mock transactions. Mock mode is only honored when
- * NODE_ENV is not production — `lib/services/readiness.ts` enforces the
+ * through deterministic mock transactions. Mock mode is only honored outside a
+ * real production runtime — `lib/services/readiness.ts` enforces the same
  * production hard-block, and this helper mirrors that contract for the
  * ERC-3643 tokenization stack.
  */
 export function isTokenizationMockMode(env: NodeJS.ProcessEnv = process.env): boolean {
   const value = env.BLOCKCHAIN_MOCK_MODE?.trim().toLowerCase();
   const enabled = value === '1' || value === 'true' || value === 'yes';
-  if (enabled && env.NODE_ENV === 'production') {
+  if (enabled && isRealProduction(env)) {
     throw new Error(
       'BLOCKCHAIN_MOCK_MODE must not be enabled in production. Configure a real RPC + signer + tokenization deployment.'
     );

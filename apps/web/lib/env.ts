@@ -68,10 +68,6 @@ const envSchema = z.object({
   // Document storage
   DOCUMENT_STORAGE_DIR: optionalString,
   DOCUMENT_STORAGE_BUCKET: optionalString,
-  // E2E-only escape hatch: permit local-filesystem storage under `next start`
-  // (NODE_ENV=production) when no bucket is configured. Forbidden by the
-  // production preflight.
-  ALLOW_LOCAL_DOCUMENT_STORAGE: optionalBool,
   DOCUMENT_STORAGE_REGION: optionalString,
   DOCUMENT_STORAGE_ENDPOINT: optionalString,
   DOCUMENT_STORAGE_ACCESS_KEY_ID: optionalString,
@@ -127,6 +123,11 @@ const envSchema = z.object({
   // Playwright escape hatches
   PLAYWRIGHT_ALLOW_HOSTED_MUTATIONS: optionalBool,
   PLAYWRIGHT_ALLOWED_HOST_PATTERN: optionalString,
+  // Opts the production-mode browser E2E (`next start`, NODE_ENV=production) out
+  // of production-only hard-blocks (mock blockchain, local document storage) so
+  // it can exercise mock/local paths. See `isRealProduction`. Forbidden by the
+  // production preflight.
+  E2E_PRODUCTION_BUILD: optionalBool,
 
   // Maps (optional). When KAKAO_MAP_API_KEY is set, the property explorer
   // renders a Kakao map; otherwise it falls back to Leaflet + OpenStreetMap,
