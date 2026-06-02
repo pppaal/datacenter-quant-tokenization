@@ -25,7 +25,27 @@
  * Historical note: this file was previously named `lp-gp-waterfall.ts`.
  */
 
+import { bisectIrr } from '@/lib/finance/irr';
+
 import { initWaterfallState, runWaterfallPeriod, type WaterfallStrategy } from './waterfall-engine';
+
+/**
+ * European-waterfall IRR: pure bisection over integer-period flows, value-sign
+ * bracket (assumes NPV decreasing in rate), |NPV| < 1 convergence, 100 iters on
+ * [-0.99, 10], returned as a percentage rounded to 3dp. Delegates to the
+ * canonical `bisectIrr` with options reproducing the prior local helper exactly.
+ */
+function computeIrr(cashflows: number[]): number | null {
+  return bisectIrr(cashflows, {
+    lo: -0.99,
+    hi: 10,
+    iterations: 100,
+    tolerance: 1,
+    branch: 'value-sign',
+    scale: 'percent',
+    percentDecimals: 3
+  });
+}
 
 export type LpGpWaterfallConfig = {
   /** Total equity invested at t=0. LP + GP contribute pro-rata. */
@@ -178,32 +198,4 @@ export function runLpGpWaterfall(
     gpIrrPct: gpIrr,
     promoteHit: gpPromoteCaptured > 0
   };
-}
-
-// ---------------------------------------------------------------------------
-// IRR helper (Newton-Raphson with bisection fallback)
-// ---------------------------------------------------------------------------
-
-function npv(rate: number, cashflows: number[]): number {
-  return cashflows.reduce((sum, cf, i) => sum + cf / Math.pow(1 + rate, i), 0);
-}
-
-function computeIrr(cashflows: number[]): number | null {
-  if (cashflows.length < 2) return null;
-  const positive = cashflows.some((c) => c > 0);
-  const negative = cashflows.some((c) => c < 0);
-  if (!positive || !negative) return null;
-
-  let low = -0.99;
-  let high = 10;
-  for (let i = 0; i < 100; i++) {
-    const mid = (low + high) / 2;
-    const val = npv(mid, cashflows);
-    if (Math.abs(val) < 1) {
-      return Number((mid * 100).toFixed(3));
-    }
-    if (val > 0) low = mid;
-    else high = mid;
-  }
-  return Number((((low + high) / 2) * 100).toFixed(3));
 }

@@ -21,37 +21,27 @@
  * Historical note: this file was previously named `gp-lp-waterfall.ts`.
  */
 
+import { bisectIrr } from '@/lib/finance/irr';
+
 import { initWaterfallState, runWaterfallPeriod, type WaterfallStrategy } from './waterfall-engine';
 
-function npv(rate: number, flows: number[]): number {
-  let sum = 0;
-  for (let i = 0; i < flows.length; i++) {
-    sum += flows[i]! / Math.pow(1 + rate, i);
-  }
-  return sum;
-}
-
+/**
+ * American-waterfall IRR: pure bisection over integer-period flows, product-sign
+ * bracket with a leading bracket guard (loV*hiV > 0 → null), |NPV| < 1e-6
+ * convergence, 100 iters on [-0.99, 10], returned as a RAW fraction (the caller
+ * multiplies by 100). Delegates to the canonical `bisectIrr` with options
+ * reproducing the prior local `solveIrr` exactly.
+ */
 function solveIrr(flows: number[]): number | null {
-  if (flows.length < 2) return null;
-  if (!flows.some((f) => f > 0) || !flows.some((f) => f < 0)) return null;
-  let lo = -0.99;
-  let hi = 10;
-  let loV = npv(lo, flows);
-  let hiV = npv(hi, flows);
-  if (loV * hiV > 0) return null;
-  for (let i = 0; i < 100; i++) {
-    const mid = (lo + hi) / 2;
-    const midV = npv(mid, flows);
-    if (Math.abs(midV) < 1e-6) return mid;
-    if (loV * midV < 0) {
-      hi = mid;
-      hiV = midV;
-    } else {
-      lo = mid;
-      loV = midV;
-    }
-  }
-  return (lo + hi) / 2;
+  return bisectIrr(flows, {
+    lo: -0.99,
+    hi: 10,
+    iterations: 100,
+    tolerance: 1e-6,
+    branch: 'product-sign',
+    requireBracket: true,
+    scale: 'fraction'
+  });
 }
 
 export type WaterfallConfig = {
