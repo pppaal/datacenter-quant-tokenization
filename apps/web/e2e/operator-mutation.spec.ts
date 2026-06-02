@@ -58,8 +58,7 @@ async function openViaLink(page: Page, link: Locator) {
 async function submitReviewDecision(page: Page, button: Locator) {
   await Promise.all([
     page.waitForResponse(
-      (response) =>
-        response.url().includes('/api/review') && response.request().method() === 'POST'
+      (response) => response.url().includes('/api/review') && response.request().method() === 'POST'
     ),
     button.click()
   ]);
