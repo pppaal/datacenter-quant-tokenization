@@ -134,7 +134,12 @@ test.describe('seeded operator smoke flows', () => {
     await expect(page.getByRole('link', { name: 'Coverage', exact: true })).toBeVisible();
 
     await page.getByRole('link', { name: 'Asset Dossiers', exact: true }).click();
-    await expect(page.getByText('Asset-level research coverage and blockers')).toBeVisible();
+    // First assertion after a route change to a data-heavy page: allow extra time
+    // for the initial server render under CI load (page is pre-built; this is
+    // first-hit latency, not on-demand compilation).
+    await expect(page.getByText('Asset-level research coverage and blockers')).toBeVisible({
+      timeout: 20_000
+    });
     await expect(page.getByRole('link', { name: /Yeouido Core Office Tower/i })).toBeVisible();
 
     await page.getByRole('link', { name: 'Coverage', exact: true }).click();
@@ -183,7 +188,9 @@ test.describe('seeded operator smoke flows', () => {
       page.getByRole('link', { name: /Korea Income & Infrastructure Portfolio I/i })
     ).toBeVisible();
     await page.getByRole('link', { name: /Korea Income & Infrastructure Portfolio I/i }).click();
-    await expect(page.getByText('Portfolio Command Center')).toBeVisible();
+    // First assertion after navigating into the portfolio detail route; give the
+    // initial server render headroom under CI load.
+    await expect(page.getByText('Portfolio Command Center')).toBeVisible({ timeout: 20_000 });
     await expect(page.getByText('AI Operator Brief')).toBeVisible();
     await expect(page.getByText('Portfolio Optimization Lab')).toBeVisible();
     await expect(page.getByText('Lease Rollover Watchlist', { exact: true })).toBeVisible();
