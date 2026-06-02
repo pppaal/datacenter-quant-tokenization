@@ -1,0 +1,121 @@
+import { formatCurrencyFromKrwAtRate } from '@/lib/finance/currency';
+import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
+import { formatDate } from '@/lib/utils';
+import type { SampleReportData } from './types';
+
+export function InsuranceSection({ data }: { data: SampleReportData }) {
+  const { displayCurrency, fxRateToKrw, insuranceSummary } = data;
+  if (!insuranceSummary) {
+    return null;
+  }
+  return (
+    <section id="im-insurance" className="app-shell py-4">
+      <Card>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <div className="eyebrow">Insurance register</div>
+            <p className="mt-2 max-w-3xl text-sm text-slate-400">
+              Active policies covering property, business interruption, liability, construction, and
+              cyber. Renewals expiring within 90 days are flagged for pre-IC review; coverage limits
+              anchor the LP-side underwriting of catastrophic loss exposure.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            {insuranceSummary.expiringSoonCount > 0 ? (
+              <Badge tone="warn">{insuranceSummary.expiringSoonCount} expiring &lt; 90d</Badge>
+            ) : null}
+            <Badge>
+              {insuranceSummary.policies.length} polic
+              {insuranceSummary.policies.length === 1 ? 'y' : 'ies'}
+            </Badge>
+          </div>
+        </div>
+        <div className="mt-5 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+          {insuranceSummary.tilesByType.map((tile) => {
+            const tone =
+              tile.status === 'EXPIRING'
+                ? 'border-amber-300/30 bg-amber-300/[0.04]'
+                : tile.status === 'EXPIRED'
+                  ? 'border-rose-300/30 bg-rose-300/[0.04]'
+                  : 'border-white/10 bg-white/[0.02]';
+            const dot =
+              tile.status === 'EXPIRING'
+                ? 'bg-amber-300'
+                : tile.status === 'EXPIRED'
+                  ? 'bg-rose-300'
+                  : 'bg-emerald-300';
+            return (
+              <div
+                key={`${tile.policyType}-${tile.insurer ?? ''}-${tile.expiresOn ?? ''}`}
+                className={`rounded-[16px] border ${tone} p-3`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="text-[11px] uppercase tracking-wide text-slate-500">
+                    {tile.label}
+                  </div>
+                  <span className="flex items-center gap-1.5 text-[10px] text-slate-400">
+                    <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />
+                    {tile.status}
+                  </span>
+                </div>
+                <div className="mt-2 font-mono text-sm font-semibold text-white">
+                  {tile.coverageKrw !== null
+                    ? formatCurrencyFromKrwAtRate(tile.coverageKrw, displayCurrency, fxRateToKrw)
+                    : '—'}
+                </div>
+                <div className="mt-1 text-[10px] text-slate-500">
+                  {tile.insurer ?? '—'}
+                  {tile.premiumKrw !== null
+                    ? ` · premium ${formatCurrencyFromKrwAtRate(tile.premiumKrw, displayCurrency, fxRateToKrw)}`
+                    : ''}
+                </div>
+                {tile.expiresOn ? (
+                  <div className="mt-1 text-[10px] text-slate-500">
+                    Expires {formatDate(tile.expiresOn)}
+                  </div>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+        <div className="mt-4 grid gap-3 text-[11px] md:grid-cols-3">
+          <div className="rounded-[12px] border border-white/5 bg-white/[0.015] px-3 py-2">
+            <div className="text-[10px] uppercase tracking-wide text-slate-500">Total coverage</div>
+            <div className="mt-1 font-mono text-sm text-white">
+              {formatCurrencyFromKrwAtRate(
+                insuranceSummary.totalCoverageKrw,
+                displayCurrency,
+                fxRateToKrw
+              )}
+            </div>
+          </div>
+          <div className="rounded-[12px] border border-white/5 bg-white/[0.015] px-3 py-2">
+            <div className="text-[10px] uppercase tracking-wide text-slate-500">
+              Total annual premium
+            </div>
+            <div className="mt-1 font-mono text-sm text-white">
+              {formatCurrencyFromKrwAtRate(
+                insuranceSummary.totalPremiumKrw,
+                displayCurrency,
+                fxRateToKrw
+              )}
+            </div>
+          </div>
+          <div className="rounded-[12px] border border-white/5 bg-white/[0.015] px-3 py-2">
+            <div className="text-[10px] uppercase tracking-wide text-slate-500">Avg deductible</div>
+            <div className="mt-1 font-mono text-sm text-white">
+              {insuranceSummary.averageDeductibleKrw !== null
+                ? formatCurrencyFromKrwAtRate(
+                    insuranceSummary.averageDeductibleKrw,
+                    displayCurrency,
+                    fxRateToKrw
+                  )
+                : '—'}
+            </div>
+          </div>
+        </div>
+      </Card>
+    </section>
+  );
+}
