@@ -158,6 +158,11 @@ function main(): void {
     issues,
     'PLAYWRIGHT_ALLOW_HOSTED_MUTATIONS=true exposes destructive E2E flows; must be off in production.'
   );
+  forbid(
+    'ALLOW_LOCAL_DOCUMENT_STORAGE',
+    issues,
+    'ALLOW_LOCAL_DOCUMENT_STORAGE=true stores documents on the (non-durable) local filesystem; it is an E2E-only escape hatch and must be off in production.'
+  );
 
   // 7. IP / WAF posture
   recommend(

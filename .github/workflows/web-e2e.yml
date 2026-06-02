@@ -35,6 +35,10 @@ jobs:
       BLOCKCHAIN_MOCK_MODE: "true"
       OPENAI_MODEL: gpt-4o-mini
       PORT: 3100
+      # The suite serves a production `next start` build, which would otherwise
+      # reject local-filesystem document storage. There is no S3 in CI, so allow
+      # local storage here; the production preflight forbids this flag.
+      ALLOW_LOCAL_DOCUMENT_STORAGE: "true"
     steps:
       - name: Checkout
         uses: actions/checkout@v4

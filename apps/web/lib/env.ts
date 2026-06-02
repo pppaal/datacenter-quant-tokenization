@@ -68,6 +68,10 @@ const envSchema = z.object({
   // Document storage
   DOCUMENT_STORAGE_DIR: optionalString,
   DOCUMENT_STORAGE_BUCKET: optionalString,
+  // E2E-only escape hatch: permit local-filesystem storage under `next start`
+  // (NODE_ENV=production) when no bucket is configured. Forbidden by the
+  // production preflight.
+  ALLOW_LOCAL_DOCUMENT_STORAGE: optionalBool,
   DOCUMENT_STORAGE_REGION: optionalString,
   DOCUMENT_STORAGE_ENDPOINT: optionalString,
   DOCUMENT_STORAGE_ACCESS_KEY_ID: optionalString,

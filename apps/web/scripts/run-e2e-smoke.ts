@@ -187,6 +187,11 @@ async function main() {
 
   await prisma.$disconnect();
   process.env.ADMIN_BASIC_AUTH_ADMIN_CREDENTIALS = getBrowserAdminCredentialEnv();
+  // The suite serves a production `next start` build; without an S3 bucket the
+  // storage factory would reject local-filesystem uploads. Enable the E2E-only
+  // escape hatch (the production preflight forbids it) so document-upload flows
+  // work. `next start` is spawned by Playwright and inherits this env.
+  process.env.ALLOW_LOCAL_DOCUMENT_STORAGE ??= 'true';
 
   await runCommand('npx', ['playwright', 'test'], {
     BLOCKCHAIN_MOCK_MODE: process.env.BLOCKCHAIN_MOCK_MODE ?? 'true',
