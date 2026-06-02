@@ -1,6 +1,4 @@
 import { spawn } from 'node:child_process';
-import { rm } from 'node:fs/promises';
-import path from 'node:path';
 import { prisma } from '@/lib/db/prisma';
 
 function runCommand(
@@ -168,9 +166,12 @@ async function prepareE2EDatabaseSchema() {
   await assertDatabaseReachable();
 }
 
-async function clearNextBuildOutput() {
-  const buildPath = path.join(process.cwd(), 'build');
-  await rm(buildPath, { recursive: true, force: true });
+async function buildProductionApp() {
+  // Build the app and serve it with `next start` (see playwright.config.ts) so
+  // routes are pre-compiled. next dev compiles each route on first request,
+  // which intermittently exceeded the Playwright assertion timeout under CI.
+  console.log('Building the production app for a compile-free, stable browser E2E...');
+  await runCommand('npm', ['run', 'build']);
 }
 
 async function main() {
@@ -182,7 +183,7 @@ async function main() {
   await runCommand('npm', ['run', 'prisma:seed']);
   await assertDatabaseReachable();
   await assertSeededOperatorData();
-  await clearNextBuildOutput();
+  await buildProductionApp();
 
   await prisma.$disconnect();
   process.env.ADMIN_BASIC_AUTH_ADMIN_CREDENTIALS = getBrowserAdminCredentialEnv();
