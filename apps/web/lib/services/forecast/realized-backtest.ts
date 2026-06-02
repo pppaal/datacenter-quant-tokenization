@@ -6,6 +6,8 @@ import {
   type ForecastRunLike
 } from '@/lib/services/forecast/gradient-boosting';
 import { pickBaseDscr } from '@/lib/services/valuation/scenario-utils';
+import { differenceInDays } from '@/lib/utils/dates';
+import { mean } from '@/lib/utils/stats';
 
 type RunLike = Pick<
   ValuationRun,
@@ -98,10 +100,6 @@ function round(value: number, decimals = 1) {
   return Number(value.toFixed(decimals));
 }
 
-function differenceInDays(start: Date, end: Date) {
-  return Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-}
-
 function isWithinHorizon(days: number) {
   return days >= HORIZON_MIN_DAYS && days <= HORIZON_MAX_DAYS;
 }
@@ -132,11 +130,6 @@ function sign(value: number) {
   if (value > 0) return 1;
   if (value < 0) return -1;
   return 0;
-}
-
-function mean(values: number[]) {
-  if (values.length === 0) return 0;
-  return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
 function rmse(errors: number[]) {

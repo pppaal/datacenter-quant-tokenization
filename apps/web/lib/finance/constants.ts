@@ -25,6 +25,9 @@ export const DAYS_PER_YEAR = 365;
 /** Milliseconds per (Julian) year. */
 export const MS_PER_YEAR = DAYS_PER_YEAR_JULIAN * 24 * 60 * 60 * 1000;
 
+/** Milliseconds per calendar day. */
+export const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
 /** Default LP preferred-return hurdle, in percent per annum. */
 export const DEFAULT_HURDLE_PCT = 8;
 

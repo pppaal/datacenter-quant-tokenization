@@ -5,6 +5,7 @@ import type { GradientBoostingForecast } from '@/lib/services/forecast/gradient-
 import { assetBundleInclude } from '@/lib/services/assets';
 import { pickBaseDscr } from '@/lib/services/valuation/scenario-utils';
 import { realizedOutcomeSchema } from '@/lib/validations/realized-outcome';
+import { differenceInDays } from '@/lib/utils/dates';
 
 type RunForComparison = Pick<
   ValuationRun,
@@ -40,10 +41,6 @@ type AssetOutcomeLike = {
 
 function round(value: number, decimals = 1) {
   return Number(value.toFixed(decimals));
-}
-
-function differenceInDays(start: Date, end: Date) {
-  return Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
 }
 
 function toNumber(value: unknown) {

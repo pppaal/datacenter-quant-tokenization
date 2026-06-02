@@ -1,4 +1,5 @@
 import type { MacroSeries } from '@prisma/client';
+import { mean } from '@/lib/utils/stats';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -52,11 +53,6 @@ function extractSortedValues(series: MacroSeries[], seriesKey: string): number[]
     .filter((s) => s.seriesKey === seriesKey && s.value != null)
     .sort((a, b) => b.observationDate.getTime() - a.observationDate.getTime())
     .map((s) => s.value!);
-}
-
-function mean(values: number[]): number {
-  if (values.length === 0) return 0;
-  return values.reduce((s, v) => s + v, 0) / values.length;
 }
 
 function sampleStdDev(values: number[]): number {

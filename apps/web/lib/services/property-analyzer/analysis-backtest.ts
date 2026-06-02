@@ -24,6 +24,7 @@
  */
 
 import type { AssetClass } from '@prisma/client';
+import { differenceInDays } from '@/lib/utils/dates';
 
 /** A prediction produced by a persisted analysis snapshot. */
 export type AnalysisPrediction = {
@@ -88,10 +89,6 @@ export type AnalysisBacktestResult = {
 
 function round(value: number, decimals = 2) {
   return Number(value.toFixed(decimals));
-}
-
-function differenceInDays(start: Date, end: Date) {
-  return Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
 }
 
 function mean(values: number[]): number | null {

@@ -24,6 +24,7 @@
  */
 
 import type { MacroSeries } from '@prisma/client';
+import { mean } from '@/lib/utils/stats';
 
 export type RegimeShift = {
   index: number;
@@ -68,11 +69,6 @@ function toObservations(series: MacroSeries[], seriesKey: string): Observation[]
     .filter((s) => s.seriesKey === seriesKey && s.value != null)
     .sort((a, b) => a.observationDate.getTime() - b.observationDate.getTime())
     .map((s) => ({ date: s.observationDate, value: s.value! }));
-}
-
-function mean(values: number[]): number {
-  if (values.length === 0) return 0;
-  return values.reduce((s, v) => s + v, 0) / values.length;
 }
 
 function sampleStdDev(values: number[]): number {

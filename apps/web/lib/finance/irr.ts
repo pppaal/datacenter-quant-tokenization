@@ -25,6 +25,8 @@
  * Pure / DB-free.
  */
 
+import { MS_PER_DAY } from './constants';
+
 // ---------------------------------------------------------------------------
 // Period-indexed NPV (return-metrics family)
 // ---------------------------------------------------------------------------
@@ -236,7 +238,6 @@ export function bisectIrr(flows: number[], options: BisectIrrOptions = {}): numb
 export type DatedCashflow = { date: Date; amountKrw: number };
 
 const DAYS_PER_YEAR = 365;
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 function xnpv(rate: number, flows: { years: number; amount: number }[]): number {
   let result = 0;

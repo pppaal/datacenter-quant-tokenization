@@ -14,6 +14,7 @@
  * can be unit-tested with Prisma fakes.
  */
 
+import { MS_PER_DAY } from '@/lib/finance/constants';
 import { computeXirr, type DatedCashflow } from '@/lib/finance/irr';
 
 // XIRR + its dated-cashflow type live in the canonical IRR module; re-exported
@@ -205,10 +206,10 @@ export function computeFundNavKrw(fund: FundNavInput): number {
 // Per-LP capital account (PCAP)
 // ---------------------------------------------------------------------------
 
-// Local time constants used by the PCAP fallback below. (XIRR itself uses its
-// own act/365 constants inside the canonical IRR module.)
+// Local day-count constant used by the PCAP fallback below. (XIRR itself uses
+// its own act/365 constants inside the canonical IRR module.) MS_PER_DAY comes
+// from the shared finance constants.
 const DAYS_PER_YEAR = 365;
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 export type PcapCommitment = {
   investorId: string;
