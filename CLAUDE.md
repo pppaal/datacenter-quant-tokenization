@@ -147,23 +147,34 @@ system consistent.
 
 ## Deferred refactors
 
-These are known to need attention but were left intentionally untouched
-because the regression risk in a single PR outweighed the benefit:
+### Completed
 
-- **`prisma/seed.ts` (~3,900 LOC)** — split into `prisma/seeds/*.ts`
-  per domain (asset factory, office, deals, portfolio, committee,
-  research, datacenters, quarterly). Each domain function should accept
-  `prisma` as a parameter rather than reading the module-level instance.
-- **`lib/services/deals.ts`** — partial split started in
-  `lib/services/deals/`: `timeline.ts`, `stage.ts`,
-  `diligence-summary.ts` extracted (3,567 → 3,328 LOC). Remaining
-  view builders (`buildDealExecutionSnapshot`, `buildDealDataCoverage`,
+- **`prisma/seed.ts`** — DONE. Split into `prisma/seeds/*.ts` per domain
+  (`asset-intel`, `committee`, `datacenters`, `deals`, `financials`,
+  `office`, `portfolio`, `quarterly`, `research`, `tokenization`, plus
+  `helpers`). Each domain function takes `prisma: PrismaClient` as a
+  parameter. `seed.ts` is now ~1,265 LOC of orchestration.
+- **`lib/services/deals.ts`** — DONE. View builders extracted as
+  `deals/views.ts` (`buildDealExecutionSnapshot`, `buildDealDataCoverage`,
   `buildDealClosingReadiness`, `buildDealCloseProbability`,
   `buildDealCloseProbabilityHistory`, `buildDealOriginationProfile`,
-  `buildDealDiligenceWorkpaper` + serializer) form a tightly-coupled
-  cluster — extract them together as `deals/views.ts` rather than
-  individually. CRUD mutations stay in `deals.ts` because they own
-  the validation schema imports + audit boilerplate.
+  `buildDealDiligenceWorkpaper` + serializer), alongside the earlier
+  `timeline.ts`, `stage.ts`, `diligence-summary.ts`. `deals.ts` is now
+  ~2,567 LOC: CRUD mutations stay there because they own the validation
+  schema imports + audit boilerplate.
+
+### Candidates still worth attention
+
+Large files that remain god-shaped. None blocks anything; pick by risk and
+test coverage (service-layer with unit tests is the safest to split):
+
+- `components/admin/deal-operator-console.tsx` (~2,156 LOC) — React
+  component; split into sub-panels. Hard to verify without the browser.
+- `lib/services/reports.ts` (~1,567 LOC) — no unit tests yet; add coverage
+  before/with any split.
+- `lib/services/dashboard.ts` (~1,403 LOC) — has `dashboard-risk.test.ts`;
+  cohesive sub-builders are extractable and verifiable via that test.
+- `components/admin/lease-book-form.tsx` (~1,194 LOC) — React form.
 
 ## What to do BEFORE editing
 
