@@ -1,4 +1,6 @@
 import type { AssetClass, MacroFactor } from '@prisma/client';
+
+import { clamp } from '@/lib/math';
 import type { MacroFactorDirection } from '@/lib/services/macro/factors';
 import { macroSensitivityTemplateRegistry } from '@/lib/services/macro/profile-registry';
 import {
@@ -119,10 +121,6 @@ function buildFactorLookup(factors: MacroFactor[], market: string): FactorLookup
     }
   }
   return map;
-}
-
-function clamp(value: number, min: number, max: number) {
-  return Math.max(min, Math.min(max, value));
 }
 
 function getSensitivityMultiplier(

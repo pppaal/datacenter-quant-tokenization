@@ -1,4 +1,6 @@
 import { AssetClass, type Asset, type RealizedOutcome, type ValuationRun } from '@prisma/client';
+
+import { clamp, round } from '@/lib/math';
 import {
   buildFeatureVector,
   predictWithModel,
@@ -93,10 +95,6 @@ export type GradientBoostingRealizedBacktest = {
   };
   rows: GradientBoostingRealizedBacktestRow[];
 };
-
-function round(value: number, decimals = 1) {
-  return Number(value.toFixed(decimals));
-}
 
 function differenceInDays(start: Date, end: Date) {
   return Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
@@ -310,10 +308,6 @@ export function buildGradientBoostingRealizedBacktest({
         Math.abs(right.dscrErrorPct ?? 0) - Math.abs(left.dscrErrorPct ?? 0)
     )
   };
-}
-
-function clamp(value: number, min: number, max: number) {
-  return Math.min(Math.max(value, min), max);
 }
 
 function toForecastRun(run: RunLike): ForecastRunLike {

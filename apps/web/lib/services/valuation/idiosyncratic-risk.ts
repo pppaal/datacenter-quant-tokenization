@@ -25,6 +25,7 @@
  *     to model concentration × rollover correlation if needed.
  */
 
+import { clamp } from '@/lib/math';
 import type { CreditGrade } from '@/lib/services/valuation/tenant-credit';
 import { formatEok } from '@/lib/finance/currency';
 
@@ -120,10 +121,6 @@ function interpolate(value: number, anchors: readonly Anchor[]): number {
     }
   }
   return last[1];
-}
-
-function clamp(v: number, lo: number, hi: number): number {
-  return Math.max(lo, Math.min(hi, v));
 }
 
 function severityFromScore(score: number): IdiosyncraticSeverity {

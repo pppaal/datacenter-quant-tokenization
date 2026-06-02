@@ -1,4 +1,6 @@
 import type { Asset, PrismaClient, RealizedOutcome, ValuationRun } from '@prisma/client';
+
+import { round } from '@/lib/math';
 import { prisma } from '@/lib/db/prisma';
 import { convertToKrw, resolveInputCurrency } from '@/lib/finance/currency';
 import type { GradientBoostingForecast } from '@/lib/services/forecast/gradient-boosting';
@@ -37,10 +39,6 @@ type AssetOutcomeLike = {
   assetCode: string;
   assetClass: Asset['assetClass'];
 };
-
-function round(value: number, decimals = 1) {
-  return Number(value.toFixed(decimals));
-}
 
 function differenceInDays(start: Date, end: Date) {
   return Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));

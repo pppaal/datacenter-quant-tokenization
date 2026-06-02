@@ -1,13 +1,10 @@
+import { clamp } from '@/lib/math';
 import { type ConfidenceBounds, clampConfidence } from '@/lib/services/valuation/stabilized-income';
 import type { UnderwritingAnalysis, UnderwritingBundle } from '@/lib/services/valuation/types';
 import {
   ENGINE_CONFIDENCE_CEILING,
   ENGINE_CONFIDENCE_FLOOR
 } from '@/lib/services/valuation/constants';
-
-function clamp(value: number, min: number, max: number) {
-  return Math.min(Math.max(value, min), max);
-}
 
 /**
  * Engine-wide confidence range, used only as a fallback for strategies that do

@@ -1,5 +1,7 @@
 import type { MacroFactor } from '@prisma/client';
 
+import { round } from '@/lib/math';
+
 type MacroDirection = 'POSITIVE' | 'NEUTRAL' | 'NEGATIVE';
 
 export type MacroBacktestFactorRow = {
@@ -35,10 +37,6 @@ export type MacroBacktest = {
   };
   markets: MacroBacktestMarketRow[];
 };
-
-function round(value: number, decimals = 1) {
-  return Number(value.toFixed(decimals));
-}
 
 function buildFactorBacktest(rows: MacroFactor[]): MacroBacktestFactorRow | null {
   const ordered = [...rows].sort(
