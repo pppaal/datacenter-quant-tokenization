@@ -51,6 +51,20 @@ async function openViaLink(page: Page, link: Locator) {
   await page.goto(href as string);
 }
 
+// Click a review decision button and wait for the mutation to actually persist
+// (POST /api/review) before the caller reloads for authoritative state. This
+// avoids depending on the form's router.refresh() in-place repaint, which is
+// load-sensitive and flaked in CI.
+async function submitReviewDecision(page: Page, button: Locator) {
+  await Promise.all([
+    page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/review') && response.request().method() === 'POST'
+    ),
+    button.click()
+  ]);
+}
+
 test.describe('operator mutation flows', () => {
   test.describe.configure({ mode: 'serial' });
 
@@ -67,29 +81,26 @@ test.describe('operator mutation flows', () => {
     await rejectItem
       .getByTestId('review-notes')
       .fill('Rejected in mutation E2E for queue coverage.');
-    await rejectItem.getByTestId('review-reject').click();
-    await expect(
-      page.locator('[data-testid="review-item"]').filter({ hasText: 'PENDING' })
-    ).toHaveCount(pendingBeforeReject - 1, { timeout: 20_000 });
+    // The action persists via POST /api/review and then calls router.refresh().
+    // That in-place refresh repaint is load-sensitive and flaked intermittently
+    // in CI (the count never settled within the timeout even though the mutation
+    // had persisted). Wait for the mutation to persist, then reload for
+    // authoritative server state instead of racing the client refresh.
+    await submitReviewDecision(page, rejectItem.getByTestId('review-reject'));
+    await page.goto('/admin/review');
+    await expect(pendingItems).toHaveCount(pendingBeforeReject - 1, { timeout: 20_000 });
     await expect(
       page.getByTestId('review-status').filter({ hasText: 'REJECTED' }).first()
     ).toBeVisible();
 
-    const approveItem = page
-      .locator('[data-testid="review-item"]')
-      .filter({ hasText: 'PENDING' })
-      .nth(0);
-    const pendingBeforeApprove = await page
-      .locator('[data-testid="review-item"]')
-      .filter({ hasText: 'PENDING' })
-      .count();
+    const pendingBeforeApprove = await pendingItems.count();
+    const approveItem = pendingItems.nth(0);
     await approveItem
       .getByTestId('review-notes')
       .fill('Approved in mutation E2E for committee-ready coverage.');
-    await approveItem.getByTestId('review-approve').click();
-    await expect(
-      page.locator('[data-testid="review-item"]').filter({ hasText: 'PENDING' })
-    ).toHaveCount(pendingBeforeApprove - 1, { timeout: 20_000 });
+    await submitReviewDecision(page, approveItem.getByTestId('review-approve'));
+    await page.goto('/admin/review');
+    await expect(pendingItems).toHaveCount(pendingBeforeApprove - 1, { timeout: 20_000 });
     await expect(
       page.getByTestId('review-status').filter({ hasText: 'APPROVED' }).first()
     ).toBeVisible();
