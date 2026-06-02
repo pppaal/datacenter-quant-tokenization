@@ -27,6 +27,8 @@
  * are bounded.
  */
 
+import { MS_PER_YEAR } from '@/lib/finance/constants';
+
 // ---------------------------------------------------------------------------
 // Bounds — clamp every adjustment so one bad comp can't dominate.
 // ---------------------------------------------------------------------------
@@ -88,9 +90,8 @@ export function computeTimeAdjustmentPct(input: TimeAdjustmentInput): {
     Math.min(MAX_ANNUAL_GROWTH_PCT, rawGrowth)
   );
 
-  const msPerYear = 1000 * 60 * 60 * 24 * 365.25;
   // Positive ⇒ comp is in the past and must be brought FORWARD to val date.
-  const yearsElapsed = (valuationDate.getTime() - transactionDate.getTime()) / msPerYear;
+  const yearsElapsed = (valuationDate.getTime() - transactionDate.getTime()) / MS_PER_YEAR;
 
   // Compound growth comp→val: (1+g)^years − 1.
   const factor = Math.pow(1 + annualGrowthUsedPct / 100, yearsElapsed) - 1;

@@ -1,3 +1,5 @@
+import { KRW_PER_EOK } from './constants';
+
 export const supportedCurrencies = ['KRW', 'USD', 'EUR', 'JPY', 'SGD', 'GBP'] as const;
 
 export type SupportedCurrency = (typeof supportedCurrencies)[number];
@@ -98,6 +100,76 @@ export function convertFromKrwAtRate(
       ? rateToKrw
       : getFxRateToKrw(currency, env);
   return amountKrw / effectiveRate;
+}
+
+// ---------------------------------------------------------------------------
+// Compact KRW formatters (single source of truth)
+//
+// Several services previously defined their own `(krw/1e8).toFixed(1)+'억'`
+// style helper with subtly different tiers, decimal places, suffixes and
+// prefixes. These helpers are parameterized so each call site keeps its
+// EXACT prior output — do not "normalize" the rounding without auditing
+// every consumer's snapshot.
+// ---------------------------------------------------------------------------
+
+/**
+ * Format an amount in KRW as 억 (hundred-millions).
+ *
+ * @example formatEok(150_000_000) // "1.5억"
+ */
+export function formatEok(
+  krw: number,
+  { dp = 1, suffix = '억', prefix = '' }: { dp?: number; suffix?: string; prefix?: string } = {}
+): string {
+  return `${prefix}${(krw / KRW_PER_EOK).toFixed(dp)}${suffix}`;
+}
+
+/**
+ * Format a KRW amount as billions (₩…B), one decimal place. Used by the
+ * LP investor reports, which display USD-style billions rather than 억.
+ *
+ * @example formatKrwBillions(1_500_000_000) // "₩1.5B"
+ */
+export function formatKrwBillions(value: number): string {
+  return `₩${(value / 1_000_000_000).toFixed(1)}B`;
+}
+
+/** A single magnitude tier for {@link formatKrwCompact}. */
+export type KrwCompactTier = {
+  /** Inclusive lower bound on `Math.abs(krw)` for this tier to apply. */
+  min: number;
+  /** Divisor applied to the (signed) amount before formatting. */
+  divisor: number;
+  /** Decimal places passed to `toFixed`. */
+  dp: number;
+  /** Suffix appended after the number. */
+  suffix: string;
+};
+
+/**
+ * Format a KRW amount by selecting the first tier whose `min` is <=
+ * `Math.abs(krw)`, then `(krw / tier.divisor).toFixed(tier.dp) + suffix`.
+ * Falls back to `fallback(krw)` when no tier matches.
+ *
+ * `prefix` is prepended to BOTH the tier output and the fallback output,
+ * matching the existing call sites (e.g. the `₩` in refinancing).
+ */
+export function formatKrwCompact(
+  krw: number,
+  options: {
+    tiers: KrwCompactTier[];
+    fallback: (krw: number) => string;
+    prefix?: string;
+  }
+): string {
+  const { tiers, fallback, prefix = '' } = options;
+  const abs = Math.abs(krw);
+  for (const tier of tiers) {
+    if (abs >= tier.min) {
+      return `${prefix}${(krw / tier.divisor).toFixed(tier.dp)}${tier.suffix}`;
+    }
+  }
+  return `${prefix}${fallback(krw)}`;
 }
 
 export function formatCurrencyFromKrw(

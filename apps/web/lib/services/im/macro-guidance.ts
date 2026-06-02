@@ -6,12 +6,7 @@
  * plus a 6-line narrative summary. The IM surfaces those numerically
  * so the LP can see HOW the regime engine moved the base inputs.
  */
-type ProvenanceEntry = {
-  field: string;
-  sourceSystem?: string;
-  value?: unknown;
-  freshnessLabel?: string;
-};
+import type { ProvenanceEntry } from '@/lib/sources/types';
 
 export type MacroGuidance = {
   shifts: {

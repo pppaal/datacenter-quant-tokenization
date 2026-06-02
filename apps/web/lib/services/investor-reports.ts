@@ -6,6 +6,7 @@ import {
   type LpStatement,
   type PcapResult
 } from '@/lib/services/fund-nav';
+import { formatKrwBillions } from '@/lib/finance/currency';
 
 type InvestorReportSection = {
   title: string;
@@ -45,10 +46,6 @@ type InvestorReportBundle = {
   } | null;
   exportFileBase: string;
 };
-
-function formatKrwBillions(value: number) {
-  return `₩${(value / 1_000_000_000).toFixed(1)}B`;
-}
 
 /**
  * Build per-LP capital accounts (PCAP) for an entire fund in a single query.

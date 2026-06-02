@@ -34,6 +34,7 @@ import {
   type CompAdjustmentFactor,
   type HedonicSample
 } from '@/lib/services/valuation/comp-adjustments';
+import { MS_PER_YEAR } from '@/lib/finance/constants';
 
 export type ValuationApproachKey = 'income' | 'salesComparison' | 'cost';
 
@@ -326,8 +327,6 @@ function computeSalesComparisonApproach(
   let usedTransactionCompCount = 0;
   let usedComparableEntryCount = 0;
 
-  const msPerYear = 1000 * 60 * 60 * 24 * 365.25;
-
   function pushComp(args: {
     source: CompAdjustmentRecord['source'];
     rawPrice: number;
@@ -364,7 +363,7 @@ function computeSalesComparisonApproach(
     });
     if (args.area && args.area > 0) {
       const ageYears = args.transactionDate
-        ? Math.max(0, (valuationDate.getTime() - args.transactionDate.getTime()) / msPerYear)
+        ? Math.max(0, (valuationDate.getTime() - args.transactionDate.getTime()) / MS_PER_YEAR)
         : 0;
       hedonicSamples.push({ pricePerSqmKrw: args.rawPrice, areaSqm: args.area, ageYears });
     }

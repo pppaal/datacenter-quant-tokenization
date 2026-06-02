@@ -8,17 +8,7 @@
  * renders "—" for any cell that lacks the necessary inputs.
  */
 
-type Decimalish = number | { toNumber: () => number } | null | undefined;
-
-function toNum(value: Decimalish): number | null {
-  if (value === null || value === undefined) return null;
-  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
-  if (typeof (value as { toNumber?: () => number }).toNumber === 'function') {
-    const v = (value as { toNumber: () => number }).toNumber();
-    return Number.isFinite(v) ? v : null;
-  }
-  return null;
-}
+import { type Decimalish, toNum } from '@/lib/finance/decimalish';
 
 function safeDiv(a: number | null, b: number | null): number | null {
   if (a === null || b === null || b === 0) return null;

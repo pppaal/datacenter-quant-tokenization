@@ -26,6 +26,7 @@
  */
 
 import type { CreditGrade } from '@/lib/services/valuation/tenant-credit';
+import { formatEok } from '@/lib/finance/currency';
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -286,7 +287,7 @@ function scoreCapexBacklog(
   );
 
   const ratioPct = ratio * 100;
-  const evidence = `Deferred CapEx ${(deferred / 1e8).toFixed(1)} 억원 = ${ratioPct.toFixed(2)}% of building value`;
+  const evidence = `Deferred CapEx ${formatEok(deferred, { suffix: ' 억원' })} = ${ratioPct.toFixed(2)}% of building value`;
 
   const recommendation =
     score >= 60

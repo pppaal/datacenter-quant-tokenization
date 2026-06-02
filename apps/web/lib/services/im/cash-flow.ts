@@ -8,17 +8,7 @@
  * provenance under the table.
  */
 
-type Decimalish = number | { toNumber: () => number } | null | undefined;
-
-function toNum(v: Decimalish): number | null {
-  if (v === null || v === undefined) return null;
-  if (typeof v === 'number') return Number.isFinite(v) ? v : null;
-  if (typeof (v as { toNumber?: () => number }).toNumber === 'function') {
-    const n = (v as { toNumber: () => number }).toNumber();
-    return Number.isFinite(n) ? n : null;
-  }
-  return null;
-}
+import { type Decimalish, toNum } from '@/lib/finance/decimalish';
 
 export type CashFlowInputs = {
   /** From the income statement. */

@@ -1,11 +1,4 @@
-type ProvenanceEntry = {
-  field: string;
-  sourceSystem: string;
-  value: unknown;
-  mode: string;
-  fetchedAt?: string;
-  freshnessLabel: string;
-};
+import type { ProvenanceEntry } from '@/lib/sources/types';
 
 type ScenarioEntry = {
   name: string;

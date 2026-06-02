@@ -19,6 +19,7 @@
  */
 
 import type { ProFormaYear } from '@/lib/services/valuation/types';
+import { formatEok } from '@/lib/finance/currency';
 
 export type CovenantConfig = {
   dscrFloor: number;
@@ -147,7 +148,7 @@ function buildSummary(
   }
   if (totalSwept > 0) {
     parts.push(
-      `Cash sweep diverts ${(totalSwept / 1e8).toFixed(1)}억 from distributions to principal paydown over the hold.`
+      `Cash sweep diverts ${formatEok(totalSwept)} from distributions to principal paydown over the hold.`
     );
   }
   return parts.join(' ');

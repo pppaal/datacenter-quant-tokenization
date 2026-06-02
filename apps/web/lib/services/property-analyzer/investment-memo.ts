@@ -16,6 +16,7 @@ import type { RefinanceAnalysis } from '@/lib/services/valuation/refinancing';
 import type { DealMacroExposure } from '@/lib/services/macro/deal-risk';
 import type { ProsConsReport } from '@/lib/services/valuation/pros-cons';
 import type { AnalysisProvenance } from '@/lib/services/property-analyzer/bundle-assembler';
+import { formatKrwCompact } from '@/lib/finance/currency';
 
 /**
  * One row of the deterministic assumption-audit: a key modeling input, its
@@ -166,9 +167,13 @@ function resolveModel(): string {
 // Compact KRW formatter for prompt (숫자 크면 LLM이 자주 틀리므로 단위 명시)
 // ---------------------------------------------------------------------------
 function krwShort(v: number): string {
-  if (Math.abs(v) >= 1e12) return `${(v / 1e12).toFixed(2)}조`;
-  if (Math.abs(v) >= 1e8) return `${(v / 1e8).toFixed(1)}억`;
-  return `${Math.round(v).toLocaleString()}원`;
+  return formatKrwCompact(v, {
+    tiers: [
+      { min: 1e12, divisor: 1e12, dp: 2, suffix: '조' },
+      { min: 1e8, divisor: 1e8, dp: 1, suffix: '억' }
+    ],
+    fallback: (n) => `${Math.round(n).toLocaleString()}원`
+  });
 }
 
 function pctShort(v: number | null, d = 2): string {

@@ -23,6 +23,7 @@ import {
   buildValuationQualitySummary,
   type ValuationQualitySummary
 } from '@/lib/valuation-quality';
+import type { ProvenanceEntry } from '@/lib/sources/types';
 
 export const reportKinds = ['teaser', 'ic-memo', 'dd-checklist', 'risk-memo'] as const;
 
@@ -32,14 +33,6 @@ export type ReportTemplateStatus = 'production-ready' | 'partial';
 
 type AssetBundle = NonNullable<Awaited<ReturnType<typeof getAssetById>>>;
 type DocumentTopic = 'legal' | 'technical' | 'financial' | 'market' | 'general';
-
-type ProvenanceEntry = {
-  field: string;
-  sourceSystem: string;
-  value: unknown;
-  mode: string;
-  freshnessLabel: string;
-};
 
 type ReportFactTone = 'neutral' | 'good' | 'warn' | 'danger';
 type ChecklistStatus = 'complete' | 'partial' | 'open';

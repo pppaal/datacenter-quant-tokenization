@@ -1,4 +1,5 @@
 import { formatCurrency, formatNumber, formatPercent, toSentenceCase } from '@/lib/utils';
+import type { ProvenanceEntry } from '@/lib/sources/types';
 
 type RecordLike = Record<string, unknown>;
 
@@ -15,14 +16,6 @@ type FeatureSnapshotLike = {
   featureNamespace: string;
   sourceVersion: string | null;
   values: FeatureValueLike[];
-};
-
-type ProvenanceEntry = {
-  field: string;
-  sourceSystem: string;
-  value: unknown;
-  mode: string;
-  freshnessLabel: string;
 };
 
 type MappingTarget = {
