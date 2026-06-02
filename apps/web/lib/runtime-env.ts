@@ -18,5 +18,14 @@ export function isRealProduction(env: NodeJS.ProcessEnv = process.env): boolean 
   if (env.NODE_ENV !== 'production') {
     return false;
   }
+  // A real production deployment must NEVER honor the E2E opt-out, regardless of
+  // whether the (advisory) production preflight was run. Vercel sets VERCEL_ENV
+  // automatically to 'production' on production deployments, so the flag can
+  // only ever relax hard-blocks in a non-production `next start` context (the
+  // browser E2E) and can never weaken a real deployment via a leaked/copied
+  // env var.
+  if (env.VERCEL_ENV === 'production') {
+    return true;
+  }
   return env.E2E_PRODUCTION_BUILD?.trim().toLowerCase() !== 'true';
 }

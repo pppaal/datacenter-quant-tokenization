@@ -1,3 +1,4 @@
+import { isRealProduction } from '@/lib/runtime-env';
 import { MockKycProvider } from './mock-provider';
 import { SumsubProvider } from './sumsub-provider';
 import type { KycProvider } from './types';
@@ -11,10 +12,18 @@ export function getKycProvider(name: string): KycProvider {
 
   let provider: KycProvider;
   if (key === 'mock') {
+    // The mock provider would accept forged KYC events; never allow it to handle
+    // real-production webhooks, and require an explicit secret (no shared default).
+    if (isRealProduction()) {
+      throw new Error('The mock KYC provider must not be used in production.');
+    }
+    const webhookSecret = process.env.KYC_MOCK_WEBHOOK_SECRET?.trim();
+    if (!webhookSecret) {
+      throw new Error('KYC_MOCK_WEBHOOK_SECRET is required for the mock KYC provider.');
+    }
     provider = new MockKycProvider({
-      webhookSecret: process.env.KYC_MOCK_WEBHOOK_SECRET ?? 'dev-mock-secret',
-      allowUnsignedLocal:
-        process.env.NODE_ENV !== 'production' && process.env.KYC_MOCK_SKIP_SIG === '1'
+      webhookSecret,
+      allowUnsignedLocal: !isRealProduction() && process.env.KYC_MOCK_SKIP_SIG === '1'
     });
   } else if (key === 'sumsub') {
     const secret = process.env.KYC_SUMSUB_WEBHOOK_SECRET;

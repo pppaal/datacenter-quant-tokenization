@@ -84,13 +84,15 @@ export function buildDealTimeline(deal: DealDetailRecord): DealTimelineEvent[] {
     kind: 'valuation',
     category: 'valuation',
     title: 'Valuation run updated',
-    body: `Base case ${valuation.baseCaseValueKrw.toLocaleString()} KRW with ${valuation.confidenceScore.toFixed(0)} confidence.`,
+    body: `Base case ${valuation.baseCaseValueKrw.toLocaleString()} KRW with ${valuation.confidenceScore.toFixed(1)} / 10 confidence.`,
     createdAt: valuation.createdAt,
     href: `/admin/valuations/${valuation.id}`,
+    // confidenceScore is on the engine-wide 0–10 scale (valuation/constants.ts),
+    // not 0–100 — thresholds and display must match or every run reads as 'warn'.
     tone:
-      valuation.confidenceScore >= 70
+      valuation.confidenceScore >= 7
         ? 'good'
-        : valuation.confidenceScore >= 55
+        : valuation.confidenceScore >= 5.5
           ? 'neutral'
           : 'warn',
     meta: ['valuation', valuation.runLabel ?? 'latest run']

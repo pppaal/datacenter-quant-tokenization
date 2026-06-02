@@ -16,6 +16,9 @@ function isPublicApiPath(pathname: string) {
     pathname === '/api/admin/sso/login' ||
     pathname === '/api/admin/sso/callback' ||
     pathname.startsWith('/api/admin/scim/') ||
+    // Provider KYC webhooks carry no admin cookie; the route handler verifies a
+    // per-provider HMAC signature and audits failures itself.
+    pathname.startsWith('/api/kyc/webhook/') ||
     pathname.startsWith('/api/public/')
   );
 }
