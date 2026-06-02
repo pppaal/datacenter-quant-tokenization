@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { StatCard } from '@/components/ui/stat-card';
+import { EmptyState } from '@/components/ui/empty-state';
 import { TenantDemandForm } from '@/components/admin/tenant-demand-form';
 import { prisma } from '@/lib/db/prisma';
 import { formatDate, formatNumber } from '@/lib/utils';
@@ -74,10 +75,10 @@ export default async function TenantDemandPage() {
           </p>
         </div>
         {rows.length === 0 ? (
-          <div className="rounded-[18px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
+          <EmptyState>
             No tenant requirements recorded yet. Use the form above to capture one from your last
             leasing-broker call.
-          </div>
+          </EmptyState>
         ) : (
           <div className="overflow-x-auto rounded-[18px] border border-white/10">
             <table className="w-full text-sm">

@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { StatCard } from '@/components/ui/stat-card';
+import { EmptyState } from '@/components/ui/empty-state';
 import { DealFlowForm } from '@/components/admin/deal-flow-form';
 import { prisma } from '@/lib/db/prisma';
 import { formatDate, formatNumber } from '@/lib/utils';
@@ -79,9 +80,9 @@ export default async function DealFlowPage() {
           </p>
         </div>
         {rows.length === 0 ? (
-          <div className="rounded-[18px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
+          <EmptyState>
             No deal flow logged yet. Use the form above to capture a deal you saw in the market.
-          </div>
+          </EmptyState>
         ) : (
           <div className="overflow-x-auto rounded-[18px] border border-white/10">
             <table className="w-full text-sm">

@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { StatCard } from '@/components/ui/stat-card';
+import { EmptyState } from '@/components/ui/empty-state';
 import { getAiCacheSummary, getEmbeddingCorpusSummary } from '@/lib/services/ai/admin-stats';
 import { formatDate, formatNumber } from '@/lib/utils';
 
@@ -80,10 +81,10 @@ export default async function AiCacheConsolePage() {
           </Badge>
         </div>
         {cache.perModel.length === 0 ? (
-          <div className="rounded-[18px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
+          <EmptyState>
             No cache entries yet. The cache populates lazily as the OpenAI call sites
             (extractFinancialStatementWithAi, generateUnderwritingMemo, ...) record responses.
-          </div>
+          </EmptyState>
         ) : (
           <div className="overflow-hidden rounded-[18px] border border-white/10">
             <table className="w-full text-sm">
@@ -124,9 +125,7 @@ export default async function AiCacheConsolePage() {
           </p>
         </div>
         {cache.recentHits.length === 0 ? (
-          <div className="rounded-[18px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
-            No cache hits yet — every recent call has been a miss.
-          </div>
+          <EmptyState>No cache hits yet — every recent call has been a miss.</EmptyState>
         ) : (
           <ul className="space-y-2">
             {cache.recentHits.map((hit) => (
@@ -167,14 +166,14 @@ export default async function AiCacheConsolePage() {
           </Badge>
         </div>
         {embeddings.perModel.length === 0 ? (
-          <div className="rounded-[18px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
+          <EmptyState>
             No embeddings yet. Trigger
             <code className="mx-1 rounded bg-white/5 px-1.5 py-0.5">
               POST /api/ops/index-documents
             </code>
             with an
             <code className="mx-1 rounded bg-white/5 px-1.5 py-0.5">x-ops-cron-token</code> header.
-          </div>
+          </EmptyState>
         ) : (
           <div className="overflow-hidden rounded-[18px] border border-white/10">
             <table className="w-full text-sm">
@@ -206,9 +205,7 @@ export default async function AiCacheConsolePage() {
           </p>
         </div>
         {embeddings.recentDocuments.length === 0 ? (
-          <div className="rounded-[18px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
-            No documents indexed yet.
-          </div>
+          <EmptyState>No documents indexed yet.</EmptyState>
         ) : (
           <ul className="space-y-2">
             {embeddings.recentDocuments.map((doc) => (

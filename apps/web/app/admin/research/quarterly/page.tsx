@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { PrintImButton } from '@/components/marketing/print-im-button';
+import { EmptyState } from '@/components/ui/empty-state';
 import { generateQuarterlyMarketNarrative } from '@/lib/ai/openai';
 import { prisma } from '@/lib/db/prisma';
 import { aggregateCapRates } from '@/lib/services/research/cap-rate-aggregator';
@@ -199,11 +200,11 @@ export default async function QuarterlyResearchPage(props: {
             </p>
           </div>
         ) : (
-          <div className="rounded-[18px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
+          <EmptyState>
             Narrative generator skipped: no OPENAI_API_KEY in this environment. The publication
             still renders the matrices, transactions, and approved house views below — the narrative
             is editorial scaffolding, not a primary data source.
-          </div>
+          </EmptyState>
         )}
       </section>
 
@@ -217,9 +218,7 @@ export default async function QuarterlyResearchPage(props: {
           </p>
         </div>
         {aggregation.fromTransactions.length === 0 ? (
-          <div className="rounded-[18px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
-            No deal-level cap rates recorded for this quarter.
-          </div>
+          <EmptyState>No deal-level cap rates recorded for this quarter.</EmptyState>
         ) : (
           <MatrixTable buckets={aggregation.fromTransactions} />
         )}
@@ -234,9 +233,7 @@ export default async function QuarterlyResearchPage(props: {
           </p>
         </div>
         {aggregation.fromIndicators.length === 0 ? (
-          <div className="rounded-[18px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
-            No published cap-rate series for this quarter.
-          </div>
+          <EmptyState>No published cap-rate series for this quarter.</EmptyState>
         ) : (
           <MatrixTable buckets={aggregation.fromIndicators} />
         )}
@@ -250,9 +247,7 @@ export default async function QuarterlyResearchPage(props: {
           </p>
         </div>
         {transactions.length === 0 ? (
-          <div className="rounded-[18px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
-            No qualifying transactions recorded in this quarter.
-          </div>
+          <EmptyState>No qualifying transactions recorded in this quarter.</EmptyState>
         ) : (
           <div className="overflow-hidden rounded-[18px] border border-white/10">
             <table className="w-full text-sm">
@@ -307,10 +302,10 @@ export default async function QuarterlyResearchPage(props: {
           approval timestamp render so the IC reader can see who signed off.
         </p>
         {houseViews.length === 0 ? (
-          <div className="rounded-[18px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
+          <EmptyState>
             No approved house views for this quarter. Promote drafts from the Research workspace
             (button below) before re-rendering this PDF.
-          </div>
+          </EmptyState>
         ) : (
           <div className="space-y-3">
             {houseViews.map((snap) => {

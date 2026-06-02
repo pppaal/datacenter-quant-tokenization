@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { StatCard } from '@/components/ui/stat-card';
+import { EmptyState } from '@/components/ui/empty-state';
 import { SponsorForms } from '@/components/admin/sponsor-form';
 import { prisma } from '@/lib/db/prisma';
 import { formatNumber } from '@/lib/utils';
@@ -55,9 +56,9 @@ export default async function SponsorsPage() {
 
       {sponsors.length === 0 ? (
         <Card>
-          <div className="rounded-[18px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
+          <EmptyState>
             No sponsors yet. Add one above to start populating IM track-record cards.
-          </div>
+          </EmptyState>
         </Card>
       ) : (
         <div className="space-y-4">
@@ -100,9 +101,7 @@ export default async function SponsorsPage() {
                   </div>
                 </div>
                 {s.priorDeals.length === 0 ? (
-                  <div className="rounded-[18px] border border-white/10 bg-white/[0.03] p-3 text-sm text-slate-400">
-                    No prior deals captured yet.
-                  </div>
+                  <EmptyState className="p-3">No prior deals captured yet.</EmptyState>
                 ) : (
                   <div className="overflow-hidden rounded-[18px] border border-white/10">
                     <table className="w-full text-sm">
