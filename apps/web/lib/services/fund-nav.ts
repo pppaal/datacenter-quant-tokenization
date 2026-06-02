@@ -14,6 +14,7 @@
  * can be unit-tested with Prisma fakes.
  */
 
+import { toNumber } from '@/lib/math';
 import { computeXirr, type DatedCashflow } from '@/lib/finance/irr';
 
 // XIRR + its dated-cashflow type live in the canonical IRR module; re-exported
@@ -24,15 +25,6 @@ export type { DatedCashflow };
 // ---------------------------------------------------------------------------
 // Number coercion (Float | Prisma.Decimal | number | null)
 // ---------------------------------------------------------------------------
-
-function toNumber(value: unknown): number {
-  if (typeof value === 'number') return value;
-  if (value == null) return 0;
-  const maybe = value as { toNumber?: () => number };
-  if (typeof maybe.toNumber === 'function') return maybe.toNumber();
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : 0;
-}
 
 // ---------------------------------------------------------------------------
 // Fair-value NAV

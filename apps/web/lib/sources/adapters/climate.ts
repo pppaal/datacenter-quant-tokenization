@@ -1,4 +1,6 @@
 import { SourceStatus } from '@prisma/client';
+
+import { clamp } from '@/lib/math';
 import { DEFAULT_FALLBACK_SOURCE_DATA, FALLBACK_SOURCE_DATA } from '@/lib/sources/fallback-data';
 import { fetchJsonWithRetry, fetchTextWithRetry, type Fetcher } from '@/lib/sources/http';
 import type { SourceCacheStore, SourceEnvelope } from '@/lib/sources/types';
@@ -143,10 +145,6 @@ function summarizeSeries(series?: Record<string, number | string>) {
 
   if (values.length === 0) return null;
   return values;
-}
-
-function clamp(value: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, value));
 }
 
 function buildBbox(latitude: number, longitude: number, deltaDegrees = 0.1) {

@@ -1,4 +1,6 @@
 import { AssetClass, type PrismaClient } from '@prisma/client';
+
+import { clamp } from '@/lib/math';
 import { prisma } from '@/lib/db/prisma';
 import { pickBaseDscr } from '@/lib/services/valuation/scenario-utils';
 
@@ -118,10 +120,6 @@ function getMacroImpactScore(assumptions: unknown, key: string) {
   const dimensions = Array.isArray(impacts?.dimensions) ? impacts?.dimensions : [];
   const point = dimensions.find((dimension) => isRecord(dimension) && dimension.key === key);
   return point && isRecord(point) ? (toNumber(point.score) ?? 0) : 0;
-}
-
-function clamp(value: number, min: number, max: number) {
-  return Math.min(Math.max(value, min), max);
 }
 
 function round(value: number, decimals = 2) {

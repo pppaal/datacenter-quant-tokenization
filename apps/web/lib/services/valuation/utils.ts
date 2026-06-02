@@ -1,5 +1,7 @@
 import type { AssetStage } from '@prisma/client';
 
+export { clamp } from '@/lib/math';
+
 export const stageMultiplier: Record<AssetStage, number> = {
   SCREENING: 0.54,
   LAND_SECURED: 0.62,
@@ -16,10 +18,6 @@ export function roundKrw(value: number) {
 
 export function ensureNumber(value: number | null | undefined, fallback: number) {
   return Number.isFinite(value) ? Number(value) : fallback;
-}
-
-export function clamp(value: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, value));
 }
 
 export function safeDivide(numerator: number, denominator: number, fallback = 0) {

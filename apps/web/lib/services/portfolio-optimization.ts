@@ -1,4 +1,6 @@
 import { AssetClass, CovenantStatus, PortfolioAssetStatus, SourceStatus } from '@prisma/client';
+
+import { clamp } from '@/lib/math';
 import type { PortfolioRecord } from '@/lib/services/portfolio';
 import { buildAssetResearchDossier } from '@/lib/services/research/dossier';
 
@@ -44,10 +46,6 @@ export type PortfolioOptimizationLab = {
 };
 
 type AssetSignal = ReturnType<typeof buildAssetSignal>;
-
-function clamp(value: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, value));
-}
 
 function sum(values: number[]) {
   return values.reduce((total, value) => total + value, 0);

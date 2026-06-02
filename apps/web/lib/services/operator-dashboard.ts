@@ -6,6 +6,8 @@ import {
   TaskStatus,
   type PrismaClient
 } from '@prisma/client';
+
+import { toNumber } from '@/lib/math';
 import { prisma } from '@/lib/db/prisma';
 
 export type PipelineStageCount = {
@@ -63,20 +65,6 @@ const PIPELINE_STAGE_ORDER: DealStage[] = [
   DealStage.CLOSING,
   DealStage.ASSET_MANAGEMENT
 ];
-
-function toNumber(value: unknown): number {
-  if (value == null) return 0;
-  if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
-  if (typeof value === 'object' && 'toNumber' in (value as object)) {
-    try {
-      const n = (value as { toNumber: () => number }).toNumber();
-      return Number.isFinite(n) ? n : 0;
-    } catch {
-      return 0;
-    }
-  }
-  return 0;
-}
 
 export async function buildOperatorDashboard(
   db: PrismaClient = prisma

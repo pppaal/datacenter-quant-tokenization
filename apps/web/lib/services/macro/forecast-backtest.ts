@@ -1,5 +1,7 @@
 import type { MacroFactor } from '@prisma/client';
 
+import { round } from '@/lib/math';
+
 export type MacroForecastBacktestFactorRow = {
   factorKey: string;
   label: string;
@@ -31,10 +33,6 @@ export type MacroForecastBacktest = {
   };
   markets: MacroForecastBacktestMarketRow[];
 };
-
-function round(value: number, decimals = 1) {
-  return Number(value.toFixed(decimals));
-}
 
 function sign(value: number) {
   if (value > 0) return 1;

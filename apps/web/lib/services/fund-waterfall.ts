@@ -1,4 +1,6 @@
 import type { PrismaClient } from '@prisma/client';
+
+import { toNumber } from '@/lib/math';
 import { prisma } from '@/lib/db/prisma';
 import { computeFundNavDetail } from '@/lib/services/fund-nav';
 import { DEFAULT_CARRY_PCT, DEFAULT_HURDLE_PCT, MS_PER_YEAR } from '@/lib/finance/constants';
@@ -61,15 +63,6 @@ export type FundWaterfallData = {
 
 const HURDLE_RATE_PCT = DEFAULT_HURDLE_PCT;
 const CARRIED_INTEREST_PCT = DEFAULT_CARRY_PCT;
-
-function toNumber(value: unknown): number {
-  if (typeof value === 'number') return value;
-  if (value == null) return 0;
-  const maybe = value as { toNumber?: () => number };
-  if (typeof maybe.toNumber === 'function') return maybe.toNumber();
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : 0;
-}
 
 export type FundWaterfallTierResult = {
   returnOfCapitalAmount: number;

@@ -19,6 +19,8 @@
  * Pure function, no DB / IO.
  */
 
+import { clamp } from '@/lib/math';
+
 export type CapRateInputs = {
   /** Risk-free rate — KR 10y govt bond yield, percent (e.g. 3.5). */
   riskFreeRatePct: number;
@@ -90,8 +92,7 @@ export function decomposeCapRate(inputs: CapRateInputs): CapRateDecomposition {
   // Liquidity: above 100 → tighter (negative discount); below → wider.
   // Map 50-150 index to ±50 bps around 0.
   const liquidityPct =
-    ((100 - clampNumber(transactionVolumeIndex, 50, 150)) / 100) *
-    (DEFAULT_LIQUIDITY_BAND_BPS / 100);
+    ((100 - clamp(transactionVolumeIndex, 50, 150)) / 100) * (DEFAULT_LIQUIDITY_BAND_BPS / 100);
   // Obsolescence: each year of age = +5 bps (cap raised).
   const ageYears = Math.max(0, referenceYear - vintageYear);
   const obsolescencePct = (ageYears * DEFAULT_OBSOLESCENCE_BPS_PER_YEAR) / 100;
@@ -202,10 +203,6 @@ export function estimateSubmarketSpread(input: SubmarketSpreadInput): {
     targetCount: targetRows.length,
     krMeanPct: round2(krMean)
   };
-}
-
-function clampNumber(v: number, lo: number, hi: number): number {
-  return Math.min(Math.max(v, lo), hi);
 }
 
 function round2(v: number): number {

@@ -1,4 +1,6 @@
 import type { MacroFactor, MacroSeries } from '@prisma/client';
+
+import { clamp } from '@/lib/math';
 import type { MacroStressScenario } from '@/lib/services/macro/deal-risk';
 import type { TrendAnalysis } from '@/lib/services/macro/trend';
 import {
@@ -46,10 +48,6 @@ function buildFactorLookup(factors: MacroFactor[], market: string): FactorLookup
     }
   }
   return map;
-}
-
-function clamp(value: number, min: number, max: number) {
-  return Math.max(min, Math.min(max, value));
 }
 
 function getTrendMomentum(trends: TrendAnalysis[], seriesKey: string): number {

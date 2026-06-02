@@ -1,3 +1,4 @@
+import { round } from '@/lib/math';
 import type { ForecastModelStack } from '@/lib/services/forecast/model-stack';
 import type { GradientBoostingRealizedBacktest } from '@/lib/services/forecast/realized-backtest';
 import type { MacroBacktest } from '@/lib/services/macro/backtest';
@@ -31,10 +32,6 @@ export type ForecastEnsemblePolicy = {
   };
   useCases: ForecastEnsembleUseCase[];
 };
-
-function round(value: number, decimals = 1) {
-  return Number(value.toFixed(decimals));
-}
 
 function clamp(value: number, min = 0, max = 100) {
   return Math.min(Math.max(value, min), max);

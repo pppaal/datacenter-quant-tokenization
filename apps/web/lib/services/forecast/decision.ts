@@ -1,4 +1,6 @@
 import { AssetClass, Prisma, type PrismaClient } from '@prisma/client';
+
+import { round } from '@/lib/math';
 import { prisma } from '@/lib/db/prisma';
 import type { GradientBoostingForecast } from '@/lib/services/forecast/gradient-boosting';
 import { buildGradientBoostingRealizedBacktest } from '@/lib/services/forecast/realized-backtest';
@@ -77,10 +79,6 @@ export type ForecastDecisionNarrative = {
 
 function clamp(value: number, min = 0, max = 100) {
   return Math.min(Math.max(value, min), max);
-}
-
-function round(value: number, decimals = 1) {
-  return Number(value.toFixed(decimals));
 }
 
 function toneFromScore(score: number): 'HIGH' | 'MEDIUM' | 'LOW' {

@@ -1,3 +1,4 @@
+import { clamp } from '@/lib/math';
 import { pickBaseDscr } from '@/lib/services/valuation/scenario-utils';
 
 type SensitivityMetricName = 'Value' | 'DSCR';
@@ -136,10 +137,6 @@ function roundMetric(value: number) {
 
 function roundDelta(value: number) {
   return Number(value.toFixed(2));
-}
-
-function clamp(value: number, min: number, max: number) {
-  return Math.min(Math.max(value, min), max);
 }
 
 function percentile(sortedValues: number[], pct: number) {
