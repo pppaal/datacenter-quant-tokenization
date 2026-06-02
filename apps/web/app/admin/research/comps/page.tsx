@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card';
 import { prisma } from '@/lib/db/prisma';
 import { aggregateCapRates } from '@/lib/services/research/cap-rate-aggregator';
 import { formatDate, formatNumber } from '@/lib/utils';
+import { formatPriceKrw } from '@/lib/ui/format';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,13 +25,6 @@ function parseAssetClass(value: string | undefined): AssetClass | undefined {
 
 function formatCapPct(value: number): string {
   return `${value.toFixed(2)}%`;
-}
-
-function formatPriceKrw(value: number | null) {
-  if (value === null) return '—';
-  if (value >= 1_000_000_000_000) return `${(value / 1_000_000_000_000).toFixed(2)}조`;
-  if (value >= 100_000_000) return `${(value / 100_000_000).toFixed(0)}억`;
-  return formatNumber(value, 0);
 }
 
 export default async function ResearchCompsPage(props: { searchParams: Promise<SearchParams> }) {

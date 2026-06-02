@@ -2,18 +2,13 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { StatCard } from '@/components/ui/stat-card';
 import { SponsorForms } from '@/components/admin/sponsor-form';
 import { prisma } from '@/lib/db/prisma';
 import { formatNumber } from '@/lib/utils';
+import { formatPriceKrw } from '@/lib/ui/format';
 
 export const dynamic = 'force-dynamic';
-
-function formatPriceKrw(value: number | null) {
-  if (value === null || value === undefined) return '—';
-  if (value >= 1_000_000_000_000) return `${(value / 1_000_000_000_000).toFixed(2)}조`;
-  if (value >= 100_000_000) return `${(value / 100_000_000).toFixed(0)}억`;
-  return formatNumber(value, 0);
-}
 
 export default async function SponsorsPage() {
   const sponsors = await prisma.sponsor.findMany({
@@ -162,15 +157,5 @@ export default async function SponsorsPage() {
         </div>
       )}
     </div>
-  );
-}
-
-function StatCard({ label, primary, detail }: { label: string; primary: string; detail: string }) {
-  return (
-    <Card className="space-y-2">
-      <div className="fine-print">{label}</div>
-      <div className="text-2xl font-semibold text-white">{primary}</div>
-      <div className="text-xs text-slate-500">{detail}</div>
-    </Card>
   );
 }

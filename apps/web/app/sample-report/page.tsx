@@ -9,6 +9,7 @@ import { SiteNav } from '@/components/marketing/site-nav';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { KeyValueRow } from '@/components/ui/key-value-row';
 import { ConfidenceBreakdown } from '@/components/valuation/confidence-breakdown';
 import { ValuationBreakdown } from '@/components/valuation/valuation-breakdown';
 import { ValuationProvenance } from '@/components/valuation/valuation-provenance';
@@ -978,29 +979,29 @@ export default async function SampleReportPage({
               the base case; minimum DSCR is the floor across all scenarios.
             </p>
             <dl className="mt-5 grid gap-3 text-sm">
-              <Row label="Going-in yield">
+              <KeyValueRow variant="inline" label="Going-in yield">
                 {returnsSnapshot.goingInYieldPct !== null
                   ? formatPercent(returnsSnapshot.goingInYieldPct)
                   : '—'}
-              </Row>
-              <Row label="Exit cap">
+              </KeyValueRow>
+              <KeyValueRow variant="inline" label="Exit cap">
                 {returnsSnapshot.exitCapPct !== null
                   ? formatPercent(returnsSnapshot.exitCapPct)
                   : '—'}
-              </Row>
-              <Row label="Upside (base → bull)">
+              </KeyValueRow>
+              <KeyValueRow variant="inline" label="Upside (base → bull)">
                 {returnsSnapshot.upsideToBullPct !== null
                   ? `+${returnsSnapshot.upsideToBullPct.toFixed(1)}%`
                   : '—'}
-              </Row>
-              <Row label="Downside (base → bear)">
+              </KeyValueRow>
+              <KeyValueRow variant="inline" label="Downside (base → bear)">
                 {returnsSnapshot.downsideToBearPct !== null
                   ? `${returnsSnapshot.downsideToBearPct.toFixed(1)}%`
                   : '—'}
-              </Row>
-              <Row label="Min DSCR">
+              </KeyValueRow>
+              <KeyValueRow variant="inline" label="Min DSCR">
                 {returnsSnapshot.minDscr !== null ? `${returnsSnapshot.minDscr.toFixed(2)}x` : '—'}
-              </Row>
+              </KeyValueRow>
             </dl>
             <ProvenancePill entries={provenanceByCard.valuationRates} />
           </Card>
@@ -1013,24 +1014,24 @@ export default async function SampleReportPage({
                 : `${capStack.facilityCount} facility${capStack.facilityCount === 1 ? '' : 'ies'} aggregated.`}
             </p>
             <dl className="mt-5 grid gap-3 text-sm">
-              <Row label="Total commitment">
+              <KeyValueRow variant="inline" label="Total commitment">
                 {formatCurrencyFromKrwAtRate(
                   capStack.totalCommitmentKrw,
                   displayCurrency,
                   fxRateToKrw
                 )}
-              </Row>
-              <Row label="Drawn">
+              </KeyValueRow>
+              <KeyValueRow variant="inline" label="Drawn">
                 {formatCurrencyFromKrwAtRate(capStack.totalDrawnKrw, displayCurrency, fxRateToKrw)}
-              </Row>
-              <Row label="Drawn / commitment">
+              </KeyValueRow>
+              <KeyValueRow variant="inline" label="Drawn / commitment">
                 {capStack.totalCommitmentKrw === 0
                   ? '—'
                   : `${capStack.drawnPctOfCommitment.toFixed(1)}%`}
-              </Row>
-              <Row label="Blended rate">
+              </KeyValueRow>
+              <KeyValueRow variant="inline" label="Blended rate">
                 {capStack.totalCommitmentKrw === 0 ? '—' : `${capStack.blendedRatePct.toFixed(2)}%`}
-              </Row>
+              </KeyValueRow>
             </dl>
             {asset.debtFacilities && asset.debtFacilities.length > 0 ? (
               <div className="mt-5 overflow-x-auto rounded-[14px] border border-white/10">
@@ -1101,29 +1102,29 @@ export default async function SampleReportPage({
                 : `${leaseRoll.leaseCount} lease${leaseRoll.leaseCount === 1 ? '' : 's'} aggregated; weighted by leasedKw.`}
             </p>
             <dl className="mt-5 grid gap-3 text-sm">
-              <Row label="Total leased capacity">
+              <KeyValueRow variant="inline" label="Total leased capacity">
                 {leaseRoll.totalLeasedKw > 0
                   ? `${formatNumber(leaseRoll.totalLeasedKw, 1)} kW`
                   : '—'}
-              </Row>
-              <Row label="WALT">
+              </KeyValueRow>
+              <KeyValueRow variant="inline" label="WALT">
                 {leaseRoll.weightedAvgTermYears > 0
                   ? `${leaseRoll.weightedAvgTermYears.toFixed(1)} yrs`
                   : '—'}
-              </Row>
-              <Row label="Weighted in-place rent">
+              </KeyValueRow>
+              <KeyValueRow variant="inline" label="Weighted in-place rent">
                 {leaseRoll.weightedRentPerKwKrw > 0
                   ? `${formatNumber(leaseRoll.weightedRentPerKwKrw, 0)} KRW/kW/mo`
                   : '—'}
-              </Row>
-              <Row label="Mark-to-market gap">
+              </KeyValueRow>
+              <KeyValueRow variant="inline" label="Mark-to-market gap">
                 {leaseRoll.markToMarketGapPct !== null
                   ? `${leaseRoll.markToMarketGapPct >= 0 ? '+' : ''}${leaseRoll.markToMarketGapPct.toFixed(1)}%`
                   : '—'}
-              </Row>
-              <Row label="Tenant credit (avg)">
+              </KeyValueRow>
+              <KeyValueRow variant="inline" label="Tenant credit (avg)">
                 {tenantCredit.count > 0 ? tenantCredit.averageScore.toFixed(0) : '—'}
-              </Row>
+              </KeyValueRow>
             </dl>
             {asset.leases && asset.leases.length > 0 ? (
               <div className="mt-5 overflow-x-auto rounded-[14px] border border-white/10">
@@ -1205,96 +1206,96 @@ export default async function SampleReportPage({
             <div className="rounded-[18px] border border-white/10 bg-white/[0.02] p-4">
               <div className="fine-print">Valuation rates</div>
               <dl className="mt-3 space-y-2 text-sm">
-                <Row label="Cap rate">
+                <KeyValueRow variant="inline" label="Cap rate">
                   {underwriting.capRatePct !== null
                     ? `${underwriting.capRatePct.toFixed(2)}%`
                     : '—'}
-                </Row>
-                <Row label="Discount rate">
+                </KeyValueRow>
+                <KeyValueRow variant="inline" label="Discount rate">
                   {underwriting.discountRatePct !== null
                     ? `${underwriting.discountRatePct.toFixed(2)}%`
                     : '—'}
-                </Row>
-                <Row label="Going-in occupancy">
+                </KeyValueRow>
+                <KeyValueRow variant="inline" label="Going-in occupancy">
                   {underwriting.occupancyPct !== null
                     ? `${underwriting.occupancyPct.toFixed(1)}%`
                     : '—'}
-                </Row>
-                <Row label="In-place rate">
+                </KeyValueRow>
+                <KeyValueRow variant="inline" label="In-place rate">
                   {underwriting.monthlyRatePerKwKrw !== null
                     ? `${formatNumber(underwriting.monthlyRatePerKwKrw, 0)} KRW/kW/mo`
                     : '—'}
-                </Row>
-                <Row label="Power price">
+                </KeyValueRow>
+                <KeyValueRow variant="inline" label="Power price">
                   {underwriting.powerPriceKrwPerKwh !== null
                     ? `${underwriting.powerPriceKrwPerKwh.toFixed(0)} KRW/kWh`
                     : '—'}
-                </Row>
-                <Row label="PUE target">
+                </KeyValueRow>
+                <KeyValueRow variant="inline" label="PUE target">
                   {underwriting.pueTarget !== null ? underwriting.pueTarget.toFixed(2) : '—'}
-                </Row>
+                </KeyValueRow>
               </dl>
             </div>
 
             <div className="rounded-[18px] border border-white/10 bg-white/[0.02] p-4">
               <div className="fine-print">Tax stack</div>
               <dl className="mt-3 space-y-2 text-sm">
-                <Row label="Corporate tax">
+                <KeyValueRow variant="inline" label="Corporate tax">
                   {underwriting.corporateTaxPct !== null
                     ? `${underwriting.corporateTaxPct.toFixed(1)}%`
                     : '—'}
-                </Row>
-                <Row label="Property tax">
+                </KeyValueRow>
+                <KeyValueRow variant="inline" label="Property tax">
                   {underwriting.propertyTaxPct !== null
                     ? `${underwriting.propertyTaxPct.toFixed(2)}%`
                     : '—'}
-                </Row>
-                <Row label="Acquisition tax">
+                </KeyValueRow>
+                <KeyValueRow variant="inline" label="Acquisition tax">
                   {underwriting.acquisitionTaxPct !== null
                     ? `${underwriting.acquisitionTaxPct.toFixed(1)}%`
                     : '—'}
-                </Row>
-                <Row label="Exit tax">
+                </KeyValueRow>
+                <KeyValueRow variant="inline" label="Exit tax">
                   {underwriting.exitTaxPct !== null
                     ? `${underwriting.exitTaxPct.toFixed(1)}%`
                     : '—'}
-                </Row>
-                <Row label="VAT recovery">
+                </KeyValueRow>
+                <KeyValueRow variant="inline" label="VAT recovery">
                   {underwriting.vatRecoveryPct !== null
                     ? `${underwriting.vatRecoveryPct.toFixed(0)}%`
                     : '—'}
-                </Row>
+                </KeyValueRow>
               </dl>
             </div>
 
             <div className="rounded-[18px] border border-white/10 bg-white/[0.02] p-4">
               <div className="fine-print">SPV & promote</div>
               <dl className="mt-3 space-y-2 text-sm">
-                <Row label="Mgmt fee">
+                <KeyValueRow variant="inline" label="Mgmt fee">
                   {underwriting.managementFeePct !== null
                     ? `${underwriting.managementFeePct.toFixed(2)}%`
                     : '—'}
-                </Row>
-                <Row label="Performance fee">
+                </KeyValueRow>
+                <KeyValueRow variant="inline" label="Performance fee">
                   {underwriting.performanceFeePct !== null
                     ? `${underwriting.performanceFeePct.toFixed(1)}%`
                     : '—'}
-                </Row>
-                <Row label="Promote hurdle">
+                </KeyValueRow>
+                <KeyValueRow variant="inline" label="Promote hurdle">
                   {underwriting.promoteThresholdPct !== null
                     ? `${underwriting.promoteThresholdPct.toFixed(1)}%`
                     : '—'}
-                </Row>
-                <Row label="Promote share">
+                </KeyValueRow>
+                <KeyValueRow variant="inline" label="Promote share">
                   {underwriting.promoteSharePct !== null
                     ? `${underwriting.promoteSharePct.toFixed(1)}%`
                     : '—'}
-                </Row>
-                <Row label="Reserve target">
+                </KeyValueRow>
+                <KeyValueRow variant="inline" label="Reserve target">
                   {underwriting.reserveTargetMonths !== null
                     ? `${underwriting.reserveTargetMonths.toFixed(0)} mo`
                     : '—'}
-                </Row>
+                </KeyValueRow>
               </dl>
             </div>
           </div>
@@ -2161,48 +2162,48 @@ export default async function SampleReportPage({
                 funding; reserves accrue against the year-one equity outflow.
               </p>
               <dl className="mt-5 grid gap-3 text-sm">
-                <Row label="Sources · senior debt">
+                <KeyValueRow variant="inline" label="Sources · senior debt">
                   {formatCurrencyFromKrwAtRate(
                     proForma.summary.initialDebtFundingKrw,
                     displayCurrency,
                     fxRateToKrw
                   )}
-                </Row>
-                <Row label="Sources · LP/GP equity">
+                </KeyValueRow>
+                <KeyValueRow variant="inline" label="Sources · LP/GP equity">
                   {formatCurrencyFromKrwAtRate(
                     proForma.summary.initialEquityKrw,
                     displayCurrency,
                     fxRateToKrw
                   )}
-                </Row>
-                <Row label="Sources · total">
+                </KeyValueRow>
+                <KeyValueRow variant="inline" label="Sources · total">
                   {formatCurrencyFromKrwAtRate(
                     proForma.summary.initialDebtFundingKrw + proForma.summary.initialEquityKrw,
                     displayCurrency,
                     fxRateToKrw
                   )}
-                </Row>
-                <Row label="Uses · purchase + capex">
+                </KeyValueRow>
+                <KeyValueRow variant="inline" label="Uses · purchase + capex">
                   {formatCurrencyFromKrwAtRate(
                     proForma.summary.initialDebtFundingKrw + proForma.summary.initialEquityKrw,
                     displayCurrency,
                     fxRateToKrw
                   )}
-                </Row>
-                <Row label="Reserves required">
+                </KeyValueRow>
+                <KeyValueRow variant="inline" label="Reserves required">
                   {formatCurrencyFromKrwAtRate(
                     proForma.summary.reserveRequirementKrw,
                     displayCurrency,
                     fxRateToKrw
                   )}
-                </Row>
-                <Row label="Peak equity exposure">
+                </KeyValueRow>
+                <KeyValueRow variant="inline" label="Peak equity exposure">
                   {formatCurrencyFromKrwAtRate(
                     proForma.summary.peakEquityExposureKrw,
                     displayCurrency,
                     fxRateToKrw
                   )}
-                </Row>
+                </KeyValueRow>
               </dl>
 
               {capexBreakdown.totalCapexKrw !== null ? (
@@ -2272,38 +2273,38 @@ export default async function SampleReportPage({
                 Equity multiple = total distributions / initial equity.
               </p>
               <dl className="mt-5 grid gap-3 text-sm">
-                <Row label="Equity IRR">
+                <KeyValueRow variant="inline" label="Equity IRR">
                   {proForma.summary.equityIrr !== null
                     ? formatPercent(proForma.summary.equityIrr)
                     : '—'}
-                </Row>
-                <Row label="Unlevered IRR">
+                </KeyValueRow>
+                <KeyValueRow variant="inline" label="Unlevered IRR">
                   {proForma.summary.unleveragedIrr !== null
                     ? formatPercent(proForma.summary.unleveragedIrr)
                     : '—'}
-                </Row>
-                <Row label="Equity multiple">
+                </KeyValueRow>
+                <KeyValueRow variant="inline" label="Equity multiple">
                   {proForma.summary.equityMultiple > 0
                     ? `${proForma.summary.equityMultiple.toFixed(2)}x`
                     : '—'}
-                </Row>
-                <Row label="Avg cash-on-cash">
+                </KeyValueRow>
+                <KeyValueRow variant="inline" label="Avg cash-on-cash">
                   {proForma.summary.averageCashOnCash > 0
                     ? formatPercent(proForma.summary.averageCashOnCash)
                     : '—'}
-                </Row>
-                <Row label="Payback year">
+                </KeyValueRow>
+                <KeyValueRow variant="inline" label="Payback year">
                   {proForma.summary.paybackYear !== null
                     ? `Year ${proForma.summary.paybackYear}`
                     : 'Beyond model horizon'}
-                </Row>
-                <Row label="Net exit proceeds">
+                </KeyValueRow>
+                <KeyValueRow variant="inline" label="Net exit proceeds">
                   {formatCurrencyFromKrwAtRate(
                     proForma.summary.netExitProceedsKrw,
                     displayCurrency,
                     fxRateToKrw
                   )}
-                </Row>
+                </KeyValueRow>
               </dl>
             </Card>
           </div>
@@ -4859,28 +4860,30 @@ export default async function SampleReportPage({
               where configured.
             </p>
             <dl className="mt-5 grid gap-3 text-sm md:grid-cols-2">
-              <Row label="Chain ID">{asset.tokenization.chainId}</Row>
-              <Row label="Registry asset ID">
+              <KeyValueRow variant="inline" label="Chain ID">
+                {asset.tokenization.chainId}
+              </KeyValueRow>
+              <KeyValueRow variant="inline" label="Registry asset ID">
                 <span className="break-all">{asset.tokenization.registryAssetId}</span>
-              </Row>
-              <Row label="Token address">
+              </KeyValueRow>
+              <KeyValueRow variant="inline" label="Token address">
                 <span className="break-all font-mono text-xs">
                   {asset.tokenization.tokenAddress}
                 </span>
-              </Row>
-              <Row label="Identity registry">
+              </KeyValueRow>
+              <KeyValueRow variant="inline" label="Identity registry">
                 <span className="break-all font-mono text-xs">
                   {asset.tokenization.identityRegistryAddress}
                 </span>
-              </Row>
-              <Row label="Compliance">
+              </KeyValueRow>
+              <KeyValueRow variant="inline" label="Compliance">
                 <span className="break-all font-mono text-xs">
                   {asset.tokenization.complianceAddress}
                 </span>
-              </Row>
-              <Row label="Deployment block">
+              </KeyValueRow>
+              <KeyValueRow variant="inline" label="Deployment block">
                 <span className="font-mono">{asset.tokenization.deploymentBlock}</span>
-              </Row>
+              </KeyValueRow>
             </dl>
           </Card>
         </section>
@@ -5156,15 +5159,6 @@ export default async function SampleReportPage({
         </div>
       </section>
     </main>
-  );
-}
-
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex items-center justify-between gap-4 rounded-[14px] border border-white/5 bg-white/[0.02] px-3 py-2 text-sm">
-      <dt className="text-xs uppercase tracking-wide text-slate-500">{label}</dt>
-      <dd className="font-mono text-sm text-white">{children}</dd>
-    </div>
   );
 }
 

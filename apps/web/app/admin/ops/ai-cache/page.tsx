@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { StatCard } from '@/components/ui/stat-card';
 import { getAiCacheSummary, getEmbeddingCorpusSummary } from '@/lib/services/ai/admin-stats';
 import { formatDate, formatNumber } from '@/lib/utils';
 
@@ -231,15 +232,5 @@ export default async function AiCacheConsolePage() {
         )}
       </Card>
     </div>
-  );
-}
-
-function StatCard({ label, primary, detail }: { label: string; primary: string; detail: string }) {
-  return (
-    <Card className="space-y-2">
-      <div className="fine-print">{label}</div>
-      <div className="text-2xl font-semibold text-white">{primary}</div>
-      <div className="text-xs text-slate-500">{detail}</div>
-    </Card>
   );
 }

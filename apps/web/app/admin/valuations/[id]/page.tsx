@@ -47,6 +47,7 @@ import {
 } from '@/lib/valuation/feature-snapshot-usage';
 import { resolveSatelliteRiskSnapshot } from '@/lib/valuation/satellite-risk';
 import { getValuationRecommendation } from '@/lib/valuation/recommendation';
+import { approvalTone } from '@/lib/ui/status-tone';
 
 export const dynamic = 'force-dynamic';
 
@@ -57,13 +58,6 @@ type ProvenanceEntry = {
   mode: string;
   freshnessLabel: string;
 };
-
-function getApprovalTone(approvalStatus: string) {
-  if (approvalStatus === 'APPROVED') return 'good' as const;
-  if (approvalStatus === 'CONDITIONAL') return 'warn' as const;
-  if (approvalStatus === 'REJECTED') return 'danger' as const;
-  return 'neutral' as const;
-}
 
 export default async function ValuationRunDetailPage({
   params
@@ -140,7 +134,7 @@ export default async function ValuationRunDetailPage({
           <Badge tone="good">Generated IM</Badge>
           <Badge>{run.asset.assetCode}</Badge>
           <Badge>{recommendation}</Badge>
-          <Badge tone={getApprovalTone(run.approvalStatus)}>
+          <Badge tone={approvalTone(run.approvalStatus)}>
             {run.approvalStatus.replaceAll('_', ' ')}
           </Badge>
         </div>
@@ -384,7 +378,7 @@ export default async function ValuationRunDetailPage({
                       {run.approvalStatus.replaceAll('_', ' ')}
                     </div>
                   </div>
-                  <Badge tone={getApprovalTone(run.approvalStatus)}>
+                  <Badge tone={approvalTone(run.approvalStatus)}>
                     {run.approvalStatus.replaceAll('_', ' ')}
                   </Badge>
                 </div>

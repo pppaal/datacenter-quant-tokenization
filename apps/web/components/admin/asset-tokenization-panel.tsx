@@ -3,21 +3,13 @@ import type { TokenizedAsset } from '@prisma/client';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { KeyValueRow } from '@/components/ui/key-value-row';
 import { shortenHash } from '@/lib/blockchain/registry';
 
 type Props = {
   tokenization: TokenizedAsset | null;
   assetId: string;
 };
-
-function Row({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
-  return (
-    <div className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-3">
-      <div className="fine-print">{label}</div>
-      <div className={`mt-2 text-sm text-white ${mono ? 'font-mono' : ''}`}>{value}</div>
-    </div>
-  );
-}
 
 export function AssetTokenizationPanel({ tokenization, assetId }: Props) {
   if (!tokenization) return null;
@@ -47,24 +39,26 @@ export function AssetTokenizationPanel({ tokenization, assetId }: Props) {
       </div>
 
       <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-        <Row label="Token (ERC-3643)" value={shortenHash(tokenization.tokenAddress, 12)} mono />
-        <Row label="Registry Asset Id" value={tokenization.registryAssetId} mono />
-        <Row
-          label="Identity Registry"
-          value={shortenHash(tokenization.identityRegistryAddress, 12)}
-          mono
-        />
-        <Row label="Compliance" value={shortenHash(tokenization.complianceAddress, 12)} mono />
-        <Row label="Deployment Block" value={String(tokenization.deploymentBlock)} />
-        <Row
-          label="Deployment Tx"
-          value={
-            tokenization.deploymentTxHash
-              ? shortenHash(tokenization.deploymentTxHash, 12)
-              : 'No transaction'
-          }
-          mono
-        />
+        <KeyValueRow variant="panel" mono label="Token (ERC-3643)">
+          {shortenHash(tokenization.tokenAddress, 12)}
+        </KeyValueRow>
+        <KeyValueRow variant="panel" mono label="Registry Asset Id">
+          {tokenization.registryAssetId}
+        </KeyValueRow>
+        <KeyValueRow variant="panel" mono label="Identity Registry">
+          {shortenHash(tokenization.identityRegistryAddress, 12)}
+        </KeyValueRow>
+        <KeyValueRow variant="panel" mono label="Compliance">
+          {shortenHash(tokenization.complianceAddress, 12)}
+        </KeyValueRow>
+        <KeyValueRow variant="panel" label="Deployment Block">
+          {String(tokenization.deploymentBlock)}
+        </KeyValueRow>
+        <KeyValueRow variant="panel" mono label="Deployment Tx">
+          {tokenization.deploymentTxHash
+            ? shortenHash(tokenization.deploymentTxHash, 12)
+            : 'No transaction'}
+        </KeyValueRow>
       </div>
 
       {modules.length > 0 ? (

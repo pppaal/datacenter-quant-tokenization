@@ -1,20 +1,15 @@
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { KeyValueRow } from '@/components/ui/key-value-row';
 import { prisma } from '@/lib/db/prisma';
 import { shortenHash } from '@/lib/blockchain/registry';
 import { formatDate } from '@/lib/utils';
+import { statusTone } from '@/lib/ui/status-tone';
 
 export const dynamic = 'force-dynamic';
 
-function tone(status: string): 'good' | 'warn' | 'danger' {
-  switch (status) {
-    case 'FUNDED':
-      return 'good';
-    case 'RECLAIMED':
-      return 'danger';
-    default:
-      return 'warn';
-  }
+function tone(status: string) {
+  return statusTone(status, { FUNDED: 'good', RECLAIMED: 'danger' }, 'warn');
 }
 
 export default async function DistributionsPage() {
@@ -75,29 +70,22 @@ export default async function DistributionsPage() {
                   <Badge tone={tone(d.status)}>{d.status}</Badge>
                 </div>
                 <dl className="mt-4 grid gap-3 text-sm text-slate-300 md:grid-cols-3">
-                  <Row label="Total amount">{d.totalAmount}</Row>
-                  <Row label="Allocations">
+                  <KeyValueRow label="Total amount">{d.totalAmount}</KeyValueRow>
+                  <KeyValueRow label="Allocations">
                     {claimed}/{d.allocations.length} claimed
-                  </Row>
-                  <Row label="Reclaim after">{formatDate(d.reclaimAfter)}</Row>
-                  <Row label="Merkle root">{shortenHash(d.merkleRoot, 8)}</Row>
-                  <Row label="Funding tx">{d.txHash ? shortenHash(d.txHash) : '—'}</Row>
-                  <Row label="Created">{formatDate(d.createdAt)}</Row>
+                  </KeyValueRow>
+                  <KeyValueRow label="Reclaim after">{formatDate(d.reclaimAfter)}</KeyValueRow>
+                  <KeyValueRow label="Merkle root">{shortenHash(d.merkleRoot, 8)}</KeyValueRow>
+                  <KeyValueRow label="Funding tx">
+                    {d.txHash ? shortenHash(d.txHash) : '—'}
+                  </KeyValueRow>
+                  <KeyValueRow label="Created">{formatDate(d.createdAt)}</KeyValueRow>
                 </dl>
               </Card>
             );
           })}
         </div>
       )}
-    </div>
-  );
-}
-
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="rounded-[18px] border border-white/10 bg-white/[0.03] p-3">
-      <dt className="text-xs uppercase tracking-wide text-slate-500">{label}</dt>
-      <dd className="mt-1 font-mono text-xs text-slate-200">{children}</dd>
     </div>
   );
 }

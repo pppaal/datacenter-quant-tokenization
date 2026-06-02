@@ -7,7 +7,8 @@ import { generateQuarterlyMarketNarrative } from '@/lib/ai/openai';
 import { prisma } from '@/lib/db/prisma';
 import { aggregateCapRates } from '@/lib/services/research/cap-rate-aggregator';
 import { buildQuarterlyNarrativeInputs } from '@/lib/services/research/quarterly-narrative';
-import { formatDate, formatNumber } from '@/lib/utils';
+import { formatDate } from '@/lib/utils';
+import { formatPriceKrwWithCode } from '@/lib/ui/format';
 
 export const dynamic = 'force-dynamic';
 
@@ -52,13 +53,6 @@ function parseQuarter(value: string | undefined): { label: string; start: Date; 
 
 function formatCap(value: number) {
   return `${value.toFixed(2)}%`;
-}
-
-function formatPriceKrw(value: number | null) {
-  if (value === null) return '—';
-  if (value >= 1_000_000_000_000) return `${(value / 1_000_000_000_000).toFixed(2)}조 KRW`;
-  if (value >= 100_000_000) return `${(value / 100_000_000).toFixed(0)}억 KRW`;
-  return `${formatNumber(value, 0)} KRW`;
 }
 
 export default async function QuarterlyResearchPage(props: {
@@ -284,7 +278,9 @@ export default async function QuarterlyResearchPage(props: {
                     <td className="px-3 py-2 text-xs">
                       {row.assetClass ?? '—'} / {row.assetTier ?? 'Untiered'}
                     </td>
-                    <td className="px-3 py-2 text-right text-xs">{formatPriceKrw(row.priceKrw)}</td>
+                    <td className="px-3 py-2 text-right text-xs">
+                      {formatPriceKrwWithCode(row.priceKrw)}
+                    </td>
                     <td className="px-3 py-2 text-right font-mono text-xs">
                       {row.capRatePct ? formatCap(row.capRatePct) : '—'}
                     </td>

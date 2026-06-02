@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FullReport } from '@/lib/services/property-analyzer/full-report';
 import type { MapProviderConfig } from '@/lib/maps/config';
 import { PropertyMap, type MapCoordinate } from '@/components/admin/property-map';
+import { KeyValueRow } from '@/components/ui/key-value-row';
 
 const B = 1_000_000_000;
 function krw(v: number | null | undefined, d = 2): string {
@@ -221,14 +222,25 @@ export default function PropertyAnalyzePage({ mapConfig }: { mapConfig: MapProvi
             <Section
               title={`${resolved.roadAddress ?? resolved.jibunAddress} · ${resolved.districtName}`}
             >
-              <Row k="Primary class" v={`${a.asset.assetClass} (${cls.feasibility})`} />
-              <Row k="Base valuation" v={`${krw(a.baseCaseValueKrw)} KRW`} />
-              <Row
-                k="Scenario range"
-                v={`${krw(a.scenarios.find((s: any) => s.name === 'Bear')?.valuationKrw)} — ${krw(
+              <KeyValueRow
+                variant="divider"
+                className="border-t py-1.5 text-sm first:border-t-0"
+                label="Primary class"
+              >{`${a.asset.assetClass} (${cls.feasibility})`}</KeyValueRow>
+              <KeyValueRow
+                variant="divider"
+                className="border-t py-1.5 text-sm first:border-t-0"
+                label="Base valuation"
+              >{`${krw(a.baseCaseValueKrw)} KRW`}</KeyValueRow>
+              <KeyValueRow
+                variant="divider"
+                className="border-t py-1.5 text-sm first:border-t-0"
+                label="Scenario range"
+              >
+                {`${krw(a.scenarios.find((s: any) => s.name === 'Bear')?.valuationKrw)} — ${krw(
                   a.scenarios.find((s: any) => s.name === 'Bull')?.valuationKrw
                 )}`}
-              />
+              </KeyValueRow>
             </Section>
 
             {dq && <DataQualityPanel dq={dq} />}
@@ -611,7 +623,13 @@ export default function PropertyAnalyzePage({ mapConfig }: { mapConfig: MapProvi
             )}
 
             <Section title="1. Macro Regime Interpretation" collapsible defaultOpen={false}>
-              <Row k="Label" v={macro?.regime?.label ?? '(n/a)'} />
+              <KeyValueRow
+                variant="divider"
+                className="border-t py-1.5 text-sm first:border-t-0"
+                label="Label"
+              >
+                {macro?.regime?.label ?? '(n/a)'}
+              </KeyValueRow>
               <ul className="mt-2 space-y-1 text-sm text-zinc-300">
                 {(macro?.regime?.summary ?? []).slice(0, 5).map((l: string, i: number) => (
                   <li key={i}>· {l}</li>
@@ -623,14 +641,20 @@ export default function PropertyAnalyzePage({ mapConfig }: { mapConfig: MapProvi
             </Section>
 
             <Section title="2. Deal Macro Exposure (0-100, higher = worse)">
-              <Row
-                k="Overall"
-                v={`${macro.dealExposure.overallScore} [${macro.dealExposure.band}] (raw ${macro.dealExposure.rawScore})`}
-              />
-              <Row
-                k="Correlation penalty"
-                v={`+${macro.dealExposure.correlationPenalty.appliedPenaltyPct.toFixed(1)}%`}
-              />
+              <KeyValueRow
+                variant="divider"
+                className="border-t py-1.5 text-sm first:border-t-0"
+                label="Overall"
+              >
+                {`${macro.dealExposure.overallScore} [${macro.dealExposure.band}] (raw ${macro.dealExposure.rawScore})`}
+              </KeyValueRow>
+              <KeyValueRow
+                variant="divider"
+                className="border-t py-1.5 text-sm first:border-t-0"
+                label="Correlation penalty"
+              >
+                {`+${macro.dealExposure.correlationPenalty.appliedPenaltyPct.toFixed(1)}%`}
+              </KeyValueRow>
               <table className="mt-3 w-full text-sm">
                 <tbody>
                   {macro.dealExposure.dimensions.map((d: any) => (
@@ -671,14 +695,62 @@ export default function PropertyAnalyzePage({ mapConfig }: { mapConfig: MapProvi
             </Section>
 
             <Section title="4. Pro-Forma Summary (10-year)">
-              <Row k="Year-1 NOI" v={krw(pf.stabilizedNoiKrw)} />
-              <Row k="Year-1 Revenue" v={krw(pf.annualRevenueKrw)} />
-              <Row k={`Terminal Value (Y${pf.terminalYear})`} v={krw(pf.terminalValueKrw)} />
-              <Row k="Initial Equity" v={krw(pf.initialEquityKrw)} />
-              <Row k="Initial Debt" v={krw(pf.initialDebtFundingKrw)} />
-              <Row k="Ending Debt Balance" v={krw(pf.endingDebtBalanceKrw)} />
-              <Row k="Gross Exit Value" v={krw(pf.grossExitValueKrw)} />
-              <Row k="Net Exit Proceeds" v={krw(pf.netExitProceedsKrw)} />
+              <KeyValueRow
+                variant="divider"
+                className="border-t py-1.5 text-sm first:border-t-0"
+                label="Year-1 NOI"
+              >
+                {krw(pf.stabilizedNoiKrw)}
+              </KeyValueRow>
+              <KeyValueRow
+                variant="divider"
+                className="border-t py-1.5 text-sm first:border-t-0"
+                label="Year-1 Revenue"
+              >
+                {krw(pf.annualRevenueKrw)}
+              </KeyValueRow>
+              <KeyValueRow
+                variant="divider"
+                className="border-t py-1.5 text-sm first:border-t-0"
+                label={`Terminal Value (Y${pf.terminalYear})`}
+              >
+                {krw(pf.terminalValueKrw)}
+              </KeyValueRow>
+              <KeyValueRow
+                variant="divider"
+                className="border-t py-1.5 text-sm first:border-t-0"
+                label="Initial Equity"
+              >
+                {krw(pf.initialEquityKrw)}
+              </KeyValueRow>
+              <KeyValueRow
+                variant="divider"
+                className="border-t py-1.5 text-sm first:border-t-0"
+                label="Initial Debt"
+              >
+                {krw(pf.initialDebtFundingKrw)}
+              </KeyValueRow>
+              <KeyValueRow
+                variant="divider"
+                className="border-t py-1.5 text-sm first:border-t-0"
+                label="Ending Debt Balance"
+              >
+                {krw(pf.endingDebtBalanceKrw)}
+              </KeyValueRow>
+              <KeyValueRow
+                variant="divider"
+                className="border-t py-1.5 text-sm first:border-t-0"
+                label="Gross Exit Value"
+              >
+                {krw(pf.grossExitValueKrw)}
+              </KeyValueRow>
+              <KeyValueRow
+                variant="divider"
+                className="border-t py-1.5 text-sm first:border-t-0"
+                label="Net Exit Proceeds"
+              >
+                {krw(pf.netExitProceedsKrw)}
+              </KeyValueRow>
             </Section>
 
             {pfx && pfYears.length > 0 && (
@@ -698,23 +770,74 @@ export default function PropertyAnalyzePage({ mapConfig }: { mapConfig: MapProvi
                         <div className="mb-2 text-xs uppercase tracking-wide text-zinc-400">
                           Uses of Funds
                         </div>
-                        <Row k="Purchase Price" v={krw(purchasePrice)} />
-                        <Row k="Acquisition Tax (4.6%)" v={krw(pfx.acquisitionTaxKrw)} />
-                        <Row k="Initial TI + Fit-out (Y1)" v={krw(initialTenantCapital)} />
-                        <Row k="Reserve Funding" v={krw(reserveFunding)} />
-                        <Row k="Total Uses" v={krw(totalUses)} />
+                        <KeyValueRow
+                          variant="divider"
+                          className="border-t py-1.5 text-sm first:border-t-0"
+                          label="Purchase Price"
+                        >
+                          {krw(purchasePrice)}
+                        </KeyValueRow>
+                        <KeyValueRow
+                          variant="divider"
+                          className="border-t py-1.5 text-sm first:border-t-0"
+                          label="Acquisition Tax (4.6%)"
+                        >
+                          {krw(pfx.acquisitionTaxKrw)}
+                        </KeyValueRow>
+                        <KeyValueRow
+                          variant="divider"
+                          className="border-t py-1.5 text-sm first:border-t-0"
+                          label="Initial TI + Fit-out (Y1)"
+                        >
+                          {krw(initialTenantCapital)}
+                        </KeyValueRow>
+                        <KeyValueRow
+                          variant="divider"
+                          className="border-t py-1.5 text-sm first:border-t-0"
+                          label="Reserve Funding"
+                        >
+                          {krw(reserveFunding)}
+                        </KeyValueRow>
+                        <KeyValueRow
+                          variant="divider"
+                          className="border-t py-1.5 text-sm first:border-t-0"
+                          label="Total Uses"
+                        >
+                          {krw(totalUses)}
+                        </KeyValueRow>
                       </div>
                       <div>
                         <div className="mb-2 text-xs uppercase tracking-wide text-zinc-400">
                           Sources of Funds
                         </div>
-                        <Row
-                          k={`Senior Debt (${((pf.initialDebtFundingKrw / Math.max(purchasePrice, 1)) * 100).toFixed(1)}% LTV)`}
-                          v={krw(pf.initialDebtFundingKrw)}
-                        />
-                        <Row k="Sponsor Equity" v={krw(pf.initialEquityKrw)} />
-                        <Row k="Total Sources" v={krw(totalSources)} />
-                        <Row k="Balance (Sources − Uses)" v={krw(balanceCheck)} />
+                        <KeyValueRow
+                          variant="divider"
+                          className="border-t py-1.5 text-sm first:border-t-0"
+                          label={`Senior Debt (${((pf.initialDebtFundingKrw / Math.max(purchasePrice, 1)) * 100).toFixed(1)}% LTV)`}
+                        >
+                          {krw(pf.initialDebtFundingKrw)}
+                        </KeyValueRow>
+                        <KeyValueRow
+                          variant="divider"
+                          className="border-t py-1.5 text-sm first:border-t-0"
+                          label="Sponsor Equity"
+                        >
+                          {krw(pf.initialEquityKrw)}
+                        </KeyValueRow>
+                        <KeyValueRow
+                          variant="divider"
+                          className="border-t py-1.5 text-sm first:border-t-0"
+                          label="Total Sources"
+                        >
+                          {krw(totalSources)}
+                        </KeyValueRow>
+                        <KeyValueRow
+                          variant="divider"
+                          className="border-t py-1.5 text-sm first:border-t-0"
+                          label="Balance (Sources − Uses)"
+                        >
+                          {krw(balanceCheck)}
+                        </KeyValueRow>
                       </div>
                     </div>
                   );
@@ -728,24 +851,90 @@ export default function PropertyAnalyzePage({ mapConfig }: { mapConfig: MapProvi
                 collapsible
                 defaultOpen={false}
               >
-                <Row k="Acquisition Tax (4.6%)" v={krw(pfx.acquisitionTaxKrw)} />
-                <Row k="Total Basis (price + 취득세)" v={krw(pfx.totalBasisKrw)} />
-                <Row k="Annual Depreciation" v={krw(pfx.annualDepreciationKrw)} />
-                <Row k="Accumulated Depreciation (10y)" v={krw(pfx.accumulatedDepreciationKrw)} />
-                <Row
-                  k="Depreciation Tax Shield (cumulative)"
-                  v={krw(pfx.depreciationTaxShieldKrw)}
-                />
-                <Row k="Adjusted Basis at Exit" v={krw(pfx.adjustedBasisAtExitKrw)} />
-                <Row k="Exit Transaction Cost (1.5%)" v={krw(pfx.exitTransactionCostKrw)} />
-                <Row k="In-place Terminal NOI (Y10)" v={krw(pfx.inPlaceTerminalNoiKrw)} />
-                <Row
-                  k="Forward Terminal NOI (Y11, used for exit cap)"
-                  v={krw(pfx.forwardTerminalNoiKrw)}
-                />
-                <Row k="Capex Reserve (cumulative)" v={krw(pfx.totalCapexReserveKrw)} />
-                <Row k="Operating Reserve (cumulative)" v={krw(pfx.totalOperatingReserveKrw)} />
-                <Row k="Released at Exit (reserves)" v={krw(pfx.releasedReservesAtExitKrw)} />
+                <KeyValueRow
+                  variant="divider"
+                  className="border-t py-1.5 text-sm first:border-t-0"
+                  label="Acquisition Tax (4.6%)"
+                >
+                  {krw(pfx.acquisitionTaxKrw)}
+                </KeyValueRow>
+                <KeyValueRow
+                  variant="divider"
+                  className="border-t py-1.5 text-sm first:border-t-0"
+                  label="Total Basis (price + 취득세)"
+                >
+                  {krw(pfx.totalBasisKrw)}
+                </KeyValueRow>
+                <KeyValueRow
+                  variant="divider"
+                  className="border-t py-1.5 text-sm first:border-t-0"
+                  label="Annual Depreciation"
+                >
+                  {krw(pfx.annualDepreciationKrw)}
+                </KeyValueRow>
+                <KeyValueRow
+                  variant="divider"
+                  className="border-t py-1.5 text-sm first:border-t-0"
+                  label="Accumulated Depreciation (10y)"
+                >
+                  {krw(pfx.accumulatedDepreciationKrw)}
+                </KeyValueRow>
+                <KeyValueRow
+                  variant="divider"
+                  className="border-t py-1.5 text-sm first:border-t-0"
+                  label="Depreciation Tax Shield (cumulative)"
+                >
+                  {krw(pfx.depreciationTaxShieldKrw)}
+                </KeyValueRow>
+                <KeyValueRow
+                  variant="divider"
+                  className="border-t py-1.5 text-sm first:border-t-0"
+                  label="Adjusted Basis at Exit"
+                >
+                  {krw(pfx.adjustedBasisAtExitKrw)}
+                </KeyValueRow>
+                <KeyValueRow
+                  variant="divider"
+                  className="border-t py-1.5 text-sm first:border-t-0"
+                  label="Exit Transaction Cost (1.5%)"
+                >
+                  {krw(pfx.exitTransactionCostKrw)}
+                </KeyValueRow>
+                <KeyValueRow
+                  variant="divider"
+                  className="border-t py-1.5 text-sm first:border-t-0"
+                  label="In-place Terminal NOI (Y10)"
+                >
+                  {krw(pfx.inPlaceTerminalNoiKrw)}
+                </KeyValueRow>
+                <KeyValueRow
+                  variant="divider"
+                  className="border-t py-1.5 text-sm first:border-t-0"
+                  label="Forward Terminal NOI (Y11, used for exit cap)"
+                >
+                  {krw(pfx.forwardTerminalNoiKrw)}
+                </KeyValueRow>
+                <KeyValueRow
+                  variant="divider"
+                  className="border-t py-1.5 text-sm first:border-t-0"
+                  label="Capex Reserve (cumulative)"
+                >
+                  {krw(pfx.totalCapexReserveKrw)}
+                </KeyValueRow>
+                <KeyValueRow
+                  variant="divider"
+                  className="border-t py-1.5 text-sm first:border-t-0"
+                  label="Operating Reserve (cumulative)"
+                >
+                  {krw(pfx.totalOperatingReserveKrw)}
+                </KeyValueRow>
+                <KeyValueRow
+                  variant="divider"
+                  className="border-t py-1.5 text-sm first:border-t-0"
+                  label="Released at Exit (reserves)"
+                >
+                  {krw(pfx.releasedReservesAtExitKrw)}
+                </KeyValueRow>
               </Section>
             )}
 
@@ -1076,53 +1265,174 @@ export default function PropertyAnalyzePage({ mapConfig }: { mapConfig: MapProvi
                       <div className="mb-2 text-xs uppercase tracking-wide text-zinc-400">
                         Sources &amp; Uses (entry)
                       </div>
-                      <Row k="Initial Debt Funding" v={krw(pf.initialDebtFundingKrw)} />
-                      <Row k="(1) Initial Equity Outlay" v={krw(-initialEquity)} />
+                      <KeyValueRow
+                        variant="divider"
+                        className="border-t py-1.5 text-sm first:border-t-0"
+                        label="Initial Debt Funding"
+                      >
+                        {krw(pf.initialDebtFundingKrw)}
+                      </KeyValueRow>
+                      <KeyValueRow
+                        variant="divider"
+                        className="border-t py-1.5 text-sm first:border-t-0"
+                        label="(1) Initial Equity Outlay"
+                      >
+                        {krw(-initialEquity)}
+                      </KeyValueRow>
 
                       <div className="mt-4 mb-2 text-xs uppercase tracking-wide text-zinc-400">
                         Operating Cash (Y1–Y{pf.terminalYear})
                       </div>
-                      <Row k="Cumulative Interest Paid" v={krw(-cumInterest)} />
-                      <Row k="Cumulative Principal Paid" v={krw(-cumPrincipal)} />
-                      <Row k="Cumulative Property Tax" v={krw(-cumPropertyTax)} />
-                      <Row k="Cumulative Corporate Tax" v={krw(-cumCorpTax)} />
-                      <Row
-                        k="(2) Cumulative After-Tax Distributions"
-                        v={krw(cumulativeDistributions)}
-                      />
+                      <KeyValueRow
+                        variant="divider"
+                        className="border-t py-1.5 text-sm first:border-t-0"
+                        label="Cumulative Interest Paid"
+                      >
+                        {krw(-cumInterest)}
+                      </KeyValueRow>
+                      <KeyValueRow
+                        variant="divider"
+                        className="border-t py-1.5 text-sm first:border-t-0"
+                        label="Cumulative Principal Paid"
+                      >
+                        {krw(-cumPrincipal)}
+                      </KeyValueRow>
+                      <KeyValueRow
+                        variant="divider"
+                        className="border-t py-1.5 text-sm first:border-t-0"
+                        label="Cumulative Property Tax"
+                      >
+                        {krw(-cumPropertyTax)}
+                      </KeyValueRow>
+                      <KeyValueRow
+                        variant="divider"
+                        className="border-t py-1.5 text-sm first:border-t-0"
+                        label="Cumulative Corporate Tax"
+                      >
+                        {krw(-cumCorpTax)}
+                      </KeyValueRow>
+                      <KeyValueRow
+                        variant="divider"
+                        className="border-t py-1.5 text-sm first:border-t-0"
+                        label="(2) Cumulative After-Tax Distributions"
+                      >
+                        {krw(cumulativeDistributions)}
+                      </KeyValueRow>
 
                       <div className="mt-4 mb-2 text-xs uppercase tracking-wide text-zinc-400">
                         Exit Decomposition (Y{pf.terminalYear})
                       </div>
-                      <Row k="Gross Exit Value" v={krw(grossExit)} />
-                      <Row k="(–) Ending Debt Repayment" v={krw(-endingDebt)} />
-                      <Row k="(–) Exit Transaction / Promote / Tax" v={krw(-exitCostsTotal)} />
+                      <KeyValueRow
+                        variant="divider"
+                        className="border-t py-1.5 text-sm first:border-t-0"
+                        label="Gross Exit Value"
+                      >
+                        {krw(grossExit)}
+                      </KeyValueRow>
+                      <KeyValueRow
+                        variant="divider"
+                        className="border-t py-1.5 text-sm first:border-t-0"
+                        label="(–) Ending Debt Repayment"
+                      >
+                        {krw(-endingDebt)}
+                      </KeyValueRow>
+                      <KeyValueRow
+                        variant="divider"
+                        className="border-t py-1.5 text-sm first:border-t-0"
+                        label="(–) Exit Transaction / Promote / Tax"
+                      >
+                        {krw(-exitCostsTotal)}
+                      </KeyValueRow>
                       {pfx && (
-                        <Row
-                          k="    • Exit Transaction Cost (1.5%)"
-                          v={krw(-pfx.exitTransactionCostKrw)}
-                        />
+                        <KeyValueRow
+                          variant="divider"
+                          className="border-t py-1.5 text-sm first:border-t-0"
+                          label="    • Exit Transaction Cost (1.5%)"
+                        >
+                          {krw(-pfx.exitTransactionCostKrw)}
+                        </KeyValueRow>
                       )}
                       {pfx && pfx.releasedReservesAtExitKrw > 0 && (
-                        <Row
-                          k="(+) Released SPV Reserves (capex + opex)"
-                          v={krw(pfx.releasedReservesAtExitKrw)}
-                        />
+                        <KeyValueRow
+                          variant="divider"
+                          className="border-t py-1.5 text-sm first:border-t-0"
+                          label="(+) Released SPV Reserves (capex + opex)"
+                        >
+                          {krw(pfx.releasedReservesAtExitKrw)}
+                        </KeyValueRow>
                       )}
-                      <Row k="(3) Net Exit Proceeds" v={krw(netExit)} />
+                      <KeyValueRow
+                        variant="divider"
+                        className="border-t py-1.5 text-sm first:border-t-0"
+                        label="(3) Net Exit Proceeds"
+                      >
+                        {krw(netExit)}
+                      </KeyValueRow>
 
                       <div className="mt-4 mb-2 text-xs uppercase tracking-wide text-zinc-400">
                         Equity Return
                       </div>
-                      <Row k="(4) Total Return to Equity  [ (2) + (3) ]" v={krw(totalReturn)} />
-                      <Row k="(5) Net Gain  [ (4) − |1| ]" v={krw(gain)} />
-                      <Row k="(6) MOIC  [ (4) ÷ |1| ]" v={`${moic.toFixed(2)}x`} />
-                      <Row k="  • Operating CF share of return" v={pct(operatingShare * 100)} />
-                      <Row k="  • Exit proceeds share of return" v={pct(exitShare * 100)} />
-                      <Row k="Levered Equity Value (PV)" v={krw(pf.leveredEquityValueKrw)} />
-                      <Row k="Equity IRR" v={pct(rm.equityIrr)} />
-                      <Row k="Unlevered IRR" v={pct(rm.unleveragedIrr)} />
-                      <Row k="Payback Year" v={rm.paybackYear ?? 'never'} />
+                      <KeyValueRow
+                        variant="divider"
+                        className="border-t py-1.5 text-sm first:border-t-0"
+                        label="(4) Total Return to Equity  [ (2) + (3) ]"
+                      >
+                        {krw(totalReturn)}
+                      </KeyValueRow>
+                      <KeyValueRow
+                        variant="divider"
+                        className="border-t py-1.5 text-sm first:border-t-0"
+                        label="(5) Net Gain  [ (4) − |1| ]"
+                      >
+                        {krw(gain)}
+                      </KeyValueRow>
+                      <KeyValueRow
+                        variant="divider"
+                        className="border-t py-1.5 text-sm first:border-t-0"
+                        label="(6) MOIC  [ (4) ÷ |1| ]"
+                      >{`${moic.toFixed(2)}x`}</KeyValueRow>
+                      <KeyValueRow
+                        variant="divider"
+                        className="border-t py-1.5 text-sm first:border-t-0"
+                        label="  • Operating CF share of return"
+                      >
+                        {pct(operatingShare * 100)}
+                      </KeyValueRow>
+                      <KeyValueRow
+                        variant="divider"
+                        className="border-t py-1.5 text-sm first:border-t-0"
+                        label="  • Exit proceeds share of return"
+                      >
+                        {pct(exitShare * 100)}
+                      </KeyValueRow>
+                      <KeyValueRow
+                        variant="divider"
+                        className="border-t py-1.5 text-sm first:border-t-0"
+                        label="Levered Equity Value (PV)"
+                      >
+                        {krw(pf.leveredEquityValueKrw)}
+                      </KeyValueRow>
+                      <KeyValueRow
+                        variant="divider"
+                        className="border-t py-1.5 text-sm first:border-t-0"
+                        label="Equity IRR"
+                      >
+                        {pct(rm.equityIrr)}
+                      </KeyValueRow>
+                      <KeyValueRow
+                        variant="divider"
+                        className="border-t py-1.5 text-sm first:border-t-0"
+                        label="Unlevered IRR"
+                      >
+                        {pct(rm.unleveragedIrr)}
+                      </KeyValueRow>
+                      <KeyValueRow
+                        variant="divider"
+                        className="border-t py-1.5 text-sm first:border-t-0"
+                        label="Payback Year"
+                      >
+                        {rm.paybackYear ?? 'never'}
+                      </KeyValueRow>
                     </>
                   );
                 })()}
@@ -1479,12 +1789,46 @@ export default function PropertyAnalyzePage({ mapConfig }: { mapConfig: MapProvi
             )}
 
             <Section title="5. Return Metrics">
-              <Row k="Equity IRR" v={pct(rm.equityIrr)} />
-              <Row k="Unlevered IRR" v={pct(rm.unleveragedIrr)} />
-              <Row k="Equity Multiple" v={`${rm.equityMultiple.toFixed(2)}x`} />
-              <Row k="Avg Cash-on-Cash" v={pct(rm.averageCashOnCash)} />
-              <Row k="Payback Year" v={rm.paybackYear ?? 'never'} />
-              <Row k="Peak Equity" v={krw(rm.peakEquityExposureKrw)} />
+              <KeyValueRow
+                variant="divider"
+                className="border-t py-1.5 text-sm first:border-t-0"
+                label="Equity IRR"
+              >
+                {pct(rm.equityIrr)}
+              </KeyValueRow>
+              <KeyValueRow
+                variant="divider"
+                className="border-t py-1.5 text-sm first:border-t-0"
+                label="Unlevered IRR"
+              >
+                {pct(rm.unleveragedIrr)}
+              </KeyValueRow>
+              <KeyValueRow
+                variant="divider"
+                className="border-t py-1.5 text-sm first:border-t-0"
+                label="Equity Multiple"
+              >{`${rm.equityMultiple.toFixed(2)}x`}</KeyValueRow>
+              <KeyValueRow
+                variant="divider"
+                className="border-t py-1.5 text-sm first:border-t-0"
+                label="Avg Cash-on-Cash"
+              >
+                {pct(rm.averageCashOnCash)}
+              </KeyValueRow>
+              <KeyValueRow
+                variant="divider"
+                className="border-t py-1.5 text-sm first:border-t-0"
+                label="Payback Year"
+              >
+                {rm.paybackYear ?? 'never'}
+              </KeyValueRow>
+              <KeyValueRow
+                variant="divider"
+                className="border-t py-1.5 text-sm first:border-t-0"
+                label="Peak Equity"
+              >
+                {krw(rm.peakEquityExposureKrw)}
+              </KeyValueRow>
             </Section>
 
             {mc && (
@@ -1739,20 +2083,39 @@ export default function PropertyAnalyzePage({ mapConfig }: { mapConfig: MapProvi
             )}
 
             <Section title="6. Debt Covenant (DSCR)">
-              <Row k="Covenant floor" v={`${dc.covenantFloor.toFixed(2)}x`} />
-              <Row
-                k="Year-1 DSCR"
-                v={dc.baseYear1Dscr ? `${dc.baseYear1Dscr.toFixed(2)}x` : 'N/A'}
-              />
-              <Row
-                k={`Years < ${dc.covenantFloor}`}
-                v={dc.yearsBelowFloor.length > 0 ? dc.yearsBelowFloor.join(',') : 'none'}
-              />
-              <Row
-                k="Years < 1.00x"
-                v={dc.yearsBelowOne.length > 0 ? dc.yearsBelowOne.join(',') : 'none'}
-              />
-              <Row k="Base breaches" v={dc.breachesInBase ? 'YES ⚠' : 'NO'} />
+              <KeyValueRow
+                variant="divider"
+                className="border-t py-1.5 text-sm first:border-t-0"
+                label="Covenant floor"
+              >{`${dc.covenantFloor.toFixed(2)}x`}</KeyValueRow>
+              <KeyValueRow
+                variant="divider"
+                className="border-t py-1.5 text-sm first:border-t-0"
+                label="Year-1 DSCR"
+              >
+                {dc.baseYear1Dscr ? `${dc.baseYear1Dscr.toFixed(2)}x` : 'N/A'}
+              </KeyValueRow>
+              <KeyValueRow
+                variant="divider"
+                className="border-t py-1.5 text-sm first:border-t-0"
+                label={`Years < ${dc.covenantFloor}`}
+              >
+                {dc.yearsBelowFloor.length > 0 ? dc.yearsBelowFloor.join(',') : 'none'}
+              </KeyValueRow>
+              <KeyValueRow
+                variant="divider"
+                className="border-t py-1.5 text-sm first:border-t-0"
+                label="Years < 1.00x"
+              >
+                {dc.yearsBelowOne.length > 0 ? dc.yearsBelowOne.join(',') : 'none'}
+              </KeyValueRow>
+              <KeyValueRow
+                variant="divider"
+                className="border-t py-1.5 text-sm first:border-t-0"
+                label="Base breaches"
+              >
+                {dc.breachesInBase ? 'YES ⚠' : 'NO'}
+              </KeyValueRow>
             </Section>
 
             <Section
@@ -1907,26 +2270,31 @@ export default function PropertyAnalyzePage({ mapConfig }: { mapConfig: MapProvi
                     <div className="mb-1 font-semibold text-zinc-300">
                       Terminal Value Cross-Check
                     </div>
-                    <Row
-                      k="Exit-Cap TV (primary)"
-                      v={krw(pfx.terminalValueCrossCheck.exitCapTerminalValueKrw)}
-                    />
-                    <Row
-                      k="Gordon-Growth TV"
-                      v={
-                        pfx.terminalValueCrossCheck.gordonTerminalValueKrw === null
-                          ? 'N/A (r ≤ g)'
-                          : krw(pfx.terminalValueCrossCheck.gordonTerminalValueKrw)
-                      }
-                    />
-                    <Row
-                      k="Divergence"
-                      v={
-                        pfx.terminalValueCrossCheck.divergencePct === null
-                          ? 'N/A'
-                          : `${pfx.terminalValueCrossCheck.divergencePct.toFixed(1)}%`
-                      }
-                    />
+                    <KeyValueRow
+                      variant="divider"
+                      className="border-t py-1.5 text-sm first:border-t-0"
+                      label="Exit-Cap TV (primary)"
+                    >
+                      {krw(pfx.terminalValueCrossCheck.exitCapTerminalValueKrw)}
+                    </KeyValueRow>
+                    <KeyValueRow
+                      variant="divider"
+                      className="border-t py-1.5 text-sm first:border-t-0"
+                      label="Gordon-Growth TV"
+                    >
+                      {pfx.terminalValueCrossCheck.gordonTerminalValueKrw === null
+                        ? 'N/A (r ≤ g)'
+                        : krw(pfx.terminalValueCrossCheck.gordonTerminalValueKrw)}
+                    </KeyValueRow>
+                    <KeyValueRow
+                      variant="divider"
+                      className="border-t py-1.5 text-sm first:border-t-0"
+                      label="Divergence"
+                    >
+                      {pfx.terminalValueCrossCheck.divergencePct === null
+                        ? 'N/A'
+                        : `${pfx.terminalValueCrossCheck.divergencePct.toFixed(1)}%`}
+                    </KeyValueRow>
                     {pfx.terminalValueCrossCheck.divergesBeyondThreshold && (
                       <p className="mt-1 text-amber-400">
                         ⚠ Exit-cap and Gordon TV diverge &gt;{' '}
@@ -1947,7 +2315,13 @@ export default function PropertyAnalyzePage({ mapConfig }: { mapConfig: MapProvi
             )}
 
             <Section title="10. Refinancing Analysis" collapsible defaultOpen={false}>
-              <Row k="Triggers detected" v={refi.triggers.length} />
+              <KeyValueRow
+                variant="divider"
+                className="border-t py-1.5 text-sm first:border-t-0"
+                label="Triggers detected"
+              >
+                {refi.triggers.length}
+              </KeyValueRow>
               <ul className="mt-2 space-y-1 text-sm text-zinc-300">
                 {refi.triggers.slice(0, 5).map((t: any, i: number) => (
                   <li key={i}>
@@ -2031,15 +2405,6 @@ function VerdictBadge({ tier }: { tier: string }) {
     >
       {label[tier] ?? tier}
     </span>
-  );
-}
-
-function Row({ k, v }: { k: string; v: React.ReactNode }) {
-  return (
-    <div className="flex justify-between border-t border-zinc-800 py-1.5 text-sm first:border-t-0">
-      <span className="text-zinc-400">{k}</span>
-      <span className="font-mono text-zinc-100">{v}</span>
-    </div>
   );
 }
 
