@@ -53,6 +53,7 @@ import {
   type ProFormaInputs
 } from '@/lib/services/valuation/synthetic-pro-forma';
 import { computeReturnMetricsFromProForma } from '@/lib/services/valuation/return-metrics';
+import { mulberry32, standardNormal, applyCholesky, cholesky } from '@/lib/finance/numerics';
 
 export type TailRiskMetrics = {
   // Lower-tail (loss) metrics: percentile boundary + Expected Shortfall (ES) =
@@ -188,65 +189,8 @@ const DEFAULT_CORRELATION: CorrelationMatrix = [
   [0.05, 0.05, 0.2, 0.3, -0.15, 1.0] // opex ratio
 ];
 
-// ---------------------------------------------------------------------------
-// Seeded PRNG (mulberry32) — deterministic across runs given the same seed.
-// ---------------------------------------------------------------------------
-function mulberry32(seed: number): () => number {
-  let a = seed >>> 0;
-  return function () {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-// Box-Muller → one standard normal per call. We use two uniforms each draw
-// and discard the cos-pair's second value; cheap given mulberry32 is ~1 cycle.
-function standardNormal(rng: () => number): number {
-  const u1 = Math.max(1e-12, rng());
-  const u2 = rng();
-  return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
-}
-
-// ---------------------------------------------------------------------------
-// Cholesky: lower-triangular L s.t. L Lᵀ = Σ. Throws if Σ is not PSD.
-// ---------------------------------------------------------------------------
-function cholesky(matrix: number[][]): number[][] {
-  const n = matrix.length;
-  const L: number[][] = Array.from({ length: n }, () => new Array(n).fill(0));
-  for (let i = 0; i < n; i++) {
-    for (let j = 0; j <= i; j++) {
-      let sum = 0;
-      for (let k = 0; k < j; k++) sum += L[i]![k]! * L[j]![k]!;
-      if (i === j) {
-        const diag = matrix[i]![i]! - sum;
-        if (diag <= 0) {
-          throw new Error(
-            `Correlation matrix is not positive-definite at index ${i} (got ${diag.toFixed(4)}). ` +
-              `Reduce off-diagonal magnitudes or verify symmetry.`
-          );
-        }
-        L[i]![j] = Math.sqrt(diag);
-      } else {
-        L[i]![j] = (matrix[i]![j]! - sum) / L[j]![j]!;
-      }
-    }
-  }
-  return L;
-}
-
-function applyCholesky(L: number[][], z: number[]): number[] {
-  const n = L.length;
-  const x: number[] = new Array(n).fill(0);
-  for (let i = 0; i < n; i++) {
-    let v = 0;
-    for (let j = 0; j <= i; j++) v += L[i]![j]! * z[j]!;
-    x[i] = v;
-  }
-  return x;
-}
+// Seeded PRNG (mulberry32), Box-Muller standard normal, Cholesky factor +
+// application: canonical implementations live in `@/lib/finance/numerics`.
 
 // ---------------------------------------------------------------------------
 // Soft bound: a smooth, monotone, infinitely-differentiable squashing that
