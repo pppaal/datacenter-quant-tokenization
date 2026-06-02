@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import type { FeatureAssumptionMappingRow } from '@/lib/valuation/feature-assumption-mapping';
+import type { FeatureAssumptionMappingRow } from '@/lib/services/valuation/feature-assumption-mapping';
 import { formatNumber, toSentenceCase } from '@/lib/utils';
 
 function toneForMode(mode: string | null) {

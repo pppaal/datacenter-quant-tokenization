@@ -1,4 +1,4 @@
-import { getValuationFeatureSourceDescriptors } from '@/lib/valuation/feature-snapshot-usage';
+import { getValuationFeatureSourceDescriptors } from '@/lib/services/valuation/feature-snapshot-usage';
 import type { ProvenanceEntry } from '@/lib/sources/types';
 
 type AssetQualityInput = {

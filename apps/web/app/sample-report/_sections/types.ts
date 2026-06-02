@@ -10,7 +10,7 @@
 import type { resolveDisplayCurrency } from '@/lib/finance/currency';
 import type { getSampleReport } from '@/lib/services/dashboard';
 import type { getAssetBySlug } from '@/lib/services/assets';
-import type { getValuationRecommendation } from '@/lib/valuation/recommendation';
+import type { getValuationRecommendation } from '@/lib/services/valuation/recommendation';
 import type {
   computeReturnsSnapshot,
   computeLeaseRollSummary,

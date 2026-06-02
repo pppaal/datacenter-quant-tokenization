@@ -8,8 +8,8 @@ import { Card } from '@/components/ui/card';
 import { listAssets } from '@/lib/services/assets';
 import { getFxRateMap } from '@/lib/services/fx';
 import { formatDate, formatNumber } from '@/lib/utils';
-import { resolveSatelliteRiskSnapshot } from '@/lib/valuation/satellite-risk';
-import { getValuationRecommendation } from '@/lib/valuation/recommendation';
+import { resolveSatelliteRiskSnapshot } from '@/lib/services/valuation/satellite-risk';
+import { getValuationRecommendation } from '@/lib/services/valuation/recommendation';
 
 export const dynamic = 'force-dynamic';
 

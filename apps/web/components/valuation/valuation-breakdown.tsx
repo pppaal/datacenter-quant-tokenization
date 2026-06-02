@@ -6,7 +6,7 @@ import {
   type SupportedCurrency
 } from '@/lib/finance/currency';
 import { formatNumber, formatPercent, toSentenceCase } from '@/lib/utils';
-import { buildDebtBreakdown } from '@/lib/valuation/debt-breakdown';
+import { buildDebtBreakdown } from '@/lib/services/valuation/debt-breakdown';
 
 type ProvenanceEntry = {
   field: string;

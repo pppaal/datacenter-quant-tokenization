@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { buildFeatureAssumptionMappings } from '@/lib/valuation/feature-assumption-mapping';
+import { buildFeatureAssumptionMappings } from '@/lib/services/valuation/feature-assumption-mapping';
 
 test('feature assumption mapping resolves feature values to assumptions and provenance fields', () => {
   const rows = buildFeatureAssumptionMappings(

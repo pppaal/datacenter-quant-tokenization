@@ -54,7 +54,7 @@ import { resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-reque
 import { getAssetById } from '@/lib/services/assets';
 import { getAssetFinancialStatements } from '@/lib/services/financial-statements';
 import { getFxRateMap } from '@/lib/services/fx';
-import { getValuationRecommendation } from '@/lib/valuation/recommendation';
+import { getValuationRecommendation } from '@/lib/services/valuation/recommendation';
 import { buildRealizedOutcomeComparison } from '@/lib/services/realized-outcomes';
 import { buildAssetResearchDossier } from '@/lib/services/research/dossier';
 import {
@@ -63,9 +63,9 @@ import {
   getLatestReviewPacketRecord
 } from '@/lib/services/review';
 import { formatDate, formatNumber, formatPercent } from '@/lib/utils';
-import { buildFeatureAssumptionMappings } from '@/lib/valuation/feature-assumption-mapping';
-import { filterValuationFeatureSnapshots } from '@/lib/valuation/feature-snapshot-usage';
-import { resolveSatelliteRiskSnapshot } from '@/lib/valuation/satellite-risk';
+import { buildFeatureAssumptionMappings } from '@/lib/services/valuation/feature-assumption-mapping';
+import { filterValuationFeatureSnapshots } from '@/lib/services/valuation/feature-snapshot-usage';
+import { resolveSatelliteRiskSnapshot } from '@/lib/services/valuation/satellite-risk';
 
 export const dynamic = 'force-dynamic';
 

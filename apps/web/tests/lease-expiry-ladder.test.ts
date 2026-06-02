@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { buildLeaseExpiryLadder } from '@/lib/valuation/lease-expiry-ladder';
+import { buildLeaseExpiryLadder } from '@/lib/services/valuation/lease-expiry-ladder';
 
 test('lease expiry ladder aggregates expiry concentration and renewal assumptions', () => {
   const ladder = buildLeaseExpiryLadder([

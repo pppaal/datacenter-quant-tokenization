@@ -40,13 +40,13 @@ import { buildRealizedOutcomeComparison } from '@/lib/services/realized-outcomes
 import { getValuationRunById } from '@/lib/services/valuations';
 import type { MacroInterpretation } from '@/lib/services/macro/regime';
 import { formatDate, formatNumber, formatPercent } from '@/lib/utils';
-import { buildFeatureAssumptionMappings } from '@/lib/valuation/feature-assumption-mapping';
+import { buildFeatureAssumptionMappings } from '@/lib/services/valuation/feature-assumption-mapping';
 import {
   filterValuationFeatureSnapshots,
   getValuationFeatureSourceDescriptors
-} from '@/lib/valuation/feature-snapshot-usage';
-import { resolveSatelliteRiskSnapshot } from '@/lib/valuation/satellite-risk';
-import { getValuationRecommendation } from '@/lib/valuation/recommendation';
+} from '@/lib/services/valuation/feature-snapshot-usage';
+import { resolveSatelliteRiskSnapshot } from '@/lib/services/valuation/satellite-risk';
+import { getValuationRecommendation } from '@/lib/services/valuation/recommendation';
 import { approvalTone } from '@/lib/ui/status-tone';
 
 export const dynamic = 'force-dynamic';

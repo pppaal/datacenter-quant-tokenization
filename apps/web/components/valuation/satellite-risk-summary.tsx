@@ -4,7 +4,7 @@ import {
   getSatelliteRiskLabel,
   getSatelliteRiskTone,
   type SatelliteRiskSnapshot
-} from '@/lib/valuation/satellite-risk';
+} from '@/lib/services/valuation/satellite-risk';
 
 type Props = {
   snapshot?: SatelliteRiskSnapshot | null;

@@ -3,7 +3,7 @@ import test from 'node:test';
 import {
   filterValuationFeatureSnapshots,
   getValuationFeatureSourceDescriptors
-} from '@/lib/valuation/feature-snapshot-usage';
+} from '@/lib/services/valuation/feature-snapshot-usage';
 
 test('valuation feature source descriptors collect promoted feature source versions in display order', () => {
   const descriptors = getValuationFeatureSourceDescriptors({

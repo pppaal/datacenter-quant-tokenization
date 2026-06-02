@@ -8,7 +8,7 @@ import { prisma } from '@/lib/db/prisma';
 import { getAssetBySlug } from '@/lib/services/assets';
 import { getSampleReport } from '@/lib/services/dashboard';
 import { getFxRateMap } from '@/lib/services/fx';
-import { getValuationRecommendation } from '@/lib/valuation/recommendation';
+import { getValuationRecommendation } from '@/lib/services/valuation/recommendation';
 import {
   computeCapitalStructure,
   computeLeaseRollSummary,

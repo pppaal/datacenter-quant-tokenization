@@ -11,9 +11,9 @@ import { Card } from '@/components/ui/card';
 import { getFxRateMap } from '@/lib/services/fx';
 import { listValuationRuns } from '@/lib/services/valuations';
 import { formatDate, formatNumber, formatPercent } from '@/lib/utils';
-import { getValuationFeatureSourceDescriptors } from '@/lib/valuation/feature-snapshot-usage';
-import { resolveSatelliteRiskSnapshot } from '@/lib/valuation/satellite-risk';
-import { getValuationRecommendation } from '@/lib/valuation/recommendation';
+import { getValuationFeatureSourceDescriptors } from '@/lib/services/valuation/feature-snapshot-usage';
+import { resolveSatelliteRiskSnapshot } from '@/lib/services/valuation/satellite-risk';
+import { getValuationRecommendation } from '@/lib/services/valuation/recommendation';
 import { approvalTone } from '@/lib/ui/status-tone';
 
 export const dynamic = 'force-dynamic';
