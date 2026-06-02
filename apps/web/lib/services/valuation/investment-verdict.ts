@@ -14,6 +14,14 @@
 import type { ReturnMetrics } from '@/lib/services/valuation/return-metrics';
 import type { MonteCarloResult } from '@/lib/services/valuation/monte-carlo';
 import type { RefinanceAnalysis } from '@/lib/services/valuation/refinancing';
+import {
+  DEFAULT_DSCR_COVENANT,
+  DEFAULT_FLOOR_P10_IRR_PCT,
+  DEFAULT_MAX_MACRO_SCORE,
+  DEFAULT_MAX_PROB_BELOW_8_PCT,
+  DEFAULT_MIN_MOIC_P50,
+  DEFAULT_TARGET_LEVERED_IRR_PCT
+} from '@/lib/services/valuation/constants';
 
 export type VerdictTier = 'STRONG_BUY' | 'BUY' | 'CONDITIONAL' | 'PASS' | 'AVOID';
 
@@ -52,12 +60,12 @@ export type VerdictHurdles = {
 };
 
 export const DEFAULT_HURDLES: VerdictHurdles = {
-  targetLeveredIrrPct: 12,
-  floorP10IrrPct: 6,
-  maxProbBelow8Pct: 0.25,
-  minMoicP50: 1.5,
-  maxMacroScore: 70,
-  dscrCovenant: 1.15
+  targetLeveredIrrPct: DEFAULT_TARGET_LEVERED_IRR_PCT,
+  floorP10IrrPct: DEFAULT_FLOOR_P10_IRR_PCT,
+  maxProbBelow8Pct: DEFAULT_MAX_PROB_BELOW_8_PCT,
+  minMoicP50: DEFAULT_MIN_MOIC_P50,
+  maxMacroScore: DEFAULT_MAX_MACRO_SCORE,
+  dscrCovenant: DEFAULT_DSCR_COVENANT
 };
 
 export type VerdictInputs = {

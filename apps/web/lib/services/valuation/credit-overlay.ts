@@ -1,5 +1,9 @@
 import { type ConfidenceBounds, clampConfidence } from '@/lib/services/valuation/stabilized-income';
 import type { UnderwritingAnalysis, UnderwritingBundle } from '@/lib/services/valuation/types';
+import {
+  ENGINE_CONFIDENCE_CEILING,
+  ENGINE_CONFIDENCE_FLOOR
+} from '@/lib/services/valuation/constants';
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
@@ -12,7 +16,10 @@ function clamp(value: number, min: number, max: number) {
  * post-delta clamp respects the same `[floor, ceiling]` the strategy used for
  * the base score, instead of silently widening it.
  */
-const DEFAULT_CONFIDENCE_BOUNDS: ConfidenceBounds = { floor: 4.5, ceiling: 9.9 };
+const DEFAULT_CONFIDENCE_BOUNDS: ConfidenceBounds = {
+  floor: ENGINE_CONFIDENCE_FLOOR,
+  ceiling: ENGINE_CONFIDENCE_CEILING
+};
 
 /**
  * Resolve the confidence bounds the overlay should clamp to. Prefers explicitly

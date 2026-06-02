@@ -8,6 +8,7 @@ import type {
   TerminalValueCrossCheck
 } from '@/lib/services/valuation/types';
 import { clamp, discountValue, ensureNumber } from '@/lib/services/valuation/utils';
+import { TERMINAL_NOI_FLOOR_RATIO } from '@/lib/services/valuation/constants';
 
 /**
  * Reconcile the primary exit-cap terminal value against a Gordon-growth
@@ -827,8 +828,8 @@ export function computeLeaseDcf(
   // Forward (Y+1) terminal NOI = stabilized NOI grown one period. Floor against a
   // small fraction of total capex so a degenerate (near-zero / suppressed) NOI
   // can't collapse the exit value to ~0; the floor is the conservative downside
-  // anchor, NOT a typical-case adjustment.
-  const TERMINAL_NOI_FLOOR_RATIO = 0.01;
+  // anchor, NOT a typical-case adjustment. (TERMINAL_NOI_FLOOR_RATIO lives in
+  // constants.ts.)
   const forwardTerminalNoiKrw = Math.max(
     stabilizedNoiKrw * (1 + annualGrowthPct / 100),
     prepared.capexBreakdown.totalCapexKrw * TERMINAL_NOI_FLOOR_RATIO
