@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { formatCurrencyFromKrwAtRate, type SupportedCurrency } from '@/lib/finance/currency';
 import type { BundleLease } from '@/lib/services/valuation/types';
 import { formatNumber } from '@/lib/utils';
-import { buildLeaseRolloverDrilldown } from '@/lib/valuation/lease-rollover-drilldown';
+import { buildLeaseRolloverDrilldown } from '@/lib/services/valuation/lease-rollover-drilldown';
 
 export function LeaseRolloverDrilldown({
   leases,

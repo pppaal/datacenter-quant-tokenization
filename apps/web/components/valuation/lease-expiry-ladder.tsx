@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { formatCurrencyFromKrwAtRate, type SupportedCurrency } from '@/lib/finance/currency';
 import type { BundleLease } from '@/lib/services/valuation/types';
 import { formatNumber } from '@/lib/utils';
-import { buildLeaseExpiryLadder } from '@/lib/valuation/lease-expiry-ladder';
+import { buildLeaseExpiryLadder } from '@/lib/services/valuation/lease-expiry-ladder';
 
 function formatMaybe(value: number | null, digits = 1) {
   return value === null ? 'N/A' : formatNumber(value, digits);

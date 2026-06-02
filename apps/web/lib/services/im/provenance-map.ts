@@ -7,13 +7,7 @@
  * surface on a card (geo, satellite, internal feature snapshots).
  * We surface only the ones the LP would naturally challenge.
  */
-type ProvenanceEntry = {
-  field: string;
-  sourceSystem: string;
-  value: unknown;
-  mode: string;
-  freshnessLabel: string;
-};
+import type { ProvenanceEntry } from '@/lib/sources/types';
 
 export type CardProvenance = {
   field: string;

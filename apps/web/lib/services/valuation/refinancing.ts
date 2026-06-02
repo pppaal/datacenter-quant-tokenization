@@ -1,4 +1,5 @@
 import type { ProFormaYear } from '@/lib/services/valuation/types';
+import { formatKrwCompact } from '@/lib/finance/currency';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -199,9 +200,13 @@ export function analyzeRefinancing(
 }
 
 function formatKrwShort(krw: number): string {
-  const abs = Math.abs(krw);
-  if (abs >= 1e12) return `₩${(krw / 1e12).toFixed(1)}T`;
-  if (abs >= 1e8) return `₩${(krw / 1e8).toFixed(1)}억`;
-  if (abs >= 1e6) return `₩${(krw / 1e6).toFixed(1)}M`;
-  return `₩${krw.toLocaleString()}`;
+  return formatKrwCompact(krw, {
+    prefix: '₩',
+    tiers: [
+      { min: 1e12, divisor: 1e12, dp: 1, suffix: 'T' },
+      { min: 1e8, divisor: 1e8, dp: 1, suffix: '억' },
+      { min: 1e6, divisor: 1e6, dp: 1, suffix: 'M' }
+    ],
+    fallback: (v) => v.toLocaleString()
+  });
 }

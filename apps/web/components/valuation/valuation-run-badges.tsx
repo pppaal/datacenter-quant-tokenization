@@ -1,5 +1,5 @@
 import { Badge } from '@/components/ui/badge';
-import { getRunHealthFlags } from '@/lib/valuation-run-health';
+import { getRunHealthFlags } from '@/lib/services/valuation/run-health';
 
 type ProvenanceEntry = {
   field: string;

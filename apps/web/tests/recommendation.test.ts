@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { getValuationRecommendation } from '@/lib/valuation/recommendation';
+import { getValuationRecommendation } from '@/lib/services/valuation/recommendation';
 
 test('getValuationRecommendation maps the 0-10 confidence scale to tiers', () => {
   assert.equal(getValuationRecommendation(9.9), 'Proceed To Committee');

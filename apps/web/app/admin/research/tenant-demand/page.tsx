@@ -2,13 +2,16 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { StatCard } from '@/components/ui/stat-card';
+import { EmptyState } from '@/components/ui/empty-state';
 import { TenantDemandForm } from '@/components/admin/tenant-demand-form';
 import { prisma } from '@/lib/db/prisma';
 import { formatDate, formatNumber } from '@/lib/utils';
+import { statusTone, type Tone } from '@/lib/ui/status-tone';
 
 export const dynamic = 'force-dynamic';
 
-const STATUS_TONES: Record<string, 'good' | 'warn' | 'danger'> = {
+const STATUS_TONES: Record<string, Tone> = {
   ACTIVE: 'good',
   SIGNED: 'good',
   WITHDRAWN: 'danger',
@@ -72,10 +75,10 @@ export default async function TenantDemandPage() {
           </p>
         </div>
         {rows.length === 0 ? (
-          <div className="rounded-[18px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
+          <EmptyState>
             No tenant requirements recorded yet. Use the form above to capture one from your last
             leasing-broker call.
-          </div>
+          </EmptyState>
         ) : (
           <div className="overflow-x-auto rounded-[18px] border border-white/10">
             <table className="w-full text-sm">
@@ -108,7 +111,9 @@ export default async function TenantDemandPage() {
                       {row.targetMoveInDate ? formatDate(row.targetMoveInDate) : '—'}
                     </td>
                     <td className="px-3 py-2">
-                      <Badge tone={STATUS_TONES[row.status] ?? 'warn'}>{row.status}</Badge>
+                      <Badge tone={statusTone(row.status, STATUS_TONES, 'warn')}>
+                        {row.status}
+                      </Badge>
                     </td>
                     <td className="px-3 py-2 text-xs text-slate-400">{row.source ?? '—'}</td>
                     <td className="px-3 py-2 text-xs text-slate-500">
@@ -123,15 +128,5 @@ export default async function TenantDemandPage() {
         )}
       </Card>
     </div>
-  );
-}
-
-function StatCard({ label, primary, detail }: { label: string; primary: string; detail: string }) {
-  return (
-    <Card className="space-y-2">
-      <div className="fine-print">{label}</div>
-      <div className="text-2xl font-semibold text-white">{primary}</div>
-      <div className="text-xs text-slate-500">{detail}</div>
-    </Card>
   );
 }

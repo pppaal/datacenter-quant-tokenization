@@ -27,17 +27,28 @@
  * are bounded.
  */
 
+import { MS_PER_YEAR } from '@/lib/finance/constants';
+import {
+  DEFAULT_ANNUAL_PRICE_GROWTH_PCT,
+  MAX_ANNUAL_GROWTH_PCT,
+  MAX_FACTOR_ADJUSTMENT_PCT,
+  MAX_NET_ADJUSTMENT_PCT,
+  SIZE_ELASTICITY
+} from '@/lib/services/valuation/constants';
+
 // ---------------------------------------------------------------------------
 // Bounds — clamp every adjustment so one bad comp can't dominate.
+// All coefficients live in `constants.ts` (single source of truth) and are
+// re-exported here so existing import sites and the doc context stay intact.
 // ---------------------------------------------------------------------------
 
-/** Max absolute single-factor adjustment (±). 35% is already aggressive for
- * one dimension; beyond that the comp is too dissimilar to trust. */
-export const MAX_FACTOR_ADJUSTMENT_PCT = 35;
-
-/** Max absolute *net* (compounded) adjustment across all factors. Even if every
- * factor pegs at its bound, the adjusted price stays within ±60% of raw. */
-export const MAX_NET_ADJUSTMENT_PCT = 60;
+export {
+  DEFAULT_ANNUAL_PRICE_GROWTH_PCT,
+  MAX_ANNUAL_GROWTH_PCT,
+  MAX_FACTOR_ADJUSTMENT_PCT,
+  MAX_NET_ADJUSTMENT_PCT,
+  SIZE_ELASTICITY
+};
 
 function clampPct(pct: number, bound: number): number {
   if (!Number.isFinite(pct)) return 0;
@@ -54,12 +65,10 @@ function clampPct(pct: number, bound: number): number {
  * appreciation assumption — below historical Seoul prime so we never *inflate*
  * stale comps optimistically. Documented as a default, overridable by a real
  * `annualPriceGrowthPct` signal derived from MarketIndicatorSeries.
+ *
+ * `DEFAULT_ANNUAL_PRICE_GROWTH_PCT` (2.5) and `MAX_ANNUAL_GROWTH_PCT` (12) now
+ * live in `constants.ts` and are re-exported above.
  */
-export const DEFAULT_ANNUAL_PRICE_GROWTH_PCT = 2.5;
-
-/** Cap the effective annual growth used for time-adjustment so a noisy index
- * spike can't compound into an absurd uplift on a very old comp. */
-export const MAX_ANNUAL_GROWTH_PCT = 12;
 
 export type TimeAdjustmentInput = {
   /** Comp transaction date. Null ⇒ no time adjustment (0%). */
@@ -88,9 +97,8 @@ export function computeTimeAdjustmentPct(input: TimeAdjustmentInput): {
     Math.min(MAX_ANNUAL_GROWTH_PCT, rawGrowth)
   );
 
-  const msPerYear = 1000 * 60 * 60 * 24 * 365.25;
   // Positive ⇒ comp is in the past and must be brought FORWARD to val date.
-  const yearsElapsed = (valuationDate.getTime() - transactionDate.getTime()) / msPerYear;
+  const yearsElapsed = (valuationDate.getTime() - transactionDate.getTime()) / MS_PER_YEAR;
 
   // Compound growth comp→val: (1+g)^years − 1.
   const factor = Math.pow(1 + annualGrowthUsedPct / 100, yearsElapsed) - 1;
@@ -135,9 +143,9 @@ export function computeTimeAdjustmentPct(input: TimeAdjustmentInput): {
  * (2× and ½× give equal-and-opposite %), which is cleaner to audit than the
  * raw power form. Elasticity 0.10 is intentionally small/conservative —
  * empirical KR commercial size discounts are modest and noisy. Clamped to
- * ±MAX_FACTOR.
+ * ±MAX_FACTOR. `SIZE_ELASTICITY` (0.1) now lives in `constants.ts` and is
+ * re-exported above.
  */
-export const SIZE_ELASTICITY = 0.1;
 
 export function computeSizeAdjustmentPct(
   subjectAreaSqm: number,

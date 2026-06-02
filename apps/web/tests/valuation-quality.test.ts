@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { buildValuationQualitySummary } from '@/lib/valuation-quality';
+import { buildValuationQualitySummary } from '@/lib/services/valuation/quality';
 
 test('valuation quality summary flags missing core inputs and exposes active feature sources', () => {
   const summary = buildValuationQualitySummary(

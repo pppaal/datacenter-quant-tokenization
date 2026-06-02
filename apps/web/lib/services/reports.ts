@@ -9,7 +9,7 @@ import {
 import { getAssetById } from '@/lib/services/assets';
 import { getFxRateMap } from '@/lib/services/fx';
 import { readStoredBaseCaseProForma } from '@/lib/services/valuation/pro-forma';
-import { getValuationRecommendation } from '@/lib/valuation/recommendation';
+import { getValuationRecommendation } from '@/lib/services/valuation/recommendation';
 import {
   buildAssetEvidenceReviewSummary,
   extractReviewPacketSummary,
@@ -22,7 +22,8 @@ import { formatDate, formatNumber, formatPercent, slugify, toSentenceCase } from
 import {
   buildValuationQualitySummary,
   type ValuationQualitySummary
-} from '@/lib/valuation-quality';
+} from '@/lib/services/valuation/quality';
+import type { ProvenanceEntry } from '@/lib/sources/types';
 
 export const reportKinds = ['teaser', 'ic-memo', 'dd-checklist', 'risk-memo'] as const;
 
@@ -32,14 +33,6 @@ export type ReportTemplateStatus = 'production-ready' | 'partial';
 
 type AssetBundle = NonNullable<Awaited<ReturnType<typeof getAssetById>>>;
 type DocumentTopic = 'legal' | 'technical' | 'financial' | 'market' | 'general';
-
-type ProvenanceEntry = {
-  field: string;
-  sourceSystem: string;
-  value: unknown;
-  mode: string;
-  freshnessLabel: string;
-};
 
 type ReportFactTone = 'neutral' | 'good' | 'warn' | 'danger';
 type ChecklistStatus = 'complete' | 'partial' | 'open';

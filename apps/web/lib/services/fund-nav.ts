@@ -14,6 +14,13 @@
  * can be unit-tested with Prisma fakes.
  */
 
+import { computeXirr, type DatedCashflow } from '@/lib/finance/irr';
+
+// XIRR + its dated-cashflow type live in the canonical IRR module; re-exported
+// here so existing importers (and this module's own callers) are unchanged.
+export { computeXirr };
+export type { DatedCashflow };
+
 // ---------------------------------------------------------------------------
 // Number coercion (Float | Prisma.Decimal | number | null)
 // ---------------------------------------------------------------------------
@@ -195,97 +202,13 @@ export function computeFundNavKrw(fund: FundNavInput): number {
 }
 
 // ---------------------------------------------------------------------------
-// XIRR (date-aware IRR over irregular cashflows)
-// ---------------------------------------------------------------------------
-
-export type DatedCashflow = { date: Date; amountKrw: number };
-
-const DAYS_PER_YEAR = 365;
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
-
-function xnpv(rate: number, flows: { years: number; amount: number }[]): number {
-  let result = 0;
-  for (const f of flows) {
-    result += f.amount / Math.pow(1 + rate, f.years);
-  }
-  return result;
-}
-
-function xnpvDerivative(rate: number, flows: { years: number; amount: number }[]): number {
-  let result = 0;
-  for (const f of flows) {
-    if (f.years === 0) continue;
-    result -= (f.years * f.amount) / Math.pow(1 + rate, f.years + 1);
-  }
-  return result;
-}
-
-/**
- * XIRR: the annualized internal rate of return for a series of dated cashflows
- * (negatives = outflows/contributions, positives = inflows/distributions+NAV).
- * Returns the rate as a percentage (e.g. 12.34), or null when undefined
- * (no sign change, < 2 flows, or non-convergence).
- *
- * Newton-Raphson with a bisection fallback, mirroring the convergence strategy
- * in `valuation/return-metrics.ts#computeIrr` but generalized to act/365 dating.
- */
-export function computeXirr(
-  cashflows: DatedCashflow[],
-  maxIterations = 200,
-  tolerance = 1e-7
-): number | null {
-  const valid = cashflows.filter((c) => !Number.isNaN(c.date.getTime()) && c.amountKrw !== 0);
-  if (valid.length < 2) return null;
-
-  const hasPositive = valid.some((c) => c.amountKrw > 0);
-  const hasNegative = valid.some((c) => c.amountKrw < 0);
-  if (!hasPositive || !hasNegative) return null;
-
-  const sorted = [...valid].sort((a, b) => a.date.getTime() - b.date.getTime());
-  const t0 = sorted[0]!.date.getTime();
-  const flows = sorted.map((c) => ({
-    years: (c.date.getTime() - t0) / MS_PER_DAY / DAYS_PER_YEAR,
-    amount: c.amountKrw
-  }));
-
-  let rate = 0.1;
-  for (let i = 0; i < maxIterations; i++) {
-    const f = xnpv(rate, flows);
-    const fp = xnpvDerivative(rate, flows);
-    if (Math.abs(fp) < 1e-14) break;
-    const next = rate - f / fp;
-    if (Math.abs(next - rate) < tolerance) {
-      if (next > -0.9999 && next < 100) return Number((next * 100).toFixed(4));
-      break;
-    }
-    rate = next;
-    if (rate <= -1) rate = -0.9999;
-    if (rate > 100) rate = 100;
-  }
-
-  // Bisection fallback.
-  let lo = -0.9999;
-  let hi = 100;
-  let fLo = xnpv(lo, flows);
-  for (let i = 0; i < 300; i++) {
-    const mid = (lo + hi) / 2;
-    const fMid = xnpv(mid, flows);
-    if (Math.abs(fMid) < 1 || (hi - lo) / 2 < tolerance) {
-      return Number((mid * 100).toFixed(4));
-    }
-    if (fLo * fMid < 0) {
-      hi = mid;
-    } else {
-      lo = mid;
-      fLo = fMid;
-    }
-  }
-  return null;
-}
-
-// ---------------------------------------------------------------------------
 // Per-LP capital account (PCAP)
 // ---------------------------------------------------------------------------
+
+// Local time constants used by the PCAP fallback below. (XIRR itself uses its
+// own act/365 constants inside the canonical IRR module.)
+const DAYS_PER_YEAR = 365;
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 export type PcapCommitment = {
   investorId: string;

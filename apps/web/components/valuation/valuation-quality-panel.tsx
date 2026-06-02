@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { buildValuationQualitySummary } from '@/lib/valuation-quality';
+import { buildValuationQualitySummary } from '@/lib/services/valuation/quality';
 import { formatNumber } from '@/lib/utils';
 
 type ProvenanceEntry = {

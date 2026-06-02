@@ -14,7 +14,38 @@
  * Distinct from the existing [`equity-waterfall.ts`](./equity-waterfall.ts) which
  * models a single-year exit promote only. This module operates on the 10-year
  * pro-forma and handles per-period distributions.
+ *
+ * The four-tier mechanics live in the shared [`waterfall-engine.ts`](./waterfall-engine.ts);
+ * this module supplies the EUROPEAN strategy: LP-only ROC, rounded simple-on-(cap+pref)
+ * accrual, a `cumLpProfit × promote/(100−promote)` catch-up target measured against
+ * cumulative GP *profit*, and `catchUpSharePct`-scaled catch-up capacity. The American
+ * sibling in [`waterfall-american.ts`](./waterfall-american.ts) keeps its OWN, divergent
+ * catch-up definition — the two are intentionally not reconciled.
+ *
+ * Historical note: this file was previously named `lp-gp-waterfall.ts`.
  */
+
+import { bisectIrr } from '@/lib/finance/irr';
+
+import { initWaterfallState, runWaterfallPeriod, type WaterfallStrategy } from './waterfall-engine';
+
+/**
+ * European-waterfall IRR: pure bisection over integer-period flows, value-sign
+ * bracket (assumes NPV decreasing in rate), |NPV| < 1 convergence, 100 iters on
+ * [-0.99, 10], returned as a percentage rounded to 3dp. Delegates to the
+ * canonical `bisectIrr` with options reproducing the prior local helper exactly.
+ */
+function computeIrr(cashflows: number[]): number | null {
+  return bisectIrr(cashflows, {
+    lo: -0.99,
+    hi: 10,
+    iterations: 100,
+    tolerance: 1,
+    branch: 'value-sign',
+    scale: 'percent',
+    percentDecimals: 3
+  });
+}
 
 export type LpGpWaterfallConfig = {
   /** Total equity invested at t=0. LP + GP contribute pro-rata. */
@@ -85,10 +116,25 @@ export function runLpGpWaterfall(
   const lpContrib = Math.round(cfg.totalEquityKrw * (1 - cfg.gpContributionSharePct / 100));
   const gpContrib = Math.round(cfg.totalEquityKrw * (cfg.gpContributionSharePct / 100));
 
-  let lpUnreturnedCapital = lpContrib;
-  let lpAccruedPref = 0;
-  let cumulativeLpProfit = 0;
-  let cumulativeGpProfit = 0;
+  // GP capital is not distinguished by the European waterfall (ROC is LP-only),
+  // so it is held out of the engine's pro-rata pool.
+  const state = initWaterfallState(lpContrib, 0);
+
+  // European strategy — reproduces the legacy per-tier arithmetic exactly.
+  const strategy: WaterfallStrategy = {
+    rocMode: 'lp-only',
+    accruePref: (accruedPref, lpCapitalRemaining) =>
+      accruedPref + Math.round((lpCapitalRemaining + accruedPref) * (cfg.prefRatePct / 100)),
+    catchUpTarget: (ctx) => {
+      if (!(cfg.promoteSharePct > 0 && cfg.promoteSharePct < 100)) return 0;
+      const promoteRatio = cfg.promoteSharePct / (100 - cfg.promoteSharePct);
+      return Math.max(0, Math.round((ctx.cumLpProfit + ctx.tier2ThisPeriod) * promoteRatio));
+    },
+    catchUpAlreadyPaid: (ctx) => ctx.cumGpProfit,
+    catchUpCapacity: (remaining) => Math.round(remaining * (cfg.catchUpSharePct / 100)),
+    carryGpShare: (residual) => Math.round(residual * (cfg.promoteSharePct / 100))
+  };
+
   let cumulativeLp = 0;
   let cumulativeGp = 0;
 
@@ -103,78 +149,25 @@ export function runLpGpWaterfall(
 
   for (let i = 0; i < cashflowsByYear.length; i++) {
     const yearNum = i + 1;
-    const raw = Math.max(0, Math.round(cashflowsByYear[i] ?? 0));
+    const period = runWaterfallPeriod(cashflowsByYear[i] ?? 0, state, strategy);
 
-    // Accrue preferred return on unreturned LP capital + previously accrued pref
-    // (compounding annually — European-style standard).
-    lpAccruedPref += Math.round((lpUnreturnedCapital + lpAccruedPref) * (cfg.prefRatePct / 100));
-
-    let remaining = raw;
-    let tier1 = 0;
-    let tier2 = 0;
-    let tier3 = 0;
-    let tier4Lp = 0;
-    let tier4Gp = 0;
-
-    // Tier 1: Return of capital (LP only)
-    const roc = Math.min(remaining, lpUnreturnedCapital);
-    tier1 += roc;
-    lpUnreturnedCapital -= roc;
-    remaining -= roc;
-
-    // Tier 2: Preferred return (LP only)
-    if (remaining > 0 && lpAccruedPref > 0) {
-      const pref = Math.min(remaining, lpAccruedPref);
-      tier2 += pref;
-      lpAccruedPref -= pref;
-      remaining -= pref;
-    }
-
-    // Tier 3: GP Catch-Up — pay GP until cumulative GP profit ratio equals promote target.
-    // Target: gpProfit / (lpProfit + gpProfit) = promoteSharePct/100.
-    // Equivalently: gpProfit = (promote/(100-promote)) * lpProfit.
-    if (remaining > 0 && cfg.promoteSharePct > 0 && cfg.promoteSharePct < 100) {
-      const promoteRatio = cfg.promoteSharePct / (100 - cfg.promoteSharePct);
-      const targetGp = Math.max(0, Math.round((cumulativeLpProfit + tier2) * promoteRatio));
-      const gpShortfall = Math.max(0, targetGp - cumulativeGpProfit);
-      if (gpShortfall > 0) {
-        const catchUpCapacity = Math.round(remaining * (cfg.catchUpSharePct / 100));
-        const catchUp = Math.min(catchUpCapacity, gpShortfall);
-        tier3 += catchUp;
-        remaining -= catchUp;
-      }
-    }
-
-    // Tier 4: Promote split on remainder.
-    if (remaining > 0) {
-      const gpShare = Math.round(remaining * (cfg.promoteSharePct / 100));
-      const lpShare = remaining - gpShare;
-      tier4Lp += lpShare;
-      tier4Gp += gpShare;
-      remaining -= lpShare + gpShare;
-    }
-
-    const lpThisYear = tier1 + tier2 + tier4Lp;
-    const gpThisYear = tier3 + tier4Gp;
-
-    // Profit tracking: ROC is not profit; everything else is.
-    cumulativeLpProfit += tier2 + tier4Lp;
-    cumulativeGpProfit += tier3 + tier4Gp;
+    const lpThisYear = period.lpTotal;
+    const gpThisYear = period.gpTotal;
     cumulativeLp += lpThisYear;
     cumulativeGp += gpThisYear;
 
     years.push({
       year: yearNum,
-      distributableKrw: raw,
-      tier1CapitalReturnLpKrw: tier1,
-      tier2PrefLpKrw: tier2,
-      tier3CatchUpGpKrw: tier3,
-      tier4PromoteLpKrw: tier4Lp,
-      tier4PromoteGpKrw: tier4Gp,
+      distributableKrw: period.distributable,
+      tier1CapitalReturnLpKrw: period.tier1Lp,
+      tier2PrefLpKrw: period.tier2Lp,
+      tier3CatchUpGpKrw: period.tier3Gp,
+      tier4PromoteLpKrw: period.tier4Lp,
+      tier4PromoteGpKrw: period.tier4Gp,
       lpTotalKrw: lpThisYear,
       gpTotalKrw: gpThisYear,
-      lpUnreturnedCapitalKrw: lpUnreturnedCapital,
-      lpAccruedPrefKrw: lpAccruedPref,
+      lpUnreturnedCapitalKrw: period.lpCapitalRemaining,
+      lpAccruedPrefKrw: period.accruedPref,
       cumulativeLpKrw: cumulativeLp,
       cumulativeGpKrw: cumulativeGp
     });
@@ -205,32 +198,4 @@ export function runLpGpWaterfall(
     gpIrrPct: gpIrr,
     promoteHit: gpPromoteCaptured > 0
   };
-}
-
-// ---------------------------------------------------------------------------
-// IRR helper (Newton-Raphson with bisection fallback)
-// ---------------------------------------------------------------------------
-
-function npv(rate: number, cashflows: number[]): number {
-  return cashflows.reduce((sum, cf, i) => sum + cf / Math.pow(1 + rate, i), 0);
-}
-
-function computeIrr(cashflows: number[]): number | null {
-  if (cashflows.length < 2) return null;
-  const positive = cashflows.some((c) => c > 0);
-  const negative = cashflows.some((c) => c < 0);
-  if (!positive || !negative) return null;
-
-  let low = -0.99;
-  let high = 10;
-  for (let i = 0; i < 100; i++) {
-    const mid = (low + high) / 2;
-    const val = npv(mid, cashflows);
-    if (Math.abs(val) < 1) {
-      return Number((mid * 100).toFixed(3));
-    }
-    if (val > 0) low = mid;
-    else high = mid;
-  }
-  return Number((((low + high) / 2) * 100).toFixed(3));
 }

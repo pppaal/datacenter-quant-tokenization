@@ -11,6 +11,10 @@ import type {
   ValuationStrategyContext
 } from '@/lib/services/valuation/types';
 import { clamp, roundKrw, safeDivide } from '@/lib/services/valuation/utils';
+import {
+  ENGINE_CONFIDENCE_CEILING,
+  ENGINE_CONFIDENCE_FLOOR
+} from '@/lib/services/valuation/constants';
 import type { ProvenanceEntry } from '@/lib/sources/types';
 
 /**
@@ -168,7 +172,7 @@ function buildConfidenceScore(derivation: LandValueDerivation): number {
       : derivation.sourceTier === 'gongsijiga_or_purchase'
         ? 5.6
         : 4.8;
-  return Number(clamp(base, 4.5, 9.9).toFixed(1));
+  return Number(clamp(base, ENGINE_CONFIDENCE_FLOOR, ENGINE_CONFIDENCE_CEILING).toFixed(1));
 }
 
 function buildLandKeyRisks(derivation: LandValueDerivation): string[] {

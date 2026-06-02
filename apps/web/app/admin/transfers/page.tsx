@@ -1,22 +1,19 @@
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { KeyValueRow } from '@/components/ui/key-value-row';
 import { prisma } from '@/lib/db/prisma';
 import { shortenHash } from '@/lib/blockchain/registry';
 import { formatDate } from '@/lib/utils';
+import { statusTone } from '@/lib/ui/status-tone';
 
 export const dynamic = 'force-dynamic';
 
-function tone(status: string): 'good' | 'warn' | 'danger' {
-  switch (status) {
-    case 'SETTLED':
-      return 'good';
-    case 'REJECTED':
-    case 'CANCELLED':
-    case 'EXPIRED':
-      return 'danger';
-    default:
-      return 'warn';
-  }
+function tone(status: string) {
+  return statusTone(
+    status,
+    { SETTLED: 'good', REJECTED: 'danger', CANCELLED: 'danger', EXPIRED: 'danger' },
+    'warn'
+  );
 }
 
 export default async function TransfersPage() {
@@ -71,31 +68,26 @@ export default async function TransfersPage() {
                 <Badge tone={tone(t.status)}>{t.status}</Badge>
               </div>
               <dl className="mt-4 grid gap-3 text-sm text-slate-300 md:grid-cols-3">
-                <Row label="Seller">{shortenHash(t.sellerAddress)}</Row>
-                <Row label="Buyer">{shortenHash(t.buyerAddress)}</Row>
-                <Row label="Shares">{t.shareAmount}</Row>
-                <Row label="Quote">
+                <KeyValueRow label="Seller">{shortenHash(t.sellerAddress)}</KeyValueRow>
+                <KeyValueRow label="Buyer">{shortenHash(t.buyerAddress)}</KeyValueRow>
+                <KeyValueRow label="Shares">{t.shareAmount}</KeyValueRow>
+                <KeyValueRow label="Quote">
                   {t.quotePrice} {t.quoteAssetSymbol}
-                </Row>
-                <Row label="RFQ ref">{shortenHash(t.rfqRef, 8)}</Row>
-                <Row label="Expires">{t.expiresAt ? formatDate(t.expiresAt) : '—'}</Row>
-                <Row label="Opened by">{t.openedBy}</Row>
-                <Row label="Decided by">{t.decidedBy ?? '—'}</Row>
-                <Row label="Settle tx">{t.settledTxHash ? shortenHash(t.settledTxHash) : '—'}</Row>
+                </KeyValueRow>
+                <KeyValueRow label="RFQ ref">{shortenHash(t.rfqRef, 8)}</KeyValueRow>
+                <KeyValueRow label="Expires">
+                  {t.expiresAt ? formatDate(t.expiresAt) : '—'}
+                </KeyValueRow>
+                <KeyValueRow label="Opened by">{t.openedBy}</KeyValueRow>
+                <KeyValueRow label="Decided by">{t.decidedBy ?? '—'}</KeyValueRow>
+                <KeyValueRow label="Settle tx">
+                  {t.settledTxHash ? shortenHash(t.settledTxHash) : '—'}
+                </KeyValueRow>
               </dl>
             </Card>
           ))}
         </div>
       )}
-    </div>
-  );
-}
-
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="rounded-[18px] border border-white/10 bg-white/[0.03] p-3">
-      <dt className="text-xs uppercase tracking-wide text-slate-500">{label}</dt>
-      <dd className="mt-1 font-mono text-xs text-slate-200">{children}</dd>
     </div>
   );
 }

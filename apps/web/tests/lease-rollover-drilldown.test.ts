@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { buildLeaseRolloverDrilldown } from '@/lib/valuation/lease-rollover-drilldown';
+import { buildLeaseRolloverDrilldown } from '@/lib/services/valuation/lease-rollover-drilldown';
 
 test('lease rollover drilldown expands renewal downtime, rent-free, and return month events', () => {
   const drilldown = buildLeaseRolloverDrilldown([

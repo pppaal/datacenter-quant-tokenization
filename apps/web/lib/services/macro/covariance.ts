@@ -1,4 +1,7 @@
 import type { MacroSeries } from '@prisma/client';
+import { mulberry32, standardNormal, applyCholesky, cholesky } from '@/lib/finance/numerics';
+
+export { mulberry32, standardNormal, applyCholesky };
 
 /**
  * Data-driven covariance / correlation estimation for macro factor changes.
@@ -308,61 +311,19 @@ export function changeStdDevs(cov: number[][]): number[] {
 }
 
 // ---------------------------------------------------------------------------
-// PSD-safe Cholesky — MIRRORS lib/services/valuation/monte-carlo.ts.
+// PSD-safe Cholesky — the canonical clamping variant from `@/lib/finance/numerics`.
 // Lower-triangular L s.t. L Lᵀ = Σ. A non-PSD diagonal is clamped to 0 (rather
 // than thrown) because callers here pass eigenvalue-clipped matrices and want a
 // total function; the corresponding column of L is left zero.
 // ---------------------------------------------------------------------------
 export function choleskyPsd(matrix: number[][]): number[][] {
-  const n = matrix.length;
-  const L: number[][] = Array.from({ length: n }, () => new Array(n).fill(0));
-  for (let i = 0; i < n; i++) {
-    for (let j = 0; j <= i; j++) {
-      let sum = 0;
-      for (let k = 0; k < j; k++) sum += L[i]![k]! * L[j]![k]!;
-      if (i === j) {
-        const diag = matrix[i]![i]! - sum;
-        L[i]![j] = diag > 0 ? Math.sqrt(diag) : 0;
-      } else {
-        const denom = L[j]![j]!;
-        L[i]![j] = denom > 0 ? (matrix[i]![j]! - sum) / denom : 0;
-      }
-    }
-  }
-  return L;
+  return cholesky(matrix, { clamp: true });
 }
 
-export function applyCholesky(L: number[][], z: number[]): number[] {
-  const n = L.length;
-  const x: number[] = new Array(n).fill(0);
-  for (let i = 0; i < n; i++) {
-    let v = 0;
-    for (let j = 0; j <= i; j++) v += L[i]![j]! * z[j]!;
-    x[i] = v;
-  }
-  return x;
-}
-
-// ---------------------------------------------------------------------------
-// Seeded standard-normal generator — MIRRORS monte-carlo.ts (mulberry32 +
-// Box-Muller) so macro draws are deterministic and reproducible in audit logs.
-// ---------------------------------------------------------------------------
-export function mulberry32(seed: number): () => number {
-  let a = seed >>> 0;
-  return function () {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-export function standardNormal(rng: () => number): number {
-  const u1 = Math.max(1e-12, rng());
-  const u2 = rng();
-  return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
-}
+// Seeded standard-normal generator (mulberry32 + Box-Muller), the Cholesky
+// application helper, and the seeded PRNG are re-exported above from
+// `@/lib/finance/numerics` so macro draws stay deterministic and reproducible
+// in audit logs.
 
 /**
  * Draw one correlated shock vector x ~ N(0, Σ) using L = chol(Σ) and a seeded

@@ -2,25 +2,22 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { StatCard } from '@/components/ui/stat-card';
+import { EmptyState } from '@/components/ui/empty-state';
 import { DealFlowForm } from '@/components/admin/deal-flow-form';
 import { prisma } from '@/lib/db/prisma';
 import { formatDate, formatNumber } from '@/lib/utils';
+import { formatPriceKrw } from '@/lib/ui/format';
+import { statusTone, type Tone } from '@/lib/ui/status-tone';
 
 export const dynamic = 'force-dynamic';
 
-const STATUS_TONES: Record<string, 'good' | 'warn' | 'danger'> = {
+const STATUS_TONES: Record<string, Tone> = {
   LIVE: 'good',
   CLOSED: 'good',
   WITHDRAWN: 'warn',
   LOST: 'danger'
 };
-
-function formatPriceKrw(value: number | null) {
-  if (value === null) return '—';
-  if (value >= 1_000_000_000_000) return `${(value / 1_000_000_000_000).toFixed(2)}조`;
-  if (value >= 100_000_000) return `${(value / 100_000_000).toFixed(0)}억`;
-  return formatNumber(value, 0);
-}
 
 export default async function DealFlowPage() {
   const rows = await prisma.dealFlowEntry.findMany({
@@ -83,9 +80,9 @@ export default async function DealFlowPage() {
           </p>
         </div>
         {rows.length === 0 ? (
-          <div className="rounded-[18px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
+          <EmptyState>
             No deal flow logged yet. Use the form above to capture a deal you saw in the market.
-          </div>
+          </EmptyState>
         ) : (
           <div className="overflow-x-auto rounded-[18px] border border-white/10">
             <table className="w-full text-sm">
@@ -124,7 +121,9 @@ export default async function DealFlowPage() {
                     </td>
                     <td className="px-3 py-2 text-xs">{row.sponsor ?? '—'}</td>
                     <td className="px-3 py-2">
-                      <Badge tone={STATUS_TONES[row.status] ?? 'warn'}>{row.status}</Badge>
+                      <Badge tone={statusTone(row.status, STATUS_TONES, 'warn')}>
+                        {row.status}
+                      </Badge>
                     </td>
                     <td className="px-3 py-2 text-xs text-slate-400">{row.brokerSource ?? '—'}</td>
                     <td className="px-3 py-2 text-xs text-slate-500">
@@ -139,15 +138,5 @@ export default async function DealFlowPage() {
         )}
       </Card>
     </div>
-  );
-}
-
-function StatCard({ label, primary, detail }: { label: string; primary: string; detail: string }) {
-  return (
-    <Card className="space-y-2">
-      <div className="fine-print">{label}</div>
-      <div className="text-2xl font-semibold text-white">{primary}</div>
-      <div className="text-xs text-slate-500">{detail}</div>
-    </Card>
   );
 }

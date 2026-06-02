@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { KeyValueRow } from '@/components/ui/key-value-row';
 
 const DEFAULT_SUBMARKETS = [
   '강남구',
@@ -222,34 +223,52 @@ export default function QuarterlyReportPage() {
             <section className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-5">
               <h2 className="mb-3 text-lg font-semibold">Snapshot metrics</h2>
               <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
-                <Row k="Market" v={s.market} />
-                <Row k="Submarket" v={s.submarket} />
-                <Row k="Quarter" v={s.quarter} />
-                <Row k="Asset class" v={s.assetClass ?? '(all)'} />
-                <Row k="Base rate" v={s.baseRatePct ? `${s.baseRatePct}%` : 'n/a'} />
-                <Row k="KRW/USD" v={s.krwUsd ?? 'n/a'} />
-                <Row k="CPI YoY" v={s.cpiYoYPct ? `${s.cpiYoYPct}%` : 'n/a'} />
-                <Row k="GDP YoY" v={s.gdpYoYPct ? `${s.gdpYoYPct}%` : 'n/a'} />
-                <Row k="Transactions" v={s.transactionCount ?? 'n/a'} />
-                <Row
-                  k="Volume KRW"
-                  v={
-                    s.transactionVolumeKrw
-                      ? `${(Number(s.transactionVolumeKrw) / 1e9).toFixed(2)}B`
-                      : 'n/a'
-                  }
-                />
-                <Row
-                  k="Median price/sqm"
-                  v={
-                    s.medianPriceKrwPerSqm
-                      ? `${(Number(s.medianPriceKrwPerSqm) / 1e6).toFixed(2)}M`
-                      : 'n/a'
-                  }
-                />
-                <Row k="QoQ %" v={s.priceChangeQoQPct ? `${s.priceChangeQoQPct}%` : 'n/a'} />
-                <Row k="YoY %" v={s.priceChangeYoYPct ? `${s.priceChangeYoYPct}%` : 'n/a'} />
-                <Row k="Generated" v={new Date(s.generatedAt).toLocaleString()} />
+                <KeyValueRow variant="divider" className="border-b py-1" label="Market">
+                  {s.market}
+                </KeyValueRow>
+                <KeyValueRow variant="divider" className="border-b py-1" label="Submarket">
+                  {s.submarket}
+                </KeyValueRow>
+                <KeyValueRow variant="divider" className="border-b py-1" label="Quarter">
+                  {s.quarter}
+                </KeyValueRow>
+                <KeyValueRow variant="divider" className="border-b py-1" label="Asset class">
+                  {s.assetClass ?? '(all)'}
+                </KeyValueRow>
+                <KeyValueRow variant="divider" className="border-b py-1" label="Base rate">
+                  {s.baseRatePct ? `${s.baseRatePct}%` : 'n/a'}
+                </KeyValueRow>
+                <KeyValueRow variant="divider" className="border-b py-1" label="KRW/USD">
+                  {s.krwUsd ?? 'n/a'}
+                </KeyValueRow>
+                <KeyValueRow variant="divider" className="border-b py-1" label="CPI YoY">
+                  {s.cpiYoYPct ? `${s.cpiYoYPct}%` : 'n/a'}
+                </KeyValueRow>
+                <KeyValueRow variant="divider" className="border-b py-1" label="GDP YoY">
+                  {s.gdpYoYPct ? `${s.gdpYoYPct}%` : 'n/a'}
+                </KeyValueRow>
+                <KeyValueRow variant="divider" className="border-b py-1" label="Transactions">
+                  {s.transactionCount ?? 'n/a'}
+                </KeyValueRow>
+                <KeyValueRow variant="divider" className="border-b py-1" label="Volume KRW">
+                  {s.transactionVolumeKrw
+                    ? `${(Number(s.transactionVolumeKrw) / 1e9).toFixed(2)}B`
+                    : 'n/a'}
+                </KeyValueRow>
+                <KeyValueRow variant="divider" className="border-b py-1" label="Median price/sqm">
+                  {s.medianPriceKrwPerSqm
+                    ? `${(Number(s.medianPriceKrwPerSqm) / 1e6).toFixed(2)}M`
+                    : 'n/a'}
+                </KeyValueRow>
+                <KeyValueRow variant="divider" className="border-b py-1" label="QoQ %">
+                  {s.priceChangeQoQPct ? `${s.priceChangeQoQPct}%` : 'n/a'}
+                </KeyValueRow>
+                <KeyValueRow variant="divider" className="border-b py-1" label="YoY %">
+                  {s.priceChangeYoYPct ? `${s.priceChangeYoYPct}%` : 'n/a'}
+                </KeyValueRow>
+                <KeyValueRow variant="divider" className="border-b py-1" label="Generated">
+                  {new Date(s.generatedAt).toLocaleString()}
+                </KeyValueRow>
               </div>
             </section>
 
@@ -262,15 +281,6 @@ export default function QuarterlyReportPage() {
           </div>
         )}
       </div>
-    </div>
-  );
-}
-
-function Row({ k, v }: { k: string; v: React.ReactNode }) {
-  return (
-    <div className="flex justify-between border-b border-zinc-800 py-1">
-      <span className="text-zinc-400">{k}</span>
-      <span className="font-mono text-zinc-100">{v}</span>
     </div>
   );
 }

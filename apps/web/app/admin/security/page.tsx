@@ -6,6 +6,7 @@ import { OpsAlertReplayButton } from '@/components/admin/ops-alert-replay-button
 import { OpsWorkItemReplayButton } from '@/components/admin/ops-work-item-replay-button';
 import { OpsCycleButton } from '@/components/admin/ops-cycle-button';
 import { Card } from '@/components/ui/card';
+import { EmptyState } from '@/components/ui/empty-state';
 import { prisma } from '@/lib/db/prisma';
 import { listAdminAccessGrants } from '@/lib/security/admin-access';
 import { getAdminAuthConfig } from '@/lib/security/admin-auth';
@@ -321,9 +322,9 @@ export default async function AdminSecurityPage() {
               </div>
             ))
           ) : (
-            <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
+            <EmptyState className="rounded-[22px]">
               No replayable ops alert deliveries are waiting for intervention.
-            </div>
+            </EmptyState>
           )}
         </div>
       </Card>
@@ -402,9 +403,9 @@ export default async function AdminSecurityPage() {
               </div>
             ))
           ) : (
-            <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
+            <EmptyState className="rounded-[22px]">
               No queued ops work items have been recorded yet.
-            </div>
+            </EmptyState>
           )}
         </div>
       </Card>
@@ -470,9 +471,9 @@ export default async function AdminSecurityPage() {
               </div>
             ))
           ) : (
-            <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
+            <EmptyState className="rounded-[22px]">
               All persisted reviewer identities are mapped to a canonical user.
-            </div>
+            </EmptyState>
           )}
         </div>
       </Card>
@@ -522,9 +523,9 @@ export default async function AdminSecurityPage() {
               </div>
             ))
           ) : (
-            <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
+            <EmptyState className="rounded-[22px]">
               No canonical operators are available yet.
-            </div>
+            </EmptyState>
           )}
         </div>
       </Card>
@@ -555,9 +556,9 @@ export default async function AdminSecurityPage() {
               </div>
             ))
           ) : (
-            <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400 md:col-span-3">
+            <EmptyState className="rounded-[22px] md:col-span-3">
               No audit events have been recorded yet.
-            </div>
+            </EmptyState>
           )}
         </div>
       </Card>
@@ -625,9 +626,7 @@ export default async function AdminSecurityPage() {
               </div>
             ))
           ) : (
-            <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
-              No audit history recorded yet.
-            </div>
+            <EmptyState className="rounded-[22px]">No audit history recorded yet.</EmptyState>
           )}
         </div>
       </Card>
@@ -697,9 +696,9 @@ export default async function AdminSecurityPage() {
                 </div>
               ))
             ) : (
-              <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
+              <EmptyState className="rounded-[22px]">
                 No research sync runs have been recorded yet.
-              </div>
+              </EmptyState>
             )}
           </div>
         </Card>
@@ -768,9 +767,9 @@ export default async function AdminSecurityPage() {
                 </div>
               ))
             ) : (
-              <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
+              <EmptyState className="rounded-[22px]">
                 No source refresh runs have been recorded yet.
-              </div>
+              </EmptyState>
             )}
           </div>
         </Card>
@@ -847,9 +846,9 @@ export default async function AdminSecurityPage() {
               </div>
             ))
           ) : (
-            <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
+            <EmptyState className="rounded-[22px]">
               No ops alert deliveries have been recorded yet.
-            </div>
+            </EmptyState>
           )}
         </div>
       </Card>

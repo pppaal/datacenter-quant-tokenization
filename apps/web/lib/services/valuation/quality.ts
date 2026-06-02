@@ -1,12 +1,5 @@
-import { getValuationFeatureSourceDescriptors } from '@/lib/valuation/feature-snapshot-usage';
-
-type ProvenanceEntry = {
-  field: string;
-  sourceSystem: string;
-  value: unknown;
-  mode: string;
-  freshnessLabel: string;
-};
+import { getValuationFeatureSourceDescriptors } from '@/lib/services/valuation/feature-snapshot-usage';
+import type { ProvenanceEntry } from '@/lib/sources/types';
 
 type AssetQualityInput = {
   leases?: Array<unknown> | null;

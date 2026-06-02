@@ -8,6 +8,10 @@ import type {
   UnderwritingScenario
 } from '@/lib/services/valuation/types';
 import { clamp, roundKrw } from '@/lib/services/valuation/utils';
+import {
+  ENGINE_CONFIDENCE_CEILING,
+  ENGINE_CONFIDENCE_FLOOR
+} from '@/lib/services/valuation/constants';
 import type { ProvenanceEntry } from '@/lib/sources/types';
 
 export type DataCenterScenarioEvaluation = {
@@ -76,8 +80,8 @@ export function buildDataCenterConfidenceScore(prepared: PreparedUnderwritingInp
         encumbrancePenalty -
         revenuePenalty -
         powerPenalty,
-      4.5,
-      9.9
+      ENGINE_CONFIDENCE_FLOOR,
+      ENGINE_CONFIDENCE_CEILING
     ).toFixed(1)
   );
 }

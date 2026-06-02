@@ -2,18 +2,14 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { StatCard } from '@/components/ui/stat-card';
+import { EmptyState } from '@/components/ui/empty-state';
 import { SponsorForms } from '@/components/admin/sponsor-form';
 import { prisma } from '@/lib/db/prisma';
 import { formatNumber } from '@/lib/utils';
+import { formatPriceKrw } from '@/lib/ui/format';
 
 export const dynamic = 'force-dynamic';
-
-function formatPriceKrw(value: number | null) {
-  if (value === null || value === undefined) return '—';
-  if (value >= 1_000_000_000_000) return `${(value / 1_000_000_000_000).toFixed(2)}조`;
-  if (value >= 100_000_000) return `${(value / 100_000_000).toFixed(0)}억`;
-  return formatNumber(value, 0);
-}
 
 export default async function SponsorsPage() {
   const sponsors = await prisma.sponsor.findMany({
@@ -60,9 +56,9 @@ export default async function SponsorsPage() {
 
       {sponsors.length === 0 ? (
         <Card>
-          <div className="rounded-[18px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
+          <EmptyState>
             No sponsors yet. Add one above to start populating IM track-record cards.
-          </div>
+          </EmptyState>
         </Card>
       ) : (
         <div className="space-y-4">
@@ -105,9 +101,7 @@ export default async function SponsorsPage() {
                   </div>
                 </div>
                 {s.priorDeals.length === 0 ? (
-                  <div className="rounded-[18px] border border-white/10 bg-white/[0.03] p-3 text-sm text-slate-400">
-                    No prior deals captured yet.
-                  </div>
+                  <EmptyState className="p-3">No prior deals captured yet.</EmptyState>
                 ) : (
                   <div className="overflow-hidden rounded-[18px] border border-white/10">
                     <table className="w-full text-sm">
@@ -162,15 +156,5 @@ export default async function SponsorsPage() {
         </div>
       )}
     </div>
-  );
-}
-
-function StatCard({ label, primary, detail }: { label: string; primary: string; detail: string }) {
-  return (
-    <Card className="space-y-2">
-      <div className="fine-print">{label}</div>
-      <div className="text-2xl font-semibold text-white">{primary}</div>
-      <div className="text-xs text-slate-500">{detail}</div>
-    </Card>
   );
 }

@@ -3,9 +3,11 @@ import { AssetClass } from '@prisma/client';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { EmptyState } from '@/components/ui/empty-state';
 import { prisma } from '@/lib/db/prisma';
 import { aggregateCapRates } from '@/lib/services/research/cap-rate-aggregator';
 import { formatDate, formatNumber } from '@/lib/utils';
+import { formatPriceKrw } from '@/lib/ui/format';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,13 +26,6 @@ function parseAssetClass(value: string | undefined): AssetClass | undefined {
 
 function formatCapPct(value: number): string {
   return `${value.toFixed(2)}%`;
-}
-
-function formatPriceKrw(value: number | null) {
-  if (value === null) return '—';
-  if (value >= 1_000_000_000_000) return `${(value / 1_000_000_000_000).toFixed(2)}조`;
-  if (value >= 100_000_000) return `${(value / 100_000_000).toFixed(0)}억`;
-  return formatNumber(value, 0);
 }
 
 export default async function ResearchCompsPage(props: { searchParams: Promise<SearchParams> }) {
@@ -177,10 +172,10 @@ export default async function ResearchCompsPage(props: { searchParams: Promise<S
           </p>
         </div>
         {recentTransactions.length === 0 ? (
-          <div className="rounded-[18px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
+          <EmptyState>
             No matching transactions. Try removing filters or extending the lookback by adjusting
             the URL.
-          </div>
+          </EmptyState>
         ) : (
           <div className="overflow-x-auto rounded-[18px] border border-white/10">
             <table className="w-full text-sm">
@@ -243,11 +238,7 @@ function CapRateTable({
   emptyLabel: string;
 }) {
   if (buckets.length === 0) {
-    return (
-      <div className="rounded-[18px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
-        {emptyLabel}
-      </div>
-    );
+    return <EmptyState>{emptyLabel}</EmptyState>;
   }
   return (
     <div className="overflow-hidden rounded-[18px] border border-white/10">

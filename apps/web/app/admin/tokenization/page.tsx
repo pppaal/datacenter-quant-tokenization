@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { KeyValueRow } from '@/components/ui/key-value-row';
 import { listTokenizedAssets } from '@/lib/services/onchain/tokenization-repo';
 import { shortenHash } from '@/lib/blockchain/registry';
 import { formatDate } from '@/lib/utils';
@@ -63,30 +64,63 @@ export default async function TokenizationPage() {
               </div>
 
               <dl className="mt-5 grid gap-3 text-sm text-slate-300 md:grid-cols-2">
-                <Row label="Token">{shortenHash(d.tokenAddress)}</Row>
-                <Row label="Identity registry">{shortenHash(d.identityRegistryAddress)}</Row>
-                <Row label="Compliance">{shortenHash(d.complianceAddress)}</Row>
-                <Row label="MaxHolders module">{shortenHash(d.maxHoldersModuleAddress)}</Row>
-                <Row label="CountryRestrict module">
+                <KeyValueRow className="rounded-[20px] p-4" fallback="Not attached" label="Token">
+                  {shortenHash(d.tokenAddress)}
+                </KeyValueRow>
+                <KeyValueRow
+                  className="rounded-[20px] p-4"
+                  fallback="Not attached"
+                  label="Identity registry"
+                >
+                  {shortenHash(d.identityRegistryAddress)}
+                </KeyValueRow>
+                <KeyValueRow
+                  className="rounded-[20px] p-4"
+                  fallback="Not attached"
+                  label="Compliance"
+                >
+                  {shortenHash(d.complianceAddress)}
+                </KeyValueRow>
+                <KeyValueRow
+                  className="rounded-[20px] p-4"
+                  fallback="Not attached"
+                  label="MaxHolders module"
+                >
+                  {shortenHash(d.maxHoldersModuleAddress)}
+                </KeyValueRow>
+                <KeyValueRow
+                  className="rounded-[20px] p-4"
+                  fallback="Not attached"
+                  label="CountryRestrict module"
+                >
                   {shortenHash(d.countryRestrictModuleAddress)}
-                </Row>
-                <Row label="Lockup module">{shortenHash(d.lockupModuleAddress)}</Row>
-                <Row label="Deployed at block">{d.deploymentBlock.toLocaleString()}</Row>
-                <Row label="Recorded">{formatDate(d.createdAt)}</Row>
+                </KeyValueRow>
+                <KeyValueRow
+                  className="rounded-[20px] p-4"
+                  fallback="Not attached"
+                  label="Lockup module"
+                >
+                  {shortenHash(d.lockupModuleAddress)}
+                </KeyValueRow>
+                <KeyValueRow
+                  className="rounded-[20px] p-4"
+                  fallback="Not attached"
+                  label="Deployed at block"
+                >
+                  {d.deploymentBlock.toLocaleString()}
+                </KeyValueRow>
+                <KeyValueRow
+                  className="rounded-[20px] p-4"
+                  fallback="Not attached"
+                  label="Recorded"
+                >
+                  {formatDate(d.createdAt)}
+                </KeyValueRow>
               </dl>
             </Card>
           ))}
         </div>
       )}
-    </div>
-  );
-}
-
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
-      <dt className="text-xs uppercase tracking-wide text-slate-500">{label}</dt>
-      <dd className="mt-1 font-mono text-xs text-slate-200">{children ?? 'Not attached'}</dd>
     </div>
   );
 }

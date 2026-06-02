@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card';
 import { ValuationRunBadges } from '@/components/valuation/valuation-run-badges';
 import { formatCurrencyFromKrwAtRate, type SupportedCurrency } from '@/lib/finance/currency';
 import { formatDate, formatNumber } from '@/lib/utils';
-import { getRunSpreadRatio } from '@/lib/valuation-run-health';
+import { getRunSpreadRatio } from '@/lib/services/valuation/run-health';
 
 type ProvenanceEntry = {
   field: string;

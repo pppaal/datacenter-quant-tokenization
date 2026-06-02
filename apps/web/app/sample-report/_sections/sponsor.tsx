@@ -1,0 +1,88 @@
+import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
+import { formatNumber } from '@/lib/utils';
+import type { SampleReportData } from './types';
+
+export function SponsorSection({ data }: { data: SampleReportData }) {
+  const { sponsorTrack } = data;
+  if (!sponsorTrack) {
+    return null;
+  }
+  return (
+    <section id="im-sponsor" className="app-shell py-4">
+      <Card>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div className="eyebrow">Sponsor track record</div>
+            <p className="mt-2 text-sm text-slate-400">
+              {sponsorTrack.name}
+              {sponsorTrack.hqMarket ? ` · ${sponsorTrack.hqMarket}` : ''}
+              {sponsorTrack.yearFounded ? ` · founded ${sponsorTrack.yearFounded}` : ''}
+              {sponsorTrack.aumKrw
+                ? ` · AUM ${formatNumber(sponsorTrack.aumKrw / 1_000_000_000_000, 2)}조 KRW`
+                : ''}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {sponsorTrack.averageEquityMultiple !== null ? (
+              <Badge tone="good">avg {sponsorTrack.averageEquityMultiple.toFixed(2)}x</Badge>
+            ) : null}
+            {sponsorTrack.averageGrossIrrPct !== null ? (
+              <Badge tone="good">avg IRR {sponsorTrack.averageGrossIrrPct.toFixed(1)}%</Badge>
+            ) : null}
+            <Badge>{sponsorTrack.priorDealCount} prior</Badge>
+            {sponsorTrack.oldestVintage ? (
+              <Badge>
+                {sponsorTrack.oldestVintage}–{sponsorTrack.newestVintage} vintage
+              </Badge>
+            ) : null}
+          </div>
+        </div>
+        {sponsorTrack.recentDeals.length === 0 ? (
+          <div className="mt-5 rounded-[18px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
+            Sponsor on file but no prior deals captured yet — populate the track record on{' '}
+            <span className="font-mono text-xs">/admin/sponsors</span>.
+          </div>
+        ) : (
+          <div className="mt-5 overflow-hidden rounded-[18px] border border-white/10">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-white/[0.04] text-left text-xs uppercase tracking-wide text-slate-500">
+                  <th className="px-3 py-2 font-semibold">Deal</th>
+                  <th className="px-3 py-2 font-semibold">Vintage</th>
+                  <th className="px-3 py-2 font-semibold">Class / market</th>
+                  <th className="px-3 py-2 text-right font-semibold">Multiple</th>
+                  <th className="px-3 py-2 text-right font-semibold">IRR</th>
+                  <th className="px-3 py-2 font-semibold">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5 text-slate-200">
+                {sponsorTrack.recentDeals.map((d) => (
+                  <tr key={d.id}>
+                    <td className="px-3 py-2 text-sm">{d.dealName}</td>
+                    <td className="px-3 py-2 text-xs">
+                      {d.vintageYear}
+                      {d.exitYear ? ` → ${d.exitYear}` : ''}
+                    </td>
+                    <td className="px-3 py-2 text-xs text-slate-400">
+                      {d.assetClass ?? '—'} / {d.market ?? '—'}
+                    </td>
+                    <td className="px-3 py-2 text-right font-mono text-xs">
+                      {d.equityMultiple !== null ? `${d.equityMultiple.toFixed(2)}x` : '—'}
+                    </td>
+                    <td className="px-3 py-2 text-right font-mono text-xs">
+                      {d.grossIrrPct !== null ? `${d.grossIrrPct.toFixed(1)}%` : '—'}
+                    </td>
+                    <td className="px-3 py-2 text-xs">
+                      <Badge tone={d.status === 'EXITED' ? 'good' : 'warn'}>{d.status}</Badge>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+    </section>
+  );
+}

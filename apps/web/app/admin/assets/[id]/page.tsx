@@ -31,6 +31,7 @@ import { ValuationRunForm } from '@/components/admin/valuation-run-form';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Section } from '@/components/ui/section';
 import { ConfidenceBreakdown } from '@/components/valuation/confidence-breakdown';
 import { FeatureAssumptionMapping } from '@/components/valuation/feature-assumption-mapping';
 import { MarketEvidencePanel } from '@/components/valuation/market-evidence-panel';
@@ -53,7 +54,7 @@ import { resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-reque
 import { getAssetById } from '@/lib/services/assets';
 import { getAssetFinancialStatements } from '@/lib/services/financial-statements';
 import { getFxRateMap } from '@/lib/services/fx';
-import { getValuationRecommendation } from '@/lib/valuation/recommendation';
+import { getValuationRecommendation } from '@/lib/services/valuation/recommendation';
 import { buildRealizedOutcomeComparison } from '@/lib/services/realized-outcomes';
 import { buildAssetResearchDossier } from '@/lib/services/research/dossier';
 import {
@@ -62,9 +63,9 @@ import {
   getLatestReviewPacketRecord
 } from '@/lib/services/review';
 import { formatDate, formatNumber, formatPercent } from '@/lib/utils';
-import { buildFeatureAssumptionMappings } from '@/lib/valuation/feature-assumption-mapping';
-import { filterValuationFeatureSnapshots } from '@/lib/valuation/feature-snapshot-usage';
-import { resolveSatelliteRiskSnapshot } from '@/lib/valuation/satellite-risk';
+import { buildFeatureAssumptionMappings } from '@/lib/services/valuation/feature-assumption-mapping';
+import { filterValuationFeatureSnapshots } from '@/lib/services/valuation/feature-snapshot-usage';
+import { resolveSatelliteRiskSnapshot } from '@/lib/services/valuation/satellite-risk';
 
 export const dynamic = 'force-dynamic';
 
@@ -395,14 +396,11 @@ export default async function AssetDetailPage({
       />
 
       <Card>
-        <div>
-          <div className="eyebrow">Micro Research Capture</div>
-          <h3 className="mt-2 text-2xl font-semibold text-white">{playbook.intakeHeading}</h3>
-          <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400">
-            Use this panel to capture normalized evidence that changes downside, execution
-            certainty, and approved feature coverage for this asset class.
-          </p>
-        </div>
+        <Section
+          eyebrow="Micro Research Capture"
+          title={playbook.intakeHeading}
+          description="Use this panel to capture normalized evidence that changes downside, execution certainty, and approved feature coverage for this asset class."
+        />
         <div className="mt-5">
           <MicroDataForm
             assetId={asset.id}
@@ -477,21 +475,17 @@ export default async function AssetDetailPage({
       </Card>
 
       <Card>
-        <div>
-          <div className="eyebrow">Lease Book</div>
-          <h3 className="mt-2 text-2xl font-semibold text-white">
-            {asset.assetClass === AssetClass.OFFICE
+        <Section
+          eyebrow="Lease Book"
+          title={
+            asset.assetClass === AssetClass.OFFICE
               ? 'Occupancy, rollover, and rent schedule'
               : asset.assetClass === AssetClass.INDUSTRIAL
                 ? 'Tenant durability and lease stack'
-                : 'Contracted demand and lease stack'}
-          </h3>
-          <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400">
-            Capture signed, active, or pipeline lease evidence here. The valuation engine uses
-            approved lease and revenue context first, then falls back to residual assumptions where
-            coverage is still thin.
-          </p>
-        </div>
+                : 'Contracted demand and lease stack'
+          }
+          description="Capture signed, active, or pipeline lease evidence here. The valuation engine uses approved lease and revenue context first, then falls back to residual assumptions where coverage is still thin."
+        />
         <div className="mt-5">
           <LeaseBookForm
             assetId={asset.id}
@@ -615,17 +609,11 @@ export default async function AssetDetailPage({
       </Card>
 
       <Card>
-        <div>
-          <div className="eyebrow">Comparable Book</div>
-          <h3 className="mt-2 text-2xl font-semibold text-white">
-            Pricing calibration and market peers
-          </h3>
-          <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400">
-            Add peer assets with pricing signals and weights so the underwriting no longer leans
-            only on generic market snapshots. This directly improves cap-rate, rate, and
-            direct-value calibration.
-          </p>
-        </div>
+        <Section
+          eyebrow="Comparable Book"
+          title="Pricing calibration and market peers"
+          description="Add peer assets with pricing signals and weights so the underwriting no longer leans only on generic market snapshots. This directly improves cap-rate, rate, and direct-value calibration."
+        />
         <div className="mt-5">
           <ComparableBookForm
             assetId={asset.id}
@@ -660,17 +648,11 @@ export default async function AssetDetailPage({
       </Card>
 
       <Card>
-        <div>
-          <div className="eyebrow">Capex Book</div>
-          <h3 className="mt-2 text-2xl font-semibold text-white">
-            Replacement-cost structure and downside floor
-          </h3>
-          <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400">
-            Split the development budget into land, shell/core, electrical, mechanical, IT fit-out,
-            soft cost, and contingency so the replacement floor and retained hard-cost logic stop
-            leaning on fallback allocation.
-          </p>
-        </div>
+        <Section
+          eyebrow="Capex Book"
+          title="Replacement-cost structure and downside floor"
+          description="Split the development budget into land, shell/core, electrical, mechanical, IT fit-out, soft cost, and contingency so the replacement floor and retained hard-cost logic stop leaning on fallback allocation."
+        />
         <div className="mt-5">
           <CapexBookForm
             assetId={asset.id}
@@ -689,16 +671,11 @@ export default async function AssetDetailPage({
       </Card>
 
       <Card>
-        <div>
-          <div className="eyebrow">Debt Book</div>
-          <h3 className="mt-2 text-2xl font-semibold text-white">
-            Facility terms, draws, and debt-service realism
-          </h3>
-          <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400">
-            Enter actual lender terms and draw timing so DSCR, reserve sizing, and ending debt
-            balance reflect the real capital stack instead of the synthetic underwriting facility.
-          </p>
-        </div>
+        <Section
+          eyebrow="Debt Book"
+          title="Facility terms, draws, and debt-service realism"
+          description="Enter actual lender terms and draw timing so DSCR, reserve sizing, and ending debt balance reflect the real capital stack instead of the synthetic underwriting facility."
+        />
         <div className="mt-5">
           <DebtBookForm
             assetId={asset.id}
@@ -764,17 +741,11 @@ export default async function AssetDetailPage({
 
       <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
         <Card>
-          <div>
-            <div className="eyebrow">Realized Outcome Capture</div>
-            <h3 className="mt-2 text-2xl font-semibold text-white">
-              Observed asset performance after the underwriting run
-            </h3>
-            <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400">
-              Capture actual occupancy, NOI, value, and DSCR after the run closes. This is the
-              feedback loop the macro team needs to validate regime overlays against real asset
-              outcomes.
-            </p>
-          </div>
+          <Section
+            eyebrow="Realized Outcome Capture"
+            title="Observed asset performance after the underwriting run"
+            description="Capture actual occupancy, NOI, value, and DSCR after the run closes. This is the feedback loop the macro team needs to validate regime overlays against real asset outcomes."
+          />
           <div className="mt-5">
             <RealizedOutcomeForm assetId={asset.id} inputCurrency={displayCurrency} />
           </div>

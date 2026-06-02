@@ -3,20 +3,9 @@ import { Card } from '@/components/ui/card';
 import { prisma } from '@/lib/db/prisma';
 import { shortenHash } from '@/lib/blockchain/registry';
 import { formatDate } from '@/lib/utils';
+import { kycTone } from '@/lib/ui/status-tone';
 
 export const dynamic = 'force-dynamic';
-
-function statusTone(status: string): 'good' | 'warn' | 'danger' {
-  switch (status) {
-    case 'APPROVED':
-      return 'good';
-    case 'REJECTED':
-    case 'REVOKED':
-      return 'danger';
-    default:
-      return 'warn';
-  }
-}
 
 export default async function IdentityPage() {
   const records = await prisma.kycRecord.findMany({
@@ -67,7 +56,7 @@ export default async function IdentityPage() {
                     <td className="px-2 py-2 font-mono text-xs">{shortenHash(r.wallet)}</td>
                     <td className="px-2 py-2">{r.countryCode}</td>
                     <td className="px-2 py-2">
-                      <Badge tone={statusTone(r.status)}>{r.status}</Badge>
+                      <Badge tone={kycTone(r.status)}>{r.status}</Badge>
                     </td>
                     <td className="px-2 py-2 font-mono text-xs">
                       {r.bridgedTxHash ? shortenHash(r.bridgedTxHash) : '—'}

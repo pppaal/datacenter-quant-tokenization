@@ -28,7 +28,11 @@ export default defineConfig({
   webServer: useExternalBaseUrl
     ? undefined
     : {
-        command: `npm run dev -- --hostname 127.0.0.1 --port ${port}`,
+        // Serve the pre-built production app (run-e2e-smoke runs `next build`
+        // first). next start serves pre-compiled routes instantly, so the suite
+        // is not subject to next-dev on-demand per-route compilation latency
+        // (which intermittently exceeded the assertion timeout under CI).
+        command: `npm run start -- --hostname 127.0.0.1 --port ${port}`,
         url: baseURL,
         reuseExistingServer: !process.env.CI,
         timeout: 180_000

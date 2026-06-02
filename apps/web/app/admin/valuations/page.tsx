@@ -11,9 +11,10 @@ import { Card } from '@/components/ui/card';
 import { getFxRateMap } from '@/lib/services/fx';
 import { listValuationRuns } from '@/lib/services/valuations';
 import { formatDate, formatNumber, formatPercent } from '@/lib/utils';
-import { getValuationFeatureSourceDescriptors } from '@/lib/valuation/feature-snapshot-usage';
-import { resolveSatelliteRiskSnapshot } from '@/lib/valuation/satellite-risk';
-import { getValuationRecommendation } from '@/lib/valuation/recommendation';
+import { getValuationFeatureSourceDescriptors } from '@/lib/services/valuation/feature-snapshot-usage';
+import { resolveSatelliteRiskSnapshot } from '@/lib/services/valuation/satellite-risk';
+import { getValuationRecommendation } from '@/lib/services/valuation/recommendation';
+import { approvalTone } from '@/lib/ui/status-tone';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,13 +25,6 @@ type ProvenanceEntry = {
   mode: string;
   freshnessLabel: string;
 };
-
-function getApprovalTone(approvalStatus: string) {
-  if (approvalStatus === 'APPROVED') return 'good' as const;
-  if (approvalStatus === 'CONDITIONAL') return 'warn' as const;
-  if (approvalStatus === 'REJECTED') return 'danger' as const;
-  return 'neutral' as const;
-}
 
 export default async function ValuationsPage() {
   const runs = await listValuationRuns();
@@ -113,7 +107,7 @@ export default async function ValuationsPage() {
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <Badge tone="good">{run.status}</Badge>
-                      <Badge tone={getApprovalTone(run.approvalStatus)}>
+                      <Badge tone={approvalTone(run.approvalStatus)}>
                         {run.approvalStatus.replaceAll('_', ' ')}
                       </Badge>
                       <Badge>{recommendation}</Badge>

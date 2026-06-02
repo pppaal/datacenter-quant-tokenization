@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { buildDebtBreakdown } from '@/lib/valuation/debt-breakdown';
+import { buildDebtBreakdown } from '@/lib/services/valuation/debt-breakdown';
 
 test('debt breakdown allocates reserve and balance impact across facilities', () => {
   const summary = buildDebtBreakdown(

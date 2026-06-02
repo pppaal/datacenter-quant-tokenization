@@ -9,37 +9,39 @@
  *
  * American (deal-by-deal) waterfall applied to a single-asset 10-year hold.
  * All distribution amounts in KRW; percentages in [0, 1].
+ *
+ * The four-tier mechanics live in the shared [`waterfall-engine.ts`](./waterfall-engine.ts);
+ * this module supplies the AMERICAN strategy: pro-rata ROC (LP+GP), unrounded
+ * compound pref accrual, rounded pref at pay time, a `cumLpPrefPaid × gpSplit/lpSplit`
+ * catch-up target measured against cumulative GP *catch-up* (100% capacity, no scaling),
+ * and unrounded raw inflows. The European sibling in
+ * [`waterfall-european.ts`](./waterfall-european.ts) keeps its OWN, divergent catch-up
+ * definition — the two are intentionally not reconciled.
+ *
+ * Historical note: this file was previously named `gp-lp-waterfall.ts`.
  */
 
-function npv(rate: number, flows: number[]): number {
-  let sum = 0;
-  for (let i = 0; i < flows.length; i++) {
-    sum += flows[i]! / Math.pow(1 + rate, i);
-  }
-  return sum;
-}
+import { bisectIrr } from '@/lib/finance/irr';
 
+import { initWaterfallState, runWaterfallPeriod, type WaterfallStrategy } from './waterfall-engine';
+
+/**
+ * American-waterfall IRR: pure bisection over integer-period flows, product-sign
+ * bracket with a leading bracket guard (loV*hiV > 0 → null), |NPV| < 1e-6
+ * convergence, 100 iters on [-0.99, 10], returned as a RAW fraction (the caller
+ * multiplies by 100). Delegates to the canonical `bisectIrr` with options
+ * reproducing the prior local `solveIrr` exactly.
+ */
 function solveIrr(flows: number[]): number | null {
-  if (flows.length < 2) return null;
-  if (!flows.some((f) => f > 0) || !flows.some((f) => f < 0)) return null;
-  let lo = -0.99;
-  let hi = 10;
-  let loV = npv(lo, flows);
-  let hiV = npv(hi, flows);
-  if (loV * hiV > 0) return null;
-  for (let i = 0; i < 100; i++) {
-    const mid = (lo + hi) / 2;
-    const midV = npv(mid, flows);
-    if (Math.abs(midV) < 1e-6) return mid;
-    if (loV * midV < 0) {
-      hi = mid;
-      hiV = midV;
-    } else {
-      lo = mid;
-      loV = midV;
-    }
-  }
-  return (lo + hi) / 2;
+  return bisectIrr(flows, {
+    lo: -0.99,
+    hi: 10,
+    iterations: 100,
+    tolerance: 1e-6,
+    branch: 'product-sign',
+    requireBracket: true,
+    scale: 'fraction'
+  });
 }
 
 export type WaterfallConfig = {
@@ -116,11 +118,23 @@ export function computeGpLpWaterfall(inputs: WaterfallInputs): GpLpWaterfallResu
   // + pref early, residual late) instead of a flat pro-rata share of the pool.
 
   const prefRate = config.preferredReturnPct / 100;
-  let lpCapitalRemaining = lpCommitted;
-  let gpCapitalRemaining = gpCommitted;
-  let lpPrefAccrued = 0;
-  let cumLpPrefPaid = 0;
-  let cumGpCatchupPaid = 0;
+  const state = initWaterfallState(lpCommitted, gpCommitted);
+
+  // American strategy — reproduces the legacy per-tier arithmetic exactly.
+  const strategy: WaterfallStrategy = {
+    rocMode: 'pro-rata',
+    roundDistributable: false,
+    accruePref: (accruedPref, lpCapitalRemaining) =>
+      accruedPref * (1 + prefRate) + lpCapitalRemaining * prefRate,
+    prefPayable: (accruedPref) => Math.round(accruedPref),
+    catchUpTarget: (ctx) =>
+      config.catchUpLpSplit > 0
+        ? Math.round(ctx.cumLpPrefPaid * (config.catchUpGpSplit / config.catchUpLpSplit))
+        : 0,
+    catchUpAlreadyPaid: (ctx) => ctx.cumGpCatchupPaid,
+    catchUpCapacity: (remaining) => remaining,
+    carryGpShare: (residual) => residual - Math.round(residual * config.residualLpSplit)
+  };
 
   let tier1Total = 0,
     tier1LpTotal = 0,
@@ -135,71 +149,19 @@ export function computeGpLpWaterfall(inputs: WaterfallInputs): GpLpWaterfallResu
   const gpFlows: number[] = [-gpCommitted];
 
   for (let i = 0; i < yearFlows.length; i++) {
-    // Accrue pref at start of period: compound on existing unpaid pref + new
-    // accrual on outstanding capital. Once capital is fully returned, pref
-    // continues to compound on the unpaid balance until paid.
-    lpPrefAccrued = lpPrefAccrued * (1 + prefRate) + lpCapitalRemaining * prefRate;
+    const period = runWaterfallPeriod(yearFlows[i] ?? 0, state, strategy);
 
-    let remaining = Math.max(0, yearFlows[i] ?? 0);
-    let yLP = 0;
-    let yGP = 0;
+    tier1Total += period.tier1Lp + period.tier1Gp;
+    tier1LpTotal += period.tier1Lp;
+    tier1GpTotal += period.tier1Gp;
+    tier2Total += period.tier2Lp;
+    tier3Total += period.tier3Gp;
+    tier4Total += period.tier4Lp + period.tier4Gp;
+    tier4LpTotal += period.tier4Lp;
+    tier4GpTotal += period.tier4Gp;
 
-    // Tier 1: Return of Capital pro rata to outstanding capital
-    const totalCapOutstanding = lpCapitalRemaining + gpCapitalRemaining;
-    if (remaining > 0 && totalCapOutstanding > 0) {
-      const t1 = Math.min(remaining, totalCapOutstanding);
-      const t1Lp = Math.min(
-        lpCapitalRemaining,
-        Math.round(t1 * (lpCapitalRemaining / totalCapOutstanding))
-      );
-      const t1Gp = Math.min(gpCapitalRemaining, t1 - t1Lp);
-      lpCapitalRemaining -= t1Lp;
-      gpCapitalRemaining -= t1Gp;
-      yLP += t1Lp;
-      yGP += t1Gp;
-      remaining -= t1Lp + t1Gp;
-      tier1Total += t1Lp + t1Gp;
-      tier1LpTotal += t1Lp;
-      tier1GpTotal += t1Gp;
-    }
-
-    // Tier 2: LP Preferred Return (100% to LP, up to accrued pref)
-    if (remaining > 0 && lpPrefAccrued > 0) {
-      const t2 = Math.min(remaining, Math.round(lpPrefAccrued));
-      yLP += t2;
-      lpPrefAccrued -= t2;
-      cumLpPrefPaid += t2;
-      remaining -= t2;
-      tier2Total += t2;
-    }
-
-    // Tier 3: GP Catch-up — bring cumulative GP catch-up to the catchUp split
-    // of the pref pool: target GP catchup = cumLpPrefPaid × gpSplit / lpSplit.
-    // GP receives 100% of distributions until the cumulative target is hit.
-    if (remaining > 0 && config.catchUpLpSplit > 0) {
-      const target = Math.round(cumLpPrefPaid * (config.catchUpGpSplit / config.catchUpLpSplit));
-      const shortfall = Math.max(0, target - cumGpCatchupPaid);
-      const t3 = Math.min(remaining, shortfall);
-      yGP += t3;
-      cumGpCatchupPaid += t3;
-      remaining -= t3;
-      tier3Total += t3;
-    }
-
-    // Tier 4: Residual Promote — split per residual ratio
-    if (remaining > 0) {
-      const t4 = remaining;
-      const t4Lp = Math.round(t4 * config.residualLpSplit);
-      const t4Gp = t4 - t4Lp;
-      yLP += t4Lp;
-      yGP += t4Gp;
-      tier4Total += t4;
-      tier4LpTotal += t4Lp;
-      tier4GpTotal += t4Gp;
-    }
-
-    lpFlows.push(yLP);
-    gpFlows.push(yGP);
+    lpFlows.push(period.lpTotal);
+    gpFlows.push(period.gpTotal);
   }
 
   // Cumulative tier rollups for the summary (post-simulation)

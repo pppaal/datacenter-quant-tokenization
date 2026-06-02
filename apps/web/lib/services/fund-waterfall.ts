@@ -1,6 +1,7 @@
 import type { PrismaClient } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { computeFundNavDetail } from '@/lib/services/fund-nav';
+import { DEFAULT_CARRY_PCT, DEFAULT_HURDLE_PCT, MS_PER_YEAR } from '@/lib/finance/constants';
 
 export type FundWaterfallInvestorRow = {
   investorId: string;
@@ -58,9 +59,8 @@ export type FundWaterfallData = {
   generatedAt: string;
 };
 
-const HURDLE_RATE_PCT = 8;
-const CARRIED_INTEREST_PCT = 20;
-const MS_PER_YEAR = 365.25 * 24 * 60 * 60 * 1000;
+const HURDLE_RATE_PCT = DEFAULT_HURDLE_PCT;
+const CARRIED_INTEREST_PCT = DEFAULT_CARRY_PCT;
 
 function toNumber(value: unknown): number {
   if (typeof value === 'number') return value;
@@ -87,7 +87,7 @@ type DatedCashflow = { date: Date; amountKrw: number };
 /**
  * Accrue the LP preferred return on *unreturned* called capital, compounding at
  * `hurdleRatePct` per annum, mirroring the European-style convention in
- * `valuation/lp-gp-waterfall.ts`.
+ * `valuation/waterfall-european.ts`.
  *
  * Unlike the pro-forma calculator (which works on equal annual periods), here we
  * only have aggregate called/distributed figures plus dated capital-call and
