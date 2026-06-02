@@ -8,6 +8,7 @@ import {
   type S3ClientConfig
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { isRealProduction } from '@/lib/runtime-env';
 
 export type UploadableFile = {
   name: string;
@@ -204,8 +205,11 @@ export function createS3DocumentStorage(config: S3StorageConfig): DocumentStorag
  * (`DOCUMENT_STORAGE_BUCKET`) over the local filesystem; falls back to
  * `createLocalDocumentStorage()` when no bucket is configured.
  *
- * In production (`NODE_ENV=production`) this throws if no S3 bucket is
- * configured, since the local filesystem is not durable on Vercel.
+ * In a real production runtime this throws if no S3 bucket is configured, since
+ * the local filesystem is not durable on Vercel. The production-mode browser
+ * E2E (which runs `next start` but has no S3) opts out via the
+ * `E2E_PRODUCTION_BUILD` flag — see `isRealProduction`. The production preflight
+ * rejects that flag, so local storage can never ship to real prod.
  */
 export function createDocumentStorageFromEnv(): DocumentStorageAdapter {
   const bucket = process.env.DOCUMENT_STORAGE_BUCKET?.trim();
@@ -220,7 +224,7 @@ export function createDocumentStorageFromEnv(): DocumentStorageAdapter {
       forcePathStyle: process.env.DOCUMENT_STORAGE_FORCE_PATH_STYLE === 'true'
     });
   }
-  if (process.env.NODE_ENV === 'production') {
+  if (isRealProduction()) {
     throw new Error(
       'DOCUMENT_STORAGE_BUCKET is required in production. Configure S3-compatible storage or set NODE_ENV != production.'
     );

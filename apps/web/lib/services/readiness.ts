@@ -9,13 +9,14 @@ import {
 } from '@/lib/blockchain/registry';
 import { awaitTxReceipt } from '@/lib/blockchain/tx';
 import { prisma } from '@/lib/db/prisma';
+import { isRealProduction } from '@/lib/runtime-env';
 import { promoteAssetSnapshotsToFeatures } from '@/lib/services/feature-promotion';
 import { buildReviewPacketManifest } from '@/lib/services/review';
 
 function isBlockchainMockMode(env: NodeJS.ProcessEnv = process.env) {
   const value = env.BLOCKCHAIN_MOCK_MODE?.trim().toLowerCase();
   const enabled = value === '1' || value === 'true' || value === 'yes';
-  if (enabled && env.NODE_ENV === 'production') {
+  if (enabled && isRealProduction(env)) {
     throw new Error(
       'BLOCKCHAIN_MOCK_MODE must not be enabled in production. Configure a real RPC + signer + registry address.'
     );

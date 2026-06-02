@@ -35,6 +35,11 @@ jobs:
       BLOCKCHAIN_MOCK_MODE: "true"
       OPENAI_MODEL: gpt-4o-mini
       PORT: 3100
+      # The suite serves a production `next start` build (NODE_ENV=production)
+      # with no S3 / RPC, which would otherwise trip production-only hard-blocks
+      # (mock blockchain writes, local document storage). This flag opts the
+      # build out of those guards; the production preflight forbids it.
+      E2E_PRODUCTION_BUILD: "true"
     steps:
       - name: Checkout
         uses: actions/checkout@v4

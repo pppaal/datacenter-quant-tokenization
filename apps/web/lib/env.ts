@@ -123,6 +123,11 @@ const envSchema = z.object({
   // Playwright escape hatches
   PLAYWRIGHT_ALLOW_HOSTED_MUTATIONS: optionalBool,
   PLAYWRIGHT_ALLOWED_HOST_PATTERN: optionalString,
+  // Opts the production-mode browser E2E (`next start`, NODE_ENV=production) out
+  // of production-only hard-blocks (mock blockchain, local document storage) so
+  // it can exercise mock/local paths. See `isRealProduction`. Forbidden by the
+  // production preflight.
+  E2E_PRODUCTION_BUILD: optionalBool,
 
   // Maps (optional). When KAKAO_MAP_API_KEY is set, the property explorer
   // renders a Kakao map; otherwise it falls back to Leaflet + OpenStreetMap,

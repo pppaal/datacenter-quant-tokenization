@@ -7,6 +7,11 @@ const useExternalBaseUrl = Boolean(process.env.PLAYWRIGHT_BASE_URL);
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: false,
+  // Serialize in CI: the two spec files otherwise run on separate workers and
+  // hammer the single `next start` server concurrently, which slows the
+  // post-mutation router.refresh() repaint enough to flake assertions that wait
+  // on freshly mutated state. One worker keeps the server responsive.
+  workers: process.env.CI ? 1 : undefined,
   retries: process.env.CI ? 2 : 0,
   timeout: 60_000,
   expect: {
