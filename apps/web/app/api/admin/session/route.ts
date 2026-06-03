@@ -3,7 +3,12 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { authorizeAdminCredentials, getAdminAuthConfig } from '@/lib/security/admin-auth';
 import { resolveAdminActorSeat } from '@/lib/security/admin-identity';
-import { resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
+import {
+  getRequestIpAddress,
+  resolveVerifiedAdminActorFromHeaders
+} from '@/lib/security/admin-request';
+import { checkDistributedRateLimit } from '@/lib/security/distributed-rate-limit';
+import { authRateLimiter, RateLimitError } from '@/lib/security/rate-limit';
 import {
   ADMIN_SESSION_COOKIE,
   clearAdminSessionCookie,
@@ -14,7 +19,44 @@ import {
   revokePersistedAdminSession
 } from '@/lib/security/admin-session';
 
+// Brute-force throttle for the most-attacked endpoint. The edge per-IP limiter
+// (`edge-protection.ts`) is too loose for credential stuffing and bypassable by
+// cycling edge regions, so gate the login attempt twice: an always-on in-process
+// limiter (10/min, relaxed under E2E) plus a cross-instance Upstash counter that
+// soft-fails open when Redis is unconfigured (CI/dev are unaffected).
+const LOGIN_RATE_WINDOW_MS = 60_000;
+const LOGIN_RATE_MAX = 10;
+
+function rateLimitedResponse(retryAfterMs: number) {
+  const retryAfterSeconds = Math.max(1, Math.ceil(retryAfterMs / 1000));
+  return NextResponse.json(
+    { error: 'Too many login attempts. Please try again later.' },
+    { status: 429, headers: { 'Retry-After': String(retryAfterSeconds) } }
+  );
+}
+
 export async function POST(request: Request) {
+  const ipAddress = getRequestIpAddress(request.headers) ?? 'unknown';
+
+  try {
+    authRateLimiter.check(`login:${ipAddress}`);
+  } catch (error) {
+    if (error instanceof RateLimitError) {
+      return rateLimitedResponse(error.retryAfterMs);
+    }
+    throw error;
+  }
+
+  const distributed = await checkDistributedRateLimit(
+    'admin-login',
+    ipAddress,
+    LOGIN_RATE_WINDOW_MS,
+    LOGIN_RATE_MAX
+  );
+  if (!distributed.allowed) {
+    return rateLimitedResponse(distributed.retryAfterMs);
+  }
+
   const body = (await request.json().catch(() => null)) as {
     user?: string;
     password?: string;

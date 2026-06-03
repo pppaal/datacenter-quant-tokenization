@@ -202,9 +202,11 @@ confidence-scale timeline fix, KYC webhook gating).
   `process.env` reads remain); `withAdminApi` covers ~half of admin routes (the
   rest hand-roll auth+audit and some return 401 where 403 is correct). Migrate
   incrementally.
-- **Login brute-force (P2).** `checkDistributedRateLimit` exists but has zero
-  callers; wire it into `POST /api/admin/session` (it soft-fails open when
-  Upstash is unconfigured, so CI/dev are unaffected).
+- **Login brute-force (P2).** DONE. `POST /api/admin/session` now throttles per
+  client IP via the in-process `authRateLimiter` (10/min, relaxed under E2E) plus
+  `checkDistributedRateLimit('admin-login', ...)` (soft-fails open when Upstash is
+  unconfigured, so CI/dev are unaffected). Covered by
+  `tests/admin-session-rate-limit.test.ts`.
 - **Client error leakage (P2).** Several admin/ops routes return raw
   `error.message` (incl. Prisma errors) to the client; return a generic message
   + `requestId` and log details server-side.
