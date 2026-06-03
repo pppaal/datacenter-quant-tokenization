@@ -50,7 +50,7 @@ const ANALYSIS_STEPS = [
 const SUGGESTIONS = [
   '서울특별시 강남구 테헤란로 100',
   '서울특별시 영등포구 여의대로 24',
-  '경기도 성남시 분당구 판교역로 235',
+  '서울특별시 성동구 성수이로 113',
   '경기도 평택시 고덕면 삼성로 114'
 ];
 
@@ -162,6 +162,7 @@ export default function PropertyAnalyzePage({ mapConfig }: { mapConfig: MapProvi
   const irr = (rm?.equityIrr ?? pf?.equityIrr) as number | null | undefined;
   const moic = (pf?.equityMultiple ?? rm?.equityMultiple) as number | null | undefined;
   const confidence = a?.confidenceScore as number | null | undefined;
+  const clsLabel = (cls as { assetClass?: string } | undefined)?.assetClass?.replace(/_/g, ' ');
 
   const hasResult = Boolean(
     report && a && resolved && cls && macro && pf && rm && dc && capMatrix && md && refi
@@ -346,7 +347,7 @@ export default function PropertyAnalyzePage({ mapConfig }: { mapConfig: MapProvi
                   <StatCard
                     label="Base value"
                     value={krw(a.baseCaseValueKrw, 2)}
-                    sub={cls ? String(cls).replace(/_/g, ' ') : undefined}
+                    sub={clsLabel}
                     tone="accent"
                     span={2}
                   />
