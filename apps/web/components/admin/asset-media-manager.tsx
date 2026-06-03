@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -78,7 +78,7 @@ export function AssetMediaManager({
       setBanner({ tone: 'good', text: 'Uploaded.' });
       setFile(null);
       setCaption('');
-      router.refresh();
+      startTransition(() => router.refresh());
     } catch (err) {
       setBanner({
         tone: 'warn',
@@ -100,7 +100,7 @@ export function AssetMediaManager({
       }
       setItems((prev) => prev.filter((m) => m.id !== id));
       setBanner({ tone: 'good', text: 'Deleted.' });
-      router.refresh();
+      startTransition(() => router.refresh());
     } catch (err) {
       setBanner({
         tone: 'warn',

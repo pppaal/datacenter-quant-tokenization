@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 
@@ -23,7 +23,7 @@ export function SourcesRefreshButton() {
         throw new Error(body?.error ?? 'Failed to refresh source adapters');
       }
 
-      router.refresh();
+      startTransition(() => router.refresh());
     } catch (caughtError) {
       setError(
         caughtError instanceof Error ? caughtError.message : 'Failed to refresh source adapters'

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { LeaseStatus, ReviewStatus } from '@prisma/client';
 import { type SupportedCurrency } from '@/lib/finance/currency';
@@ -366,7 +366,7 @@ export function LeaseBookForm({
         throw new Error(result?.error ?? 'Failed to save lease');
       }
 
-      router.refresh();
+      startTransition(() => router.refresh());
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Failed to save lease');
     } finally {
@@ -396,7 +396,7 @@ export function LeaseBookForm({
         throw new Error(result?.error ?? 'Failed to delete lease');
       }
 
-      router.refresh();
+      startTransition(() => router.refresh());
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Failed to delete lease');
     } finally {

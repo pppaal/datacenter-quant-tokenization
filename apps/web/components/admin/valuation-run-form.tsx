@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,7 +35,7 @@ export function ValuationRunForm({ assetId }: { assetId: string }) {
           if (!response.ok) throw new Error('Valuation failed');
           setFeedbackTone('good');
           setFeedback(`Valuation run queued: ${runLabel}`);
-          router.refresh();
+          startTransition(() => router.refresh());
         } catch (error) {
           setFeedbackTone('danger');
           setFeedback(error instanceof Error ? error.message : 'Valuation failed');

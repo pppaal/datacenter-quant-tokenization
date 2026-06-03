@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 
@@ -34,7 +34,7 @@ export function OpsAlertReplayButton({ deliveryId }: OpsAlertReplayButtonProps) 
       setFeedback(
         `Replay recorded as ${payload?.delivery?.statusLabel?.toLowerCase() ?? 'delivered'}.`
       );
-      router.refresh();
+      startTransition(() => router.refresh());
     } catch (caughtError) {
       setError(
         caughtError instanceof Error ? caughtError.message : 'Failed to replay alert delivery.'

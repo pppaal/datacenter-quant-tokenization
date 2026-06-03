@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { TaskPriority, TaskStatus } from '@prisma/client';
 import { Badge } from '@/components/ui/badge';
@@ -92,7 +92,7 @@ function InitiativeRow({
       }
 
       setFeedback('Initiative updated.');
-      router.refresh();
+      startTransition(() => router.refresh());
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : 'Failed to update initiative');
     } finally {
@@ -241,7 +241,7 @@ export function AssetManagementInitiativePanel({
       setTargetDate('');
       setSummary('');
       setNextStep('');
-      router.refresh();
+      startTransition(() => router.refresh());
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : 'Failed to create initiative');
     } finally {

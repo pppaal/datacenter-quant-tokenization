@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 
@@ -30,7 +30,7 @@ export function ResearchRefreshButton() {
               throw new Error(payload?.error ?? 'Failed to refresh research workspace');
             }
 
-            router.refresh();
+            startTransition(() => router.refresh());
           } catch (caughtError) {
             setError(
               caughtError instanceof Error
