@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, startTransition } from 'react';
 import { CapexCategory } from '@prisma/client';
 import { useRouter } from 'next/navigation';
 import { type SupportedCurrency } from '@/lib/finance/currency';
@@ -105,7 +105,7 @@ export function CapexBookForm({
         throw new Error(result?.error ?? 'Failed to save CAPEX line item');
       }
 
-      router.refresh();
+      startTransition(() => router.refresh());
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Failed to save CAPEX line item');
     } finally {
@@ -135,7 +135,7 @@ export function CapexBookForm({
         throw new Error(result?.error ?? 'Failed to delete CAPEX line item');
       }
 
-      router.refresh();
+      startTransition(() => router.refresh());
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Failed to delete CAPEX line item');
     } finally {

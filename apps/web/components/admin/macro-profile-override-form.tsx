@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { AssetClass } from '@prisma/client';
 import { Badge } from '@/components/ui/badge';
@@ -156,7 +156,7 @@ function OverrideEditorCard({
         throw new Error((payload?.error as string | undefined) ?? 'Failed to update override');
 
       onSaved(normalizeRecord(payload ?? {}));
-      router.refresh();
+      startTransition(() => router.refresh());
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Failed to update override');
     } finally {
@@ -372,7 +372,7 @@ export function MacroProfileOverrideForm({
         )
       );
       setDraft(emptyDraft());
-      router.refresh();
+      startTransition(() => router.refresh());
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Failed to create override');
     } finally {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 
@@ -56,7 +56,7 @@ export function ReadinessActionPanel({ assetId }: { assetId: string }) {
         tone: 'good',
         message: actionCopy[action].successLabel
       });
-      router.refresh();
+      startTransition(() => router.refresh());
     } catch (error) {
       setFeedback({
         tone: 'danger',

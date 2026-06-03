@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, startTransition } from 'react';
 import {
   ActivityType,
   DealBidStatus,
@@ -189,7 +189,7 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
       if (successMessage) {
         setNotice(successMessage);
       }
-      router.refresh();
+      startTransition(() => router.refresh());
     } catch (mutationError) {
       setError(mutationError instanceof Error ? mutationError.message : 'Request failed');
     } finally {

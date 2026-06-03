@@ -1,7 +1,7 @@
 'use client';
 
 import { CommitteeDecisionOutcome } from '@prisma/client';
-import { useState } from 'react';
+import { useState, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
@@ -48,7 +48,7 @@ export function CommitteePacketDecisionForm({ packetId }: { packetId: string }) 
 
       setNotes('');
       setFollowUpActions('');
-      router.refresh();
+      startTransition(() => router.refresh());
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : 'Failed to record decision');
     } finally {

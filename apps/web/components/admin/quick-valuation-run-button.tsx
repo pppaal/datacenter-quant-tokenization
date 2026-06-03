@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 
@@ -57,7 +57,7 @@ export function QuickValuationRunButton({
             }
 
             setSuccess(`Valuation run queued for ${assetCode ?? assetId}.`);
-            router.refresh();
+            startTransition(() => router.refresh());
           } catch (caughtError) {
             setError(caughtError instanceof Error ? caughtError.message : 'Failed to run analysis');
           } finally {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { InvestorReportReleaseStatus } from '@prisma/client';
 import { Badge } from '@/components/ui/badge';
@@ -82,7 +82,7 @@ function ReleaseRow({ report }: { report: InvestorReportRecord }) {
       setFeedback(
         releaseStatus === 'RELEASED' ? 'Investor report released.' : 'Release workflow updated.'
       );
-      router.refresh();
+      startTransition(() => router.refresh());
     } catch (caughtError) {
       setError(
         caughtError instanceof Error

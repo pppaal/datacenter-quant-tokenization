@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AssetClass, DealOriginationSource, DealStage } from '@prisma/client';
@@ -67,7 +67,7 @@ export function DealCreateForm({ assets }: Props) {
 
       const deal = await response.json();
       router.push(`/admin/deals/${deal.id}`);
-      router.refresh();
+      startTransition(() => router.refresh());
     } finally {
       setSubmitting(false);
     }

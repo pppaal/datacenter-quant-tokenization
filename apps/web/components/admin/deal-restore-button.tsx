@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 
@@ -32,7 +32,7 @@ export function DealRestoreButton({ dealId }: Props) {
           if (!response.ok) {
             throw new Error('Failed to restore deal');
           }
-          router.refresh();
+          startTransition(() => router.refresh());
         } finally {
           setBusy(false);
         }
