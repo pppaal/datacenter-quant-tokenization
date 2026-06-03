@@ -74,4 +74,22 @@ test('admin session cookie options stay secure by environment', () => {
   assert.equal(localOptions.sameSite, 'lax');
   assert.equal(localOptions.secure, false);
   assert.equal(prodOptions.secure, true);
+
+  // The E2E production build serves a real `next start` over http://localhost,
+  // where Playwright's APIRequestContext drops Secure cookies. That opt-out must
+  // make the cookie non-secure...
+  const e2eOptions = getAdminSessionCookieOptions({
+    NODE_ENV: 'production',
+    E2E_PRODUCTION_BUILD: 'true'
+  } as NodeJS.ProcessEnv);
+  assert.equal(e2eOptions.secure, false);
+
+  // ...but a real Vercel production deployment must stay Secure even if the
+  // E2E flag leaks into the environment.
+  const vercelProdOptions = getAdminSessionCookieOptions({
+    NODE_ENV: 'production',
+    E2E_PRODUCTION_BUILD: 'true',
+    VERCEL_ENV: 'production'
+  } as NodeJS.ProcessEnv);
+  assert.equal(vercelProdOptions.secure, true);
 });

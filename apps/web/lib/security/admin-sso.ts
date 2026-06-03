@@ -1,3 +1,4 @@
+import { isRealProduction } from '@/lib/runtime-env';
 import type { AdminAccessRole, AuthorizedAdminActor } from '@/lib/security/admin-auth';
 
 export type AdminSsoMode = 'disabled' | 'configured' | 'misconfigured';
@@ -143,7 +144,7 @@ export function createAdminSsoCookieOptions(
   return {
     httpOnly: true,
     sameSite: 'lax' as const,
-    secure: env.NODE_ENV === 'production',
+    secure: isRealProduction(env),
     path: '/',
     maxAge: maxAgeSeconds
   };
