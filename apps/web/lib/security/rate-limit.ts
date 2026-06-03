@@ -56,17 +56,25 @@ export function createRateLimiter(name: string, config: RateLimitConfig) {
   };
 }
 
+// The serial browser E2E drives many auth/mutation/upload calls through one
+// process and one operator identifier (amplified by Playwright retries), which
+// trips these per-process limiters. Relax them only under the E2E build flag
+// (which the production preflight forbids), so real deployments keep the tight
+// defaults.
+const E2E_RELAXED = process.env.E2E_PRODUCTION_BUILD?.trim().toLowerCase() === 'true';
+const maxReq = (production: number, e2e: number) => (E2E_RELAXED ? e2e : production);
+
 export const authRateLimiter = createRateLimiter('auth', {
   windowMs: 60_000,
-  maxRequests: 10
+  maxRequests: maxReq(10, 100_000)
 });
 
 export const mutationRateLimiter = createRateLimiter('mutation', {
   windowMs: 10_000,
-  maxRequests: 20
+  maxRequests: maxReq(20, 100_000)
 });
 
 export const uploadRateLimiter = createRateLimiter('upload', {
   windowMs: 60_000,
-  maxRequests: 5
+  maxRequests: maxReq(5, 100_000)
 });
