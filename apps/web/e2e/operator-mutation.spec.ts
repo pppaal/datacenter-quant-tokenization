@@ -244,7 +244,10 @@ test.describe('operator mutation flows', () => {
         }
       }
     );
-    expect(uploadResponse.ok()).toBeTruthy();
+    expect(
+      uploadResponse.ok(),
+      `deliverable upload ${uploadResponse.status()}: ${(await uploadResponse.text()).slice(0, 400)}`
+    ).toBeTruthy();
     await page.reload();
     const technicalLaneAfterUpload = page
       .getByTestId('diligence-workstream-card')
@@ -265,7 +268,10 @@ test.describe('operator mutation flows', () => {
         }
       }
     );
-    expect(updateResponse.ok()).toBeTruthy();
+    expect(
+      updateResponse.ok(),
+      `workstream signoff ${updateResponse.status()}: ${(await updateResponse.text()).slice(0, 400)}`
+    ).toBeTruthy();
     await page.reload();
     const technicalLaneSignedOff = page
       .getByTestId('diligence-workstream-card')
