@@ -20,6 +20,9 @@ function isPublicApiPath(pathname: string) {
     // the visitor (it computes a report + writes its own snapshot). No admin
     // data is exposed.
     pathname === '/api/property-analyze' ||
+    // Provider KYC webhooks carry no admin cookie; the route handler verifies a
+    // per-provider HMAC signature and audits failures itself.
+    pathname.startsWith('/api/kyc/webhook/') ||
     pathname.startsWith('/api/public/')
   );
 }
