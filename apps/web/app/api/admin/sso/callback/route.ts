@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
+import { logger } from '@/lib/observability/logger';
 import {
   resolveAdminActorSeat,
   upsertAdminIdentityBindingForActor
@@ -112,13 +113,13 @@ export async function GET(request: Request) {
     response.cookies.set(ADMIN_SESSION_COOKIE, sessionToken, getAdminSessionCookieOptions());
     return clearSsoCookies(response);
   } catch (caughtError) {
-    const response = clearSsoCookies(
+    // Log the real exchange error server-side; never echo it back on this
+    // pre-auth redirect (the generic ?error=sso_exchange query is the signal).
+    logger.warn('sso_exchange_failed', {
+      error: caughtError instanceof Error ? caughtError.message : 'unknown'
+    });
+    return clearSsoCookies(
       NextResponse.redirect(new URL('/admin/login?error=sso_exchange', request.url))
     );
-    response.headers.set(
-      'x-sso-error',
-      caughtError instanceof Error ? caughtError.message : 'SSO exchange failed'
-    );
-    return response;
   }
 }

@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db/prisma';
 import { authorizeAdminCredentials, getAdminAuthConfig } from '@/lib/security/admin-auth';
 import { resolveAdminActorSeat } from '@/lib/security/admin-identity';
 import { resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
+import { checkDistributedRateLimit } from '@/lib/security/distributed-rate-limit';
 import {
   ADMIN_SESSION_COOKIE,
   clearAdminSessionCookie,
@@ -28,6 +29,27 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { error: 'Admin auth is not configured for operator sessions.' },
       { status: 503 }
+    );
+  }
+
+  // Distributed brute-force throttle keyed on IP + username (10 attempts / 60s).
+  // Soft-fails open when Upstash is unconfigured, so dev/CI/e2e are unaffected;
+  // the in-memory edge limiter remains the baseline.
+  const clientIp =
+    (request.headers.get('x-forwarded-for')?.split(',')[0] ?? '').trim() || 'unknown';
+  const loginThrottle = await checkDistributedRateLimit(
+    'admin-login',
+    `${clientIp}:${user.toLowerCase()}`,
+    60_000,
+    10
+  );
+  if (!loginThrottle.allowed) {
+    return NextResponse.json(
+      { error: 'Too many login attempts. Try again shortly.' },
+      {
+        status: 429,
+        headers: { 'Retry-After': String(Math.ceil(loginThrottle.retryAfterMs / 1000)) }
+      }
     );
   }
 
