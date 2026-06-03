@@ -134,6 +134,17 @@ const envSchema = z.object({
   // which needs no key. The key is a public JS API key (domain-scoped on the
   // Kakao console) and is intentionally exposed to the browser.
   KAKAO_MAP_API_KEY: optionalString,
+  // Kakao Local REST key (server-side). When set, the property analyzer geocodes
+  // arbitrary Korean addresses via the live Kakao geocoder (coords + PNU);
+  // otherwise it falls back to the deterministic demo geocoder. This is a secret
+  // REST key — distinct from the public KAKAO_MAP_API_KEY — and must not be
+  // exposed to the browser.
+  KAKAO_REST_API_KEY: optionalString,
+  // Keyless live geocoding via OSM Nominatim. When 'true' (and no Kakao key),
+  // /property-analyze resolves arbitrary Korean addresses to real coordinates
+  // with no API key (synthetic PNU). Off by default so CI/dev stay on the
+  // deterministic demo geocoder.
+  ENABLE_OSM_GEOCODER: optionalBool,
 
   // External AI / model providers (optional)
   OPENAI_API_KEY: optionalString,

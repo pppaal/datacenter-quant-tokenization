@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 const navLinks = [
+  { href: '/property-analyze', label: '주소 분석' },
   { href: '/product', label: '제품' },
   { href: '/research', label: '리서치' },
   { href: '/security', label: '보안' },

@@ -16,6 +16,10 @@ function isPublicApiPath(pathname: string) {
     pathname === '/api/admin/sso/login' ||
     pathname === '/api/admin/sso/callback' ||
     pathname.startsWith('/api/admin/scim/') ||
+    // Public click-to-analyze: the handler is IP-rate-limited and read-only to
+    // the visitor (it computes a report + writes its own snapshot). No admin
+    // data is exposed.
+    pathname === '/api/property-analyze' ||
     // Provider KYC webhooks carry no admin cookie; the route handler verifies a
     // per-provider HMAC signature and audits failures itself.
     pathname.startsWith('/api/kyc/webhook/') ||

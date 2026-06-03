@@ -11,7 +11,7 @@
  */
 
 import { AssetClass } from '@prisma/client';
-import { geocodeAddress, reverseGeocode } from '@/lib/services/geocode/korea-geocode';
+import { geocodeAddress, reverseGeocode, isLiveGeocoderConfigured } from '@/lib/services/geocode';
 import { getConnectorBundle } from '@/lib/services/public-data/registry';
 import {
   classifyAsset,
@@ -149,20 +149,21 @@ export async function autoAnalyzeProperty(
   // are attached to the provenance block so the UI can show them.
   const surfacedFailures: ConnectorFailure[] = [];
 
-  // 1. Resolve location. The only geocoder wired today is the deterministic
-  // mock; mark geocode provenance as MOCK until a live geocoder is added.
+  // 1. Resolve location via the geocoder factory — live Kakao when configured,
+  // deterministic mock otherwise. Provenance is MOCK only when no live provider
+  // is wired.
   let parcel;
   let location;
   let districtName;
-  const mockGeocode = true;
+  const mockGeocode = !isLiveGeocoderConfigured();
   if (input.address) {
-    const geo = geocodeAddress(input.address);
+    const geo = await geocodeAddress(input.address);
     if (!geo) {
       throw new Error(`Geocode failed for: ${input.address}`);
     }
     ({ parcel, location, districtName } = geo);
   } else if (input.location) {
-    const rev = reverseGeocode(input.location);
+    const rev = await reverseGeocode(input.location);
     if (!rev) {
       throw new Error(`Reverse geocode failed for: ${JSON.stringify(input.location)}`);
     }
