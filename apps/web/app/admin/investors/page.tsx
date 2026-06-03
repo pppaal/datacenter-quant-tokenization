@@ -5,6 +5,7 @@ import {
   buildInvestorComplianceView,
   type InvestorComplianceView
 } from '@/lib/services/aml/investor-compliance-view';
+import { toNumber } from '@/lib/math';
 import { formatCurrency, formatDate, formatNumber } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
@@ -42,12 +43,15 @@ export default async function InvestorsPage() {
       <div className="grid gap-5">
         {investors.map((investor) => {
           const commitmentKrw = investor.commitments.reduce(
-            (total, item) => total + item.commitmentKrw,
+            (total, item) => total + toNumber(item.commitmentKrw),
             0
           );
-          const calledKrw = investor.commitments.reduce((total, item) => total + item.calledKrw, 0);
+          const calledKrw = investor.commitments.reduce(
+            (total, item) => total + toNumber(item.calledKrw),
+            0
+          );
           const distributedKrw = investor.commitments.reduce(
-            (total, item) => total + item.distributedKrw,
+            (total, item) => total + toNumber(item.distributedKrw),
             0
           );
 
