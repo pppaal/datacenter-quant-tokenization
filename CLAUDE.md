@@ -168,13 +168,50 @@ system consistent.
 Large files that remain god-shaped. None blocks anything; pick by risk and
 test coverage (service-layer with unit tests is the safest to split):
 
-- `components/admin/deal-operator-console.tsx` (~2,156 LOC) — React
+- `components/admin/deal-operator-console.tsx` (~2,121 LOC) — React
   component; split into sub-panels. Hard to verify without the browser.
-- `lib/services/reports.ts` (~1,567 LOC) — no unit tests yet; add coverage
-  before/with any split.
-- `lib/services/dashboard.ts` (~1,403 LOC) — has `dashboard-risk.test.ts`;
-  cohesive sub-builders are extractable and verifiable via that test.
+- `lib/services/reports.ts` (~1,413 LOC) — has coverage via
+  `tests/reporting.test.ts` (and is exercised by several other suites), but
+  only ~half its exports are directly tested; close the gaps before/with any
+  split.
+- `lib/services/dashboard.ts` (~801 LOC, already split into
+  `dashboard/summaries.ts`) — has `dashboard-risk.test.ts`; remaining
+  sub-builders are extractable and verifiable via that test.
 - `components/admin/lease-book-form.tsx` (~1,194 LOC) — React form.
+
+### Audit follow-ups (2026-06, 3-reviewer pass)
+
+Tracked findings not yet actioned. The P0 security/correctness fixes from the
+same audit shipped separately (isRealProduction self-enforcement, the 0–10
+confidence-scale timeline fix, KYC webhook gating).
+
+- **`router.refresh()` UX staleness (P1).** ~40 admin mutation forms do
+  `await fetch(); router.refresh()` fire-and-forget with no pending state, so a
+  slow refresh can leave the screen stale. Wrap in `useTransition` +
+  surface an "updating" state (precedent: `compliance-modules-panel.tsx`,
+  `tenant-demand-form.tsx`). This would also let the e2e drop its
+  reload-after-mutation crutch.
+- **E2E coverage debt (P1).** 6 `test.fixme` flows in
+  `e2e/operator-mutation.spec.ts` (IC packet lock/decision/release, DD
+  completeness gating, security seat/identity, explorer bootstrap, research,
+  committee). Root cause of the DD upload failure is the in-process
+  `uploadRateLimiter` (5/60s, `lib/security/rate-limit.ts`) colliding with
+  serial-mode retries — reset/raise it under E2E, then un-quarantine. Note that
+  per-process limiter is also a no-op across multi-instance deploys.
+- **Convention adoption (P2).** `env()` is used in ~1 file (~72 raw
+  `process.env` reads remain); `withAdminApi` covers ~half of admin routes (the
+  rest hand-roll auth+audit and some return 401 where 403 is correct). Migrate
+  incrementally.
+- **Login brute-force (P2).** `checkDistributedRateLimit` exists but has zero
+  callers; wire it into `POST /api/admin/session` (it soft-fails open when
+  Upstash is unconfigured, so CI/dev are unaffected).
+- **Client error leakage (P2).** Several admin/ops routes return raw
+  `error.message` (incl. Prisma errors) to the client; return a generic message
+  + `requestId` and log details server-side.
+
+Note: the residual local `round` / `toNumber` / `clamp` variants in
+`macro`/`forecast` are **intentional** domain conventions (2-dp macro rounding,
+0–100 clamps), per `lib/math.ts`'s own docstring — not duplication to collapse.
 
 ## What to do BEFORE editing
 
