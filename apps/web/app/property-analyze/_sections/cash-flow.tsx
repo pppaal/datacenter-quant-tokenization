@@ -61,6 +61,10 @@ export function CashFlowSection({ pfYears }: { pfYears: any[] }) {
                 pick: (y: any) => -y.propertyTaxKrw
               },
               {
+                label: '종합부동산세 (Jongbuse)',
+                pick: (y: any) => -y.jongbuseKrw
+              },
+              {
                 label: 'Insurance',
                 pick: (y: any) => -y.insuranceKrw
               },
@@ -71,6 +75,10 @@ export function CashFlowSection({ pfYears }: { pfYears: any[] }) {
               {
                 label: 'Reserve Contribution',
                 pick: (y: any) => -y.reserveContributionKrw
+              },
+              {
+                label: 'Capex Reserve',
+                pick: (y: any) => -y.capexReserveKrw
               },
               {
                 label: 'Corporate Tax',
