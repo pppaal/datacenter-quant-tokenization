@@ -14,8 +14,13 @@ import type { KycEvent, KycProvider, KycProviderConfig } from './types';
  * Sumsub's `externalUserId` by the onboarding frontend; country code comes
  * from the verified document (ISO 3166-1 alpha-3 → numeric mapping).
  *
+ * Replay defense: the signed `ts` is bound into the HMAC, and
+ * `verifySignature` additionally rejects events whose `ts` is outside an
+ * allowed clock-skew window (`maxTimestampSkewSeconds`) so a captured webhook
+ * cannot be replayed indefinitely. Idempotency is handled downstream in
+ * `persistKycEvent` (re-asserting the current status is a no-op).
+ *
  * NOTE: this is a scaffold — production should add:
- *   - retry-safe idempotency using `applicantId + reviewResult.reviewStatus`
  *   - country alpha3→numeric mapping (see ISO-3166 packages)
  *   - explicit reject reason persistence
  */
@@ -44,6 +49,22 @@ export class SumsubProvider implements KycProvider {
     let diff = 0;
     for (let i = 0; i < got.length; i++) diff |= got.charCodeAt(i) ^ want.charCodeAt(i);
     if (diff !== 0) throw new Error('sumsub kyc: bad signature');
+
+    // Replay defense: the signed `ts` is part of the HMAC above, so a valid
+    // signature proves the sender chose `ts` — but a captured webhook can be
+    // replayed verbatim forever unless we also bound how old `ts` may be.
+    // Reject events whose signed timestamp is outside the allowed skew window.
+    const skew = this.config.maxTimestampSkewSeconds;
+    if (skew !== undefined) {
+      const signedTs = Number(ts);
+      if (!Number.isFinite(signedTs)) {
+        throw new Error('sumsub kyc: non-numeric signed timestamp');
+      }
+      const nowSeconds = Math.floor(Date.now() / 1000);
+      if (Math.abs(nowSeconds - signedTs) > skew) {
+        throw new Error('sumsub kyc: stale or future-dated webhook timestamp (replay rejected)');
+      }
+    }
   }
 
   async parseEvent(body: unknown): Promise<KycEvent> {

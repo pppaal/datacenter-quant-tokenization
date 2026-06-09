@@ -10,11 +10,59 @@ import { getDeploymentByAssetId, toDeploymentRow } from '@/lib/services/onchain/
 import { getWalletScreeningGate } from '@/lib/services/aml/screening';
 import type { KycEvent } from './types';
 
+export type PersistKycEventResult = {
+  record: KycRecord;
+  /**
+   * `true` when the inbound event asserted the exact same status that the
+   * existing `KycRecord` already reflected, so persistence was a no-op and the
+   * caller should NOT re-bridge / re-assert on-chain. Always `false` for the
+   * first event for an applicant (no prior record) and for any status change.
+   */
+  idempotentNoop: boolean;
+};
+
+/**
+ * Persist a normalized KYC event as a `KycRecord` (one row per
+ * provider + providerApplicantId).
+ *
+ * Replay/idempotency: a captured-and-replayed webhook (or a duplicate delivery)
+ * that re-asserts a status the record already holds is treated as a no-op — we
+ * do NOT rewrite the row or signal a status change, so the caller skips
+ * re-bridging on-chain. This complements the per-provider signature/timestamp
+ * freshness check: even a "fresh" duplicate within the skew window cannot
+ * re-assert (e.g. re-APPROVE) a status the applicant already has.
+ *
+ * Limitation: idempotency is keyed on the CURRENT persisted status only (the
+ * schema has no per-event nonce/event-id column). A replay that flips the
+ * status back and forth (APPROVED → REVOKED → APPROVED) is still distinct from
+ * the current row and will be applied; true once-only event dedup would need a
+ * processed-event ledger / unique event-id column (out of scope: no migration).
+ */
 export async function persistKycEvent(
   event: KycEvent,
   db: PrismaClient = prisma
-): Promise<KycRecord> {
-  return db.kycRecord.upsert({
+): Promise<PersistKycEventResult> {
+  const existing = await db.kycRecord.findUnique({
+    where: {
+      provider_providerApplicantId: {
+        provider: event.provider,
+        providerApplicantId: event.providerApplicantId
+      }
+    }
+  });
+
+  // Idempotent no-op: the record already reflects the asserted status for the
+  // same wallet + country. Skip the write and tell the caller not to re-bridge.
+  if (
+    existing &&
+    existing.status === event.status &&
+    existing.wallet === event.wallet &&
+    existing.countryCode === event.countryCode
+  ) {
+    return { record: existing, idempotentNoop: true };
+  }
+
+  const record = await db.kycRecord.upsert({
     where: {
       provider_providerApplicantId: {
         provider: event.provider,
@@ -36,6 +84,8 @@ export async function persistKycEvent(
       rawPayload: event.rawPayload as object
     }
   });
+
+  return { record, idempotentNoop: false };
 }
 
 /**
