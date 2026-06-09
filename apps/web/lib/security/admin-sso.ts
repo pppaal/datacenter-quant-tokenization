@@ -32,6 +32,56 @@ export const ADMIN_SSO_STATE_COOKIE = 'nexus_admin_sso_state';
 export const ADMIN_SSO_VERIFIER_COOKIE = 'nexus_admin_sso_verifier';
 export const ADMIN_SSO_NEXT_COOKIE = 'nexus_admin_sso_next';
 
+export const ADMIN_SSO_DEFAULT_NEXT_PATH = '/admin';
+
+/**
+ * Sanitize an attacker-controllable `next` redirect target.
+ *
+ * Returns the value only when it is a safe in-app, same-origin relative path.
+ * Anything else (absolute URLs, protocol-relative `//`, backslash tricks,
+ * scheme prefixes, control characters, or non-relative input) collapses to the
+ * default `/admin` landing path. This blocks the SSO open-redirect where a
+ * crafted `?next=https://evil.com` would bounce a freshly-authenticated admin
+ * off-site.
+ */
+export function sanitizeNextPath(next: string | null | undefined): string {
+  if (typeof next !== 'string') {
+    return ADMIN_SSO_DEFAULT_NEXT_PATH;
+  }
+
+  const candidate = next.trim();
+
+  // Must be a non-empty, single-leading-slash relative path.
+  if (candidate.length === 0 || candidate[0] !== '/') {
+    return ADMIN_SSO_DEFAULT_NEXT_PATH;
+  }
+
+  // Reject protocol-relative (`//host`) and backslash (`/\host`) tricks that
+  // browsers normalize to an absolute/off-origin URL.
+  if (candidate[1] === '/' || candidate[1] === '\\') {
+    return ADMIN_SSO_DEFAULT_NEXT_PATH;
+  }
+
+  // Reject backslashes anywhere (some clients treat `\` as `/`).
+  if (candidate.includes('\\')) {
+    return ADMIN_SSO_DEFAULT_NEXT_PATH;
+  }
+
+  // Reject any control characters (NUL, CR, LF, tab, etc.) used to smuggle
+  // schemes or split header values.
+  for (let i = 0; i < candidate.length; i += 1) {
+    if (candidate.charCodeAt(i) < 0x20 || candidate.charCodeAt(i) === 0x7f) {
+      return ADMIN_SSO_DEFAULT_NEXT_PATH;
+    }
+  }
+
+  // Note: schemes like `javascript:` / `https:` are already rejected above
+  // because they do not start with a single leading slash. A colon inside a
+  // genuine path segment (e.g. `/admin/x:y`) is left intact.
+
+  return candidate;
+}
+
 const textEncoder = new TextEncoder();
 
 function trim(value: string | undefined) {

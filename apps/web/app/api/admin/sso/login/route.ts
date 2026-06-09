@@ -6,7 +6,8 @@ import {
   buildAdminSsoAuthorizationUrl,
   createAdminSsoCookieOptions,
   createAdminSsoRandomValue,
-  getAdminSsoConfig
+  getAdminSsoConfig,
+  sanitizeNextPath
 } from '@/lib/security/admin-sso';
 
 export async function GET(request: Request) {
@@ -18,7 +19,10 @@ export async function GET(request: Request) {
   try {
     const state = createAdminSsoRandomValue();
     const verifier = createAdminSsoRandomValue();
-    const nextPath = new URL(request.url).searchParams.get('next');
+    const requestedNext = new URL(request.url).searchParams.get('next');
+    // Validate the attacker-controllable `next` before persisting it in a
+    // cookie; an unvalidated value enables a post-auth open redirect.
+    const nextPath = requestedNext ? sanitizeNextPath(requestedNext) : null;
     const redirectUrl = await buildAdminSsoAuthorizationUrl(config, {
       state,
       verifier
