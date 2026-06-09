@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { ReviewStatus } from '@prisma/client';
 import { Button } from '@/components/ui/button';
@@ -57,7 +57,7 @@ export function ReviewActionForm({
         throw new Error(payload?.error ?? 'Failed to review evidence.');
       }
 
-      router.refresh();
+      startTransition(() => router.refresh());
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Failed to review evidence.');
     } finally {

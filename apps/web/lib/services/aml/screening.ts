@@ -253,7 +253,58 @@ export type ScreenAndRecordInput = {
   investorId?: string | null;
   counterpartyId?: string | null;
   beneficialOwnerId?: string | null;
+  /** 0x-prefixed on-chain wallet this screening covers (lower-cased on store). */
+  wallet?: string | null;
 };
+
+/**
+ * Screening statuses that must block onboarding / on-chain whitelisting. Mirrors
+ * the eligibility gate; the only non-blocking status is `CLEAR`.
+ */
+export const BLOCKING_SCREENING_STATUSES: ReadonlySet<ScreeningStatus> = new Set([
+  'POTENTIAL_MATCH',
+  'CONFIRMED_MATCH',
+  'ESCALATED',
+  'REJECTED'
+]);
+
+export function isBlockingScreeningStatus(status: string | null | undefined): boolean {
+  return BLOCKING_SCREENING_STATUSES.has((status ?? '').toUpperCase() as ScreeningStatus);
+}
+
+export type WalletScreeningGate = {
+  cleared: boolean;
+  status: ScreeningStatus | null;
+  reason: 'CLEAR' | 'NOT_SCREENED' | 'SANCTIONS_BLOCKED';
+};
+
+/**
+ * Fail-closed sanctions gate for a wallet: returns `cleared: true` only when the
+ * latest `ScreeningResult` for the wallet exists and is non-blocking. No
+ * screening on record → NOT_SCREENED (blocked), a blocking status → SANCTIONS_BLOCKED.
+ */
+export async function getWalletScreeningGate(
+  wallet: string,
+  db: Pick<PrismaClient, 'screeningResult'> = prisma
+): Promise<WalletScreeningGate> {
+  const normalized = wallet.trim().toLowerCase();
+  const latest = await db.screeningResult.findFirst({
+    where: { wallet: normalized },
+    orderBy: { screenedAt: 'desc' },
+    select: { status: true }
+  });
+  if (!latest) {
+    return { cleared: false, status: null, reason: 'NOT_SCREENED' };
+  }
+  if (isBlockingScreeningStatus(latest.status)) {
+    return {
+      cleared: false,
+      status: latest.status as ScreeningStatus,
+      reason: 'SANCTIONS_BLOCKED'
+    };
+  }
+  return { cleared: true, status: latest.status as ScreeningStatus, reason: 'CLEAR' };
+}
 
 /**
  * Screen a subject through the configured provider, evaluate the outcome, and
@@ -283,6 +334,7 @@ export async function screenAndRecord(
       subjectName: input.subject.name,
       subjectDob: subjectDob ? new Date(subjectDob) : null,
       subjectCountry: input.subject.country ?? null,
+      wallet: input.wallet?.trim().toLowerCase() ?? null,
       provider: provider.name,
       listType: outcome.listType,
       matchScore: outcome.matchScore,

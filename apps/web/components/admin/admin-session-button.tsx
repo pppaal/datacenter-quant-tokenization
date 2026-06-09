@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 
@@ -17,7 +17,7 @@ export function AdminSessionButton() {
       });
     } finally {
       router.push('/admin/login');
-      router.refresh();
+      startTransition(() => router.refresh());
       setIsSubmitting(false);
     }
   }

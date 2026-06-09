@@ -5,7 +5,7 @@ import {
   DealDiligenceWorkstreamType,
   DocumentType
 } from '@prisma/client';
-import { useState } from 'react';
+import { useState, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -123,7 +123,7 @@ export function DealDiligenceWorkstreamPanel({
       await work();
       setNotice(successMessage);
       setTimeout(() => setNotice(null), 4000);
-      router.refresh();
+      startTransition(() => router.refresh());
     } catch (mutationError) {
       setError(mutationError instanceof Error ? mutationError.message : 'Request failed');
     } finally {

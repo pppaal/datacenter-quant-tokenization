@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -49,7 +49,7 @@ export function ValuationApprovalForm({
             throw new Error(payload?.error ?? 'Failed to update approval');
           }
 
-          router.refresh();
+          startTransition(() => router.refresh());
         } catch (caughtError) {
           setError(
             caughtError instanceof Error ? caughtError.message : 'Failed to update approval'

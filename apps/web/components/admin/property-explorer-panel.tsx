@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -46,7 +46,7 @@ export function PropertyExplorerPanel({ data, mapConfig }: Props) {
       }
 
       router.push(`/admin/assets/${payload.id}`);
-      router.refresh();
+      startTransition(() => router.refresh());
     } catch (caughtError) {
       setError(
         caughtError instanceof Error

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -237,7 +237,7 @@ export function AssetIntakeForm({ defaultValues, assetId }: Props) {
 
       const result = await response.json();
       router.push(`/admin/assets/${result.id}`);
-      router.refresh();
+      startTransition(() => router.refresh());
     } finally {
       setSubmitting(false);
     }

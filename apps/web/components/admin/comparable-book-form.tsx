@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { AssetStage } from '@prisma/client';
 import { type SupportedCurrency } from '@/lib/finance/currency';
@@ -151,7 +151,7 @@ export function ComparableBookForm({
         throw new Error(result?.error ?? 'Failed to save comparable');
       }
 
-      router.refresh();
+      startTransition(() => router.refresh());
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Failed to save comparable');
     } finally {
@@ -181,7 +181,7 @@ export function ComparableBookForm({
         throw new Error(result?.error ?? 'Failed to delete comparable');
       }
 
-      router.refresh();
+      startTransition(() => router.refresh());
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Failed to delete comparable');
     } finally {

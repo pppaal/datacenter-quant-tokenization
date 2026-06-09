@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 
@@ -29,7 +29,7 @@ export function CommitteePacketReleaseButton({ packetId }: { packetId: string })
         const payload = (await response.json().catch(() => null)) as { error?: string } | null;
         throw new Error(payload?.error ?? 'Failed to release packet');
       }
-      router.refresh();
+      startTransition(() => router.refresh());
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : 'Failed to release packet');
     } finally {

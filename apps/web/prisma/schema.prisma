@@ -2760,6 +2760,10 @@ model ScreeningResult {
   subjectName    String
   subjectDob     DateTime?
   subjectCountry String?  // ISO 3166-1 alpha-3
+  // 0x-prefixed, lower-cased on-chain wallet this screening covers (when the
+  // subject is a token holder). Lets the KYC→identity bridge require a CLEAR
+  // sanctions screening before whitelisting a wallet on-chain.
+  wallet         String?
   provider       String   @default("local") // "local" | "dowjones" | "refinitiv" ...
   listType       String?  // populated on a hit
   matchScore     Float    @default(0)
@@ -2778,6 +2782,7 @@ model ScreeningResult {
   @@index([counterpartyId, screenedAt])
   @@index([status, screenedAt])
   @@index([rescreenDueAt])
+  @@index([wallet, screenedAt])
 }
 
 // Per-investor AML risk rating (위험평가). Derived from screening outcomes,
@@ -3052,10 +3057,10 @@ model Fund {
   name                String
   strategy            String?
   baseCurrency        String          @default("KRW")
-  targetSizeKrw       Float?
-  committedCapitalKrw Float?
-  investedCapitalKrw  Float?
-  dryPowderKrw        Float?
+  targetSizeKrw       Decimal?        @db.Decimal(20, 2)
+  committedCapitalKrw Decimal?        @db.Decimal(20, 2)
+  investedCapitalKrw  Decimal?        @db.Decimal(20, 2)
+  dryPowderKrw        Decimal?        @db.Decimal(20, 2)
   vintageYear         Int?
   thesis              String?
   portfolioId         String?
@@ -3143,10 +3148,10 @@ model Commitment {
   fundId         String
   vehicleId      String?
   investorId     String
-  commitmentKrw  Float
-  calledKrw      Float     @default(0)
-  distributedKrw Float     @default(0)
-  recallableKrw  Float?
+  commitmentKrw  Decimal   @db.Decimal(20, 2)
+  calledKrw      Decimal   @default(0) @db.Decimal(20, 2)
+  distributedKrw Decimal   @default(0) @db.Decimal(20, 2)
+  recallableKrw  Decimal?  @db.Decimal(20, 2)
   signedAt       DateTime?
   statusLabel    String    @default("ACTIVE")
   createdAt      DateTime  @default(now())
@@ -3166,7 +3171,7 @@ model CapitalCall {
   vehicleId   String?
   callDate    DateTime
   dueDate     DateTime?
-  amountKrw   Float
+  amountKrw   Decimal           @db.Decimal(20, 2)
   purpose     String?
   status      CapitalCallStatus @default(PLANNED)
   notes       String?
@@ -3184,7 +3189,7 @@ model Distribution {
   fundId      String
   vehicleId   String?
   distributionDate DateTime
-  amountKrw   Float
+  amountKrw   Decimal            @db.Decimal(20, 2)
   purpose     String?
   status      DistributionStatus @default(PLANNED)
   notes       String?
@@ -3204,7 +3209,7 @@ model CapitalCallAllocation {
   id            String      @id @default(cuid())
   capitalCallId String
   investorId    String
-  amountKrw     Float
+  amountKrw     Decimal     @db.Decimal(20, 2)
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
   capitalCall   CapitalCall @relation(fields: [capitalCallId], references: [id], onDelete: Cascade)
@@ -3219,7 +3224,7 @@ model DistributionAllocation {
   id             String       @id @default(cuid())
   distributionId String
   investorId     String
-  amountKrw      Float
+  amountKrw      Decimal      @db.Decimal(20, 2)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   distribution   Distribution @relation(fields: [distributionId], references: [id], onDelete: Cascade)

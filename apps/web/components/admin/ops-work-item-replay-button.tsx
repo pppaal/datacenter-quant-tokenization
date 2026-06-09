@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 
@@ -32,7 +32,7 @@ export function OpsWorkItemReplayButton({ workItemId }: OpsWorkItemReplayButtonP
       }
 
       setFeedback(`Work item requeued as ${payload?.workItem?.status?.toLowerCase() ?? 'queued'}.`);
-      router.refresh();
+      startTransition(() => router.refresh());
     } catch (caughtError) {
       setError(
         caughtError instanceof Error ? caughtError.message : 'Failed to requeue ops work item.'

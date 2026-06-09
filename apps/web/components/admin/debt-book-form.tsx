@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, startTransition } from 'react';
 import { AmortizationProfile, DebtFacilityType } from '@prisma/client';
 import { useRouter } from 'next/navigation';
 import { type SupportedCurrency } from '@/lib/finance/currency';
@@ -225,7 +225,7 @@ export function DebtBookForm({
         throw new Error(result?.error ?? 'Failed to save debt facility');
       }
 
-      router.refresh();
+      startTransition(() => router.refresh());
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Failed to save debt facility');
     } finally {
@@ -255,7 +255,7 @@ export function DebtBookForm({
         throw new Error(result?.error ?? 'Failed to delete debt facility');
       }
 
-      router.refresh();
+      startTransition(() => router.refresh());
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Failed to delete debt facility');
     } finally {

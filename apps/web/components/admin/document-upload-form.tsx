@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useState } from 'react';
+import { useId, useState, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -52,7 +52,7 @@ export function DocumentUploadForm({ assetId, dealId }: { assetId?: string; deal
       form.reset({ assetId, dealId });
       fileInput.value = '';
       setSuccess(`Document uploaded: ${values.title}`);
-      router.refresh();
+      startTransition(() => router.refresh());
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : 'Upload failed');
     } finally {

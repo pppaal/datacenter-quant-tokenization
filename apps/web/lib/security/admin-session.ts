@@ -1,3 +1,4 @@
+import { isRealProduction } from '@/lib/runtime-env';
 import type { AuthorizedAdminActor } from '@/lib/security/admin-auth';
 
 export const ADMIN_SESSION_COOKIE = 'nexus_admin_session';
@@ -152,7 +153,11 @@ export function getAdminSessionCookieOptions(env: NodeJS.ProcessEnv = process.en
   return {
     httpOnly: true,
     sameSite: 'lax' as const,
-    secure: env.NODE_ENV === 'production',
+    // Real production stays Secure-only. Under the E2E production build the
+    // suite runs over plain http://localhost and Playwright's APIRequestContext
+    // will not attach a Secure cookie, so gate Secure on isRealProduction (which
+    // the preflight forbids in a real deployment) rather than NODE_ENV alone.
+    secure: isRealProduction(env),
     path: '/',
     maxAge: getSessionTtlMs(env) / 1000
   };

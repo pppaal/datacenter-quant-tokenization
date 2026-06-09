@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, startTransition } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 
@@ -32,7 +32,7 @@ export function AdminLoginForm() {
       }
 
       router.push(searchParams?.get('next') || '/admin');
-      router.refresh();
+      startTransition(() => router.refresh());
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : 'Unable to sign in.');
     } finally {

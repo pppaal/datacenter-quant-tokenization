@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -54,7 +54,7 @@ export function TimeseriesImportForm() {
           tone: 'good',
           text: `Imported · ${body.summary.macroInserted + body.summary.marketInserted} new · ${body.summary.macroUpdated + body.summary.marketUpdated} updated`
         });
-        router.refresh();
+        startTransition(() => router.refresh());
       }
     } finally {
       setBusy(false);

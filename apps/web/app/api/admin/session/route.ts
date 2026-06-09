@@ -38,6 +38,9 @@ function rateLimitedResponse(retryAfterMs: number) {
 export async function POST(request: Request) {
   const ipAddress = getRequestIpAddress(request.headers) ?? 'unknown';
 
+  // Layer 1: always-on in-process limiter keyed on IP. Unlike the distributed
+  // limiter below it does not depend on Upstash, so it still throttles in
+  // single-instance / no-Redis deployments (it is relaxed under E2E).
   try {
     authRateLimiter.check(`login:${ipAddress}`);
   } catch (error) {
@@ -45,16 +48,6 @@ export async function POST(request: Request) {
       return rateLimitedResponse(error.retryAfterMs);
     }
     throw error;
-  }
-
-  const distributed = await checkDistributedRateLimit(
-    'admin-login',
-    ipAddress,
-    LOGIN_RATE_WINDOW_MS,
-    LOGIN_RATE_MAX
-  );
-  if (!distributed.allowed) {
-    return rateLimitedResponse(distributed.retryAfterMs);
   }
 
   const body = (await request.json().catch(() => null)) as {
@@ -71,6 +64,18 @@ export async function POST(request: Request) {
       { error: 'Admin auth is not configured for operator sessions.' },
       { status: 503 }
     );
+  }
+
+  // Layer 2: cross-instance distributed throttle keyed on IP + username. Soft-
+  // fails open when Upstash is unconfigured, so dev/CI/e2e are unaffected.
+  const distributed = await checkDistributedRateLimit(
+    'admin-login',
+    `${ipAddress}:${user.toLowerCase()}`,
+    LOGIN_RATE_WINDOW_MS,
+    LOGIN_RATE_MAX
+  );
+  if (!distributed.allowed) {
+    return rateLimitedResponse(distributed.retryAfterMs);
   }
 
   const actor = authorizeAdminCredentials(user, password, config);

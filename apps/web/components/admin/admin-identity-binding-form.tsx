@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
@@ -66,7 +66,7 @@ export function AdminIdentityBindingForm({
       setFeedback(
         nextUserId ? 'Identity mapped to canonical operator.' : 'Identity mapping cleared.'
       );
-      router.refresh();
+      startTransition(() => router.refresh());
     } catch (caughtError) {
       setError(
         caughtError instanceof Error ? caughtError.message : 'Failed to update identity binding.'
