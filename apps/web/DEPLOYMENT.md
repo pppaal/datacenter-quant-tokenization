@@ -60,7 +60,7 @@ From a developer workstation (not from Vercel's build step):
 ```bash
 cd apps/web
 export DATABASE_URL="<your-direct-connection-string>"
-npx prisma migrate deploy
+npm run prisma:migrate:deploy
 ```
 
 Use a **direct** (non-pooled) connection string for `migrate deploy`. Once
@@ -114,6 +114,11 @@ Vercel will:
    `vercel.json`) so the Prisma client is regenerated against the deployed
    `schema.prisma`.
 2. Run `npm run build` which executes `tsx scripts/clean-next-build.ts && next build`.
+   The build deliberately does **not** run `prisma migrate deploy` — Vercel's
+   build sandbox has no guaranteed (or direct) database connection, so migrating
+   from the build would fail the deployment. Apply migrations as the separate
+   release step in §b (`npm run prisma:migrate:deploy` against a direct
+   connection) before promoting.
 3. Publish the `build/` output.
 4. Deploy API routes with `maxDuration: 60s` so Prisma-backed routes have
    headroom for cold starts and longer queries.
