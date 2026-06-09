@@ -30,7 +30,11 @@ test('admin login throttles brute-force after the per-IP limit', async () => {
 
   // First 10 attempts are admitted by the limiter (then rejected downstream as
   // 503 because auth is not configured in the test env), the 11th+ are 429.
-  assert.equal(statuses.slice(0, 10).every((s) => s !== 429), true, `early: ${statuses}`);
+  assert.equal(
+    statuses.slice(0, 10).every((s) => s !== 429),
+    true,
+    `early: ${statuses}`
+  );
   assert.equal(statuses[10], 429, `11th should be 429: ${statuses}`);
   assert.equal(statuses[11], 429, `12th should be 429: ${statuses}`);
 
