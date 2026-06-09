@@ -55,12 +55,12 @@ export async function POST(request: Request, context: { params: Promise<{ provid
 
   try {
     const event = await provider.parseEvent(body);
-    const record = await persistKycEvent(event);
+    const { record, idempotentNoop } = await persistKycEvent(event);
 
     await recordAuditEvent({
       actorIdentifier: `kyc-webhook:${provider.name}`,
       actorRole: 'system',
-      action: 'kyc.webhook_received',
+      action: idempotentNoop ? 'kyc.webhook_received_noop' : 'kyc.webhook_received',
       entityType: 'KycRecord',
       entityId: record.id,
       requestPath: new URL(request.url).pathname,
@@ -71,11 +71,12 @@ export async function POST(request: Request, context: { params: Promise<{ provid
         providerApplicantId: event.providerApplicantId,
         wallet: event.wallet,
         countryCode: event.countryCode,
-        status: event.status
+        status: event.status,
+        idempotentNoop
       }
     });
 
-    return NextResponse.json({ kycRecordId: record.id, status: record.status });
+    return NextResponse.json({ kycRecordId: record.id, status: record.status, idempotentNoop });
   } catch (error) {
     await recordAuditEvent({
       actorIdentifier: `kyc-webhook:${provider.name}`,

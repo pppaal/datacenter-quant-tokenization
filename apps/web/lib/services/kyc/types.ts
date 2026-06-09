@@ -18,6 +18,14 @@ export type KycProviderConfig = {
   webhookSecret: string;
   /** When true, signature verification is skipped (local + test). */
   allowUnsignedLocal?: boolean;
+  /**
+   * Maximum allowed clock skew, in seconds, between the signed webhook `ts`
+   * and the receiver's clock. Events whose signed timestamp falls outside
+   * `[now - skew, now + skew]` are rejected as stale/replayed. When omitted,
+   * timestamp freshness is not enforced (e.g. the mock provider, whose scheme
+   * has no signed timestamp).
+   */
+  maxTimestampSkewSeconds?: number;
 };
 
 export interface KycProvider {

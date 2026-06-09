@@ -5,6 +5,22 @@ import type { KycProvider } from './types';
 
 const cache = new Map<string, KycProvider>();
 
+const DEFAULT_WEBHOOK_TS_SKEW_SECONDS = 300;
+
+/**
+ * Resolve the allowed webhook timestamp skew (seconds) from
+ * `KYC_WEBHOOK_TS_SKEW_SECONDS`, falling back to a 5-minute default. A
+ * malformed/non-positive value falls back to the default rather than silently
+ * disabling the replay check.
+ */
+function resolveSkewSeconds(): number {
+  const raw = process.env.KYC_WEBHOOK_TS_SKEW_SECONDS?.trim();
+  if (!raw) return DEFAULT_WEBHOOK_TS_SKEW_SECONDS;
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed) || parsed <= 0) return DEFAULT_WEBHOOK_TS_SKEW_SECONDS;
+  return Math.floor(parsed);
+}
+
 export function getKycProvider(name: string): KycProvider {
   const key = name.toLowerCase();
   const cached = cache.get(key);
@@ -30,7 +46,17 @@ export function getKycProvider(name: string): KycProvider {
     if (!secret) {
       throw new Error('KYC_SUMSUB_WEBHOOK_SECRET is required for the Sumsub provider');
     }
-    provider = new SumsubProvider({ webhookSecret: secret });
+    // Bound how old a signed webhook `ts` may be to defeat replay. Configurable
+    // via KYC_WEBHOOK_TS_SKEW_SECONDS; defaults to 300s (5 min). In non-real-
+    // production contexts (local/dev/e2e) the freshness check is skipped UNLESS
+    // the env var is explicitly set, so fixtures with fixed timestamps don't
+    // decay — mirroring the `allowUnsignedLocal` escape hatch the mock provider
+    // uses.
+    const enforceFreshness = isRealProduction() || Boolean(process.env.KYC_WEBHOOK_TS_SKEW_SECONDS);
+    provider = new SumsubProvider({
+      webhookSecret: secret,
+      maxTimestampSkewSeconds: enforceFreshness ? resolveSkewSeconds() : undefined
+    });
   } else {
     throw new Error(`Unknown KYC provider: ${name}`);
   }
