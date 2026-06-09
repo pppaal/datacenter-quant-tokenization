@@ -40,7 +40,18 @@ function baseProForma(overrides: Partial<ProFormaInputs> = {}): ProFormaInputs {
   };
 }
 
-const ASSET_CLASSES: ProFormaInputs['assetClass'][] = ['OFFICE', 'RETAIL', 'DATA_CENTER'];
+// Every asset class the synthetic engine supports — the statements must foot for
+// all of them, not just office (e.g. MULTIFAMILY carries heavier 주택 종부세).
+const ASSET_CLASSES: ProFormaInputs['assetClass'][] = [
+  'OFFICE',
+  'INDUSTRIAL',
+  'RETAIL',
+  'MULTIFAMILY',
+  'HOTEL',
+  'DATA_CENTER',
+  'LAND',
+  'MIXED_USE'
+];
 
 test('cash flow deduction bridge foots to After-Tax Distribution every year', () => {
   for (const assetClass of ASSET_CLASSES) {
