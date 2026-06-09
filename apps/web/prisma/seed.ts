@@ -106,6 +106,13 @@ async function main() {
         role: UserRole.ADMIN
       },
       {
+        // Second ADMIN seat so the IC maker-checker (segregation of duties) can be
+        // exercised: one admin locks/releases, a distinct admin decides.
+        name: 'Committee Chair',
+        email: 'admin2@nexusseoul.local',
+        role: UserRole.ADMIN
+      },
+      {
         name: 'Lead Underwriter',
         email: 'analyst@nexusseoul.local',
         role: UserRole.ANALYST
