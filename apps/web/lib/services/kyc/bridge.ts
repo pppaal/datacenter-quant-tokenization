@@ -7,6 +7,7 @@ import {
   updateCountry
 } from '@/lib/services/onchain/identity-registry';
 import { getDeploymentByAssetId, toDeploymentRow } from '@/lib/services/onchain/tokenization-repo';
+import { getWalletScreeningGate } from '@/lib/services/aml/screening';
 import type { KycEvent } from './types';
 
 export async function persistKycEvent(
@@ -48,6 +49,13 @@ export async function persistKycEvent(
  * - REJECTED | REVOKED & registered → removeIdentity
  * - REJECTED | REVOKED & not registered → no-op
  * - PENDING → no-op (wait for next webhook)
+ *
+ * Sanctions gate: an APPROVED KYC alone is NOT sufficient to whitelist a wallet
+ * on-chain. Any write that ADDS or KEEPS the wallet on the registry
+ * (register / updateCountry) requires a CLEAR sanctions screening for that
+ * wallet (`getWalletScreeningGate`, fail-closed — a missing screening blocks).
+ * Removals are never gated: pulling a sanctioned wallet off-chain must always be
+ * allowed.
  */
 export async function bridgeKycToChain(input: {
   kycRecordId: string;
@@ -72,6 +80,19 @@ export async function bridgeKycToChain(input: {
   let action = 'noop';
 
   if (record.status === 'APPROVED') {
+    const needsOnchainWrite = !current.registered || current.countryCode !== record.countryCode;
+    if (needsOnchainWrite) {
+      // Fail-closed sanctions gate before any whitelist/keep write. The AML
+      // engine screens the wallet separately; an APPROVED KYC must never be
+      // enough on its own to register a sanctioned holder on-chain.
+      const gate = await getWalletScreeningGate(record.wallet, db);
+      if (!gate.cleared) {
+        throw new Error(
+          `Sanctions screening required before on-chain identity registration (wallet=${record.wallet}, reason=${gate.reason}).`
+        );
+      }
+    }
+
     if (!current.registered) {
       txHash = await registerIdentity(deployment, {
         wallet: record.wallet,
