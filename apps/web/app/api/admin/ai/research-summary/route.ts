@@ -6,6 +6,7 @@ import {
 } from '@/lib/security/admin-request';
 import { recordAuditEvent } from '@/lib/services/audit';
 import { hasRequiredAdminRole } from '@/lib/security/admin-auth';
+import { genericErrorResponse } from '@/lib/security/error-response';
 import { OpenAIConfigurationError, summarizeResearchSnapshot } from '@/lib/services/ai-assistant';
 
 export async function POST(request: Request) {
@@ -48,7 +49,6 @@ export async function POST(request: Request) {
     return NextResponse.json(result);
   } catch (error) {
     const isConfigError = error instanceof OpenAIConfigurationError;
-    const status = isConfigError ? 503 : 400;
 
     await recordAuditEvent({
       actorIdentifier: actor.identifier,
@@ -65,11 +65,15 @@ export async function POST(request: Request) {
       }
     });
 
-    return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : 'Failed to summarize research snapshot'
-      },
-      { status }
-    );
+    // OpenAIConfigurationError is a known operator-facing config signal (503);
+    // its message is safe to surface. Everything else is unexpected and is
+    // genericized so raw/Prisma internals don't leak to the client.
+    if (isConfigError) {
+      return NextResponse.json({ error: (error as Error).message }, { status: 503 });
+    }
+    return genericErrorResponse(error, {
+      status: 500,
+      context: { route: '/api/admin/ai/research-summary', snapshotId }
+    });
   }
 }

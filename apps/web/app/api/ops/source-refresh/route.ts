@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { SourceRefreshTriggerType } from '@prisma/client';
 import { recordAuditEvent } from '@/lib/services/audit';
+import { genericErrorResponse } from '@/lib/security/error-response';
 import { runSourceRefreshJob } from '@/lib/services/source-refresh';
 
 function isAuthorized(request: Request, expectedToken: string) {
@@ -62,9 +63,9 @@ export async function POST(request: Request) {
       }
     });
 
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to run source refresh job' },
-      { status: 500 }
-    );
+    return genericErrorResponse(error, {
+      status: 500,
+      context: { route: '/api/ops/source-refresh' }
+    });
   }
 }

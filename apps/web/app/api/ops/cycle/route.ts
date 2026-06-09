@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { recordAuditEvent } from '@/lib/services/audit';
+import { genericErrorResponse } from '@/lib/security/error-response';
 import { runOpsCycle } from '@/lib/services/ops-worker';
 
 function isAuthorized(request: Request, expectedToken: string) {
@@ -58,9 +59,6 @@ export async function POST(request: Request) {
       }
     });
 
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to run ops cycle' },
-      { status: 500 }
-    );
+    return genericErrorResponse(error, { status: 500, context: { route: '/api/ops/cycle' } });
   }
 }

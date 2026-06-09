@@ -7,6 +7,7 @@ import {
   resolveVerifiedAdminActorFromHeaders
 } from '@/lib/security/admin-request';
 import { hasRequiredAdminRole } from '@/lib/security/admin-auth';
+import { genericErrorResponse } from '@/lib/security/error-response';
 
 export async function GET(request: Request) {
   const actor = await resolveVerifiedAdminActorFromHeaders(request.headers, prisma, {
@@ -59,9 +60,9 @@ export async function GET(request: Request) {
       }
     });
 
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to list notifications' },
-      { status: 400 }
-    );
+    return genericErrorResponse(error, {
+      status: 500,
+      context: { route: '/api/admin/notifications' }
+    });
   }
 }

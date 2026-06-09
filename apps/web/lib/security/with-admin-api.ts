@@ -34,6 +34,7 @@ import {
   type AuthorizedAdminActor as AdminActor
 } from './admin-auth';
 import { recordAuditEvent } from '@/lib/services/audit';
+import { genericErrorResponse } from './error-response';
 
 export type WithAdminApiContext<TBody, TParams> = {
   actor: AdminActor;
@@ -196,10 +197,14 @@ export function withAdminApi<
             }
           });
         }
-        return NextResponse.json(
-          { error: error instanceof Error ? error.message : 'Request failed' },
-          { status: 500, headers: { 'X-Request-Id': requestId } }
-        );
+        // Genericize: unexpected handler failures (incl. raw Prisma errors)
+        // must not leak `error.message` to the client. The full error is
+        // logged + reported server-side, correlated by `requestId`.
+        return genericErrorResponse(error, {
+          status: 500,
+          requestId,
+          context: { route: new URL(request.url).pathname, method: request.method }
+        });
       }
     });
   };

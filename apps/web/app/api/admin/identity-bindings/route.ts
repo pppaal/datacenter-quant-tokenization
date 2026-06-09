@@ -5,6 +5,7 @@ import {
   resolveVerifiedAdminActorFromHeaders
 } from '@/lib/security/admin-request';
 import { recordAuditEvent } from '@/lib/services/audit';
+import { genericErrorResponse } from '@/lib/security/error-response';
 import { updateAdminIdentityBindingUser } from '@/lib/security/admin-identity';
 
 type IdentityBindingPayload = {
@@ -76,11 +77,9 @@ export async function PATCH(request: Request) {
       }
     });
 
-    return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : 'Failed to update admin identity binding.'
-      },
-      { status: 400 }
-    );
+    return genericErrorResponse(error, {
+      status: 500,
+      context: { route: '/api/admin/identity-bindings' }
+    });
   }
 }

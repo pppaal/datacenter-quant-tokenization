@@ -22,13 +22,17 @@ export async function GET(request: Request) {
     const result = await runAuditPrune({ dryRun });
     return NextResponse.json({ ok: true, ...result });
   } catch (error) {
-    await reportError(error, { route: '/api/ops/audit-prune' });
+    const requestId = crypto.randomUUID();
+    await reportError(error, { route: '/api/ops/audit-prune', requestId });
     logger.error('audit_pruner_route_failed', {
+      requestId,
       error: error instanceof Error ? error.message : String(error)
     });
+    // Genericize: the real error is logged + reported above; the client only
+    // sees a generic message + the correlating requestId.
     return NextResponse.json(
-      { ok: false, error: error instanceof Error ? error.message : 'unknown' },
-      { status: 500 }
+      { ok: false, error: 'Internal server error.', requestId },
+      { status: 500, headers: { 'X-Request-Id': requestId } }
     );
   }
 }

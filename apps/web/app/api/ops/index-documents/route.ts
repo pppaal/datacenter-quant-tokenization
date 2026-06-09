@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { recordAuditEvent } from '@/lib/services/audit';
+import { genericErrorResponse } from '@/lib/security/error-response';
 import {
   indexDocumentForSearch,
   type IndexDocumentResult
@@ -132,6 +133,9 @@ export async function POST(request: Request) {
       statusLabel: 'FAILED',
       metadata: { mode, batchSize, error: message }
     });
-    return NextResponse.json({ error: message }, { status: 500 });
+    return genericErrorResponse(error, {
+      status: 500,
+      context: { route: '/api/ops/index-documents', mode }
+    });
   }
 }

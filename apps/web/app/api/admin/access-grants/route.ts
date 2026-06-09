@@ -33,12 +33,17 @@ export const POST = withAdminApi({
       const grant = await grantAdminAccessScope(body, prisma.adminAccessGrant);
       return NextResponse.json({ grant }, { status: 201 });
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to create grant';
-      const isDuplicate = /unique|duplicate|already/i.test(message);
-      return NextResponse.json(
-        { error: isDuplicate ? 'Grant already exists for this user and scope.' : message },
-        { status: isDuplicate ? 409 : 500, headers: { 'X-Request-Id': requestId } }
-      );
+      const message = error instanceof Error ? error.message : '';
+      // Duplicate is an expected business conflict (409) with a safe message.
+      // Anything else is unexpected — rethrow so `withAdminApi` genericizes it
+      // (generic message + requestId) instead of leaking `error.message`.
+      if (/unique|duplicate|already/i.test(message)) {
+        return NextResponse.json(
+          { error: 'Grant already exists for this user and scope.' },
+          { status: 409, headers: { 'X-Request-Id': requestId } }
+        );
+      }
+      throw error;
     }
   }
 });

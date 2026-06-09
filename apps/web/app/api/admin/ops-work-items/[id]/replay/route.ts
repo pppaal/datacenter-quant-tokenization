@@ -6,6 +6,7 @@ import {
   resolveVerifiedAdminActorFromHeaders
 } from '@/lib/security/admin-request';
 import { recordAuditEvent } from '@/lib/services/audit';
+import { genericErrorResponse } from '@/lib/security/error-response';
 
 export async function POST(
   request: Request,
@@ -76,11 +77,9 @@ export async function POST(
       }
     });
 
-    return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : 'Failed to requeue ops work item.'
-      },
-      { status: 400 }
-    );
+    return genericErrorResponse(error, {
+      status: 500,
+      context: { route: `/api/admin/ops-work-items/${id}/replay` }
+    });
   }
 }

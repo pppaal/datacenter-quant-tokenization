@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { NotificationSeverity, NotificationType } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { recordAuditEvent } from '@/lib/services/audit';
+import { genericErrorResponse } from '@/lib/security/error-response';
 import { createNotification } from '@/lib/services/notifications';
 
 /**
@@ -151,6 +152,9 @@ export async function POST(request: Request) {
       statusLabel: 'FAILED',
       metadata: { error: message }
     });
-    return NextResponse.json({ error: message }, { status: 500 });
+    return genericErrorResponse(error, {
+      status: 500,
+      context: { route: '/api/ops/research-stale-drafts' }
+    });
   }
 }

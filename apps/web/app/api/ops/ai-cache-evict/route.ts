@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { recordAuditEvent } from '@/lib/services/audit';
+import { genericErrorResponse } from '@/lib/security/error-response';
 import { evictExpiredAiResponses } from '@/lib/services/ai/response-cache';
 
 /**
@@ -62,6 +63,9 @@ export async function POST(request: Request) {
       statusLabel: 'FAILED',
       metadata: { error: message }
     });
-    return NextResponse.json({ error: message }, { status: 500 });
+    return genericErrorResponse(error, {
+      status: 500,
+      context: { route: '/api/ops/ai-cache-evict' }
+    });
   }
 }

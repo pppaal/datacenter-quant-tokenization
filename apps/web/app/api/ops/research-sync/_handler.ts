@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { ResearchSyncTriggerType } from '@prisma/client';
 import { recordAuditEvent } from '@/lib/services/audit';
+import { genericErrorResponse } from '@/lib/security/error-response';
 import {
   runResearchWorkspaceSync,
   type ResearchSyncScope
@@ -73,6 +74,9 @@ export async function runScopedResearchSyncRoute(
       statusLabel: 'FAILED',
       metadata: { scope: options.scope, error: message }
     });
-    return NextResponse.json({ error: message }, { status: 500 });
+    return genericErrorResponse(error, {
+      status: 500,
+      context: { route: options.auditPath, scope: options.scope }
+    });
   }
 }

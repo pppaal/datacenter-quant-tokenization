@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { recordAuditEvent } from '@/lib/services/audit';
+import { genericErrorResponse } from '@/lib/security/error-response';
 import { backfillDeltas, runQuarterlyAggregate } from '@/lib/services/quarterly-report/aggregator';
 import { generateNarrative } from '@/lib/services/quarterly-report/narrative';
 import { LAWD_CODES } from '@/lib/services/quarterly-report/connectors/molit-transactions';
@@ -112,9 +113,9 @@ export async function POST(request: Request) {
       statusLabel: 'FAILED',
       metadata: { quarter, market, error: error instanceof Error ? error.message : 'unknown' }
     });
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Quarterly snapshot failed' },
-      { status: 500 }
-    );
+    return genericErrorResponse(error, {
+      status: 500,
+      context: { route: '/api/ops/quarterly-snapshot', quarter, market }
+    });
   }
 }

@@ -5,6 +5,7 @@ import {
   resolveVerifiedAdminActorFromHeaders
 } from '@/lib/security/admin-request';
 import { recordAuditEvent } from '@/lib/services/audit';
+import { genericErrorResponse } from '@/lib/security/error-response';
 import {
   maskOpsAlertDestination,
   recordOpsAlertDelivery,
@@ -121,11 +122,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       }
     });
 
-    return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : 'Failed to replay ops alert delivery.'
-      },
-      { status: 400 }
-    );
+    return genericErrorResponse(error, {
+      status: 500,
+      context: { route: '/api/admin/ops-alert-deliveries/[id]/replay' }
+    });
   }
 }
