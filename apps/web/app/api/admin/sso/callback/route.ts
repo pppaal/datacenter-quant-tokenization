@@ -20,7 +20,8 @@ import {
   exchangeAdminSsoCode,
   fetchAdminSsoProfile,
   getAdminSsoConfig,
-  mapAdminSsoClaimsToActor
+  mapAdminSsoClaimsToActor,
+  sanitizeNextPath
 } from '@/lib/security/admin-sso';
 
 export async function GET(request: Request) {
@@ -109,7 +110,10 @@ export async function GET(request: Request) {
       return NextResponse.redirect(new URL('/admin/login?error=sso_session', request.url));
     }
 
-    const response = NextResponse.redirect(new URL(nextPath || '/admin', request.url));
+    // Re-sanitize the cookie value defensively (it should already be safe from
+    // the login route, but the cookie is client-visible/tamperable).
+    const safeNextPath = sanitizeNextPath(nextPath);
+    const response = NextResponse.redirect(new URL(safeNextPath, request.url));
     response.cookies.set(ADMIN_SESSION_COOKIE, sessionToken, getAdminSessionCookieOptions());
     return clearSsoCookies(response);
   } catch (caughtError) {
