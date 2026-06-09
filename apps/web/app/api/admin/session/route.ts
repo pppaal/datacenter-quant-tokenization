@@ -3,8 +3,12 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { authorizeAdminCredentials, getAdminAuthConfig } from '@/lib/security/admin-auth';
 import { resolveAdminActorSeat } from '@/lib/security/admin-identity';
-import { resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
+import {
+  getRequestIpAddress,
+  resolveVerifiedAdminActorFromHeaders
+} from '@/lib/security/admin-request';
 import { checkDistributedRateLimit } from '@/lib/security/distributed-rate-limit';
+import { authRateLimiter, RateLimitError } from '@/lib/security/rate-limit';
 import {
   ADMIN_SESSION_COOKIE,
   clearAdminSessionCookie,
@@ -15,7 +19,37 @@ import {
   revokePersistedAdminSession
 } from '@/lib/security/admin-session';
 
+// Brute-force throttle for the most-attacked endpoint. The edge per-IP limiter
+// (`edge-protection.ts`) is too loose for credential stuffing and bypassable by
+// cycling edge regions, so gate the login attempt twice: an always-on in-process
+// limiter (10/min, relaxed under E2E) plus a cross-instance Upstash counter that
+// soft-fails open when Redis is unconfigured (CI/dev are unaffected).
+const LOGIN_RATE_WINDOW_MS = 60_000;
+const LOGIN_RATE_MAX = 10;
+
+function rateLimitedResponse(retryAfterMs: number) {
+  const retryAfterSeconds = Math.max(1, Math.ceil(retryAfterMs / 1000));
+  return NextResponse.json(
+    { error: 'Too many login attempts. Please try again later.' },
+    { status: 429, headers: { 'Retry-After': String(retryAfterSeconds) } }
+  );
+}
+
 export async function POST(request: Request) {
+  const ipAddress = getRequestIpAddress(request.headers) ?? 'unknown';
+
+  // Layer 1: always-on in-process limiter keyed on IP. Unlike the distributed
+  // limiter below it does not depend on Upstash, so it still throttles in
+  // single-instance / no-Redis deployments (it is relaxed under E2E).
+  try {
+    authRateLimiter.check(`login:${ipAddress}`);
+  } catch (error) {
+    if (error instanceof RateLimitError) {
+      return rateLimitedResponse(error.retryAfterMs);
+    }
+    throw error;
+  }
+
   const body = (await request.json().catch(() => null)) as {
     user?: string;
     password?: string;
@@ -32,25 +66,16 @@ export async function POST(request: Request) {
     );
   }
 
-  // Distributed brute-force throttle keyed on IP + username (10 attempts / 60s).
-  // Soft-fails open when Upstash is unconfigured, so dev/CI/e2e are unaffected;
-  // the in-memory edge limiter remains the baseline.
-  const clientIp =
-    (request.headers.get('x-forwarded-for')?.split(',')[0] ?? '').trim() || 'unknown';
-  const loginThrottle = await checkDistributedRateLimit(
+  // Layer 2: cross-instance distributed throttle keyed on IP + username. Soft-
+  // fails open when Upstash is unconfigured, so dev/CI/e2e are unaffected.
+  const distributed = await checkDistributedRateLimit(
     'admin-login',
-    `${clientIp}:${user.toLowerCase()}`,
-    60_000,
-    10
+    `${ipAddress}:${user.toLowerCase()}`,
+    LOGIN_RATE_WINDOW_MS,
+    LOGIN_RATE_MAX
   );
-  if (!loginThrottle.allowed) {
-    return NextResponse.json(
-      { error: 'Too many login attempts. Try again shortly.' },
-      {
-        status: 429,
-        headers: { 'Retry-After': String(Math.ceil(loginThrottle.retryAfterMs / 1000)) }
-      }
-    );
+  if (!distributed.allowed) {
+    return rateLimitedResponse(distributed.retryAfterMs);
   }
 
   const actor = authorizeAdminCredentials(user, password, config);
