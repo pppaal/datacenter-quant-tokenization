@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { authorizeAdminScimRequest, deprovisionAdminUser } from '@/lib/security/admin-scim';
+import { genericErrorResponse } from '@/lib/security/error-response';
 
 type UserPatchPayload = {
   role?: 'ADMIN' | 'ANALYST' | 'VIEWER';
@@ -65,11 +66,15 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
       user
     });
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : 'Failed to deprovision user.'
-      },
-      { status: 400 }
-    );
+    // Preserve the explicit "not found" business signal (404) but genericize
+    // any other failure so raw/Prisma internals don't leak to the client.
+    const message = error instanceof Error ? error.message : '';
+    if (/not found/i.test(message)) {
+      return NextResponse.json({ error: 'Provisioned user was not found.' }, { status: 404 });
+    }
+    return genericErrorResponse(error, {
+      status: 500,
+      context: { route: '/api/admin/scim/users/[id]', method: 'DELETE' }
+    });
   }
 }

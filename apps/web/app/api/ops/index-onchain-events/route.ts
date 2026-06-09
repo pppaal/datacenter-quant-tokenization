@@ -10,6 +10,7 @@ import {
   transferAgentAbi
 } from '@/lib/blockchain/tokenization-abi';
 import { recordAuditEvent } from '@/lib/services/audit';
+import { genericErrorResponse } from '@/lib/security/error-response';
 import { indexOnchainEvents, type IndexerTarget } from '@/lib/services/onchain/event-indexer';
 import { prisma } from '@/lib/db/prisma';
 
@@ -139,6 +140,9 @@ export async function POST(request: Request) {
       statusLabel: 'FAILED',
       metadata: { error: message }
     });
-    return NextResponse.json({ error: message }, { status: 500 });
+    return genericErrorResponse(error, {
+      status: 500,
+      context: { route: '/api/ops/index-onchain-events' }
+    });
   }
 }

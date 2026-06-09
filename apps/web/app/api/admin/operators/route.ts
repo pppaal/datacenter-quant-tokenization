@@ -10,6 +10,7 @@ import {
 } from '@/lib/security/admin-identity';
 import { revokePersistedAdminSessionsForUser } from '@/lib/security/admin-session';
 import { recordAuditEvent } from '@/lib/services/audit';
+import { genericErrorResponse } from '@/lib/security/error-response';
 
 type OperatorPayload = {
   userId?: string;
@@ -93,9 +94,9 @@ export async function PATCH(request: Request) {
       }
     });
 
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to update operator seat.' },
-      { status: 400 }
-    );
+    return genericErrorResponse(error, {
+      status: 500,
+      context: { route: '/api/admin/operators' }
+    });
   }
 }

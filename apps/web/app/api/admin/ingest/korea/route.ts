@@ -6,6 +6,7 @@ import {
   resolveVerifiedAdminActorFromHeaders
 } from '@/lib/security/admin-request';
 import { mutationRateLimiter, RateLimitError } from '@/lib/security/rate-limit';
+import { genericErrorResponse } from '@/lib/security/error-response';
 import { recordAuditEvent } from '@/lib/services/audit';
 import { runKoreaIngest } from '@/lib/services/data-ingest';
 
@@ -83,9 +84,9 @@ export async function POST(request: Request) {
       }
     });
 
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Korea ingest run failed.' },
-      { status: 500 }
-    );
+    return genericErrorResponse(error, {
+      status: 500,
+      context: { route: '/api/admin/ingest/korea' }
+    });
   }
 }
