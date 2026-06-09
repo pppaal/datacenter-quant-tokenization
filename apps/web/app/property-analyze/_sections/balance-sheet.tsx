@@ -24,7 +24,11 @@ export function BalanceSheetSection({ pfx, pfYears }: { pfx: any; pfYears: any[]
               let cumulativeReserve = 0;
               let cumulativeRetained = 0;
               const rows = pfYears.map((y) => {
-                cumulativeReserve += y.reserveContributionKrw;
+                // Both the operating reserve and the capex reserve accumulate as
+                // restricted cash on the balance sheet — and both are released to
+                // equity at exit — so the cash line must carry both, not just the
+                // operating reserve contribution.
+                cumulativeReserve += y.reserveContributionKrw + y.capexReserveKrw;
                 cumulativeRetained += y.afterTaxDistributionKrw;
                 const accumDep = annualDep * y.year;
                 const netProperty = Math.max(basis - accumDep, 0);
@@ -55,7 +59,10 @@ export function BalanceSheetSection({ pfx, pfYears }: { pfx: any; pfYears: any[]
                 { label: 'Property at Cost (basis)', pick: (r) => r.basis },
                 { label: '  (–) Accumulated Depreciation', pick: (r) => -r.accumDep },
                 { label: 'Net Property', pick: (r) => r.netProperty, bold: true },
-                { label: 'Cash / Reserve Balance', pick: (r) => r.cashReserves },
+                {
+                  label: 'Cash / Reserve Balance (operating + capex)',
+                  pick: (r) => r.cashReserves
+                },
                 { label: 'TOTAL ASSETS', pick: (r) => r.totalAssets, bold: true },
                 { label: 'Debt (senior)', pick: (r) => r.debt },
                 { label: 'Equity (plug)', pick: (r) => r.equity, bold: true },
@@ -88,8 +95,10 @@ export function BalanceSheetSection({ pfx, pfYears }: { pfx: any; pfYears: any[]
         </table>
       </div>
       <p className="mt-2 text-xs text-zinc-500">
-        Depreciation runs off total basis. Cash/Reserve = cumulative reserve contributions
-        (operating distributions assumed paid out). Equity = plug (Assets − Debt).
+        Depreciation runs off total basis. Cash/Reserve = cumulative operating + capex reserves
+        (both released to equity at exit); operating distributions are assumed paid out, so they are
+        not retained on the balance sheet. Equity = Assets − Debt, which equals contributed equity
+        grown by debt amortization and reserve accretion less depreciation.
       </p>
     </Section>
   );

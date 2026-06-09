@@ -11,8 +11,16 @@ export function SourcesAndUsesSection({ pf, pfx, pfYears }: { pf: any; pfx: any;
         const reserveFunding = pf.reserveRequirementKrw;
         const totalUses =
           purchasePrice + pfx.acquisitionTaxKrw + initialTenantCapital + reserveFunding;
-        const totalSources = pf.initialDebtFundingKrw + pf.initialEquityKrw;
+        // The headline sponsor equity (pf.initialEquityKrw = basis − debt) funds the
+        // acquisition only. TI/fit-out and reserve funding are additional day-one
+        // uses, so they require additional equity above the acquisition equity —
+        // surface it explicitly so Sources foots to Uses instead of leaving a gap.
+        const acquisitionEquity = pf.initialEquityKrw;
+        const fundingEquity = initialTenantCapital + reserveFunding;
+        const totalSources = pf.initialDebtFundingKrw + acquisitionEquity + fundingEquity;
         const balanceCheck = totalSources - totalUses;
+        const acquisitionTaxRatePct =
+          purchasePrice > 0 ? (pfx.acquisitionTaxKrw / purchasePrice) * 100 : 0;
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
@@ -29,7 +37,7 @@ export function SourcesAndUsesSection({ pf, pfx, pfYears }: { pf: any; pfx: any;
               <KeyValueRow
                 variant="divider"
                 className="border-t py-1.5 text-sm first:border-t-0"
-                label="Acquisition Tax (4.6%)"
+                label={`Acquisition Tax (${acquisitionTaxRatePct.toFixed(1)}%)`}
               >
                 {krw(pfx.acquisitionTaxKrw)}
               </KeyValueRow>
@@ -69,9 +77,16 @@ export function SourcesAndUsesSection({ pf, pfx, pfYears }: { pf: any; pfx: any;
               <KeyValueRow
                 variant="divider"
                 className="border-t py-1.5 text-sm first:border-t-0"
-                label="Sponsor Equity"
+                label="Sponsor Equity (acquisition)"
               >
-                {krw(pf.initialEquityKrw)}
+                {krw(acquisitionEquity)}
+              </KeyValueRow>
+              <KeyValueRow
+                variant="divider"
+                className="border-t py-1.5 text-sm first:border-t-0"
+                label="Sponsor Equity (TI + reserves)"
+              >
+                {krw(fundingEquity)}
               </KeyValueRow>
               <KeyValueRow
                 variant="divider"
