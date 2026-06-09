@@ -1,5 +1,6 @@
 import type { Prisma, PrismaClient } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
+import { toNumber } from '@/lib/math';
 import { buildAssetResearchDossier } from '@/lib/services/research/dossier';
 import { computeFundNavDetail } from '@/lib/services/fund-nav';
 
@@ -157,20 +158,23 @@ export function buildCommitmentMath(
     Partial<Pick<FundBundle, 'portfolio'>>
 ) {
   const totalCommitmentKrw = fund.commitments.reduce(
-    (total, item) => total + item.commitmentKrw,
+    (total, item) => total + toNumber(item.commitmentKrw),
     0
   );
-  const totalCalledKrw = fund.commitments.reduce((total, item) => total + item.calledKrw, 0);
+  const totalCalledKrw = fund.commitments.reduce(
+    (total, item) => total + toNumber(item.calledKrw),
+    0
+  );
   const totalDistributedKrw = fund.commitments.reduce(
-    (total, item) => total + item.distributedKrw,
+    (total, item) => total + toNumber(item.distributedKrw),
     0
   );
   const pendingCallsKrw = fund.capitalCalls
     .filter((item) => item.status === 'PLANNED' || item.status === 'ISSUED')
-    .reduce((total, item) => total + item.amountKrw, 0);
+    .reduce((total, item) => total + toNumber(item.amountKrw), 0);
   const pendingDistributionsKrw = fund.distributions
     .filter((item) => item.status === 'PLANNED' || item.status === 'ISSUED')
-    .reduce((total, item) => total + item.amountKrw, 0);
+    .reduce((total, item) => total + toNumber(item.amountKrw), 0);
 
   // Fair-value NAV = sum of latest asset valuations (cost-basis fallback flagged).
   // Falls back to 0 when the caller did not load the portfolio relation.
@@ -189,17 +193,22 @@ export function buildCommitmentMath(
     navUsedCostBasisFallback: nav.usedCostBasisFallback,
     pendingCallsKrw,
     pendingDistributionsKrw,
-    targetSizeKrw: fund.targetSizeKrw ?? null,
-    committedCapitalKrw: fund.committedCapitalKrw ?? totalCommitmentKrw,
-    investedCapitalKrw: fund.investedCapitalKrw ?? totalCalledKrw - totalDistributedKrw,
-    dryPowderKrw: fund.dryPowderKrw ?? totalCommitmentKrw - totalCalledKrw
+    targetSizeKrw: fund.targetSizeKrw == null ? null : toNumber(fund.targetSizeKrw),
+    committedCapitalKrw:
+      fund.committedCapitalKrw == null ? totalCommitmentKrw : toNumber(fund.committedCapitalKrw),
+    investedCapitalKrw:
+      fund.investedCapitalKrw == null
+        ? totalCalledKrw - totalDistributedKrw
+        : toNumber(fund.investedCapitalKrw),
+    dryPowderKrw:
+      fund.dryPowderKrw == null ? totalCommitmentKrw - totalCalledKrw : toNumber(fund.dryPowderKrw)
   };
 }
 
 export function buildFundDashboard(fund: FundBundle) {
   const math = buildCommitmentMath(fund);
   const topInvestors = [...fund.commitments]
-    .sort((left, right) => right.commitmentKrw - left.commitmentKrw)
+    .sort((left, right) => toNumber(right.commitmentKrw) - toNumber(left.commitmentKrw))
     .slice(0, 5);
   const latestCall = fund.capitalCalls[0] ?? null;
   const latestDistribution = fund.distributions[0] ?? null;
@@ -232,10 +241,10 @@ export function buildFundDashboard(fund: FundBundle) {
   const investorUpdateDraft = [
     `${fund.name} has KRW ${Math.round(math.totalCommitmentKrw).toLocaleString()} of commitments and KRW ${Math.round(math.totalCalledKrw).toLocaleString()} called to date.`,
     latestCall
-      ? `The latest capital call was dated ${latestCall.callDate.toISOString().slice(0, 10)} for KRW ${Math.round(latestCall.amountKrw).toLocaleString()} to support ${latestCall.purpose ?? 'portfolio execution'}.`
+      ? `The latest capital call was dated ${latestCall.callDate.toISOString().slice(0, 10)} for KRW ${Math.round(toNumber(latestCall.amountKrw)).toLocaleString()} to support ${latestCall.purpose ?? 'portfolio execution'}.`
       : 'No capital call has been issued yet.',
     latestDistribution
-      ? `The latest distribution was dated ${latestDistribution.distributionDate.toISOString().slice(0, 10)} for KRW ${Math.round(latestDistribution.amountKrw).toLocaleString()}.`
+      ? `The latest distribution was dated ${latestDistribution.distributionDate.toISOString().slice(0, 10)} for KRW ${Math.round(toNumber(latestDistribution.amountKrw)).toLocaleString()}.`
       : 'No distribution has been issued yet.',
     latestReport
       ? `The current reporting cadence is anchored by ${latestReport.title} in ${(latestReport.releaseStatus ?? 'DRAFT').toLowerCase().replaceAll('_', ' ')} state.`
@@ -266,15 +275,15 @@ export function buildFundOperatorBriefs(fund: FundBundle, dashboard = buildFundD
   const capitalActivityBrief = [
     `${fund.name} has KRW ${Math.round(dashboard.math.totalCommitmentKrw).toLocaleString()} of commitments and KRW ${Math.round(dashboard.math.dryPowderKrw).toLocaleString()} of modeled dry powder.`,
     dashboard.latestCall
-      ? `The latest capital call is ${dashboard.latestCall.status.toLowerCase()} for KRW ${Math.round(dashboard.latestCall.amountKrw).toLocaleString()}.`
+      ? `The latest capital call is ${dashboard.latestCall.status.toLowerCase()} for KRW ${Math.round(toNumber(dashboard.latestCall.amountKrw)).toLocaleString()}.`
       : 'No capital call has been staged yet.',
     dashboard.latestDistribution
-      ? `The latest distribution is ${dashboard.latestDistribution.status.toLowerCase()} for KRW ${Math.round(dashboard.latestDistribution.amountKrw).toLocaleString()}.`
+      ? `The latest distribution is ${dashboard.latestDistribution.status.toLowerCase()} for KRW ${Math.round(toNumber(dashboard.latestDistribution.amountKrw)).toLocaleString()}.`
       : 'No distribution has been staged yet.'
   ].join(' ');
 
   const investorCoverageBrief = topInvestor
-    ? `${topInvestor.investor.name} is the largest investor at KRW ${Math.round(topInvestor.commitmentKrw).toLocaleString()} committed. ${ddqBacklog} DDQ response${ddqBacklog === 1 ? '' : 's'}, ${reportingBacklog} controlled investor report release item${reportingBacklog === 1 ? '' : 's'}, and ${readyReports} release-ready package${readyReports === 1 ? '' : 's'} remain in the queue.`
+    ? `${topInvestor.investor.name} is the largest investor at KRW ${Math.round(toNumber(topInvestor.commitmentKrw)).toLocaleString()} committed. ${ddqBacklog} DDQ response${ddqBacklog === 1 ? '' : 's'}, ${reportingBacklog} controlled investor report release item${reportingBacklog === 1 ? '' : 's'}, and ${readyReports} release-ready package${readyReports === 1 ? '' : 's'} remain in the queue.`
     : `No investor commitment has been loaded yet. ${ddqBacklog} DDQ response${ddqBacklog === 1 ? '' : 's'} and ${reportingBacklog} controlled report release item${reportingBacklog === 1 ? '' : 's'} are staged.`;
 
   const reportReleaseBrief = dashboard.releaseQueue[0]

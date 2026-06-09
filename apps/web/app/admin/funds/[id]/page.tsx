@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { canActorAccessScope } from '@/lib/security/admin-access';
 import { prisma } from '@/lib/db/prisma';
+import { toNumber } from '@/lib/math';
 import { resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
 import { buildFundDashboard, buildFundOperatorBriefs, getFundById } from '@/lib/services/capital';
 import { buildFundPcap } from '@/lib/services/investor-reports';
@@ -126,8 +127,8 @@ export default async function FundDetailPage({ params }: Props) {
                     </div>
                   </div>
                   <div className="text-right text-sm text-white">
-                    <div>{formatCurrency(commitment.commitmentKrw)}</div>
-                    <div>called {formatCurrency(commitment.calledKrw)}</div>
+                    <div>{formatCurrency(toNumber(commitment.commitmentKrw))}</div>
+                    <div>called {formatCurrency(toNumber(commitment.calledKrw))}</div>
                   </div>
                 </div>
               </div>
@@ -189,7 +190,7 @@ export default async function FundDetailPage({ params }: Props) {
                     </div>
                   </div>
                   <div className="text-right text-sm text-white">
-                    {formatCurrency(call.amountKrw)}
+                    {formatCurrency(toNumber(call.amountKrw))}
                   </div>
                 </div>
               </div>
@@ -208,7 +209,7 @@ export default async function FundDetailPage({ params }: Props) {
                     </div>
                   </div>
                   <div className="text-right text-sm text-white">
-                    {formatCurrency(distribution.amountKrw)}
+                    {formatCurrency(toNumber(distribution.amountKrw))}
                   </div>
                 </div>
               </div>
