@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { mutationRateLimiter, RateLimitError } from '@/lib/security/rate-limit';
 import { withAdminApi } from '@/lib/security/with-admin-api';
-import { releaseCommitteePacket } from '@/lib/services/ic';
+import { releaseCommitteePacket, SegregationOfDutiesError } from '@/lib/services/ic';
 
 export const POST = withAdminApi<undefined, { id: string }>({
   requiredRole: 'ADMIN',
@@ -22,7 +22,21 @@ export const POST = withAdminApi<undefined, { id: string }>({
       throw error;
     }
 
-    const packet = await releaseCommitteePacket(params.id, actor.identifier, prisma);
+    let packet;
+    try {
+      packet = await releaseCommitteePacket(params.id, actor.identifier, prisma);
+    } catch (error) {
+      // Segregation-of-duties violations are an authorization failure for this
+      // actor, not a server error — surface as 403 (insufficient permission).
+      if (error instanceof SegregationOfDutiesError) {
+        return NextResponse.json(
+          { error: error.message },
+          { status: 403, headers: { 'X-Request-Id': requestId } }
+        );
+      }
+      throw error;
+    }
+
     return NextResponse.json({
       ok: true,
       packetId: packet.id,

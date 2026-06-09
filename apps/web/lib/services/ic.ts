@@ -15,6 +15,31 @@ import {
   createNotification
 } from '@/lib/services/notifications';
 
+/**
+ * Raised when an action would violate IC segregation of duties (maker-checker).
+ * Distinct from generic Errors so route handlers can map it to HTTP 403.
+ */
+export class SegregationOfDutiesError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'SegregationOfDutiesError';
+  }
+}
+
+/**
+ * Compares two recorded actor identities for SoD purposes.
+ *
+ * Limitation: the IC packet/decision models persist only an actor *label*
+ * (`preparedByLabel` / `decidedByLabel`) — there is no stable operator-id
+ * column, and we are not permitted to add a migration. We therefore enforce
+ * SoD against the persisted label, normalising case/whitespace to avoid
+ * trivially bypassing it with different casing.
+ */
+function isSameActor(a: string | null | undefined, b: string | null | undefined): boolean {
+  if (!a || !b) return false;
+  return a.trim().toLowerCase() === b.trim().toLowerCase();
+}
+
 export const committeePacketInclude = {
   asset: {
     select: {
@@ -396,6 +421,20 @@ export async function decideCommitteePacket(
     throw new Error('Only locked packets can receive committee decisions.');
   }
 
+  // Segregation of duties (maker-checker): the operator who LOCKED the packet
+  // must not be the one who records its committee decision. The locker's
+  // identity is persisted on `preparedByLabel` (written by lockCommitteePacket).
+  //
+  // Limitation: only the actor *label* is persisted (no stable operator-id
+  // column exists and we may not add a migration), so SoD is enforced against
+  // `preparedByLabel`. If it is null — e.g. a packet locked before this field
+  // was populated — we cannot establish the locker and therefore cannot enforce.
+  if (packet.preparedByLabel && isSameActor(packet.preparedByLabel, actorLabel)) {
+    throw new SegregationOfDutiesError(
+      'Segregation of duties: the operator who locked this packet cannot record its committee decision. A different committee member must decide.'
+    );
+  }
+
   const outcomeStatusMap: Record<CommitteeDecisionOutcome, CommitteePacketStatus> = {
     APPROVED: CommitteePacketStatus.APPROVED,
     CONDITIONAL: CommitteePacketStatus.CONDITIONAL,
@@ -470,12 +509,30 @@ export async function releaseCommitteePacket(
     throw new Error('Only decided packets can be released.');
   }
 
+  // Segregation of duties (maker-checker): the operator who recorded the
+  // committee DECISION must not be the one who RELEASES the packet — a distinct
+  // ADMIN must perform the release. The decider's identity is persisted on the
+  // most recent decision's `decidedByLabel` (written by decideCommitteePacket).
+  //
+  // Limitation: only the actor *label* is persisted (no stable operator-id
+  // column exists and we may not add a migration), so SoD is enforced against
+  // the latest `decidedByLabel`. If no decision label is recorded we cannot
+  // establish the decider and therefore cannot enforce.
+  const latestDecisionLabel = packet.decisions[0]?.decidedByLabel ?? null;
+  if (latestDecisionLabel && isSameActor(latestDecisionLabel, actorLabel)) {
+    throw new SegregationOfDutiesError(
+      'Segregation of duties: the operator who recorded the committee decision cannot release this packet. A different ADMIN must release it.'
+    );
+  }
+
   const released = await db.investmentCommitteePacket.update({
     where: { id: packet.id },
     data: {
       status: CommitteePacketStatus.RELEASED,
-      releasedAt: new Date(),
-      preparedByLabel: actorLabel
+      releasedAt: new Date()
+      // NOTE: deliberately do NOT overwrite `preparedByLabel` here. That field
+      // records the locker (maker) identity used for decide-step SoD; clobbering
+      // it on release would destroy the audit trail of who locked the packet.
     },
     include: committeePacketInclude
   });

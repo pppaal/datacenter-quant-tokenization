@@ -22,8 +22,16 @@ export async function POST(
     requireActiveSeat: true
   });
 
-  if (!actor || !hasRequiredAdminRole(actor.role, 'ADMIN')) {
+  if (!actor) {
+    // 401: no authenticated operator session.
     return NextResponse.json({ error: 'Admin session required.' }, { status: 401 });
+  }
+  if (!hasRequiredAdminRole(actor.role, 'ADMIN')) {
+    // 403: authenticated but lacks the ADMIN role required to lock packets.
+    return NextResponse.json(
+      { error: 'Insufficient role. ADMIN access required.' },
+      { status: 403 }
+    );
   }
 
   const { id } = await context.params;

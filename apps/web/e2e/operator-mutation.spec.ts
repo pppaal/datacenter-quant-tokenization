@@ -1,20 +1,23 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
-function resolveAdminBrowserCredential() {
+// Resolve the Nth admin credential (0 = primary admin). A second admin
+// (index 1) is required to exercise the IC maker-checker: one admin locks /
+// releases, a distinct admin decides.
+function resolveAdminBrowserCredential(index = 0) {
   const legacyUser = process.env.ADMIN_BASIC_AUTH_USER?.trim();
   const legacyPassword = process.env.ADMIN_BASIC_AUTH_PASSWORD?.trim();
 
-  if (legacyUser && legacyPassword) {
+  if (index === 0 && legacyUser && legacyPassword) {
     return {
       user: legacyUser,
       password: legacyPassword
     };
   }
 
-  const adminCredentialEntry =
-    process.env.ADMIN_BASIC_AUTH_ADMIN_CREDENTIALS?.split(',')
-      .map((entry) => entry.trim())
-      .find(Boolean) ?? 'admin@nexusseoul.local:secret';
+  const entries = (process.env.ADMIN_BASIC_AUTH_ADMIN_CREDENTIALS?.split(',') ?? [])
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+  const adminCredentialEntry = entries[index] ?? entries[0] ?? 'admin@nexusseoul.local:secret';
 
   const separatorIndex = adminCredentialEntry.indexOf(':');
   if (separatorIndex <= 0 || separatorIndex === adminCredentialEntry.length - 1) {
@@ -27,8 +30,10 @@ function resolveAdminBrowserCredential() {
   };
 }
 
-async function loginAsOperator(page: Page) {
-  const credentials = resolveAdminBrowserCredential();
+async function loginAsOperator(page: Page, operatorIndex = 0) {
+  const credentials = resolveAdminBrowserCredential(operatorIndex);
+  // Clear any existing session so this works as a re-login (switch operators).
+  await page.context().clearCookies();
   await page.goto('/admin/login');
   await page.locator('#user').fill(credentials.user);
   await page.locator('#password').fill(credentials.password);
@@ -313,6 +318,11 @@ test.describe('operator mutation flows', () => {
       timeout: 20_000
     });
 
+    // Segregation of duties: the admin who locked the packet cannot also decide
+    // it. Re-authenticate as a distinct admin (committee chair) for the decision.
+    await loginAsOperator(page, 1);
+    await page.goto('/admin/ic');
+
     await packetAfterUpload.getByTestId('ic-packet-decision-outcome').selectOption('APPROVED');
     await packetAfterUpload
       .getByTestId('ic-packet-decision-notes')
@@ -326,6 +336,11 @@ test.describe('operator mutation flows', () => {
     await expect(packetAfterUpload.getByTestId('ic-packet-status')).toContainText('approved', {
       timeout: 20_000
     });
+
+    // Segregation of duties: the admin who decided cannot also release. Switch
+    // back to the original admin (who locked, ≠ decider) to release.
+    await loginAsOperator(page, 0);
+    await page.goto('/admin/ic');
 
     await mutateAndReload(page, () =>
       packetAfterUpload.getByTestId('ic-packet-release-button').click()
