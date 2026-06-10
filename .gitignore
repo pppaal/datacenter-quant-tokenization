@@ -1,3 +1,7 @@
+# Ignore node_modules in any form — directory OR a stray symlink named
+# node_modules (the trailing-slash form only matches directories, so a symlink
+# slipped past it once and got committed).
+node_modules
 node_modules/
 .next/
 .turbo/
