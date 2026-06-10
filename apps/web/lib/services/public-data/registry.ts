@@ -13,11 +13,14 @@
  *   building-registry  → MOLIT_BUILDING_API_KEY
  *   transaction-comps  → RTMS_SERVICE_KEY
  *   grid-access        → KEPCO_SUBSTATION_DATA_PATH || KEPCO_SUBSTATION_DATA_URL
+ *   use-zone           → VWORLD_API_KEY        (V-World 토지이용계획)
+ *   land-pricing       → VWORLD_API_KEY        (V-World 개별공시지가)
+ *   rent-comps         → RONE_API_KEY          (한국부동산원 R-ONE 임대동향)
+ *   macro-micro        → KOSIS_API_KEY         (통계청 KOSIS)
  *
- * The remaining 3 connectors (use-zone, land-pricing, rent-comps,
- * macro-micro) currently only have mock implementations — adding a live
- * adapter is as simple as dropping a class under `live/` and adding a
- * branch here.
+ * All seven connectors now have a live adapter under `live/`; each returns
+ * empty/null (or, for the non-nullable macro snapshot, delegates to the mock)
+ * when its key is unset, so the mock path keeps working until a key is added.
  */
 import type {
   BuildingRegistryConnector,
@@ -38,6 +41,10 @@ import { MockUseZone } from './mock/use-zone';
 import { LiveMolitBuildingRegistry } from './live/molit-building';
 import { LiveKepcoGridAccess } from './live/kepco-grid';
 import { LiveRtmsTransactionComps } from './live/rtms';
+import { LiveReoneRentComps } from './live/rone-rent';
+import { LiveVworldLandPricing } from './live/vworld-land-price';
+import { LiveVworldUseZone } from './live/vworld-use-zone';
+import { LiveKosisMacroMicro } from './live/kosis-macro';
 
 export type ConnectorBundle = {
   buildingRegistry: BuildingRegistryConnector;
@@ -57,14 +64,14 @@ export type ConnectorModeReport = Record<ConnectorKind, ConnectorMode>;
 export function resolveConnectorMode(): ConnectorModeReport {
   return {
     buildingRegistry: process.env.MOLIT_BUILDING_API_KEY ? 'live' : 'mock',
-    useZone: 'mock',
-    landPricing: 'mock',
-    rentComps: 'mock',
+    useZone: process.env.VWORLD_API_KEY ? 'live' : 'mock',
+    landPricing: process.env.VWORLD_API_KEY ? 'live' : 'mock',
+    rentComps: process.env.RONE_API_KEY ? 'live' : 'mock',
     grid:
       process.env.KEPCO_SUBSTATION_DATA_PATH || process.env.KEPCO_SUBSTATION_DATA_URL
         ? 'live'
         : 'mock',
-    macroMicro: 'mock',
+    macroMicro: process.env.KOSIS_API_KEY ? 'live' : 'mock',
     transactionComps: process.env.RTMS_SERVICE_KEY ? 'live' : 'mock'
   };
 }
@@ -76,11 +83,11 @@ export function getConnectorBundle(): ConnectorBundle {
       mode.buildingRegistry === 'live'
         ? new LiveMolitBuildingRegistry()
         : new MockBuildingRegistry(),
-    useZone: new MockUseZone(),
-    landPricing: new MockLandPricing(),
-    rentComps: new MockRentComps(),
+    useZone: mode.useZone === 'live' ? new LiveVworldUseZone() : new MockUseZone(),
+    landPricing: mode.landPricing === 'live' ? new LiveVworldLandPricing() : new MockLandPricing(),
+    rentComps: mode.rentComps === 'live' ? new LiveReoneRentComps() : new MockRentComps(),
     grid: mode.grid === 'live' ? new LiveKepcoGridAccess() : new MockGridAccess(),
-    macroMicro: new MockMacroMicro(),
+    macroMicro: mode.macroMicro === 'live' ? new LiveKosisMacroMicro() : new MockMacroMicro(),
     transactionComps:
       mode.transactionComps === 'live' ? new LiveRtmsTransactionComps() : new MockTransactionComps()
   };
