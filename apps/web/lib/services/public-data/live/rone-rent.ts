@@ -30,8 +30,7 @@ import type {
   RentalComparable
 } from '@/lib/services/public-data/types';
 
-const DEFAULT_BASE =
-  'https://www.reb.or.kr/r-one/openapi/SttsApiTblData.do';
+const DEFAULT_BASE = 'https://www.reb.or.kr/r-one/openapi/SttsApiTblData.do';
 
 type ReoneRegion = {
   /** R-ONE 권역 classification code (CLS_ID value). */

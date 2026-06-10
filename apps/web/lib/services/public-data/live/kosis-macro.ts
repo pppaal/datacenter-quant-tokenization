@@ -15,10 +15,7 @@
 
 import { fetchWithTimeout } from '@/lib/services/public-data/fetch-with-timeout';
 import { MockMacroMicro } from '@/lib/services/public-data/mock/macro-micro';
-import type {
-  MacroMicroConnector,
-  MacroMicroSnapshot
-} from '@/lib/services/public-data/types';
+import type { MacroMicroConnector, MacroMicroSnapshot } from '@/lib/services/public-data/types';
 
 const DEFAULT_BASE = 'https://kosis.kr/openapi/Param/statisticsParameterData.do';
 

@@ -61,7 +61,11 @@ test('mapZoneLabelToCode classifies Korean zoning labels', () => {
 test('live adapters fail closed to mock-compatible empties when unconfigured', async () => {
   // No API key → no network call, safe empty/null so the registry mock path holds.
   assert.deepEqual(
-    await new LiveReoneRentComps(undefined).fetch({ latitude: 37.5, longitude: 127.0 }, 'OFFICE', 2),
+    await new LiveReoneRentComps(undefined).fetch(
+      { latitude: 37.5, longitude: 127.0 },
+      'OFFICE',
+      2
+    ),
     []
   );
   assert.equal(await new LiveVworldLandPricing(undefined).fetch(PARCEL), null);
