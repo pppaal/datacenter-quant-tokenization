@@ -1,6 +1,11 @@
 import type { Prisma } from '@prisma/client';
 import { extractFinancialStatementWithAi } from '@/lib/ai/openai';
 import { prisma } from '@/lib/db/prisma';
+import {
+  fetchDartFinancials,
+  type DartFinancialSnapshot,
+  type DartFinancialsOptions
+} from '@/lib/services/quarterly-report/connectors/dart-financials';
 
 type FinancialStatementDb = {
   counterparty: {
@@ -517,6 +522,74 @@ export function parseFinancialStatementFromText(input: {
   assetName: string;
 }): ParsedFinancialStatement | null {
   return finalizeParsedStatement(input, buildHeuristicCandidate(input));
+}
+
+/**
+ * Adapt an OpenDART account-level financial snapshot into the canonical
+ * `ParsedFinancialStatement` shape this module ingests. Maps DART's BS/IS
+ * totals onto the same fields the document-extraction path populates, so a
+ * DART-sourced statement flows through `buildCreditAssessmentFromStatement`
+ * and `ingestFinancialStatement` identically to an uploaded PDF.
+ *
+ * EBITDA isn't a DART standard account, so it is left null (the heuristic path
+ * has the same gap); leverage/coverage ratios that key off EBITDA simply stay
+ * null, as they already do for statements that omit it.
+ *
+ * Returns `null` when the snapshot lacks the >=3 populated metrics this module
+ * treats as the minimum for a usable statement — fail-closed, never displacing
+ * the existing heuristic/upload path with an empty DART pull.
+ */
+export function dartSnapshotToParsedStatement(
+  snapshot: DartFinancialSnapshot | null,
+  counterpartyRole = 'TENANT'
+): ParsedFinancialStatement | null {
+  if (!snapshot) return null;
+
+  const candidate: ParsedFinancialStatementCandidate = {
+    counterpartyName: snapshot.corpName ?? snapshot.corpCode,
+    counterpartyRole,
+    statementType: 'ANNUAL',
+    fiscalYear: snapshot.fiscalYear,
+    fiscalPeriod: 'FY',
+    currency: snapshot.currency || 'KRW',
+    revenueKrw: snapshot.revenueKrw,
+    ebitdaKrw: null,
+    cashKrw: snapshot.cashAndEquivalentsKrw,
+    operatingCashFlowKrw: snapshot.operatingCashFlowKrw,
+    capexKrw: null,
+    totalDebtKrw: snapshot.totalDebtKrw,
+    currentAssetsKrw: snapshot.currentAssetsKrw,
+    currentLiabilitiesKrw: snapshot.currentLiabilitiesKrw,
+    currentDebtMaturitiesKrw: null,
+    totalAssetsKrw: snapshot.totalAssetsKrw,
+    totalEquityKrw: snapshot.totalEquityKrw,
+    interestExpenseKrw: snapshot.interestExpenseKrw,
+    lineItems: []
+  };
+
+  return finalizeParsedStatement(
+    {
+      title: `${candidate.counterpartyName} DART FY${snapshot.fiscalYear}`,
+      extractedText: '',
+      assetName: candidate.counterpartyName ?? ''
+    },
+    candidate
+  );
+}
+
+/**
+ * Fetch a counterparty's financial statement from OpenDART (by corp_code) and
+ * return it in canonical form. Env-gated on `DART_API_KEY`; returns `null`
+ * when the key is unset or the fetch fails, so callers fall back to their
+ * existing document-extraction / heuristic path.
+ */
+export async function fetchDartFinancialStatement(
+  corpCode: string,
+  options: DartFinancialsOptions & { counterpartyRole?: string } = {}
+): Promise<ParsedFinancialStatement | null> {
+  const { counterpartyRole, ...fetchOptions } = options;
+  const snapshot = await fetchDartFinancials(corpCode, fetchOptions);
+  return dartSnapshotToParsedStatement(snapshot, counterpartyRole ?? 'TENANT');
 }
 
 export async function parseFinancialStatement(
