@@ -21,6 +21,14 @@
  *   - ENTSO-E Transparency (https://web-api.tp.entsoe.eu/api) — European grid
  *     load/generation. XML API; this ships only a keyless-gated reachability
  *     scaffold (see TODO in `probeEntsoe`).
+ *   - Ember (https://api.ember-energy.org/v1) — the only OPEN global dataset of
+ *     electricity generation / emissions / demand + wind+solar capacity, by
+ *     country, monthly (88 areas) or yearly (215 areas). Licensed CC BY 4.0
+ *     (attribution: "Ember — Yearly Electricity Data"). Free `api_key` query
+ *     param. This is the STRUCTURAL/HISTORICAL complement to ElectricityMaps'
+ *     real-time signal: per-country generation mix, carbon intensity OF
+ *     GENERATION, and renewable / fossil-free share. Consumable via
+ *     `fetchEmberElectricity(entityCode)`.
  *
  * Maturity / scaffold-parity (matches the other live adapters):
  *   - Endpoints + auth shapes are correct per published docs, but the exact
@@ -67,6 +75,43 @@ export type EntsoeProbeResult = {
   /** Short human label for ops; e.g. "Reachable; documentType parsing TODO". */
   note: string;
   source: 'entsoe';
+};
+
+export type EmberElectricityPoint = {
+  /** Ember entity code echoed from the query (ISO-3166 alpha-3, e.g. "KOR"). */
+  entity: string;
+  /** Calendar year of the datapoint (Ember "yearly" series), e.g. 2024. */
+  year: number | null;
+  /** Total electricity generation in TWh for the year, when available. */
+  generationTwh: number | null;
+  /** Carbon intensity OF GENERATION in gCO2/kWh (Ember "co2_intensity"). */
+  emissionsIntensityGco2PerKwh: number | null;
+  /** Renewables share of generation, 0–100. */
+  renewablePct: number | null;
+  /** Fossil-free (renewables + nuclear) share of generation, 0–100. */
+  fossilFreePct: number | null;
+  source: 'ember';
+};
+
+/**
+ * Shape of a single Ember API row. Ember returns
+ * `{ data: [ { entity_code, date, series, value, unit, ... }, ... ] }` where
+ * each row is one (series, date) pair, so the same year yields several rows
+ * (one per series). Field names are typed loosely and validated at parse time;
+ * the exact set needs live-sample confirmation (see scaffold-parity note).
+ */
+type EmberRow = {
+  entity_code?: string;
+  entity?: string;
+  date?: string;
+  year?: string | number;
+  series?: string;
+  value?: string | number | null;
+  unit?: string;
+};
+
+type EmberResponse = {
+  data?: EmberRow[];
 };
 
 type ElectricityMapsCarbonResponse = {
@@ -136,6 +181,16 @@ export function electricityMapsZoneForMarket(market: string | null | undefined):
 const EM_BASE_URL = 'https://api.electricitymap.org/v3';
 const EIA_BASE_URL = 'https://api.eia.gov/v2';
 const ENTSOE_BASE_URL = 'https://web-api.tp.entsoe.eu/api';
+const EMBER_BASE_URL = 'https://api.ember-energy.org/v1';
+
+function getEmberApiKey(): string | null {
+  const key = process.env.EMBER_API_KEY?.trim();
+  return key ? key : null;
+}
+
+function getEmberBaseUrl(): string {
+  return process.env.EMBER_API_BASE?.trim() || EMBER_BASE_URL;
+}
 
 function getElectricityMapsToken(): string | null {
   const token = process.env.ELECTRICITYMAPS_API_TOKEN?.trim();
@@ -162,6 +217,10 @@ export function isEiaConfigured(): boolean {
 
 export function isEntsoeConfigured(): boolean {
   return getEntsoeToken() !== null;
+}
+
+export function isEmberConfigured(): boolean {
+  return getEmberApiKey() !== null;
 }
 
 function toFiniteNumber(value: unknown): number | null {
@@ -376,6 +435,124 @@ export async function probeEntsoe(
 }
 
 // ---------------------------------------------------------------------------
+// Ember — open global generation mix / carbon intensity / renewable share
+// ---------------------------------------------------------------------------
+
+/**
+ * The Ember series we read and the typed point field each maps to. Ember keys
+ * rows by a `series` label; the strings below are the published labels for the
+ * yearly electricity dataset. Exact spellings need live-sample confirmation
+ * (see scaffold-parity note) — parsing is tolerant: an unrecognised/missing
+ * series simply leaves its field null rather than failing the whole point.
+ */
+const EMBER_SERIES = {
+  generationTwh: 'Total Generation',
+  emissionsIntensityGco2PerKwh: 'CO2 intensity',
+  renewablePct: 'Renewables',
+  fossilFreePct: 'Clean'
+} as const;
+
+function pickEmberSeriesValue(rows: EmberRow[], series: string): number | null {
+  // Prefer the latest year's row for the requested series.
+  const matches = rows.filter(
+    (r) => typeof r.series === 'string' && r.series.toLowerCase() === series.toLowerCase()
+  );
+  if (matches.length === 0) return null;
+  let best: EmberRow | null = null;
+  let bestYear = -Infinity;
+  for (const row of matches) {
+    const y = emberRowYear(row) ?? -Infinity;
+    if (y >= bestYear) {
+      bestYear = y;
+      best = row;
+    }
+  }
+  return best ? toFiniteNumber(best.value) : null;
+}
+
+function emberRowYear(row: EmberRow): number | null {
+  if (typeof row.year === 'number' && Number.isFinite(row.year)) return row.year;
+  const raw = typeof row.year === 'string' ? row.year : row.date;
+  if (typeof raw === 'string') {
+    const y = Number(raw.slice(0, 4));
+    if (Number.isFinite(y)) return y;
+  }
+  return null;
+}
+
+/**
+ * Fetch the latest yearly electricity snapshot for an Ember entity — a country
+ * code (ISO-3166 alpha-3, e.g. "KOR", "USA", "DEU"). Returns generation (TWh),
+ * carbon intensity OF GENERATION (gCO2/kWh), and renewable / fossil-free share.
+ *
+ * This is the structural / historical complement to ElectricityMaps' real-time
+ * grid signal: it answers "what does this country's annual generation mix look
+ * like" rather than "how clean is the grid right now".
+ *
+ * Data: Ember — Yearly Electricity Data, licensed CC BY 4.0. Keep
+ * `source: 'ember'` on emitted points so the attribution is traceable.
+ *
+ * Endpoint (yearly series): GET /v1/electricity-generation/yearly
+ *   ?entity_code=<KOR>&api_key=...
+ * Ember also exposes /electricity-demand, /power-sector-emissions, and a
+ * /monthly cadence — wire those alongside as follow-ups.
+ *
+ * Fails closed: returns null when `EMBER_API_KEY` is unset, on an empty/blank
+ * entity code, or on any transport/HTTP/parse error — never throws.
+ */
+export async function fetchEmberElectricity(
+  entityCode: string,
+  options?: { fetcher?: Fetcher }
+): Promise<EmberElectricityPoint | null> {
+  const apiKey = getEmberApiKey();
+  if (!apiKey) return null;
+  if (!entityCode || !entityCode.trim()) return null;
+
+  const entity = entityCode.trim().toUpperCase();
+  const url = new URL(`${getEmberBaseUrl()}/electricity-generation/yearly`);
+  url.searchParams.set('entity_code', entity);
+  url.searchParams.set('api_key', apiKey);
+
+  let body: EmberResponse;
+  try {
+    body = (await fetchJsonWithRetry(
+      url.toString(),
+      { cache: 'no-store' },
+      {
+        fetcher: options?.fetcher
+      }
+    )) as EmberResponse;
+  } catch {
+    return null;
+  }
+
+  const rows = Array.isArray(body?.data) ? body.data : [];
+  if (rows.length === 0) return null;
+
+  // Latest year present across any series — the snapshot's reference year.
+  let year: number | null = null;
+  for (const row of rows) {
+    const y = emberRowYear(row);
+    if (y !== null && (year === null || y > year)) year = y;
+  }
+
+  const echoedEntity = rows.find((r) => typeof r.entity_code === 'string')?.entity_code;
+
+  return {
+    entity: typeof echoedEntity === 'string' ? echoedEntity : entity,
+    year,
+    generationTwh: pickEmberSeriesValue(rows, EMBER_SERIES.generationTwh),
+    emissionsIntensityGco2PerKwh: pickEmberSeriesValue(
+      rows,
+      EMBER_SERIES.emissionsIntensityGco2PerKwh
+    ),
+    renewablePct: pickEmberSeriesValue(rows, EMBER_SERIES.renewablePct),
+    fossilFreePct: pickEmberSeriesValue(rows, EMBER_SERIES.fossilFreePct),
+    source: 'ember'
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Aggregate helper — which connectors are live
 // ---------------------------------------------------------------------------
 
@@ -384,5 +561,6 @@ export function getConfiguredPowerGridProviders(): string[] {
   if (isElectricityMapsConfigured()) providers.push('electricitymaps');
   if (isEiaConfigured()) providers.push('eia');
   if (isEntsoeConfigured()) providers.push('entsoe');
+  if (isEmberConfigured()) providers.push('ember');
   return providers;
 }
