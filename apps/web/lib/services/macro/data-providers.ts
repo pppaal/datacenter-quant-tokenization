@@ -5,6 +5,7 @@
 // These fetch real-time macro series data to replace seed/hardcoded values.
 
 import { safeFetch } from '@/lib/security/safe-fetch';
+import { fetchWorldBankMacro, isWorldBankMacroEnabled } from '@/lib/sources/adapters/world-bank';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -286,15 +287,46 @@ export async function fetchFredData(months = 12): Promise<DataProviderResult> {
 }
 
 // ---------------------------------------------------------------------------
+// World Bank — worldwide cross-country indicators (keyless, flag-gated)
+// ---------------------------------------------------------------------------
+// Adapter lives in lib/sources/adapters/world-bank.ts (uses the injectable
+// fetchJsonWithRetry Fetcher so it is unit-testable). Here we bridge its
+// cross-country WorldwideMacroPoint[] into the DataProviderResult shape the
+// macro dashboard already consumes. The bridge keeps the country prefix on
+// the seriesKey so multi-country points don't collide. Fails closed: the
+// adapter never throws, so a disabled/unreachable World Bank degrades to an
+// empty point list, mirroring the BOK/FRED "not configured" behaviour.
+
+export async function fetchWorldBankMacroData(): Promise<DataProviderResult> {
+  const result = await fetchWorldBankMacro();
+  return {
+    provider: result.provider,
+    market: 'WORLD',
+    points: result.points.map((point) => ({
+      seriesKey: `${point.country.toLowerCase()}.${point.seriesKey}`,
+      label: `${point.country} ${point.label}`,
+      value: point.value,
+      unit: point.unit,
+      // World Bank reports annual periods (e.g. "2024"); pin to Jan 1 UTC.
+      observationDate: new Date(Date.UTC(Number(point.date) || 1970, 0, 1)),
+      sourceSystem: point.sourceSystem
+    })),
+    fetchedAt: result.fetchedAt,
+    error: result.error
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Unified fetch
 // ---------------------------------------------------------------------------
 
 export async function fetchAllMacroData(months = 12): Promise<DataProviderResult[]> {
   const results: DataProviderResult[] = [];
 
-  const [bokResult, fredResult] = await Promise.allSettled([
+  const [bokResult, fredResult, worldBankResult] = await Promise.allSettled([
     isBokConfigured() ? fetchBokData(months) : Promise.resolve(null),
-    isFredConfigured() ? fetchFredData(months) : Promise.resolve(null)
+    isFredConfigured() ? fetchFredData(months) : Promise.resolve(null),
+    isWorldBankMacroEnabled() ? fetchWorldBankMacroData() : Promise.resolve(null)
   ]);
 
   if (bokResult.status === 'fulfilled' && bokResult.value) {
@@ -302,6 +334,9 @@ export async function fetchAllMacroData(months = 12): Promise<DataProviderResult
   }
   if (fredResult.status === 'fulfilled' && fredResult.value) {
     results.push(fredResult.value);
+  }
+  if (worldBankResult.status === 'fulfilled' && worldBankResult.value) {
+    results.push(worldBankResult.value);
   }
 
   return results;
@@ -311,5 +346,6 @@ export function getConfiguredProviders(): string[] {
   const providers: string[] = [];
   if (isBokConfigured()) providers.push('bok-ecos');
   if (isFredConfigured()) providers.push('fred');
+  if (isWorldBankMacroEnabled()) providers.push('world-bank-indicators');
   return providers;
 }
