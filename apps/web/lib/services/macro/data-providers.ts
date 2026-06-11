@@ -13,6 +13,7 @@ import {
   isEiaConfigured
 } from '@/lib/sources/adapters/power-grid';
 import { fetchWorldBankMacro, isWorldBankMacroEnabled } from '@/lib/sources/adapters/world-bank';
+import { fetchDbnomicsSeries, isDbnomicsMacroEnabled } from '@/lib/sources/adapters/dbnomics';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -463,19 +464,59 @@ export async function fetchWorldBankMacroData(): Promise<DataProviderResult> {
 }
 
 // ---------------------------------------------------------------------------
+// DBnomics — single keyless API aggregating ~61 macro providers (flag-gated)
+// ---------------------------------------------------------------------------
+// Adapter lives in lib/sources/adapters/dbnomics.ts (uses the injectable
+// fetchJsonWithRetry Fetcher so it is unit-testable). DBnomics unifies World
+// Bank, IMF, OECD, BIS, ECB, Eurostat, FRED… behind one Provider>Dataset>Series
+// API. Here we bridge its DbnomicsPoint[] into the DataProviderResult shape the
+// macro dashboard already consumes. The seriesKey is kept provider-prefixed so
+// multi-source points (e.g. DBnomics-relayed BIS policy rate vs. native FRED)
+// don't collide. DBnomics only RELAYS upstream providers, so the relayed
+// provider (point.provider, e.g. "BIS") is preserved as the sourceSystem suffix
+// to keep attribution. Fails closed: the adapter never throws, so a
+// disabled/unreachable DBnomics degrades to an empty point list.
+
+export async function fetchDbnomicsMacroData(): Promise<DataProviderResult> {
+  const result = await fetchDbnomicsSeries();
+  return {
+    provider: result.provider,
+    market: 'WORLD',
+    points: result.points.map((point) => ({
+      // Provider-prefixed so DBnomics-relayed points never collide with native
+      // single-market series sharing the same canonical seriesKey.
+      seriesKey: `dbnomics.${point.provider.toLowerCase()}.${point.seriesKey}`,
+      label: `${point.provider} ${point.label}`,
+      value: point.value,
+      unit: point.unit,
+      // DBnomics periods may be annual ("2024"), quarterly ("2024-Q1") or
+      // monthly ("2024-03"); take the leading 4-digit year and pin to Jan 1 UTC
+      // (the dashboard treats these as latest-observation snapshots).
+      observationDate: new Date(Date.UTC(Number(point.date.slice(0, 4)) || 1970, 0, 1)),
+      // Keep the relayed upstream provider on the point for attribution.
+      sourceSystem: `${point.sourceSystem}:${point.provider.toLowerCase()}`
+    })),
+    fetchedAt: result.fetchedAt,
+    error: result.error
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Unified fetch
 // ---------------------------------------------------------------------------
 
 export async function fetchAllMacroData(months = 12): Promise<DataProviderResult[]> {
   const results: DataProviderResult[] = [];
 
-  const [bokResult, fredResult, emResult, eiaResult, worldBankResult] = await Promise.allSettled([
-    isBokConfigured() ? fetchBokData(months) : Promise.resolve(null),
-    isFredConfigured() ? fetchFredData(months) : Promise.resolve(null),
-    isElectricityMapsConfigured() ? fetchCarbonIntensityData() : Promise.resolve(null),
-    isEiaConfigured() ? fetchEiaPriceData() : Promise.resolve(null),
-    isWorldBankMacroEnabled() ? fetchWorldBankMacroData() : Promise.resolve(null)
-  ]);
+  const [bokResult, fredResult, emResult, eiaResult, worldBankResult, dbnomicsResult] =
+    await Promise.allSettled([
+      isBokConfigured() ? fetchBokData(months) : Promise.resolve(null),
+      isFredConfigured() ? fetchFredData(months) : Promise.resolve(null),
+      isElectricityMapsConfigured() ? fetchCarbonIntensityData() : Promise.resolve(null),
+      isEiaConfigured() ? fetchEiaPriceData() : Promise.resolve(null),
+      isWorldBankMacroEnabled() ? fetchWorldBankMacroData() : Promise.resolve(null),
+      isDbnomicsMacroEnabled() ? fetchDbnomicsMacroData() : Promise.resolve(null)
+    ]);
 
   if (bokResult.status === 'fulfilled' && bokResult.value) {
     results.push(bokResult.value);
@@ -492,6 +533,9 @@ export async function fetchAllMacroData(months = 12): Promise<DataProviderResult
   if (worldBankResult.status === 'fulfilled' && worldBankResult.value) {
     results.push(worldBankResult.value);
   }
+  if (dbnomicsResult.status === 'fulfilled' && dbnomicsResult.value) {
+    results.push(dbnomicsResult.value);
+  }
 
   return results;
 }
@@ -503,5 +547,6 @@ export function getConfiguredProviders(): string[] {
   if (isElectricityMapsConfigured()) providers.push('electricitymaps');
   if (isEiaConfigured()) providers.push('eia');
   if (isWorldBankMacroEnabled()) providers.push('world-bank-indicators');
+  if (isDbnomicsMacroEnabled()) providers.push('dbnomics');
   return providers;
 }
