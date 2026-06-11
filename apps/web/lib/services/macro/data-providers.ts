@@ -5,6 +5,13 @@
 // These fetch real-time macro series data to replace seed/hardcoded values.
 
 import { safeFetch } from '@/lib/security/safe-fetch';
+import {
+  electricityMapsZoneForMarket,
+  fetchCarbonIntensity,
+  fetchEiaElectricityPrice,
+  isElectricityMapsConfigured,
+  isEiaConfigured
+} from '@/lib/sources/adapters/power-grid';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -286,15 +293,156 @@ export async function fetchFredData(months = 12): Promise<DataProviderResult> {
 }
 
 // ---------------------------------------------------------------------------
+// Power / grid / carbon intensity — ElectricityMaps + EIA
+// ---------------------------------------------------------------------------
+// Data-center site quality is power-bound, so we surface global grid carbon
+// intensity and US electricity price as macro data points keyed by market.
+// The underlying connectors (lib/sources/adapters/power-grid.ts) fail closed:
+// a missing key or any transport error yields no points (and no throw).
+
+export function isElectricityMapsProviderConfigured(): boolean {
+  return isElectricityMapsConfigured();
+}
+
+export function isEiaProviderConfigured(): boolean {
+  return isEiaConfigured();
+}
+
+/**
+ * Fetch grid carbon-intensity points for the given firm markets via
+ * ElectricityMaps. Each resolvable market yields a `carbon_intensity_gco2_kwh`
+ * point (plus fossil-free / renewable share points when the breakdown endpoint
+ * responds). Markets with no zone mapping or a failed fetch are skipped.
+ */
+export async function fetchCarbonIntensityData(
+  markets: string[] = ['KR', 'US-CAL-CISO', 'DE']
+): Promise<DataProviderResult> {
+  if (!isElectricityMapsConfigured()) {
+    return {
+      provider: 'electricitymaps',
+      market: 'GLOBAL',
+      points: [],
+      fetchedAt: new Date(),
+      error: 'ELECTRICITYMAPS_API_TOKEN not configured'
+    };
+  }
+
+  const points: MacroDataPoint[] = [];
+  const errors: string[] = [];
+
+  for (const market of markets) {
+    const zone = electricityMapsZoneForMarket(market) ?? market;
+    try {
+      const point = await fetchCarbonIntensity(zone);
+      if (!point) {
+        errors.push(`EM ${market}: no data`);
+        continue;
+      }
+      const observationDate = point.asOf ? new Date(point.asOf) : new Date();
+      if (point.carbonIntensityGco2PerKwh !== null) {
+        points.push({
+          seriesKey: `${point.zone}.carbon_intensity_gco2_kwh`,
+          label: `${point.zone} Grid Carbon Intensity`,
+          value: point.carbonIntensityGco2PerKwh,
+          unit: 'gCO2eq/kWh',
+          observationDate,
+          sourceSystem: 'electricitymaps'
+        });
+      }
+      if (point.fossilFreePct !== null) {
+        points.push({
+          seriesKey: `${point.zone}.fossil_free_pct`,
+          label: `${point.zone} Fossil-Free Share`,
+          value: point.fossilFreePct,
+          unit: '%',
+          observationDate,
+          sourceSystem: 'electricitymaps'
+        });
+      }
+      if (point.renewablePct !== null) {
+        points.push({
+          seriesKey: `${point.zone}.renewable_pct`,
+          label: `${point.zone} Renewable Share`,
+          value: point.renewablePct,
+          unit: '%',
+          observationDate,
+          sourceSystem: 'electricitymaps'
+        });
+      }
+    } catch (err) {
+      errors.push(`EM ${market}: ${err instanceof Error ? err.message : 'unknown error'}`);
+    }
+  }
+
+  return {
+    provider: 'electricitymaps',
+    market: 'GLOBAL',
+    points,
+    fetchedAt: new Date(),
+    error: errors.length > 0 ? errors.join('; ') : null
+  };
+}
+
+/**
+ * Fetch US electricity retail price points from EIA for the given regions.
+ * Fails closed: returns an empty point set when EIA_API_KEY is unset.
+ */
+export async function fetchEiaPriceData(regions: string[] = ['US']): Promise<DataProviderResult> {
+  if (!isEiaConfigured()) {
+    return {
+      provider: 'eia',
+      market: 'US',
+      points: [],
+      fetchedAt: new Date(),
+      error: 'EIA_API_KEY not configured'
+    };
+  }
+
+  const points: MacroDataPoint[] = [];
+  const errors: string[] = [];
+
+  for (const region of regions) {
+    try {
+      const point = await fetchEiaElectricityPrice(region);
+      if (point?.retailPriceCentsPerKwh != null) {
+        const periodDate = point.period ? new Date(`${point.period}-01T00:00:00.000Z`) : new Date();
+        points.push({
+          seriesKey: `${point.region}.electricity_price_cents_kwh`,
+          label: `${point.region} Retail Electricity Price`,
+          value: point.retailPriceCentsPerKwh,
+          unit: 'cents/kWh',
+          observationDate: isNaN(periodDate.getTime()) ? new Date() : periodDate,
+          sourceSystem: 'eia'
+        });
+      } else {
+        errors.push(`EIA ${region}: no price`);
+      }
+    } catch (err) {
+      errors.push(`EIA ${region}: ${err instanceof Error ? err.message : 'unknown error'}`);
+    }
+  }
+
+  return {
+    provider: 'eia',
+    market: 'US',
+    points,
+    fetchedAt: new Date(),
+    error: errors.length > 0 ? errors.join('; ') : null
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Unified fetch
 // ---------------------------------------------------------------------------
 
 export async function fetchAllMacroData(months = 12): Promise<DataProviderResult[]> {
   const results: DataProviderResult[] = [];
 
-  const [bokResult, fredResult] = await Promise.allSettled([
+  const [bokResult, fredResult, emResult, eiaResult] = await Promise.allSettled([
     isBokConfigured() ? fetchBokData(months) : Promise.resolve(null),
-    isFredConfigured() ? fetchFredData(months) : Promise.resolve(null)
+    isFredConfigured() ? fetchFredData(months) : Promise.resolve(null),
+    isElectricityMapsConfigured() ? fetchCarbonIntensityData() : Promise.resolve(null),
+    isEiaConfigured() ? fetchEiaPriceData() : Promise.resolve(null)
   ]);
 
   if (bokResult.status === 'fulfilled' && bokResult.value) {
@@ -302,6 +450,12 @@ export async function fetchAllMacroData(months = 12): Promise<DataProviderResult
   }
   if (fredResult.status === 'fulfilled' && fredResult.value) {
     results.push(fredResult.value);
+  }
+  if (emResult.status === 'fulfilled' && emResult.value) {
+    results.push(emResult.value);
+  }
+  if (eiaResult.status === 'fulfilled' && eiaResult.value) {
+    results.push(eiaResult.value);
   }
 
   return results;
@@ -311,5 +465,7 @@ export function getConfiguredProviders(): string[] {
   const providers: string[] = [];
   if (isBokConfigured()) providers.push('bok-ecos');
   if (isFredConfigured()) providers.push('fred');
+  if (isElectricityMapsConfigured()) providers.push('electricitymaps');
+  if (isEiaConfigured()) providers.push('eia');
   return providers;
 }
