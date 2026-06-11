@@ -12,6 +12,7 @@ import {
   isElectricityMapsConfigured,
   isEiaConfigured
 } from '@/lib/sources/adapters/power-grid';
+import { fetchWorldBankMacro, isWorldBankMacroEnabled } from '@/lib/sources/adapters/world-bank';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -432,17 +433,48 @@ export async function fetchEiaPriceData(regions: string[] = ['US']): Promise<Dat
 }
 
 // ---------------------------------------------------------------------------
+// World Bank — worldwide cross-country indicators (keyless, flag-gated)
+// ---------------------------------------------------------------------------
+// Adapter lives in lib/sources/adapters/world-bank.ts (uses the injectable
+// fetchJsonWithRetry Fetcher so it is unit-testable). Here we bridge its
+// cross-country WorldwideMacroPoint[] into the DataProviderResult shape the
+// macro dashboard already consumes. The bridge keeps the country prefix on
+// the seriesKey so multi-country points don't collide. Fails closed: the
+// adapter never throws, so a disabled/unreachable World Bank degrades to an
+// empty point list, mirroring the BOK/FRED "not configured" behaviour.
+
+export async function fetchWorldBankMacroData(): Promise<DataProviderResult> {
+  const result = await fetchWorldBankMacro();
+  return {
+    provider: result.provider,
+    market: 'WORLD',
+    points: result.points.map((point) => ({
+      seriesKey: `${point.country.toLowerCase()}.${point.seriesKey}`,
+      label: `${point.country} ${point.label}`,
+      value: point.value,
+      unit: point.unit,
+      // World Bank reports annual periods (e.g. "2024"); pin to Jan 1 UTC.
+      observationDate: new Date(Date.UTC(Number(point.date) || 1970, 0, 1)),
+      sourceSystem: point.sourceSystem
+    })),
+    fetchedAt: result.fetchedAt,
+    error: result.error
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Unified fetch
 // ---------------------------------------------------------------------------
 
 export async function fetchAllMacroData(months = 12): Promise<DataProviderResult[]> {
   const results: DataProviderResult[] = [];
 
-  const [bokResult, fredResult, emResult, eiaResult] = await Promise.allSettled([
+  const [bokResult, fredResult, emResult, eiaResult, worldBankResult] = await Promise.allSettled([
     isBokConfigured() ? fetchBokData(months) : Promise.resolve(null),
     isFredConfigured() ? fetchFredData(months) : Promise.resolve(null),
     isElectricityMapsConfigured() ? fetchCarbonIntensityData() : Promise.resolve(null),
-    isEiaConfigured() ? fetchEiaPriceData() : Promise.resolve(null)
+    isEiaConfigured() ? fetchEiaPriceData() : Promise.resolve(null),
+    isWorldBankMacroEnabled() ? fetchWorldBankMacroData() : Promise.resolve(null)
   ]);
 
   if (bokResult.status === 'fulfilled' && bokResult.value) {
@@ -457,6 +489,9 @@ export async function fetchAllMacroData(months = 12): Promise<DataProviderResult
   if (eiaResult.status === 'fulfilled' && eiaResult.value) {
     results.push(eiaResult.value);
   }
+  if (worldBankResult.status === 'fulfilled' && worldBankResult.value) {
+    results.push(worldBankResult.value);
+  }
 
   return results;
 }
@@ -467,5 +502,6 @@ export function getConfiguredProviders(): string[] {
   if (isFredConfigured()) providers.push('fred');
   if (isElectricityMapsConfigured()) providers.push('electricitymaps');
   if (isEiaConfigured()) providers.push('eia');
+  if (isWorldBankMacroEnabled()) providers.push('world-bank-indicators');
   return providers;
 }
