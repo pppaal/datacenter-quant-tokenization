@@ -28,7 +28,8 @@ import { fetchAirQuality } from '@/lib/services/dc-intel/openaq';
 import { fetchSiteHazards } from '@/lib/services/dc-intel/thinkhazard';
 import { fetchPoiDensity } from '@/lib/services/dc-intel/overpass-poi';
 import { fetchAllMacroData, getConfiguredProviders } from '@/lib/services/macro/data-providers';
-import { geocodeAddress, isLiveGeocoderConfigured } from '@/lib/services/geocode';
+import { isKakaoConfigured, kakaoGeocodeAddress } from '@/lib/services/geocode/kakao-geocode';
+import { isOsmGeocoderEnabled, osmGeocodeAddress } from '@/lib/services/geocode/osm-geocode';
 import type { ParcelIdentifier, LatLng } from '@/lib/services/public-data/types';
 
 // ---------------------------------------------------------------------------
@@ -212,19 +213,23 @@ async function run(): Promise<void> {
   // -------------------------------------------------------------------------
   // 3. Geocoder
   // -------------------------------------------------------------------------
+  // Probe the real provider directly (Kakao or OSM) — NOT geocodeAddress, which
+  // silently falls back to the demo mock when the live provider is unreachable
+  // and would falsely report LIVE.
+  const geocoderName = isKakaoConfigured() ? 'geocoder (Kakao)' : 'geocoder (OSM Nominatim)';
   await probe(
     'Geo',
-    'geocoder (Kakao key / ENABLE_OSM_GEOCODER)',
-    isLiveGeocoderConfigured() || isFlag('ENABLE_OSM_GEOCODER'),
+    geocoderName,
+    isKakaoConfigured() || isOsmGeocoderEnabled(),
     'MOCK',
-    () => geocodeAddress(ADDRESS),
+    () => (isKakaoConfigured() ? kakaoGeocodeAddress(ADDRESS) : osmGeocodeAddress(ADDRESS)),
     (g) =>
       g
         ? {
             nonEmpty: true,
             detail: `${g.location.latitude.toFixed(4)}, ${g.location.longitude.toFixed(4)}`
           }
-        : { nonEmpty: false, detail: 'null' }
+        : { nonEmpty: false, detail: 'no result (provider unreachable or not found)' }
   );
 
   // -------------------------------------------------------------------------
