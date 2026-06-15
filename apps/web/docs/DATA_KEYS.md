@@ -33,9 +33,57 @@ ENABLE_OSM_GEOCODER=true       # OpenStreetMap Nominatim geocoder — worldwide 
 ```
 
 > Egress note: your hosting network policy must allow outbound HTTPS to these
-> hosts, or the calls fail-soft to empty (the app keeps working on mock). Hosts:
-> `api.worldbank.org`, `api.db.nomics.world`, `www.thinkhazard.org`,
-> `www.peeringdb.com`, `overpass-api.de`, `nominatim.openstreetmap.org`.
+> hosts, or the calls fail-soft to empty (the app keeps working on mock). See
+> the **Network egress allowlist** section below for the exact host list.
+
+---
+
+## Network egress allowlist (the #1 thing that blocks live data)
+
+Live connectors only return data if your runtime can reach the upstream host.
+On a sandbox / locked-down network (incl. Claude Code on the web with a
+restricted policy, or a corporate proxy) outbound calls to these hosts are
+blocked and every connector shows `MOCK` / `LIVE ∅` / `ERROR` even with valid
+keys. This is **not** a code bug — `data:smoke` makes the real call and the host
+returns `403 Host not in allowlist`.
+
+The fix is a network-policy setting, not code. On Claude Code on the web:
+environment → **Network access** → allow the hosts below (or pick a policy that
+permits general outbound HTTPS). Docs:
+<https://code.claude.com/docs/en/claude-code-on-the-web>. On a corporate proxy,
+add them to the proxy allowlist. Running locally on a normal laptop, they are
+reachable already.
+
+```
+# Tier 0 — keyless (allow these first)
+api.worldbank.org
+api.db.nomics.world
+www.thinkhazard.org
+www.peeringdb.com
+overpass-api.de
+nominatim.openstreetmap.org
+
+# Tier 1 — Korea (allow when you add the Korea keys)
+apis.data.go.kr          # RTMS 실거래가 (new endpoint)
+openapi.molit.go.kr      # MOLIT 건축물대장 / RTMS (legacy endpoint)
+api.vworld.kr            # V-World 공시지가 + 토지이용계획
+www.reb.or.kr            # R-ONE 임대동향
+opendart.fss.or.kr       # DART 재무제표
+kosis.kr                 # KOSIS (optional)
+dapi.kakao.com           # Kakao geocoder (optional)
+
+# Tier 2 — global keyed (allow only for the keys you set)
+api.stlouisfed.org       # FRED
+ecos.bok.or.kr           # Bank of Korea ECOS
+api.eia.gov              # US EIA
+api.electricitymap.org   # ElectricityMaps
+web-api.tp.entsoe.eu     # ENTSO-E
+api.ember-energy.org     # Ember
+api.openaq.org           # OpenAQ
+```
+
+After allowing the hosts, re-run `npm --prefix apps/web run data:smoke` — the
+connectors you've enabled should flip to `LIVE ✅`.
 
 ---
 
