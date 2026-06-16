@@ -29,7 +29,9 @@ const RTMS_ENDPOINT = 'https://apis.data.go.kr/1613000/RTMSDataSvcNrgTrade/getRT
 export class LiveRtmsTransactionComps implements TransactionCompsConnector {
   constructor(
     private readonly apiKey: string | undefined = process.env.RTMS_SERVICE_KEY,
-    private readonly timeoutMs: number = 8000
+    // data.go.kr RTMS responses can be slow on a cold call; 8s was too tight
+    // (requests aborted before the body arrived). 20s gives comfortable margin.
+    private readonly timeoutMs: number = 20000
   ) {}
 
   async fetch(params: {

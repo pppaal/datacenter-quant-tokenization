@@ -50,18 +50,21 @@ const memStore: SourceCacheStore = {
 };
 
 // ---------------------------------------------------------------------------
-// Fixture — a single, real Seoul parcel so every run checks the same row.
+// Fixture — Gangnam Finance Center (강남파이낸스센터), 역삼동 737. A real, large
+// commercial building so every parcel-keyed connector hits a row that actually
+// exists in MOLIT/V-World (verified live: 건축물대장 표제부 returns 업무시설,
+// 연면적 212,615㎡, 지상45/지하8층).
 // ---------------------------------------------------------------------------
-const COORDS: LatLng = { latitude: 37.527, longitude: 127.028 };
+const COORDS: LatLng = { latitude: 37.5006, longitude: 127.0366 };
 const PARCEL: ParcelIdentifier = {
-  jibunAddress: '서울특별시 강남구 압구정동 458-7',
-  pnu: '1168010600104580007',
-  roadAddress: '서울특별시 강남구 압구정로 340'
+  jibunAddress: '서울특별시 강남구 역삼동 737',
+  pnu: '1168010100107370000',
+  roadAddress: '서울특별시 강남구 테헤란로 152'
 };
 const LAWD_CODE = '11680'; // 강남구
 const DISTRICT = '강남구';
 const METRO = '서울 강남권';
-const ADDRESS = '서울특별시 강남구 압구정로 340';
+const ADDRESS = '서울특별시 강남구 테헤란로 152';
 // Samsung Electronics — a stable, always-present DART corp_code (8 digits, not
 // the stock code) to verify the financial-statements connector end-to-end.
 const DART_SAMSUNG_CORP_CODE = '00126380';
