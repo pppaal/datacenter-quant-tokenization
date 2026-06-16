@@ -59,6 +59,7 @@ export class LiveRtmsTransactionComps implements TransactionCompsConnector {
     url.searchParams.set('DEAL_YMD', yyyyMm);
     url.searchParams.set('numOfRows', '100');
     url.searchParams.set('pageNo', '1');
+    url.searchParams.set('_type', 'xml');
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), this.timeoutMs);

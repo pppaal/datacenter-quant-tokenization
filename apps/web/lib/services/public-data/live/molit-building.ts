@@ -50,6 +50,8 @@ export class LiveMolitBuildingRegistry implements BuildingRegistryConnector {
     url.searchParams.set('ji', ids.ji);
     url.searchParams.set('numOfRows', '1');
     url.searchParams.set('pageNo', '1');
+    // 건축HUB serves JSON+XML; force XML so the regex parser below applies.
+    url.searchParams.set('_type', 'xml');
 
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.timeoutMs);
