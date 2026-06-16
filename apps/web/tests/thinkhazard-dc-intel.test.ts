@@ -3,7 +3,6 @@ import test from 'node:test';
 import {
   fetchSiteHazards,
   parseHazardReport,
-  parseAdminDivisionId,
   scoreSiteHazards,
   THINKHAZARD_SOURCE,
   type SiteHazard
@@ -32,12 +31,6 @@ const SAMPLE_REPORT = [
   { hazardtype: { mnemonic: 'ZZ', title: 'Unknown' }, hazardlevel: { mnemonic: 'HIG' } }
 ];
 
-// Sample coordinate→admin lookup body (array; deepest entry is most specific).
-const SAMPLE_ADMIN = [
-  { id: 10, name: 'Country' },
-  { id: 1234, name: 'Province' }
-];
-
 function jsonFetcher(bodyByUrl: (url: string) => unknown) {
   return async (url: string) => new Response(JSON.stringify(bodyByUrl(url)), { status: 200 });
 }
@@ -55,13 +48,6 @@ test('parseHazardReport normalizes the 4 known hazards and skips unknowns', () =
 test('parseHazardReport accepts an object-wrapped array', () => {
   const hazards = parseHazardReport({ hazards: SAMPLE_REPORT });
   assert.equal(hazards.length, 4);
-});
-
-test('parseAdminDivisionId picks the most specific (deepest) division id', () => {
-  assert.equal(parseAdminDivisionId(SAMPLE_ADMIN), 1234);
-  assert.equal(parseAdminDivisionId({ id: 99 }), 99);
-  assert.equal(parseAdminDivisionId([]), null);
-  assert.equal(parseAdminDivisionId(null), null);
 });
 
 test('scoreSiteHazards is deterministic, bounded, and monotonic', () => {
@@ -89,47 +75,51 @@ test('scoreSiteHazards is deterministic, bounded, and monotonic', () => {
   assert.ok(higher >= lower);
 });
 
-test('fetchSiteHazards resolves coords→admin→report and scores (enabled)', async () => {
+test('fetchSiteHazards fetches the report for an explicit adminId and scores', async () => {
   process.env.ENABLE_THINKHAZARD = 'true';
+  let reportUrl = '';
   const result = await fetchSiteHazards(
-    { latitude: 37.5665, longitude: 126.978 },
+    { adminId: 1234 },
     {
-      fetcher: jsonFetcher((url) =>
-        url.includes('/administrativedivision') ? SAMPLE_ADMIN : SAMPLE_REPORT
-      )
+      fetcher: jsonFetcher((url) => {
+        reportUrl = url;
+        return SAMPLE_REPORT;
+      })
     }
   );
 
+  assert.ok(reportUrl.includes('/report/1234.json'));
   assert.equal(result.hazards.length, 4);
   assert.equal(result.overallRiskScore, 52.8);
   assert.deepEqual(result.highRiskHazards, ['earthquake']);
   assert.equal(result.source, THINKHAZARD_SOURCE);
 });
 
-test('fetchSiteHazards accepts an explicit adminId (no lookup needed)', async () => {
+test('fetchSiteHazards returns empty for coordinate input without calling the API', async () => {
+  // The public ThinkHazard API has no coordinate→division lookup, so a
+  // coordinate-only call must fail soft to empty and make NO request.
   process.env.ENABLE_THINKHAZARD = 'true';
-  let lookupCalled = false;
+  let called = false;
   const result = await fetchSiteHazards(
-    { adminId: 1234 },
+    { latitude: 37.5665, longitude: 126.978 },
     {
-      fetcher: jsonFetcher((url) => {
-        if (url.includes('/administrativedivision')) {
-          lookupCalled = true;
-          return SAMPLE_ADMIN;
-        }
-        return SAMPLE_REPORT;
-      })
+      fetcher: async () => {
+        called = true;
+        return new Response('[]', { status: 200 });
+      }
     }
   );
 
-  assert.equal(lookupCalled, false);
-  assert.equal(result.overallRiskScore, 52.8);
+  assert.equal(called, false);
+  assert.equal(result.hazards.length, 0);
+  assert.equal(result.overallRiskScore, 0);
+  assert.equal(result.source, THINKHAZARD_SOURCE);
 });
 
 test('fetchSiteHazards returns empty (no throw) on fetch error', async () => {
   process.env.ENABLE_THINKHAZARD = 'true';
   const result = await fetchSiteHazards(
-    { latitude: 1, longitude: 1 },
+    { adminId: 1234 },
     {
       fetcher: async () => {
         throw new Error('network down');
@@ -156,21 +146,11 @@ test('fetchSiteHazards returns empty (no throw) on HTTP 500', async () => {
   assert.equal(result.hazards.length, 0);
 });
 
-test('fetchSiteHazards returns empty when admin division cannot be resolved', async () => {
-  process.env.ENABLE_THINKHAZARD = 'true';
-  const result = await fetchSiteHazards(
-    { latitude: 0, longitude: 0 },
-    { fetcher: jsonFetcher(() => []) }
-  );
-  assert.equal(result.hazards.length, 0);
-  assert.equal(result.overallRiskScore, 0);
-});
-
 test('fetchSiteHazards is gated off when ENABLE_THINKHAZARD is unset', async () => {
   delete process.env.ENABLE_THINKHAZARD;
   let called = false;
   const result = await fetchSiteHazards(
-    { latitude: 37.5665, longitude: 126.978 },
+    { adminId: 1234 },
     {
       fetcher: async () => {
         called = true;

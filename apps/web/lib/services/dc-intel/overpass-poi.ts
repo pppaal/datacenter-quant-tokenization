@@ -54,6 +54,16 @@ export const OVERPASS_API_DEFAULT_URL = 'https://overpass-api.de/api/interpreter
 /** Attribution string for downstream display. */
 export const OVERPASS_SOURCE = '© OpenStreetMap contributors';
 
+/**
+ * Descriptive User-Agent. overpass-api.de's Apache front-end performs content
+ * negotiation and rejects requests with `406 Not Acceptable` when they carry a
+ * narrow `Accept: application/json` header (the response is served as
+ * `application/osm3s+json`) and/or lack a descriptive User-Agent. We send a
+ * permissive `Accept` of any type (the `[out:json]` directive already pins the
+ * body to JSON) plus this UA to stay within Overpass usage policy.
+ */
+const OVERPASS_USER_AGENT = 'NexusSeoul-DCIntel/1.0 (+https://nexus-seoul.example)';
+
 /** The amenity categories we bucket POIs into. */
 export type PoiCategory =
   | 'food'
@@ -313,8 +323,9 @@ export async function fetchPoiDensity(
         cache: 'no-store',
         signal: controller.signal,
         headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/x-www-form-urlencoded'
+          Accept: '*/*',
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'User-Agent': OVERPASS_USER_AGENT
         },
         body: new URLSearchParams({ data: query }).toString()
       },

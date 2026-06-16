@@ -77,6 +77,9 @@ export type SiteHazard = {
   level: ThinkHazardLevel;
 };
 
+// ThinkHazard's public API only reports by division code (`adminId`); it has no
+// coordinate lookup (see `fetchSiteHazards`). Coordinates are still accepted for
+// caller convenience but resolve to an empty result until an `adminId` is given.
 export type FetchSiteHazardsInput =
   | { latitude: number; longitude: number; adminId?: never }
   | { adminId: number; latitude?: never; longitude?: never };
@@ -311,36 +314,6 @@ export function parseHazardReport(body: unknown): SiteHazard[] {
   return hazards;
 }
 
-/**
- * Parse a ThinkHazard! `/administrativedivision?lon=&lat=` response body into
- * an admin division id. The endpoint returns the matching division(s); we take
- * the most specific (smallest / last) one's id. Tolerant of array or single
- * object shapes. Exported for unit testing.
- */
-export function parseAdminDivisionId(body: unknown): number | null {
-  const pickId = (o: Record<string, unknown>): number | null => {
-    const candidate = o.id ?? o.admin_id ?? o.code;
-    const n = Number(candidate);
-    return Number.isFinite(n) ? n : null;
-  };
-
-  if (Array.isArray(body)) {
-    // Most specific division is typically the last / deepest entry.
-    for (let i = body.length - 1; i >= 0; i -= 1) {
-      const row = body[i];
-      if (row && typeof row === 'object') {
-        const id = pickId(row as Record<string, unknown>);
-        if (id !== null) return id;
-      }
-    }
-    return null;
-  }
-  if (body && typeof body === 'object') {
-    return pickId(body as Record<string, unknown>);
-  }
-  return null;
-}
-
 function buildResult(hazards: SiteHazard[]): SiteHazardsResult {
   return {
     hazards,
@@ -350,26 +323,10 @@ function buildResult(hazards: SiteHazard[]): SiteHazardsResult {
   };
 }
 
-async function resolveAdminId(
-  latitude: number,
-  longitude: number,
-  fetcher: Fetcher | undefined,
-  signal: AbortSignal
-): Promise<number | null> {
-  const url = new URL(`${THINKHAZARD_API_BASE}/administrativedivision`);
-  url.searchParams.set('lon', String(longitude));
-  url.searchParams.set('lat', String(latitude));
-  const body = await fetchJsonWithRetry(
-    url.toString(),
-    { cache: 'no-store', signal, headers: { Accept: 'application/json' } },
-    { fetcher }
-  );
-  return parseAdminDivisionId(body);
-}
-
 /**
  * Fetch classified natural-hazard levels and a bounded site-risk score for a
- * location (lat/lng) or an explicit ThinkHazard admin division id.
+ * ThinkHazard admin division id (`adminId`). Coordinate input is not supported
+ * by the public API and resolves to an empty result.
  *
  * Gated behind `ENABLE_THINKHAZARD`. When disabled, given no usable location,
  * or on any error/timeout, returns `EMPTY_RESULT` (never throws). Pass a
@@ -384,40 +341,27 @@ export async function fetchSiteHazards(
     return EMPTY_RESULT;
   }
 
-  const hasCoords =
-    typeof input.latitude === 'number' &&
-    Number.isFinite(input.latitude) &&
-    typeof input.longitude === 'number' &&
-    Number.isFinite(input.longitude);
   const hasAdminId = typeof input.adminId === 'number' && Number.isFinite(input.adminId);
 
-  if (!hasCoords && !hasAdminId) {
-    logger.warn('thinkhazard_missing_location', { reason: 'need lat+lng or adminId' });
+  if (!hasAdminId) {
+    // ThinkHazard's public API has NO coordinate→division lookup (confirmed in
+    // its API.md). The `/administrativedivision` route is a name autocomplete
+    // that requires a `q` text parameter, not lat/lng — calling it with
+    // coordinates returns HTTP 400. Callers must resolve a ThinkHazard division
+    // code out-of-band (e.g. from a GAUL/admin-boundary dataset) and pass it as
+    // `adminId`. We fail soft to empty rather than make a doomed request.
+    logger.debug('thinkhazard_requires_admin_code', {
+      reason: 'public API has no coordinate lookup; pass adminId (division code)'
+    });
     return EMPTY_RESULT;
   }
 
+  const adminId = input.adminId as number;
   const timeoutMs = options?.timeoutMs ?? 8_000;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    let adminId: number | null = hasAdminId ? (input.adminId as number) : null;
-    if (adminId === null && hasCoords) {
-      adminId = await resolveAdminId(
-        input.latitude as number,
-        input.longitude as number,
-        options?.fetcher,
-        controller.signal
-      );
-    }
-
-    if (adminId === null) {
-      logger.warn('thinkhazard_admin_unresolved', {
-        reason: 'no admin division for location'
-      });
-      return EMPTY_RESULT;
-    }
-
     const reportUrl = `${THINKHAZARD_API_BASE}/report/${adminId}.json`;
     const body = await fetchJsonWithRetry(
       reportUrl,

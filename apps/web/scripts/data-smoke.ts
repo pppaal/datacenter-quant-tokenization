@@ -198,7 +198,12 @@ async function run(): Promise<void> {
     () => fetchSiteHazards(COORDS),
     (r) => ({
       nonEmpty: r.hazards.length > 0,
-      detail: `${r.hazards.length} hazards, risk=${r.overallRiskScore}`
+      // Public API has no coordinate lookup; needs an adminId (division code),
+      // so a coordinate-only probe is expected to come back empty.
+      detail:
+        r.hazards.length > 0
+          ? `${r.hazards.length} hazards, risk=${r.overallRiskScore}`
+          : 'empty — needs adminId (no coord lookup in public API)'
     })
   );
   await probe(
