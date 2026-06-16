@@ -58,6 +58,45 @@ test('parseRtmsXml skips items without 거래금액 and handles missing building
   assert.equal(second.dealAmountManWon, 54_000);
 });
 
+// Current apis.data.go.kr schema: English camelCase item fields.
+const SAMPLE_XML_EN = `<?xml version="1.0" encoding="UTF-8"?>
+<response>
+  <header><resultCode>00</resultCode><resultMsg>OK</resultMsg></header>
+  <body>
+    <items>
+      <item>
+        <sggCd>11680</sggCd>
+        <umdNm>역삼동</umdNm>
+        <buildingType>일반</buildingType>
+        <buildingUse>업무시설</buildingUse>
+        <dealYear>2025</dealYear>
+        <dealMonth>9</dealMonth>
+        <dealDay>15</dealDay>
+        <floor>18</floor>
+        <buildYear>2012</buildYear>
+        <dealAmount> 128,000 </dealAmount>
+        <plottageAr>450</plottageAr>
+        <buildingAr>1200</buildingAr>
+      </item>
+    </items>
+  </body>
+</response>`;
+
+test('parseRtmsXml parses the current apis.data.go.kr English schema', () => {
+  const comps = parseRtmsXml(SAMPLE_XML_EN, '11680');
+  assert.equal(comps.length, 1);
+  const c = comps[0]!;
+  assert.equal(c.transactionDate, '2025-09-15');
+  assert.equal(c.dealAmountManWon, 128_000);
+  assert.equal(c.gfaSqm, 1200);
+  assert.equal(c.landAreaSqm, 450);
+  assert.equal(c.buildYear, 2012);
+  assert.equal(c.floor, 18);
+  assert.equal(c.buildingUse, '업무시설');
+  assert.equal(c.buildingName, null);
+  assert.equal(c.pricePerSqmKrw, 1_066_667);
+});
+
 test('parseRtmsXml returns empty array on malformed xml', () => {
   const comps = parseRtmsXml('<nope/>', '11680');
   assert.equal(comps.length, 0);
