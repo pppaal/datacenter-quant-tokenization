@@ -30,7 +30,23 @@ import { fetchPoiDensity } from '@/lib/services/dc-intel/overpass-poi';
 import { fetchAllMacroData, getConfiguredProviders } from '@/lib/services/macro/data-providers';
 import { isKakaoConfigured, kakaoGeocodeAddress } from '@/lib/services/geocode/kakao-geocode';
 import { isOsmGeocoderEnabled, osmGeocodeAddress } from '@/lib/services/geocode/osm-geocode';
+import { createFxAdapter } from '@/lib/sources/adapters/fx';
+import { createClimateAdapter } from '@/lib/sources/adapters/climate';
+import type { SourceCacheStore } from '@/lib/sources/types';
 import type { ParcelIdentifier, LatLng } from '@/lib/services/public-data/types';
+
+// These two adapters are keyless (Frankfurter FX, NASA POWER climate) but are
+// built on the DB-backed SourceCacheStore. A no-op in-memory store lets the
+// smoke exercise them with zero DB — every call misses the cache and goes live.
+const memStore: SourceCacheStore = {
+  async getOverride() {
+    return null;
+  },
+  async getFreshCache() {
+    return null;
+  },
+  async upsertCache() {}
+};
 
 // ---------------------------------------------------------------------------
 // Fixture — a single, real Seoul parcel so every run checks the same row.
@@ -238,7 +254,43 @@ async function run(): Promise<void> {
   );
 
   // -------------------------------------------------------------------------
-  // 4. Global macro providers (Promise.allSettled inside fetchAllMacroData)
+  // 4. Keyless market/climate adapters (no key, no flag — always probed)
+  // -------------------------------------------------------------------------
+  await probe(
+    'Market',
+    'FX rates (Frankfurter, keyless)',
+    true,
+    'OFF',
+    () => createFxAdapter(memStore).fetch('USD'),
+    (env) => ({
+      // Live success → provider 'frankfurter' + FRESH; failure falls back to a
+      // default rate with status FAILED (no throw).
+      nonEmpty: env.status === 'FRESH' && env.data.provider === 'frankfurter',
+      detail: `USD→KRW ${env.data.rateToKrw} (${env.data.provider}, ${env.status})`
+    })
+  );
+  await probe(
+    'Climate',
+    'NASA POWER climate (keyless)',
+    true,
+    'OFF',
+    () =>
+      createClimateAdapter(memStore).fetch({
+        assetCode: 'SMOKE-APGUJEONG',
+        latitude: COORDS.latitude,
+        longitude: COORDS.longitude
+      }),
+    (env) => ({
+      nonEmpty: env.status === 'FRESH',
+      detail:
+        env.data.recentAverageTempC != null
+          ? `avgTemp=${env.data.recentAverageTempC}°C, ${env.sourceSystem} (${env.status})`
+          : `${env.data.climateRiskNote} (${env.status})`
+    })
+  );
+
+  // -------------------------------------------------------------------------
+  // 5. Global macro providers (Promise.allSettled inside fetchAllMacroData)
   // -------------------------------------------------------------------------
   const configured = getConfiguredProviders();
   if (configured.length === 0) {
