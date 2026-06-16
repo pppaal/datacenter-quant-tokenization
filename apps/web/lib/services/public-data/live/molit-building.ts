@@ -1,12 +1,13 @@
 /**
  * MOLIT 건축물대장 (Korean building registry) live adapter.
  *
- * Endpoint: http://apis.data.go.kr/1613000/BldRgstService_v2/getBrTitleInfo
- * Docs:     https://www.data.go.kr/data/15044713/openapi.do
+ * Endpoint: https://apis.data.go.kr/1613000/BldRgstHubService/getBrTitleInfo
+ * Docs:     https://www.data.go.kr/data/15134735/openapi.do (건축HUB 건축물대장정보 서비스)
  *
  * Required env:
  *   MOLIT_BUILDING_API_KEY — obtained from data.go.kr after registering for
- *     "건축HUB 건축물대장정보 서비스".
+ *     "국토교통부_건축HUB_건축물대장정보 서비스" (BldRgstHubService). Use the
+ *     일반 인증키 (Decoding/Encoding both work per the portal).
  *
  * Query (PNU-derived):
  *   sigunguCd  = first 5 digits of PNU
@@ -28,7 +29,7 @@ import type {
   ParcelIdentifier
 } from '@/lib/services/public-data/types';
 
-const ENDPOINT = 'http://apis.data.go.kr/1613000/BldRgstService_v2/getBrTitleInfo';
+const ENDPOINT = 'https://apis.data.go.kr/1613000/BldRgstHubService/getBrTitleInfo';
 
 export class LiveMolitBuildingRegistry implements BuildingRegistryConnector {
   constructor(
