@@ -30,6 +30,7 @@ import { fetchPoiDensity } from '@/lib/services/dc-intel/overpass-poi';
 import { fetchAllMacroData, getConfiguredProviders } from '@/lib/services/macro/data-providers';
 import { isKakaoConfigured, kakaoGeocodeAddress } from '@/lib/services/geocode/kakao-geocode';
 import { isOsmGeocoderEnabled, osmGeocodeAddress } from '@/lib/services/geocode/osm-geocode';
+import { fetchDartFinancials } from '@/lib/services/quarterly-report/connectors/dart-financials';
 import { createFxAdapter } from '@/lib/sources/adapters/fx';
 import { createClimateAdapter } from '@/lib/sources/adapters/climate';
 import type { SourceCacheStore } from '@/lib/sources/types';
@@ -61,6 +62,9 @@ const LAWD_CODE = '11680'; // 강남구
 const DISTRICT = '강남구';
 const METRO = '서울 강남권';
 const ADDRESS = '서울특별시 강남구 압구정로 340';
+// Samsung Electronics — a stable, always-present DART corp_code (8 digits, not
+// the stock code) to verify the financial-statements connector end-to-end.
+const DART_SAMSUNG_CORP_CODE = '00126380';
 
 type Status = 'LIVE ✅' | 'LIVE ∅' | 'MOCK' | 'OFF' | 'ERROR';
 
@@ -179,6 +183,20 @@ async function run(): Promise<void> {
       });
     },
     (t) => ({ nonEmpty: t.length > 0, detail: `${t.length} deals` })
+  );
+  await probe(
+    'Korea',
+    'financial-statements (재무제표 / DART)',
+    !!process.env.DART_API_KEY?.trim(),
+    'OFF',
+    () => fetchDartFinancials(DART_SAMSUNG_CORP_CODE),
+    (s) =>
+      s
+        ? {
+            nonEmpty: s.totalAssetsKrw != null || s.revenueKrw != null,
+            detail: `${s.corpName ?? s.corpCode} FY${s.fiscalYear} assets=${s.totalAssetsKrw ?? 'n/a'}`
+          }
+        : { nonEmpty: false, detail: 'null (no key, bad corp_code, or no data)' }
   );
 
   // -------------------------------------------------------------------------
