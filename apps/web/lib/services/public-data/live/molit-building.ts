@@ -34,7 +34,7 @@ const ENDPOINT = 'https://apis.data.go.kr/1613000/BldRgstHubService/getBrTitleIn
 export class LiveMolitBuildingRegistry implements BuildingRegistryConnector {
   constructor(
     private readonly apiKey: string | undefined = process.env.MOLIT_BUILDING_API_KEY,
-    private readonly timeoutMs: number = 8000
+    private readonly timeoutMs: number = 15000
   ) {}
 
   async fetch(parcel: ParcelIdentifier): Promise<BuildingRecord | null> {
