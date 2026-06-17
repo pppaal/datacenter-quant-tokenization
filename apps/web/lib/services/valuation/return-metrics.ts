@@ -49,28 +49,35 @@ export function computeReturnMetrics({
   // Year 0: negative initial equity outlay
   // Year 1..N: after-tax distribution
   // Year N: + net exit proceeds
+  // Operating flows only — the exit/terminal lump is passed separately so it is
+  // discounted at the full horizon exponent (a point-in-time sale), not at the
+  // mid-year exponent that operating distributions use.
   const leveredCashFlows: number[] = [-initialEquityKrw];
   for (let i = 0; i < equityWaterfall.years.length; i++) {
-    const year = equityWaterfall.years[i]!;
-    const isTerminal = i === equityWaterfall.years.length - 1;
-    const cf = year.afterTaxDistributionKrw + (isTerminal ? equityWaterfall.netExitProceedsKrw : 0);
-    leveredCashFlows.push(cf);
+    leveredCashFlows.push(equityWaterfall.years[i]!.afterTaxDistributionKrw);
   }
 
   // --- Unleveraged cash flows (for project/asset IRR) ---
-  // Year 0: negative total capex
-  // Year 1..N: NOI (before debt)
-  // Year N: + terminal value
+  // Year 0: negative total capex; Year 1..N: NOI (before debt); terminal separate.
   const unleveragedCashFlows: number[] = [-totalCapexKrw];
   for (let i = 0; i < leaseDcf.years.length; i++) {
-    const year = leaseDcf.years[i]!;
-    const isTerminal = i === leaseDcf.years.length - 1;
-    const cf = year.noiKrw + (isTerminal ? leaseDcf.terminalValueKrw : 0);
-    unleveragedCashFlows.push(cf);
+    unleveragedCashFlows.push(leaseDcf.years[i]!.noiKrw);
   }
 
-  const equityIrr = computeIrr(leveredCashFlows, 200, 1e-8, midYear);
-  const unleveragedIrr = computeIrr(unleveragedCashFlows, 200, 1e-8, midYear);
+  const equityIrr = computeIrr(
+    leveredCashFlows,
+    200,
+    1e-8,
+    midYear,
+    equityWaterfall.netExitProceedsKrw
+  );
+  const unleveragedIrr = computeIrr(
+    unleveragedCashFlows,
+    200,
+    1e-8,
+    midYear,
+    leaseDcf.terminalValueKrw
+  );
 
   // Leveraged IRR = same as equity IRR in this context (standard RE terminology)
   const leveragedIrr = equityIrr;
@@ -146,24 +153,20 @@ export function computeReturnMetricsFromProForma(
   const initialEquityKrw = totalCapexKrw - initialDebtFundingKrw;
   const years = proForma.years;
 
+  // Operating flows only; exit/terminal lumps passed separately (full-exponent
+  // discounting at the horizon, even under mid-year).
   const leveredCashFlows: number[] = [-initialEquityKrw];
   for (let i = 0; i < years.length; i++) {
-    const year = years[i]!;
-    const isTerminal = i === years.length - 1;
-    const cf = year.afterTaxDistributionKrw + (isTerminal ? netExitProceedsKrw : 0);
-    leveredCashFlows.push(cf);
+    leveredCashFlows.push(years[i]!.afterTaxDistributionKrw);
   }
 
   const unleveragedCashFlows: number[] = [-totalCapexKrw];
   for (let i = 0; i < years.length; i++) {
-    const year = years[i]!;
-    const isTerminal = i === years.length - 1;
-    const cf = year.noiKrw + (isTerminal ? terminalValueKrw : 0);
-    unleveragedCashFlows.push(cf);
+    unleveragedCashFlows.push(years[i]!.noiKrw);
   }
 
-  const equityIrr = computeIrr(leveredCashFlows, 200, 1e-8, midYear);
-  const unleveragedIrr = computeIrr(unleveragedCashFlows, 200, 1e-8, midYear);
+  const equityIrr = computeIrr(leveredCashFlows, 200, 1e-8, midYear, netExitProceedsKrw);
+  const unleveragedIrr = computeIrr(unleveragedCashFlows, 200, 1e-8, midYear, terminalValueKrw);
 
   const totalDistributions = years.reduce((sum, y) => sum + y.afterTaxDistributionKrw, 0);
   const totalReturn = totalDistributions + netExitProceedsKrw;
