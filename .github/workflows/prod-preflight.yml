@@ -1,0 +1,54 @@
+name: prod-preflight
+
+# Enforced production preflight gate.
+#
+# The repo ships `npm run prod:preflight` (scripts/run-production-preflight.ts),
+# which hard-rejects unsafe production config (mock blockchain, local FS
+# storage, weak/absent ADMIN_SESSION_SECRET, the E2E_PRODUCTION_BUILD and
+# ADMIN_ALLOW_UNBOUND_BROWSER_SESSION escape hatches, missing required secrets).
+# Previously this was a manual, easy-to-forget step. This workflow makes it a
+# repeatable, reviewable gate run against the protected `production`
+# environment's secrets — run it (and require it green) before promoting a
+# deployment to production traffic.
+#
+# SETUP REQUIRED (one-time): populate the `production` GitHub Environment
+# (Settings → Environments → production) with the secrets below. Until then this
+# workflow will (correctly) fail, because the preflight refuses to pass on an
+# incomplete production configuration.
+
+on:
+  workflow_dispatch: {}
+  # Also run when a GitHub deployment to production is created, so promotion is
+  # gated. (No-op if you deploy purely via Vercel — keep using workflow_dispatch
+  # before promoting, or wire a Vercel deploy hook to this workflow.)
+  deployment:
+
+jobs:
+  preflight:
+    name: production preflight
+    runs-on: ubuntu-latest
+    environment: production
+    defaults:
+      run:
+        working-directory: apps/web
+    env:
+      NODE_ENV: production
+      # Map the protected production-environment secrets the preflight enforces.
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      ADMIN_SESSION_SECRET: ${{ secrets.ADMIN_SESSION_SECRET }}
+      APP_BASE_URL: ${{ secrets.APP_BASE_URL }}
+      DOCUMENT_STORAGE_BUCKET: ${{ secrets.DOCUMENT_STORAGE_BUCKET }}
+      OPS_CRON_TOKEN: ${{ secrets.OPS_CRON_TOKEN }}
+      # Distributed rate limiting (login brute-force / webhook). Preflight should
+      # warn when unset; populate to make throttling effective across instances.
+      UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}
+      UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install
+        run: npm ci
+      - name: Production preflight
+        run: npm run prod:preflight
