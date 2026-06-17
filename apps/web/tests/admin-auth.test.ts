@@ -60,4 +60,8 @@ test('admin role matrix protects analyst and admin routes', () => {
   assert.equal(getRequiredAdminRoleForPath('/api/admin/ops-work-items/work_1/replay'), 'ADMIN');
   assert.equal(getRequiredAdminRoleForPath('/api/deals'), 'ANALYST');
   assert.equal(getRequiredAdminRoleForPath('/api/readiness'), 'ADMIN');
+  // Irreversible on-chain ops + KYC bridge require ADMIN; the public webhook does not.
+  assert.equal(getRequiredAdminRoleForPath('/api/tokenization/issuance'), 'ADMIN');
+  assert.equal(getRequiredAdminRoleForPath('/api/onchain/valuation-anchor'), 'ADMIN');
+  assert.equal(getRequiredAdminRoleForPath('/api/kyc/bridge'), 'ADMIN');
 });
