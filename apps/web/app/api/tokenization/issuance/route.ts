@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { genericErrorResponse } from '@/lib/security/error-response';
 import { z } from 'zod';
 import { AdminAccessScopeType } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
@@ -76,10 +77,11 @@ export async function GET(request: Request) {
       }
     });
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'read failed' },
-      { status: 400 }
-    );
+    return genericErrorResponse(error, {
+      status: 400,
+      message: 'Read failed',
+      context: { route: 'tokenization/issuance', op: 'GET' }
+    });
   }
 }
 
@@ -167,9 +169,10 @@ export async function POST(request: Request) {
       statusLabel: 'FAILED',
       metadata: { error: error instanceof Error ? error.message : 'issuance failed' }
     });
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'issuance failed' },
-      { status: 400 }
-    );
+    return genericErrorResponse(error, {
+      status: 400,
+      message: 'Issuance failed',
+      context: { route: 'tokenization/issuance', op: 'POST' }
+    });
   }
 }
