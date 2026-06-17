@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { genericErrorResponse } from '@/lib/security/error-response';
 import { z } from 'zod';
 import { AdminAccessScopeType } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
@@ -79,9 +80,10 @@ export async function POST(request: Request) {
       statusLabel: 'FAILED',
       metadata: { error: error instanceof Error ? error.message : 'valuation anchor failed' }
     });
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'valuation anchor failed' },
-      { status: 400 }
-    );
+    return genericErrorResponse(error, {
+      status: 400,
+      message: 'Valuation anchor failed',
+      context: { route: 'onchain/valuation-anchor' }
+    });
   }
 }

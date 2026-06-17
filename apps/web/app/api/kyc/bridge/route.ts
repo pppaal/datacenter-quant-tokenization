@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { genericErrorResponse } from '@/lib/security/error-response';
 import { z } from 'zod';
 import { AdminAccessScopeType } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
@@ -68,9 +69,10 @@ export async function POST(request: Request) {
       statusLabel: 'FAILED',
       metadata: { error: error instanceof Error ? error.message : 'bridge failed' }
     });
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'bridge failed' },
-      { status: 400 }
-    );
+    return genericErrorResponse(error, {
+      status: 400,
+      message: 'Bridge failed',
+      context: { route: 'kyc/bridge' }
+    });
   }
 }
