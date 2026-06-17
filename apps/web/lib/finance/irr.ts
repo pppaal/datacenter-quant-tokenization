@@ -34,29 +34,50 @@
  *  - End-of-year: index 0 is at t=0 (initial outlay), index k at t=k.
  *  - Mid-year: index 0 stays at t=0 (initial outlay arrives up front), but each
  *    operating flow at index k≥1 is discounted at `k - 0.5` (arrives mid-period).
- *    The terminal/exit lump is baked into the last index's cash flow and is
- *    therefore discounted at the same mid-year exponent here; callers that need
- *    end-of-period terminal handling discount it separately (see lease-dcf).
+ *    The terminal/exit lump must NOT be baked into the last periodic flow — pass
+ *    it via the `terminalValue` argument so it is discounted at the full horizon
+ *    exponent `n` (a point-in-time sale), matching lease-dcf / equity-waterfall.
  */
 function periodExponent(i: number, midYear: boolean): number {
   if (i === 0) return 0;
   return midYear ? i - 0.5 : i;
 }
 
-/** Period-indexed NPV at `rate`. Index 0 is t=0. */
-export function npv(cashFlows: number[], rate: number, midYear = false): number {
+/** Period-indexed NPV at `rate`. Index 0 is t=0.
+ *
+ * `terminalValue` (optional) is an exit/terminal lump that occurs at the horizon
+ * (the last cash-flow index). Unlike the periodic flows it is ALWAYS discounted
+ * at the full integer horizon exponent `n = length-1`, even under the mid-year
+ * convention — a sale at the horizon is a point-in-time event, not a flow spread
+ * across the final period. Pass it separately rather than baking it into the
+ * last periodic flow (which would wrongly discount it at `n - 0.5` mid-year).
+ */
+export function npv(cashFlows: number[], rate: number, midYear = false, terminalValue = 0): number {
   let result = 0;
   for (let i = 0; i < cashFlows.length; i++) {
     result += cashFlows[i]! / (1 + rate) ** periodExponent(i, midYear);
   }
+  if (terminalValue !== 0 && cashFlows.length > 0) {
+    const n = cashFlows.length - 1; // horizon index — integer exponent regardless of midYear
+    result += terminalValue / (1 + rate) ** n;
+  }
   return result;
 }
 
-function npvDerivative(cashFlows: number[], rate: number, midYear = false): number {
+function npvDerivative(
+  cashFlows: number[],
+  rate: number,
+  midYear = false,
+  terminalValue = 0
+): number {
   let result = 0;
   for (let i = 1; i < cashFlows.length; i++) {
     const t = periodExponent(i, midYear);
     result -= (t * cashFlows[i]!) / (1 + rate) ** (t + 1);
+  }
+  if (terminalValue !== 0 && cashFlows.length > 1) {
+    const n = cashFlows.length - 1;
+    result -= (n * terminalValue) / (1 + rate) ** (n + 1);
   }
   return result;
 }
@@ -73,19 +94,20 @@ export function computeIrr(
   cashFlows: number[],
   maxIterations = 200,
   tolerance = 1e-8,
-  midYear = false
+  midYear = false,
+  terminalValue = 0
 ): number | null {
   if (cashFlows.length < 2) return null;
 
-  const hasPositive = cashFlows.some((cf) => cf > 0);
-  const hasNegative = cashFlows.some((cf) => cf < 0);
+  const hasPositive = cashFlows.some((cf) => cf > 0) || terminalValue > 0;
+  const hasNegative = cashFlows.some((cf) => cf < 0) || terminalValue < 0;
   if (!hasPositive || !hasNegative) return null;
 
   let rate = 0.1;
 
   for (let i = 0; i < maxIterations; i++) {
-    const f = npv(cashFlows, rate, midYear);
-    const fPrime = npvDerivative(cashFlows, rate, midYear);
+    const f = npv(cashFlows, rate, midYear, terminalValue);
+    const fPrime = npvDerivative(cashFlows, rate, midYear, terminalValue);
 
     if (Math.abs(fPrime) < 1e-14) break;
 
@@ -104,11 +126,11 @@ export function computeIrr(
   // Fallback: bisection if Newton didn't converge
   let lo = -0.99;
   let hi = 5.0;
-  let fLo = npv(cashFlows, lo, midYear);
+  let fLo = npv(cashFlows, lo, midYear, terminalValue);
 
   for (let i = 0; i < 200; i++) {
     const mid = (lo + hi) / 2;
-    const fMid = npv(cashFlows, mid, midYear);
+    const fMid = npv(cashFlows, mid, midYear, terminalValue);
 
     if (Math.abs(fMid) < tolerance || (hi - lo) / 2 < tolerance) {
       return Number((mid * 100).toFixed(4));
