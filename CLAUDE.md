@@ -22,7 +22,7 @@ system consistent.
 ## Database (Prisma)
 
 - The migration chain is currently the source of truth. `npm --prefix
-  apps/web run typecheck && npx --prefix apps/web prisma migrate deploy`
+apps/web run typecheck && npx --prefix apps/web prisma migrate deploy`
   must succeed against an empty database.
 - **Never** edit a migration that has already shipped. Reconcile drift via
   a new migration with `IF NOT EXISTS` / `IF EXISTS` guards. The
@@ -90,8 +90,8 @@ system consistent.
 - `reportError(error, context)` forwards to the optional
   `ERROR_REPORT_WEBHOOK_URL` and never throws.
 - Ops alert dedup: callers can use `computeOpsAlertFingerprint(payload)`
-  + `isDuplicateOpsAlert(fingerprint)` to suppress duplicates within
-  `OPS_ALERT_DEDUP_WINDOW_MINUTES` (default 30).
+  - `isDuplicateOpsAlert(fingerprint)` to suppress duplicates within
+    `OPS_ALERT_DEDUP_WINDOW_MINUTES` (default 30).
 
 ## Lint & format
 
@@ -179,7 +179,53 @@ test coverage (service-layer with unit tests is the safest to split):
   sub-builders are extractable and verifiable via that test.
 - `components/admin/lease-book-form.tsx` (~1,194 LOC) — React form.
 
-### Audit follow-ups (2026-06, 3-reviewer pass)
+### Audit follow-ups (2026-06, 5-agent precision pass)
+
+A second, 5-domain audit (valuation / data-connectors / contracts / web-security
+/ db-ops) shipped its P0/P1 code fixes in a batch series:
+
+- **DONE** — valuation: terminal-value mid-year discounting + equity-waterfall
+  reserve release (IRR no longer inflated). data: `http.ts` per-attempt timeout +
+  fresh AbortSignal, RTMS pagination + date guard. security: on-chain
+  mint/burn/forceTransfer + KYC bridge now ADMIN-gated; client error
+  genericization on the sensitive on-chain/KYC routes. ops: `prod-preflight.yml`
+  gate (run against the `production` env before promotion). contracts: Waterfall
+  descoped from `deploy-rwa-stack.ts` (DEPLOY_WATERFALL) pending redesign.
+
+Still open from that pass:
+
+- **Float → Decimal for the second money tier (P0, scoped).** Half the KRW
+  columns were migrated to `Decimal(20,2)` (Fund/Commitment/CapitalCall/
+  Distribution/allocations/FinancialStatement); the reconciliation-critical
+  remainder are still `Float` and feed NAV/waterfall/reporting math:
+  `MonthlyAssetKpi.{navKrw,noiKrw,opexKrw,capexKrw,debtOutstandingKrw,
+cashBalanceKrw}`, `PortfolioAsset.{acquisitionCostKrw,currentHoldValueKrw}`,
+  `Budget*`/`CapexProject`/`ExitCase`/`Mandate.targetAumKrw`. Do it as a
+  dedicated, validated effort (NOT bundled): `ALTER ... TYPE numeric(20,2)`
+  migration modeled on `capital_accounts_decimal`, THEN update every consumer
+  (`portfolio.ts`, `fund-waterfall.ts`, `realized-outcomes.ts`, …) to handle
+  `Prisma.Decimal` (read via `.toNumber()` at the boundary or compute in
+  Decimal) — the type change ripples across the service layer, so it needs its
+  own typecheck/test cycle + local-Postgres migration validation.
+- **Scope-access "optional allowlist" (P1, decision recorded).** `canActorAccessScope`
+  treats a non-ADMIN actor with no grants as unrestricted — documented as
+  intentional in `admin-access.ts` (not flipped, because fail-closing would lock
+  out every un-granted/SCIM-provisioned analyst). The worst case is already
+  contained: the irreversible on-chain/KYC routes are ADMIN-gated. Revisit if a
+  true least-privilege model is desired.
+- **Waterfall.sol redesign (P0).** Descoped from deploy; still needs the funding
+  invariant (`distribute` must pull funds / assert balance delta), per-distribution
+  commitment snapshotting, and `ReentrancyGuard` before any real deployment +
+  external audit.
+- **Per-process rate limiters (P1/P2).** `rate-limit.ts` + `edge-protection.ts`
+  are in-memory (N× the intended limit on multi-instance). Wire the distributed
+  (Upstash) limiter into the KYC webhook + `property-analyze`, and add
+  `UPSTASH_*` to the prod preflight required set.
+- **Remaining error-leakage (P2).** ~35 hand-rolled routes still return raw
+  `error.message`; the sensitive on-chain/KYC ones were genericized — migrate the
+  rest to `withAdminApi` / `genericErrorResponse` incrementally.
+
+---
 
 Tracked findings not yet actioned. The P0 security/correctness fixes from the
 same audit shipped separately (isRealProduction self-enforcement, the 0–10
@@ -209,7 +255,7 @@ confidence-scale timeline fix, KYC webhook gating).
   `tests/admin-session-rate-limit.test.ts`.
 - **Client error leakage (P2).** Several admin/ops routes return raw
   `error.message` (incl. Prisma errors) to the client; return a generic message
-  + `requestId` and log details server-side.
+  - `requestId` and log details server-side.
 
 Note: the residual local `round` / `toNumber` / `clamp` variants in
 `macro`/`forecast` are **intentional** domain conventions (2-dp macro rounding,

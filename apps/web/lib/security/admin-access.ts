@@ -60,6 +60,21 @@ export async function canActorAccessScope(
     return true;
   }
 
+  // SECURITY MODEL (intentional): scope grants are an OPTIONAL allowlist. A
+  // non-ADMIN actor with NO grants for this scope type is treated as
+  // unrestricted (sees all assets/deals/funds of that type); grants only ever
+  // *narrow* access. This is by design (see `hasScopedAccessRestriction`), not a
+  // fail-open bug — but it means row-level scoping is opt-in per user.
+  //
+  // The highest-consequence, irreversible actions are NOT governed by this
+  // function: tokenization mint/burn/forceTransfer, on-chain valuation
+  // anchoring, and the KYC→chain bridge are ADMIN-gated at the route layer
+  // (see getRequiredAdminRoleForPath), so an un-granted ANALYST cannot reach
+  // them regardless of this allowlist.
+  //
+  // To switch to least-privilege (deny when no grants), change the early return
+  // below to `return false` AND audit every caller + the SCIM default role —
+  // it would lock out every newly provisioned analyst until explicitly granted.
   const grantedScopeIds = await listGrantedScopeIdsForUser(actor.userId, scopeType, db);
   if (grantedScopeIds.length === 0) {
     return true;
