@@ -213,6 +213,14 @@ export function getRequiredAdminRoleForPath(pathname: string): AdminAccessRole {
   if (pathname.startsWith('/api/readiness')) return 'ADMIN';
   if (pathname.startsWith('/api/registry')) return 'ADMIN';
   if (pathname.startsWith('/api/valuations/') && pathname.endsWith('/approval')) return 'ADMIN';
+  // Irreversible on-chain value movements (mint/burn/forceTransfer, dividend
+  // distributions, valuation anchoring) and the KYC→chain bridge are the
+  // highest-consequence actions in the system — require ADMIN, not ANALYST.
+  // NOTE: `/api/kyc/webhook/*` is a PUBLIC, HMAC-verified provider callback and
+  // is intentionally excluded here (it is gated by signature, not by role).
+  if (pathname.startsWith('/api/tokenization')) return 'ADMIN';
+  if (pathname.startsWith('/api/onchain')) return 'ADMIN';
+  if (pathname.startsWith('/api/kyc/bridge')) return 'ADMIN';
   if (pathname.startsWith('/api/')) return 'ANALYST';
   return 'VIEWER';
 }
