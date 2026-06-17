@@ -35,6 +35,21 @@ import {IPausableTarget} from "../../interfaces/IPausableTarget.sol";
 ///         Decimal precision: stablecoin values are stored at the token's
 ///         native decimals (commonly 6 for USDC). Internal math uses the
 ///         same units to avoid precision loss.
+///
+/// @custom:audit NOT AUDIT-READY / NOT FOR PRODUCTION OR TESTNET DEPLOY.
+///   A 2026 security review found fund-loss-class issues in this contract:
+///     1. `distribute()` records withdrawable LP/GP claims WITHOUT verifying the
+///        contract actually received the funds (no `safeTransferFrom` / balance-
+///        delta assertion) → claims can exceed the held balance (insolvency).
+///     2. Pro-rata is recomputed against CURRENT `commitments` each distribution
+///        with no per-distribution snapshot, so a mid-stream `setCommitment` can
+///        retroactively skew shares and can underflow `totalCommitments -
+///        cumReturnOfCapital`, bricking all further distributions.
+///     3. No `ReentrancyGuard` (unlike every sibling contract).
+///   This contract is intentionally excluded from `deploy-rwa-stack.ts` (gated
+///   behind DEPLOY_WATERFALL) pending a redesign + dedicated audit. Do NOT enable
+///   it for a real deployment until the funding invariant and commitment
+///   snapshotting are fixed and tested.
 contract Waterfall is IPausableTarget, AccessControlDefaultAdminRules, Pausable {
     using SafeERC20 for IERC20;
 

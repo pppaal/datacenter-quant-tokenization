@@ -88,17 +88,38 @@ async function main() {
     console.log(JSON.stringify({ step: "nav-oracle-deployed", address: oracleAddress }, null, 2));
 
     // ------- 2. Waterfall -------
-    const Waterfall = await hre.ethers.getContractFactory("Waterfall");
-    const waterfall = await Waterfall.deploy(
-        stable,
-        gp,
-        hurdleBps,
-        promoteBps,
-        deployer.address, // admin
-    );
-    await waterfall.waitForDeployment();
-    const waterfallAddress = await waterfall.getAddress();
-    console.log(JSON.stringify({ step: "waterfall-deployed", address: waterfallAddress }, null, 2));
+    // GATED OFF by default: the Waterfall distribution contract is NOT
+    // audit-ready (see its @custom:audit NatSpec — fund-loss-class solvency +
+    // pro-rata bugs from the 2026 security review). Excluded from the stack
+    // deploy until redesigned + audited. Set DEPLOY_WATERFALL=true only for
+    // isolated local testing, never for a shared testnet/mainnet.
+    let waterfallAddress: string | null = null;
+    if (process.env.DEPLOY_WATERFALL === "true") {
+        const Waterfall = await hre.ethers.getContractFactory("Waterfall");
+        const waterfall = await Waterfall.deploy(
+            stable,
+            gp,
+            hurdleBps,
+            promoteBps,
+            deployer.address, // admin
+        );
+        await waterfall.waitForDeployment();
+        waterfallAddress = await waterfall.getAddress();
+        console.log(
+            JSON.stringify({ step: "waterfall-deployed", address: waterfallAddress }, null, 2)
+        );
+    } else {
+        console.log(
+            JSON.stringify(
+                {
+                    step: "waterfall-skipped",
+                    reason: "not audit-ready; set DEPLOY_WATERFALL=true to override (local only)"
+                },
+                null,
+                2
+            )
+        );
+    }
 
     // ------- Final manifest -------
     const manifest = {
