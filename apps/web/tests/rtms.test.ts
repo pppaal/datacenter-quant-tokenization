@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { enumerateMonths, parseRtmsXml } from '@/lib/services/public-data/live/rtms';
+import {
+  enumerateMonths,
+  parseRtmsXml,
+  extractTotalCount
+} from '@/lib/services/public-data/live/rtms';
 import { MockTransactionComps } from '@/lib/services/public-data/mock/transaction-comps';
 import { rtmsWindowYyyyMm } from '@/lib/services/property-analyzer/auto-analyze';
 
@@ -95,6 +99,23 @@ test('parseRtmsXml parses the current apis.data.go.kr English schema', () => {
   assert.equal(c.buildingUse, '업무시설');
   assert.equal(c.buildingName, null);
   assert.equal(c.pricePerSqmKrw, 1_066_667);
+});
+
+test('parseRtmsXml skips rows with no contract date (no "null-01-01")', () => {
+  const xml = `<response><body><items>
+    <item><dealAmount>50000</dealAmount><buildingAr>300</buildingAr></item>
+    <item><dealAmount>60000</dealAmount><dealYear>2025</dealYear><dealMonth>4</dealMonth><dealDay>2</dealDay><buildingAr>300</buildingAr></item>
+  </items></body></response>`;
+  const comps = parseRtmsXml(xml, '11680');
+  assert.equal(comps.length, 1);
+  assert.equal(comps[0]!.transactionDate, '2025-04-02');
+  assert.ok(!comps.some((c) => c.transactionDate.startsWith('null')));
+});
+
+test('extractTotalCount reads the RTMS totalCount field', () => {
+  assert.equal(extractTotalCount('<body><totalCount>137</totalCount></body>'), 137);
+  assert.equal(extractTotalCount('<body><totalCount> 0 </totalCount></body>'), 0);
+  assert.equal(extractTotalCount('<body></body>'), null);
 });
 
 test('parseRtmsXml returns empty array on malformed xml', () => {

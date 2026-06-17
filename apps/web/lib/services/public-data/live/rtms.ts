@@ -55,12 +55,36 @@ export class LiveRtmsTransactionComps implements TransactionCompsConnector {
   }
 
   private async fetchMonth(lawdCode: string, yyyyMm: string): Promise<TransactionComp[]> {
+    // Paginate the whole month. A busy 시군구 (e.g. Gangnam) can have >100 deals
+    // in a month; fetching only page 1 silently truncated the comp set and biased
+    // the sales-comparison approach. Drive pagination off the response totalCount.
+    const numOfRows = 1000;
+    const maxPages = 20; // safety cap (20k deals/month is far beyond reality)
+    const all: TransactionComp[] = [];
+    let totalCount = Number.POSITIVE_INFINITY;
+
+    for (let pageNo = 1; pageNo <= maxPages && (pageNo - 1) * numOfRows < totalCount; pageNo += 1) {
+      const xml = await this.fetchPage(lawdCode, yyyyMm, pageNo, numOfRows);
+      if (totalCount === Number.POSITIVE_INFINITY) {
+        totalCount = extractTotalCount(xml) ?? 0;
+      }
+      all.push(...parseRtmsXml(xml, lawdCode));
+    }
+    return all;
+  }
+
+  private async fetchPage(
+    lawdCode: string,
+    yyyyMm: string,
+    pageNo: number,
+    numOfRows: number
+  ): Promise<string> {
     const url = new URL(RTMS_ENDPOINT);
     url.searchParams.set('serviceKey', this.apiKey!);
     url.searchParams.set('LAWD_CD', lawdCode);
     url.searchParams.set('DEAL_YMD', yyyyMm);
-    url.searchParams.set('numOfRows', '100');
-    url.searchParams.set('pageNo', '1');
+    url.searchParams.set('numOfRows', String(numOfRows));
+    url.searchParams.set('pageNo', String(pageNo));
     url.searchParams.set('_type', 'xml');
 
     const controller = new AbortController();
@@ -70,12 +94,19 @@ export class LiveRtmsTransactionComps implements TransactionCompsConnector {
       if (!response.ok) {
         throw new Error(`RTMS HTTP ${response.status}`);
       }
-      const xml = await response.text();
-      return parseRtmsXml(xml, lawdCode);
+      return await response.text();
     } finally {
       clearTimeout(timeout);
     }
   }
+}
+
+/** Extract `<totalCount>N</totalCount>` from an RTMS response body, or null. */
+export function extractTotalCount(xml: string): number | null {
+  const m = /<totalCount>\s*(\d+)\s*<\/totalCount>/.exec(xml);
+  if (!m) return null;
+  const n = Number(m[1]);
+  return Number.isFinite(n) ? n : null;
 }
 
 // ---------------------------------------------------------------------------
@@ -96,6 +127,10 @@ export function parseRtmsXml(xml: string, lawdCode: string): TransactionComp[] {
     const year = readField(block, 'dealYear') ?? readField(block, '년');
     const month = readField(block, 'dealMonth') ?? readField(block, '월');
     const day = readField(block, 'dealDay') ?? readField(block, '일');
+    // A comp with no contract date is unusable downstream (sorting / windowing)
+    // and would otherwise serialize as "null-01-01" — skip it rather than emit a
+    // malformed `transactionDate`.
+    if (!year) continue;
     const gfa = readField(block, 'buildingAr') ?? readField(block, '건물면적');
     const landArea = readField(block, 'plottageAr') ?? readField(block, '대지면적');
     const buildingUse = readField(block, 'buildingUse') ?? readField(block, '유형');
