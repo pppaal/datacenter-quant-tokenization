@@ -30,21 +30,30 @@ export function isLiveGeocoderConfigured(): boolean {
 }
 
 export async function geocodeAddress(input: string): Promise<GeocodeResult | null> {
+  // Try live providers in order of fidelity (Kakao = real PNU, OSM = real
+  // coords), each falling through to the next when it cannot resolve the
+  // address, so a single unmatched address never hard-fails the analysis. The
+  // deterministic mock is the final backstop (it always returns a synthetic
+  // result, so callers never see null when any provider is reachable).
   if (isKakaoConfigured()) {
-    return kakaoGeocodeAddress(input);
+    const kakao = await kakaoGeocodeAddress(input);
+    if (kakao) return kakao;
   }
   if (isOsmGeocoderEnabled()) {
-    return (await osmGeocodeAddress(input)) ?? mockGeocodeAddress(input);
+    const osm = await osmGeocodeAddress(input);
+    if (osm) return osm;
   }
   return mockGeocodeAddress(input);
 }
 
 export async function reverseGeocode(location: LatLng): Promise<ReverseGeocodeResult | null> {
   if (isKakaoConfigured()) {
-    return kakaoReverseGeocode(location);
+    const kakao = await kakaoReverseGeocode(location);
+    if (kakao) return kakao;
   }
   if (isOsmGeocoderEnabled()) {
-    return (await osmReverseGeocode(location)) ?? mockReverseGeocode(location);
+    const osm = await osmReverseGeocode(location);
+    if (osm) return osm;
   }
   return mockReverseGeocode(location);
 }
