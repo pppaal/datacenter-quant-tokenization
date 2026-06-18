@@ -90,6 +90,16 @@ async function mutateAndReload(page: Page, action: () => Promise<void>) {
   await page.reload();
 }
 
+// The asset detail page groups its panels into tabs; only the active tab's
+// content is in the DOM. Select a tab before interacting with its panels. The
+// tab syncs `?tab=` into the URL (history.replaceState), so a subsequent
+// page.reload() preserves the active tab.
+async function selectAssetTab(page: Page, name: RegExp) {
+  const tab = page.getByRole('tab', { name });
+  await tab.click();
+  await expect(tab).toHaveAttribute('aria-selected', 'true');
+}
+
 test.describe('operator mutation flows', () => {
   test.describe.configure({ mode: 'serial' });
 
@@ -138,6 +148,7 @@ test.describe('operator mutation flows', () => {
     await mutateAndReload(page, () => page.getByTestId('valuation-run-submit').click());
     await expect(page.getByTestId('latest-run-label')).toContainText(runLabel, { timeout: 30_000 });
 
+    await selectAssetTab(page, /Data Room/i);
     await page.getByTestId('document-title').fill(uploadTitle);
     await page.getByTestId('document-file').setInputFiles({
       name: 'e2e-diligence-note.txt',
@@ -149,6 +160,7 @@ test.describe('operator mutation flows', () => {
       timeout: 30_000
     });
 
+    await selectAssetTab(page, /Execution & Registry/i);
     await mutateAndReload(page, () => page.getByTestId('readiness-stage').click());
     await expect(page.getByTestId('readiness-packet')).not.toHaveText('Not staged', {
       timeout: 30_000
@@ -422,7 +434,7 @@ test.describe('operator mutation flows', () => {
 
     await expect(page).toHaveURL(/\/admin\/assets\/[^/]+$/);
     await expect(
-      page.locator('h2').filter({ hasText: 'Pangyo Innovation Office Park' })
+      page.getByRole('heading', { level: 1, name: /Pangyo Innovation Office Park/i })
     ).toBeVisible({ timeout: 20_000 });
     await expect(page.getByText('Research Snapshot', { exact: true })).toBeVisible();
 
