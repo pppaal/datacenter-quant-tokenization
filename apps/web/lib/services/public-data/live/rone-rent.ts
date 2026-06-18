@@ -11,6 +11,7 @@
  * Optional env (override the wired 상업용부동산 임대동향조사_오피스 tables):
  *   RONE_RENT_STATBL_ID    — 임대동향 지역별 임대료_오피스 (default below)
  *   RONE_VACANCY_STATBL_ID — 임대동향 지역별 공실률_오피스 (default below)
+ *   RONE_YIELD_STATBL_ID   — 임대동향 수익률_오피스 (소득/투자수익률, default below)
  *   RONE_API_BASE          — endpoint base override
  *
  * The survey is published per 권역 (CLS_NM, e.g. 도심/강남/여의도), quarterly
@@ -33,9 +34,40 @@ import type {
 } from '@/lib/services/public-data/types';
 
 const DEFAULT_BASE = 'https://www.reb.or.kr/r-one/openapi/SttsApiTblData.do';
-// 상업용부동산 임대동향조사 — 임대동향 지역별 (2024년3분기~)_오피스, quarterly.
-const DEFAULT_RENT_STATBL_ID = 'TT249843134237374'; // 임대료 (천원/㎡)
-const DEFAULT_VACANCY_STATBL_ID = 'TT244763134428698'; // 공실률 (%)
+
+// 상업용부동산 임대동향조사 (2024Q3~, quarterly). STATBL_IDs per property type;
+// each env-overridable. Office also proxies office-dominant mixed-use; retail
+// uses the 중대형상가 tables.
+type ReoneTableSet = { rent: string; vacancy: string; yieldId: string };
+
+function officeTables(): ReoneTableSet {
+  return {
+    rent: process.env.RONE_RENT_STATBL_ID?.trim() || 'TT249843134237374',
+    vacancy: process.env.RONE_VACANCY_STATBL_ID?.trim() || 'TT244763134428698',
+    yieldId: process.env.RONE_YIELD_STATBL_ID?.trim() || 'T245883135037859'
+  };
+}
+
+function retailTables(): ReoneTableSet {
+  return {
+    rent: process.env.RONE_RETAIL_RENT_STATBL_ID?.trim() || 'T244363134858603',
+    vacancy: process.env.RONE_RETAIL_VACANCY_STATBL_ID?.trim() || 'T249633134845544',
+    yieldId: process.env.RONE_RETAIL_YIELD_STATBL_ID?.trim() || 'T242083134887473'
+  };
+}
+
+/** Asset class → R-ONE 상업용 table set + label; null when no survey applies. */
+function tablesFor(
+  assetClass: RentalComparable['assetClassHint']
+): { tables: ReoneTableSet; label: string } | null {
+  if (assetClass === 'OFFICE' || assetClass === 'MIXED_USE') {
+    return { tables: officeTables(), label: '오피스' };
+  }
+  if (assetClass === 'RETAIL') {
+    return { tables: retailTables(), label: '중대형상가' };
+  }
+  return null;
+}
 
 /** Coarse lat/lng → R-ONE 오피스 권역 (matches the survey's CLS_NM values). */
 export function resolveReoneRegion(loc: LatLng): { clsNm: string; label: string } {
@@ -62,19 +94,36 @@ export function resolveReoneRegion(loc: LatLng): { clsNm: string; label: string 
 
 type ReoneRow = {
   CLS_NM?: string; // 권역명 e.g. 도심/강남/여의도/서울/전국
+  ITM_NM?: string; // 항목명 e.g. 임대료/공실률/소득수익률/투자수익률
   DTA_VAL?: string | number; // 값
   UI_NM?: string; // 단위 e.g. "천원/㎡", "%"
   WRTTIME_IDTFR_ID?: string; // 기준시점 식별자 e.g. "202403" (latest = max)
   WRTTIME_DESC?: string; // "2024년 3분기"
 };
 
-/** Latest-quarter row for a 권역; null when the region/value is absent. */
-function latestRegionRow(rows: ReoneRow[], clsNm: string): ReoneRow | null {
-  const matching = rows.filter((r) => r.CLS_NM === clsNm && r.DTA_VAL != null);
-  if (matching.length === 0) return null;
-  return matching.reduce((best, r) =>
-    (r.WRTTIME_IDTFR_ID ?? '') > (best.WRTTIME_IDTFR_ID ?? '') ? r : best
+/**
+ * Latest-quarter row for a 권역, optionally preferring an ITM by name. Single-item
+ * tables (rent/vacancy) pass no preference; the 수익률 table carries multiple
+ * items (소득수익률/자본수익률/투자수익률) so the cap-rate read prefers 소득수익률.
+ * Returns null when the region (or a matching item) is absent.
+ */
+function latestRegionRow(
+  rows: ReoneRow[],
+  clsNm: string,
+  itemPrefs: RegExp[] = []
+): ReoneRow | null {
+  const regionRows = rows.filter((r) => r.CLS_NM === clsNm && r.DTA_VAL != null);
+  if (regionRows.length === 0) return null;
+  const latestT = regionRows.reduce(
+    (max, r) => ((r.WRTTIME_IDTFR_ID ?? '') > max ? (r.WRTTIME_IDTFR_ID ?? '') : max),
+    ''
   );
+  const latest = regionRows.filter((r) => (r.WRTTIME_IDTFR_ID ?? '') === latestT);
+  for (const pat of itemPrefs) {
+    const hit = latest.find((r) => r.ITM_NM && pat.test(r.ITM_NM));
+    if (hit) return hit;
+  }
+  return latest[0] ?? null;
 }
 
 function numericValue(row: ReoneRow | null): number | null {
@@ -88,10 +137,6 @@ export class LiveReoneRentComps implements RentComparableConnector {
     private readonly apiKey: string | undefined = process.env.RONE_API_KEY,
     private readonly baseUrl: string = process.env.RONE_API_BASE?.trim() || DEFAULT_BASE,
     private readonly timeoutMs: number = 8000,
-    private readonly rentStatblId: string = process.env.RONE_RENT_STATBL_ID?.trim() ||
-      DEFAULT_RENT_STATBL_ID,
-    private readonly vacancyStatblId: string = process.env.RONE_VACANCY_STATBL_ID?.trim() ||
-      DEFAULT_VACANCY_STATBL_ID,
     private readonly fetcher: typeof fetchWithTimeout = fetchWithTimeout
   ) {}
 
@@ -103,27 +148,35 @@ export class LiveReoneRentComps implements RentComparableConnector {
     if (!this.apiKey) {
       return [];
     }
-    // Only the OFFICE survey is wired (and used as a proxy for office-dominant
-    // mixed-use). Other classes fall through to the registry's mock comps.
-    if (assetClass !== 'OFFICE' && assetClass !== 'MIXED_USE') {
+    // Office (+ office-dominant mixed-use) and retail (중대형상가) are surveyed;
+    // other classes fall through to the registry's mock comps.
+    const resolved = tablesFor(assetClass);
+    if (!resolved) {
       return [];
     }
+    const { tables, label } = resolved;
 
     const region = resolveReoneRegion(location);
-    const [rentRows, vacancyRows] = await Promise.all([
-      this.fetchTable(this.rentStatblId).catch((err) => {
+    const [rentRows, vacancyRows, yieldRows] = await Promise.all([
+      this.fetchTable(tables.rent).catch((err) => {
         console.warn(`[r-one] rent table failed:`, err.message);
         return [] as ReoneRow[];
       }),
-      this.fetchTable(this.vacancyStatblId).catch((err) => {
+      this.fetchTable(tables.vacancy).catch((err) => {
         console.warn(`[r-one] vacancy table failed:`, err.message);
+        return [] as ReoneRow[];
+      }),
+      this.fetchTable(tables.yieldId).catch((err) => {
+        console.warn(`[r-one] yield table failed:`, err.message);
         return [] as ReoneRow[];
       })
     ]);
 
     const rentRow = latestRegionRow(rentRows, region.clsNm);
     const vacancyRow = latestRegionRow(vacancyRows, region.clsNm);
-    if (!rentRow && !vacancyRow) {
+    // Cap rate ≈ 소득수익률 (income return); fall back to 투자수익률 (total return).
+    const yieldRow = latestRegionRow(yieldRows, region.clsNm, [/소득수익률/, /투자수익률/]);
+    if (!rentRow && !vacancyRow && !yieldRow) {
       return [];
     }
 
@@ -134,7 +187,8 @@ export class LiveReoneRentComps implements RentComparableConnector {
       rentRaw == null ? null : Math.round(rentRaw * (rentRow?.UI_NM?.includes('천원') ? 1000 : 1));
 
     const vacancy = numericValue(vacancyRow);
-    const period = rentRow?.WRTTIME_DESC ?? vacancyRow?.WRTTIME_DESC ?? 'latest';
+    const period =
+      rentRow?.WRTTIME_DESC ?? vacancyRow?.WRTTIME_DESC ?? yieldRow?.WRTTIME_DESC ?? 'latest';
 
     return [
       {
@@ -143,11 +197,11 @@ export class LiveReoneRentComps implements RentComparableConnector {
         assetClassHint: assetClass,
         monthlyRentKrwPerSqm: rentKrwPerSqm,
         monthlyRentKrwPerKw: null,
-        // 소득수익률 (cap) lives in a separate STATBL_ID not wired here yet.
-        capRatePct: null,
+        // Cap rate from the 수익률 table (소득수익률, already a %).
+        capRatePct: numericValue(yieldRow),
         occupancyPct: vacancy == null ? null : clamp(100 - vacancy, 0, 100),
         transactionDate: null,
-        note: `한국부동산원 상업용부동산 임대동향조사 (오피스 · ${region.label})`
+        note: `한국부동산원 상업용부동산 임대동향조사 (${label} · ${region.label})`
       }
     ];
   }
