@@ -63,6 +63,7 @@ export function RiskRegisterForm({ assetId, entries, inputCurrency = 'KRW', fxRa
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [generating, setGenerating] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(entries.length === 0);
 
@@ -112,6 +113,22 @@ export function RiskRegisterForm({ assetId, entries, inputCurrency = 'KRW', fxRa
     }
   };
 
+  const onGenerate = async () => {
+    setGenerating(true);
+    setErrorMessage(null);
+    try {
+      const response = await fetch(`/api/assets/${assetId}/risk-register/generate`, {
+        method: 'POST'
+      });
+      if (!response.ok) throw new Error('Failed to generate risk register');
+      startTransition(() => router.refresh());
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Failed to generate risk register');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   const selectClass =
     'w-full rounded-[8px] border border-border bg-panel px-3 py-2 text-sm text-foreground';
 
@@ -128,9 +145,14 @@ export function RiskRegisterForm({ assetId, entries, inputCurrency = 'KRW', fxRa
             quantified IRR / value effect, the mitigant, and the residual posture after mitigation.
           </p>
         </div>
-        <Button type="button" variant="secondary" onClick={() => setShowForm((value) => !value)}>
-          {showForm ? 'Close' : 'Add Risk'}
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="button" variant="secondary" onClick={onGenerate} disabled={generating}>
+            {generating ? 'Generating…' : 'Generate from analysis'}
+          </Button>
+          <Button type="button" variant="secondary" onClick={() => setShowForm((value) => !value)}>
+            {showForm ? 'Close' : 'Add Risk'}
+          </Button>
+        </div>
       </div>
 
       {entries.length ? (
