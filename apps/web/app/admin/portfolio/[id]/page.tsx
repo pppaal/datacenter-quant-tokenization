@@ -370,7 +370,11 @@ export default async function PortfolioDetailPage({ params }: Props) {
                   </div>
                 </div>
                 <div className="text-right text-sm text-white">
-                  <div>{formatCurrency(row.exitCase.underwritingValueKrw ?? row.holdValueKrw)}</div>
+                  <div>
+                    {formatCurrency(
+                      toNumberOrNull(row.exitCase.underwritingValueKrw) ?? row.holdValueKrw
+                    )}
+                  </div>
                   <div>
                     {row.exitCase.targetExitDate
                       ? formatDate(row.exitCase.targetExitDate)

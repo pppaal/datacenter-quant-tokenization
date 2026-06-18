@@ -2980,9 +2980,9 @@ model BudgetLineItem {
   budgetId        String
   category        String
   label           String
-  annualBudgetKrw Float
-  ytdActualKrw    Float?
-  varianceKrw     Float?
+  annualBudgetKrw Decimal  @db.Decimal(20, 2)
+  ytdActualKrw    Decimal? @db.Decimal(20, 2)
+  varianceKrw     Decimal? @db.Decimal(20, 2)
   notes           String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -2997,9 +2997,9 @@ model CapexProject {
   name                String
   category            String?
   statusLabel         String         @default("PLANNED")
-  budgetKrw           Float?
-  approvedBudgetKrw   Float?
-  spentToDateKrw      Float?
+  budgetKrw           Decimal? @db.Decimal(20, 2)
+  approvedBudgetKrw   Decimal? @db.Decimal(20, 2)
+  spentToDateKrw      Decimal? @db.Decimal(20, 2)
   targetCompletionDate DateTime?
   actualCompletionDate DateTime?
   summary             String?
@@ -3037,7 +3037,7 @@ model ExitCase {
   portfolioAssetId  String
   caseLabel         String
   statusLabel       String         @default("ACTIVE")
-  underwritingValueKrw Float?
+  underwritingValueKrw Decimal? @db.Decimal(20, 2)
   targetExitDate    DateTime?
   targetCapRatePct  Float?
   targetIrrPct      Float?
@@ -3104,7 +3104,7 @@ model Mandate {
   title          String
   investorName   String?
   strategy       String?
-  targetAumKrw   Float?
+  targetAumKrw   Decimal? @db.Decimal(20, 2)
   statusLabel    String   @default("ACTIVE")
   notes          String?
   createdAt      DateTime @default(now())
