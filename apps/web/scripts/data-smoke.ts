@@ -35,6 +35,26 @@ import { createFxAdapter } from '@/lib/sources/adapters/fx';
 import { createClimateAdapter } from '@/lib/sources/adapters/climate';
 import type { SourceCacheStore } from '@/lib/sources/types';
 import type { ParcelIdentifier, LatLng } from '@/lib/services/public-data/types';
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
+
+// Standalone runs (`tsx scripts/data-smoke.ts`) don't get Next.js's automatic
+// .env loading, so load apps/web/.env[.local] here — the same keys the deployed
+// app sees — so the smoke reflects real configuration instead of always-mock.
+// No-op when the files are absent (CI / fresh checkouts stay deterministic).
+// Every connector reads process.env lazily (at construct/call time), so this
+// runs before any of them are instantiated in `run()`.
+for (const file of ['.env', '.env.local']) {
+  const envPath = resolve(process.cwd(), file);
+  if (existsSync(envPath)) {
+    try {
+      process.loadEnvFile(envPath);
+    } catch {
+      // ignore a malformed/locked env file — the smoke still runs on whatever
+      // is already set in the environment.
+    }
+  }
+}
 
 // These two adapters are keyless (Frankfurter FX, NASA POWER climate) but are
 // built on the DB-backed SourceCacheStore. A no-op in-memory store lets the
