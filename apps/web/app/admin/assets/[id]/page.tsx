@@ -5,9 +5,11 @@ import { AdminAccessScopeType, AssetClass } from '@prisma/client';
 import { AssetEnrichmentButton } from '@/components/admin/asset-enrichment-button';
 import {
   convertFromKrw,
+  formatCompactCurrencyFromKrwAtRate,
   formatCurrencyFromKrwAtRate,
   resolveDisplayCurrency
 } from '@/lib/finance/currency';
+import { AssetTabs } from '@/components/admin/asset-tabs';
 import { AssetIntakeForm } from '@/components/admin/asset-intake-form';
 import { CapexBookForm } from '@/components/admin/capex-book-form';
 import { ComparableBookForm } from '@/components/admin/comparable-book-form';
@@ -170,48 +172,60 @@ export default async function AssetDetailPage({
           'Run an analysis first, then capture a later realized outcome to validate the macro view.'
       };
 
-  return (
-    <div className="space-y-8">
-      <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-        <Card className="hero-mesh">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <div className="eyebrow">Asset Dossier</div>
-              <h2 className="mt-2 text-4xl font-semibold tracking-[-0.04em] text-white">
-                {asset.name}
-              </h2>
-            </div>
-            <div className="flex gap-2">
-              <Badge>{asset.status}</Badge>
-              <Badge tone="good">{asset.stage}</Badge>
-            </div>
+  // Persistent identity + headline-KPI bar shown across every tab. Answers the
+  // first question an IC reader has — what is it, what is it worth, how
+  // confident, should we act — without scrolling.
+  const headerBar = (
+    <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-3">
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <h1 className="text-xl font-semibold tracking-[-0.02em] text-foreground">{asset.name}</h1>
+          <span className="font-mono text-xs text-muted">{asset.assetCode}</span>
+        </div>
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted">
+          <Badge>{asset.assetClass}</Badge>
+          <Badge>{asset.status}</Badge>
+          <Badge tone="good">{asset.stage}</Badge>
+          <span>{asset.address?.city ?? 'N/A'}</span>
+          <span aria-hidden>·</span>
+          <span>
+            {isDataCenter
+              ? `${formatNumber(asset.powerCapacityMw)} MW`
+              : `${formatNumber(asset.rentableAreaSqm ?? asset.grossFloorAreaSqm)} sqm`}
+          </span>
+        </div>
+      </div>
+      <dl className="flex flex-wrap items-start gap-x-7 gap-y-2">
+        {(
+          [
+            [
+              'Base Case Value',
+              formatCompactCurrencyFromKrwAtRate(
+                asset.currentValuationKrw,
+                displayCurrency,
+                fxRateToKrw
+              )
+            ],
+            [
+              'Confidence',
+              latestRun ? `${formatNumber(latestRun.confidenceScore, 1)} / 10` : 'N/A'
+            ],
+            ['Underwriting Position', recommendation],
+            ['Updated', formatDate(asset.updatedAt)]
+          ] as Array<[string, string]>
+        ).map(([label, value]) => (
+          <div key={label}>
+            <dt className="fine-print">{label}</dt>
+            <dd className="mt-1 text-base font-semibold tabular-nums text-foreground">{value}</dd>
           </div>
+        ))}
+      </dl>
+    </div>
+  );
 
-          <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-300">{asset.description}</p>
-
-          <div className="mt-6 grid gap-4 md:grid-cols-4">
-            {[
-              ['Location', asset.address?.city ?? 'N/A'],
-              [
-                playbook.sizeLabel,
-                isDataCenter
-                  ? `${formatNumber(asset.powerCapacityMw)} MW`
-                  : `${formatNumber(asset.rentableAreaSqm ?? asset.grossFloorAreaSqm)} sqm`
-              ],
-              [
-                'Base Case',
-                formatCurrencyFromKrwAtRate(asset.currentValuationKrw, displayCurrency, fxRateToKrw)
-              ],
-              ['Updated', formatDate(asset.updatedAt)]
-            ].map(([label, value]) => (
-              <div key={label} className="metric-card">
-                <div className="fine-print">{label}</div>
-                <div className="mt-3 text-2xl font-semibold text-white">{value}</div>
-              </div>
-            ))}
-          </div>
-        </Card>
-
+  const overviewTab = (
+    <div className="space-y-6">
+      <div className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
         <Card className="space-y-5">
           <div>
             <div className="eyebrow">Analysis Control</div>
@@ -259,9 +273,7 @@ export default async function AssetDetailPage({
             </Button>
           </Link>
         </Card>
-      </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
         <Card>
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
@@ -318,162 +330,169 @@ export default async function AssetDetailPage({
             ) : null}
           </div>
         </Card>
-
-        <div className="grid gap-6">
-          <Card>
-            <div className="eyebrow">Research Snapshot</div>
-            <div className="mt-4 grid gap-4 text-sm text-slate-300">
-              <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
-                <div className="text-slate-500">
-                  {isDataCenter ? 'Grid / Fiber' : 'Site / Access'}
-                </div>
-                <div className="mt-2">{asset.siteProfile?.gridAvailability}</div>
-                <div className="mt-1 text-slate-400">{asset.siteProfile?.fiberAccess}</div>
-              </div>
-              <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
-                <div className="text-slate-500">Permit</div>
-                <div className="mt-2">{asset.permitSnapshot?.powerApprovalStatus}</div>
-                <div className="mt-1 text-slate-400">{asset.permitSnapshot?.timelineNotes}</div>
-              </div>
-              <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
-                <div className="text-slate-500">Market</div>
-                <div className="mt-2">
-                  {isDataCenter
-                    ? `Cap rate ${formatPercent(asset.marketSnapshot?.capRatePct)} / Colocation ${formatCurrencyFromKrwAtRate(asset.marketSnapshot?.colocationRatePerKwKrw, displayCurrency, fxRateToKrw)}`
-                    : asset.assetClass === AssetClass.OFFICE
-                      ? `Cap rate ${formatPercent(asset.marketSnapshot?.capRatePct)} / Vacancy ${formatPercent(asset.marketSnapshot?.vacancyPct)} / Market rent ${formatNumber(asset.rentComps[0]?.monthlyRentPerSqmKrw)} KRW/sqm/mo`
-                      : `Cap rate ${formatPercent(asset.marketSnapshot?.capRatePct)} / Vacancy ${formatPercent(asset.marketSnapshot?.vacancyPct)}`}
-                </div>
-                <div className="mt-1 text-slate-400">{asset.marketSnapshot?.marketNotes}</div>
-              </div>
-            </div>
-          </Card>
-
-          <SatelliteRiskSummary snapshot={satelliteRisk} />
-
-          {latestRun?.keyRisks.length ? (
-            <Card>
-              <div className="eyebrow">Key Risks</div>
-              <ul className="mt-4 space-y-3 text-sm text-slate-300">
-                {latestRun.keyRisks.map((risk) => (
-                  <li
-                    key={risk}
-                    className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-3"
-                  >
-                    {risk}
-                  </li>
-                ))}
-              </ul>
-            </Card>
-          ) : null}
-        </div>
       </div>
 
+      <div className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
+        <Card>
+          <div className="eyebrow">Research Snapshot</div>
+          <div className="mt-4 grid gap-4 text-sm text-slate-300">
+            <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+              <div className="text-slate-500">
+                {isDataCenter ? 'Grid / Fiber' : 'Site / Access'}
+              </div>
+              <div className="mt-2">{asset.siteProfile?.gridAvailability}</div>
+              <div className="mt-1 text-slate-400">{asset.siteProfile?.fiberAccess}</div>
+            </div>
+            <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+              <div className="text-slate-500">Permit</div>
+              <div className="mt-2">{asset.permitSnapshot?.powerApprovalStatus}</div>
+              <div className="mt-1 text-slate-400">{asset.permitSnapshot?.timelineNotes}</div>
+            </div>
+            <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+              <div className="text-slate-500">Market</div>
+              <div className="mt-2">
+                {isDataCenter
+                  ? `Cap rate ${formatPercent(asset.marketSnapshot?.capRatePct)} / Colocation ${formatCurrencyFromKrwAtRate(asset.marketSnapshot?.colocationRatePerKwKrw, displayCurrency, fxRateToKrw)}`
+                  : asset.assetClass === AssetClass.OFFICE
+                    ? `Cap rate ${formatPercent(asset.marketSnapshot?.capRatePct)} / Vacancy ${formatPercent(asset.marketSnapshot?.vacancyPct)} / Market rent ${formatNumber(asset.rentComps[0]?.monthlyRentPerSqmKrw)} KRW/sqm/mo`
+                    : `Cap rate ${formatPercent(asset.marketSnapshot?.capRatePct)} / Vacancy ${formatPercent(asset.marketSnapshot?.vacancyPct)}`}
+              </div>
+              <div className="mt-1 text-slate-400">{asset.marketSnapshot?.marketNotes}</div>
+            </div>
+          </div>
+        </Card>
+
+        {latestRun?.keyRisks.length ? (
+          <Card>
+            <div className="eyebrow">Key Risks</div>
+            <ul className="mt-4 space-y-3 text-sm text-slate-300">
+              {latestRun.keyRisks.map((risk) => (
+                <li
+                  key={risk}
+                  className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-3"
+                >
+                  {risk}
+                </li>
+              ))}
+            </ul>
+          </Card>
+        ) : (
+          <SatelliteRiskSummary snapshot={satelliteRisk} />
+        )}
+      </div>
+
+      <AssetInsightsPanel aiInsights={asset.aiInsights} pipelineProjects={asset.pipelineProjects} />
+    </div>
+  );
+
+  const valuationTab = (
+    <div className="space-y-6">
       <FeatureSnapshotPanel
         title="Approved Feature Layer"
         snapshots={latestFeatureSnapshots}
         emptyMessage="No approved feature snapshots yet. Approve normalized evidence or run enrichment before relying on this asset in committee materials."
       />
 
-      <ResearchDossierPanel
-        dossier={researchDossier}
-        canApproveHouseView={actor?.role === 'ADMIN'}
-      />
-
-      <ReviewQueuePanel
-        summaries={[reviewSummary]}
-        title="Asset Evidence Review"
-        emptyMessage="All evidence rows for this asset are already reviewed."
-      />
-
-      <MarketEvidencePanel
-        assetClass={asset.assetClass}
-        displayCurrency={displayCurrency}
-        fxRateToKrw={fxRateToKrw}
-        transactionComps={asset.transactionComps}
-        rentComps={asset.rentComps}
-        marketIndicators={asset.marketIndicatorSeries}
-      />
-
       <Card>
         <Section
-          eyebrow="Micro Research Capture"
-          title={playbook.intakeHeading}
-          description="Use this panel to capture normalized evidence that changes downside, execution certainty, and approved feature coverage for this asset class."
+          eyebrow="Comparable Book"
+          title="Pricing calibration and market peers"
+          description="Add peer assets with pricing signals and weights so the underwriting no longer leans only on generic market snapshots. This directly improves cap-rate, rate, and direct-value calibration."
         />
         <div className="mt-5">
-          <MicroDataForm
+          <ComparableBookForm
             assetId={asset.id}
             inputCurrency={displayCurrency}
-            reviewStatuses={
-              [
-                asset.energySnapshot
-                  ? {
-                      label: 'Energy / Building Services',
-                      status: asset.energySnapshot.reviewStatus
-                    }
-                  : null,
-                asset.permitSnapshot
-                  ? {
-                      label: 'Permit / Entitlement',
-                      status: asset.permitSnapshot.reviewStatus
-                    }
-                  : null,
-                asset.ownershipRecords[0]
-                  ? {
-                      label: 'Ownership',
-                      status: asset.ownershipRecords[0].reviewStatus
-                    }
-                  : null,
-                asset.encumbranceRecords[0]
-                  ? {
-                      label: 'Encumbrance',
-                      status: asset.encumbranceRecords[0].reviewStatus
-                    }
-                  : null,
-                asset.planningConstraints[0]
-                  ? {
-                      label: 'Planning',
-                      status: asset.planningConstraints[0].reviewStatus
-                    }
-                  : null
-              ].filter(Boolean) as Array<{ label: string; status: any }>
+            defaultSetName={asset.comparableSet?.name}
+            defaultSetNotes={asset.comparableSet?.notes}
+            defaultEntries={
+              asset.comparableSet?.entries.map((entry) => ({
+                id: entry.id,
+                label: entry.label,
+                location: entry.location,
+                assetType: entry.assetType,
+                stage: entry.stage,
+                sourceLink: entry.sourceLink ?? '',
+                powerCapacityMw: entry.powerCapacityMw,
+                grossFloorAreaSqm: entry.grossFloorAreaSqm,
+                occupancyPct: entry.occupancyPct,
+                valuationKrw: toInputCurrencyValue(entry.valuationKrw, displayCurrency),
+                pricePerMwKrw: toInputCurrencyValue(entry.pricePerMwKrw, displayCurrency),
+                monthlyRatePerKwKrw: toInputCurrencyValue(
+                  entry.monthlyRatePerKwKrw,
+                  displayCurrency
+                ),
+                capRatePct: entry.capRatePct,
+                discountRatePct: entry.discountRatePct,
+                weightPct: entry.weightPct,
+                notes: entry.notes ?? ''
+              })) ?? []
             }
-            defaultValues={{
-              utilityName: asset.energySnapshot?.utilityName ?? '',
-              substationDistanceKm: asset.energySnapshot?.substationDistanceKm ?? undefined,
-              tariffKrwPerKwh: toInputCurrencyValue(
-                asset.energySnapshot?.tariffKrwPerKwh,
-                displayCurrency
-              ),
-              renewableAvailabilityPct: asset.energySnapshot?.renewableAvailabilityPct ?? undefined,
-              pueTarget: asset.energySnapshot?.pueTarget ?? undefined,
-              backupFuelHours: asset.energySnapshot?.backupFuelHours ?? undefined,
-              permitStage: asset.permitSnapshot?.permitStage ?? '',
-              zoningApprovalStatus: asset.permitSnapshot?.zoningApprovalStatus ?? '',
-              environmentalReviewStatus: asset.permitSnapshot?.environmentalReviewStatus ?? '',
-              powerApprovalStatus: asset.permitSnapshot?.powerApprovalStatus ?? '',
-              timelineNotes: asset.permitSnapshot?.timelineNotes ?? '',
-              legalOwnerName: asset.ownershipRecords[0]?.ownerName ?? '',
-              legalOwnerEntityType: asset.ownershipRecords[0]?.entityType ?? '',
-              ownershipPct: asset.ownershipRecords[0]?.ownershipPct ?? undefined,
-              encumbranceType: asset.encumbranceRecords[0]?.encumbranceType ?? '',
-              encumbranceHolderName: asset.encumbranceRecords[0]?.holderName ?? '',
-              securedAmountKrw: toInputCurrencyValue(
-                asset.encumbranceRecords[0]?.securedAmountKrw,
-                displayCurrency
-              ),
-              priorityRank: asset.encumbranceRecords[0]?.priorityRank ?? undefined,
-              encumbranceStatus: asset.encumbranceRecords[0]?.statusLabel ?? '',
-              planningConstraintType: asset.planningConstraints[0]?.constraintType ?? '',
-              planningConstraintTitle: asset.planningConstraints[0]?.title ?? '',
-              planningConstraintSeverity: asset.planningConstraints[0]?.severity ?? '',
-              planningConstraintDescription: asset.planningConstraints[0]?.description ?? ''
-            }}
           />
         </div>
       </Card>
 
+      {latestRun ? (
+        <>
+          <ValuationQualityPanel
+            asset={{
+              leases: asset.leases,
+              capexLineItems: asset.capexLineItems,
+              comparableSet: asset.comparableSet,
+              energySnapshot: asset.energySnapshot,
+              permitSnapshot: asset.permitSnapshot,
+              ownershipRecords: asset.ownershipRecords,
+              encumbranceRecords: asset.encumbranceRecords,
+              planningConstraints: asset.planningConstraints
+            }}
+            assumptions={latestRun.assumptions}
+            provenance={provenance}
+          />
+          <FeatureAssumptionMapping rows={featureAssumptionMappings} />
+          <ValuationHistoryTable
+            runs={asset.valuations}
+            displayCurrency={displayCurrency}
+            fxRateToKrw={fxRateToKrw}
+          />
+          <ValuationBreakdown
+            assumptions={latestRun.assumptions as Record<string, number | string | null>}
+            provenance={provenance}
+            displayCurrency={displayCurrency}
+            fxRateToKrw={fxRateToKrw}
+            debtFacilities={asset.debtFacilities}
+            scenarios={latestRun.scenarios}
+          />
+          <ProFormaPanel
+            assumptions={latestRun.assumptions}
+            rolloverBasePath={`/admin/assets/${asset.id}`}
+            selectedRolloverYear={selectedRolloverYear}
+            displayCurrency={displayCurrency}
+            fxRateToKrw={fxRateToKrw}
+          />
+          <ConfidenceBreakdown
+            engineVersion={latestRun.engineVersion}
+            confidenceScore={latestRun.confidenceScore}
+            address={asset.address}
+            siteProfile={asset.siteProfile}
+            buildingSnapshot={asset.buildingSnapshot}
+            permitSnapshot={asset.permitSnapshot}
+            energySnapshot={asset.energySnapshot}
+            marketSnapshot={asset.marketSnapshot}
+            provenance={provenance}
+          />
+          <ValuationSignals
+            confidenceScore={latestRun.confidenceScore}
+            assumptions={latestRun.assumptions as Record<string, number | string | null>}
+            provenance={provenance}
+          />
+          <ValuationProvenance entries={provenance} />
+        </>
+      ) : null}
+    </div>
+  );
+
+  const leasingTab = (
+    <div className="space-y-6">
       <Card>
         <Section
           eyebrow="Lease Book"
@@ -608,68 +627,30 @@ export default async function AssetDetailPage({
         </div>
       </Card>
 
-      <Card>
-        <Section
-          eyebrow="Comparable Book"
-          title="Pricing calibration and market peers"
-          description="Add peer assets with pricing signals and weights so the underwriting no longer leans only on generic market snapshots. This directly improves cap-rate, rate, and direct-value calibration."
-        />
-        <div className="mt-5">
-          <ComparableBookForm
-            assetId={asset.id}
-            inputCurrency={displayCurrency}
-            defaultSetName={asset.comparableSet?.name}
-            defaultSetNotes={asset.comparableSet?.notes}
-            defaultEntries={
-              asset.comparableSet?.entries.map((entry) => ({
-                id: entry.id,
-                label: entry.label,
-                location: entry.location,
-                assetType: entry.assetType,
-                stage: entry.stage,
-                sourceLink: entry.sourceLink ?? '',
-                powerCapacityMw: entry.powerCapacityMw,
-                grossFloorAreaSqm: entry.grossFloorAreaSqm,
-                occupancyPct: entry.occupancyPct,
-                valuationKrw: toInputCurrencyValue(entry.valuationKrw, displayCurrency),
-                pricePerMwKrw: toInputCurrencyValue(entry.pricePerMwKrw, displayCurrency),
-                monthlyRatePerKwKrw: toInputCurrencyValue(
-                  entry.monthlyRatePerKwKrw,
-                  displayCurrency
-                ),
-                capRatePct: entry.capRatePct,
-                discountRatePct: entry.discountRatePct,
-                weightPct: entry.weightPct,
-                notes: entry.notes ?? ''
-              })) ?? []
-            }
+      {latestRun ? (
+        <>
+          <LeaseExpiryLadder
+            leases={asset.leases}
+            leaseBasePath={`/admin/assets/${asset.id}`}
+            rolloverBasePath={`/admin/assets/${asset.id}`}
+            selectedRolloverYear={selectedRolloverYear}
+            displayCurrency={displayCurrency}
+            fxRateToKrw={fxRateToKrw}
           />
-        </div>
-      </Card>
-
-      <Card>
-        <Section
-          eyebrow="Capex Book"
-          title="Replacement-cost structure and downside floor"
-          description="Split the development budget into land, shell/core, electrical, mechanical, IT fit-out, soft cost, and contingency so the replacement floor and retained hard-cost logic stop leaning on fallback allocation."
-        />
-        <div className="mt-5">
-          <CapexBookForm
-            assetId={asset.id}
-            inputCurrency={displayCurrency}
-            defaultItems={asset.capexLineItems.map((item) => ({
-              id: item.id,
-              category: item.category,
-              label: item.label,
-              amountKrw: toInputCurrencyValue(item.amountKrw, displayCurrency),
-              spendYear: item.spendYear,
-              isEmbedded: item.isEmbedded,
-              notes: item.notes ?? ''
-            }))}
+          <LeaseRolloverDrilldown
+            leases={asset.leases}
+            focusYear={selectedRolloverYear}
+            leaseBasePath={`/admin/assets/${asset.id}`}
+            displayCurrency={displayCurrency}
+            fxRateToKrw={fxRateToKrw}
           />
-        </div>
-      </Card>
+        </>
+      ) : null}
+    </div>
+  );
 
+  const capitalTab = (
+    <div className="space-y-6">
       <Card>
         <Section
           eyebrow="Debt Book"
@@ -707,6 +688,29 @@ export default async function AssetDetailPage({
         </div>
       </Card>
 
+      <Card>
+        <Section
+          eyebrow="Capex Book"
+          title="Replacement-cost structure and downside floor"
+          description="Split the development budget into land, shell/core, electrical, mechanical, IT fit-out, soft cost, and contingency so the replacement floor and retained hard-cost logic stop leaning on fallback allocation."
+        />
+        <div className="mt-5">
+          <CapexBookForm
+            assetId={asset.id}
+            inputCurrency={displayCurrency}
+            defaultItems={asset.capexLineItems.map((item) => ({
+              id: item.id,
+              category: item.category,
+              label: item.label,
+              amountKrw: toInputCurrencyValue(item.amountKrw, displayCurrency),
+              spendYear: item.spendYear,
+              isEmbedded: item.isEmbedded,
+              notes: item.notes ?? ''
+            }))}
+          />
+        </div>
+      </Card>
+
       <FinancialStatementsPanel
         statements={financialStatements}
         displayCurrency={displayCurrency}
@@ -718,14 +722,21 @@ export default async function AssetDetailPage({
         displayCurrency={displayCurrency}
         fxRateToKrw={fxRateToKrw}
       />
+    </div>
+  );
 
-      <AssetSustainabilityPanel
-        insurancePolicies={asset.insurancePolicies}
-        carbonRecords={asset.carbonRecords}
-        sideLetters={asset.sideLetters}
+  const marketRiskTab = (
+    <div className="space-y-6">
+      <MarketEvidencePanel
+        assetClass={asset.assetClass}
         displayCurrency={displayCurrency}
         fxRateToKrw={fxRateToKrw}
+        transactionComps={asset.transactionComps}
+        rentComps={asset.rentComps}
+        marketIndicators={asset.marketIndicatorSeries}
       />
+
+      <SatelliteRiskSummary snapshot={satelliteRisk} />
 
       <AssetRegistryPanel
         parcels={asset.parcels}
@@ -735,30 +746,18 @@ export default async function AssetDetailPage({
         fxRateToKrw={fxRateToKrw}
       />
 
-      <AssetInsightsPanel aiInsights={asset.aiInsights} pipelineProjects={asset.pipelineProjects} />
+      <AssetSustainabilityPanel
+        insurancePolicies={asset.insurancePolicies}
+        carbonRecords={asset.carbonRecords}
+        sideLetters={asset.sideLetters}
+        displayCurrency={displayCurrency}
+        fxRateToKrw={fxRateToKrw}
+      />
+    </div>
+  );
 
-      <AssetTokenizationPanel tokenization={asset.tokenization} assetId={asset.id} />
-
-      <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-        <Card>
-          <Section
-            eyebrow="Realized Outcome Capture"
-            title="Observed asset performance after the underwriting run"
-            description="Capture actual occupancy, NOI, value, and DSCR after the run closes. This is the feedback loop the macro team needs to validate regime overlays against real asset outcomes."
-          />
-          <div className="mt-5">
-            <RealizedOutcomeForm assetId={asset.id} inputCurrency={displayCurrency} />
-          </div>
-        </Card>
-
-        <RealizedOutcomePanel
-          comparison={realizedOutcomeComparison}
-          outcomes={asset.realizedOutcomes}
-          displayCurrency={displayCurrency}
-          fxRateToKrw={fxRateToKrw}
-        />
-      </div>
-
+  const executionTab = (
+    <div className="space-y-6">
       <Card>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -822,78 +821,43 @@ export default async function AssetDetailPage({
         </div>
       </Card>
 
-      {latestRun ? (
-        <div className="space-y-6">
-          <ValuationQualityPanel
-            asset={{
-              leases: asset.leases,
-              capexLineItems: asset.capexLineItems,
-              comparableSet: asset.comparableSet,
-              energySnapshot: asset.energySnapshot,
-              permitSnapshot: asset.permitSnapshot,
-              ownershipRecords: asset.ownershipRecords,
-              encumbranceRecords: asset.encumbranceRecords,
-              planningConstraints: asset.planningConstraints
-            }}
-            assumptions={latestRun.assumptions}
-            provenance={provenance}
-          />
-          <FeatureAssumptionMapping rows={featureAssumptionMappings} />
-          <ValuationHistoryTable
-            runs={asset.valuations}
-            displayCurrency={displayCurrency}
-            fxRateToKrw={fxRateToKrw}
-          />
-          <ValuationBreakdown
-            assumptions={latestRun.assumptions as Record<string, number | string | null>}
-            provenance={provenance}
-            displayCurrency={displayCurrency}
-            fxRateToKrw={fxRateToKrw}
-            debtFacilities={asset.debtFacilities}
-            scenarios={latestRun.scenarios}
-          />
-          <ProFormaPanel
-            assumptions={latestRun.assumptions}
-            rolloverBasePath={`/admin/assets/${asset.id}`}
-            selectedRolloverYear={selectedRolloverYear}
-            displayCurrency={displayCurrency}
-            fxRateToKrw={fxRateToKrw}
-          />
-          <LeaseExpiryLadder
-            leases={asset.leases}
-            leaseBasePath={`/admin/assets/${asset.id}`}
-            rolloverBasePath={`/admin/assets/${asset.id}`}
-            selectedRolloverYear={selectedRolloverYear}
-            displayCurrency={displayCurrency}
-            fxRateToKrw={fxRateToKrw}
-          />
-          <LeaseRolloverDrilldown
-            leases={asset.leases}
-            focusYear={selectedRolloverYear}
-            leaseBasePath={`/admin/assets/${asset.id}`}
-            displayCurrency={displayCurrency}
-            fxRateToKrw={fxRateToKrw}
-          />
-          <ConfidenceBreakdown
-            engineVersion={latestRun.engineVersion}
-            confidenceScore={latestRun.confidenceScore}
-            address={asset.address}
-            siteProfile={asset.siteProfile}
-            buildingSnapshot={asset.buildingSnapshot}
-            permitSnapshot={asset.permitSnapshot}
-            energySnapshot={asset.energySnapshot}
-            marketSnapshot={asset.marketSnapshot}
-            provenance={provenance}
-          />
-          <ValuationSignals
-            confidenceScore={latestRun.confidenceScore}
-            assumptions={latestRun.assumptions as Record<string, number | string | null>}
-            provenance={provenance}
-          />
-          <ValuationProvenance entries={provenance} />
-        </div>
-      ) : null}
+      <ReviewQueuePanel
+        summaries={[reviewSummary]}
+        title="Asset Evidence Review"
+        emptyMessage="All evidence rows for this asset are already reviewed."
+      />
 
+      <ResearchDossierPanel
+        dossier={researchDossier}
+        canApproveHouseView={actor?.role === 'ADMIN'}
+      />
+
+      <AssetTokenizationPanel tokenization={asset.tokenization} assetId={asset.id} />
+
+      <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+        <Card>
+          <Section
+            eyebrow="Realized Outcome Capture"
+            title="Observed asset performance after the underwriting run"
+            description="Capture actual occupancy, NOI, value, and DSCR after the run closes. This is the feedback loop the macro team needs to validate regime overlays against real asset outcomes."
+          />
+          <div className="mt-5">
+            <RealizedOutcomeForm assetId={asset.id} inputCurrency={displayCurrency} />
+          </div>
+        </Card>
+
+        <RealizedOutcomePanel
+          comparison={realizedOutcomeComparison}
+          outcomes={asset.realizedOutcomes}
+          displayCurrency={displayCurrency}
+          fxRateToKrw={fxRateToKrw}
+        />
+      </div>
+    </div>
+  );
+
+  const dataRoomTab = (
+    <div className="space-y-6">
       <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
         <Card>
           <div className="eyebrow">Data Room Upload</div>
@@ -924,6 +888,85 @@ export default async function AssetDetailPage({
           </div>
         </Card>
       </div>
+
+      <Card>
+        <Section
+          eyebrow="Micro Research Capture"
+          title={playbook.intakeHeading}
+          description="Use this panel to capture normalized evidence that changes downside, execution certainty, and approved feature coverage for this asset class."
+        />
+        <div className="mt-5">
+          <MicroDataForm
+            assetId={asset.id}
+            inputCurrency={displayCurrency}
+            reviewStatuses={
+              [
+                asset.energySnapshot
+                  ? {
+                      label: 'Energy / Building Services',
+                      status: asset.energySnapshot.reviewStatus
+                    }
+                  : null,
+                asset.permitSnapshot
+                  ? {
+                      label: 'Permit / Entitlement',
+                      status: asset.permitSnapshot.reviewStatus
+                    }
+                  : null,
+                asset.ownershipRecords[0]
+                  ? {
+                      label: 'Ownership',
+                      status: asset.ownershipRecords[0].reviewStatus
+                    }
+                  : null,
+                asset.encumbranceRecords[0]
+                  ? {
+                      label: 'Encumbrance',
+                      status: asset.encumbranceRecords[0].reviewStatus
+                    }
+                  : null,
+                asset.planningConstraints[0]
+                  ? {
+                      label: 'Planning',
+                      status: asset.planningConstraints[0].reviewStatus
+                    }
+                  : null
+              ].filter(Boolean) as Array<{ label: string; status: any }>
+            }
+            defaultValues={{
+              utilityName: asset.energySnapshot?.utilityName ?? '',
+              substationDistanceKm: asset.energySnapshot?.substationDistanceKm ?? undefined,
+              tariffKrwPerKwh: toInputCurrencyValue(
+                asset.energySnapshot?.tariffKrwPerKwh,
+                displayCurrency
+              ),
+              renewableAvailabilityPct: asset.energySnapshot?.renewableAvailabilityPct ?? undefined,
+              pueTarget: asset.energySnapshot?.pueTarget ?? undefined,
+              backupFuelHours: asset.energySnapshot?.backupFuelHours ?? undefined,
+              permitStage: asset.permitSnapshot?.permitStage ?? '',
+              zoningApprovalStatus: asset.permitSnapshot?.zoningApprovalStatus ?? '',
+              environmentalReviewStatus: asset.permitSnapshot?.environmentalReviewStatus ?? '',
+              powerApprovalStatus: asset.permitSnapshot?.powerApprovalStatus ?? '',
+              timelineNotes: asset.permitSnapshot?.timelineNotes ?? '',
+              legalOwnerName: asset.ownershipRecords[0]?.ownerName ?? '',
+              legalOwnerEntityType: asset.ownershipRecords[0]?.entityType ?? '',
+              ownershipPct: asset.ownershipRecords[0]?.ownershipPct ?? undefined,
+              encumbranceType: asset.encumbranceRecords[0]?.encumbranceType ?? '',
+              encumbranceHolderName: asset.encumbranceRecords[0]?.holderName ?? '',
+              securedAmountKrw: toInputCurrencyValue(
+                asset.encumbranceRecords[0]?.securedAmountKrw,
+                displayCurrency
+              ),
+              priorityRank: asset.encumbranceRecords[0]?.priorityRank ?? undefined,
+              encumbranceStatus: asset.encumbranceRecords[0]?.statusLabel ?? '',
+              planningConstraintType: asset.planningConstraints[0]?.constraintType ?? '',
+              planningConstraintTitle: asset.planningConstraints[0]?.title ?? '',
+              planningConstraintSeverity: asset.planningConstraints[0]?.severity ?? '',
+              planningConstraintDescription: asset.planningConstraints[0]?.description ?? ''
+            }}
+          />
+        </div>
+      </Card>
 
       <Card>
         <div className="eyebrow">Intake Record</div>
@@ -996,5 +1039,21 @@ export default async function AssetDetailPage({
         </div>
       </Card>
     </div>
+  );
+
+  return (
+    <AssetTabs
+      header={headerBar}
+      defaultTabId={selectedRolloverYear != null ? 'valuation' : undefined}
+      tabs={[
+        { id: 'overview', label: 'Overview', content: overviewTab },
+        { id: 'valuation', label: 'Valuation', content: valuationTab },
+        { id: 'leasing', label: 'Leasing & Income', content: leasingTab },
+        { id: 'capital', label: 'Capital & Credit', content: capitalTab },
+        { id: 'market', label: 'Market & Risk', content: marketRiskTab },
+        { id: 'execution', label: 'Execution & Registry', content: executionTab },
+        { id: 'dataroom', label: 'Data Room & Setup', content: dataRoomTab }
+      ]}
+    />
   );
 }

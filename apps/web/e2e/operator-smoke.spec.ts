@@ -52,6 +52,14 @@ async function openViaLink(page: Page, link: Locator) {
   await page.goto(href as string);
 }
 
+// The asset detail page groups its panels into tabs; only the active tab's
+// content is in the DOM. Select a tab before asserting on its panels.
+async function selectAssetTab(page: Page, name: RegExp) {
+  const tab = page.getByRole('tab', { name });
+  await tab.click();
+  await expect(tab).toHaveAttribute('aria-selected', 'true');
+}
+
 test.describe('seeded operator smoke flows', () => {
   test('admin overview and navigation stay connected', async ({ page }) => {
     await loginAsOperator(page);
@@ -100,18 +108,25 @@ test.describe('seeded operator smoke flows', () => {
     await expect(page.getByRole('link', { name: /Seoul Hyperscale Campus I/i })).toBeVisible();
 
     await openViaLink(page, page.getByRole('link', { name: /Yeouido Core Office Tower/i }));
+    // Persistent identity header carries the asset name as the page <h1>.
     await expect(
-      page.locator('.eyebrow').filter({ hasText: 'Asset Dossier' }).first()
+      page.getByRole('heading', { level: 1, name: /Yeouido Core Office Tower/i })
     ).toBeVisible();
-    await expect(page.locator('h2').filter({ hasText: 'Yeouido Core Office Tower' })).toBeVisible();
+    // Overview is the default tab.
+    await expect(page.getByText('Research Snapshot', { exact: true })).toBeVisible();
+    // Approved feature layer lives in the Valuation tab.
+    await selectAssetTab(page, /Valuation/i);
     await expect(
       page
         .locator('[data-testid="feature-snapshot-panel"]')
         .getByText('Approved Feature Layer', { exact: true })
     ).toBeVisible();
-    await expect(page.getByText('Research Snapshot', { exact: true })).toBeVisible();
+    // Review-readiness packaging lives in the Execution & Registry tab.
+    await selectAssetTab(page, /Execution & Registry/i);
     await expect(page.getByText('Review Readiness', { exact: true })).toBeVisible();
 
+    // The Report Library link is on the Overview tab's analysis-control card.
+    await selectAssetTab(page, /Overview/i);
     await openViaLink(page, page.getByRole('link', { name: /Open Report Library/i }));
     await expect(page.getByRole('heading', { name: /Underwriting Reports/i })).toBeVisible();
     await expect(page.getByText('Package Snapshot', { exact: true })).toBeVisible();
