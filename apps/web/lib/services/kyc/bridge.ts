@@ -107,24 +107,54 @@ export async function persistKycEvent(
  * Removals are never gated: pulling a sanctioned wallet off-chain must always be
  * allowed.
  */
-export async function bridgeKycToChain(input: {
-  kycRecordId: string;
-  assetId: string;
-  db?: PrismaClient;
-}): Promise<{ txHash: string | null; action: string }> {
+/**
+ * Injectable on-chain + screening collaborators. Defaults to the real module
+ * functions; tests override them to exercise the bridge's ORCHESTRATION (the
+ * fail-closed sanctions gate, register/update/remove routing) without a chain
+ * or a real screening store. The `db`-backed `getWalletScreeningGate` primitive
+ * is covered separately in `kyc-bridge-screening-gate.test.ts`.
+ */
+export type BridgeKycChainDeps = {
+  getDeploymentByAssetId: typeof getDeploymentByAssetId;
+  toDeploymentRow: typeof toDeploymentRow;
+  getIdentity: typeof getIdentity;
+  registerIdentity: typeof registerIdentity;
+  updateCountry: typeof updateCountry;
+  removeIdentity: typeof removeIdentity;
+  getWalletScreeningGate: typeof getWalletScreeningGate;
+};
+
+export async function bridgeKycToChain(
+  input: {
+    kycRecordId: string;
+    assetId: string;
+    db?: PrismaClient;
+  },
+  deps: Partial<BridgeKycChainDeps> = {}
+): Promise<{ txHash: string | null; action: string }> {
   const db = input.db ?? prisma;
+  const onchain = {
+    getDeploymentByAssetId: deps.getDeploymentByAssetId ?? getDeploymentByAssetId,
+    toDeploymentRow: deps.toDeploymentRow ?? toDeploymentRow,
+    getIdentity: deps.getIdentity ?? getIdentity,
+    registerIdentity: deps.registerIdentity ?? registerIdentity,
+    updateCountry: deps.updateCountry ?? updateCountry,
+    removeIdentity: deps.removeIdentity ?? removeIdentity,
+    getWalletScreeningGate: deps.getWalletScreeningGate ?? getWalletScreeningGate
+  };
+
   const record = await db.kycRecord.findUnique({ where: { id: input.kycRecordId } });
   if (!record) throw new Error(`KycRecord ${input.kycRecordId} not found`);
 
-  const row = await getDeploymentByAssetId(input.assetId, db);
+  const row = await onchain.getDeploymentByAssetId(input.assetId, db);
   if (!row) throw new Error(`No TokenizedAsset deployment for assetId=${input.assetId}`);
-  const deployment = toDeploymentRow(row);
+  const deployment = onchain.toDeploymentRow(row);
 
   if (record.status === 'PENDING') {
     return { txHash: null, action: 'noop:pending' };
   }
 
-  const current = await getIdentity(deployment, record.wallet);
+  const current = await onchain.getIdentity(deployment, record.wallet);
 
   let txHash: string | null = null;
   let action = 'noop';
@@ -135,7 +165,7 @@ export async function bridgeKycToChain(input: {
       // Fail-closed sanctions gate before any whitelist/keep write. The AML
       // engine screens the wallet separately; an APPROVED KYC must never be
       // enough on its own to register a sanctioned holder on-chain.
-      const gate = await getWalletScreeningGate(record.wallet, db);
+      const gate = await onchain.getWalletScreeningGate(record.wallet, db);
       if (!gate.cleared) {
         throw new Error(
           `Sanctions screening required before on-chain identity registration (wallet=${record.wallet}, reason=${gate.reason}).`
@@ -144,13 +174,13 @@ export async function bridgeKycToChain(input: {
     }
 
     if (!current.registered) {
-      txHash = await registerIdentity(deployment, {
+      txHash = await onchain.registerIdentity(deployment, {
         wallet: record.wallet,
         countryCode: record.countryCode
       });
       action = 'register';
     } else if (current.countryCode !== record.countryCode) {
-      txHash = await updateCountry(deployment, {
+      txHash = await onchain.updateCountry(deployment, {
         wallet: record.wallet,
         countryCode: record.countryCode
       });
@@ -161,7 +191,7 @@ export async function bridgeKycToChain(input: {
   } else {
     // REJECTED / REVOKED
     if (current.registered) {
-      txHash = await removeIdentity(deployment, record.wallet);
+      txHash = await onchain.removeIdentity(deployment, record.wallet);
       action = 'remove';
     } else {
       action = 'noop:already-unregistered';
