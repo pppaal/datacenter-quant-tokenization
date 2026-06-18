@@ -11,34 +11,45 @@ type Props = {
 export function DealRestoreButton({ dealId }: Props) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   return (
-    <Button
-      type="button"
-      variant="secondary"
-      disabled={busy}
-      onClick={async () => {
-        setBusy(true);
-        try {
-          const response = await fetch(`/api/deals/${dealId}/restore`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              summary: 'Restored from archived queue.'
-            })
-          });
-          if (!response.ok) {
-            throw new Error('Failed to restore deal');
+    <div className="space-y-2">
+      <Button
+        type="button"
+        variant="secondary"
+        disabled={busy}
+        onClick={async () => {
+          setBusy(true);
+          setError(null);
+          try {
+            const response = await fetch(`/api/deals/${dealId}/restore`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                summary: 'Restored from archived queue.'
+              })
+            });
+            if (!response.ok) {
+              throw new Error('Failed to restore deal');
+            }
+            startTransition(() => router.refresh());
+          } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to restore deal.');
+          } finally {
+            setBusy(false);
           }
-          startTransition(() => router.refresh());
-        } finally {
-          setBusy(false);
-        }
-      }}
-    >
-      {busy ? 'Restoring...' : 'Restore'}
-    </Button>
+        }}
+      >
+        {busy ? 'Restoring...' : 'Restore'}
+      </Button>
+      {error ? (
+        <p role="alert" className="text-xs text-red-400">
+          {error}
+        </p>
+      ) : null}
+    </div>
   );
 }
