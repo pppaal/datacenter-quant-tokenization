@@ -224,10 +224,15 @@ cashBalanceKrw}`, `PortfolioAsset.{acquisitionCostKrw,currentHoldValueKrw}`,
   (`Waterfall.test.ts`, now in `test:unit`). STILL deploy-gated behind
   `DEPLOY_WATERFALL` until an external audit signs off; the O(n) `_lpList`
   allocation should move to a Merkle-claim pattern before scaling LP rosters.
-- **Per-process rate limiters (P1/P2).** `rate-limit.ts` + `edge-protection.ts`
-  are in-memory (N× the intended limit on multi-instance). Wire the distributed
-  (Upstash) limiter into the KYC webhook + `property-analyze`, and add
-  `UPSTASH_*` to the prod preflight required set.
+- **Per-process rate limiters (P1/P2) — mostly DONE.** The distributed (Upstash)
+  limiter is now wired into the KYC webhook (`/api/kyc/webhook/[provider]`, new
+  two-layer throttle before signature work) and `property-analyze` (added the
+  cross-instance layer alongside the existing in-process one), joining the
+  earlier admin-login path; `UPSTASH_*` are now required by `prod:preflight`.
+  Covered by `kyc-webhook-rate-limit.test.ts` + `property-analyze-rate-limit.test.ts`.
+  Still in-memory: the edge middleware limiter in `edge-protection.ts` (Edge
+  runtime can't reach the Node Upstash REST helper) — acceptable as a coarse
+  per-region pre-filter behind the Node-layer distributed limits.
 - **Remaining error-leakage (P2).** ~35 hand-rolled routes still return raw
   `error.message`; the sensitive on-chain/KYC ones were genericized — migrate the
   rest to `withAdminApi` / `genericErrorResponse` incrementally.

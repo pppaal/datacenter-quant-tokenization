@@ -3,6 +3,33 @@ import { recordAuditEvent } from '@/lib/services/audit';
 import { getRequestIpAddress } from '@/lib/security/admin-request';
 import { persistKycEvent } from '@/lib/services/kyc/bridge';
 import { getKycProvider } from '@/lib/services/kyc/registry';
+import { createRateLimiter, RateLimitError } from '@/lib/security/rate-limit';
+import { checkDistributedRateLimit } from '@/lib/security/distributed-rate-limit';
+
+// The webhook is public (authenticity comes from the provider signature, not a
+// cookie), so an attacker who cannot forge a signature can still flood it to
+// burn signature-verification CPU. Throttle per source-IP+provider BEFORE the
+// signature check, in two layers: an always-on in-process limiter plus a
+// cross-instance Upstash counter (soft-fails open when Redis is unconfigured,
+// so dev/CI are unaffected). The limit is generous so legitimate provider
+// bursts pass; it only caps abuse.
+const WEBHOOK_RATE_WINDOW_MS = 60_000;
+const WEBHOOK_RATE_MAX = 120;
+
+const webhookRateLimiter = createRateLimiter('kyc-webhook', {
+  windowMs: WEBHOOK_RATE_WINDOW_MS,
+  maxRequests: WEBHOOK_RATE_MAX
+});
+
+function tooManyRequests(retryAfterMs: number) {
+  return NextResponse.json(
+    { error: 'Too many requests. Please retry shortly.' },
+    {
+      status: 429,
+      headers: { 'Retry-After': String(Math.max(1, Math.ceil(retryAfterMs / 1000))) }
+    }
+  );
+}
 
 /**
  * Provider-agnostic KYC webhook ingress. Verifies the signature using the
@@ -17,6 +44,27 @@ import { getKycProvider } from '@/lib/services/kyc/registry';
 export async function POST(request: Request, context: { params: Promise<{ provider: string }> }) {
   const { provider: providerName } = await context.params;
   const ipAddress = getRequestIpAddress(request.headers);
+
+  // Rate-limit before any signature work so unsigned floods are cheap to reject.
+  const limiterKey = `${ipAddress ?? 'unknown'}:${providerName}`;
+  try {
+    webhookRateLimiter.check(limiterKey);
+  } catch (error) {
+    if (error instanceof RateLimitError) {
+      return tooManyRequests(error.retryAfterMs);
+    }
+    throw error;
+  }
+  const distributed = await checkDistributedRateLimit(
+    'kyc-webhook',
+    limiterKey,
+    WEBHOOK_RATE_WINDOW_MS,
+    WEBHOOK_RATE_MAX
+  );
+  if (!distributed.allowed) {
+    return tooManyRequests(distributed.retryAfterMs);
+  }
+
   const rawBody = await request.text();
 
   let provider;
