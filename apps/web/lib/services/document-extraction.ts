@@ -243,20 +243,22 @@ export async function ingestDocumentExtraction(
     }
   });
 
-  for (const chunk of chunks) {
-    await db.documentChunk.create({
-      data: {
+  // Batch the inserts (was one round-trip per chunk + per fact — a large PDF
+  // serialized N+M sequential queries). createMany is a single statement each.
+  if (chunks.length > 0) {
+    await db.documentChunk.createMany({
+      data: chunks.map((chunk) => ({
         documentVersionId: input.documentVersionId,
         chunkIndex: chunk.chunkIndex,
         text: chunk.text,
         pageNumber: chunk.pageNumber
-      }
+      }))
     });
   }
 
-  for (const fact of facts) {
-    await db.documentFact.create({
-      data: {
+  if (facts.length > 0) {
+    await db.documentFact.createMany({
+      data: facts.map((fact) => ({
         assetId: input.assetId ?? null,
         documentVersionId: input.documentVersionId,
         factType: fact.factType,
@@ -267,7 +269,7 @@ export async function ingestDocumentExtraction(
         unit: fact.unit ?? null,
         confidenceScore: fact.confidenceScore ?? null,
         extractionRunId: run.id
-      }
+      }))
     });
   }
 
