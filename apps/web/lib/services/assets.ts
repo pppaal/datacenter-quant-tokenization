@@ -37,7 +37,7 @@ export const assetBundleInclude = {
   buildingSnapshot: true,
   permitSnapshot: true,
   energySnapshot: true,
-  marketSnapshot: true,
+  marketSnapshot: { include: { dataCenterMarketDetail: true } },
   macroSeries: {
     orderBy: [
       {

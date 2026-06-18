@@ -370,6 +370,7 @@ export default async function AssetDetailPage({
           market={asset.marketSnapshot}
           permit={asset.permitSnapshot}
           siteProfile={asset.siteProfile}
+          leases={asset.leases}
           displayCurrency={displayCurrency}
           fxRateToKrw={fxRateToKrw}
         />

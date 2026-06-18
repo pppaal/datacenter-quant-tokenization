@@ -29,6 +29,15 @@ type MarketSnapshot = {
   colocationRatePerKwKrw?: number | null;
   constructionCostPerMwKrw?: number | null;
   capRatePct?: number | null;
+  dataCenterMarketDetail?: {
+    aiDemandIndex?: number | null;
+    utilityQueueMonths?: number | null;
+  } | null;
+};
+
+type LeaseLite = {
+  leasedKw?: number | null;
+  status?: string | null;
 };
 
 type PermitSnapshot = {
@@ -48,6 +57,7 @@ type Props = {
   market?: MarketSnapshot | null;
   permit?: PermitSnapshot | null;
   siteProfile?: SiteProfile | null;
+  leases?: LeaseLite[];
   displayCurrency?: SupportedCurrency;
   fxRateToKrw?: number | null;
 };
@@ -109,11 +119,20 @@ export function DataCenterPowerPanel({
   market,
   permit,
   siteProfile,
+  leases,
   displayCurrency = 'KRW',
   fxRateToKrw
 }: Props) {
   const builtMw = firstNumber(detail?.powerCapacityMw, powerCapacityMw);
   const itLoadMw = firstNumber(detail?.targetItLoadMw, targetItLoadMw);
+  // Pre-leasing: committed (signed/active) capacity over built power. The
+  // institutional comfort threshold for spec DC is ~50–60% before completion.
+  const committedKw = (leases ?? [])
+    .filter((lease) => lease.status === 'ACTIVE' || lease.status === 'SIGNED')
+    .reduce((sum, lease) => sum + (lease.leasedKw ?? 0), 0);
+  const preLeasingPct = builtMw && builtMw > 0 ? (committedKw / (builtMw * 1000)) * 100 : null;
+  const aiDemandIndex = firstNumber(market?.dataCenterMarketDetail?.aiDemandIndex);
+  const utilityQueueMonths = firstNumber(market?.dataCenterMarketDetail?.utilityQueueMonths);
   const utilizationPct =
     builtMw && builtMw > 0 && itLoadMw != null ? (itLoadMw / builtMw) * 100 : null;
   const pue = firstNumber(detail?.pueTarget, energy?.pueTarget);
@@ -181,6 +200,19 @@ export function DataCenterPowerPanel({
         market?.colocationRatePerKwKrw != null
           ? `${money(market.colocationRatePerKwKrw)} / kW·mo`
           : TEXT
+    },
+    {
+      label: 'Pre-Leasing',
+      value: preLeasingPct != null ? formatPercent(preLeasingPct) : TEXT,
+      hint: preLeasingPct != null ? 'committed / built MW' : undefined
+    },
+    {
+      label: 'KEPCO Queue',
+      value: utilityQueueMonths != null ? `${formatNumber(utilityQueueMonths, 0)} mo` : TEXT
+    },
+    {
+      label: 'AI Demand Index',
+      value: aiDemandIndex != null ? formatNumber(aiDemandIndex, 0) : TEXT
     }
   ];
 
