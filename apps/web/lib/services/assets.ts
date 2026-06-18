@@ -66,6 +66,9 @@ export const assetBundleInclude = {
     },
     take: 12
   },
+  riskRegisterEntries: {
+    orderBy: [{ sortOrder: 'asc' as const }, { createdAt: 'asc' as const }]
+  },
   officeDetail: true,
   dataCenterDetail: true,
   counterparties: {

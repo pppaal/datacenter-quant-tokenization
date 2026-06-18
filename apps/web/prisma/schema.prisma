@@ -512,6 +512,7 @@ model Asset {
   macroSeries           MacroSeries[]
   macroFactors          MacroFactor[]
   realizedOutcomes      RealizedOutcome[]
+  riskRegisterEntries   AssetRiskRegisterEntry[]
   pipelineProjects      PipelineProject[]
   geoFeatures           GeoFeature[]
   satelliteScenes       SatelliteScene[]
@@ -1697,6 +1698,32 @@ model MacroFactor {
 
   @@unique([market, factorKey, observationDate, assetId])
   @@index([market, factorKey, observationDate])
+}
+
+// Quantified IC-style risk register. Each row carries likelihood × impact, an
+// optional quantified IRR/value effect, the mitigant, and the residual posture
+// after mitigation — the institutional alternative to a free-text fear list.
+model AssetRiskRegisterEntry {
+  id                 String        @id @default(cuid())
+  assetId            String
+  category           String?
+  title              String
+  description        String?
+  likelihood         RiskSeverity  @default(MEDIUM)
+  impact             RiskSeverity  @default(MEDIUM)
+  irrImpactBps       Int?
+  valueImpactKrw     Float?
+  mitigant           String?
+  residualLikelihood RiskSeverity?
+  residualImpact     RiskSeverity?
+  status             String        @default("OPEN")
+  ownerName          String?
+  sortOrder          Int           @default(0)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  asset              Asset         @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([assetId, status])
 }
 
 model RealizedOutcome {
