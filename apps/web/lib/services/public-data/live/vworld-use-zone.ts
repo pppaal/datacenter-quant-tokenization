@@ -7,6 +7,8 @@
  *
  * Required env:
  *   VWORLD_API_KEY — shared with the land-price adapter (same V-World account).
+ *   VWORLD_API_DOMAIN — the key's registered service URL; V-World's NED data
+ *     APIs reject keyed calls that omit it with `INCORRECT_KEY` (REQUIRED).
  *   VWORLD_USE_ZONE_BASE — optional override of the endpoint base.
  *
  * Returns the parcel's 용도지역 (primary zone) + 용도지구, mapping the Korean zone
@@ -58,11 +60,19 @@ export class LiveVworldUseZone implements UseZoneConnector {
   constructor(
     private readonly apiKey: string | undefined = process.env.VWORLD_API_KEY,
     private readonly baseUrl: string = process.env.VWORLD_USE_ZONE_BASE?.trim() || DEFAULT_BASE,
-    private readonly timeoutMs: number = 8000
+    private readonly timeoutMs: number = 8000,
+    private readonly domain: string | undefined = process.env.VWORLD_API_DOMAIN?.trim(),
+    private readonly fetcher: typeof fetchWithTimeout = fetchWithTimeout
   ) {}
 
   async fetch(parcel: ParcelIdentifier): Promise<UseZone | null> {
     if (!this.apiKey || !parcel.pnu) {
+      return null;
+    }
+    if (!this.domain) {
+      console.warn(
+        "[vworld-zone] VWORLD_API_DOMAIN is not set; V-World rejects NED calls without the key's registered domain. Set it to the registered service URL."
+      );
       return null;
     }
     const rows = await this.fetchPnu(parcel.pnu).catch((err) => {
@@ -96,12 +106,13 @@ export class LiveVworldUseZone implements UseZoneConnector {
   private async fetchPnu(pnu: string): Promise<LandUseRow[]> {
     const url = new URL(this.baseUrl);
     url.searchParams.set('key', this.apiKey!);
+    url.searchParams.set('domain', this.domain!);
     url.searchParams.set('pnu', pnu);
     url.searchParams.set('format', 'json');
     url.searchParams.set('numOfRows', '50');
     url.searchParams.set('pageNo', '1');
 
-    const response = await fetchWithTimeout(url.toString(), {}, this.timeoutMs);
+    const response = await this.fetcher(url.toString(), {}, this.timeoutMs);
     if (!response.ok) {
       throw new Error(`V-World use-zone HTTP ${response.status}`);
     }
