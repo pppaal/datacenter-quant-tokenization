@@ -12,10 +12,14 @@ export function Badge({ className, tone = 'neutral', label, children, ...props }
       {...props}
       className={cn(
         'inline-flex rounded-full border px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.22em]',
-        tone === 'neutral' && 'border-white/10 bg-white/[0.04] text-slate-300',
-        tone === 'good' && 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300',
-        tone === 'warn' && 'border-amber-500/30 bg-amber-500/10 text-amber-300',
-        tone === 'danger' && 'border-rose-500/30 bg-rose-500/10 text-rose-300',
+        tone === 'neutral' &&
+          'border-border bg-[hsl(var(--panel-alt))] text-[hsl(var(--foreground-muted))]',
+        tone === 'good' &&
+          'border-[hsl(var(--success)/0.25)] bg-[hsl(var(--success-tint))] text-[hsl(var(--success))]',
+        tone === 'warn' &&
+          'border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--warning-tint))] text-[hsl(var(--warning))]',
+        tone === 'danger' &&
+          'border-[hsl(var(--danger)/0.25)] bg-[hsl(var(--danger-tint))] text-[hsl(var(--danger))]',
         className
       )}
     >

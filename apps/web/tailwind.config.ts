@@ -12,20 +12,36 @@ const config: Config = {
       colors: {
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
+        foregroundMuted: 'hsl(var(--foreground-muted))',
         panel: 'hsl(var(--panel))',
         panelAlt: 'hsl(var(--panel-alt))',
+        surfaceHover: 'hsl(var(--surface-hover))',
         border: 'hsl(var(--border))',
+        borderStrong: 'hsl(var(--border-strong))',
         muted: 'hsl(var(--muted))',
         accent: 'hsl(var(--accent))',
+        accentHover: 'hsl(var(--accent-hover))',
+        accentTint: 'hsl(var(--accent-tint))',
         success: 'hsl(var(--success))',
+        successTint: 'hsl(var(--success-tint))',
         warning: 'hsl(var(--warning))',
-        danger: 'hsl(var(--danger))'
+        warningTint: 'hsl(var(--warning-tint))',
+        danger: 'hsl(var(--danger))',
+        dangerTint: 'hsl(var(--danger-tint))',
+        info: 'hsl(var(--info))',
+        infoTint: 'hsl(var(--info-tint))'
       },
       boxShadow: {
-        glow: '0 0 0 1px rgba(124, 156, 194, 0.12), 0 24px 80px rgba(4, 11, 24, 0.45)'
+        xs: 'var(--shadow-xs)',
+        sm: 'var(--shadow-sm)',
+        // `glow` key retained so existing `shadow-glow` classes survive the
+        // dark→light swap; it now resolves to the soft light card shadow.
+        glow: 'var(--shadow-sm)',
+        card: 'var(--shadow-sm)',
+        lift: 'var(--shadow-md)'
       },
       backgroundImage: {
-        grid: 'linear-gradient(to right, rgba(124, 156, 194, 0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(124, 156, 194, 0.08) 1px, transparent 1px)'
+        grid: 'linear-gradient(to right, rgba(16, 24, 40, 0.04) 1px, transparent 1px), linear-gradient(to bottom, rgba(16, 24, 40, 0.04) 1px, transparent 1px)'
       }
     }
   },
