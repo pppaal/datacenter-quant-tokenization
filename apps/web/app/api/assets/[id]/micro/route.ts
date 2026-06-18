@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { validationOrGenericError } from '@/lib/security/error-response';
 import { updateAssetMicroData } from '@/lib/services/micro-data';
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -8,9 +9,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const asset = await updateAssetMicroData(id, payload);
     return NextResponse.json(asset);
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to update micro data' },
-      { status: 400 }
-    );
+    return validationOrGenericError(error, { message: 'Failed to update micro data.' });
   }
 }

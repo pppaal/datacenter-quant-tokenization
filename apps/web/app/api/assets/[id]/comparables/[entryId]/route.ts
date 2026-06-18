@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { validationOrGenericError } from '@/lib/security/error-response';
 import { deleteComparableEntry, updateComparableEntry } from '@/lib/services/comparable-book';
 
 export async function PATCH(
@@ -11,10 +12,7 @@ export async function PATCH(
     const entry = await updateComparableEntry(id, entryId, payload);
     return NextResponse.json(entry);
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to update comparable entry' },
-      { status: 400 }
-    );
+    return validationOrGenericError(error, { message: 'Failed to update comparable entry.' });
   }
 }
 
@@ -27,9 +25,6 @@ export async function DELETE(
     const result = await deleteComparableEntry(id, entryId);
     return NextResponse.json(result);
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to delete comparable entry' },
-      { status: 400 }
-    );
+    return validationOrGenericError(error, { message: 'Failed to delete comparable entry.' });
   }
 }

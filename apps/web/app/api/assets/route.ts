@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { validationOrGenericError } from '@/lib/security/error-response';
 import { prisma } from '@/lib/db/prisma';
 import { createAsset, listAssets } from '@/lib/services/assets';
 import {
@@ -54,9 +55,6 @@ export async function POST(request: Request) {
         error: error instanceof Error ? error.message : 'Failed to create asset'
       }
     });
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to create asset' },
-      { status: 400 }
-    );
+    return validationOrGenericError(error, { message: 'Failed to create asset.' });
   }
 }
