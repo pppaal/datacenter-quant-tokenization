@@ -42,10 +42,11 @@ afterEach(() => {
 });
 
 test('resolveReoneRegion maps Apgujeong to the Gangnam submarket', () => {
-  // Apgujeong-ro ~ (37.527, 127.028)
-  assert.equal(resolveReoneRegion({ latitude: 37.527, longitude: 127.028 }).regionCode, 'GANGNAM');
-  assert.equal(resolveReoneRegion({ latitude: 37.566, longitude: 126.978 }).regionCode, 'CBD');
-  assert.equal(resolveReoneRegion({ latitude: 37.525, longitude: 126.925 }).regionCode, 'YBD');
+  // Apgujeong-ro ~ (37.527, 127.028). resolveReoneRegion now returns the R-ONE
+  // 권역 CLS_NM (Korean submarket name) rather than an internal code.
+  assert.equal(resolveReoneRegion({ latitude: 37.527, longitude: 127.028 }).clsNm, '강남');
+  assert.equal(resolveReoneRegion({ latitude: 37.566, longitude: 126.978 }).clsNm, '도심');
+  assert.equal(resolveReoneRegion({ latitude: 37.525, longitude: 126.925 }).clsNm, '여의도');
 });
 
 test('mapZoneLabelToCode classifies Korean zoning labels', () => {
