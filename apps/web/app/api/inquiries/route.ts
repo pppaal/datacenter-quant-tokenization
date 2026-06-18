@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { validationOrGenericError } from '@/lib/security/error-response';
 import { createInquiry } from '@/lib/services/inquiries';
 
 export async function POST(request: Request) {
@@ -7,9 +8,6 @@ export async function POST(request: Request) {
     const inquiry = await createInquiry(payload);
     return NextResponse.json(inquiry, { status: 201 });
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to create inquiry' },
-      { status: 400 }
-    );
+    return validationOrGenericError(error, { message: 'Failed to create inquiry.' });
   }
 }

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { validationOrGenericError } from '@/lib/security/error-response';
 import { prisma } from '@/lib/db/prisma';
 import {
   getRequestIpAddress,
@@ -55,9 +56,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       }
     });
 
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to update valuation approval' },
-      { status: 400 }
-    );
+    return validationOrGenericError(error, { message: 'Failed to update valuation approval.' });
   }
 }

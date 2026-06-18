@@ -9,6 +9,7 @@ import {
   getAdminSsoConfig,
   sanitizeNextPath
 } from '@/lib/security/admin-sso';
+import { reportError } from '@/lib/observability/logger';
 
 export async function GET(request: Request) {
   const config = getAdminSsoConfig();
@@ -40,11 +41,12 @@ export async function GET(request: Request) {
     }
     return response;
   } catch (error) {
+    // Never echo the raw error into the browser-visible redirect URL — SSO
+    // init failures can embed OIDC issuer/discovery/config details. Report it
+    // server-side and show a fixed, generic detail instead.
+    void reportError(error, { route: '/api/admin/sso/login' });
     const target = new URL('/admin/login?error=sso_config', request.url);
-    target.searchParams.set(
-      'detail',
-      error instanceof Error ? error.message : 'Unable to initialize SSO.'
-    );
+    target.searchParams.set('detail', 'Unable to initialize SSO.');
     return NextResponse.redirect(target);
   }
 }

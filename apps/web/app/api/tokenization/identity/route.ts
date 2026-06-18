@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { validationOrGenericError } from '@/lib/security/error-response';
 import { z } from 'zod';
 import { AdminAccessScopeType } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
@@ -54,10 +55,7 @@ export async function GET(request: Request) {
     const identity = await getIdentity(toDeploymentRow(row), parsed.data.wallet);
     return NextResponse.json({ wallet: parsed.data.wallet, identity });
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'read failed' },
-      { status: 400 }
-    );
+    return validationOrGenericError(error, { message: 'read failed.' });
   }
 }
 
@@ -75,10 +73,7 @@ export async function POST(request: Request) {
   try {
     parsed = RegisterSchema.parse(await request.json());
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Invalid body' },
-      { status: 400 }
-    );
+    return validationOrGenericError(error, { message: 'Invalid body.' });
   }
 
   try {
@@ -128,9 +123,6 @@ export async function POST(request: Request) {
       statusLabel: 'FAILED',
       metadata: { error: error instanceof Error ? error.message : 'identity write failed' }
     });
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'identity write failed' },
-      { status: 400 }
-    );
+    return validationOrGenericError(error, { message: 'identity write failed.' });
   }
 }

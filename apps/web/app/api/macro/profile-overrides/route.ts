@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { validationOrGenericError } from '@/lib/security/error-response';
 import {
   createMacroProfileOverride,
   listMacroProfileOverrides
@@ -15,9 +16,6 @@ export async function POST(request: Request) {
     const override = await createMacroProfileOverride(payload);
     return NextResponse.json(override, { status: 201 });
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to create macro profile override' },
-      { status: 400 }
-    );
+    return validationOrGenericError(error, { message: 'Failed to create macro profile override.' });
   }
 }

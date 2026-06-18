@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { validationOrGenericError } from '@/lib/security/error-response';
 import { prisma } from '@/lib/db/prisma';
 import { recordAuditEvent } from '@/lib/services/audit';
 import { committeePacketInclude } from '@/lib/services/ic';
@@ -392,9 +393,6 @@ export async function GET(
       }
     });
 
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to export committee packet' },
-      { status: 400 }
-    );
+    return validationOrGenericError(error, { message: 'Failed to export committee packet.' });
   }
 }

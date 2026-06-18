@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { validationOrGenericError } from '@/lib/security/error-response';
 import { ReviewStatus } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
@@ -67,9 +68,6 @@ export async function POST(request: Request) {
         error: error instanceof Error ? error.message : 'Failed to review record.'
       }
     });
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to review record.' },
-      { status: 400 }
-    );
+    return validationOrGenericError(error, { message: 'Failed to review record.' });
   }
 }

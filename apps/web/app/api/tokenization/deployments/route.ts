@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { validationOrGenericError } from '@/lib/security/error-response';
 import { z } from 'zod';
 import { AdminAccessScopeType } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
@@ -57,10 +58,7 @@ export async function POST(request: Request) {
   try {
     parsed = UpsertSchema.parse(await request.json());
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Invalid body' },
-      { status: 400 }
-    );
+    return validationOrGenericError(error, { message: 'Invalid body.' });
   }
 
   try {
@@ -98,9 +96,6 @@ export async function POST(request: Request) {
       statusLabel: 'FAILED',
       metadata: { error: error instanceof Error ? error.message : 'upsert failed' }
     });
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'upsert failed' },
-      { status: 400 }
-    );
+    return validationOrGenericError(error, { message: 'upsert failed.' });
   }
 }

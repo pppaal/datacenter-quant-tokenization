@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { validationOrGenericError } from '@/lib/security/error-response';
 import { genericErrorResponse } from '@/lib/security/error-response';
 import { z } from 'zod';
 import { AdminAccessScopeType } from '@prisma/client';
@@ -99,10 +100,7 @@ export async function POST(request: Request) {
   try {
     parsed = IssuanceSchema.parse(await request.json());
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Invalid body' },
-      { status: 400 }
-    );
+    return validationOrGenericError(error, { message: 'Invalid body.' });
   }
 
   try {

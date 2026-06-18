@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { validationOrGenericError } from '@/lib/security/error-response';
 import { getAllocationProof } from '@/lib/services/onchain/dividend-distributor';
 
 /**
@@ -25,9 +26,6 @@ export async function GET(
       claimTxHash: allocation.claimTxHash
     });
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'lookup failed' },
-      { status: 400 }
-    );
+    return validationOrGenericError(error, { message: 'lookup failed.' });
   }
 }

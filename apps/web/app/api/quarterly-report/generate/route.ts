@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { validationOrGenericError } from '@/lib/security/error-response';
 import { AssetClass } from '@prisma/client';
 import { backfillDeltas, runQuarterlyAggregate } from '@/lib/services/quarterly-report/aggregator';
 import { generateNarrative } from '@/lib/services/quarterly-report/narrative';
@@ -72,9 +73,6 @@ export async function POST(request: Request) {
       narrativesGenerated
     });
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Generation failed' },
-      { status: 500 }
-    );
+    return validationOrGenericError(error, { message: 'Generation failed.', status: 500 });
   }
 }
