@@ -49,6 +49,7 @@
 
 import { fetchJsonWithRetry, type Fetcher } from '@/lib/sources/http';
 import { logger } from '@/lib/observability/logger';
+import { clamp } from '@/lib/math';
 
 export const THINKHAZARD_API_BASE =
   process.env.THINKHAZARD_API_BASE?.trim() || 'https://thinkhazard.org';
@@ -141,10 +142,6 @@ const HAZARD_WEIGHTS: Record<ThinkHazardType, number> = {
 function isEnabled(): boolean {
   const raw = process.env.ENABLE_THINKHAZARD?.trim().toLowerCase();
   return raw === '1' || raw === 'true' || raw === 'yes' || raw === 'on';
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
 }
 
 function roundTo(value: number, decimals: number): number {

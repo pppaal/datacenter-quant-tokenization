@@ -30,9 +30,7 @@ function asString(value: unknown) {
   return typeof value === 'string' && value.trim().length > 0 ? value : null;
 }
 
-export function readSatelliteRiskAssumptions(
-  assumptions: unknown
-): SatelliteRiskAssumptions | null {
+function readSatelliteRiskAssumptions(assumptions: unknown): SatelliteRiskAssumptions | null {
   if (!assumptions || typeof assumptions !== 'object') return null;
 
   const candidate =

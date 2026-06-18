@@ -31,6 +31,7 @@
 
 import { fetchJsonWithRetry, type Fetcher } from '@/lib/sources/http';
 import { logger } from '@/lib/observability/logger';
+import { clamp } from '@/lib/math';
 
 export const PEERINGDB_API_BASE = 'https://www.peeringdb.com/api';
 
@@ -98,10 +99,6 @@ const SCORE_NETWORK_WEIGHT = 0.55; // weight of network depth
 function isEnabled(): boolean {
   const raw = process.env.ENABLE_PEERINGDB?.trim().toLowerCase();
   return raw === '1' || raw === 'true' || raw === 'yes' || raw === 'on';
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
 }
 
 function roundTo(value: number, decimals: number): number {

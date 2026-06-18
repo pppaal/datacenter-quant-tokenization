@@ -48,6 +48,7 @@
 
 import { fetchJsonWithRetry, type Fetcher } from '@/lib/sources/http';
 import { logger } from '@/lib/observability/logger';
+import { clamp } from '@/lib/math';
 
 export const OVERPASS_API_DEFAULT_URL = 'https://overpass-api.de/api/interpreter';
 
@@ -164,10 +165,6 @@ function isEnabled(): boolean {
 
 function endpointUrl(): string {
   return process.env.OVERPASS_API_URL?.trim() || OVERPASS_API_DEFAULT_URL;
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
 }
 
 function roundTo(value: number, decimals: number): number {
