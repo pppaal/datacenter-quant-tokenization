@@ -213,10 +213,17 @@ cashBalanceKrw}`, `PortfolioAsset.{acquisitionCostKrw,currentHoldValueKrw}`,
   out every un-granted/SCIM-provisioned analyst). The worst case is already
   contained: the irreversible on-chain/KYC routes are ADMIN-gated. Revisit if a
   true least-privilege model is desired.
-- **Waterfall.sol redesign (P0).** Descoped from deploy; still needs the funding
-  invariant (`distribute` must pull funds / assert balance delta), per-distribution
-  commitment snapshotting, and `ReentrancyGuard` before any real deployment +
-  external audit.
+- **Waterfall.sol hardening (P0) — code fixes DONE, external audit still
+  required.** The three fund-loss-class issues are now fixed in-contract:
+  (1) funding invariant — `distribute` PULLS `amount` via `safeTransferFrom`, so
+  held balance >= total recorded claims (floor-division dust is retained, never
+  shorted); (2) commitment freeze — commitments lock on the first `distribute`
+  (or explicit `lockCommitments`), so the pro-rata denominator/tier caps can't
+  shift mid-stream and `totalCommitments - cumReturnOfCapital` can't underflow;
+  (3) `ReentrancyGuard` on `distribute`/`withdraw`/`withdrawGp`. Tests added
+  (`Waterfall.test.ts`, now in `test:unit`). STILL deploy-gated behind
+  `DEPLOY_WATERFALL` until an external audit signs off; the O(n) `_lpList`
+  allocation should move to a Merkle-claim pattern before scaling LP rosters.
 - **Per-process rate limiters (P1/P2).** `rate-limit.ts` + `edge-protection.ts`
   are in-memory (N× the intended limit on multi-instance). Wire the distributed
   (Upstash) limiter into the KYC webhook + `property-analyze`, and add
