@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { validationOrGenericError } from '@/lib/security/error-response';
 import { createDebtFacility } from '@/lib/services/debt-book';
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -8,9 +9,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const facility = await createDebtFacility(id, payload);
     return NextResponse.json(facility);
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to create debt facility' },
-      { status: 400 }
-    );
+    return validationOrGenericError(error, { message: 'Failed to create debt facility.' });
   }
 }

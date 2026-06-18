@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { validationOrGenericError } from '@/lib/security/error-response';
 import { deleteDebtFacility, updateDebtFacility } from '@/lib/services/debt-book';
 
 export async function PATCH(
@@ -11,10 +12,7 @@ export async function PATCH(
     const facility = await updateDebtFacility(id, facilityId, payload);
     return NextResponse.json(facility);
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to update debt facility' },
-      { status: 400 }
-    );
+    return validationOrGenericError(error, { message: 'Failed to update debt facility.' });
   }
 }
 
@@ -27,9 +25,6 @@ export async function DELETE(
     const result = await deleteDebtFacility(id, facilityId);
     return NextResponse.json(result);
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to delete debt facility' },
-      { status: 400 }
-    );
+    return validationOrGenericError(error, { message: 'Failed to delete debt facility.' });
   }
 }

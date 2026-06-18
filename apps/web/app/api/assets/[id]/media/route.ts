@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import { NextResponse } from 'next/server';
+import { validationOrGenericError } from '@/lib/security/error-response';
 import { prisma } from '@/lib/db/prisma';
 import {
   getRequestIpAddress,
@@ -186,9 +187,6 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       metadata: { error: error instanceof Error ? error.message : 'Failed to upload asset media' }
     });
 
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to upload asset media' },
-      { status: 400 }
-    );
+    return validationOrGenericError(error, { message: 'Failed to upload asset media.' });
   }
 }
