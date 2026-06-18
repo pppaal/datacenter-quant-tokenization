@@ -11,6 +11,7 @@ import {
 } from '@/lib/finance/currency';
 import { AssetTabs } from '@/components/admin/asset-tabs';
 import { DataCenterPowerPanel } from '@/components/admin/data-center-power-panel';
+import { RiskRegisterForm } from '@/components/admin/risk-register-form';
 import { AssetIntakeForm } from '@/components/admin/asset-intake-form';
 import { CapexBookForm } from '@/components/admin/capex-book-form';
 import { ComparableBookForm } from '@/components/admin/comparable-book-form';
@@ -789,6 +790,13 @@ export default async function AssetDetailPage({
         transactionComps={asset.transactionComps}
         rentComps={asset.rentComps}
         displayCurrency={displayCurrency}
+        fxRateToKrw={fxRateToKrw}
+      />
+
+      <RiskRegisterForm
+        assetId={asset.id}
+        entries={asset.riskRegisterEntries}
+        inputCurrency={displayCurrency}
         fxRateToKrw={fxRateToKrw}
       />
 
