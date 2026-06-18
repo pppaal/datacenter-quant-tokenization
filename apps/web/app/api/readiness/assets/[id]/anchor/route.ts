@@ -7,6 +7,7 @@ import {
   resolveVerifiedAdminActorFromHeaders
 } from '@/lib/security/admin-request';
 import { recordAuditEvent } from '@/lib/services/audit';
+import { genericErrorResponse } from '@/lib/security/error-response';
 import { anchorLatestDocumentOnchain } from '@/lib/services/readiness';
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -53,11 +54,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         error: error instanceof Error ? error.message : 'Failed to anchor review evidence onchain'
       }
     });
-    return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : 'Failed to anchor review evidence onchain'
-      },
-      { status: 400 }
-    );
+    // Generic client message + requestId; the real error (which can embed
+    // onchain RPC / Prisma internals) is in the audit metadata above and is
+    // reported server-side by genericErrorResponse.
+    return genericErrorResponse(error, {
+      status: 400,
+      message: 'Failed to anchor review evidence onchain.',
+      context: { route: '/api/readiness/assets/[id]/anchor', assetId: id }
+    });
   }
 }

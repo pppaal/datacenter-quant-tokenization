@@ -7,6 +7,7 @@ import {
   resolveVerifiedAdminActorFromHeaders
 } from '@/lib/security/admin-request';
 import { recordAuditEvent } from '@/lib/services/audit';
+import { genericErrorResponse } from '@/lib/security/error-response';
 import { registerAssetOnchain } from '@/lib/services/readiness';
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -54,12 +55,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
           error instanceof Error ? error.message : 'Failed to prepare the review package onchain'
       }
     });
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : 'Failed to prepare the review package onchain'
-      },
-      { status: 400 }
-    );
+    return genericErrorResponse(error, {
+      status: 400,
+      message: 'Failed to prepare the review package onchain.',
+      context: { route: '/api/readiness/assets/[id]/register', assetId: id }
+    });
   }
 }
