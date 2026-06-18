@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { validationOrGenericError } from '@/lib/security/error-response';
 import { updateDealDocumentRequest } from '@/lib/services/deals';
 
 type Props = {
@@ -15,9 +16,6 @@ export async function PATCH(request: Request, { params }: Props) {
     const documentRequest = await updateDealDocumentRequest(id, requestId, body);
     return NextResponse.json({ documentRequest });
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to update document request' },
-      { status: 400 }
-    );
+    return validationOrGenericError(error, { message: 'Failed to update document request.' });
   }
 }

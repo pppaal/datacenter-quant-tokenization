@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { genericErrorResponse } from '@/lib/security/error-response';
+import { z } from 'zod';
+import { genericErrorResponse, validationOrGenericError } from '@/lib/security/error-response';
 import { withRequestContext } from '@/lib/observability/logger';
 
 const SECRET = 'connect ECONNREFUSED 10.0.0.5:5432 — db "investors" column "ssn"';
@@ -43,4 +44,43 @@ test('genericErrorResponse prefers an explicitly passed requestId', async () => 
   const response = genericErrorResponse(new Error(SECRET), { requestId: 'explicit-req-id-001' });
   const body = (await response.json()) as { requestId: string };
   assert.equal(body.requestId, 'explicit-req-id-001');
+});
+
+const schema = z.object({ title: z.string().min(3), kw: z.number().int().positive() });
+
+test('validationOrGenericError echoes ZodError field issues (safe) as a 400', async () => {
+  let zodErr: unknown;
+  try {
+    schema.parse({ title: 'ab', kw: -1 });
+  } catch (e) {
+    zodErr = e;
+  }
+  const response = validationOrGenericError(zodErr, { message: 'Failed to create thing.' });
+  assert.equal(response.status, 400);
+  const body = (await response.json()) as { error: string };
+  // Field paths + messages are surfaced (useful, non-sensitive form feedback).
+  assert.ok(body.error.includes('title'));
+  assert.ok(body.error.includes('kw'));
+  // Not the generic fallback — validation feedback is preserved.
+  assert.notEqual(body.error, 'Failed to create thing.');
+});
+
+test('validationOrGenericError genericizes a non-Zod (e.g. Prisma) error', async () => {
+  const response = validationOrGenericError(new Error(SECRET), {
+    message: 'Failed to create thing.'
+  });
+  assert.equal(response.status, 400);
+  const body = (await response.json()) as { error: string; requestId: string };
+  assert.equal(body.error, 'Failed to create thing.');
+  assert.ok(!JSON.stringify(body).includes('ssn'));
+  assert.ok(!JSON.stringify(body).includes('ECONNREFUSED'));
+  assert.ok(typeof body.requestId === 'string' && body.requestId.length > 0);
+});
+
+test('validationOrGenericError honors a custom status for the non-validation case', async () => {
+  const response = validationOrGenericError(new Error(SECRET), {
+    message: 'Boom.',
+    status: 500
+  });
+  assert.equal(response.status, 500);
 });

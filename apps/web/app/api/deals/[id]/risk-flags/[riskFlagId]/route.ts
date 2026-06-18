@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { validationOrGenericError } from '@/lib/security/error-response';
 import { updateDealRiskFlag } from '@/lib/services/deals';
 
 export async function PATCH(
@@ -11,9 +12,6 @@ export async function PATCH(
     const riskFlag = await updateDealRiskFlag(id, riskFlagId, payload);
     return NextResponse.json(riskFlag);
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to update risk flag' },
-      { status: 400 }
-    );
+    return validationOrGenericError(error, { message: 'Failed to update risk flag.' });
   }
 }

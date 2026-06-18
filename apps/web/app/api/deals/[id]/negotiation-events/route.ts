@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { validationOrGenericError } from '@/lib/security/error-response';
 import { createDealNegotiationEvent } from '@/lib/services/deals';
 
 type Props = {
@@ -14,9 +15,6 @@ export async function POST(request: Request, { params }: Props) {
     const negotiationEvent = await createDealNegotiationEvent(id, body);
     return NextResponse.json({ negotiationEvent }, { status: 201 });
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to create negotiation event' },
-      { status: 400 }
-    );
+    return validationOrGenericError(error, { message: 'Failed to create negotiation event.' });
   }
 }
