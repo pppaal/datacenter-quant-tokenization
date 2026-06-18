@@ -86,6 +86,13 @@ function main(): void {
   require('OPS_CRON_TOKEN', issues);
   checkSecretStrength('OPS_CRON_TOKEN', 24, issues);
 
+  // 1b. Distributed rate limiting. The in-process limiters (login brute-force,
+  // KYC webhook, property-analyze) are per-instance, so on multi-instance
+  // serverless the effective limit is N× without a shared counter. Require
+  // Upstash so the cross-instance throttle is actually in force in production.
+  require('UPSTASH_REDIS_REST_URL', issues);
+  require('UPSTASH_REDIS_REST_TOKEN', issues);
+
   // 2. Document storage
   if (!process.env.DOCUMENT_STORAGE_BUCKET?.trim()) {
     issues.push({

@@ -4,6 +4,7 @@ import { AssetClass } from '@prisma/client';
 import { autoAnalyzeProperty } from '@/lib/services/property-analyzer/auto-analyze';
 import { buildFullReport } from '@/lib/services/property-analyzer/full-report';
 import { createRateLimiter, RateLimitError } from '@/lib/security/rate-limit';
+import { checkDistributedRateLimit } from '@/lib/security/distributed-rate-limit';
 import { recordAuditEvent } from '@/lib/services/audit';
 import { LruCache, hashCacheKey } from '@/lib/services/property-analyzer/report-cache';
 import { persistAnalysisSnapshot } from '@/lib/services/property-analyzer/snapshot';
@@ -12,9 +13,18 @@ import type { FullReport } from '@/lib/services/property-analyzer/full-report';
 
 const reportCache = new LruCache<FullReport>({ max: 64, ttlMs: 10 * 60_000 });
 
+// This endpoint is expensive (geocode + many external connectors + DCF/Monte
+// Carlo), so throttle it in two layers like the admin-login path: an always-on
+// in-process limiter, plus a cross-instance Upstash counter (soft-fails open
+// when Redis is unconfigured, so dev/CI/e2e are unaffected). The in-process
+// limiter alone is per-instance, i.e. N× the intended limit on multi-instance
+// serverless.
+const ANALYZE_RATE_WINDOW_MS = 60_000;
+const ANALYZE_RATE_MAX = 10;
+
 const analyzeRateLimiter = createRateLimiter('property-analyze', {
-  windowMs: 60_000,
-  maxRequests: 10
+  windowMs: ANALYZE_RATE_WINDOW_MS,
+  maxRequests: ANALYZE_RATE_MAX
 });
 
 const bodySchema = z
@@ -54,6 +64,22 @@ export async function POST(request: Request) {
       );
     }
     throw err;
+  }
+
+  const distributed = await checkDistributedRateLimit(
+    'property-analyze',
+    ip,
+    ANALYZE_RATE_WINDOW_MS,
+    ANALYZE_RATE_MAX
+  );
+  if (!distributed.allowed) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please retry shortly.' },
+      {
+        status: 429,
+        headers: { 'retry-after': String(Math.ceil(distributed.retryAfterMs / 1000)) }
+      }
+    );
   }
 
   let parsedBody: z.infer<typeof bodySchema>;
