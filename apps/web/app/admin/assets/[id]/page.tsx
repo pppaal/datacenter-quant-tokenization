@@ -10,6 +10,7 @@ import {
   resolveDisplayCurrency
 } from '@/lib/finance/currency';
 import { AssetTabs } from '@/components/admin/asset-tabs';
+import { DataCenterPowerPanel } from '@/components/admin/data-center-power-panel';
 import { AssetIntakeForm } from '@/components/admin/asset-intake-form';
 import { CapexBookForm } from '@/components/admin/capex-book-form';
 import { ComparableBookForm } from '@/components/admin/comparable-book-form';
@@ -331,6 +332,20 @@ export default async function AssetDetailPage({
           </div>
         </Card>
       </div>
+
+      {isDataCenter ? (
+        <DataCenterPowerPanel
+          powerCapacityMw={asset.powerCapacityMw}
+          targetItLoadMw={asset.targetItLoadMw}
+          detail={asset.dataCenterDetail}
+          energy={asset.energySnapshot}
+          market={asset.marketSnapshot}
+          permit={asset.permitSnapshot}
+          siteProfile={asset.siteProfile}
+          displayCurrency={displayCurrency}
+          fxRateToKrw={fxRateToKrw}
+        />
+      ) : null}
 
       <div className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
         <Card>
