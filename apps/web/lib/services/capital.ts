@@ -205,6 +205,54 @@ export function buildCommitmentMath(
   };
 }
 
+export type CommitmentMath = ReturnType<typeof buildCommitmentMath>;
+
+export type FundFamilyTotals = {
+  fundCount: number;
+  totalCommitmentKrw: number;
+  totalCalledKrw: number;
+  totalDistributedKrw: number;
+  totalNavKrw: number;
+  unfundedCommitmentKrw: number;
+  netInvestedKrw: number;
+  /** DPI = distributed / called (realized). */
+  dpi: number | null;
+  /** RVPI = NAV / called (unrealized residual). */
+  rvpi: number | null;
+  /** TVPI = (distributed + NAV) / called (total value). */
+  tvpi: number | null;
+  navUsedCostBasisFallback: boolean;
+};
+
+/**
+ * Firm-wide roll-up across funds: aggregate commitments / called / distributed
+ * / fair-value NAV (AUM), plus money-weighted DPI / RVPI / TVPI. Pure
+ * composition of per-fund `buildCommitmentMath` results — no IRR (which needs
+ * dated cashflows) is implied here.
+ */
+export function buildFundFamilyTotals(maths: CommitmentMath[]): FundFamilyTotals {
+  const sum = (pick: (m: CommitmentMath) => number) => maths.reduce((t, m) => t + pick(m), 0);
+  const totalCommitmentKrw = sum((m) => m.totalCommitmentKrw);
+  const totalCalledKrw = sum((m) => m.totalCalledKrw);
+  const totalDistributedKrw = sum((m) => m.totalDistributedKrw);
+  const totalNavKrw = sum((m) => m.navKrw);
+  const ratio = (numerator: number) => (totalCalledKrw > 0 ? numerator / totalCalledKrw : null);
+
+  return {
+    fundCount: maths.length,
+    totalCommitmentKrw,
+    totalCalledKrw,
+    totalDistributedKrw,
+    totalNavKrw,
+    unfundedCommitmentKrw: totalCommitmentKrw - totalCalledKrw,
+    netInvestedKrw: totalCalledKrw - totalDistributedKrw,
+    dpi: ratio(totalDistributedKrw),
+    rvpi: ratio(totalNavKrw),
+    tvpi: ratio(totalDistributedKrw + totalNavKrw),
+    navUsedCostBasisFallback: maths.some((m) => m.navUsedCostBasisFallback)
+  };
+}
+
 export function buildFundDashboard(fund: FundBundle) {
   const math = buildCommitmentMath(fund);
   const topInvestors = [...fund.commitments]

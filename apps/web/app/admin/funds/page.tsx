@@ -11,10 +11,12 @@ import { prisma } from '@/lib/db/prisma';
 import { resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
 import {
   buildFundDashboard,
+  buildFundFamilyTotals,
   listFunds,
   type FundDashboard,
   type FundRecord
 } from '@/lib/services/capital';
+import { formatCompactCurrencyFromKrwAtRate } from '@/lib/finance/currency';
 import { formatCurrency, formatNumber } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
@@ -35,6 +37,9 @@ export default async function FundsPage() {
     fund,
     dashboard: buildFundDashboard(fund)
   }));
+  const family = buildFundFamilyTotals(rows.map((row) => row.dashboard.math));
+  const krw = (value: number) => formatCompactCurrencyFromKrwAtRate(value, 'KRW');
+  const multiple = (value: number | null) => (value == null ? '—' : `${formatNumber(value, 2)}x`);
 
   return (
     <div className="space-y-8">
@@ -48,6 +53,41 @@ export default async function FundsPage() {
           commitments, calls, distributions, investor reporting, and DDQ responses.
         </p>
       </section>
+
+      {family.fundCount > 0 ? (
+        <Card data-testid="fund-family-rollup">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="eyebrow">Firm-Wide</div>
+            <span className="text-xs text-muted">
+              {family.fundCount} fund{family.fundCount === 1 ? '' : 's'}
+              {family.navUsedCostBasisFallback ? ' · NAV partly at cost basis' : ''}
+            </span>
+          </div>
+          <dl className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+            {(
+              [
+                ['AUM (NAV)', krw(family.totalNavKrw)],
+                ['Commitments', krw(family.totalCommitmentKrw)],
+                ['Called', krw(family.totalCalledKrw)],
+                ['Distributed', krw(family.totalDistributedKrw)],
+                ['TVPI', multiple(family.tvpi)],
+                ['DPI', multiple(family.dpi)],
+                ['RVPI', multiple(family.rvpi)]
+              ] as Array<[string, string]>
+            ).map(([label, value]) => (
+              <div
+                key={label}
+                className="rounded-[12px] border border-border bg-[hsl(var(--panel-alt))] p-4"
+              >
+                <dt className="text-[11px] uppercase tracking-[0.12em] text-muted">{label}</dt>
+                <dd className="mt-1.5 text-lg font-semibold tabular-nums text-foreground">
+                  {value}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </Card>
+      ) : null}
 
       <div className="grid gap-5">
         {rows.map(({ fund, dashboard }) => (
