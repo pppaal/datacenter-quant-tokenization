@@ -26,9 +26,18 @@ async function deployFixture() {
     return { waterfall, stable, admin, gp, lp1, lp2, lp3, outsider };
 }
 
-async function fundDistribution(stable: MockERC20, waterfall: Waterfall, amount: bigint) {
+// distribute() now PULLS funds from the caller (the DISTRIBUTOR), so the
+// distributor must hold the units and approve the Waterfall first.
+async function fundDistribution(
+    stable: MockERC20,
+    waterfall: Waterfall,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    distributor: any,
+    amount: bigint,
+) {
     const addr = await waterfall.getAddress();
-    await stable.mint(addr, amount);
+    await stable.mint(distributor.address, amount);
+    await stable.connect(distributor).approve(addr, amount);
 }
 
 describe("Waterfall", () => {
@@ -72,13 +81,71 @@ describe("Waterfall", () => {
         });
     });
 
+    describe("commitment lock (mid-stream skew guard)", () => {
+        it("explicit lockCommitments freezes further commitment edits", async () => {
+            const { waterfall, admin, lp1, lp2 } = await loadFixture(deployFixture);
+            await waterfall.connect(admin).setCommitment(lp1.address, 100n);
+            await expect(waterfall.connect(admin).lockCommitments())
+                .to.emit(waterfall, "CommitmentsLocked");
+            expect(await waterfall.commitmentsLocked()).to.equal(true);
+            await expect(
+                waterfall.connect(admin).setCommitment(lp2.address, 50n),
+            ).to.be.revertedWithCustomError(waterfall, "CommitmentsAreLocked");
+        });
+
+        it("lockCommitments reverts when there are no commitments", async () => {
+            const { waterfall, admin } = await loadFixture(deployFixture);
+            await expect(
+                waterfall.connect(admin).lockCommitments(),
+            ).to.be.revertedWithCustomError(waterfall, "NoCommitments");
+        });
+
+        it("first distribution auto-locks commitments", async () => {
+            const { waterfall, stable, admin, lp1, lp2 } = await loadFixture(deployFixture);
+            await waterfall.connect(admin).setCommitment(lp1.address, 100n);
+            expect(await waterfall.commitmentsLocked()).to.equal(false);
+            await fundDistribution(stable, waterfall, admin, 50n);
+            await waterfall.connect(admin).distribute(50n);
+            expect(await waterfall.commitmentsLocked()).to.equal(true);
+            // A mid-stream commitment change can no longer skew shares.
+            await expect(
+                waterfall.connect(admin).setCommitment(lp2.address, 100n),
+            ).to.be.revertedWithCustomError(waterfall, "CommitmentsAreLocked");
+        });
+    });
+
+    describe("funding invariant", () => {
+        it("distribute reverts when the distributor has not approved the funds", async () => {
+            const { waterfall, admin, lp1 } = await loadFixture(deployFixture);
+            await waterfall.connect(admin).setCommitment(lp1.address, 100n);
+            // No mint / approve → the safeTransferFrom pull must fail.
+            await expect(waterfall.connect(admin).distribute(50n)).to.be.reverted;
+        });
+
+        it("contract holds >= total recorded claims after distribution", async () => {
+            const { waterfall, stable, admin, lp1, lp2 } = await loadFixture(deployFixture);
+            await waterfall.connect(admin).setCommitment(lp1.address, 100n);
+            await waterfall.connect(admin).setCommitment(lp2.address, 300n);
+            await fundDistribution(stable, waterfall, admin, 200n);
+            await waterfall.connect(admin).distribute(200n);
+            const held = await stable.balanceOf(await waterfall.getAddress());
+            const claims =
+                (await waterfall.claimable(lp1.address)) +
+                (await waterfall.claimable(lp2.address)) +
+                (await waterfall.gpAccrued());
+            expect(held).to.be.greaterThanOrEqual(claims);
+            // And the pulled funds actually arrived.
+            expect(held).to.equal(200n);
+        });
+    });
+
     describe("distribute — tier 1 (return of capital)", () => {
         it("LP gets full distribution pro-rata until totalCommitments returned", async () => {
             const { waterfall, stable, admin, lp1, lp2 } = await loadFixture(deployFixture);
             await waterfall.connect(admin).setCommitment(lp1.address, 100n);
             await waterfall.connect(admin).setCommitment(lp2.address, 300n);
             // total commitment = 400, distribute 200 → still in tier 1
-            await fundDistribution(stable, waterfall, 200n);
+            await fundDistribution(stable, waterfall, admin, 200n);
             await waterfall.connect(admin).distribute(200n);
             // tier 1 cap = 400, so all 200 goes to return-of-capital
             // pro-rata: lp1 gets 50, lp2 gets 150
@@ -94,7 +161,7 @@ describe("Waterfall", () => {
             // single LP, 100 commitment, 10% hurdle = 10 units in tier 2
             await waterfall.connect(admin).setCommitment(lp1.address, 100n);
             // distribute 100 (tier 1) + 5 (partial tier 2) = 105
-            await fundDistribution(stable, waterfall, 105n);
+            await fundDistribution(stable, waterfall, admin, 105n);
             await waterfall.connect(admin).distribute(105n);
             // claimable = 100 (cap return) + 5 (partial preferred)
             expect(await waterfall.claimable(lp1.address)).to.equal(105n);
@@ -109,7 +176,7 @@ describe("Waterfall", () => {
             await waterfall.connect(admin).setCommitment(lp1.address, 100n);
             // tier 1 = 100, tier 2 = 10, tier 3 desired catchup = 10 * 1500/8500 ≈ 1
             // distribute 200: 100 cap + 10 hurdle + ~1 catchup + ~89 carry
-            await fundDistribution(stable, waterfall, 200n);
+            await fundDistribution(stable, waterfall, admin, 200n);
             await waterfall.connect(admin).distribute(200n);
             // GP must have non-zero accrual after carry
             const gpAccrued = await waterfall.gpAccrued();
@@ -124,7 +191,7 @@ describe("Waterfall", () => {
         it("LP pulls their balance and zeroes claimable", async () => {
             const { waterfall, stable, admin, lp1 } = await loadFixture(deployFixture);
             await waterfall.connect(admin).setCommitment(lp1.address, 100n);
-            await fundDistribution(stable, waterfall, 50n);
+            await fundDistribution(stable, waterfall, admin, 50n);
             await waterfall.connect(admin).distribute(50n);
             expect(await waterfall.claimable(lp1.address)).to.equal(50n);
             await waterfall.connect(lp1).withdraw();
@@ -135,7 +202,7 @@ describe("Waterfall", () => {
         it("GP pulls accrued promote", async () => {
             const { waterfall, stable, admin, gp, lp1 } = await loadFixture(deployFixture);
             await waterfall.connect(admin).setCommitment(lp1.address, 100n);
-            await fundDistribution(stable, waterfall, 200n);
+            await fundDistribution(stable, waterfall, admin, 200n);
             await waterfall.connect(admin).distribute(200n);
             const gpAccrued = await waterfall.gpAccrued();
             expect(gpAccrued).to.be.greaterThan(0n);
@@ -156,10 +223,11 @@ describe("Waterfall", () => {
         it("paused state blocks distribute + withdraw", async () => {
             const { waterfall, stable, admin, lp1 } = await loadFixture(deployFixture);
             await waterfall.connect(admin).setCommitment(lp1.address, 100n);
-            await fundDistribution(stable, waterfall, 50n);
+            await fundDistribution(stable, waterfall, admin, 50n);
             await waterfall.connect(admin).distribute(50n);
             await waterfall.connect(admin).pause();
             await expect(waterfall.connect(lp1).withdraw()).to.be.reverted;
+            await fundDistribution(stable, waterfall, admin, 10n);
             await expect(
                 waterfall.connect(admin).distribute(10n),
             ).to.be.reverted;

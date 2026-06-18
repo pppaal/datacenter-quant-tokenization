@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import {AccessControlDefaultAdminRules} from
     "@openzeppelin/contracts/access/extensions/AccessControlDefaultAdminRules.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
@@ -36,21 +37,27 @@ import {IPausableTarget} from "../../interfaces/IPausableTarget.sol";
 ///         native decimals (commonly 6 for USDC). Internal math uses the
 ///         same units to avoid precision loss.
 ///
-/// @custom:audit NOT AUDIT-READY / NOT FOR PRODUCTION OR TESTNET DEPLOY.
-///   A 2026 security review found fund-loss-class issues in this contract:
-///     1. `distribute()` records withdrawable LP/GP claims WITHOUT verifying the
-///        contract actually received the funds (no `safeTransferFrom` / balance-
-///        delta assertion) → claims can exceed the held balance (insolvency).
-///     2. Pro-rata is recomputed against CURRENT `commitments` each distribution
-///        with no per-distribution snapshot, so a mid-stream `setCommitment` can
-///        retroactively skew shares and can underflow `totalCommitments -
-///        cumReturnOfCapital`, bricking all further distributions.
-///     3. No `ReentrancyGuard` (unlike every sibling contract).
-///   This contract is intentionally excluded from `deploy-rwa-stack.ts` (gated
-///   behind DEPLOY_WATERFALL) pending a redesign + dedicated audit. Do NOT enable
-///   it for a real deployment until the funding invariant and commitment
-///   snapshotting are fixed and tested.
-contract Waterfall is IPausableTarget, AccessControlDefaultAdminRules, Pausable {
+/// @custom:audit Hardened, but STILL PENDING AN EXTERNAL AUDIT before any
+///   production/mainnet deploy. A 2026 internal review found three fund-loss-class
+///   issues; all three are now addressed in-contract:
+///     1. Funding invariant — `distribute()` now PULLS the funds it allocates via
+///        `stable.safeTransferFrom(msg.sender, address(this), amount)`, so the
+///        contract provably holds every unit it records as claimable. (Allocation
+///        floor-division dust is retained, so held balance >= total claims: the
+///        contract can never become insolvent against its own claims.)
+///     2. Commitment freeze — commitments lock on the first distribution (or
+///        explicitly via `lockCommitments`); `setCommitment` reverts once locked.
+///        Pro-rata therefore always uses a stable denominator, so a mid-stream
+///        `setCommitment` can no longer retroactively skew shares, and
+///        `totalCommitments - cumReturnOfCapital` can never underflow (tier-1 caps
+///        `cumReturnOfCapital` at the frozen `totalCommitments`).
+///     3. Reentrancy — `distribute`, `withdraw`, and `withdrawGp` are
+///        `nonReentrant` (matching every sibling contract).
+///   It remains gated out of `deploy-rwa-stack.ts` (DEPLOY_WATERFALL) until an
+///   external audit signs off. The per-LP allocation still iterates `_lpList`
+///   (O(n) per distribution) — fine for small rosters; migrate to a Merkle-claim
+///   pattern for large LP sets before scaling.
+contract Waterfall is IPausableTarget, AccessControlDefaultAdminRules, Pausable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     bytes32 public constant DISTRIBUTOR_ROLE = keccak256("DISTRIBUTOR_ROLE");
@@ -64,8 +71,10 @@ contract Waterfall is IPausableTarget, AccessControlDefaultAdminRules, Pausable 
     error InvalidHurdle();
     error InvalidPromote();
     error NoCommitments();
+    error CommitmentsAreLocked();
 
     event LpCommitmentSet(address indexed lp, uint256 commitment);
+    event CommitmentsLocked();
     event GpSet(address indexed gp);
     event WaterfallParamsSet(uint256 hurdleBps, uint256 promoteBps);
     event DistributionPosted(
@@ -118,6 +127,11 @@ contract Waterfall is IPausableTarget, AccessControlDefaultAdminRules, Pausable 
 
     uint256 public distributionSeq;
 
+    /// @dev Once true, `setCommitment` is frozen so pro-rata denominators and
+    ///      tier caps cannot shift mid-stream. Flipped by the first
+    ///      `distribute` call (or explicitly via `lockCommitments`).
+    bool public commitmentsLocked;
+
     constructor(
         IERC20 stable_,
         address gp_,
@@ -141,11 +155,14 @@ contract Waterfall is IPausableTarget, AccessControlDefaultAdminRules, Pausable 
     }
 
     /// @notice Set absolute LP commitment. Pass 0 to remove an LP.
+    /// @dev Reverts once commitments are locked (first distribution or an
+    ///      explicit `lockCommitments`), so distribution economics are fixed.
     function setCommitment(address lp, uint256 commitment)
         external
         onlyRole(CONFIG_ROLE)
         whenNotPaused
     {
+        if (commitmentsLocked) revert CommitmentsAreLocked();
         if (lp == address(0)) revert InvalidLp();
         uint256 prev = commitments[lp];
         if (prev != commitment) {
@@ -155,6 +172,17 @@ contract Waterfall is IPausableTarget, AccessControlDefaultAdminRules, Pausable 
                 _registerLp(lp);
             }
             emit LpCommitmentSet(lp, commitment);
+        }
+    }
+
+    /// @notice Freeze commitments ahead of the first distribution. Idempotent;
+    ///         distributions auto-lock anyway, but an explicit call lets the GP
+    ///         signal the commitment period is closed before any capital moves.
+    function lockCommitments() external onlyRole(CONFIG_ROLE) {
+        if (totalCommitments == 0) revert NoCommitments();
+        if (!commitmentsLocked) {
+            commitmentsLocked = true;
+            emit CommitmentsLocked();
         }
     }
 
@@ -171,10 +199,14 @@ contract Waterfall is IPausableTarget, AccessControlDefaultAdminRules, Pausable 
         emit WaterfallParamsSet(hurdleBps_, promoteBps_);
     }
 
-    /// @notice Post a new distribution. Caller must have transferred the
-    ///         `amount` of stable units to this contract via standard
-    ///         ERC-20 transfer beforehand. The contract verifies its
-    ///         balance increased by at least `amount`.
+    /// @notice Post a new distribution. The contract PULLS `amount` of stable
+    ///         units from the caller (`safeTransferFrom`), so the caller must
+    ///         have approved this contract for at least `amount` beforehand.
+    ///         Pulling the funds in-band guarantees the contract holds every
+    ///         unit it records as claimable (no insolvency against its claims).
+    ///
+    ///         The first distribution freezes commitments (see `commitmentsLocked`)
+    ///         so the pro-rata denominator and tier caps cannot shift mid-stream.
     ///
     ///         Splits the amount across the four tiers based on cumulative
     ///         state. Each LP's share is pro-rata to their commitment.
@@ -183,6 +215,7 @@ contract Waterfall is IPausableTarget, AccessControlDefaultAdminRules, Pausable 
         external
         whenNotPaused
         onlyRole(DISTRIBUTOR_ROLE)
+        nonReentrant
         returns (
             uint256 toReturnOfCapital,
             uint256 toPreferred,
@@ -192,6 +225,18 @@ contract Waterfall is IPausableTarget, AccessControlDefaultAdminRules, Pausable 
     {
         if (amount == 0) revert InvalidAmount();
         if (totalCommitments == 0) revert NoCommitments();
+
+        // Freeze commitments on the first distribution so every subsequent
+        // pro-rata split uses the same denominator.
+        if (!commitmentsLocked) {
+            commitmentsLocked = true;
+            emit CommitmentsLocked();
+        }
+
+        // Funding invariant: pull the funds we are about to record as claimable.
+        // (Pull before computing claims; CEI-safe because the token is the
+        // trusted, immutable `stable` and the call is also nonReentrant-guarded.)
+        stable.safeTransferFrom(msg.sender, address(this), amount);
 
         // Tier 1: return of capital — fill until cumReturnOfCapital == totalCommitments
         uint256 remaining = amount;
@@ -298,7 +343,7 @@ contract Waterfall is IPausableTarget, AccessControlDefaultAdminRules, Pausable 
     }
 
     /// @notice LP withdraws their pending stable balance.
-    function withdraw() external whenNotPaused {
+    function withdraw() external whenNotPaused nonReentrant {
         uint256 amount = claimable[msg.sender];
         if (amount == 0) revert InvalidAmount();
         claimable[msg.sender] = 0;
@@ -307,7 +352,7 @@ contract Waterfall is IPausableTarget, AccessControlDefaultAdminRules, Pausable 
     }
 
     /// @notice GP withdraws their accrued promote.
-    function withdrawGp() external whenNotPaused {
+    function withdrawGp() external whenNotPaused nonReentrant {
         if (msg.sender != gp) revert InvalidGp();
         uint256 amount = gpAccrued;
         if (amount == 0) revert InvalidAmount();

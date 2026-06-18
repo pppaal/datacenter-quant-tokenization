@@ -6,7 +6,7 @@
   "scripts": {
     "compile": "hardhat compile",
     "test": "hardhat test",
-    "test:unit": "hardhat test test/DataCenterAssetRegistry.test.ts test/EmergencyCouncil.test.ts test/NamespacedRegistrar.test.ts test/ReentrancyGuard.test.ts test/tokenization/IdentityRegistry.test.ts test/tokenization/ModularCompliance.test.ts test/tokenization/AssetToken.test.ts test/tokenization/compliance-modules.test.ts test/tokenization/NavOracle.test.ts test/tokenization/DividendDistributor.test.ts test/tokenization/TransferAgent.test.ts",
+    "test:unit": "hardhat test test/DataCenterAssetRegistry.test.ts test/EmergencyCouncil.test.ts test/NamespacedRegistrar.test.ts test/ReentrancyGuard.test.ts test/tokenization/IdentityRegistry.test.ts test/tokenization/ModularCompliance.test.ts test/tokenization/AssetToken.test.ts test/tokenization/compliance-modules.test.ts test/tokenization/NavOracle.test.ts test/tokenization/DividendDistributor.test.ts test/tokenization/TransferAgent.test.ts test/tokenization/Waterfall.test.ts",
     "test:integration": "hardhat test test/integration/RegistryCouncilHandoff.test.ts test/integration/RegistryNamespacedRegistrarHandoff.test.ts",
     "test:scripts": "hardhat test test/scripts/verification.test.ts test/scripts/audit-trail.test.ts",
     "test:fuzz": "hardhat test test/fuzz/property.test.ts test/fuzz/negative-paths.test.ts test/fuzz/council.test.ts test/fuzz/namespaced-registrar.test.ts",
