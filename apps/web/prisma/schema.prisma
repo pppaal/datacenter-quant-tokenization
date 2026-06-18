@@ -1719,6 +1719,10 @@ model AssetRiskRegisterEntry {
   status             String        @default("OPEN")
   ownerName          String?
   sortOrder          Int           @default(0)
+  // 'MANUAL' for operator-entered rows; an engine tag (e.g.
+  // 'IDIOSYNCRATIC_ENGINE') for auto-generated rows so a re-generate can
+  // replace its own rows without touching manual entries.
+  sourceSystem       String        @default("MANUAL")
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
   asset              Asset         @relation(fields: [assetId], references: [id], onDelete: Cascade)
