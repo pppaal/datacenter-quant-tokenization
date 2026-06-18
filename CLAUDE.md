@@ -233,9 +233,16 @@ cashBalanceKrw}`, `PortfolioAsset.{acquisitionCostKrw,currentHoldValueKrw}`,
   Still in-memory: the edge middleware limiter in `edge-protection.ts` (Edge
   runtime can't reach the Node Upstash REST helper) — acceptable as a coarse
   per-region pre-filter behind the Node-layer distributed limits.
-- **Remaining error-leakage (P2).** ~35 hand-rolled routes still return raw
-  `error.message`; the sensitive on-chain/KYC ones were genericized — migrate the
-  rest to `withAdminApi` / `genericErrorResponse` incrementally.
+- **Remaining error-leakage (P2) — DONE.** Added the ZodError-aware
+  `validationOrGenericError` helper (`error-response.ts`): echoes safe zod field
+  summaries (preserving form validation) and routes everything else through
+  `genericErrorResponse`. Swept it across readiness, deals (26), assets (14),
+  tokenization/onchain, valuations, research, macro, ops, IC-packets,
+  property-candidates, inquiries, document upload, etc.; hand-fixed the
+  `admin/sso/login` `?detail=` redirect leak (OIDC config). Intentionally left:
+  the KYC webhook's provider-facing 404/parse messages and the health endpoint's
+  `detail` (ops monitoring). Server-side audit metadata and typed-error responses
+  (RateLimitError/UploadPolicyError) are unchanged.
 
 ---
 

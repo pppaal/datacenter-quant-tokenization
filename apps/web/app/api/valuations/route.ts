@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { validationOrGenericError } from '@/lib/security/error-response';
 import { AdminAccessScopeType } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { assertActorScopeAccess } from '@/lib/security/admin-access';
@@ -64,9 +65,6 @@ export async function POST(request: Request) {
         error: error instanceof Error ? error.message : 'Failed to create valuation run'
       }
     });
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to create valuation run' },
-      { status: 400 }
-    );
+    return validationOrGenericError(error, { message: 'Failed to create valuation run.' });
   }
 }

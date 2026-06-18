@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { validationOrGenericError } from '@/lib/security/error-response';
 import { CommitteeDecisionOutcome } from '@prisma/client';
 import { z } from 'zod';
 import { prisma } from '@/lib/db/prisma';
@@ -98,9 +99,6 @@ export async function POST(
       return NextResponse.json({ error: error.message }, { status: 403 });
     }
 
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to record committee decision' },
-      { status: 400 }
-    );
+    return validationOrGenericError(error, { message: 'Failed to record committee decision.' });
   }
 }

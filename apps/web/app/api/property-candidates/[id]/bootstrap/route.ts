@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { validationOrGenericError } from '@/lib/security/error-response';
 import { prisma } from '@/lib/db/prisma';
 import {
   getRequestIpAddress,
@@ -53,9 +54,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         error: error instanceof Error ? error.message : 'Failed to bootstrap property candidate'
       }
     });
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to bootstrap property candidate' },
-      { status: 400 }
-    );
+    return validationOrGenericError(error, { message: 'Failed to bootstrap property candidate.' });
   }
 }

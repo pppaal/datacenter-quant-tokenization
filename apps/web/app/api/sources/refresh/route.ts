@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { validationOrGenericError } from '@/lib/security/error-response';
 import { SourceRefreshTriggerType } from '@prisma/client';
 import { hasRequiredAdminRole } from '@/lib/security/admin-auth';
 import { prisma } from '@/lib/db/prisma';
@@ -61,9 +62,6 @@ export async function POST(request: Request) {
       }
     });
 
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to refresh sources' },
-      { status: 500 }
-    );
+    return validationOrGenericError(error, { message: 'Failed to refresh sources.', status: 500 });
   }
 }

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { validationOrGenericError } from '@/lib/security/error-response';
 import { prisma } from '@/lib/db/prisma';
 import {
   getRequestIpAddress,
@@ -117,9 +118,6 @@ export async function POST(request: Request) {
         error: error instanceof Error ? error.message : 'Research agent failed'
       }
     });
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Research agent failed' },
-      { status: 500 }
-    );
+    return validationOrGenericError(error, { message: 'Research agent failed.', status: 500 });
   }
 }
