@@ -225,7 +225,11 @@ export function formatCompactCurrencyFromKrwAtRate(
   if (currency === 'KRW') {
     if (abs >= 1e12) return `₩${(value / 1e12).toFixed(2)}조`;
     if (abs >= 1e8) return `₩${(value / 1e8).toFixed(1)}억`;
-    if (abs >= 1e4) return `₩${Math.round(value / 1e4).toLocaleString('en-US')}만`;
+    // 만 tier: round to whole 만 for ≥100만 (e.g. ₩942만), but keep one
+    // decimal below that so small per-unit figures (e.g. a ₩46,748/sqm rent)
+    // read ₩4.7만 rather than a misleadingly coarse ₩5만.
+    if (abs >= 1e6) return `₩${Math.round(value / 1e4).toLocaleString('en-US')}만`;
+    if (abs >= 1e4) return `₩${(value / 1e4).toFixed(1)}만`;
     return `₩${Math.round(value).toLocaleString('en-US')}`;
   }
 
