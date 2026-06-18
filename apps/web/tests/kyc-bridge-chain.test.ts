@@ -40,7 +40,7 @@ function harness(opts: {
   const hasDeployment = opts.deployment !== null;
   const deps: Partial<BridgeKycChainDeps> = {
     getDeploymentByAssetId: async () => (hasDeployment ? ({ id: 'tok_1' } as never) : null),
-    toDeploymentRow: () => ({ identityRegistryAddress: '0xreg' } as never),
+    toDeploymentRow: () => ({ identityRegistryAddress: '0xreg' }) as never,
     getIdentity: async () => ({
       registered: opts.identity.registered,
       countryCode: opts.identity.countryCode,
