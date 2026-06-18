@@ -171,6 +171,7 @@ function withCurrencyLabel(
 export function AssetIntakeForm({ defaultValues, assetId }: Props) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const form = useForm<AssetIntakeInput>({
     resolver: zodResolver(assetIntakeSchema),
     defaultValues: {
@@ -222,6 +223,7 @@ export function AssetIntakeForm({ defaultValues, assetId }: Props) {
 
   const onSubmit = form.handleSubmit(async (values) => {
     setSubmitting(true);
+    setSaveError(null);
     try {
       const response = await fetch(assetId ? `/api/assets/${assetId}` : '/api/assets', {
         method: assetId ? 'PATCH' : 'POST',
@@ -232,12 +234,22 @@ export function AssetIntakeForm({ defaultValues, assetId }: Props) {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save asset');
+        const body = (await response.json().catch(() => null)) as {
+          error?: string;
+          requestId?: string;
+        } | null;
+        throw new Error(
+          [body?.error ?? 'Failed to save asset', body?.requestId && `(ref ${body.requestId})`]
+            .filter(Boolean)
+            .join(' ')
+        );
       }
 
       const result = await response.json();
       router.push(`/admin/assets/${result.id}`);
       startTransition(() => router.refresh());
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Failed to save asset.');
     } finally {
       setSubmitting(false);
     }
@@ -400,6 +412,15 @@ export function AssetIntakeForm({ defaultValues, assetId }: Props) {
           </label>
         </div>
       </section>
+
+      {saveError ? (
+        <p
+          role="alert"
+          className="rounded-[16px] border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300"
+        >
+          {saveError}
+        </p>
+      ) : null}
 
       <div className="flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-5">
         <p className="max-w-2xl text-sm text-slate-400">

@@ -35,6 +35,7 @@ const numericFields = new Set<keyof DealCreateInput>([
 export function DealCreateForm({ assets }: Props) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const form = useForm<DealCreateInput>({
     resolver: zodResolver(dealCreateSchema),
     defaultValues: {
@@ -52,6 +53,7 @@ export function DealCreateForm({ assets }: Props) {
 
   async function onSubmit(values: DealCreateInput) {
     setSubmitting(true);
+    setError(null);
     try {
       const response = await fetch('/api/deals', {
         method: 'POST',
@@ -62,12 +64,22 @@ export function DealCreateForm({ assets }: Props) {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create deal');
+        const body = (await response.json().catch(() => null)) as {
+          error?: string;
+          requestId?: string;
+        } | null;
+        throw new Error(
+          [body?.error ?? 'Failed to create deal', body?.requestId && `(ref ${body.requestId})`]
+            .filter(Boolean)
+            .join(' ')
+        );
       }
 
       const deal = await response.json();
       router.push(`/admin/deals/${deal.id}`);
       startTransition(() => router.refresh());
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create deal.');
     } finally {
       setSubmitting(false);
     }
@@ -219,6 +231,15 @@ export function DealCreateForm({ assets }: Props) {
             {selectedAsset.city ?? selectedAsset.market} / {selectedAsset.country ?? 'N/A'}
           </div>
         </div>
+      ) : null}
+
+      {error ? (
+        <p
+          role="alert"
+          className="rounded-[16px] border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300"
+        >
+          {error}
+        </p>
       ) : null}
 
       <div className="flex items-center justify-between gap-4 border-t border-white/10 pt-5">
