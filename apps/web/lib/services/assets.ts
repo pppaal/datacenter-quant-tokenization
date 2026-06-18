@@ -67,6 +67,7 @@ export const assetBundleInclude = {
     take: 12
   },
   officeDetail: true,
+  dataCenterDetail: true,
   counterparties: {
     orderBy: {
       updatedAt: 'desc' as const
