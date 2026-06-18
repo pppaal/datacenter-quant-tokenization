@@ -41,6 +41,7 @@ import { FeatureAssumptionMapping } from '@/components/valuation/feature-assumpt
 import { MarketEvidencePanel } from '@/components/valuation/market-evidence-panel';
 import { ComparablePositioning } from '@/components/valuation/comparable-positioning';
 import { LeaseExpiryLadder } from '@/components/valuation/lease-expiry-ladder';
+import { LeasingAnalyticsPanel } from '@/components/valuation/leasing-analytics-panel';
 import { LeaseRolloverDrilldown } from '@/components/valuation/lease-rollover-drilldown';
 import { ProFormaPanel } from '@/components/valuation/pro-forma-panel';
 import { SatelliteRiskSummary } from '@/components/valuation/satellite-risk-summary';
@@ -543,6 +544,12 @@ export default async function AssetDetailPage({
 
   const leasingTab = (
     <div className="space-y-6">
+      <LeasingAnalyticsPanel
+        leases={asset.leases}
+        displayCurrency={displayCurrency}
+        fxRateToKrw={fxRateToKrw}
+      />
+
       <Card>
         <Section
           eyebrow="Lease Book"
