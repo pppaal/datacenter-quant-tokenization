@@ -38,6 +38,7 @@ import { Section } from '@/components/ui/section';
 import { ConfidenceBreakdown } from '@/components/valuation/confidence-breakdown';
 import { FeatureAssumptionMapping } from '@/components/valuation/feature-assumption-mapping';
 import { MarketEvidencePanel } from '@/components/valuation/market-evidence-panel';
+import { ComparablePositioning } from '@/components/valuation/comparable-positioning';
 import { LeaseExpiryLadder } from '@/components/valuation/lease-expiry-ladder';
 import { LeaseRolloverDrilldown } from '@/components/valuation/lease-rollover-drilldown';
 import { ProFormaPanel } from '@/components/valuation/pro-forma-panel';
@@ -131,6 +132,23 @@ export default async function AssetDetailPage({
       : null;
   const baseCapRatePct =
     typeof latestAssumptions?.capRatePct === 'number' ? latestAssumptions.capRatePct : null;
+  const subjectPricePerSqmKrw =
+    typeof latestAssumptions?.comparableValuePerSqmKrw === 'number'
+      ? latestAssumptions.comparableValuePerSqmKrw
+      : null;
+  const subjectRentPerSqmKrw =
+    typeof latestAssumptions?.monthlyRentPerSqmKrw === 'number'
+      ? latestAssumptions.monthlyRentPerSqmKrw
+      : null;
+  const subjectOccupancyPct =
+    typeof latestAssumptions?.occupancyPct === 'number' ? latestAssumptions.occupancyPct : null;
+  const subjectPricePerMwKrw =
+    asset.powerCapacityMw &&
+    asset.powerCapacityMw > 0 &&
+    typeof latestRun?.baseCaseValueKrw === 'number'
+      ? latestRun.baseCaseValueKrw / asset.powerCapacityMw
+      : null;
+  const subjectRatePerKwKrw = asset.marketSnapshot?.colocationRatePerKwKrw ?? null;
   const latestFeatureSnapshots = asset.featureSnapshots.slice(0, 4);
   const usedFeatureSnapshots = latestRun
     ? filterValuationFeatureSnapshots(asset.featureSnapshots, latestRun.assumptions)
@@ -758,6 +776,22 @@ export default async function AssetDetailPage({
 
   const marketRiskTab = (
     <div className="space-y-6">
+      <ComparablePositioning
+        assetClass={asset.assetClass}
+        subject={{
+          capRatePct: baseCapRatePct,
+          pricePerSqmKrw: subjectPricePerSqmKrw,
+          pricePerMwKrw: subjectPricePerMwKrw,
+          rentPerSqmKrw: subjectRentPerSqmKrw,
+          ratePerKwKrw: subjectRatePerKwKrw,
+          occupancyPct: subjectOccupancyPct
+        }}
+        transactionComps={asset.transactionComps}
+        rentComps={asset.rentComps}
+        displayCurrency={displayCurrency}
+        fxRateToKrw={fxRateToKrw}
+      />
+
       <MarketEvidencePanel
         assetClass={asset.assetClass}
         displayCurrency={displayCurrency}
