@@ -434,7 +434,7 @@ test.describe('operator mutation flows', () => {
 
     await expect(page).toHaveURL(/\/admin\/assets\/[^/]+$/);
     await expect(
-      page.locator('h2').filter({ hasText: 'Pangyo Innovation Office Park' })
+      page.getByRole('heading', { level: 1, name: /Pangyo Innovation Office Park/i })
     ).toBeVisible({ timeout: 20_000 });
     await expect(page.getByText('Research Snapshot', { exact: true })).toBeVisible();
 
