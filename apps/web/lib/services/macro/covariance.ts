@@ -126,11 +126,14 @@ export function sampleCovariance(changes: number[][]): number[][] {
 //   T = diag(S)  (the diagonal target: keeps variances, kills covariances)
 //   δ = shrinkage intensity in [0,1]
 //
-// We estimate δ with the canonical Ledoit-Wolf ratio:
-//   δ* = clamp( π̂ / γ̂ , 0, 1 )
+// We estimate δ with the canonical Ledoit-Wolf ratio (δ = κ/n form):
+//   δ* = clamp( π̂ / (n · γ̂) , 0, 1 )
 //   γ̂ = Σ_{i≠j} S_ij²          (off-diagonal dispersion of S from target)
-//   π̂ ≈ (1/n) Σ_t Σ_{i≠j} ( (x_ti·x_tj) - S_ij )²   (sampling error of S off-diag)
-// When n is small relative to p, π̂/γ̂ → 1 and the estimate collapses toward the
+//   π̂ = Σ_{i≠j} (1/n) Σ_t ( (x_ti·x_tj) - S_ij )²   (per-element variance of the
+//        product x_i·x_j). The sampling variance of the estimate S_ij is π̂_ij/n,
+//        so the optimal intensity divides π̂ by n·γ̂ — omitting the /n over-shrinks
+//        (δ saturates to 1) by a factor of n.
+// When n is small relative to p, δ → 1 and the estimate collapses toward the
 // diagonal target — exactly the well-conditioning we want.
 // ---------------------------------------------------------------------------
 export type ShrinkageResult = {
@@ -176,7 +179,7 @@ export function ledoitWolfShrinkage(changes: number[][]): ShrinkageResult {
     }
   }
 
-  let delta = gamma > 0 ? pi / gamma : 1;
+  let delta = gamma > 0 ? pi / (n * gamma) : 1;
   delta = Math.max(0, Math.min(1, delta));
 
   // Σ_shrunk = δ·diag(S) + (1-δ)·S  → diagonal untouched, off-diag scaled by (1-δ).
