@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { clamp, round, toNumber } from '../lib/math';
+import { clamp, round, toNumber, toNumberOrNull } from '../lib/math';
 
 test('clamp constrains values to the inclusive range', () => {
   assert.equal(clamp(5, 0, 10), 5);
@@ -60,4 +60,16 @@ test('toNumber parses numeric strings and rejects garbage', () => {
   assert.equal(toNumber('42.5'), 42.5);
   assert.equal(toNumber('not-a-number'), 0);
   assert.equal(toNumber('garbage', 5), 5);
+});
+
+test('toNumberOrNull preserves null/undefined instead of folding to 0', () => {
+  assert.equal(toNumberOrNull(null), null);
+  assert.equal(toNumberOrNull(undefined), null);
+  // Decimal-like and plain numbers unwrap to a number; 0 stays 0 (not null).
+  assert.equal(toNumberOrNull({ toNumber: () => 14_000_000_000 }), 14_000_000_000);
+  assert.equal(toNumberOrNull(0), 0);
+  assert.equal(toNumberOrNull(-12.5), -12.5);
+  // Non-finite / unconvertible collapses to null (no misleading 0).
+  assert.equal(toNumberOrNull(Number.NaN), null);
+  assert.equal(toNumberOrNull('garbage'), null);
 });

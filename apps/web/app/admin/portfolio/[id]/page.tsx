@@ -16,6 +16,7 @@ import {
 } from '@/lib/services/portfolio';
 import { buildResearchPrioritySignal } from '@/lib/services/research/workspace';
 import { formatCurrency, formatDate, formatNumber, formatPercent } from '@/lib/utils';
+import { toNumberOrNull } from '@/lib/math';
 
 export const dynamic = 'force-dynamic';
 
@@ -200,7 +201,7 @@ export default async function PortfolioDetailPage({ params }: Props) {
                     <div>
                       <div className="fine-print">NOI</div>
                       <div className="mt-2 text-sm text-white">
-                        {formatCurrency(row.latest?.noiKrw)}
+                        {formatCurrency(toNumberOrNull(row.latest?.noiKrw))}
                       </div>
                     </div>
                     <div>

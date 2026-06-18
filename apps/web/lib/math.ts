@@ -52,3 +52,15 @@ export function toNumber(value: unknown, fallback = 0): number {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
 }
+
+/**
+ * Like {@link toNumber} but PRESERVES null/undefined (returns `null`) instead of
+ * folding them to a fallback. Use at the view/serialization boundary where a
+ * missing money value must render as "—", not ₩0 — e.g. converting a Prisma
+ * `Decimal | null` column for `formatCurrency(number | null)`.
+ */
+export function toNumberOrNull(value: unknown): number | null {
+  if (value == null) return null;
+  const n = toNumber(value, Number.NaN);
+  return Number.isFinite(n) ? n : null;
+}

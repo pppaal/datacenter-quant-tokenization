@@ -7,6 +7,7 @@ import {
   type PrismaClient
 } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
+import { toNumber, toNumberOrNull } from '@/lib/math';
 import { buildAssetResearchDossier } from '@/lib/services/research/dossier';
 
 export const portfolioInclude = {
@@ -318,12 +319,15 @@ export function buildPortfolioDashboard(portfolio: PortfolioBundle) {
       capexBudget,
       capexSpent,
       initiativeSummary,
-      holdValueKrw:
+      // Decimal-typed money columns (currentHoldValueKrw / navKrw /
+      // acquisitionCostKrw) coexist with number columns here; normalize to a
+      // plain `number | null` (null preserved so the view renders "—", not ₩0).
+      holdValueKrw: toNumberOrNull(
         portfolioAsset.currentHoldValueKrw ??
-        latest?.navKrw ??
-        valuation?.baseCaseValueKrw ??
-        portfolioAsset.acquisitionCostKrw ??
-        null,
+          latest?.navKrw ??
+          valuation?.baseCaseValueKrw ??
+          portfolioAsset.acquisitionCostKrw
+      ),
       latestDocumentHash: latestDocumentHash(portfolioAsset),
       latestAnchorReference: latestAnchorReference(portfolioAsset)
     };
@@ -333,12 +337,12 @@ export function buildPortfolioDashboard(portfolio: PortfolioBundle) {
     assetCount: assetRows.length,
     grossHoldValueKrw: sum(assetRows.map((row) => row.holdValueKrw)),
     averageOccupancyPct: average(assetRows.map((row) => row.latest?.occupancyPct)),
-    annualizedNoiKrw: sum(assetRows.map((row) => row.latest?.noiKrw)),
+    annualizedNoiKrw: sum(assetRows.map((row) => toNumber(row.latest?.noiKrw))),
     annualizedRevenueKrw: sum(
       assetRows.map((row) =>
         row.latest?.effectiveRentKrwPerSqmMonth != null && row.latest?.leasedAreaSqm != null
           ? row.latest.effectiveRentKrwPerSqmMonth * row.latest.leasedAreaSqm * 12
-          : (row.latest?.noiKrw ?? 0)
+          : toNumber(row.latest?.noiKrw)
       )
     ),
     watchlistCount: assetRows.filter(
