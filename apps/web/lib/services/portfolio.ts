@@ -297,13 +297,17 @@ export function buildPortfolioDashboard(portfolio: PortfolioBundle) {
     const valuation = latestValuation(portfolioAsset);
     const covenant = buildCovenantStatusSummary(portfolioAsset.covenantTests);
     const budget = latestBudget(portfolioAsset);
-    const annualBudget = sum(budget?.lineItems.map((item) => item.annualBudgetKrw) ?? []);
-    const actualBudget = sum(budget?.lineItems.map((item) => item.ytdActualKrw) ?? []);
-    const varianceBudget = sum(budget?.lineItems.map((item) => item.varianceKrw) ?? []);
+    const annualBudget = sum(budget?.lineItems.map((item) => toNumber(item.annualBudgetKrw)) ?? []);
+    const actualBudget = sum(budget?.lineItems.map((item) => toNumber(item.ytdActualKrw)) ?? []);
+    const varianceBudget = sum(budget?.lineItems.map((item) => toNumber(item.varianceKrw)) ?? []);
     const capexBudget = sum(
-      portfolioAsset.capexProjects.map((project) => project.approvedBudgetKrw ?? project.budgetKrw)
+      portfolioAsset.capexProjects.map((project) =>
+        toNumber(project.approvedBudgetKrw ?? project.budgetKrw)
+      )
     );
-    const capexSpent = sum(portfolioAsset.capexProjects.map((project) => project.spentToDateKrw));
+    const capexSpent = sum(
+      portfolioAsset.capexProjects.map((project) => toNumber(project.spentToDateKrw))
+    );
     const initiativeSummary = buildInitiativeSummary(portfolioAsset.initiatives);
 
     return {
