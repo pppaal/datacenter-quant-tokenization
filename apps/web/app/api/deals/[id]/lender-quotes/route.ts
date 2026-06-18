@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { validationOrGenericError } from '@/lib/security/error-response';
 import { createDealLenderQuote } from '@/lib/services/deals';
 
 type Props = {
@@ -14,9 +15,6 @@ export async function POST(request: Request, { params }: Props) {
     const lenderQuote = await createDealLenderQuote(id, body);
     return NextResponse.json({ lenderQuote }, { status: 201 });
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to create lender quote' },
-      { status: 400 }
-    );
+    return validationOrGenericError(error, { message: 'Failed to create lender quote.' });
   }
 }

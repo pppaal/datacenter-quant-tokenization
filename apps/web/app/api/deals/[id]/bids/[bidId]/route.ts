@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { validationOrGenericError } from '@/lib/security/error-response';
 import { updateDealBidRevision } from '@/lib/services/deals';
 
 type Props = {
@@ -15,9 +16,6 @@ export async function PATCH(request: Request, { params }: Props) {
     const bidRevision = await updateDealBidRevision(id, bidId, body);
     return NextResponse.json({ bidRevision });
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to update bid revision' },
-      { status: 400 }
-    );
+    return validationOrGenericError(error, { message: 'Failed to update bid revision.' });
   }
 }

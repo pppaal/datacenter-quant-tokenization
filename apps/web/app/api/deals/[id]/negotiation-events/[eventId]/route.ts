@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { validationOrGenericError } from '@/lib/security/error-response';
 import { updateDealNegotiationEvent } from '@/lib/services/deals';
 
 type Props = {
@@ -15,9 +16,6 @@ export async function PATCH(request: Request, { params }: Props) {
     const negotiationEvent = await updateDealNegotiationEvent(id, eventId, body);
     return NextResponse.json({ negotiationEvent });
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to update negotiation event' },
-      { status: 400 }
-    );
+    return validationOrGenericError(error, { message: 'Failed to update negotiation event.' });
   }
 }

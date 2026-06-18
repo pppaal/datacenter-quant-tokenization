@@ -10,6 +10,7 @@
  *     support ticket so operators can correlate it to the server log line.
  */
 import { NextResponse } from 'next/server';
+import { ZodError } from 'zod';
 import { getRequestContext, reportError } from '@/lib/observability/logger';
 
 const GENERIC_MESSAGE = 'Internal server error.';
@@ -48,4 +49,43 @@ export function genericErrorResponse(
     { error: options.message ?? GENERIC_MESSAGE, requestId },
     { status, headers: { 'X-Request-Id': requestId } }
   );
+}
+
+/** Flatten a ZodError into a single client-safe line (field: message; ...). */
+function summarizeZodError(error: ZodError): string {
+  const summary = error.issues
+    .map((issue) =>
+      issue.path.length ? `${issue.path.join('.')}: ${issue.message}` : issue.message
+    )
+    .join('; ');
+  return summary || 'Invalid request.';
+}
+
+/**
+ * For handlers whose failures are EITHER input-validation (zod, safe to echo —
+ * field names + messages, no internals) OR unexpected (Prisma/onchain/etc.,
+ * which must not leak). Returns the validation summary as `error` for a
+ * `ZodError` (status 400, preserving form-level feedback), and routes anything
+ * else through `genericErrorResponse` (generic message + requestId + server-side
+ * report). Replaces the `error instanceof Error ? error.message : '…'` anti-
+ * pattern that leaked raw Prisma strings to the client.
+ */
+export function validationOrGenericError(
+  error: unknown,
+  options: {
+    /** Generic client message for the non-validation (unexpected) case. */
+    message: string;
+    /** Status for the non-validation case (validation is always 400). */
+    status?: number;
+    context?: Record<string, unknown>;
+  }
+): NextResponse {
+  if (error instanceof ZodError) {
+    return NextResponse.json({ error: summarizeZodError(error) }, { status: 400 });
+  }
+  return genericErrorResponse(error, {
+    status: options.status ?? 400,
+    message: options.message,
+    context: options.context
+  });
 }

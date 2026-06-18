@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { validationOrGenericError } from '@/lib/security/error-response';
 import { seedDealStageChecklist } from '@/lib/services/deals';
 
 export async function POST(_: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -7,9 +8,6 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
     const tasks = await seedDealStageChecklist(id);
     return NextResponse.json({ createdCount: tasks.length, tasks });
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to seed checklist' },
-      { status: 400 }
-    );
+    return validationOrGenericError(error, { message: 'Failed to seed checklist.' });
   }
 }

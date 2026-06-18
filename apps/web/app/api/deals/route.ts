@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { validationOrGenericError } from '@/lib/security/error-response';
 import { createDeal, listDeals } from '@/lib/services/deals';
 
 export async function GET() {
@@ -12,9 +13,6 @@ export async function POST(request: Request) {
     const deal = await createDeal(payload);
     return NextResponse.json(deal, { status: 201 });
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to create deal' },
-      { status: 400 }
-    );
+    return validationOrGenericError(error, { message: 'Failed to create deal.' });
   }
 }

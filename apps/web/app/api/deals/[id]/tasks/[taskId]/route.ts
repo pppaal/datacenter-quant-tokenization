@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { validationOrGenericError } from '@/lib/security/error-response';
 import { updateDealTask } from '@/lib/services/deals';
 
 export async function PATCH(
@@ -11,9 +12,6 @@ export async function PATCH(
     const task = await updateDealTask(id, taskId, payload);
     return NextResponse.json(task);
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to update task' },
-      { status: 400 }
-    );
+    return validationOrGenericError(error, { message: 'Failed to update task.' });
   }
 }
