@@ -48,6 +48,7 @@ import { ValuationHistoryTable } from '@/components/valuation/valuation-history-
 import { ValuationProvenance } from '@/components/valuation/valuation-provenance';
 import { ValuationQualityPanel } from '@/components/valuation/valuation-quality-panel';
 import { ValuationRunBadges } from '@/components/valuation/valuation-run-badges';
+import { ValuationScenarioMatrix } from '@/components/valuation/valuation-scenario-matrix';
 import { ValuationSignals } from '@/components/valuation/valuation-signals';
 import { shortenHash } from '@/lib/blockchain/registry';
 import { getAssetClassPlaybook } from '@/lib/asset-class/playbook';
@@ -123,6 +124,13 @@ export default async function AssetDetailPage({
     siteProfile: asset.siteProfile
   });
   const recommendation = getValuationRecommendation(latestRun?.confidenceScore);
+  const latestAssumptions = (latestRun?.assumptions ?? null) as Record<string, unknown> | null;
+  const stabilizedNoiKrw =
+    typeof latestAssumptions?.stabilizedNoiKrw === 'number'
+      ? latestAssumptions.stabilizedNoiKrw
+      : null;
+  const baseCapRatePct =
+    typeof latestAssumptions?.capRatePct === 'number' ? latestAssumptions.capRatePct : null;
   const latestFeatureSnapshots = asset.featureSnapshots.slice(0, 4);
   const usedFeatureSnapshots = latestRun
     ? filterValuationFeatureSnapshots(asset.featureSnapshots, latestRun.assumptions)
@@ -476,6 +484,14 @@ export default async function AssetDetailPage({
             fxRateToKrw={fxRateToKrw}
             debtFacilities={asset.debtFacilities}
             scenarios={latestRun.scenarios}
+          />
+          <ValuationScenarioMatrix
+            baseCaseValueKrw={latestRun.baseCaseValueKrw}
+            scenarios={latestRun.scenarios}
+            stabilizedNoiKrw={stabilizedNoiKrw}
+            capRatePct={baseCapRatePct}
+            displayCurrency={displayCurrency}
+            fxRateToKrw={fxRateToKrw}
           />
           <ProFormaPanel
             assumptions={latestRun.assumptions}
