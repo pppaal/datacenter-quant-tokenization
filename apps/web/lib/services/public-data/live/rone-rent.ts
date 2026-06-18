@@ -34,10 +34,40 @@ import type {
 } from '@/lib/services/public-data/types';
 
 const DEFAULT_BASE = 'https://www.reb.or.kr/r-one/openapi/SttsApiTblData.do';
-// 상업용부동산 임대동향조사 — 임대동향 지역별 (2024년3분기~)_오피스, quarterly.
-const DEFAULT_RENT_STATBL_ID = 'TT249843134237374'; // 임대료 (천원/㎡)
-const DEFAULT_VACANCY_STATBL_ID = 'TT244763134428698'; // 공실률 (%)
-const DEFAULT_YIELD_STATBL_ID = 'T245883135037859'; // 수익률 (%) — 소득/투자수익률 items
+
+// 상업용부동산 임대동향조사 (2024Q3~, quarterly). STATBL_IDs per property type;
+// each env-overridable. Office also proxies office-dominant mixed-use; retail
+// uses the 중대형상가 tables.
+type ReoneTableSet = { rent: string; vacancy: string; yieldId: string };
+
+function officeTables(): ReoneTableSet {
+  return {
+    rent: process.env.RONE_RENT_STATBL_ID?.trim() || 'TT249843134237374',
+    vacancy: process.env.RONE_VACANCY_STATBL_ID?.trim() || 'TT244763134428698',
+    yieldId: process.env.RONE_YIELD_STATBL_ID?.trim() || 'T245883135037859'
+  };
+}
+
+function retailTables(): ReoneTableSet {
+  return {
+    rent: process.env.RONE_RETAIL_RENT_STATBL_ID?.trim() || 'T244363134858603',
+    vacancy: process.env.RONE_RETAIL_VACANCY_STATBL_ID?.trim() || 'T249633134845544',
+    yieldId: process.env.RONE_RETAIL_YIELD_STATBL_ID?.trim() || 'T242083134887473'
+  };
+}
+
+/** Asset class → R-ONE 상업용 table set + label; null when no survey applies. */
+function tablesFor(
+  assetClass: RentalComparable['assetClassHint']
+): { tables: ReoneTableSet; label: string } | null {
+  if (assetClass === 'OFFICE' || assetClass === 'MIXED_USE') {
+    return { tables: officeTables(), label: '오피스' };
+  }
+  if (assetClass === 'RETAIL') {
+    return { tables: retailTables(), label: '중대형상가' };
+  }
+  return null;
+}
 
 /** Coarse lat/lng → R-ONE 오피스 권역 (matches the survey's CLS_NM values). */
 export function resolveReoneRegion(loc: LatLng): { clsNm: string; label: string } {
@@ -107,12 +137,6 @@ export class LiveReoneRentComps implements RentComparableConnector {
     private readonly apiKey: string | undefined = process.env.RONE_API_KEY,
     private readonly baseUrl: string = process.env.RONE_API_BASE?.trim() || DEFAULT_BASE,
     private readonly timeoutMs: number = 8000,
-    private readonly rentStatblId: string = process.env.RONE_RENT_STATBL_ID?.trim() ||
-      DEFAULT_RENT_STATBL_ID,
-    private readonly vacancyStatblId: string = process.env.RONE_VACANCY_STATBL_ID?.trim() ||
-      DEFAULT_VACANCY_STATBL_ID,
-    private readonly yieldStatblId: string = process.env.RONE_YIELD_STATBL_ID?.trim() ||
-      DEFAULT_YIELD_STATBL_ID,
     private readonly fetcher: typeof fetchWithTimeout = fetchWithTimeout
   ) {}
 
@@ -124,23 +148,25 @@ export class LiveReoneRentComps implements RentComparableConnector {
     if (!this.apiKey) {
       return [];
     }
-    // Only the OFFICE survey is wired (and used as a proxy for office-dominant
-    // mixed-use). Other classes fall through to the registry's mock comps.
-    if (assetClass !== 'OFFICE' && assetClass !== 'MIXED_USE') {
+    // Office (+ office-dominant mixed-use) and retail (중대형상가) are surveyed;
+    // other classes fall through to the registry's mock comps.
+    const resolved = tablesFor(assetClass);
+    if (!resolved) {
       return [];
     }
+    const { tables, label } = resolved;
 
     const region = resolveReoneRegion(location);
     const [rentRows, vacancyRows, yieldRows] = await Promise.all([
-      this.fetchTable(this.rentStatblId).catch((err) => {
+      this.fetchTable(tables.rent).catch((err) => {
         console.warn(`[r-one] rent table failed:`, err.message);
         return [] as ReoneRow[];
       }),
-      this.fetchTable(this.vacancyStatblId).catch((err) => {
+      this.fetchTable(tables.vacancy).catch((err) => {
         console.warn(`[r-one] vacancy table failed:`, err.message);
         return [] as ReoneRow[];
       }),
-      this.fetchTable(this.yieldStatblId).catch((err) => {
+      this.fetchTable(tables.yieldId).catch((err) => {
         console.warn(`[r-one] yield table failed:`, err.message);
         return [] as ReoneRow[];
       })
@@ -175,7 +201,7 @@ export class LiveReoneRentComps implements RentComparableConnector {
         capRatePct: numericValue(yieldRow),
         occupancyPct: vacancy == null ? null : clamp(100 - vacancy, 0, 100),
         transactionDate: null,
-        note: `한국부동산원 상업용부동산 임대동향조사 (오피스 · ${region.label})`
+        note: `한국부동산원 상업용부동산 임대동향조사 (${label} · ${region.label})`
       }
     ];
   }
