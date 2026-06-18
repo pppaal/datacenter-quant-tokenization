@@ -3,18 +3,59 @@
 @tailwind utilities;
 
 :root {
-  --background: 214 57% 7%;
-  --foreground: 210 40% 96%;
-  --panel: 216 43% 11%;
-  --panel-alt: 210 38% 15%;
-  --border: 213 27% 24%;
-  --muted: 214 15% 66%;
-  --accent: 188 82% 58%;
-  --success: 150 58% 54%;
-  --warning: 38 96% 63%;
-  --danger: 8 88% 66%;
-  --font-sans: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-  --font-mono: 'IBM Plex Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  /* ============================================================
+     LIGHT THEME — institutional CRE / RWA platform.
+     HSL triplets keep the existing hsl(var(--x)) Tailwind wiring
+     intact; hex equivalents are in comments. Swapping these
+     values flips the whole palette with no config edits.
+     ============================================================ */
+
+  /* Core surfaces */
+  --background: 210 20% 98%; /* #F7F8FA cool near-white page bg */
+  --foreground: 222 30% 12%; /* #161D29 primary text */
+  --panel: 0 0% 100%; /* #FFFFFF primary card surface */
+  --panel-alt: 210 20% 97%; /* #F4F6F8 subtle surface / table header */
+  --surface-hover: 210 22% 95%; /* #EEF1F5 row/button hover */
+
+  /* Borders */
+  --border: 214 20% 90%; /* #DDE2E9 hairline border */
+  --border-strong: 214 16% 82%; /* #C8CFD9 divider / focused border */
+
+  /* Text */
+  --foreground-muted: 215 16% 38%; /* #515E72 secondary text */
+  --muted: 215 14% 52%; /* #76808F muted / caption */
+  --foreground-faint: 214 12% 64%; /* #97A0AD placeholder / disabled */
+  --on-accent: 0 0% 100%; /* #FFFFFF text on accent fill */
+
+  /* Accent / brand — deep institutional teal-blue, calm on white */
+  --accent: 201 89% 36%; /* #0A6FAE primary accent (was neon cyan #2BD4E8) */
+  --accent-hover: 201 92% 30%; /* #075C92 */
+  --accent-active: 202 95% 24%; /* #054A78 */
+  --accent-tint: 201 70% 95%; /* #E7F2FA selected/active bg */
+  --accent-ring: 201 89% 36%; /* #0A6FAE focus ring (use at /30%) */
+
+  /* Semantic: text color + subtle tint background */
+  --success: 152 58% 30%; /* #207A52 */
+  --success-tint: 150 52% 94%; /* #E6F6EE */
+  --warning: 33 82% 36%; /* #A86511 */
+  --warning-tint: 40 88% 93%; /* #FCF2DC */
+  --danger: 4 68% 44%; /* #BD2E25 */
+  --danger-tint: 4 80% 96%; /* #FDEBEA */
+  --info: 201 89% 36%; /* #0A6FAE (= accent) */
+  --info-tint: 201 70% 95%; /* #E7F2FA */
+
+  /* Shadow scale — light cards lean on borders; shadows whisper-soft */
+  --shadow-xs: 0 1px 2px rgba(16, 24, 40, 0.04);
+  --shadow-sm: 0 1px 3px rgba(16, 24, 40, 0.06), 0 1px 2px rgba(16, 24, 40, 0.04);
+  --shadow-md: 0 4px 8px -2px rgba(16, 24, 40, 0.08), 0 2px 4px -2px rgba(16, 24, 40, 0.05);
+  --shadow-lg: 0 12px 24px -6px rgba(16, 24, 40, 0.1), 0 4px 8px -4px rgba(16, 24, 40, 0.06);
+  --shadow-focus: 0 0 0 3px hsl(var(--accent-ring) / 0.3);
+
+  --font-sans:
+    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Pretendard', 'Apple SD Gothic Neo',
+    'Malgun Gothic', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono:
+    'IBM Plex Mono', 'SFMono-Regular', ui-monospace, Consolas, 'Liberation Mono', Menlo, monospace;
 }
 
 * {
@@ -23,11 +64,7 @@
 
 html {
   min-height: 100%;
-  background:
-    radial-gradient(circle at 15% 20%, rgba(34, 211, 238, 0.18), transparent 24%),
-    radial-gradient(circle at 85% 12%, rgba(245, 158, 11, 0.14), transparent 20%),
-    radial-gradient(circle at 50% 75%, rgba(56, 189, 248, 0.08), transparent 28%),
-    linear-gradient(180deg, #040915 0%, #07111f 45%, #04070f 100%);
+  background: hsl(var(--background));
 }
 
 body {
@@ -36,21 +73,12 @@ body {
   color: hsl(var(--foreground));
   font-family: var(--font-sans), sans-serif;
   background:
-    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    linear-gradient(rgba(16, 24, 40, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(16, 24, 40, 0.025) 1px, transparent 1px);
   background-size: 88px 88px;
   background-position: center top;
-}
-
-body::before {
-  position: fixed;
-  inset: 0;
-  z-index: -2;
-  pointer-events: none;
-  content: '';
-  background:
-    radial-gradient(circle at 20% 0%, rgba(34, 211, 238, 0.1), transparent 28%),
-    radial-gradient(circle at 100% 0%, rgba(249, 115, 22, 0.08), transparent 22%);
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: 'tnum' 1;
 }
 
 a {
@@ -63,22 +91,12 @@ a {
 }
 
 ::selection {
-  background: rgba(34, 211, 238, 0.26);
+  background: hsl(var(--accent-tint));
+  color: hsl(var(--accent-active));
 }
 
 .page-noise {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  opacity: 0.05;
-  background-image:
-    radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.8) 1px, transparent 0),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.04), transparent 45%);
-  background-size:
-    22px 22px,
-    100% 100%;
-  mix-blend-mode: screen;
+  display: none;
 }
 
 .app-shell {
@@ -86,13 +104,16 @@ a {
 }
 
 .panel {
-  @apply rounded-[28px] border shadow-glow backdrop-blur-xl;
-  background-color: hsl(var(--panel) / 0.78);
+  @apply rounded-[14px] border;
+  background-color: hsl(var(--panel));
+  border-color: hsl(var(--border));
+  box-shadow: var(--shadow-sm);
 }
 
 .panel-alt {
-  @apply rounded-[28px] border backdrop-blur-xl;
-  background-color: hsl(var(--panel-alt) / 0.65);
+  @apply rounded-[14px] border;
+  background-color: hsl(var(--panel-alt));
+  border-color: hsl(var(--border));
 }
 
 .surface {
@@ -100,39 +121,41 @@ a {
 }
 
 .surface-muted {
-  @apply rounded-[28px] border p-6 backdrop-blur-sm;
-  border-color: rgba(255, 255, 255, 0.08);
-  background-color: rgba(255, 255, 255, 0.03);
+  @apply rounded-[14px] border p-6;
+  border-color: hsl(var(--border));
+  background-color: hsl(var(--panel-alt));
 }
 
 .eyebrow {
-  @apply font-mono text-[11px] uppercase tracking-[0.36em] text-accent;
+  @apply font-mono text-[11px] uppercase tracking-[0.24em];
+  color: hsl(var(--muted));
 }
 
 .section-title {
-  @apply text-3xl font-semibold tracking-[-0.03em] text-white md:text-4xl;
+  @apply text-3xl font-semibold tracking-[-0.03em] md:text-4xl;
+  color: hsl(var(--foreground));
 }
 
 .metric-card {
-  @apply rounded-[24px] border border-white/10 bg-white/[0.04] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)];
+  @apply rounded-[10px] border p-5;
+  border-color: hsl(var(--border));
+  background-color: hsl(var(--panel));
+  box-shadow: var(--shadow-xs);
 }
 
 .fine-print {
-  @apply font-mono text-[11px] uppercase tracking-[0.24em] text-slate-500;
+  @apply font-mono text-[11px] uppercase tracking-[0.24em];
+  color: hsl(var(--muted));
 }
 
 .glow-ring {
-  box-shadow:
-    0 0 0 1px rgba(125, 211, 252, 0.12),
-    0 24px 80px rgba(4, 8, 18, 0.38),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  box-shadow: var(--shadow-sm);
 }
 
 .hero-mesh {
   background:
-    radial-gradient(circle at top left, rgba(34, 211, 238, 0.14), transparent 26%),
-    radial-gradient(circle at bottom right, rgba(249, 115, 22, 0.12), transparent 24%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
+    radial-gradient(circle at top left, hsl(var(--accent) / 0.06), transparent 30%),
+    linear-gradient(180deg, hsl(var(--panel-alt)), hsl(var(--panel)));
 }
 
 .grid-lines {
@@ -170,6 +193,63 @@ a {
     transform: translate3d(0, 0, 0);
   }
 }
+
+/* ============================================================
+   Light-theme compatibility layer.
+
+   The feature components were authored against the old dark
+   palette with hard-coded utilities (text-white, the slate text
+   ramp, white/slate translucent surfaces, white borders). Rather
+   than rewrite ~180 files, we remap that GRAYSCALE ramp onto the
+   light tokens here. Intentional semantic colors (emerald/amber/
+   rose/cyan/accent and the already-dark slate-700..950 used as
+   text ON light fills) are deliberately NOT touched.
+
+   Placed after @tailwind utilities so single-class selectors win
+   by source order; !important covers the hover/responsive variant
+   selectors (.hover\:text-white:hover etc.) that carry higher
+   specificity.
+   ============================================================ */
+
+/* Text: white + light slate ramp → dark foreground tiers */
+.text-white,
+.text-slate-100,
+.text-slate-200 {
+  color: hsl(var(--foreground)) !important;
+}
+.text-slate-300 {
+  color: hsl(var(--foreground-muted)) !important;
+}
+.text-slate-400,
+.text-slate-500,
+.text-slate-600 {
+  color: hsl(var(--muted)) !important;
+}
+
+/* Translucent white raised surfaces → subtle light surface */
+[class*='bg-white/[0.0'],
+.bg-white\/5,
+.bg-white\/10 {
+  background-color: hsl(var(--panel-alt)) !important;
+}
+
+/* Dark slate insets (cards-within-cards on the dark theme) → light inset */
+[class*='bg-slate-950'],
+[class*='bg-slate-900'] {
+  background-color: hsl(var(--panel-alt)) !important;
+}
+
+/* White hairline borders → light hairline */
+.border-white\/5,
+.border-white\/10,
+.border-white\/12,
+.border-white\/15,
+.border-white\/20 {
+  border-color: hsl(var(--border)) !important;
+}
+
+/* The global `* { border-color }` reset still points at --border (light),
+   so default borders are already correct. */
 
 @media print {
   html,
