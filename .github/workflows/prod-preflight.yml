@@ -18,14 +18,23 @@ name: prod-preflight
 
 on:
   workflow_dispatch: {}
-  # Also run when a GitHub deployment to production is created, so promotion is
-  # gated. (No-op if you deploy purely via Vercel — keep using workflow_dispatch
-  # before promoting, or wire a Vercel deploy hook to this workflow.)
+  # Also run when a GitHub deployment to PRODUCTION is created, so promotion is
+  # gated. Note: Vercel creates a GitHub `deployment` for *every* preview build
+  # too, so the job below is guarded to skip non-production deployments —
+  # otherwise the preflight would (correctly) fail on every PR for lack of the
+  # production-environment secrets and pollute each PR with a red check.
   deployment:
 
 jobs:
   preflight:
     name: production preflight
+    # Run on manual dispatch, or only for deployments targeting production.
+    # Vercel labels its production environment "Production"; preview builds use
+    # "Preview"/"Preview – <project>", which are skipped here.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      startsWith(github.event.deployment.environment, 'Production') ||
+      startsWith(github.event.deployment.environment, 'production')
     runs-on: ubuntu-latest
     environment: production
     defaults:
