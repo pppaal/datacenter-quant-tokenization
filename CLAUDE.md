@@ -194,19 +194,20 @@ A second, 5-domain audit (valuation / data-connectors / contracts / web-security
 
 Still open from that pass:
 
-- **Float → Decimal for the second money tier (P0, scoped).** Half the KRW
-  columns were migrated to `Decimal(20,2)` (Fund/Commitment/CapitalCall/
-  Distribution/allocations/FinancialStatement); the reconciliation-critical
-  remainder are still `Float` and feed NAV/waterfall/reporting math:
-  `MonthlyAssetKpi.{navKrw,noiKrw,opexKrw,capexKrw,debtOutstandingKrw,
-cashBalanceKrw}`, `PortfolioAsset.{acquisitionCostKrw,currentHoldValueKrw}`,
-  `Budget*`/`CapexProject`/`ExitCase`/`Mandate.targetAumKrw`. Do it as a
-  dedicated, validated effort (NOT bundled): `ALTER ... TYPE numeric(20,2)`
-  migration modeled on `capital_accounts_decimal`, THEN update every consumer
-  (`portfolio.ts`, `fund-waterfall.ts`, `realized-outcomes.ts`, …) to handle
-  `Prisma.Decimal` (read via `.toNumber()` at the boundary or compute in
-  Decimal) — the type change ripples across the service layer, so it needs its
-  own typecheck/test cycle + local-Postgres migration validation.
+- **Float → Decimal for the second money tier (P0, scoped) — NAV/portfolio
+  slice DONE; Budget/Capex/Exit/Mandate remain.** Migrated tiers so far:
+  Fund/Commitment/CapitalCall/Distribution/allocations/FinancialStatement
+  (earlier), and now `PortfolioAsset.{acquisitionCostKrw,currentHoldValueKrw}` +
+  `MonthlyAssetKpi.{noiKrw,opexKrw,capexKrw,debtOutstandingKrw,navKrw,
+cashBalanceKrw}` (migration `20260618000000_nav_portfolio_decimal`, consumers in
+  `portfolio.ts` / `portfolio-optimization.ts` / portfolio detail page updated
+  via `toNumber` / new `toNumberOrNull` boundary coercion). **Still `Float`:**
+  `Budget`/`BudgetLineItem`/`CapexProject`/`ExitCase`/`Mandate.targetAumKrw` —
+  do each as its own dedicated, validated slice (`ALTER ... TYPE numeric(20,2)`
+  modeled on `capital_accounts_decimal`, then let typecheck surface the consumers
+  and coerce at the boundary; validate the migration on a local Postgres + the
+  `migrate diff` parity check, NOT just CI). Note: do NOT run `prisma format` —
+  the schema isn't format-clean and it rewrites the whole file; hand-edit fields.
 - **Scope-access "optional allowlist" (P1, decision recorded).** `canActorAccessScope`
   treats a non-ADMIN actor with no grants as unrestricted — documented as
   intentional in `admin-access.ts` (not flipped, because fail-closing would lock

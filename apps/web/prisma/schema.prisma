@@ -2853,8 +2853,8 @@ model PortfolioAsset {
   assetId              String
   status               PortfolioAssetStatus @default(ACTIVE)
   acquisitionDate      DateTime?
-  acquisitionCostKrw   Float?
-  currentHoldValueKrw  Float?
+  acquisitionCostKrw   Decimal? @db.Decimal(20, 2)
+  currentHoldValueKrw  Decimal? @db.Decimal(20, 2)
   ownershipPct         Float?
   holdPeriodYears      Float?
   assetManager         String?
@@ -2923,14 +2923,14 @@ model MonthlyAssetKpi {
   passingRentKrwPerSqmMonth  Float?
   marketRentKrwPerSqmMonth   Float?
   effectiveRentKrwPerSqmMonth Float?
-  noiKrw                     Float?
-  opexKrw                    Float?
-  capexKrw                   Float?
-  debtOutstandingKrw         Float?
+  noiKrw                     Decimal? @db.Decimal(20, 2)
+  opexKrw                    Decimal? @db.Decimal(20, 2)
+  capexKrw                   Decimal? @db.Decimal(20, 2)
+  debtOutstandingKrw         Decimal? @db.Decimal(20, 2)
   debtServiceCoverage        Float?
   ltvPct                     Float?
-  navKrw                     Float?
-  cashBalanceKrw             Float?
+  navKrw                     Decimal? @db.Decimal(20, 2)
+  cashBalanceKrw             Decimal? @db.Decimal(20, 2)
   notes                      String?
   createdAt                  DateTime       @default(now())
   updatedAt                  DateTime       @updatedAt

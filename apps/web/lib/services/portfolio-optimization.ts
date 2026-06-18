@@ -1,6 +1,6 @@
 import { AssetClass, CovenantStatus, PortfolioAssetStatus, SourceStatus } from '@prisma/client';
 
-import { clamp } from '@/lib/math';
+import { clamp, toNumber } from '@/lib/math';
 import type { PortfolioRecord } from '@/lib/services/portfolio';
 import { buildAssetResearchDossier } from '@/lib/services/research/dossier';
 
@@ -251,8 +251,8 @@ function buildAssetSignal(input: PortfolioRecord['assets'][number]) {
 }
 
 function buildInitialWeights(portfolio: PortfolioRecord) {
-  const rawWeights = portfolio.assets.map(
-    (asset) => asset.currentHoldValueKrw ?? asset.acquisitionCostKrw ?? 0
+  const rawWeights = portfolio.assets.map((asset) =>
+    toNumber(asset.currentHoldValueKrw ?? asset.acquisitionCostKrw)
   );
   const normalized = normalizeWeightVector(rawWeights);
   if (normalized.some((weight) => weight > 0)) {
