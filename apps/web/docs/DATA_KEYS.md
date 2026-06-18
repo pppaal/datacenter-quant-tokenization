@@ -111,11 +111,38 @@ Steps: 로그인 → search the API name above → **활용신청** → fill pur
 
 Powers both **개별공시지가 (land pricing)** and **토지이용계획 (use-zone)**.
 
-- Sign up: <https://www.vworld.kr> → 회원가입.
-- 인증키 발급: 마이페이지 → 인증키 관리 → **인증키 발급** → register your
-  service domain (use your Vercel domain, e.g. `your-app.vercel.app`; add
-  `localhost` for local dev).
-- Copy the key → `VWORLD_API_KEY`.
+> ⚠️ V-World has a two-step gotcha that silently keeps these on mock — follow
+> all three points or you'll get `INCORRECT_KEY` even with a "valid" key.
+
+1. **Sign up + issue a key:** <https://www.vworld.kr> → 회원가입 → 마이페이지 →
+   인증키 관리 → **인증키 발급**. Set the **서비스 URL (등록 도메인)** to your
+   real domain (e.g. `your-app.vercel.app`) — remember it, you need it in step 3.
+2. **활용신청 the NED data APIs (separate from the map/search key!):** the
+   개별공시지가/토지이용계획 datasets are **NED 데이터 API**, not the 2.0
+   map/geocoder API, so they need their own application. Go to **오픈API → 데이터
+   API**, search and **활용신청** for:
+   - **개별공시지가속성조회** (`getIndvdLandPriceAttr` → land pricing)
+   - **토지이용계획속성조회** (`getLandUseAttr` → use-zone)
+   - This may issue a **separate "데이터 API" key** distinct from the map key —
+     use **that** data-API key as `VWORLD_API_KEY`.
+3. **Set the domain param (REQUIRED):** V-World's NED data APIs reject any call
+   that omits the key's **registered service URL**, returning `INCORRECT_KEY`.
+   Set `VWORLD_API_DOMAIN` to exactly the URL you registered in step 1 (e.g.
+   `your-app.vercel.app`). V-World validates the **value**, not the request
+   origin, so the same value works from local, Vercel, anywhere.
+
+```bash
+VWORLD_API_KEY=<your NED 데이터 API key>
+VWORLD_API_DOMAIN=<the service URL you registered on the key, e.g. your-app.vercel.app>
+```
+
+Quick check from any machine (replace the key/domain):
+
+```bash
+curl "https://api.vworld.kr/ned/data/getIndvdLandPriceAttr?key=<KEY>&pnu=1168010100107370000&format=json&numOfRows=5&pageNo=1&domain=<DOMAIN>"
+# → resultCode "" + a field[] of 공시지가 rows = working
+# → "INCORRECT_KEY" = the NED 활용신청 (step 2) or the domain (step 3) is missing
+```
 
 ### 3. R-ONE — 한국부동산원 부동산통계 (rent trends)
 
