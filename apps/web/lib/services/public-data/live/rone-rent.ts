@@ -1,28 +1,30 @@
 /**
- * 한국부동산원 R-ONE 상업용부동산 임대동향조사 live adapter (rent / vacancy /
- * 소득수익률) — the single highest-value public source for commercial rent and
- * cap-rate ground truth, replacing synthetic rent comps.
+ * 한국부동산원 R-ONE 상업용부동산 임대동향조사 (오피스) live adapter — monthly
+ * rent (원/㎡) + vacancy → occupancy, the single highest-value public source for
+ * commercial-office rent ground truth, replacing synthetic rent comps.
  *
- * Source: 한국부동산원 부동산통계정보시스템 (R-ONE) open API, also mirrored on
- *   공공데이터포털: "한국부동산원_상업용부동산 임대동향조사".
- * Docs:   https://www.reb.or.kr/r-one/  /  https://www.data.go.kr (search R-ONE)
+ * Source: 한국부동산원 부동산통계정보 (R-ONE) open API, SttsApiTblData.do.
+ * Docs:   https://www.reb.or.kr/r-one/
  *
  * Required env:
- *   RONE_API_KEY  — issued by R-ONE / data.go.kr after free registration.
- *   RONE_API_BASE — optional override of the statistics endpoint base URL.
+ *   RONE_API_KEY  — issued free at https://www.reb.or.kr/r-one/ (Open API).
+ * Optional env (override the wired 상업용부동산 임대동향조사_오피스 tables):
+ *   RONE_RENT_STATBL_ID    — 임대동향 지역별 임대료_오피스 (default below)
+ *   RONE_VACANCY_STATBL_ID — 임대동향 지역별 공실률_오피스 (default below)
+ *   RONE_API_BASE          — endpoint base override
  *
- * The survey is published per 권역 (submarket region), not per coordinate, so we
- * map the query location to a region code via a coarse bounding box and read the
- * region's office/retail 임대료·공실률·소득수익률(≈cap). Missing key → returns []
- * so the registry's mock path keeps working until the key is set.
+ * The survey is published per 권역 (CLS_NM, e.g. 도심/강남/여의도), quarterly
+ * (DTACYCLE_CD=QY). We map the query coordinate to a 권역, read the latest
+ * quarter's row, and convert the rent unit (천원/㎡ → 원/㎡). Missing key, no
+ * wired table for the asset class, or no matching region → [] so the registry's
+ * mock path keeps working.
  *
- * NOTE (scaffold parity): the exact statistic-table IDs and row field names of
- * the R-ONE API must be confirmed against a live sample before this is trusted
- * in an LP-facing memo — same maturity caveat as the RTMS/MOLIT live adapters.
- * The env-gating, region mapping, timeout, and graceful-empty contract are the
- * load-bearing parts and are correct now.
+ * Confirmed against a live sample (STATBL_ID TT249843134237374, 2024 Q3): rows
+ * carry CLS_NM (권역), ITM_NM, DTA_VAL, UI_NM ("천원/㎡"), WRTTIME_IDTFR_ID
+ * ("202403", latest-first), WRTTIME_DESC ("2024년 3분기").
  */
 
+import { clamp } from '@/lib/math';
 import { fetchWithTimeout } from '@/lib/services/public-data/fetch-with-timeout';
 import type {
   LatLng,
@@ -31,43 +33,51 @@ import type {
 } from '@/lib/services/public-data/types';
 
 const DEFAULT_BASE = 'https://www.reb.or.kr/r-one/openapi/SttsApiTblData.do';
+// 상업용부동산 임대동향조사 — 임대동향 지역별 (2024년3분기~)_오피스, quarterly.
+const DEFAULT_RENT_STATBL_ID = 'TT249843134237374'; // 임대료 (천원/㎡)
+const DEFAULT_VACANCY_STATBL_ID = 'TT244763134428698'; // 공실률 (%)
 
-type ReoneRegion = {
-  /** R-ONE 권역 classification code (CLS_ID value). */
-  regionCode: string;
-  label: string;
-};
-
-/** Coarse lat/lng → R-ONE commercial submarket region. */
-export function resolveReoneRegion(loc: LatLng): ReoneRegion {
+/** Coarse lat/lng → R-ONE 오피스 권역 (matches the survey's CLS_NM values). */
+export function resolveReoneRegion(loc: LatLng): { clsNm: string; label: string } {
   const { latitude: lat, longitude: lng } = loc;
-  // Gangnam core (Apgujeong, Cheongdam, Sinsa, Yeoksam, Gangnam-daero)
+  // Gangnam (Apgujeong, Cheongdam, Sinsa, Yeoksam, Gangnam-daero)
   if (lat >= 37.48 && lat <= 37.54 && lng >= 127.0 && lng <= 127.08) {
-    return { regionCode: 'GANGNAM', label: '강남대로' };
+    return { clsNm: '강남', label: '강남' };
   }
-  // CBD (Gwanghwamun, Jongno, Euljiro, City Hall)
+  // CBD / 도심 (Gwanghwamun, Jongno, Euljiro, City Hall, Namdaemun)
   if (lat >= 37.55 && lat <= 37.58 && lng >= 126.96 && lng <= 127.01) {
-    return { regionCode: 'CBD', label: '도심' };
+    return { clsNm: '도심', label: '도심' };
   }
-  // YBD (Yeouido)
+  // YBD / 여의도 (Yeouido)
   if (lat >= 37.51 && lat <= 37.54 && lng >= 126.91 && lng <= 126.95) {
-    return { regionCode: 'YBD', label: '여의도' };
+    return { clsNm: '여의도', label: '여의도' };
   }
-  if (lat >= 37.45 && lat <= 37.7 && lng >= 126.76 && lng <= 127.18) {
-    return { regionCode: 'SEOUL_ETC', label: '서울 기타' };
+  // Rest of Seoul → the 서울 aggregate row.
+  if (lat >= 37.43 && lat <= 37.71 && lng >= 126.76 && lng <= 127.19) {
+    return { clsNm: '서울', label: '서울' };
   }
-  return { regionCode: 'METRO', label: '수도권 기타' };
+  // Outside Seoul → the 전국 aggregate row.
+  return { clsNm: '전국', label: '전국' };
 }
 
 type ReoneRow = {
-  ITM_NM?: string; // 항목명 (임대료/공실률/소득수익률...)
+  CLS_NM?: string; // 권역명 e.g. 도심/강남/여의도/서울/전국
   DTA_VAL?: string | number; // 값
-  WRTTIME_DESC?: string; // 기준 분기 e.g. "2025년 4분기"
-  CLS_NM?: string; // 권역명
+  UI_NM?: string; // 단위 e.g. "천원/㎡", "%"
+  WRTTIME_IDTFR_ID?: string; // 기준시점 식별자 e.g. "202403" (latest = max)
+  WRTTIME_DESC?: string; // "2024년 3분기"
 };
 
-function pickValue(rows: ReoneRow[], itemMatch: RegExp): number | null {
-  const row = rows.find((r) => typeof r.ITM_NM === 'string' && itemMatch.test(r.ITM_NM));
+/** Latest-quarter row for a 권역; null when the region/value is absent. */
+function latestRegionRow(rows: ReoneRow[], clsNm: string): ReoneRow | null {
+  const matching = rows.filter((r) => r.CLS_NM === clsNm && r.DTA_VAL != null);
+  if (matching.length === 0) return null;
+  return matching.reduce((best, r) =>
+    (r.WRTTIME_IDTFR_ID ?? '') > (best.WRTTIME_IDTFR_ID ?? '') ? r : best
+  );
+}
+
+function numericValue(row: ReoneRow | null): number | null {
   if (!row || row.DTA_VAL == null) return null;
   const n = Number(String(row.DTA_VAL).replace(/,/g, ''));
   return Number.isFinite(n) ? n : null;
@@ -77,7 +87,12 @@ export class LiveReoneRentComps implements RentComparableConnector {
   constructor(
     private readonly apiKey: string | undefined = process.env.RONE_API_KEY,
     private readonly baseUrl: string = process.env.RONE_API_BASE?.trim() || DEFAULT_BASE,
-    private readonly timeoutMs: number = 8000
+    private readonly timeoutMs: number = 8000,
+    private readonly rentStatblId: string = process.env.RONE_RENT_STATBL_ID?.trim() ||
+      DEFAULT_RENT_STATBL_ID,
+    private readonly vacancyStatblId: string = process.env.RONE_VACANCY_STATBL_ID?.trim() ||
+      DEFAULT_VACANCY_STATBL_ID,
+    private readonly fetcher: typeof fetchWithTimeout = fetchWithTimeout
   ) {}
 
   async fetch(
@@ -88,67 +103,74 @@ export class LiveReoneRentComps implements RentComparableConnector {
     if (!this.apiKey) {
       return [];
     }
-    const region = resolveReoneRegion(location);
-    const rows = await this.fetchRegion(region.regionCode, assetClass).catch((err) => {
-      console.warn(`[r-one] region ${region.regionCode} failed:`, err.message);
-      return [] as ReoneRow[];
-    });
-    if (rows.length === 0) {
+    // Only the OFFICE survey is wired (and used as a proxy for office-dominant
+    // mixed-use). Other classes fall through to the registry's mock comps.
+    if (assetClass !== 'OFFICE' && assetClass !== 'MIXED_USE') {
       return [];
     }
 
-    const period = rows.find((r) => r.WRTTIME_DESC)?.WRTTIME_DESC ?? 'latest';
-    const rentPerSqm = pickValue(rows, /임대료|임대가격/);
-    const vacancy = pickValue(rows, /공실/);
-    const cap = pickValue(rows, /소득수익률|투자수익률|수익률/);
+    const region = resolveReoneRegion(location);
+    const [rentRows, vacancyRows] = await Promise.all([
+      this.fetchTable(this.rentStatblId).catch((err) => {
+        console.warn(`[r-one] rent table failed:`, err.message);
+        return [] as ReoneRow[];
+      }),
+      this.fetchTable(this.vacancyStatblId).catch((err) => {
+        console.warn(`[r-one] vacancy table failed:`, err.message);
+        return [] as ReoneRow[];
+      })
+    ]);
 
-    const isDc = assetClass === 'DATA_CENTER';
+    const rentRow = latestRegionRow(rentRows, region.clsNm);
+    const vacancyRow = latestRegionRow(vacancyRows, region.clsNm);
+    if (!rentRow && !vacancyRow) {
+      return [];
+    }
+
+    // Rent is published in 천원/㎡ — convert to 원/㎡ (monthly). Guard on UI_NM in
+    // case the table's unit ever changes.
+    const rentRaw = numericValue(rentRow);
+    const rentKrwPerSqm =
+      rentRaw == null ? null : Math.round(rentRaw * (rentRow?.UI_NM?.includes('천원') ? 1000 : 1));
+
+    const vacancy = numericValue(vacancyRow);
+    const period = rentRow?.WRTTIME_DESC ?? vacancyRow?.WRTTIME_DESC ?? 'latest';
+
     return [
       {
         source: `R-ONE ${period}`,
         distanceKm: 0,
         assetClassHint: assetClass,
-        monthlyRentKrwPerSqm: isDc ? null : rentPerSqm,
+        monthlyRentKrwPerSqm: rentKrwPerSqm,
         monthlyRentKrwPerKw: null,
-        capRatePct: cap,
-        occupancyPct: vacancy == null ? null : Math.max(0, 100 - vacancy),
+        // 소득수익률 (cap) lives in a separate STATBL_ID not wired here yet.
+        capRatePct: null,
+        occupancyPct: vacancy == null ? null : clamp(100 - vacancy, 0, 100),
         transactionDate: null,
-        note: `한국부동산원 상업용부동산 임대동향 (${region.label})`
+        note: `한국부동산원 상업용부동산 임대동향조사 (오피스 · ${region.label})`
       }
     ];
   }
 
-  private async fetchRegion(
-    regionCode: string,
-    assetClass: RentalComparable['assetClassHint']
-  ): Promise<ReoneRow[]> {
+  private async fetchTable(statblId: string): Promise<ReoneRow[]> {
     const url = new URL(this.baseUrl);
     url.searchParams.set('KEY', this.apiKey!);
+    url.searchParams.set('STATBL_ID', statblId);
+    url.searchParams.set('DTACYCLE_CD', 'QY');
     url.searchParams.set('Type', 'json');
     url.searchParams.set('pIndex', '1');
-    url.searchParams.set('pSize', '100');
-    // 상업용부동산 임대동향 통계표: office vs retail use different table IDs; the
-    // operator configures the concrete STATBL_ID via env when enabling live mode.
-    url.searchParams.set('REGION', regionCode);
-    url.searchParams.set(
-      'PROPERTY',
-      assetClass === 'RETAIL' ? 'RETAIL' : assetClass === 'OFFICE' ? 'OFFICE' : 'OFFICE'
-    );
+    // The latest quarter is returned first; 200 rows covers every 권역 for the
+    // most recent few quarters (the survey has ~40 submarkets).
+    url.searchParams.set('pSize', '200');
 
-    const response = await fetchWithTimeout(url.toString(), {}, this.timeoutMs);
+    const response = await this.fetcher(url.toString(), {}, this.timeoutMs);
     if (!response.ok) {
       throw new Error(`R-ONE HTTP ${response.status}`);
     }
-    const body = (await response.json().catch(() => null)) as
-      | { SttsApiTblData?: Array<{ row?: ReoneRow[] }> }
-      | { row?: ReoneRow[] }
-      | null;
-    if (!body) return [];
-    // R-ONE wraps rows under SttsApiTblData[1].row; tolerate both shapes.
-    const wrapped = (body as { SttsApiTblData?: Array<{ row?: ReoneRow[] }> }).SttsApiTblData;
-    if (Array.isArray(wrapped)) {
-      return wrapped.flatMap((segment) => segment.row ?? []);
-    }
-    return (body as { row?: ReoneRow[] }).row ?? [];
+    const body = (await response.json().catch(() => null)) as {
+      SttsApiTblData?: Array<{ row?: ReoneRow[] }>;
+    } | null;
+    // Rows live under SttsApiTblData[1].row; the [0] segment is head/RESULT.
+    return (body?.SttsApiTblData ?? []).flatMap((segment) => segment.row ?? []);
   }
 }
