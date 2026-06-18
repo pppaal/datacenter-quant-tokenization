@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { formatCurrencyFromKrwAtRate, type SupportedCurrency } from '@/lib/finance/currency';
+import { formatCompactCurrencyFromKrwAtRate, type SupportedCurrency } from '@/lib/finance/currency';
 import type { AssetFinancialStatement } from '@/lib/services/financial-statements';
 import { formatNumber, toSentenceCase } from '@/lib/utils';
 
@@ -51,7 +51,7 @@ export function FinancialStatementsPanel({
 }: Props) {
   const groups = groupByCounterparty(statements);
   const money = (value: { toString(): string } | number | null | undefined) =>
-    formatCurrencyFromKrwAtRate(toNumber(value), displayCurrency, fxRateToKrw);
+    formatCompactCurrencyFromKrwAtRate(toNumber(value), displayCurrency, fxRateToKrw);
 
   return (
     <Card data-testid="financial-statements-panel">
@@ -103,7 +103,7 @@ export function FinancialStatementsPanel({
                   {latestAssessment ? (
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge tone={riskTone(latestAssessment.riskLevel)}>
-                        {latestAssessment.riskLevel} credit
+                        {latestAssessment.riskLevel} risk
                       </Badge>
                       <Badge tone="neutral">Score {formatNumber(latestAssessment.score, 0)}</Badge>
                     </div>
@@ -152,7 +152,10 @@ export function FinancialStatementsPanel({
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="text-sm font-semibold text-white">
                             FY{statement.fiscalYear ?? '—'}
-                            {statement.fiscalPeriod ? ` ${statement.fiscalPeriod}` : ''}
+                            {statement.fiscalPeriod &&
+                            !/^(FY|ANNUAL)$/i.test(statement.fiscalPeriod)
+                              ? ` ${statement.fiscalPeriod}`
+                              : ''}
                           </span>
                           <Badge tone="neutral">{toSentenceCase(statement.statementType)}</Badge>
                           <Badge tone="neutral">

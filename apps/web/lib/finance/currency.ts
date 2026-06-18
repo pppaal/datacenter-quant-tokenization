@@ -204,3 +204,35 @@ export function formatCurrencyFromKrwAtRate(
     maximumFractionDigits: currency === 'JPY' || currency === 'KRW' ? 0 : 2
   }).format(value);
 }
+
+/**
+ * Compact, institutional money display: KRW renders in 조/억 (what a Korean
+ * desk reads), every other currency uses Intl compact notation (e.g. $1.7B).
+ * Use on dense financial panels where full 13-digit figures are unreadable —
+ * `formatCurrencyFromKrwAtRate` stays for inputs/exports that need exact digits.
+ */
+export function formatCompactCurrencyFromKrwAtRate(
+  amountKrw: number | null | undefined,
+  currency: SupportedCurrency,
+  rateToKrw?: number | null,
+  locale = 'en-US',
+  env: NodeJS.ProcessEnv = process.env
+) {
+  const value = convertFromKrwAtRate(amountKrw, currency, rateToKrw, env);
+  if (value === null || Number.isNaN(value)) return 'N/A';
+  const abs = Math.abs(value);
+
+  if (currency === 'KRW') {
+    if (abs >= 1e12) return `₩${(value / 1e12).toFixed(2)}조`;
+    if (abs >= 1e8) return `₩${(value / 1e8).toFixed(1)}억`;
+    if (abs >= 1e4) return `₩${Math.round(value / 1e4).toLocaleString('en-US')}만`;
+    return `₩${Math.round(value).toLocaleString('en-US')}`;
+  }
+
+  return new Intl.NumberFormat(locale, {
+    style: 'currency',
+    currency,
+    notation: 'compact',
+    maximumFractionDigits: 1
+  }).format(value);
+}
