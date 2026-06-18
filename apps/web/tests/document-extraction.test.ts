@@ -23,15 +23,15 @@ test('document extraction chunks text and stores heuristic plus AI facts', async
           }
         },
         documentChunk: {
-          async create(args: any) {
-            createdChunks.push(args.data);
-            return args.data;
+          async createMany(args: any) {
+            createdChunks.push(...args.data);
+            return { count: args.data.length };
           }
         },
         documentFact: {
-          async create(args: any) {
-            createdFacts.push(args.data);
-            return args.data;
+          async createMany(args: any) {
+            createdFacts.push(...args.data);
+            return { count: args.data.length };
           }
         }
       } as any,
