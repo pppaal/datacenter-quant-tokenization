@@ -8,6 +8,7 @@ import { SponsorForms } from '@/components/admin/sponsor-form';
 import { prisma } from '@/lib/db/prisma';
 import { formatNumber } from '@/lib/utils';
 import { formatPriceKrw } from '@/lib/ui/format';
+import { toNumberOrNull } from '@/lib/math';
 
 export const dynamic = 'force-dynamic';
 
@@ -85,7 +86,9 @@ export default async function SponsorsPage() {
                     <div className="mt-1 text-xs text-slate-500">
                       {s.hqMarket ? `${s.hqMarket} · ` : ''}
                       {s.yearFounded ? `founded ${s.yearFounded} · ` : ''}
-                      {s.aumKrw ? `AUM ${formatPriceKrw(s.aumKrw)} KRW` : 'AUM unknown'}
+                      {toNumberOrNull(s.aumKrw) !== null
+                        ? `AUM ${formatPriceKrw(toNumberOrNull(s.aumKrw))} KRW`
+                        : 'AUM unknown'}
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -127,7 +130,7 @@ export default async function SponsorsPage() {
                               {d.assetClass ?? '—'} / {d.market ?? '—'}
                             </td>
                             <td className="px-3 py-2 text-right text-xs">
-                              {formatPriceKrw(d.equityKrw)}
+                              {formatPriceKrw(toNumberOrNull(d.equityKrw))}
                             </td>
                             <td className="px-3 py-2 text-right font-mono text-xs">
                               {d.equityMultiple !== null && d.equityMultiple !== undefined

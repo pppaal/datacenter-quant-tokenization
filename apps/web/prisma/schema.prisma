@@ -2392,7 +2392,7 @@ model Sponsor {
   name        String              @unique
   shortName   String?
   hqMarket    String?
-  aumKrw      Float?
+  aumKrw      Decimal?            @db.Decimal(20, 2)
   fundCount   Int?
   yearFounded Int?
   websiteUrl  String?
@@ -2411,7 +2411,7 @@ model SponsorPriorDeal {
   exitYear       Int?
   assetClass     AssetClass?
   market         String?
-  equityKrw      Float?
+  equityKrw      Decimal?    @db.Decimal(20, 2)
   equityMultiple Float?
   grossIrrPct    Float?
   status         String      @default("EXITED")
