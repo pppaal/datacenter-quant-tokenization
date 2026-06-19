@@ -3,7 +3,7 @@ import { formatPercent } from '@/lib/utils';
 import type { SampleReportData } from './types';
 
 export function HeadlineScenarioStrip({ data }: { data: SampleReportData }) {
-  const { scenarios, bullValue, bearValue, displayCurrency, fxRateToKrw } = data;
+  const { baseScenario, bullValue, bearValue, displayCurrency, fxRateToKrw } = data;
   return (
     <section className="app-shell py-4">
       <div className="grid gap-4 md:grid-cols-4">
@@ -18,8 +18,8 @@ export function HeadlineScenarioStrip({ data }: { data: SampleReportData }) {
             formatCurrencyFromKrwAtRate(bearValue, displayCurrency, fxRateToKrw),
             'downside scenario'
           ],
-          ['Implied Yield', formatPercent(scenarios[1]?.impliedYieldPct), 'base scenario'],
-          ['Exit Cap Rate', formatPercent(scenarios[1]?.exitCapRatePct), 'base scenario']
+          ['Implied Yield', formatPercent(baseScenario?.impliedYieldPct), 'base scenario'],
+          ['Exit Cap Rate', formatPercent(baseScenario?.exitCapRatePct), 'base scenario']
         ].map(([label, value, detail]) => (
           <div key={label} className="metric-card">
             <div className="fine-print">{label}</div>

@@ -42,6 +42,22 @@ export function pickBaseDscr(scenarios: ScenarioLike[]): number | null {
     : null;
 }
 
+/**
+ * Bull / bear headline values resolved by valuation magnitude (highest = bull,
+ * lowest = bear), not by array position — positional `[0]`/`[2]` printed
+ * identical bull=bear for 1–2-scenario runs and could swap labels on reorder.
+ */
+export function resolveBullBearValues(scenarios: Array<{ valuationKrw?: number | null }>): {
+  bull: number | null;
+  bear: number | null;
+} {
+  const values = scenarios
+    .map((scenario) => scenario.valuationKrw)
+    .filter((value): value is number => typeof value === 'number' && Number.isFinite(value));
+  if (values.length === 0) return { bull: null, bear: null };
+  return { bull: Math.max(...values), bear: Math.min(...values) };
+}
+
 export function buildScenarioOutput(input: ScenarioOutputInput): UnderwritingScenario {
   return {
     name: input.name,

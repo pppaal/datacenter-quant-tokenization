@@ -76,6 +76,7 @@ export type SampleReportData = {
   provenance: ProvenanceEntry[];
   bullValue: number | null;
   bearValue: number | null;
+  baseScenario: NonNullable<LatestRun['scenarios']>[number] | null;
   recommendation: ReturnType<typeof getValuationRecommendation>;
   isDataCenter: boolean;
   displayCurrency: ReturnType<typeof resolveDisplayCurrency>;

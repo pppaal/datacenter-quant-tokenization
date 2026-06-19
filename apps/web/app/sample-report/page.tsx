@@ -40,6 +40,7 @@ import {
   type PipelineProjectInput
 } from '@/lib/services/research/supply-demand';
 import { readStoredBaseCaseProForma } from '@/lib/services/valuation/pro-forma';
+import { pickBaseScenario, resolveBullBearValues } from '@/lib/services/valuation/scenario-utils';
 import { AuditSection } from './_sections/audit';
 import { CapexSection } from './_sections/capex';
 import { CapitalCallsSection } from './_sections/capital-calls';
@@ -108,8 +109,10 @@ export default async function SampleReportPage({
   const provenance = Array.isArray(latestRun.provenance)
     ? (latestRun.provenance as ProvenanceEntry[])
     : [];
-  const bullValue = scenarios[0]?.valuationKrw ?? null;
-  const bearValue = scenarios[2]?.valuationKrw ?? null;
+  // Resolve by magnitude / name, never by array position: a reordered or
+  // 1–2-scenario run otherwise swaps the bull/bear labels or shows base==index-1.
+  const { bull: bullValue, bear: bearValue } = resolveBullBearValues(scenarios);
+  const baseScenario = pickBaseScenario(scenarios) ?? null;
   const recommendation = getValuationRecommendation(latestRun.confidenceScore);
   const isDataCenter = asset.assetClass === AssetClass.DATA_CENTER;
   const displayCurrency = resolveDisplayCurrency(asset.address?.country ?? asset.market);
@@ -479,6 +482,7 @@ export default async function SampleReportPage({
     provenance,
     bullValue,
     bearValue,
+    baseScenario,
     recommendation,
     isDataCenter,
     displayCurrency,
