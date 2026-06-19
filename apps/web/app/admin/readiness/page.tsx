@@ -5,6 +5,18 @@ import { formatDate } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
+// A mock anchor is persisted with payload.mockMode === true and a deterministic
+// fake txHash. Surface that so a mock-anchored asset isn't indistinguishable
+// from a real on-chain anchor on the committee-facing readiness screen.
+function isMockOnchainRecord(payload: unknown): boolean {
+  return (
+    !!payload &&
+    typeof payload === 'object' &&
+    !Array.isArray(payload) &&
+    (payload as Record<string, unknown>).mockMode === true
+  );
+}
+
 export default async function ReadinessPage() {
   const projects = await listReadinessProjects();
 
@@ -32,22 +44,43 @@ export default async function ReadinessPage() {
             </div>
             <p className="mt-4 text-sm text-slate-400">{project.nextAction}</p>
             <div className="mt-5 grid gap-4 md:grid-cols-2">
-              {project.onchainRecords.map((record) => (
-                <div
-                  key={record.id}
-                  className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5 text-sm text-slate-300"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="font-semibold text-white">
-                      {record.recordType.replace(/_/g, ' ')}
-                    </span>
-                    <span className="text-slate-500">{formatDate(record.createdAt)}</span>
+              {project.onchainRecords.map((record) => {
+                const isMock = isMockOnchainRecord(record.payload);
+                const isAnchored = record.status === 'ANCHORED';
+                return (
+                  <div
+                    key={record.id}
+                    className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5 text-sm text-slate-300"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="font-semibold text-white">
+                        {record.recordType.replace(/_/g, ' ')}
+                      </span>
+                      <span className="text-slate-500">{formatDate(record.createdAt)}</span>
+                    </div>
+                    <div className="mt-2 text-slate-400">
+                      Evidence: {record.document?.title ?? 'Pending'} / Status: {record.status}
+                    </div>
+                    {isAnchored ? (
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                        {isMock ? (
+                          <Badge tone="warn">Mock anchor (not on real chain)</Badge>
+                        ) : (
+                          <Badge tone="good">On-chain anchor</Badge>
+                        )}
+                        {record.chainId ? (
+                          <span className="text-xs text-slate-500">chain {record.chainId}</span>
+                        ) : null}
+                        {record.txHash ? (
+                          <span className="font-mono text-[11px] text-slate-500">
+                            {record.txHash.slice(0, 14)}…
+                          </span>
+                        ) : null}
+                      </div>
+                    ) : null}
                   </div>
-                  <div className="mt-2 text-slate-400">
-                    Evidence: {record.document?.title ?? 'Pending'} / Status: {record.status}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </Card>
         ))}
