@@ -789,7 +789,12 @@ export async function ingestFinancialStatement(
       totalDebtKrw: parsed.totalDebtKrw,
       totalAssetsKrw: parsed.totalAssetsKrw,
       totalEquityKrw: parsed.totalEquityKrw,
-      interestExpenseKrw: parsed.interestExpenseKrw
+      interestExpenseKrw: parsed.interestExpenseKrw,
+      currentAssetsKrw: parsed.currentAssetsKrw,
+      currentLiabilitiesKrw: parsed.currentLiabilitiesKrw,
+      currentDebtMaturitiesKrw: parsed.currentDebtMaturitiesKrw,
+      operatingCashFlowKrw: parsed.operatingCashFlowKrw,
+      capexKrw: parsed.capexKrw
     }
   });
 

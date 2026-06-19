@@ -50,20 +50,30 @@ const RATIO_CHIP_CLASS: Record<RatioTone, string> = {
  * TOTAL-liabilities basis (총부채 = 총자산 − 자기자본); thresholds follow the
  * KR institutional bands (100% / 200% / 400%).
  */
-function buildKrRatios(statement: {
+type StatementFigures = {
   revenueKrw: { toString(): string } | number | null;
   ebitdaKrw: { toString(): string } | number | null;
   cashKrw: { toString(): string } | number | null;
   totalDebtKrw: { toString(): string } | number | null;
   totalAssetsKrw: { toString(): string } | number | null;
   totalEquityKrw: { toString(): string } | number | null;
-}): KrRatio[] {
+  currentAssetsKrw?: { toString(): string } | number | null;
+  currentLiabilitiesKrw?: { toString(): string } | number | null;
+  currentDebtMaturitiesKrw?: { toString(): string } | number | null;
+  operatingCashFlowKrw?: { toString(): string } | number | null;
+};
+
+function buildKrRatios(statement: StatementFigures): KrRatio[] {
   const revenue = toNumber(statement.revenueKrw);
   const ebitda = toNumber(statement.ebitdaKrw);
   const cash = toNumber(statement.cashKrw) ?? 0;
   const debt = toNumber(statement.totalDebtKrw);
   const assets = toNumber(statement.totalAssetsKrw);
   const equity = toNumber(statement.totalEquityKrw);
+  const currentAssets = toNumber(statement.currentAssetsKrw ?? null);
+  const currentLiabilities = toNumber(statement.currentLiabilitiesKrw ?? null);
+  const currentMaturities = toNumber(statement.currentDebtMaturitiesKrw ?? null);
+  const ocf = toNumber(statement.operatingCashFlowKrw ?? null);
   const rows: KrRatio[] = [];
 
   if (assets != null && equity != null && equity > 0) {
@@ -100,6 +110,21 @@ function buildKrRatios(statement: {
     const marginPct = (ebitda / revenue) * 100;
     const tone: RatioTone = marginPct < 5 ? 'warn' : marginPct >= 15 ? 'good' : 'neutral';
     rows.push({ label: 'EBITDA Margin', value: `${formatNumber(marginPct, 0)}%`, tone });
+  }
+  if (currentAssets != null && currentLiabilities != null && currentLiabilities > 0) {
+    const cr = currentAssets / currentLiabilities; // 유동비율
+    const tone: RatioTone = cr < 1 ? 'danger' : cr < 1.5 ? 'warn' : 'good';
+    rows.push({ label: '유동비율', value: `${formatNumber(cr, 1)}x`, tone });
+  }
+  if (ocf != null && debt != null && debt > 0) {
+    const ocfToDebtPct = (ocf / debt) * 100;
+    const tone: RatioTone = ocfToDebtPct < 5 ? 'danger' : ocfToDebtPct >= 25 ? 'good' : 'neutral';
+    rows.push({ label: 'OCF / Debt', value: `${formatNumber(ocfToDebtPct, 0)}%`, tone });
+  }
+  if (currentMaturities != null && currentMaturities > 0) {
+    const coverage = (cash + (ocf ?? 0)) / currentMaturities;
+    const tone: RatioTone = coverage < 1 ? 'danger' : coverage < 1.5 ? 'warn' : 'good';
+    rows.push({ label: 'Maturity Coverage', value: `${formatNumber(coverage, 1)}x`, tone });
   }
   return rows;
 }

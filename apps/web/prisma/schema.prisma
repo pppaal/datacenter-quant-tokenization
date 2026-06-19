@@ -1401,6 +1401,14 @@ model FinancialStatement {
   totalAssetsKrw     Decimal?           @db.Decimal(20, 2)
   totalEquityKrw     Decimal?           @db.Decimal(20, 2)
   interestExpenseKrw Decimal?           @db.Decimal(20, 2)
+  // Balance-sheet liquidity + cash-flow figures parsed at intake. Previously
+  // dropped on persist (only frozen into the assessment JSON), so current
+  // ratio / OCF-to-debt / near-term-maturity coverage couldn't be recomputed.
+  currentAssetsKrw         Decimal? @db.Decimal(20, 2)
+  currentLiabilitiesKrw    Decimal? @db.Decimal(20, 2)
+  currentDebtMaturitiesKrw Decimal? @db.Decimal(20, 2)
+  operatingCashFlowKrw     Decimal? @db.Decimal(20, 2)
+  capexKrw                 Decimal? @db.Decimal(20, 2)
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
   asset              Asset              @relation(fields: [assetId], references: [id], onDelete: Cascade)
