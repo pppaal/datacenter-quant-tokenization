@@ -40,6 +40,8 @@ type Props = {
     name: string;
     debtServiceCoverage?: number | null;
   }>;
+  /** Concluded/base-case value (run.baseCaseValueKrw) — the reconciled number. */
+  concludedValueKrw?: number | null;
 };
 
 type Metric = {
@@ -53,46 +55,51 @@ function pickNumber(assumptions: Props['assumptions'], key: string) {
   return typeof value === 'number' ? value : null;
 }
 
+/**
+ * Resolve an approach value. The data-center engine nests the per-approach
+ * values under `assumptions.approaches.{replacementFloor,incomeApproach,
+ * leaseDcf,comparables}`; older/other strategies wrote flat top-level keys.
+ * Prefer the nested value, fall back to the legacy flat key.
+ */
+function pickApproach(assumptions: Props['assumptions'], nestedKey: string, flatKey: string) {
+  const approaches = (assumptions as Record<string, unknown> | null | undefined)?.approaches as
+    | Record<string, unknown>
+    | undefined;
+  const nested = approaches?.[nestedKey];
+  if (typeof nested === 'number' && Number.isFinite(nested)) return nested;
+  return pickNumber(assumptions, flatKey);
+}
+
 function buildValueStack(
   assumptions: Props['assumptions'],
   displayCurrency: SupportedCurrency,
-  fxRateToKrw?: number | null
+  fxRateToKrw?: number | null,
+  concludedValueKrw?: number | null
 ): Metric[] {
-  return [
+  const money = (value: number | null) =>
+    formatCurrencyFromKrwAtRate(value, displayCurrency, fxRateToKrw);
+  const comparables = pickApproach(assumptions, 'comparables', 'directComparableValueKrw');
+  const concluded =
+    typeof concludedValueKrw === 'number' && Number.isFinite(concludedValueKrw)
+      ? concludedValueKrw
+      : pickNumber(assumptions, 'weightedValueKrw');
+
+  const rows: Metric[] = [
     {
       label: 'Replacement Floor',
-      value: formatCurrencyFromKrwAtRate(
-        pickNumber(assumptions, 'replacementCostFloorKrw'),
-        displayCurrency,
-        fxRateToKrw
-      )
+      value: money(pickApproach(assumptions, 'replacementFloor', 'replacementCostFloorKrw'))
     },
     {
       label: 'Income Approach',
-      value: formatCurrencyFromKrwAtRate(
-        pickNumber(assumptions, 'incomeApproachValueKrw'),
-        displayCurrency,
-        fxRateToKrw
-      )
+      value: money(pickApproach(assumptions, 'incomeApproach', 'incomeApproachValueKrw'))
     },
-    {
-      label: 'DCF Value',
-      value: formatCurrencyFromKrwAtRate(
-        pickNumber(assumptions, 'dcfValueKrw'),
-        displayCurrency,
-        fxRateToKrw
-      )
-    },
-    {
-      label: 'Weighted Value',
-      value: formatCurrencyFromKrwAtRate(
-        pickNumber(assumptions, 'weightedValueKrw'),
-        displayCurrency,
-        fxRateToKrw
-      ),
-      tone: 'good'
-    }
+    { label: 'DCF Value', value: money(pickApproach(assumptions, 'leaseDcf', 'dcfValueKrw')) }
   ];
+  if (comparables != null) {
+    rows.push({ label: 'Comparables', value: money(comparables) });
+  }
+  rows.push({ label: 'Concluded Value', value: money(concluded), tone: 'good' });
+  return rows;
 }
 
 function buildOperatingInputs(
@@ -215,9 +222,10 @@ export function ValuationBreakdown({
   displayCurrency = 'KRW',
   fxRateToKrw,
   debtFacilities = [],
-  scenarios = []
+  scenarios = [],
+  concludedValueKrw
 }: Props) {
-  const valueStack = buildValueStack(assumptions, displayCurrency, fxRateToKrw);
+  const valueStack = buildValueStack(assumptions, displayCurrency, fxRateToKrw, concludedValueKrw);
   const operatingInputs = buildOperatingInputs(assumptions, displayCurrency, fxRateToKrw);
   const sourceSummary = sourceMix(provenance);
   const debtBreakdown = buildDebtBreakdown(assumptions, debtFacilities, scenarios);

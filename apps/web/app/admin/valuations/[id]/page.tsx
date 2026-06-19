@@ -460,6 +460,7 @@ export default async function ValuationRunDetailPage({
         provenance={provenance}
         displayCurrency={displayCurrency}
         fxRateToKrw={fxRateToKrw}
+        concludedValueKrw={run.baseCaseValueKrw}
       />
 
       <ConfidenceBreakdown
