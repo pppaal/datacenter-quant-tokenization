@@ -8,7 +8,7 @@ import { CommitteePacketDecisionForm } from '@/components/admin/committee-packet
 import { CommitteePacketLockButton } from '@/components/admin/committee-packet-lock-button';
 import { CommitteePacketReleaseButton } from '@/components/admin/committee-packet-release-button';
 import { getCommitteeWorkspace } from '@/lib/services/ic';
-import { formatDate, formatNumber } from '@/lib/utils';
+import { formatDate, formatNumber, toSentenceCase } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -126,7 +126,7 @@ async function CommitteeWorkspaceContent() {
                       <div className="mt-1 text-sm text-slate-400">{meeting.code}</div>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <Badge>{meeting.status.toLowerCase()}</Badge>
+                      <Badge>{toSentenceCase(meeting.status)}</Badge>
                       <Badge tone="neutral">
                         {meeting.scheduledFor ? formatDate(meeting.scheduledFor) : 'unscheduled'}
                       </Badge>
@@ -152,7 +152,7 @@ async function CommitteeWorkspaceContent() {
                                   : 'neutral'
                             }
                           >
-                            {packet.status.toLowerCase()}
+                            {toSentenceCase(packet.status)}
                           </Badge>
                         </div>
                         <div className="mt-2 text-xs text-slate-400">
@@ -189,7 +189,7 @@ async function CommitteeWorkspaceContent() {
                       <div className="text-lg font-semibold text-white">{candidate.name}</div>
                       <div className="mt-1 text-sm text-slate-400">{candidate.assetCode}</div>
                     </div>
-                    <Badge tone="warn">{candidate.status.toLowerCase().replaceAll('_', ' ')}</Badge>
+                    <Badge tone="warn">{toSentenceCase(candidate.status)}</Badge>
                   </div>
                   <p className="mt-3 text-sm text-slate-300">
                     {candidate.valuations[0]
@@ -216,7 +216,7 @@ async function CommitteeWorkspaceContent() {
                         <div className="mt-2 text-amber-200">
                           Missing {candidate.diligenceSummary.missingCoreTypes.length} core lane(s):{' '}
                           {candidate.diligenceSummary.missingCoreTypes
-                            .map((item) => item.toLowerCase())
+                            .map((item) => toSentenceCase(item))
                             .join(', ')}
                           .
                         </div>
@@ -225,7 +225,7 @@ async function CommitteeWorkspaceContent() {
                         <div className="mt-2 text-amber-200">
                           Deliverables missing for{' '}
                           {candidate.diligenceSummary.uncoveredCoreTypes
-                            .map((item) => item.toLowerCase())
+                            .map((item) => toSentenceCase(item))
                             .join(', ')}
                           .
                         </div>
@@ -274,7 +274,7 @@ async function CommitteeWorkspaceContent() {
                     <div className="mt-1 text-sm text-slate-400">{packet.packetCode}</div>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge data-testid="ic-packet-status">{packet.status.toLowerCase()}</Badge>
+                    <Badge data-testid="ic-packet-status">{toSentenceCase(packet.status)}</Badge>
                     <Badge tone="neutral">{formatDate(packet.updatedAt)}</Badge>
                   </div>
                 </div>
@@ -285,9 +285,9 @@ async function CommitteeWorkspaceContent() {
                 </p>
                 {latestDecision ? (
                   <div className="mt-3 text-xs text-slate-400">
-                    Latest decision: {latestDecision.outcome.toLowerCase()} /{' '}
+                    Latest decision: {toSentenceCase(latestDecision.outcome)} /{' '}
                     {formatDate(latestDecision.decidedAt)} /{' '}
-                    {latestDecision.decidedByLabel ?? 'committee'}
+                    {latestDecision.decidedByLabel ?? 'Not attributed'}
                   </div>
                 ) : null}
                 {packet.status !== 'LOCKED' && packet.status !== 'RELEASED' ? (

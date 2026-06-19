@@ -327,6 +327,7 @@ test.describe('operator mutation flows', () => {
       packetAfterUpload.getByTestId('ic-packet-lock-button').click()
     );
     await expect(packetAfterUpload.getByTestId('ic-packet-status')).toContainText('locked', {
+      ignoreCase: true,
       timeout: 20_000
     });
 
@@ -346,6 +347,7 @@ test.describe('operator mutation flows', () => {
       packetAfterUpload.getByTestId('ic-packet-decision-submit').click()
     );
     await expect(packetAfterUpload.getByTestId('ic-packet-status')).toContainText('approved', {
+      ignoreCase: true,
       timeout: 20_000
     });
 
@@ -358,6 +360,7 @@ test.describe('operator mutation flows', () => {
       packetAfterUpload.getByTestId('ic-packet-release-button').click()
     );
     await expect(packetAfterUpload.getByTestId('ic-packet-status')).toContainText('released', {
+      ignoreCase: true,
       timeout: 20_000
     });
   });
