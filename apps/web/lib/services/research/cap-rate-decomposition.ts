@@ -103,14 +103,14 @@ export function decomposeCapRate(inputs: CapRateInputs): CapRateDecomposition {
       label: 'Risk-free rate',
       pct: riskFreeRatePct,
       sign: '+',
-      notes: 'KR 10y govt bond yield (BOK ECOS).'
+      notes: 'KR sovereign yield (10y govt bond where available, else policy-rate proxy).'
     },
     {
       key: 'sectorPremium',
       label: 'Sector risk premium',
       pct: sectorPremiumPct,
       sign: '+',
-      notes: `Equity ERP ${equityRiskPremiumPct.toFixed(1)}% × sector beta ${sectorBeta.toFixed(2)}.`
+      notes: `Equity ERP ${equityRiskPremiumPct.toFixed(1)}% × sector beta ${sectorBeta.toFixed(2)} (standard assumptions, not market-derived).`
     },
     {
       key: 'submarketSpread',
@@ -118,9 +118,11 @@ export function decomposeCapRate(inputs: CapRateInputs): CapRateDecomposition {
       pct: submarketSpreadPct,
       sign: '+',
       notes:
-        submarketSpreadPct >= 0
+        submarketSpreadPct > 0
           ? 'Submarket trades wider than KR-wide mean (regression on TransactionComp).'
-          : 'Submarket trades tighter than KR-wide mean.'
+          : submarketSpreadPct < 0
+            ? 'Submarket trades tighter than KR-wide mean.'
+            : 'No submarket comp signal — neutral (0 bps).'
     },
     {
       key: 'growth',
@@ -135,16 +137,21 @@ export function decomposeCapRate(inputs: CapRateInputs): CapRateDecomposition {
       pct: liquidityPct,
       sign: liquidityPct >= 0 ? '+' : '-',
       notes:
-        liquidityPct >= 0
+        liquidityPct > 0
           ? 'Transaction volume below KR mean → thin-market penalty.'
-          : 'Transaction volume above KR mean → liquidity tightening.'
+          : liquidityPct < 0
+            ? 'Transaction volume above KR mean → liquidity tightening.'
+            : 'No transaction-volume signal — neutral (0 bps).'
     },
     {
       key: 'obsolescence',
       label: 'Obsolescence',
       pct: obsolescencePct,
       sign: '+',
-      notes: `${ageYears} years of age × ${DEFAULT_OBSOLESCENCE_BPS_PER_YEAR} bps/yr.`
+      notes:
+        ageYears > 0
+          ? `${ageYears} years of age × ${DEFAULT_OBSOLESCENCE_BPS_PER_YEAR} bps/yr.`
+          : 'Vintage not captured — no obsolescence premium applied.'
     }
   ];
 
