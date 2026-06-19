@@ -65,18 +65,42 @@ export default async function SponsorsPage() {
         <div className="space-y-4">
           {sponsors.map((s) => {
             const closedDeals = s.priorDeals.filter((d) => d.status === 'EXITED');
-            const multiples = closedDeals
-              .map((d) => d.equityMultiple)
-              .filter((v): v is number => typeof v === 'number');
-            const irrs = closedDeals
-              .map((d) => d.grossIrrPct)
-              .filter((v): v is number => typeof v === 'number');
-            const avgMultiple =
-              multiples.length === 0
-                ? null
-                : multiples.reduce((sum, v) => sum + v, 0) / multiples.length;
-            const avgIrr =
-              irrs.length === 0 ? null : irrs.reduce((sum, v) => sum + v, 0) / irrs.length;
+            // Capital-weighted (pooled) track record: weight each closed deal's
+            // metric by committed equity, falling back to a simple mean when no
+            // per-deal equity is captured. Matches the LP-facing IM card.
+            const equityWeightedMean = (
+              metric: (d: (typeof closedDeals)[number]) => number | null
+            ) => {
+              const weighted = closedDeals
+                .map((d) => ({ value: metric(d), weight: toNumberOrNull(d.equityKrw) }))
+                .filter(
+                  (r): r is { value: number; weight: number } =>
+                    typeof r.value === 'number' && typeof r.weight === 'number' && r.weight > 0
+                );
+              if (weighted.length > 0) {
+                const weightSum = weighted.reduce((sum, r) => sum + r.weight, 0);
+                return {
+                  value: weighted.reduce((sum, r) => sum + r.value * r.weight, 0) / weightSum,
+                  basis: 'capital' as const
+                };
+              }
+              const simple = closedDeals
+                .map(metric)
+                .filter((v): v is number => typeof v === 'number');
+              if (simple.length > 0) {
+                return {
+                  value: simple.reduce((sum, v) => sum + v, 0) / simple.length,
+                  basis: 'equal' as const
+                };
+              }
+              return { value: null, basis: null };
+            };
+            const multipleAvg = equityWeightedMean((d) => d.equityMultiple);
+            const irrAvg = equityWeightedMean((d) => d.grossIrrPct);
+            const avgMultiple = multipleAvg.value;
+            const avgIrr = irrAvg.value;
+            const weightingBasis = multipleAvg.basis ?? irrAvg.basis;
+            const avgPrefix = weightingBasis === 'capital' ? 'pooled' : 'avg';
 
             return (
               <Card key={s.id} className="space-y-4">
@@ -93,10 +117,14 @@ export default async function SponsorsPage() {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {avgMultiple !== null ? (
-                      <Badge tone="good">avg {avgMultiple.toFixed(2)}x</Badge>
+                      <Badge tone="good">
+                        {avgPrefix} {avgMultiple.toFixed(2)}x
+                      </Badge>
                     ) : null}
                     {avgIrr !== null ? (
-                      <Badge tone="good">avg IRR {avgIrr.toFixed(1)}%</Badge>
+                      <Badge tone="good">
+                        {avgPrefix} IRR {avgIrr.toFixed(1)}%
+                      </Badge>
                     ) : null}
                     <Badge>
                       {s.priorDeals.length} prior · {closedDeals.length} exited
