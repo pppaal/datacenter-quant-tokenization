@@ -26,6 +26,7 @@ import { SatelliteRiskSummary } from '@/components/valuation/satellite-risk-summ
 import { SensitivityTable } from '@/components/valuation/sensitivity-table';
 import { ValuationDeltaCard } from '@/components/valuation/valuation-delta-card';
 import { ValuationBreakdown } from '@/components/valuation/valuation-breakdown';
+import { ReturnProfilePanel } from '@/components/valuation/return-profile-panel';
 import { ValuationProvenance } from '@/components/valuation/valuation-provenance';
 import { ValuationRunBadges } from '@/components/valuation/valuation-run-badges';
 import { ValuationSignals } from '@/components/valuation/valuation-signals';
@@ -454,6 +455,13 @@ export default async function ValuationRunDetailPage({
       />
 
       <ValuationDeltaCard currentRun={run} previousRun={previousRun} />
+
+      <ReturnProfilePanel
+        assumptions={run.assumptions as Record<string, unknown>}
+        concludedValueKrw={run.baseCaseValueKrw}
+        displayCurrency={displayCurrency}
+        fxRateToKrw={fxRateToKrw}
+      />
 
       <ValuationBreakdown
         assumptions={run.assumptions as Record<string, number | string | null>}
