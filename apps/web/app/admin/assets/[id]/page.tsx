@@ -52,6 +52,7 @@ import { ValuationProvenance } from '@/components/valuation/valuation-provenance
 import { ValuationQualityPanel } from '@/components/valuation/valuation-quality-panel';
 import { ValuationRunBadges } from '@/components/valuation/valuation-run-badges';
 import { ValuationScenarioMatrix } from '@/components/valuation/valuation-scenario-matrix';
+import { ReturnProfilePanel } from '@/components/valuation/return-profile-panel';
 import { CapRateBuildupPanel } from '@/components/valuation/cap-rate-buildup-panel';
 import {
   buildAssetCapRateDecomposition,
@@ -518,6 +519,12 @@ export default async function AssetDetailPage({
             debtFacilities={asset.debtFacilities}
             scenarios={latestRun.scenarios}
             concludedValueKrw={latestRun.baseCaseValueKrw}
+          />
+          <ReturnProfilePanel
+            assumptions={latestRun.assumptions as Record<string, unknown>}
+            concludedValueKrw={latestRun.baseCaseValueKrw}
+            displayCurrency={displayCurrency}
+            fxRateToKrw={fxRateToKrw}
           />
           <ValuationScenarioMatrix
             baseCaseValueKrw={latestRun.baseCaseValueKrw}
