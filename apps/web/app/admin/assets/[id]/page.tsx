@@ -52,6 +52,11 @@ import { ValuationProvenance } from '@/components/valuation/valuation-provenance
 import { ValuationQualityPanel } from '@/components/valuation/valuation-quality-panel';
 import { ValuationRunBadges } from '@/components/valuation/valuation-run-badges';
 import { ValuationScenarioMatrix } from '@/components/valuation/valuation-scenario-matrix';
+import { CapRateBuildupPanel } from '@/components/valuation/cap-rate-buildup-panel';
+import {
+  buildAssetCapRateDecomposition,
+  capRateUsesPolicyRateProxy
+} from '@/lib/services/research/asset-cap-rate';
 import { ValuationSignals } from '@/components/valuation/valuation-signals';
 import { shortenHash } from '@/lib/blockchain/registry';
 import { getAssetClassPlaybook } from '@/lib/asset-class/playbook';
@@ -151,6 +156,8 @@ export default async function AssetDetailPage({
       ? latestRun.baseCaseValueKrw / asset.powerCapacityMw
       : null;
   const subjectRatePerKwKrw = asset.marketSnapshot?.colocationRatePerKwKrw ?? null;
+  const capRateDecomposition = buildAssetCapRateDecomposition(asset);
+  const capRateUsesProxy = capRateUsesPolicyRateProxy(asset);
   const latestFeatureSnapshots = asset.featureSnapshots.slice(0, 4);
   const usedFeatureSnapshots = latestRun
     ? filterValuationFeatureSnapshots(asset.featureSnapshots, latestRun.assumptions)
@@ -431,6 +438,11 @@ export default async function AssetDetailPage({
 
   const valuationTab = (
     <div className="space-y-6">
+      <CapRateBuildupPanel
+        decomposition={capRateDecomposition}
+        usesPolicyProxy={capRateUsesProxy}
+      />
+
       <FeatureSnapshotPanel
         title="Approved Feature Layer"
         snapshots={latestFeatureSnapshots}
