@@ -6,6 +6,8 @@ import {
   listProvisionedAdminUsers,
   upsertProvisionedAdminUser
 } from '@/lib/security/admin-scim';
+import { getRequestIpAddress } from '@/lib/security/admin-request';
+import { recordAuditEvent } from '@/lib/services/audit';
 
 type ProvisionedUserPayload = {
   provider?: string;
@@ -59,6 +61,24 @@ export async function POST(request: Request) {
     },
     prisma
   );
+
+  await recordAuditEvent({
+    actorIdentifier: `scim:${payload.provider?.trim() || 'provider'}`,
+    actorRole: 'SCIM_PROVISIONER',
+    action: 'admin_user.provision',
+    entityType: 'User',
+    entityId: user.id,
+    requestPath: new URL(request.url).pathname,
+    requestMethod: request.method,
+    ipAddress: getRequestIpAddress(request.headers),
+    metadata: {
+      externalId: payload.externalId.trim(),
+      email: payload.email.trim(),
+      role: payload.role ?? null,
+      isActive: payload.isActive ?? null,
+      grantCount: payload.grants?.filter((grant) => grant.scopeId?.trim()).length ?? 0
+    }
+  });
 
   return NextResponse.json({
     ok: true,

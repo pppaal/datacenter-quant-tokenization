@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { authorizeAdminScimRequest, deprovisionAdminUser } from '@/lib/security/admin-scim';
 import { genericErrorResponse } from '@/lib/security/error-response';
+import { getRequestIpAddress } from '@/lib/security/admin-request';
+import { recordAuditEvent } from '@/lib/services/audit';
 
 type UserPatchPayload = {
   role?: 'ADMIN' | 'ANALYST' | 'VIEWER';
@@ -40,6 +42,21 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     }
   });
 
+  await recordAuditEvent({
+    actorIdentifier: 'scim:provider',
+    actorRole: 'SCIM_PROVISIONER',
+    action: 'admin_user.modify',
+    entityType: 'User',
+    entityId: user.id,
+    requestPath: new URL(request.url).pathname,
+    requestMethod: request.method,
+    ipAddress: getRequestIpAddress(request.headers),
+    metadata: {
+      role: user.role,
+      isActive: user.isActive
+    }
+  });
+
   return NextResponse.json({
     ok: true,
     user
@@ -60,6 +77,17 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
       },
       prisma
     );
+
+    await recordAuditEvent({
+      actorIdentifier: 'scim:provider',
+      actorRole: 'SCIM_PROVISIONER',
+      action: 'admin_user.deprovision',
+      entityType: 'User',
+      entityId: id,
+      requestPath: new URL(request.url).pathname,
+      requestMethod: request.method,
+      ipAddress: getRequestIpAddress(request.headers)
+    });
 
     return NextResponse.json({
       ok: true,
