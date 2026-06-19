@@ -3,7 +3,7 @@ import { DocumentUploadForm } from '@/components/admin/document-upload-form';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { listDocuments } from '@/lib/services/documents';
-import { formatDate, formatNumber } from '@/lib/utils';
+import { formatDate, formatNumber, toSentenceCase } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,6 +11,16 @@ type CreditMetrics = {
   currentRatio?: number | null;
   currentMaturityCoverage?: number | null;
 };
+
+// Map an extraction-run status to a badge tone so a failed/pending run is not
+// shown as a green success (the badge was previously hardcoded to "good").
+function extractionTone(status: string): 'good' | 'warn' | 'danger' {
+  const normalized = status.toUpperCase();
+  if (['COMPLETED', 'COMPLETE', 'SUCCESS', 'SUCCEEDED', 'DONE'].includes(normalized)) return 'good';
+  if (['FAILED', 'ERROR', 'CANCELLED', 'CANCELED', 'DEAD_LETTERED'].includes(normalized))
+    return 'danger';
+  return 'warn';
+}
 
 export default async function DocumentsPage() {
   const documents = await listDocuments();
@@ -58,8 +68,11 @@ export default async function DocumentsPage() {
                       <p className="mt-3 text-sm leading-6 text-slate-400">{document.aiSummary}</p>
                       <div className="mt-4 flex flex-wrap gap-2">
                         {document.versions[0]?.extractionRuns[0] ? (
-                          <Badge tone="good">
-                            Extraction {document.versions[0].extractionRuns[0].status}
+                          <Badge
+                            tone={extractionTone(document.versions[0].extractionRuns[0].status)}
+                          >
+                            Extraction{' '}
+                            {toSentenceCase(document.versions[0].extractionRuns[0].status)}
                           </Badge>
                         ) : (
                           <Badge tone="warn">No extraction</Badge>
@@ -91,7 +104,10 @@ export default async function DocumentsPage() {
                                     : 'N/A')}
                               </div>
                               <div className="mt-2 text-xs text-slate-500">
-                                {fact.factType} / confidence {formatNumber(fact.confidenceScore, 2)}
+                                {fact.factType} / confidence{' '}
+                                {fact.confidenceScore !== null && fact.confidenceScore !== undefined
+                                  ? `${formatNumber(fact.confidenceScore * 100, 0)}%`
+                                  : 'N/A'}
                               </div>
                             </div>
                           ))}
@@ -137,8 +153,8 @@ export default async function DocumentsPage() {
                                 ) : null}
                                 {latestAssessment ? (
                                   <div className="mt-2 text-xs text-slate-500">
-                                    Credit {latestAssessment.riskLevel} / score{' '}
-                                    {formatNumber(latestAssessment.score, 0)}
+                                    Credit risk {toSentenceCase(latestAssessment.riskLevel)} / score{' '}
+                                    {formatNumber(latestAssessment.score, 0)} / 100
                                   </div>
                                 ) : null}
                               </div>
