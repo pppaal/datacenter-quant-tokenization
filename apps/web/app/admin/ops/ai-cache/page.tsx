@@ -17,7 +17,11 @@ export default async function AiCacheConsolePage() {
   const [cache, embeddings] = await Promise.all([getAiCacheSummary(), getEmbeddingCorpusSummary()]);
 
   const totalSavedTokens = cache.estimatedSavedInputTokens + cache.estimatedSavedOutputTokens;
-  const hitRatePct =
+  // Reuse rate = hits / (entries + hits): the share of cache-touching requests
+  // served from cache, treating each stored entry as one initial miss. This is
+  // NOT a true hit rate — misses are not separately counted — so label it as
+  // a reuse rate rather than overstating it.
+  const reuseRatePct =
     cache.totalEntries === 0
       ? 0
       : Math.round((cache.totalHits / Math.max(1, cache.totalEntries + cache.totalHits)) * 100);
@@ -51,7 +55,7 @@ export default async function AiCacheConsolePage() {
         <StatCard
           label="Cumulative hits"
           primary={formatNumber(cache.totalHits, 0)}
-          detail={`hit rate ${hitRatePct}%`}
+          detail={`reuse rate ${reuseRatePct}%`}
         />
         <StatCard
           label="Tokens saved (est.)"
