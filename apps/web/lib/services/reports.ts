@@ -14,7 +14,7 @@ import {
 import { buildAssetResearchDossier } from '@/lib/services/research/dossier';
 import { formatDate, formatNumber, formatPercent, slugify, toSentenceCase } from '@/lib/utils';
 import { buildValuationQualitySummary } from '@/lib/services/valuation/quality';
-import { pickBaseScenario } from '@/lib/services/valuation/scenario-utils';
+import { pickBaseScenario, resolveBullBearValues } from '@/lib/services/valuation/scenario-utils';
 import type { ProvenanceEntry } from '@/lib/sources/types';
 import {
   reportKinds,
@@ -124,22 +124,6 @@ function resolveBaseScenario(run: AssetBundle['valuations'][number] | undefined)
   // previous positional `scenarios[1]` fallback silently read whichever
   // scenario happened to be second for runs not literally named "Base".
   return pickBaseScenario(run.scenarios) ?? null;
-}
-
-/**
- * Bull / bear headline values resolved by valuation magnitude (highest = bull,
- * lowest = bear), not by array position — positional `[0]`/`at(-1)` printed
- * identical bull=bear for 1–2-scenario runs and could swap labels on reorder.
- */
-function resolveBullBearValues(scenarios: Array<{ valuationKrw: number | null }>): {
-  bull: number | null;
-  bear: number | null;
-} {
-  const values = scenarios
-    .map((scenario) => scenario.valuationKrw)
-    .filter((value): value is number => typeof value === 'number');
-  if (values.length === 0) return { bull: null, bear: null };
-  return { bull: Math.max(...values), bear: Math.min(...values) };
 }
 
 function inferSeverityTone(risk: string): ReportFactTone {

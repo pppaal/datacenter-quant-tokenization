@@ -287,7 +287,7 @@ export function CoverSection({ data }: { data: SampleReportData }) {
             <div className="rounded-[24px] border border-accent/20 bg-accent/10 p-5">
               <div className="fine-print text-accent">Recommendation</div>
               <p className="mt-3 text-sm leading-7 text-slate-200">
-                {recommendation}. Base case ranges{' '}
+                {recommendation}. Scenario range spans{' '}
                 {bearValue !== null && bullValue !== null
                   ? `${formatCurrencyFromKrwAtRate(bearValue, displayCurrency, fxRateToKrw)} – ${formatCurrencyFromKrwAtRate(bullValue, displayCurrency, fxRateToKrw)}`
                   : 'within scenario bounds'}{' '}
