@@ -54,6 +54,21 @@ export function ReturnProfilePanel({
   const metrics = asRecord(asRecord(assumptions)?.metrics);
   const discountRatePct =
     num(metrics, 'discountRatePct') ?? num(asRecord(assumptions), 'discountRatePct');
+  const capRatePct = num(metrics, 'capRatePct') ?? num(asRecord(assumptions), 'capRatePct');
+
+  // Yield-on-cost = stabilized NOI / total project cost (equity + debt funded);
+  // the spread over the going-in cap is the development margin a build earns
+  // over buying stabilized (institutional comfort ~75–150bps).
+  const totalCapexKrw =
+    initialEquityKrw != null && initialDebtKrw != null ? initialEquityKrw + initialDebtKrw : null;
+  const yieldOnCostPct =
+    stabilizedNoiKrw != null && totalCapexKrw && totalCapexKrw > 0
+      ? (stabilizedNoiKrw / totalCapexKrw) * 100
+      : null;
+  const devSpreadBps =
+    yieldOnCostPct != null && capRatePct != null
+      ? Math.round((yieldOnCostPct - capRatePct) * 100)
+      : null;
 
   // Year-1 debt yield = stabilized NOI / loan funded — the lender's
   // rate/amort-independent leverage test.
@@ -102,6 +117,15 @@ export function ReturnProfilePanel({
       label: 'Initial Equity',
       value: money(initialEquityKrw),
       hint: money(peakEquityKrw) + ' peak'
+    },
+    {
+      label: 'Yield on Cost',
+      value: yieldOnCostPct != null ? formatPercent(yieldOnCostPct) : '—',
+      hint:
+        devSpreadBps != null
+          ? `${devSpreadBps >= 0 ? '+' : ''}${devSpreadBps}bp dev spread`
+          : undefined,
+      tone: devSpreadBps != null && devSpreadBps < 75 ? 'warn' : undefined
     }
   ];
 
