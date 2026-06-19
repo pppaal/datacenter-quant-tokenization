@@ -10,6 +10,13 @@ export function SourcesUsesSection({ data }: { data: SampleReportData }) {
   if (!proForma) {
     return null;
   }
+  // Sources are the capital raised; Uses are the project cost summed independently
+  // from the capex breakdown (NOT a copy of the Sources total). The funding line
+  // then reconciles the two instead of footing trivially by construction.
+  const sourcesTotalKrw =
+    proForma.summary.initialDebtFundingKrw + proForma.summary.initialEquityKrw;
+  const usesTotalKrw = capexBreakdown.totalCapexKrw;
+  const fundingDeltaKrw = usesTotalKrw !== null ? sourcesTotalKrw - usesTotalKrw : null;
   return (
     <section id="im-sources-uses" className="app-shell py-4">
       <div className="grid gap-4 lg:grid-cols-2">
@@ -17,7 +24,9 @@ export function SourcesUsesSection({ data }: { data: SampleReportData }) {
           <div className="eyebrow">Sources & Uses</div>
           <p className="mt-2 text-sm text-slate-400">
             Initial capitalization at close. Equity equals total cost less drawn debt at funding;
-            reserves accrue against the year-one equity outflow.
+            uses are summed independently from the project capex breakdown below, and the funding
+            line reconciles sources against that cost. Reserves accrue against the year-one equity
+            outflow.
           </p>
           <dl className="mt-5 grid gap-3 text-sm">
             <KeyValueRow variant="inline" label="Sources · senior debt">
@@ -35,18 +44,17 @@ export function SourcesUsesSection({ data }: { data: SampleReportData }) {
               )}
             </KeyValueRow>
             <KeyValueRow variant="inline" label="Sources · total">
-              {formatCurrencyFromKrwAtRate(
-                proForma.summary.initialDebtFundingKrw + proForma.summary.initialEquityKrw,
-                displayCurrency,
-                fxRateToKrw
-              )}
+              {formatCurrencyFromKrwAtRate(sourcesTotalKrw, displayCurrency, fxRateToKrw)}
             </KeyValueRow>
-            <KeyValueRow variant="inline" label="Uses · purchase + capex">
-              {formatCurrencyFromKrwAtRate(
-                proForma.summary.initialDebtFundingKrw + proForma.summary.initialEquityKrw,
-                displayCurrency,
-                fxRateToKrw
-              )}
+            <KeyValueRow variant="inline" label="Uses · total project cost">
+              {usesTotalKrw !== null
+                ? formatCurrencyFromKrwAtRate(usesTotalKrw, displayCurrency, fxRateToKrw)
+                : 'N/A (capex breakdown unavailable)'}
+            </KeyValueRow>
+            <KeyValueRow variant="inline" label="Funding surplus / (gap)">
+              {fundingDeltaKrw !== null
+                ? formatCurrencyFromKrwAtRate(fundingDeltaKrw, displayCurrency, fxRateToKrw)
+                : '—'}
             </KeyValueRow>
             <KeyValueRow variant="inline" label="Reserves required">
               {formatCurrencyFromKrwAtRate(
