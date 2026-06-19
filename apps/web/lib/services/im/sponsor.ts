@@ -6,6 +6,7 @@
  */
 import type { PrismaClient } from '@prisma/client';
 import { prisma as defaultPrisma } from '@/lib/db/prisma';
+import { toNumberOrNull } from '@/lib/math';
 
 export type SponsorTrackSummary = {
   id: string;
@@ -63,7 +64,7 @@ export async function getSponsorTrackByName(
   // average is the standard available approximation and beats equal-weighting.)
   const equityWeightedMean = (metric: (d: (typeof closed)[number]) => number | null) => {
     const weighted = closed
-      .map((d) => ({ value: metric(d), weight: d.equityKrw }))
+      .map((d) => ({ value: metric(d), weight: toNumberOrNull(d.equityKrw) }))
       .filter(
         (r): r is { value: number; weight: number } =>
           typeof r.value === 'number' && typeof r.weight === 'number' && r.weight > 0
@@ -92,7 +93,7 @@ export async function getSponsorTrackByName(
     id: sponsor.id,
     name: sponsor.name,
     hqMarket: sponsor.hqMarket,
-    aumKrw: sponsor.aumKrw,
+    aumKrw: toNumberOrNull(sponsor.aumKrw),
     fundCount: sponsor.fundCount,
     yearFounded: sponsor.yearFounded,
     websiteUrl: sponsor.websiteUrl,
