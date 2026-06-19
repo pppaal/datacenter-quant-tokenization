@@ -103,6 +103,49 @@ export function MonteCarloSection({ mc }: { mc: any }) {
       </table>
 
       <div className="mt-4 mb-2 text-xs uppercase tracking-wide text-zinc-400">
+        Equity IRR Downside Tail Risk
+      </div>
+      <table className="w-full text-sm font-mono" aria-label="Equity IRR downside tail risk">
+        <thead>
+          <tr className="text-zinc-400">
+            <th scope="col" className="p-2 text-right">
+              VaR 95 (P5)
+            </th>
+            <th scope="col" className="p-2 text-right">
+              VaR 99 (P1)
+            </th>
+            <th scope="col" className="p-2 text-right">
+              ES 95
+            </th>
+            <th scope="col" className="p-2 text-right">
+              ES 99
+            </th>
+            <th scope="col" className="p-2 text-right">
+              Downside σ
+            </th>
+            <th scope="col" className="p-2 text-right">
+              Worst
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr className="border-t border-zinc-800">
+            <td className="p-2 text-right">{pct(mc.leveredIrr.tail.p5)}</td>
+            <td className="p-2 text-right">{pct(mc.leveredIrr.tail.p1)}</td>
+            <td className="p-2 text-right">{pct(mc.leveredIrr.tail.expectedShortfall95)}</td>
+            <td className="p-2 text-right">{pct(mc.leveredIrr.tail.expectedShortfall99)}</td>
+            <td className="p-2 text-right">{pct(mc.leveredIrr.tail.downsideDeviation)}</td>
+            <td className="p-2 text-right">{pct(mc.leveredIrr.tail.worstObserved)}</td>
+          </tr>
+        </tbody>
+      </table>
+      <div className="mt-1 text-xs text-zinc-500">
+        VaR = percentile boundary; ES (Expected Shortfall) = mean of realizations below that
+        boundary. Downside σ is the semi-deviation below a {pct(mc.leveredIrr.tail.downsideTarget)}{' '}
+        target across {mc.leveredIrr.tail.sampleCount} samples.
+      </div>
+
+      <div className="mt-4 mb-2 text-xs uppercase tracking-wide text-zinc-400">
         Driver Draws (base ± σ, min/mean/max observed)
       </div>
       <table className="w-full text-sm font-mono" aria-label="Monte Carlo driver draws">
