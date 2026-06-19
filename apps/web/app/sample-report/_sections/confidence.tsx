@@ -19,6 +19,7 @@ export function ConfidenceSection({ data }: { data: SampleReportData }) {
             <div className="fine-print">Final score</div>
             <div className="mt-1 text-2xl font-semibold text-white">
               {confidenceBreakdown.finalScore.toFixed(1)}
+              <span className="ml-1 text-sm font-normal text-slate-500">/ 10</span>
             </div>
             <div className="text-[10px] text-slate-500">
               {confidenceBreakdown.presentCount} / {confidenceBreakdown.totalCount} positive signals
