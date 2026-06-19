@@ -481,7 +481,7 @@ function buildHeroFacts(bundle: DealReportBundle, kind: ReportKind): ReportFact[
   if (kind !== 'teaser') {
     facts.push(
       {
-        label: 'Base DSCR',
+        label: 'Stabilized DSCR (base case)',
         value: baseScenario?.debtServiceCoverage
           ? `${formatNumber(baseScenario.debtServiceCoverage, 2)}x`
           : 'N/A',
@@ -693,6 +693,39 @@ function buildIcMemoSections(bundle: DealReportBundle): ReportSection[] {
         {
           label: 'Levered Equity Value',
           value: summary ? formatKrw(bundle, summary.leveredEquityValueKrw) : 'N/A'
+        }
+      ]
+    },
+    {
+      id: 'returns',
+      kicker: 'Returns',
+      title: 'Levered Return Profile',
+      facts: [
+        {
+          label: 'Equity IRR',
+          value: summary ? formatPercent(summary.equityIrr) : 'N/A',
+          detail: 'Levered, after-tax IRR to the equity from the base-case pro forma.'
+        },
+        {
+          label: 'Unlevered IRR',
+          value: summary ? formatPercent(summary.unleveragedIrr) : 'N/A'
+        },
+        {
+          label: 'Equity Multiple',
+          value: summary ? `${formatNumber(summary.equityMultiple, 2)}x` : 'N/A'
+        },
+        {
+          label: 'Avg Cash-on-Cash',
+          value: summary ? formatPercent(summary.averageCashOnCash) : 'N/A'
+        },
+        {
+          label: 'Payback',
+          value: summary?.paybackYear ? `Year ${formatNumber(summary.paybackYear, 0)}` : 'N/A',
+          detail: 'First year cumulative equity cash flow turns positive.'
+        },
+        {
+          label: 'Net Exit Proceeds',
+          value: summary ? formatKrw(bundle, summary.netExitProceedsKrw) : 'N/A'
         }
       ]
     },
