@@ -2,12 +2,18 @@ import { KeyValueRow } from '@/components/ui/key-value-row';
 import { Section, krw } from './shared';
 
 export function BasisDepreciationSection({ pfx }: { pfx: any }) {
+  // Derive the effective acquisition-tax rate from the actuals instead of
+  // hardcoding "4.6%" — the underlying rate can be heavier (중과세) and the
+  // label otherwise misrepresents the applied tax.
+  const purchasePriceKrw = (pfx.totalBasisKrw ?? 0) - (pfx.acquisitionTaxKrw ?? 0);
+  const acqTaxPct =
+    purchasePriceKrw > 0 ? ((pfx.acquisitionTaxKrw ?? 0) / purchasePriceKrw) * 100 : null;
   return (
     <Section title="4b. Basis / Depreciation / Exit Costs" collapsible defaultOpen={false}>
       <KeyValueRow
         variant="divider"
         className="border-t py-1.5 text-sm first:border-t-0"
-        label="Acquisition Tax (4.6%)"
+        label={`Acquisition Tax${acqTaxPct !== null ? ` (${acqTaxPct.toFixed(1)}%)` : ''}`}
       >
         {krw(pfx.acquisitionTaxKrw)}
       </KeyValueRow>

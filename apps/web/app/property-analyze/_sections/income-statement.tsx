@@ -1,6 +1,9 @@
 import { Section, krw } from './shared';
 
 export function IncomeStatementSection({ pfYears }: { pfYears: any[] }) {
+  // Capacity (kW) rows are data-center-specific; for office/retail/etc. every
+  // year is 0, so only show them when the pro forma actually carries capacity.
+  const hasCapacityData = pfYears.some((y) => (y.occupiedKw ?? 0) > 0 || (y.contractedKw ?? 0) > 0);
   return (
     <Section title="4c. Income Statement (10-year)" collapsible defaultOpen={false}>
       <div className="overflow-x-auto">
@@ -146,33 +149,37 @@ export function IncomeStatementSection({ pfYears }: { pfYears: any[] }) {
                 pick: (y: any) => y.weightedRenewalRatePerKwKrw,
                 isRatePerKw: true
               }
-            ].map((row) => (
-              <tr key={`is-${row.label}`} className="border-t border-zinc-800">
-                <td className={`p-2 ${row.bold ? 'font-semibold text-zinc-100' : 'text-zinc-300'}`}>
-                  {row.label}
-                </td>
-                {pfYears.map((y) => {
-                  const val = row.pick(y);
-                  const txt = row.isKw
-                    ? `${Math.round(val as number).toLocaleString()} kW`
-                    : row.isCount
-                      ? `${val}`
-                      : row.isRatePerKw
-                        ? val == null
-                          ? 'N/A'
-                          : Math.round(val as number).toLocaleString()
-                        : krw(val as number);
-                  return (
-                    <td
-                      key={`is-${row.label}-${y.year}`}
-                      className={`p-2 text-right ${row.bold ? 'font-semibold' : ''}`}
-                    >
-                      {txt}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
+            ]
+              .filter((row) => hasCapacityData || !((row as any).isKw || (row as any).isRatePerKw))
+              .map((row) => (
+                <tr key={`is-${row.label}`} className="border-t border-zinc-800">
+                  <td
+                    className={`p-2 ${row.bold ? 'font-semibold text-zinc-100' : 'text-zinc-300'}`}
+                  >
+                    {row.label}
+                  </td>
+                  {pfYears.map((y) => {
+                    const val = row.pick(y);
+                    const txt = row.isKw
+                      ? `${Math.round(val as number).toLocaleString()} kW`
+                      : row.isCount
+                        ? `${val}`
+                        : row.isRatePerKw
+                          ? val == null
+                            ? 'N/A'
+                            : Math.round(val as number).toLocaleString()
+                          : krw(val as number);
+                    return (
+                      <td
+                        key={`is-${row.label}-${y.year}`}
+                        className={`p-2 text-right ${row.bold ? 'font-semibold' : ''}`}
+                      >
+                        {txt}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
           </tbody>
         </table>
       </div>
