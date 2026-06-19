@@ -517,6 +517,7 @@ export default async function AssetDetailPage({
             fxRateToKrw={fxRateToKrw}
             debtFacilities={asset.debtFacilities}
             scenarios={latestRun.scenarios}
+            concludedValueKrw={latestRun.baseCaseValueKrw}
           />
           <ValuationScenarioMatrix
             baseCaseValueKrw={latestRun.baseCaseValueKrw}
