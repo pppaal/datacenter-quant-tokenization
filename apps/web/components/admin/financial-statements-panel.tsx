@@ -34,6 +34,76 @@ function riskTone(riskLevel: string): 'good' | 'warn' | 'danger' | 'neutral' {
   return 'neutral';
 }
 
+type RatioTone = 'good' | 'warn' | 'danger' | 'neutral';
+type KrRatio = { label: string; value: string; tone: RatioTone };
+
+const RATIO_CHIP_CLASS: Record<RatioTone, string> = {
+  good: 'border-[hsl(var(--success)/0.25)] bg-[hsl(var(--success-tint))] text-[hsl(var(--success))]',
+  warn: 'border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--warning-tint))] text-[hsl(var(--warning))]',
+  danger: 'border-[hsl(var(--danger)/0.25)] bg-[hsl(var(--danger-tint))] text-[hsl(var(--danger))]',
+  neutral: 'border-border bg-[hsl(var(--panel-alt))] text-[hsl(var(--foreground-muted))]'
+};
+
+/**
+ * KR-convention credit ratios derived from the persisted statement headline
+ * figures (no extra data). 부채비율 is the Korean primary leverage gauge on a
+ * TOTAL-liabilities basis (총부채 = 총자산 − 자기자본); thresholds follow the
+ * KR institutional bands (100% / 200% / 400%).
+ */
+function buildKrRatios(statement: {
+  revenueKrw: { toString(): string } | number | null;
+  ebitdaKrw: { toString(): string } | number | null;
+  cashKrw: { toString(): string } | number | null;
+  totalDebtKrw: { toString(): string } | number | null;
+  totalAssetsKrw: { toString(): string } | number | null;
+  totalEquityKrw: { toString(): string } | number | null;
+}): KrRatio[] {
+  const revenue = toNumber(statement.revenueKrw);
+  const ebitda = toNumber(statement.ebitdaKrw);
+  const cash = toNumber(statement.cashKrw) ?? 0;
+  const debt = toNumber(statement.totalDebtKrw);
+  const assets = toNumber(statement.totalAssetsKrw);
+  const equity = toNumber(statement.totalEquityKrw);
+  const rows: KrRatio[] = [];
+
+  if (assets != null && equity != null && equity > 0) {
+    const debtRatioPct = ((assets - equity) / equity) * 100; // 부채비율 (총부채/자기자본)
+    const tone: RatioTone =
+      debtRatioPct >= 400
+        ? 'danger'
+        : debtRatioPct >= 200
+          ? 'warn'
+          : debtRatioPct < 100
+            ? 'good'
+            : 'neutral';
+    rows.push({ label: '부채비율', value: `${formatNumber(debtRatioPct, 0)}%`, tone });
+  }
+  if (assets != null && assets > 0 && equity != null) {
+    const equityRatioPct = (equity / assets) * 100; // 자기자본비율
+    const tone: RatioTone =
+      equityRatioPct < 10
+        ? 'danger'
+        : equityRatioPct < 20
+          ? 'warn'
+          : equityRatioPct >= 30
+            ? 'good'
+            : 'neutral';
+    rows.push({ label: '자기자본비율', value: `${formatNumber(equityRatioPct, 0)}%`, tone });
+  }
+  if (debt != null && ebitda != null && ebitda > 0) {
+    const netLev = (debt - cash) / ebitda;
+    const tone: RatioTone =
+      netLev > 6 ? 'danger' : netLev > 4 ? 'warn' : netLev <= 3 ? 'good' : 'neutral';
+    rows.push({ label: 'Net Leverage', value: `${formatNumber(netLev, 1)}x`, tone });
+  }
+  if (revenue != null && revenue > 0 && ebitda != null) {
+    const marginPct = (ebitda / revenue) * 100;
+    const tone: RatioTone = marginPct < 5 ? 'warn' : marginPct >= 15 ? 'good' : 'neutral';
+    rows.push({ label: 'EBITDA Margin', value: `${formatNumber(marginPct, 0)}%`, tone });
+  }
+  return rows;
+}
+
 function groupByCounterparty(statements: AssetFinancialStatement[]) {
   const groups = new Map<string, AssetFinancialStatement[]>();
   for (const statement of statements) {
@@ -143,6 +213,8 @@ export function FinancialStatementsPanel({
                           ])
                       : [];
 
+                    const krRatios = buildKrRatios(statement);
+
                     return (
                       <div
                         key={statement.id}
@@ -195,6 +267,19 @@ export function FinancialStatementsPanel({
                                 className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs text-slate-300"
                               >
                                 {label} {value}
+                              </span>
+                            ))}
+                          </div>
+                        ) : null}
+
+                        {krRatios.length > 0 ? (
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {krRatios.map((ratio) => (
+                              <span
+                                key={ratio.label}
+                                className={`rounded-full border px-3 py-1.5 text-xs font-medium ${RATIO_CHIP_CLASS[ratio.tone]}`}
+                              >
+                                {ratio.label} {ratio.value}
                               </span>
                             ))}
                           </div>
