@@ -10,7 +10,53 @@ import { formatDate, formatNumber, formatPercent } from '@/lib/utils';
 import type { SampleReportData } from './types';
 
 export function MemoSection({ data }: { data: SampleReportData }) {
-  const { asset, latestRun, scenarios, provenance, displayCurrency, fxRateToKrw } = data;
+  const {
+    asset,
+    latestRun,
+    scenarios,
+    provenance,
+    displayCurrency,
+    fxRateToKrw,
+    proForma,
+    bullValue,
+    bearValue,
+    recommendation
+  } = data;
+
+  // Data-driven memo cards (previously identical static prose for every asset).
+  const baseCaseLabel = formatCurrencyFromKrwAtRate(
+    latestRun.baseCaseValueKrw,
+    displayCurrency,
+    fxRateToKrw
+  );
+  const scenarioRangeLabel =
+    bearValue !== null && bullValue !== null
+      ? `${formatCurrencyFromKrwAtRate(bearValue, displayCurrency, fxRateToKrw)} – ${formatCurrencyFromKrwAtRate(bullValue, displayCurrency, fxRateToKrw)}`
+      : null;
+  const irrLabel =
+    proForma && proForma.summary.equityIrr !== null
+      ? formatPercent(proForma.summary.equityIrr)
+      : null;
+  const multipleLabel =
+    proForma && proForma.summary.equityMultiple > 0
+      ? `${formatNumber(proForma.summary.equityMultiple, 2)}x`
+      : null;
+  const riskCount = latestRun.keyRisks.length;
+  const ddCount = latestRun.ddChecklist.length;
+
+  const assetClassLabel = asset.assetClass.replace(/_/g, ' ').toLowerCase();
+  const assetThesis = `${assetClassLabel.charAt(0).toUpperCase()}${assetClassLabel.slice(1)} asset in ${asset.market}; current committee posture is ${recommendation} at a ${baseCaseLabel} base case.`;
+  const returnProfile =
+    irrLabel || multipleLabel
+      ? `Base case targets ${[irrLabel ? `${irrLabel} equity IRR` : null, multipleLabel ? `${multipleLabel} equity multiple` : null].filter(Boolean).join(' / ')}${scenarioRangeLabel ? `; scenarios span ${scenarioRangeLabel}.` : '.'}`
+      : scenarioRangeLabel
+        ? `The base scenario anchors the case; bull/bear scenarios span ${scenarioRangeLabel}.`
+        : 'The base scenario anchors committee discussion; scenario returns are not yet available.';
+  const diligencePosture =
+    riskCount > 0 || ddCount > 0
+      ? `${riskCount} key risk${riskCount === 1 ? '' : 's'} and ${ddCount} diligence checklist item${ddCount === 1 ? '' : 's'} are tracked directly below.`
+      : 'No open key risks or diligence checklist items are recorded on this run.';
+
   return (
     <section id="im-memo" className="app-shell space-y-6 py-6">
       <div className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
@@ -21,24 +67,15 @@ export function MemoSection({ data }: { data: SampleReportData }) {
             <div className="grid gap-3 md:grid-cols-3">
               <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
                 <div className="fine-print">Asset Thesis</div>
-                <p className="mt-3 text-sm leading-7 text-slate-300">
-                  Asset quality, market positioning, and scenario resilience support the current
-                  underwriting case.
-                </p>
+                <p className="mt-3 text-sm leading-7 text-slate-300">{assetThesis}</p>
               </div>
               <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
                 <div className="fine-print">Return Profile</div>
-                <p className="mt-3 text-sm leading-7 text-slate-300">
-                  The base scenario anchors committee discussion, while the bull and bear cases
-                  frame upside and downside.
-                </p>
+                <p className="mt-3 text-sm leading-7 text-slate-300">{returnProfile}</p>
               </div>
               <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
                 <div className="fine-print">Diligence Posture</div>
-                <p className="mt-3 text-sm leading-7 text-slate-300">
-                  Remaining open items are tracked directly below in the risk list and diligence
-                  checklist.
-                </p>
+                <p className="mt-3 text-sm leading-7 text-slate-300">{diligencePosture}</p>
               </div>
             </div>
           </div>
