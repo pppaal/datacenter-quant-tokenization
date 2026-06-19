@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { formatNumber } from '@/lib/utils';
+import { resolveAssumptionNumber } from '@/lib/services/valuation/assumption-access';
 
 type ProvenanceEntry = {
   field: string;
@@ -44,13 +45,31 @@ function buildSignals({
   assumptions?: Record<string, number | string | null> | null;
   provenance: ProvenanceEntry[];
 }): Signal[] {
+  // Resolve nested-or-flat. The data-center engine nests these under
+  // assumptions.{metrics,approaches}.* (with different approach key names);
+  // stabilized strategies write them flat. Without this, every DC run fell
+  // through to falsely-reassuring "Balanced / no penalty / late-stage" verdicts.
+  const approaches = (assumptions as { approaches?: Record<string, unknown> } | null | undefined)
+    ?.approaches;
+  const approachNum = (key: string) =>
+    typeof approaches?.[key] === 'number' && Number.isFinite(approaches[key] as number)
+      ? (approaches[key] as number)
+      : null;
   const weightedValue = pickNumber(assumptions, 'weightedValueKrw');
-  const replacementFloor = pickNumber(assumptions, 'replacementCostFloorKrw');
-  const incomeValue = pickNumber(assumptions, 'incomeApproachValueKrw');
-  const dcfValue = pickNumber(assumptions, 'dcfValueKrw');
-  const stageFactor = pickNumber(assumptions, 'stageFactor');
-  const permitPenalty = pickNumber(assumptions, 'permitPenalty');
-  const floodPenalty = pickNumber(assumptions, 'floodPenalty');
+  const replacementFloor =
+    resolveAssumptionNumber(assumptions, 'replacementCostFloorKrw') ??
+    approachNum('replacementFloor');
+  const incomeValue =
+    resolveAssumptionNumber(assumptions, 'incomeApproachValueKrw') ?? approachNum('incomeApproach');
+  const dcfValue = resolveAssumptionNumber(assumptions, 'dcfValueKrw') ?? approachNum('leaseDcf');
+  const stageFactor = resolveAssumptionNumber(assumptions, 'stageFactor');
+  const permitPenalty = resolveAssumptionNumber(assumptions, 'permitPenalty');
+  const floodPenalty = resolveAssumptionNumber(assumptions, 'floodPenalty');
+  const postureInputsKnown =
+    weightedValue !== null ||
+    incomeValue !== null ||
+    dcfValue !== null ||
+    replacementFloor !== null;
 
   const apiCount = provenance.filter((entry) => entry.mode.toLowerCase() === 'api').length;
   const fallbackCount = provenance.filter(
@@ -58,8 +77,14 @@ function buildSignals({
   ).length;
   const floorGap = ratioDelta(weightedValue, replacementFloor);
 
-  const valuationPosture: Signal =
-    floorGap !== null && floorGap <= 0.12
+  const valuationPosture: Signal = !postureInputsKnown
+    ? {
+        title: 'Valuation Posture',
+        tone: 'neutral',
+        summary: 'Insufficient inputs',
+        detail: 'Approach values are not available on this run, so a posture cannot be inferred.'
+      }
+    : floorGap !== null && floorGap <= 0.12
       ? {
           title: 'Valuation Posture',
           tone: 'warn',
@@ -109,43 +134,60 @@ function buildSignals({
         };
 
   const developmentReadiness: Signal =
-    stageFactor !== null && stageFactor <= 0.62
+    stageFactor === null
       ? {
           title: 'Development Readiness',
-          tone: 'warn',
-          summary: 'Early-stage risk',
-          detail: `Stage factor is ${formatNumber(stageFactor, 2)}, so underwriting remains sensitive to permitting and utility sequencing.`
+          tone: 'neutral',
+          summary: 'Stage not captured',
+          detail:
+            'No development stage factor is recorded on this run, so readiness cannot be inferred from the model.'
         }
-      : stageFactor !== null && stageFactor <= 0.81
+      : stageFactor <= 0.62
         ? {
             title: 'Development Readiness',
-            tone: 'neutral',
-            summary: 'Mid-stage progressing',
-            detail: `Stage factor is ${formatNumber(stageFactor, 2)}, indicating the case has moved beyond screening but is not yet de-risked.`
+            tone: 'warn',
+            summary: 'Early-stage risk',
+            detail: `Stage factor is ${formatNumber(stageFactor, 2)}, so underwriting remains sensitive to permitting and utility sequencing.`
           }
-        : {
-            title: 'Development Readiness',
-            tone: 'good',
-            summary: 'Late-stage visibility',
-            detail: `Stage factor is ${formatNumber(stageFactor, 2)}, which supports tighter scenario spread and stronger execution visibility.`
-          };
+        : stageFactor <= 0.81
+          ? {
+              title: 'Development Readiness',
+              tone: 'neutral',
+              summary: 'Mid-stage progressing',
+              detail: `Stage factor is ${formatNumber(stageFactor, 2)}, indicating the case has moved beyond screening but is not yet de-risked.`
+            }
+          : {
+              title: 'Development Readiness',
+              tone: 'good',
+              summary: 'Late-stage visibility',
+              detail: `Stage factor is ${formatNumber(stageFactor, 2)}, which supports tighter scenario spread and stronger execution visibility.`
+            };
 
   const diligencePressure: Signal =
-    permitPenalty !== null && floodPenalty !== null && (permitPenalty < 0.95 || floodPenalty < 0.96)
+    permitPenalty === null && floodPenalty === null
       ? {
           title: 'Diligence Pressure',
-          tone: 'warn',
-          summary: 'Permitting / resilience review open',
+          tone: 'neutral',
+          summary: 'Not captured',
           detail:
-            'Permit timing or site resilience penalties are still active, so this run should be treated as committee support rather than a final underwriting view.'
+            'No permit-timing or site-resilience penalties are recorded on this run, so a diligence posture cannot be inferred.'
         }
-      : {
-          title: 'Diligence Pressure',
-          tone: 'good',
-          summary: 'No major penalty active',
-          detail:
-            'Permit and site penalties are moderate, so the model is not currently applying a severe de-risking haircut.'
-        };
+      : (permitPenalty !== null && permitPenalty < 0.95) ||
+          (floodPenalty !== null && floodPenalty < 0.96)
+        ? {
+            title: 'Diligence Pressure',
+            tone: 'warn',
+            summary: 'Permitting / resilience review open',
+            detail:
+              'Permit timing or site resilience penalties are still active, so this run should be treated as committee support rather than a final underwriting view.'
+          }
+        : {
+            title: 'Diligence Pressure',
+            tone: 'good',
+            summary: 'No major penalty active',
+            detail:
+              'Permit and site penalties are moderate, so the model is not currently applying a severe de-risking haircut.'
+          };
 
   const confidenceContext: Signal = {
     title: 'Confidence Context',

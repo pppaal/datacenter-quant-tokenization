@@ -7,6 +7,7 @@ import {
 } from '@/lib/finance/currency';
 import { formatNumber, formatPercent, toSentenceCase } from '@/lib/utils';
 import { buildDebtBreakdown } from '@/lib/services/valuation/debt-breakdown';
+import { resolveAssumptionNumber } from '@/lib/services/valuation/assumption-access';
 
 type ProvenanceEntry = {
   field: string;
@@ -107,26 +108,26 @@ function buildOperatingInputs(
   displayCurrency: SupportedCurrency,
   fxRateToKrw?: number | null
 ): Metric[] {
-  const monthlyRate = pickNumber(assumptions, 'monthlyRatePerKwKrw');
-  const powerTariff = pickNumber(assumptions, 'powerPriceKrwPerKwh');
+  // Resolve nested-or-flat: the data-center engine nests these under
+  // assumptions.metrics.*, stabilized-income strategies write them flat.
+  const capacity = resolveAssumptionNumber(assumptions, 'capacityMw');
+  const monthlyRate = resolveAssumptionNumber(assumptions, 'monthlyRatePerKwKrw');
+  const powerTariff = resolveAssumptionNumber(assumptions, 'powerPriceKrwPerKwh');
 
   return [
     {
       label: 'Capacity',
-      value:
-        assumptions?.capacityMw !== undefined && assumptions?.capacityMw !== null
-          ? `${formatNumber(pickNumber(assumptions, 'capacityMw'), 1)} MW`
-          : 'N/A'
+      value: capacity !== null ? `${formatNumber(capacity, 1)} MW` : 'N/A'
     },
     {
       label: 'Occupancy',
-      value: formatPercent(pickNumber(assumptions, 'occupancyPct'))
+      value: formatPercent(resolveAssumptionNumber(assumptions, 'occupancyPct'))
     },
     {
       label: 'Monthly Rate / kW',
       value:
         monthlyRate !== null
-          ? `${formatCurrencyFromKrwAtRate(monthlyRate, displayCurrency, fxRateToKrw)} / kW`
+          ? `${formatCurrencyFromKrwAtRate(monthlyRate, displayCurrency, fxRateToKrw)} / kW·mo`
           : 'N/A'
     },
     {
@@ -138,19 +139,19 @@ function buildOperatingInputs(
     },
     {
       label: 'PUE Target',
-      value: formatNumber(pickNumber(assumptions, 'pueTarget'), 2)
+      value: formatNumber(resolveAssumptionNumber(assumptions, 'pueTarget'), 2)
     },
     {
       label: 'Cap Rate',
-      value: formatPercent(pickNumber(assumptions, 'capRatePct'), 2)
+      value: formatPercent(resolveAssumptionNumber(assumptions, 'capRatePct'), 2)
     },
     {
       label: 'Discount Rate',
-      value: formatPercent(pickNumber(assumptions, 'discountRatePct'), 2)
+      value: formatPercent(resolveAssumptionNumber(assumptions, 'discountRatePct'), 2)
     },
     {
       label: 'Debt Cost',
-      value: formatPercent(pickNumber(assumptions, 'debtCostPct'), 2)
+      value: formatPercent(resolveAssumptionNumber(assumptions, 'debtCostPct'), 2)
     }
   ];
 }
