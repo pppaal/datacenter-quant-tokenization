@@ -61,6 +61,9 @@ type StatementFigures = {
   currentLiabilitiesKrw?: { toString(): string } | number | null;
   currentDebtMaturitiesKrw?: { toString(): string } | number | null;
   operatingCashFlowKrw?: { toString(): string } | number | null;
+  operatingIncomeKrw?: { toString(): string } | number | null;
+  netIncomeKrw?: { toString(): string } | number | null;
+  interestExpenseKrw?: { toString(): string } | number | null;
 };
 
 function buildKrRatios(statement: StatementFigures): KrRatio[] {
@@ -74,6 +77,9 @@ function buildKrRatios(statement: StatementFigures): KrRatio[] {
   const currentLiabilities = toNumber(statement.currentLiabilitiesKrw ?? null);
   const currentMaturities = toNumber(statement.currentDebtMaturitiesKrw ?? null);
   const ocf = toNumber(statement.operatingCashFlowKrw ?? null);
+  const operatingIncome = toNumber(statement.operatingIncomeKrw ?? null);
+  const netIncome = toNumber(statement.netIncomeKrw ?? null);
+  const interest = toNumber(statement.interestExpenseKrw ?? null);
   const rows: KrRatio[] = [];
 
   if (assets != null && equity != null && equity > 0) {
@@ -125,6 +131,21 @@ function buildKrRatios(statement: StatementFigures): KrRatio[] {
     const coverage = (cash + (ocf ?? 0)) / currentMaturities;
     const tone: RatioTone = coverage < 1 ? 'danger' : coverage < 1.5 ? 'warn' : 'good';
     rows.push({ label: 'Maturity Coverage', value: `${formatNumber(coverage, 1)}x`, tone });
+  }
+  if (operatingIncome != null && interest != null && interest > 0) {
+    const icr = operatingIncome / interest; // 이자보상배율 (EBIT/이자) — <1.0x = 한계기업 신호
+    const tone: RatioTone = icr < 1 ? 'danger' : icr < 3 ? 'warn' : icr >= 5 ? 'good' : 'neutral';
+    rows.push({ label: '이자보상배율', value: `${formatNumber(icr, 1)}x`, tone });
+  }
+  if (operatingIncome != null && revenue != null && revenue > 0) {
+    const marginPct = (operatingIncome / revenue) * 100; // 영업이익률
+    const tone: RatioTone = marginPct < 2 ? 'danger' : marginPct >= 15 ? 'good' : 'neutral';
+    rows.push({ label: '영업이익률', value: `${formatNumber(marginPct, 0)}%`, tone });
+  }
+  if (netIncome != null && assets != null && assets > 0) {
+    const roaPct = (netIncome / assets) * 100;
+    const tone: RatioTone = roaPct < 0 ? 'danger' : roaPct >= 7 ? 'good' : 'neutral';
+    rows.push({ label: 'ROA', value: `${formatNumber(roaPct, 1)}%`, tone });
   }
   return rows;
 }

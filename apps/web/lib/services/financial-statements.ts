@@ -78,6 +78,8 @@ export type ParsedFinancialStatement = {
   currency: string;
   revenueKrw: number | null;
   ebitdaKrw: number | null;
+  operatingIncomeKrw: number | null;
+  netIncomeKrw: number | null;
   cashKrw: number | null;
   operatingCashFlowKrw: number | null;
   capexKrw: number | null;
@@ -142,6 +144,12 @@ function toCanonicalLineDefinition(lineLabel: string) {
   if (/(revenue|sales|rental revenue)/.test(normalized))
     return { lineKey: 'revenueKrw', lineLabel: 'Revenue' };
   if (/ebitda/.test(normalized)) return { lineKey: 'ebitdaKrw', lineLabel: 'EBITDA' };
+  if (/(operating income|operating profit|영업이익)/.test(normalized)) {
+    return { lineKey: 'operatingIncomeKrw', lineLabel: 'Operating Income' };
+  }
+  if (/(net income|net profit|net earnings|당기순이익|순이익)/.test(normalized)) {
+    return { lineKey: 'netIncomeKrw', lineLabel: 'Net Income' };
+  }
   if (
     /(operating cash flow|cash flow from operations|net cash from operating activities)/.test(
       normalized
@@ -239,6 +247,8 @@ function countPopulatedMetrics(statement: ParsedFinancialStatementCandidate) {
   return [
     statement.revenueKrw,
     statement.ebitdaKrw,
+    statement.operatingIncomeKrw,
+    statement.netIncomeKrw,
     statement.cashKrw,
     statement.operatingCashFlowKrw,
     statement.capexKrw,
@@ -271,6 +281,8 @@ function mergeStatementCandidates(
     currency: primary?.currency ?? fallback?.currency ?? 'KRW',
     revenueKrw: primary?.revenueKrw ?? fallback?.revenueKrw ?? null,
     ebitdaKrw: primary?.ebitdaKrw ?? fallback?.ebitdaKrw ?? null,
+    operatingIncomeKrw: primary?.operatingIncomeKrw ?? fallback?.operatingIncomeKrw ?? null,
+    netIncomeKrw: primary?.netIncomeKrw ?? fallback?.netIncomeKrw ?? null,
     cashKrw: primary?.cashKrw ?? fallback?.cashKrw ?? null,
     operatingCashFlowKrw: primary?.operatingCashFlowKrw ?? fallback?.operatingCashFlowKrw ?? null,
     capexKrw: primary?.capexKrw ?? fallback?.capexKrw ?? null,
@@ -312,6 +324,8 @@ function finalizeParsedStatement(
     currency: candidate.currency?.trim() || (/usd/i.test(normalized) ? 'USD' : 'KRW'),
     revenueKrw: candidate.revenueKrw ?? null,
     ebitdaKrw: candidate.ebitdaKrw ?? null,
+    operatingIncomeKrw: candidate.operatingIncomeKrw ?? null,
+    netIncomeKrw: candidate.netIncomeKrw ?? null,
     cashKrw: candidate.cashKrw ?? null,
     operatingCashFlowKrw: candidate.operatingCashFlowKrw ?? null,
     capexKrw: candidate.capexKrw ?? null,
@@ -382,6 +396,8 @@ function buildLineItems(
   const definitions: Array<[StatementLineItem['lineKey'], string, number | null]> = [
     ['revenueKrw', 'Revenue', statement.revenueKrw],
     ['ebitdaKrw', 'EBITDA', statement.ebitdaKrw],
+    ['operatingIncomeKrw', 'Operating Income', statement.operatingIncomeKrw],
+    ['netIncomeKrw', 'Net Income', statement.netIncomeKrw],
     ['cashKrw', 'Cash', statement.cashKrw],
     ['operatingCashFlowKrw', 'Operating Cash Flow', statement.operatingCashFlowKrw],
     ['capexKrw', 'Capex', statement.capexKrw],
@@ -426,6 +442,22 @@ function buildHeuristicCandidate(input: {
   const ebitdaKrw =
     findLineItemValue(candidateLineItems, ['ebitda']) ??
     extractFinancialValue(normalized, [/ebitda[^\d]{0,24}(?:krw|usd)?\s*([\d,]+(?:\.\d+)?)/i]);
+  const operatingIncomeKrw =
+    findLineItemValue(candidateLineItems, ['operating income', 'operating profit', '영업이익']) ??
+    extractFinancialValue(normalized, [
+      /(?:operating income|operating profit)[^\d]{0,24}(?:krw|usd)?\s*([\d,]+(?:\.\d+)?)/i
+    ]);
+  const netIncomeKrw =
+    findLineItemValue(candidateLineItems, [
+      'net income',
+      'net profit',
+      'net earnings',
+      '당기순이익',
+      '순이익'
+    ]) ??
+    extractFinancialValue(normalized, [
+      /(?:net income|net profit|net earnings)[^\d]{0,24}(?:krw|usd)?\s*([\d,]+(?:\.\d+)?)/i
+    ]);
   const cashKrw =
     findLineItemValue(candidateLineItems, ['cash and cash equivalents', 'cash balance', 'cash']) ??
     extractFinancialValue(normalized, [
@@ -500,6 +532,8 @@ function buildHeuristicCandidate(input: {
     currency: /usd/i.test(normalized) ? 'USD' : 'KRW',
     revenueKrw,
     ebitdaKrw,
+    operatingIncomeKrw,
+    netIncomeKrw,
     cashKrw,
     operatingCashFlowKrw,
     capexKrw,
@@ -554,6 +588,8 @@ export function dartSnapshotToParsedStatement(
     currency: snapshot.currency || 'KRW',
     revenueKrw: snapshot.revenueKrw,
     ebitdaKrw: null,
+    operatingIncomeKrw: snapshot.operatingIncomeKrw ?? null,
+    netIncomeKrw: snapshot.netIncomeKrw ?? null,
     cashKrw: snapshot.cashAndEquivalentsKrw,
     operatingCashFlowKrw: snapshot.operatingCashFlowKrw,
     capexKrw: null,
@@ -785,6 +821,8 @@ export async function ingestFinancialStatement(
       provenanceSystem: input.documentVersionId ? 'UPLOAD' : 'MANUAL',
       revenueKrw: parsed.revenueKrw,
       ebitdaKrw: parsed.ebitdaKrw,
+      operatingIncomeKrw: parsed.operatingIncomeKrw,
+      netIncomeKrw: parsed.netIncomeKrw,
       cashKrw: parsed.cashKrw,
       totalDebtKrw: parsed.totalDebtKrw,
       totalAssetsKrw: parsed.totalAssetsKrw,

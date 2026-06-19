@@ -1396,6 +1396,8 @@ model FinancialStatement {
   provenanceSystem   String?
   revenueKrw         Decimal?           @db.Decimal(20, 2)
   ebitdaKrw          Decimal?           @db.Decimal(20, 2)
+  operatingIncomeKrw Decimal?           @db.Decimal(20, 2)
+  netIncomeKrw       Decimal?           @db.Decimal(20, 2)
   cashKrw            Decimal?           @db.Decimal(20, 2)
   totalDebtKrw       Decimal?           @db.Decimal(20, 2)
   totalAssetsKrw     Decimal?           @db.Decimal(20, 2)
