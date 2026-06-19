@@ -1,5 +1,6 @@
 import { formatNumber, toSentenceCase } from '@/lib/utils';
 import { pickBaseDscr } from '@/lib/services/valuation/scenario-utils';
+import { resolveAssumptionNumber } from '@/lib/services/valuation/assumption-access';
 
 type AssumptionsLike = Record<string, number | string | null> | null | undefined;
 
@@ -51,8 +52,9 @@ export type DebtBreakdownSummary = {
 };
 
 function pickNumber(assumptions: AssumptionsLike, key: string) {
-  const value = assumptions?.[key];
-  return typeof value === 'number' ? value : null;
+  // Resolve nested-or-flat: the data-center engine nests debt figures under
+  // assumptions.debt.*; stabilized strategies write them flat.
+  return resolveAssumptionNumber(assumptions as Record<string, unknown> | null | undefined, key);
 }
 
 function facilityWatchpoint(facility: DebtFacilityLike) {

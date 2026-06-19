@@ -58,6 +58,7 @@ import {
   buildAssetCapRateDecomposition,
   capRateUsesPolicyRateProxy
 } from '@/lib/services/research/asset-cap-rate';
+import { resolveAssumptionNumber } from '@/lib/services/valuation/assumption-access';
 import { ValuationSignals } from '@/components/valuation/valuation-signals';
 import { shortenHash } from '@/lib/blockchain/registry';
 import { getAssetClassPlaybook } from '@/lib/asset-class/playbook';
@@ -134,22 +135,16 @@ export default async function AssetDetailPage({
   });
   const recommendation = getValuationRecommendation(latestRun?.confidenceScore);
   const latestAssumptions = (latestRun?.assumptions ?? null) as Record<string, unknown> | null;
-  const stabilizedNoiKrw =
-    typeof latestAssumptions?.stabilizedNoiKrw === 'number'
-      ? latestAssumptions.stabilizedNoiKrw
-      : null;
-  const baseCapRatePct =
-    typeof latestAssumptions?.capRatePct === 'number' ? latestAssumptions.capRatePct : null;
-  const subjectPricePerSqmKrw =
-    typeof latestAssumptions?.comparableValuePerSqmKrw === 'number'
-      ? latestAssumptions.comparableValuePerSqmKrw
-      : null;
-  const subjectRentPerSqmKrw =
-    typeof latestAssumptions?.monthlyRentPerSqmKrw === 'number'
-      ? latestAssumptions.monthlyRentPerSqmKrw
-      : null;
-  const subjectOccupancyPct =
-    typeof latestAssumptions?.occupancyPct === 'number' ? latestAssumptions.occupancyPct : null;
+  // Resolve nested-or-flat: the data-center engine nests these under
+  // assumptions.{metrics,leasing}.*; flat for stabilized-income strategies.
+  const stabilizedNoiKrw = resolveAssumptionNumber(latestAssumptions, 'stabilizedNoiKrw');
+  const baseCapRatePct = resolveAssumptionNumber(latestAssumptions, 'capRatePct');
+  const subjectPricePerSqmKrw = resolveAssumptionNumber(
+    latestAssumptions,
+    'comparableValuePerSqmKrw'
+  );
+  const subjectRentPerSqmKrw = resolveAssumptionNumber(latestAssumptions, 'monthlyRentPerSqmKrw');
+  const subjectOccupancyPct = resolveAssumptionNumber(latestAssumptions, 'occupancyPct');
   const subjectPricePerMwKrw =
     asset.powerCapacityMw &&
     asset.powerCapacityMw > 0 &&
