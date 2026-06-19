@@ -250,14 +250,14 @@ export default function QuarterlyReportPage() {
                 <KeyValueRow variant="divider" className="border-b py-1" label="Transactions">
                   {s.transactionCount ?? 'n/a'}
                 </KeyValueRow>
-                <KeyValueRow variant="divider" className="border-b py-1" label="Volume KRW">
+                <KeyValueRow variant="divider" className="border-b py-1" label="Transaction volume">
                   {s.transactionVolumeKrw
-                    ? `${(Number(s.transactionVolumeKrw) / 1e9).toFixed(2)}B`
+                    ? `₩${(Number(s.transactionVolumeKrw) / 1e9).toFixed(2)}B`
                     : 'n/a'}
                 </KeyValueRow>
                 <KeyValueRow variant="divider" className="border-b py-1" label="Median price/sqm">
                   {s.medianPriceKrwPerSqm
-                    ? `${(Number(s.medianPriceKrwPerSqm) / 1e6).toFixed(2)}M`
+                    ? `₩${(Number(s.medianPriceKrwPerSqm) / 1e6).toFixed(2)}M / sqm`
                     : 'n/a'}
                 </KeyValueRow>
                 <KeyValueRow variant="divider" className="border-b py-1" label="QoQ %">
