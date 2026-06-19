@@ -132,9 +132,11 @@ export function UnderwritingSection({ data }: { data: SampleReportData }) {
               <div>
                 <div className="fine-print">Cap rate decomposition</div>
                 <p className="mt-1 max-w-3xl text-xs text-slate-400">
-                  Bridges the headline cap rate into 6 transparent components so the LP can see what
-                  is driving the price. RFR and growth from macro feed; submarket spread from comp
-                  regression; obsolescence from vintage age.
+                  Bridges the headline cap rate into 6 components so the LP can see what is driving
+                  the price. RFR and growth from the macro feed; submarket spread from comp
+                  regression; obsolescence from vintage age. The sector premium (ERP × beta) uses
+                  standard assumptions, and any leg shown at 0 bps reflects a missing input rather
+                  than a market reading — see each component note.
                 </p>
               </div>
               <Badge>{capRateDecomp.capRatePct.toFixed(2)}% implied</Badge>
