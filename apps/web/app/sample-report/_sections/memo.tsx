@@ -68,6 +68,9 @@ export function MemoSection({ data }: { data: SampleReportData }) {
                 <div className="fine-print">Confidence</div>
                 <div className="mt-2 text-lg font-semibold text-white">
                   {formatNumber(latestRun.confidenceScore, 1)}
+                  {latestRun.confidenceScore !== null && latestRun.confidenceScore !== undefined ? (
+                    <span className="ml-1 text-xs font-normal text-slate-400">/ 10</span>
+                  ) : null}
                 </div>
               </div>
             </div>

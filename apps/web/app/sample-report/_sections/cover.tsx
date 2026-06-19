@@ -78,6 +78,9 @@ export function CoverSection({ data }: { data: SampleReportData }) {
                 <div className="fine-print">Confidence Score</div>
                 <div className="mt-3 text-2xl font-semibold text-white">
                   {formatNumber(latestRun.confidenceScore, 1)}
+                  {latestRun.confidenceScore !== null && latestRun.confidenceScore !== undefined ? (
+                    <span className="ml-1 text-sm font-normal text-slate-400">/ 10</span>
+                  ) : null}
                 </div>
                 <p className="mt-2 text-sm text-slate-400">
                   Composite of input coverage, freshness, and fallback usage.
