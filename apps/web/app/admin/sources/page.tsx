@@ -463,9 +463,17 @@ export default async function SourcesPage() {
             <div className="flex items-center justify-between">
               <div className="font-semibold text-white">{row.sourceSystem}</div>
               <Badge
-                tone={row.status === 'FRESH' ? 'good' : row.status === 'STALE' ? 'warn' : 'danger'}
+                tone={
+                  row.status === 'FRESH'
+                    ? 'good'
+                    : row.status === 'STALE'
+                      ? 'warn'
+                      : row.status === 'NOT_QUERIED'
+                        ? 'neutral'
+                        : 'danger'
+                }
               >
-                {row.status}
+                {row.status === 'NOT_QUERIED' ? 'Not queried' : row.status}
               </Badge>
             </div>
             <div className="mt-4 text-sm text-slate-400">

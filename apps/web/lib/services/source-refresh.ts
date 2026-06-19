@@ -127,7 +127,11 @@ export async function getSourceRefreshHealth(db: SourceRefreshDb = prisma, now =
       total: sourceRows.length,
       fresh: sourceRows.filter((row) => row.status === 'FRESH').length,
       stale: sourceRows.filter((row) => row.status === 'STALE').length,
-      failed: sourceRows.filter((row) => row.status === 'FAILED').length,
+      // Never-queried systems (NOT_QUERIED) are surfaced neutrally on the
+      // /admin/sources page, but for ops-health they still count as
+      // "no fresh data" alongside hard failures (unchanged alerting behavior).
+      failed: sourceRows.filter((row) => row.status === 'FAILED' || row.status === 'NOT_QUERIED')
+        .length,
       staleSystems: sourceRows
         .filter((row) => row.status !== 'FRESH')
         .map((row) => row.sourceSystem),

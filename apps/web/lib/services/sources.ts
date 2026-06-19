@@ -615,7 +615,10 @@ export async function listSourceStatus(db: PrismaClient = prisma) {
     const latest = caches.find((cache) => cache.sourceSystem === sourceSystem);
     return {
       sourceSystem,
-      status: latest?.status ?? 'FAILED',
+      // A system that has never been queried is NOT_QUERIED, not FAILED —
+      // "FAILED" implies an attempted fetch that broke, which misrepresents an
+      // un-configured / never-run connector as an error.
+      status: latest?.status ?? 'NOT_QUERIED',
       freshnessLabel: latest?.freshnessLabel ?? 'not yet queried',
       fetchedAt: latest?.fetchedAt ?? null,
       expiresAt: latest?.expiresAt ?? null,
