@@ -74,10 +74,11 @@ export default async function SourcesPage() {
 
       <div className="grid gap-4 md:grid-cols-3">
         <div className="metric-card">
-          <div className="fine-print">Configured Data Connectors</div>
+          <div className="fine-print">Env-Configured Connectors</div>
           <div className="mt-3 text-2xl font-semibold text-white">{configuredCount}</div>
           <p className="mt-2 text-sm text-slate-400">
-            Ready for live ingestion without additional env wiring.
+            All required env keys are present — a configuration check, not a live connectivity
+            probe.
           </p>
         </div>
         <div className="metric-card">
@@ -242,6 +243,10 @@ export default async function SourcesPage() {
             add a market comps feed so the regime engine and comparable layer can move away from
             fallback assumptions toward live rates, leasing, liquidity, and transaction evidence.
           </p>
+          <p className="mt-2 max-w-3xl text-xs leading-6 text-slate-500">
+            This is a hand-maintained connector manifest; per-connector status reflects env-key
+            presence only, not a live health check.
+          </p>
         </div>
         <div className="grid gap-4">
           {macroConnectors.map((connector) => (
@@ -295,6 +300,10 @@ export default async function SourcesPage() {
             Do not expand everywhere at once. Launch the underwriting stack market by market,
             starting with the deepest public macro and transaction data environments, then add
             localized market modules.
+          </p>
+          <p className="mt-2 max-w-3xl text-xs leading-6 text-slate-500">
+            Static planning roadmap — phases and blockers are hand-authored, not derived from live
+            system state.
           </p>
         </div>
         <div className="grid gap-4">
