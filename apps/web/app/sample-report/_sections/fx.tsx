@@ -7,6 +7,17 @@ export function FxSection({ data }: { data: SampleReportData }) {
   if (!fxExposure) {
     return null;
   }
+  // baseCurrencyValue is already translated into the LP base currency by
+  // buildFxExposure, so format it as a proper compact currency amount rather
+  // than the previous hand-rolled "/1e6 … M" string (which bypassed the
+  // report's currency formatting and read ambiguously across USD/EUR/JPY).
+  const formatBase = (value: number) =>
+    new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: fxExposure.lpBaseCurrency,
+      notation: 'compact',
+      maximumFractionDigits: 1
+    }).format(value);
   return (
     <section id="im-fx" className="app-shell py-4">
       <Card>
@@ -74,10 +85,7 @@ export function FxSection({ data }: { data: SampleReportData }) {
                         : 'text-white';
                   return (
                     <td key={s.shockPct} className={`px-2 py-2 text-right font-mono ${tone}`}>
-                      {(s.baseCurrencyValue / 1_000_000).toLocaleString(undefined, {
-                        maximumFractionDigits: 1
-                      })}
-                      M {fxExposure.lpBaseCurrency}
+                      {formatBase(s.baseCurrencyValue)}
                     </td>
                   );
                 })}
