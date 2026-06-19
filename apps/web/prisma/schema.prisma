@@ -1450,6 +1450,11 @@ model CreditAssessment {
   assessmentType       String              @default("COUNTERPARTY_CREDIT")
   score                Float
   riskLevel            String
+  // AAA–CCC letter grade + 1yr PD from the tenant-credit engine, populated
+  // when the statement carries enough income-statement detail to grade.
+  grade                String?
+  pdPct                Float?
+  investmentGrade      Boolean?
   summary              String
   metrics              Json
   createdAt            DateTime            @default(now())

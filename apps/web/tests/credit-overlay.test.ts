@@ -70,6 +70,9 @@ test('credit overlay reduces confidence and adds diligence when a counterparty s
         assessmentType: 'SPONSOR_CREDIT',
         score: 41,
         riskLevel: 'HIGH',
+        grade: null,
+        pdPct: null,
+        investmentGrade: null,
         summary: 'Weak sponsor credit.',
         metrics: {
           currentRatio: 0.92,

@@ -218,6 +218,15 @@ export function FinancialStatementsPanel({
                   </div>
                   {latestAssessment ? (
                     <div className="flex flex-wrap items-center gap-2">
+                      {latestAssessment.grade ? (
+                        <Badge tone={latestAssessment.investmentGrade ? 'good' : 'warn'}>
+                          {latestAssessment.grade}
+                          {latestAssessment.pdPct != null
+                            ? ` · PD ${formatNumber(latestAssessment.pdPct, 2)}%`
+                            : ''}
+                          {latestAssessment.investmentGrade ? ' · IG' : ''}
+                        </Badge>
+                      ) : null}
                       <Badge tone={riskTone(latestAssessment.riskLevel)}>
                         {latestAssessment.riskLevel} risk
                       </Badge>

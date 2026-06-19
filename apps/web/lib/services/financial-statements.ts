@@ -6,6 +6,50 @@ import {
   type DartFinancialSnapshot,
   type DartFinancialsOptions
 } from '@/lib/services/quarterly-report/connectors/dart-financials';
+import { assessCredit } from '@/lib/services/valuation/tenant-credit';
+
+/**
+ * Grade a parsed statement with the AAA–CCC + PD engine. Returns null unless
+ * the core income-statement inputs are present, so a grade is never produced
+ * off zeros. Industry defaults to GENERAL (neutral adjustment) until captured
+ * on the counterparty; unlisted is assumed (conservative — listed adds score).
+ */
+function gradeParsedStatement(
+  parsed: ParsedFinancialStatement,
+  counterpartyId: string
+): { grade: string; pdPct: number; investmentGrade: boolean } | null {
+  if (
+    parsed.operatingIncomeKrw == null ||
+    parsed.revenueKrw == null ||
+    parsed.totalAssetsKrw == null ||
+    parsed.totalEquityKrw == null
+  ) {
+    return null;
+  }
+  const result = assessCredit({
+    companyId: counterpartyId,
+    companyName: parsed.counterpartyName,
+    industry: 'GENERAL',
+    fiscalYear: parsed.fiscalYear ?? new Date().getFullYear(),
+    isListed: false,
+    totalAssetsKrw: parsed.totalAssetsKrw,
+    totalLiabilitiesKrw: Math.max(parsed.totalAssetsKrw - parsed.totalEquityKrw, 0),
+    currentAssetsKrw: parsed.currentAssetsKrw ?? 0,
+    currentLiabilitiesKrw: parsed.currentLiabilitiesKrw ?? 0,
+    cashAndEquivalentsKrw: parsed.cashKrw ?? 0,
+    totalDebtKrw: parsed.totalDebtKrw ?? 0,
+    revenueKrw: parsed.revenueKrw,
+    operatingIncomeKrw: parsed.operatingIncomeKrw,
+    netIncomeKrw: parsed.netIncomeKrw ?? 0,
+    interestExpenseKrw: parsed.interestExpenseKrw ?? 0,
+    operatingCashFlowKrw: parsed.operatingCashFlowKrw ?? 0
+  });
+  return {
+    grade: result.grade,
+    pdPct: result.oneYearPdPct,
+    investmentGrade: result.isInvestmentGrade
+  };
+}
 
 type FinancialStatementDb = {
   counterparty: {
@@ -848,6 +892,7 @@ export async function ingestFinancialStatement(
   }
 
   const assessment = buildCreditAssessmentFromStatement(parsed);
+  const grade = gradeParsedStatement(parsed, counterparty.id);
 
   const creditAssessment = await db.creditAssessment.create({
     data: {
@@ -858,6 +903,9 @@ export async function ingestFinancialStatement(
       assessmentType: `${parsed.counterpartyRole}_CREDIT`,
       score: assessment.score,
       riskLevel: assessment.riskLevel,
+      grade: grade?.grade ?? null,
+      pdPct: grade?.pdPct ?? null,
+      investmentGrade: grade?.investmentGrade ?? null,
       summary: assessment.summary,
       metrics: assessment.metrics as Prisma.InputJsonValue
     }

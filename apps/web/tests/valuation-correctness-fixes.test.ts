@@ -218,6 +218,9 @@ function strongCreditAssessment(): BundleCreditAssessment {
     assessmentType: 'SPONSOR_CREDIT',
     score: 95,
     riskLevel: 'LOW',
+    grade: null,
+    pdPct: null,
+    investmentGrade: null,
     summary: 'Investment-grade sponsor.',
     metrics: {
       currentRatio: 2.5,
@@ -258,6 +261,9 @@ function weakCreditAssessment(): BundleCreditAssessment {
     assessmentType: 'SPONSOR_CREDIT',
     score: 38,
     riskLevel: 'HIGH',
+    grade: null,
+    pdPct: null,
+    investmentGrade: null,
     summary: 'Distressed sponsor.',
     metrics: {
       currentRatio: 0.8,
