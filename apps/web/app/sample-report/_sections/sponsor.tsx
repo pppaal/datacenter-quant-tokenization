@@ -25,10 +25,16 @@ export function SponsorSection({ data }: { data: SampleReportData }) {
           </div>
           <div className="flex flex-wrap gap-2">
             {sponsorTrack.averageEquityMultiple !== null ? (
-              <Badge tone="good">avg {sponsorTrack.averageEquityMultiple.toFixed(2)}x</Badge>
+              <Badge tone="good">
+                {sponsorTrack.averageWeightingBasis === 'capital' ? 'pooled' : 'avg'}{' '}
+                {sponsorTrack.averageEquityMultiple.toFixed(2)}x
+              </Badge>
             ) : null}
             {sponsorTrack.averageGrossIrrPct !== null ? (
-              <Badge tone="good">avg IRR {sponsorTrack.averageGrossIrrPct.toFixed(1)}%</Badge>
+              <Badge tone="good">
+                {sponsorTrack.averageWeightingBasis === 'capital' ? 'pooled' : 'avg'} IRR{' '}
+                {sponsorTrack.averageGrossIrrPct.toFixed(1)}%
+              </Badge>
             ) : null}
             <Badge>{sponsorTrack.priorDealCount} prior</Badge>
             {sponsorTrack.oldestVintage ? (
@@ -82,6 +88,15 @@ export function SponsorSection({ data }: { data: SampleReportData }) {
             </table>
           </div>
         )}
+        {sponsorTrack.averageWeightingBasis ? (
+          <p className="mt-3 text-[11px] leading-4 text-slate-500">
+            Headline multiple / IRR are over exited deals only,{' '}
+            {sponsorTrack.averageWeightingBasis === 'capital'
+              ? 'capital-weighted (pooled) by each deal’s committed equity.'
+              : 'equal-weighted (no per-deal equity captured to pool by).'}{' '}
+            Self-reported track record — not independently verified.
+          </p>
+        ) : null}
       </Card>
     </section>
   );
