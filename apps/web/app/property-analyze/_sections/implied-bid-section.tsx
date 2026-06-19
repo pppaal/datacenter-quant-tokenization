@@ -67,7 +67,7 @@ export function ImpliedBidSection({ bid }: { bid: any }) {
                         : 'text-zinc-400'
                   }`}
                 >
-                  {sol.discountPct > 0 ? '-' : '+'}
+                  {sol.discountPct > 0 ? '+' : sol.discountPct < 0 ? '-' : ''}
                   {Math.abs(sol.discountPct).toFixed(1)}%
                 </td>
                 <td className="p-1.5 text-right">
