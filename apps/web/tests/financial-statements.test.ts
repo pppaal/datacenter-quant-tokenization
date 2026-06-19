@@ -113,6 +113,8 @@ test('credit assessment builder uses liquidity and maturity coverage metrics', (
     currency: 'KRW',
     revenueKrw: 42_000_000_000,
     ebitdaKrw: 11_800_000_000,
+    operatingIncomeKrw: 9_500_000_000,
+    netIncomeKrw: 6_200_000_000,
     cashKrw: 6_400_000_000,
     operatingCashFlowKrw: 7_200_000_000,
     capexKrw: -1_600_000_000,

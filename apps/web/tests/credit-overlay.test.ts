@@ -112,6 +112,8 @@ test('credit overlay reduces confidence and adds diligence when a counterparty s
           provenanceSystem: null,
           revenueKrw: new Prisma.Decimal(100),
           ebitdaKrw: new Prisma.Decimal(20),
+          operatingIncomeKrw: new Prisma.Decimal(16),
+          netIncomeKrw: new Prisma.Decimal(9),
           cashKrw: new Prisma.Decimal(5),
           totalDebtKrw: new Prisma.Decimal(80),
           totalAssetsKrw: new Prisma.Decimal(120),

@@ -81,6 +81,8 @@ export function buildCounterpartyStatements(
       currency: 'KRW',
       revenueKrw: revenue,
       ebitdaKrw: ebitda,
+      operatingIncomeKrw: ebitda,
+      netIncomeKrw: null,
       cashKrw: cash,
       operatingCashFlowKrw: operatingCashFlow,
       capexKrw: capex,
