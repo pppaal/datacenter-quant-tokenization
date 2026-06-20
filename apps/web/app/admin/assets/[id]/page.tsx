@@ -20,6 +20,7 @@ import { DebtBookForm } from '@/components/admin/debt-book-form';
 import { DocumentUploadForm } from '@/components/admin/document-upload-form';
 import { FeatureSnapshotPanel } from '@/components/admin/feature-snapshot-panel';
 import { FinancialStatementsPanel } from '@/components/admin/financial-statements-panel';
+import { ComparativeStatementsPanel } from '@/components/admin/comparative-statements-panel';
 import { CounterpartyCashflowPanel } from '@/components/admin/counterparty-cashflow-panel';
 import { AssetSustainabilityPanel } from '@/components/admin/asset-sustainability-panel';
 import { AssetRegistryPanel } from '@/components/admin/asset-registry-panel';
@@ -789,6 +790,8 @@ export default async function AssetDetailPage({
         displayCurrency={displayCurrency}
         fxRateToKrw={fxRateToKrw}
       />
+
+      <ComparativeStatementsPanel statements={financialStatements} />
 
       <CounterpartyCashflowPanel
         statements={financialStatements}
