@@ -47,11 +47,12 @@ export function OperatorDashboardPanel({ data }: Props) {
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="metric-card">
-          <div className="fine-print">Total AUM</div>
+          <div className="fine-print">AUM (NAV)</div>
           <div className="mt-3 text-4xl font-semibold text-white">{krw(portfolio.totalAumKrw)}</div>
           <p className="mt-2 text-sm text-slate-400">
             Avg NOI yield{' '}
             {portfolio.avgNoiYieldPct > 0 ? `${portfolio.avgNoiYieldPct.toFixed(1)}%` : 'N/A'}
+            {portfolio.aumUsedCostFallback ? ' · some assets at cost basis' : ''}
           </p>
         </div>
         <div className="metric-card">

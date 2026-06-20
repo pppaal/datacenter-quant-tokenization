@@ -23,6 +23,7 @@ type PortfolioDashboardData = {
   summary: {
     totalAssets: number;
     totalAumKrw: number;
+    aumUsedCostFallback: boolean;
     avgOccupancyPct: number;
     avgNoiYieldPct: number;
     riskDistribution: { good: number; warn: number; danger: number };
@@ -111,6 +112,7 @@ export async function buildPortfolioDashboardData(
   const occupancyKpis: PortfolioKpiRow[] = [];
   const riskAssets: PortfolioRiskAsset[] = [];
   let totalAumKrw = 0;
+  let aumUsedCostFallback = false;
   let occupancySum = 0;
   let occupancyCount = 0;
   let noiYieldSum = 0;
@@ -128,12 +130,14 @@ export async function buildPortfolioDashboardData(
 
     const latestKpi = pa.monthlyKpis[0] ?? null;
     const purchasePrice = toNumber(asset.purchasePriceKrw) ?? 0;
-    totalAumKrw += purchasePrice;
+    // AUM at current market value (NAV), cost fallback only when no mark exists.
+    const markValue = toNumber(pa.currentHoldValueKrw) ?? toNumber(latestKpi?.navKrw);
+    const holdValue = markValue ?? purchasePrice;
+    totalAumKrw += holdValue;
+    if (markValue == null) aumUsedCostFallback = true;
 
     const occupancyPct = toNumber(latestKpi?.occupancyPct);
     const noiKrw = toNumber(latestKpi?.noiKrw);
-    const holdValue =
-      toNumber(pa.currentHoldValueKrw) ?? toNumber(latestKpi?.navKrw) ?? purchasePrice;
     const noiYieldPct = noiKrw != null && holdValue > 0 ? ((noiKrw * 12) / holdValue) * 100 : null;
 
     if (occupancyPct != null) {
@@ -192,6 +196,7 @@ export async function buildPortfolioDashboardData(
     summary: {
       totalAssets: portfolioAssets.length,
       totalAumKrw,
+      aumUsedCostFallback,
       avgOccupancyPct: occupancyCount > 0 ? occupancySum / occupancyCount : 0,
       avgNoiYieldPct: noiYieldCount > 0 ? noiYieldSum / noiYieldCount : 0,
       riskDistribution: { good: goodCount, warn: warnCount, danger: dangerCount }

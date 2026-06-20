@@ -156,7 +156,10 @@ export default async function PortfolioPage() {
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-slate-400">Total AUM</span>
+                  <span className="text-slate-400">
+                    AUM (NAV)
+                    {dashboardData.summary.aumUsedCostFallback ? ' · some at cost' : ''}
+                  </span>
                   <span className="text-white">{krw(dashboardData.summary.totalAumKrw)}</span>
                 </div>
               </div>
