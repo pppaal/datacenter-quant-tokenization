@@ -39,7 +39,7 @@ export function TitleSection({ data }: { data: SampleReportData }) {
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-semibold text-white">{o.ownerName}</span>
                       <span className="font-mono text-xs text-slate-400">
-                        {typeof o.ownershipPct === 'number' ? `${o.ownershipPct.toFixed(0)}%` : '—'}
+                        {typeof o.ownershipPct === 'number' ? `${o.ownershipPct.toFixed(1)}%` : '—'}
                       </span>
                     </div>
                     <div className="mt-1 text-[11px] text-slate-500">
@@ -163,7 +163,8 @@ export function TitleSection({ data }: { data: SampleReportData }) {
                       </span>
                     </div>
                     <div className="mt-1 text-[11px] text-slate-500">
-                      {b.useType ?? 'use n/a'} · {b.floorCount ?? '?'}F /{b.basementCount ?? '?'}B ·
+                      {b.useType ?? 'use n/a'} · {b.floorCount ?? '–'}F / {b.basementCount ?? '–'}B
+                      ·
                       {typeof b.grossFloorAreaSqm === 'number'
                         ? ` ${formatNumber(b.grossFloorAreaSqm, 0)} sqm GFA`
                         : ' GFA n/a'}

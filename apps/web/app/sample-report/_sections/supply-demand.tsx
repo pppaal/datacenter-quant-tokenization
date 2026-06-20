@@ -4,7 +4,7 @@ import { formatNumber } from '@/lib/utils';
 import type { SampleReportData } from './types';
 
 export function SupplyDemandSection({ data }: { data: SampleReportData }) {
-  const { supplyDemandModel } = data;
+  const { supplyDemandModel, demandGrowthPct } = data;
   if (!supplyDemandModel) {
     return null;
   }
@@ -16,8 +16,9 @@ export function SupplyDemandSection({ data }: { data: SampleReportData }) {
             <div className="eyebrow">Supply-demand forecast</div>
             <p className="mt-2 max-w-3xl text-sm text-slate-400">
               Probability-weighted pipeline supply (stage-conditional completion rates) paired with
-              a {supplyDemandModel.unit === 'MW' ? '8% AI-load' : '3% baseline'} demand growth
-              assumption to project net absorption and implied vacancy over a 5-year hold.
+              a {formatNumber(demandGrowthPct, 1)}%{' '}
+              {supplyDemandModel.unit === 'MW' ? 'AI-load' : 'baseline'} demand growth assumption to
+              project net absorption and implied vacancy over a 5-year hold.
             </p>
           </div>
           <Badge>

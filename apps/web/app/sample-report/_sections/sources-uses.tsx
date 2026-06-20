@@ -52,9 +52,17 @@ export function SourcesUsesSection({ data }: { data: SampleReportData }) {
                 : 'N/A (capex breakdown unavailable)'}
             </KeyValueRow>
             <KeyValueRow variant="inline" label="Funding surplus / (gap)">
-              {fundingDeltaKrw !== null
-                ? formatCompactCurrencyFromKrwAtRate(fundingDeltaKrw, displayCurrency, fxRateToKrw)
-                : '—'}
+              {fundingDeltaKrw !== null ? (
+                <span className={fundingDeltaKrw < 0 ? 'text-rose-300' : undefined}>
+                  {formatCompactCurrencyFromKrwAtRate(
+                    fundingDeltaKrw,
+                    displayCurrency,
+                    fxRateToKrw
+                  )}
+                </span>
+              ) : (
+                '—'
+              )}
             </KeyValueRow>
             <KeyValueRow variant="inline" label="Reserves required">
               {formatCompactCurrencyFromKrwAtRate(
