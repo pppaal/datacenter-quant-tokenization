@@ -3,7 +3,7 @@ import { Section, pct } from './shared';
 
 export function MacroRegimeSection({ macro }: { macro: any }) {
   return (
-    <Section title="1. Macro Regime Interpretation" collapsible defaultOpen={false}>
+    <Section title="Macro Regime Interpretation" collapsible defaultOpen={false}>
       <KeyValueRow
         variant="divider"
         className="border-t py-1.5 text-sm first:border-t-0"
@@ -25,7 +25,7 @@ export function MacroRegimeSection({ macro }: { macro: any }) {
 
 export function MacroExposureSection({ macro }: { macro: any }) {
   return (
-    <Section title="2. Deal Macro Exposure (0-100, higher = worse)">
+    <Section title="Deal Macro Exposure (0-100, higher = worse)">
       <KeyValueRow
         variant="divider"
         className="border-t py-1.5 text-sm first:border-t-0"
@@ -58,7 +58,7 @@ export function MacroExposureSection({ macro }: { macro: any }) {
 
 export function MacroStressSection({ macro }: { macro: any }) {
   return (
-    <Section title="3. Macro Stress Tests" collapsible defaultOpen={false}>
+    <Section title="Macro Stress Tests" collapsible defaultOpen={false}>
       <div className="space-y-3">
         {macro.stressTests.map((s: any) => (
           <div key={s.scenario.name} className="rounded border border-zinc-800 p-3">

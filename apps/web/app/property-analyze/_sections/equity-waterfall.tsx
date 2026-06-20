@@ -13,7 +13,7 @@ export function EquityWaterfallSection({
   pfYears: any[];
 }) {
   return (
-    <Section title="4e. Equity Waterfall" collapsible defaultOpen={false}>
+    <Section title="Equity Waterfall" collapsible defaultOpen={false}>
       {(() => {
         const initialEquity = pf.initialEquityKrw;
         const cumulativeDistributions = pfYears.reduce((s, y) => s + y.afterTaxDistributionKrw, 0);

@@ -9,7 +9,7 @@ export function BasisDepreciationSection({ pfx }: { pfx: any }) {
   const acqTaxPct =
     purchasePriceKrw > 0 ? ((pfx.acquisitionTaxKrw ?? 0) / purchasePriceKrw) * 100 : null;
   return (
-    <Section title="4b. Basis / Depreciation / Exit Costs" collapsible defaultOpen={false}>
+    <Section title="Basis / Depreciation / Exit Costs" collapsible defaultOpen={false}>
       <KeyValueRow
         variant="divider"
         className="border-t py-1.5 text-sm first:border-t-0"

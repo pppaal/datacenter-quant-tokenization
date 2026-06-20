@@ -4,7 +4,7 @@ import { Section, krw, pct } from './shared';
 export function CapRateSensitivitySection({ capMatrix }: { capMatrix: any }) {
   return (
     <Section
-      title="7. Sensitivity — Cap Rate × Exit Cap Rate (equity IRR)"
+      title="Sensitivity — Cap Rate × Exit Cap Rate (equity IRR)"
       collapsible
       defaultOpen={false}
     >
@@ -40,7 +40,7 @@ export function CapRateSensitivitySection({ capMatrix }: { capMatrix: any }) {
 
 export function InterestRateSensitivitySection({ irRows }: { irRows: any[] }) {
   return (
-    <Section title="8. Sensitivity — Interest Rate Shift" collapsible defaultOpen={false}>
+    <Section title="Sensitivity — Interest Rate Shift" collapsible defaultOpen={false}>
       <table className="text-sm font-mono" aria-label="Interest rate sensitivity">
         <thead>
           <tr className="text-zinc-400">
@@ -80,7 +80,7 @@ export function InterestRateSensitivitySection({ irRows }: { irRows: any[] }) {
 export function MacroDrivenSensitivitySection({ md }: { md: any }) {
   return (
     <Section
-      title="9. Macro-Driven Sensitivity (axes from stress scenarios)"
+      title="Macro-Driven Sensitivity (axes from stress scenarios)"
       collapsible
       defaultOpen={false}
     >
@@ -120,7 +120,7 @@ export function MacroDrivenSensitivitySection({ md }: { md: any }) {
 export function TornadoSensitivitySection({ tornado, pfx }: { tornado: any; pfx: any }) {
   return (
     <Section
-      title="9b. Tornado — Driver Sensitivity (levered IRR swing)"
+      title="Tornado — Driver Sensitivity (levered IRR swing)"
       collapsible
       defaultOpen={false}
     >

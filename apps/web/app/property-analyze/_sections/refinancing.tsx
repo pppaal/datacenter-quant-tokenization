@@ -3,7 +3,7 @@ import { Section, krw } from './shared';
 
 export function RefinancingSection({ refi }: { refi: any }) {
   return (
-    <Section title="10. Refinancing Analysis" collapsible defaultOpen={false}>
+    <Section title="Refinancing Analysis" collapsible defaultOpen={false}>
       <KeyValueRow
         variant="divider"
         className="border-t py-1.5 text-sm first:border-t-0"

@@ -3,7 +3,7 @@ import { Section, krw } from './shared';
 
 export function ProFormaSummarySection({ pf }: { pf: any }) {
   return (
-    <Section title="4. Pro-Forma Summary (10-year)">
+    <Section title="Pro-Forma Summary (10-year)">
       <KeyValueRow
         variant="divider"
         className="border-t py-1.5 text-sm first:border-t-0"

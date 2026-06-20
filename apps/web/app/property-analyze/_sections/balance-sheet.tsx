@@ -2,7 +2,7 @@ import { Section, krw, pct } from './shared';
 
 export function BalanceSheetSection({ pfx, pfYears }: { pfx: any; pfYears: any[] }) {
   return (
-    <Section title="4f. Balance Sheet (10-year)" collapsible defaultOpen={false}>
+    <Section title="Balance Sheet (10-year)" collapsible defaultOpen={false}>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[720px] text-sm font-mono" aria-label="Annual balance sheet">
           <thead>
