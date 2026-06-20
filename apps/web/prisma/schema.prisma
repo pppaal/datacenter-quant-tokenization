@@ -3109,6 +3109,10 @@ model Fund {
   dryPowderKrw        Decimal?        @db.Decimal(20, 2)
   vintageYear         Int?
   thesis              String?
+  // Per-fund promote economics; null falls back to the firm-wide defaults
+  // (DEFAULT_HURDLE_PCT / DEFAULT_CARRY_PCT) in the waterfall engine.
+  hurdleRatePct       Float?
+  carriedInterestPct  Float?
   portfolioId         String?
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt

@@ -285,6 +285,10 @@ export async function buildFundWaterfall(
 
   if (!fund) throw new Error('Fund not found.');
 
+  // Per-fund promote economics override the firm-wide defaults when set.
+  const resolvedHurdlePct = fund.hurdleRatePct ?? HURDLE_RATE_PCT;
+  const resolvedCarryPct = fund.carriedInterestPct ?? CARRIED_INTEREST_PCT;
+
   const committedKrw = fund.commitments.reduce((sum, c) => sum + toNumber(c.commitmentKrw), 0);
   const calledKrw = fund.commitments.reduce((sum, c) => sum + toNumber(c.calledKrw), 0);
   const distributedKrw = fund.commitments.reduce((sum, c) => sum + toNumber(c.distributedKrw), 0);
@@ -336,8 +340,8 @@ export async function buildFundWaterfall(
       date: d.distributionDate,
       amountKrw: toNumber(d.amountKrw)
     })),
-    hurdleRatePct: HURDLE_RATE_PCT,
-    carriedInterestPct: CARRIED_INTEREST_PCT
+    hurdleRatePct: resolvedHurdlePct,
+    carriedInterestPct: resolvedCarryPct
   });
 
   const remainingAfterCatchUp = carryLpAmount + carryGpAmount;
@@ -355,7 +359,7 @@ export async function buildFundWaterfall(
     },
     {
       key: 'preferredReturn',
-      label: `Preferred Return (${HURDLE_RATE_PCT}%)`,
+      label: `Preferred Return (${resolvedHurdlePct}%)`,
       lpAmountKrw: preferredReturnAmount,
       gpAmountKrw: 0,
       totalKrw: preferredReturnAmount,
@@ -371,7 +375,7 @@ export async function buildFundWaterfall(
     },
     {
       key: 'carriedInterest',
-      label: `Carry Split (${100 - CARRIED_INTEREST_PCT}/${CARRIED_INTEREST_PCT})`,
+      label: `Carry Split (${100 - resolvedCarryPct}/${resolvedCarryPct})`,
       lpAmountKrw: carryLpAmount,
       gpAmountKrw: carryGpAmount,
       totalKrw: remainingAfterCatchUp,
@@ -405,8 +409,8 @@ export async function buildFundWaterfall(
     },
     investors,
     tiers,
-    hurdleRatePct: HURDLE_RATE_PCT,
-    carriedInterestPct: CARRIED_INTEREST_PCT,
+    hurdleRatePct: resolvedHurdlePct,
+    carriedInterestPct: resolvedCarryPct,
     generatedAt: new Date().toISOString()
   };
 }
