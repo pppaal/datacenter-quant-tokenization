@@ -10,7 +10,7 @@ export function Button({ className, variant = 'primary', ...props }: Props) {
     <button
       {...props}
       className={cn(
-        'inline-flex min-h-11 items-center justify-center rounded-full px-5 py-2.5 text-sm font-semibold tracking-[-0.01em] transition duration-200',
+        'inline-flex min-h-11 items-center justify-center rounded-full px-5 py-2.5 text-sm font-semibold tracking-[-0.01em] transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--accent-ring)/0.6)] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--background))]',
         variant === 'primary' &&
           'bg-accent text-[hsl(var(--on-accent))] shadow-sm hover:-translate-y-0.5 hover:bg-[hsl(var(--accent-hover))] disabled:translate-y-0 disabled:bg-[hsl(var(--border-strong))] disabled:text-[hsl(var(--muted))] disabled:shadow-none',
         variant === 'secondary' &&
