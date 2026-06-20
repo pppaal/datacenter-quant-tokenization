@@ -3,7 +3,7 @@ import { Section, krw, pct } from './shared';
 
 export function ReturnMetricsSection({ rm }: { rm: any }) {
   return (
-    <Section title="5. Return Metrics">
+    <Section title="Return Metrics">
       <KeyValueRow
         variant="divider"
         className="border-t py-1.5 text-sm first:border-t-0"

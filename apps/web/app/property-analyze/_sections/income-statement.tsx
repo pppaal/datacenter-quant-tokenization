@@ -5,7 +5,12 @@ export function IncomeStatementSection({ pfYears }: { pfYears: any[] }) {
   // year is 0, so only show them when the pro forma actually carries capacity.
   const hasCapacityData = pfYears.some((y) => (y.occupiedKw ?? 0) > 0 || (y.contractedKw ?? 0) > 0);
   return (
-    <Section title="4c. Income Statement (10-year)" collapsible defaultOpen={false}>
+    <Section title="Income Statement (10-year)" collapsible defaultOpen={false}>
+      <div className="mb-3 rounded border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-200/90">
+        Line items below the revenue and NOI subtotals are a synthetic decomposition (fixed
+        contracted/renewal/residual and recovery/opex ratios) for transparency — not a parsed rent
+        roll. The bolded subtotals (Total Operating Revenue, NOI, CFADS) are the model outputs.
+      </div>
       <div className="overflow-x-auto">
         <table
           className="w-full min-w-[720px] text-sm font-mono"
@@ -69,10 +74,6 @@ export function IncomeStatementSection({ pfYears }: { pfYears: any[] }) {
                 label: 'Total Operating Revenue',
                 pick: (y: any) => y.totalOperatingRevenueKrw,
                 bold: true
-              },
-              {
-                label: '  Revenue (alt subtotal)',
-                pick: (y: any) => y.revenueKrw
               },
               {
                 label: 'Operating Expenses',

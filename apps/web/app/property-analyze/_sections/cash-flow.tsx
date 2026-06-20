@@ -2,7 +2,7 @@ import { Section, krw } from './shared';
 
 export function CashFlowSection({ pfYears }: { pfYears: any[] }) {
   return (
-    <Section title="4d. Cash Flow (10-year)" collapsible defaultOpen={false}>
+    <Section title="Cash Flow (10-year)" collapsible defaultOpen={false}>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[720px] text-sm font-mono" aria-label="Annual cash flow">
           <thead>

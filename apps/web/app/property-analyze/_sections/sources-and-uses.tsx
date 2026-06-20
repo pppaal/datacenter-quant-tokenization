@@ -3,7 +3,7 @@ import { Section, krw } from './shared';
 
 export function SourcesAndUsesSection({ pf, pfx, pfYears }: { pf: any; pfx: any; pfYears: any[] }) {
   return (
-    <Section title="4a. Sources & Uses at Entry" collapsible defaultOpen={false}>
+    <Section title="Sources & Uses at Entry" collapsible defaultOpen={false}>
       {(() => {
         const purchasePrice = pfx.totalBasisKrw - pfx.acquisitionTaxKrw;
         const y1 = pfYears[0]!;

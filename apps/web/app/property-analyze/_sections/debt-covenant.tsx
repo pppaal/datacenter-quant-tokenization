@@ -3,7 +3,7 @@ import { Section } from './shared';
 
 export function DebtCovenantSection({ dc }: { dc: any }) {
   return (
-    <Section title="6. Debt Covenant (DSCR)">
+    <Section title="Debt Covenant (DSCR)">
       <KeyValueRow
         variant="divider"
         className="border-t py-1.5 text-sm first:border-t-0"

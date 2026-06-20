@@ -2,7 +2,7 @@ import { Section, krw, pct } from './shared';
 
 export function GpLpWaterfallSection({ wf }: { wf: any }) {
   return (
-    <Section title="4h. GP/LP Promote Waterfall" collapsible defaultOpen={false}>
+    <Section title="GP/LP Promote Waterfall" collapsible defaultOpen={false}>
       <div className="mb-3 rounded border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-200/90">
         Illustrative promote structure (standard 8% pref / catch-up / 80-20 carry defaults), not the
         actual negotiated LPA terms for this deal.
