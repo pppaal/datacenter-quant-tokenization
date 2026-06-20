@@ -461,14 +461,24 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                         <dt className="text-slate-400">EBIT</dt>
                         <dd className="font-mono text-white">{fmt(cashFlow.ebitKrw)}</dd>
                       </div>
+                      {inc.operatingIncomeKrw !== null ? (
+                        <div className="flex justify-between">
+                          <dt className="text-slate-400">Operating income (영업이익, filed)</dt>
+                          <dd className="font-mono text-white">{fmt(inc.operatingIncomeKrw)}</dd>
+                        </div>
+                      ) : null}
                       <div className="flex justify-between">
                         <dt className="text-slate-400">Interest expense</dt>
                         <dd className="font-mono text-white">{fmt(inc.interestExpenseKrw)}</dd>
                       </div>
                       <div className="flex justify-between border-t border-white/5 pt-1.5">
-                        <dt className="text-slate-300">Net income (post-tax)</dt>
+                        <dt className="text-slate-300">
+                          {inc.netIncomeKrw !== null
+                            ? 'Net income (당기순이익, filed)'
+                            : 'Net income (post-tax, est.)'}
+                        </dt>
                         <dd className="font-mono font-semibold text-white">
-                          {fmt(cashFlow.netIncomeKrw)}
+                          {fmt(inc.netIncomeKrw ?? cashFlow.netIncomeKrw)}
                         </dd>
                       </div>
                     </dl>
