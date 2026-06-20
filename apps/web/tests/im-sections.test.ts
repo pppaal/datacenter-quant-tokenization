@@ -57,6 +57,10 @@ test('formatMacroValue handles common units', () => {
   assert.equal(formatMacroValue({ value: 215, unit: 'bps' }), '215 bps');
   assert.equal(formatMacroValue({ value: 102.4, unit: 'idx' }), '102.4');
   assert.equal(formatMacroValue({ value: 12345, unit: null }), '12,345');
+  // Seed/live data store percent as '%' and index as 'index' — must format too.
+  assert.equal(formatMacroValue({ value: 3.5, unit: '%' }), '3.50%');
+  assert.equal(formatMacroValue({ value: 104, unit: 'index' }), '104.0');
+  assert.equal(formatMacroValue({ value: 39200, unit: 'KRW/sqm/mo' }), '39,200 KRW/sqm/mo');
 });
 
 test('computeLeaseRollSummary computes WALT + weighted rent + MTM gap', () => {
