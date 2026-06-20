@@ -322,7 +322,7 @@ export default async function DealsPage({ searchParams }: Props) {
                               : 'danger'
                         }
                       >
-                        p-close {formatNumber(closeProbability.scorePct, 0)}%
+                        momentum {formatNumber(closeProbability.scorePct, 0)}
                       </Badge>
                       {snapshot?.overdueTaskCount ? (
                         <Badge tone="danger">{snapshot.overdueTaskCount} overdue</Badge>
@@ -436,9 +436,9 @@ export default async function DealsPage({ searchParams }: Props) {
                       </div>
                     </div>
                     <div>
-                      <div className="fine-print">P(Close)</div>
+                      <div className="fine-print">Momentum</div>
                       <div className="mt-2 text-sm text-white">
-                        {formatNumber(closeProbability.scorePct, 0)}% /{' '}
+                        {formatNumber(closeProbability.scorePct, 0)} /{' '}
                         {closeProbability.band.toLowerCase()}
                       </div>
                     </div>

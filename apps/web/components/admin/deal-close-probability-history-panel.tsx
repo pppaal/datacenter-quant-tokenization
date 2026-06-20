@@ -22,7 +22,7 @@ export function DealCloseProbabilityHistoryPanel({ history }: Props) {
     <Card className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <div className="eyebrow">Close Probability History</div>
+          <div className="eyebrow">Execution Momentum History</div>
           <h2 className="mt-2 text-2xl font-semibold text-white">
             How execution certainty is moving
           </h2>
@@ -125,7 +125,7 @@ export function DealCloseProbabilityHistoryPanel({ history }: Props) {
           })
         ) : (
           <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5 text-sm text-slate-400">
-            No execution probability snapshots yet. The first new stage, task, risk, bid, lender, or
+            No execution momentum snapshots yet. The first new stage, task, risk, bid, lender, or
             negotiation update will start the trend.
           </div>
         )}
