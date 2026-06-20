@@ -85,10 +85,17 @@ export function pickMacroBackdrop(series: MacroSeriesPoint[]): MacroSeriesPoint[
 }
 
 export function formatMacroValue(point: { value: number; unit: string | null }): string {
-  if (point.unit === 'pct') return `${point.value.toFixed(2)}%`;
+  // Seed/live data store the percent unit as '%' (and the index unit as
+  // 'index'); accept those aliases so KR macro rates render "3.50%" rather
+  // than a bare "3.5" that reads as unitless.
+  if (point.unit === 'pct' || point.unit === '%') return `${point.value.toFixed(2)}%`;
   if (point.unit === 'bps') return `${point.value.toFixed(0)} bps`;
-  if (point.unit === 'idx') return point.value.toFixed(1);
-  return Number.isInteger(point.value) ? point.value.toLocaleString() : point.value.toFixed(2);
+  if (point.unit === 'idx' || point.unit === 'index') return point.value.toFixed(1);
+  const num = Number.isInteger(point.value) ? point.value.toLocaleString() : point.value.toFixed(2);
+  // Append any other concrete unit (e.g. 'x', 'KRW/sqm/mo', 'km') so the value
+  // is never shown unitless; 'score' stays bare (0–100 score).
+  if (point.unit && point.unit !== 'score') return `${num} ${point.unit}`;
+  return num;
 }
 
 export type WaltSummary = {
