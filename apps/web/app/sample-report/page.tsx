@@ -540,7 +540,7 @@ export default async function SampleReportPage({
 
   return (
     <main className="pb-24">
-      <ImPrintMode />
+      <ImPrintMode footerLabel={`${asset.name} · Investment Memo`} />
       <div className="print-hidden" data-im-print-hidden>
         <SiteNav />
       </div>
