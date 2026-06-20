@@ -21,7 +21,8 @@ const channels = [
   },
   {
     label: '보안 · 컴플라이언스',
-    detail: 'NDA 후 보안 자료 패키지 송부. 위협 모델 · 펜테스트 결과 포함.',
+    detail:
+      'NDA 후 보안 자료 패키지 송부. 위협 모델 · 보안 통제 요약 포함 (펜테스트 결과는 로드맵).',
     contact: 'security@nexus-seoul.example',
     note: 'PGP 키 요청 가능'
   },
@@ -54,7 +55,7 @@ const beforeAfter = [
     label: 'NDA 후',
     items: [
       '아키텍처 다이어그램',
-      '위협 모델 + 펜테스트 결과 요약',
+      '위협 모델 + 보안 통제 요약',
       '운용사별 IM 템플릿 데모',
       '환경변수 · 인프라 분리 정책',
       '엔터프라이즈 SLA · 페이저 정책'

@@ -58,7 +58,7 @@ const dataSources = [
   { tier: 'Tier 1 — 권위', label: '서울시 인허가 · 토지대장 · 건축물대장', cadence: '주별' },
   {
     tier: 'Tier 2 — 시장',
-    label: 'CBRE / JLL / Savills 분기 보고서, 한국감정원 시계열',
+    label: 'CBRE / JLL / Savills 스타일 큐레이션 벤치마크(추정치), 한국감정원 시계열',
     cadence: '분기'
   },
   {
