@@ -6,11 +6,22 @@ import {
   importTimeseriesRows,
   parseTimeseriesCsv
 } from '@/lib/services/research/timeseries-import';
+import { workbookToCsv } from '@/lib/services/imports/xlsx';
 
-const BodySchema = z.object({
-  csv: z.string().min(1).max(2_000_000),
-  dryRun: z.boolean().default(false)
-});
+// Accept either pasted CSV or an uploaded .xlsx (base64) — the latter is
+// flattened to CSV via `workbookToCsv` and run through the same parser, so an
+// operator can import a REB quarterly Excel report directly. At least one of
+// `csv` / `xlsxBase64` must be present.
+const BodySchema = z
+  .object({
+    csv: z.string().min(1).max(2_000_000).optional(),
+    xlsxBase64: z.string().min(1).max(15_000_000).optional(),
+    sheetName: z.string().max(80).optional(),
+    dryRun: z.boolean().default(false)
+  })
+  .refine((b) => Boolean(b.csv) || Boolean(b.xlsxBase64), {
+    message: 'Provide csv or xlsxBase64.'
+  });
 
 export const POST = withAdminApi({
   requiredRole: 'ANALYST',
@@ -18,7 +29,15 @@ export const POST = withAdminApi({
   auditAction: 'research.timeseries.import',
   auditEntityType: 'MacroSeries',
   async handler({ body }) {
-    const parsed = parseTimeseriesCsv(body.csv);
+    let csv = body.csv ?? '';
+    if (body.xlsxBase64) {
+      try {
+        csv = await workbookToCsv(Buffer.from(body.xlsxBase64, 'base64'), body.sheetName);
+      } catch {
+        return NextResponse.json({ error: 'Could not read the .xlsx workbook.' }, { status: 400 });
+      }
+    }
+    const parsed = parseTimeseriesCsv(csv);
     if (parsed.errors.length > 0 && parsed.rows.length === 0) {
       return NextResponse.json(
         {
