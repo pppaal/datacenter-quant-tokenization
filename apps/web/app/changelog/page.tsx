@@ -18,7 +18,7 @@ type ChangeKind = 'feature' | 'quant' | 'security' | 'infra' | 'fix';
 const kindStyles: Record<ChangeKind, { label: string; tone?: 'good' | 'warn' | 'danger' }> = {
   feature: { label: '기능', tone: 'good' },
   quant: { label: 'Quant', tone: 'good' },
-  security: { label: '보안', tone: 'warn' },
+  security: { label: '보안' },
   infra: { label: '인프라' },
   fix: { label: '수정' }
 };
