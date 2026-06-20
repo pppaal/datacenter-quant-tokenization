@@ -1,4 +1,4 @@
-import { formatCurrencyFromKrwAtRate } from '@/lib/finance/currency';
+import { formatCompactCurrencyFromKrwAtRate } from '@/lib/finance/currency';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import type { SampleReportData } from './types';
@@ -54,7 +54,11 @@ export function CapexSection({ data }: { data: SampleReportData }) {
                     )}
                   </td>
                   <td className="px-2 py-2 text-right font-mono">
-                    {formatCurrencyFromKrwAtRate(item.amountKrw, displayCurrency, fxRateToKrw)}
+                    {formatCompactCurrencyFromKrwAtRate(
+                      item.amountKrw,
+                      displayCurrency,
+                      fxRateToKrw
+                    )}
                   </td>
                 </tr>
               ))}
@@ -63,7 +67,7 @@ export function CapexSection({ data }: { data: SampleReportData }) {
                   Total
                 </td>
                 <td className="px-2 py-2 text-right font-mono text-white">
-                  {formatCurrencyFromKrwAtRate(
+                  {formatCompactCurrencyFromKrwAtRate(
                     asset.capexLineItems.reduce((sum, i) => sum + i.amountKrw, 0),
                     displayCurrency,
                     fxRateToKrw

@@ -1,4 +1,4 @@
-import { formatCurrencyFromKrwAtRate } from '@/lib/finance/currency';
+import { formatCompactCurrencyFromKrwAtRate } from '@/lib/finance/currency';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import type { SampleReportData } from './types';
@@ -29,7 +29,7 @@ export function CapitalCallsSection({ data }: { data: SampleReportData }) {
           <div className="flex flex-wrap gap-2">
             <Badge>
               Total commitment{' '}
-              {formatCurrencyFromKrwAtRate(
+              {formatCompactCurrencyFromKrwAtRate(
                 capitalCalls.totalCommitmentKrw,
                 displayCurrency,
                 fxRateToKrw
@@ -57,10 +57,18 @@ export function CapitalCallsSection({ data }: { data: SampleReportData }) {
                   <td className="px-2 py-2 text-slate-300">{row.yearLabel}</td>
                   <td className="px-2 py-2 text-[11px] text-slate-400">{row.purpose}</td>
                   <td className="px-2 py-2 text-right font-mono">
-                    {formatCurrencyFromKrwAtRate(row.amountKrw, displayCurrency, fxRateToKrw)}
+                    {formatCompactCurrencyFromKrwAtRate(
+                      row.amountKrw,
+                      displayCurrency,
+                      fxRateToKrw
+                    )}
                   </td>
                   <td className="px-2 py-2 text-right font-mono text-slate-400">
-                    {formatCurrencyFromKrwAtRate(row.cumulativeKrw, displayCurrency, fxRateToKrw)}
+                    {formatCompactCurrencyFromKrwAtRate(
+                      row.cumulativeKrw,
+                      displayCurrency,
+                      fxRateToKrw
+                    )}
                   </td>
                   <td className="px-2 py-2 text-right font-mono">
                     {row.cumulativePctOfCommitment.toFixed(1)}%
@@ -74,7 +82,7 @@ export function CapitalCallsSection({ data }: { data: SampleReportData }) {
           <p className="mt-3 text-[10px] text-slate-500">
             Remaining uncalled commitment:{' '}
             <span className="font-mono text-slate-300">
-              {formatCurrencyFromKrwAtRate(
+              {formatCompactCurrencyFromKrwAtRate(
                 capitalCalls.remainingUncalledKrw,
                 displayCurrency,
                 fxRateToKrw

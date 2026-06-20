@@ -1,4 +1,4 @@
-import { formatCurrencyFromKrwAtRate } from '@/lib/finance/currency';
+import { formatCompactCurrencyFromKrwAtRate } from '@/lib/finance/currency';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { formatDate, formatNumber } from '@/lib/utils';
@@ -42,7 +42,11 @@ export function RealizedSection({ data }: { data: SampleReportData }) {
                       </td>
                       <td className="px-2 py-2 text-right font-mono">
                         {typeof o.noiKrw === 'number'
-                          ? formatCurrencyFromKrwAtRate(o.noiKrw, displayCurrency, fxRateToKrw)
+                          ? formatCompactCurrencyFromKrwAtRate(
+                              o.noiKrw,
+                              displayCurrency,
+                              fxRateToKrw
+                            )
                           : '—'}
                       </td>
                       <td className="px-2 py-2 text-right font-mono">

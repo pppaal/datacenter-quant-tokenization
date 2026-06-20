@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { formatCurrencyFromKrwAtRate } from '@/lib/finance/currency';
+import { formatCompactCurrencyFromKrwAtRate } from '@/lib/finance/currency';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ConfidenceBreakdown } from '@/components/valuation/confidence-breakdown';
@@ -24,14 +24,14 @@ export function MemoSection({ data }: { data: SampleReportData }) {
   } = data;
 
   // Data-driven memo cards (previously identical static prose for every asset).
-  const baseCaseLabel = formatCurrencyFromKrwAtRate(
+  const baseCaseLabel = formatCompactCurrencyFromKrwAtRate(
     latestRun.baseCaseValueKrw,
     displayCurrency,
     fxRateToKrw
   );
   const scenarioRangeLabel =
     bearValue !== null && bullValue !== null
-      ? `${formatCurrencyFromKrwAtRate(bearValue, displayCurrency, fxRateToKrw)} – ${formatCurrencyFromKrwAtRate(bullValue, displayCurrency, fxRateToKrw)}`
+      ? `${formatCompactCurrencyFromKrwAtRate(bearValue, displayCurrency, fxRateToKrw)} – ${formatCompactCurrencyFromKrwAtRate(bullValue, displayCurrency, fxRateToKrw)}`
       : null;
   const irrLabel =
     proForma && proForma.summary.equityIrr !== null
@@ -94,7 +94,7 @@ export function MemoSection({ data }: { data: SampleReportData }) {
               <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
                 <div className="fine-print">Latest Base Case</div>
                 <div className="mt-2 text-lg font-semibold text-white">
-                  {formatCurrencyFromKrwAtRate(
+                  {formatCompactCurrencyFromKrwAtRate(
                     latestRun.baseCaseValueKrw,
                     displayCurrency,
                     fxRateToKrw
@@ -179,7 +179,11 @@ export function MemoSection({ data }: { data: SampleReportData }) {
               <div className="flex items-center justify-between gap-3">
                 <h3 className="text-lg font-semibold text-white">{scenario.name}</h3>
                 <span className="text-sm text-slate-400">
-                  {formatCurrencyFromKrwAtRate(scenario.valuationKrw, displayCurrency, fxRateToKrw)}
+                  {formatCompactCurrencyFromKrwAtRate(
+                    scenario.valuationKrw,
+                    displayCurrency,
+                    fxRateToKrw
+                  )}
                 </span>
               </div>
               <div className="mt-4 grid gap-3 text-sm text-slate-300 md:grid-cols-3">

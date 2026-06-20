@@ -1,4 +1,4 @@
-import { formatCurrencyFromKrwAtRate } from '@/lib/finance/currency';
+import { formatCompactCurrencyFromKrwAtRate } from '@/lib/finance/currency';
 import { Card } from '@/components/ui/card';
 import type { SampleReportData } from './types';
 
@@ -22,7 +22,7 @@ export function SensitivitySection({ data }: { data: SampleReportData }) {
             const isDscr = /dscr/i.test(grid.metricName);
             const fmt = (v: number) =>
               isCurrency
-                ? formatCurrencyFromKrwAtRate(v, displayCurrency, fxRateToKrw)
+                ? formatCompactCurrencyFromKrwAtRate(v, displayCurrency, fxRateToKrw)
                 : isDscr
                   ? `${v.toFixed(2)}x`
                   : v.toFixed(2);

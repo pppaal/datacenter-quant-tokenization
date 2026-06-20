@@ -1,4 +1,4 @@
-import { formatCurrencyFromKrwAtRate } from '@/lib/finance/currency';
+import { formatCompactCurrencyFromKrwAtRate } from '@/lib/finance/currency';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import type { SampleReportData } from './types';
@@ -22,7 +22,11 @@ export function TaxWalkSection({ data }: { data: SampleReportData }) {
           </div>
           <Badge tone="warn">
             Total{' '}
-            {formatCurrencyFromKrwAtRate(taxWalk.totalCashOutflowKrw, displayCurrency, fxRateToKrw)}
+            {formatCompactCurrencyFromKrwAtRate(
+              taxWalk.totalCashOutflowKrw,
+              displayCurrency,
+              fxRateToKrw
+            )}
           </Badge>
         </div>
         <div className="mt-5 overflow-x-auto rounded-[14px] border border-white/10">
@@ -42,11 +46,11 @@ export function TaxWalkSection({ data }: { data: SampleReportData }) {
                   <td className="px-2 py-2 text-white">{row.label}</td>
                   <td className="px-2 py-2 text-right font-mono">{row.ratePct.toFixed(2)}%</td>
                   <td className="px-2 py-2 text-right font-mono text-slate-400">
-                    {formatCurrencyFromKrwAtRate(row.baseKrw, displayCurrency, fxRateToKrw)}
+                    {formatCompactCurrencyFromKrwAtRate(row.baseKrw, displayCurrency, fxRateToKrw)}
                     <div className="text-[9px] text-slate-500">{row.baseLabel}</div>
                   </td>
                   <td className="px-2 py-2 text-right font-mono">
-                    {formatCurrencyFromKrwAtRate(
+                    {formatCompactCurrencyFromKrwAtRate(
                       row.totalCashOutflowKrw,
                       displayCurrency,
                       fxRateToKrw
@@ -60,7 +64,7 @@ export function TaxWalkSection({ data }: { data: SampleReportData }) {
                   Total
                 </td>
                 <td className="px-2 py-2 text-right font-mono font-semibold text-white">
-                  {formatCurrencyFromKrwAtRate(
+                  {formatCompactCurrencyFromKrwAtRate(
                     taxWalk.totalCashOutflowKrw,
                     displayCurrency,
                     fxRateToKrw
