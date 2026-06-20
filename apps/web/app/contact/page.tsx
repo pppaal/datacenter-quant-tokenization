@@ -16,20 +16,20 @@ const channels = [
   {
     label: '데모 · 영업',
     detail: '30분 라이브 데모. 영업일 24시간 내 회신.',
-    contact: 'sales@nexus-seoul.example',
+    contact: 'rheeco88@gmail.com',
     note: '한국어 / 영어 모두 가능'
   },
   {
     label: '보안 · 컴플라이언스',
     detail:
       'NDA 후 보안 자료 패키지 송부. 위협 모델 · 보안 통제 요약 포함 (펜테스트 결과는 로드맵).',
-    contact: 'security@nexus-seoul.example',
+    contact: 'rheeco88@gmail.com',
     note: 'PGP 키 요청 가능'
   },
   {
     label: '기술 · API',
     detail: '엔터프라이즈 통합 · 데이터 마이그레이션 · SSO 설정 문의.',
-    contact: 'engineering@nexus-seoul.example',
+    contact: 'rheeco88@gmail.com',
     note: '솔루션 엔지니어 직접 응대'
   },
   {
