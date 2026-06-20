@@ -80,9 +80,6 @@ export function ReportTeaserSheet({
     <div className="report-teaser-sheet space-y-5 pb-16">
       <section className="surface hero-mesh report-teaser-hero">
         <div className="flex flex-wrap items-center gap-3">
-          <Badge tone={report.status === 'production-ready' ? 'good' : 'warn'}>
-            {report.statusLabel}
-          </Badge>
           <Badge>{report.audienceLabel}</Badge>
           <Badge>{assetCode}</Badge>
           <Badge>{locationLabel}</Badge>

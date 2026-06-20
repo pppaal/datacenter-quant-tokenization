@@ -965,7 +965,7 @@ function buildDdChecklistSections(bundle: DealReportBundle): ReportSection[] {
           detail:
             bundle.counts.debtFacilities > 0
               ? `${bundle.counts.debtFacilities} debt facility record(s) are in the capital stack.`
-              : 'Debt stack is still synthetic or absent in the model.',
+              : 'No debt facilities are loaded yet — confirm the capital structure against executed facility documents.',
           status: buildChecklistStatus({ ready: bundle.counts.debtFacilities > 0 }),
           sources: pickSupportingDocuments(bundle.documents, 'debt term sheet financing dscr')
         },

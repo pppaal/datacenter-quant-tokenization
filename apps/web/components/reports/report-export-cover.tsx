@@ -45,7 +45,6 @@ export function ReportExportCover({
       <div className="space-y-8 p-10">
         <div className="flex flex-wrap items-center gap-3">
           <Badge>{report.audienceLabel}</Badge>
-          <Badge>{report.statusLabel}</Badge>
           <Badge>{assetCode}</Badge>
         </div>
 

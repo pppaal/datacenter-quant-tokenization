@@ -90,9 +90,6 @@ export function ReportIcMemoSheet({
     <div className="report-ic-sheet space-y-6 pb-16">
       <section className="surface hero-mesh report-ic-hero">
         <div className="flex flex-wrap items-center gap-3">
-          <Badge tone={report.status === 'production-ready' ? 'good' : 'warn'}>
-            {report.statusLabel}
-          </Badge>
           <Badge>{report.audienceLabel}</Badge>
           <Badge>{assetCode}</Badge>
         </div>
@@ -245,15 +242,6 @@ export function ReportIcMemoSheet({
                 ) : null}
               </div>
             ))}
-          </div>
-
-          <div className="mt-6 rounded-[20px] border border-accent/20 bg-accent/10 p-5">
-            <div className="fine-print text-accent">Template Notes</div>
-            <ul className="mt-3 space-y-2 text-sm leading-7 text-slate-200">
-              {report.readinessNotes.map((note) => (
-                <li key={note}>{note}</li>
-              ))}
-            </ul>
           </div>
         </Card>
       </section>
