@@ -42,6 +42,7 @@ export type OperatorDashboardData = {
   };
   portfolio: {
     totalAumKrw: number;
+    aumUsedCostFallback: boolean;
     totalAssets: number;
     avgOccupancyPct: number;
     avgNoiYieldPct: number;
@@ -143,6 +144,7 @@ export async function buildOperatorDashboard(
   const maxStageCount = stages.reduce((acc, s) => (s.count > acc ? s.count : acc), 0);
 
   let totalAumKrw = 0;
+  let aumUsedCostFallback = false;
   let occupancySum = 0;
   let occupancyCount = 0;
   let noiYieldSum = 0;
@@ -152,9 +154,14 @@ export async function buildOperatorDashboard(
     const asset = pa.asset;
     if (!asset) continue;
     const purchasePrice = toNumber(asset.purchasePriceKrw);
-    totalAumKrw += purchasePrice;
-
     const latestKpi = pa.monthlyKpis[0] ?? null;
+    // AUM is reported at current market value (NAV: current hold value, else
+    // latest KPI NAV); fall back to acquisition cost only when no mark exists.
+    const markValue = toNumber(pa.currentHoldValueKrw) || toNumber(latestKpi?.navKrw);
+    const holdValue = markValue || purchasePrice;
+    totalAumKrw += holdValue;
+    if (!markValue) aumUsedCostFallback = true;
+
     if (!latestKpi) continue;
 
     const occupancyPct = toNumber(latestKpi.occupancyPct);
@@ -164,8 +171,6 @@ export async function buildOperatorDashboard(
     }
 
     const noiKrw = toNumber(latestKpi.noiKrw);
-    const holdValue =
-      toNumber(pa.currentHoldValueKrw) || toNumber(latestKpi.navKrw) || purchasePrice;
     if (latestKpi.noiKrw != null && holdValue > 0) {
       const noiYieldPct = ((noiKrw * 12) / holdValue) * 100;
       noiYieldSum += noiYieldPct;
@@ -230,6 +235,7 @@ export async function buildOperatorDashboard(
     },
     portfolio: {
       totalAumKrw,
+      aumUsedCostFallback,
       totalAssets: portfolioAssets.length,
       avgOccupancyPct: occupancyCount > 0 ? occupancySum / occupancyCount : 0,
       avgNoiYieldPct: noiYieldCount > 0 ? noiYieldSum / noiYieldCount : 0
