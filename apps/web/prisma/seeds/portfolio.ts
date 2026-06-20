@@ -514,6 +514,9 @@ export async function seedPortfolioAndCapitalShell(prisma: PrismaClient): Promis
       investedCapitalKrw: 342000000000,
       dryPowderKrw: 188000000000,
       vintageYear: 2025,
+      // Negotiated LPA terms (override the firm-wide 8% / 20% defaults).
+      hurdleRatePct: 7,
+      carriedInterestPct: 15,
       thesis:
         'Korean office and digital infrastructure strategy with review-gated research and disciplined capital formation.',
       portfolioId: portfolio.id,
