@@ -12,6 +12,7 @@ import { buildFundDashboard, buildFundOperatorBriefs, getFundById } from '@/lib/
 import { buildFundPcap } from '@/lib/services/investor-reports';
 import { formatPcapRow } from '@/lib/services/fund-nav-format';
 import { CapitalAccountExportButton } from '@/components/admin/capital-account-export-button';
+import { XlsxDownloadButton } from '@/components/admin/xlsx-download-button';
 import { formatCompactCurrencyFromKrwAtRate } from '@/lib/finance/currency';
 import { formatDate } from '@/lib/utils';
 
@@ -57,6 +58,14 @@ export default async function FundDetailPage({ params }: Props) {
         <p className="mt-4 max-w-4xl text-base leading-8 text-slate-200">
           {dashboard.investorUpdateDraft}
         </p>
+        <div className="mt-5">
+          <XlsxDownloadButton
+            endpoint="/api/admin/exports/fund-report"
+            body={{ fundId: id }}
+            label="펀드 운용보고 (Excel)"
+            fallbackName="fund-report.xlsx"
+          />
+        </div>
       </section>
 
       <div className="grid gap-4 md:grid-cols-4">
