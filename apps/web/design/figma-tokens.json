@@ -1,0 +1,164 @@
+{
+  "$description": "Generated from apps/web/app/globals.css :root. Do not hand-edit — run `npm run design:tokens`. Import into Figma via the Tokens Studio plugin.",
+  "color": {
+    "background": {
+      "$value": "#f9fafb",
+      "$type": "color",
+      "$description": "--background"
+    },
+    "foreground": {
+      "$value": "#151b28",
+      "$type": "color",
+      "$description": "--foreground"
+    },
+    "panel": {
+      "$value": "#ffffff",
+      "$type": "color",
+      "$description": "--panel"
+    },
+    "panel-alt": {
+      "$value": "#f6f7f9",
+      "$type": "color",
+      "$description": "--panel-alt"
+    },
+    "surface-hover": {
+      "$value": "#eff2f5",
+      "$type": "color",
+      "$description": "--surface-hover"
+    },
+    "border": {
+      "$value": "#e0e5eb",
+      "$type": "color",
+      "$description": "--border"
+    },
+    "border-strong": {
+      "$value": "#cad0d8",
+      "$type": "color",
+      "$description": "--border-strong"
+    },
+    "foreground-muted": {
+      "$value": "#515e70",
+      "$type": "color",
+      "$description": "--foreground-muted"
+    },
+    "muted": {
+      "$value": "#738296",
+      "$type": "color",
+      "$description": "--muted"
+    },
+    "foreground-faint": {
+      "$value": "#98a2ae",
+      "$type": "color",
+      "$description": "--foreground-faint"
+    },
+    "on-accent": {
+      "$value": "#ffffff",
+      "$type": "color",
+      "$description": "--on-accent"
+    },
+    "accent": {
+      "$value": "#0a74ae",
+      "$type": "color",
+      "$description": "--accent"
+    },
+    "accent-hover": {
+      "$value": "#066293",
+      "$type": "color",
+      "$description": "--accent-hover"
+    },
+    "accent-active": {
+      "$value": "#034d77",
+      "$type": "color",
+      "$description": "--accent-active"
+    },
+    "accent-tint": {
+      "$value": "#e9f5fb",
+      "$type": "color",
+      "$description": "--accent-tint"
+    },
+    "accent-ring": {
+      "$value": "#0a74ae",
+      "$type": "color",
+      "$description": "--accent-ring"
+    },
+    "success": {
+      "$value": "#20794f",
+      "$type": "color",
+      "$description": "--success"
+    },
+    "success-tint": {
+      "$value": "#e8f8f0",
+      "$type": "color",
+      "$description": "--success-tint"
+    },
+    "warning": {
+      "$value": "#a76311",
+      "$type": "color",
+      "$description": "--warning"
+    },
+    "warning-tint": {
+      "$value": "#fdf2dd",
+      "$type": "color",
+      "$description": "--warning-tint"
+    },
+    "danger": {
+      "$value": "#bc2e24",
+      "$type": "color",
+      "$description": "--danger"
+    },
+    "danger-tint": {
+      "$value": "#fdeeed",
+      "$type": "color",
+      "$description": "--danger-tint"
+    },
+    "info": {
+      "$value": "#0a74ae",
+      "$type": "color",
+      "$description": "--info"
+    },
+    "info-tint": {
+      "$value": "#e9f5fb",
+      "$type": "color",
+      "$description": "--info-tint"
+    }
+  },
+  "fontFamily": {
+    "sans": {
+      "$value": "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', Roboto, Helvetica, Arial, sans-serif",
+      "$type": "fontFamily",
+      "$description": "--font-sans"
+    },
+    "mono": {
+      "$value": "'IBM Plex Mono', 'SFMono-Regular', ui-monospace, Consolas, 'Liberation Mono', Menlo, monospace",
+      "$type": "fontFamily",
+      "$description": "--font-mono"
+    }
+  },
+  "shadow": {
+    "xs": {
+      "$value": "0 1px 2px rgba(16, 24, 40, 0.04)",
+      "$type": "shadow",
+      "$description": "--shadow-xs"
+    },
+    "sm": {
+      "$value": "0 1px 3px rgba(16, 24, 40, 0.06), 0 1px 2px rgba(16, 24, 40, 0.04)",
+      "$type": "shadow",
+      "$description": "--shadow-sm"
+    },
+    "md": {
+      "$value": "0 4px 8px -2px rgba(16, 24, 40, 0.08), 0 2px 4px -2px rgba(16, 24, 40, 0.05)",
+      "$type": "shadow",
+      "$description": "--shadow-md"
+    },
+    "lg": {
+      "$value": "0 12px 24px -6px rgba(16, 24, 40, 0.1), 0 4px 8px -4px rgba(16, 24, 40, 0.06)",
+      "$type": "shadow",
+      "$description": "--shadow-lg"
+    },
+    "focus": {
+      "$value": "0 0 0 3px hsl(var(--accent-ring) / 0.3)",
+      "$type": "shadow",
+      "$description": "--shadow-focus"
+    }
+  }
+}
