@@ -144,8 +144,16 @@ export function buildCreditRatios(stmt: FinancialStatementLike): CreditRatio[] {
   const bs = buildBalanceSheet(stmt);
 
   const leverage = safeDiv(bs.totalDebtKrw, inc.ebitdaKrw);
-  const interestCoverage = safeDiv(inc.ebitdaKrw, inc.interestExpenseKrw);
-  const debtToEquity = safeDiv(bs.totalDebtKrw, bs.totalEquityKrw);
+  // 이자보상배율 (KR interest-coverage): operating income (영업이익) ÷ interest,
+  // matching tenant-credit + the admin panel. Falls back to EBITDA when the
+  // filing has no operating-income line.
+  const interestCoverage = safeDiv(inc.operatingIncomeKrw ?? inc.ebitdaKrw, inc.interestExpenseKrw);
+  // 부채비율 (KR debt-to-equity): TOTAL liabilities ÷ equity, not just debt.
+  const totalLiabilitiesKrw =
+    bs.totalAssetsKrw !== null && bs.totalEquityKrw !== null
+      ? bs.totalAssetsKrw - bs.totalEquityKrw
+      : null;
+  const debtToEquity = safeDiv(totalLiabilitiesKrw, bs.totalEquityKrw);
   const cashToDebt = safeDiv(bs.cashKrw, bs.totalDebtKrw);
   const netDebtToEbitda = safeDiv(bs.netDebtKrw, inc.ebitdaKrw);
   const roeProxy = safeDiv(inc.ebitdaKrw, bs.totalEquityKrw);
@@ -190,8 +198,8 @@ export function buildCreditRatios(stmt: FinancialStatementLike): CreditRatio[] {
     },
     {
       key: 'interestCoverage',
-      label: 'Interest coverage (EBITDA / Interest)',
-      formula: 'EBITDA ÷ Interest expense',
+      label: 'Interest coverage (이자보상배율)',
+      formula: '영업이익 ÷ Interest expense (EBITDA fallback)',
       value: interestCoverage,
       unit: 'x',
       benchmark: 3.0,
@@ -200,29 +208,29 @@ export function buildCreditRatios(stmt: FinancialStatementLike): CreditRatio[] {
       interpretation:
         interestCoverage === null
           ? 'Insufficient inputs.'
-          : interestCoverage >= 3.5
-            ? 'Comfortable coverage; absorbs typical rate shocks.'
-            : interestCoverage >= 2.0
-              ? 'Adequate coverage; close to 2.0x lender minimum.'
-              : 'Below 2.0x lender minimum; covenant breach risk.'
+          : interestCoverage >= 3.0
+            ? 'Comfortable coverage (≥3.0x).'
+            : interestCoverage >= 1.5
+              ? 'Adequate coverage, but below the 3.0x comfort level.'
+              : 'Below 1.5x — inadequate; sustained <1.0x flags 한계기업 risk.'
     },
     {
       key: 'debtToEquity',
-      label: 'Debt / Equity',
-      formula: 'Total Debt ÷ Total Equity',
+      label: 'Debt-to-equity (부채비율)',
+      formula: 'Total liabilities ÷ Total equity',
       value: debtToEquity,
       unit: 'x',
-      benchmark: 1.5,
+      benchmark: 2.0,
       preferred: 'lower',
-      tone: band(debtToEquity, 1.5, 'lower'),
+      tone: band(debtToEquity, 2.0, 'lower'),
       interpretation:
         debtToEquity === null
           ? 'Insufficient inputs.'
-          : debtToEquity <= 1.3
-            ? 'Conservative capitalization.'
-            : debtToEquity <= 1.7
-              ? 'Standard PE-sponsor capitalization.'
-              : 'Elevated debt-to-equity; tighter monitoring warranted.'
+          : debtToEquity <= 1.0
+            ? 'Conservative capitalization (부채비율 ≤100%).'
+            : debtToEquity <= 2.0
+              ? 'Within the ≤200% KR comfort band.'
+              : 'Above 200% — elevated leverage; tighter monitoring warranted.'
     },
     {
       key: 'cashToDebt',
@@ -262,7 +270,7 @@ export function buildCreditRatios(stmt: FinancialStatementLike): CreditRatio[] {
     },
     {
       key: 'roeProxy',
-      label: 'EBITDA / Equity (ROE proxy)',
+      label: 'EBITDA / Equity (capital efficiency)',
       formula: 'EBITDA ÷ Total Equity',
       value: roeProxy,
       unit: 'x',
@@ -280,7 +288,7 @@ export function buildCreditRatios(stmt: FinancialStatementLike): CreditRatio[] {
     },
     {
       key: 'roaProxy',
-      label: 'EBITDA / Assets (ROA proxy)',
+      label: 'EBITDA / Assets (asset productivity)',
       formula: 'EBITDA ÷ Total Assets',
       value: roaProxy,
       unit: 'x',

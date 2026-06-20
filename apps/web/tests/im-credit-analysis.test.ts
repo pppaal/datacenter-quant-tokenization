@@ -180,3 +180,23 @@ test('buildCreditRatios adds 유동비율 only when current-portion lines exist'
   assert.equal(cr!.value, 2);
   assert.equal(cr!.tone, 'good');
 });
+
+test('이자보상배율 uses operating income when filed, EBITDA otherwise', () => {
+  // EBITDA fallback (no operating income): SAMPLE → 8856/1968 = 4.5
+  assert.ok(
+    Math.abs(buildCreditRatios(SAMPLE).find((r) => r.key === 'interestCoverage')!.value! - 4.5) <
+      0.01
+  );
+  // 영업이익 filed (lower than EBITDA) → lower, more conservative coverage
+  const icr = buildCreditRatios({ ...SAMPLE, operatingIncomeKrw: 5_904_000_000 }).find(
+    (r) => r.key === 'interestCoverage'
+  )!;
+  assert.ok(Math.abs(icr.value! - 5_904_000_000 / 1_968_000_000) < 0.01); // 3.0
+});
+
+test('부채비율 is total liabilities / equity (not just debt)', () => {
+  // liabilities = assets 68.88B − equity 29.52B = 39.36B → 39.36/29.52 = 1.333x
+  const de = buildCreditRatios(SAMPLE).find((r) => r.key === 'debtToEquity')!;
+  assert.ok(Math.abs(de.value! - (68_880 - 29_520) / 29_520) < 0.01);
+  assert.equal(de.label.includes('부채비율'), true);
+});
