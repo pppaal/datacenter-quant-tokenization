@@ -477,6 +477,83 @@ a {
   .report-export-doc-summary {
     display: none !important;
   }
+
+  /* Paged-media geometry: A4 with institutional margins. The bottom margin
+     leaves room for the fixed running footer; the cover (:first) is full-bleed.
+     Chromium honors @page size/margin (it ignores margin-box content, which is
+     why the footer/page-mark below are real fixed DOM elements, not CSS
+     counters). */
+  @page {
+    size: A4;
+    margin: 16mm 13mm 20mm;
+  }
+  @page :first {
+    margin: 0;
+  }
+
+  /* Typographic hygiene for body copy and headings across page breaks. */
+  p,
+  li {
+    orphans: 3;
+    widows: 3;
+  }
+  h1,
+  h2,
+  h3,
+  .eyebrow {
+    break-after: avoid-page;
+    page-break-after: avoid;
+  }
+  figure,
+  .metric-card,
+  .recharts-wrapper,
+  svg {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Running footer + confidentiality watermark. Both are real `position: fixed`
+     DOM nodes (rendered print-only by ImPrintMode), so Chromium repeats them on
+     every printed page. They sit inside the @page bottom margin / behind body. */
+  .print-running-footer {
+    display: flex !important;
+    position: fixed;
+    bottom: 6mm;
+    left: 13mm;
+    right: 13mm;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    border-top: 0.5px solid rgba(17, 24, 39, 0.25);
+    padding-top: 2mm;
+    font-size: 8px;
+    letter-spacing: 0.04em;
+    color: #6b7280 !important;
+    background: #fff;
+    z-index: 9999;
+  }
+  .print-watermark {
+    display: block !important;
+    position: fixed;
+    top: 45%;
+    left: 0;
+    right: 0;
+    text-align: center;
+    transform: rotate(-24deg);
+    transform-origin: center;
+    font-size: 64px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: rgba(17, 24, 39, 0.05) !important;
+    pointer-events: none;
+    z-index: 0;
+  }
+}
+
+/* The running footer + watermark are print-only; never shown on screen. */
+.print-running-footer,
+.print-watermark {
+  display: none;
 }
 
 /* Hash deep links: when the URL points at #im-X, the browser would
