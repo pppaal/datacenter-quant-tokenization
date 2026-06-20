@@ -11,6 +11,7 @@ import { resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-reque
 import { buildFundDashboard, buildFundOperatorBriefs, getFundById } from '@/lib/services/capital';
 import { buildFundPcap } from '@/lib/services/investor-reports';
 import { formatPcapRow } from '@/lib/services/fund-nav-format';
+import { CapitalAccountExportButton } from '@/components/admin/capital-account-export-button';
 import { formatCompactCurrencyFromKrwAtRate } from '@/lib/finance/currency';
 import { formatDate } from '@/lib/utils';
 
@@ -232,6 +233,7 @@ export default async function FundDetailPage({ params }: Props) {
               <Badge tone="warn" label="NAV uses cost-basis fallback" />
             ) : null}
             {anyProRata ? <Badge tone="warn" label="Cashflows pro-rata allocated" /> : null}
+            {pcap.investors.length > 0 ? <CapitalAccountExportButton fundId={id} /> : null}
           </div>
         </div>
         <p className="mt-3 text-xs text-slate-400">
