@@ -25,9 +25,6 @@ export function ReportExportBar({
   return (
     <div className="print-hidden flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-white/10 bg-white/[0.03] px-5 py-4">
       <div className="flex flex-wrap items-center gap-2">
-        <Badge tone={report.status === 'production-ready' ? 'good' : 'warn'}>
-          {report.statusLabel}
-        </Badge>
         <Badge>{report.audienceLabel}</Badge>
         <div className="fine-print">Version {report.versionLabel}</div>
       </div>

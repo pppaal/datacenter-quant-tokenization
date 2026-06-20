@@ -106,9 +106,6 @@ export function ReportRiskMemoSheet({
     <div className="report-risk-sheet space-y-6 pb-16">
       <section className="surface hero-mesh report-risk-hero">
         <div className="flex flex-wrap items-center gap-3">
-          <Badge tone={report.status === 'production-ready' ? 'good' : 'warn'}>
-            {report.statusLabel}
-          </Badge>
           <Badge>{report.audienceLabel}</Badge>
           <Badge>{assetCode}</Badge>
           <Badge>{locationLabel}</Badge>
