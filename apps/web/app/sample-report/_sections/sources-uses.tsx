@@ -1,4 +1,4 @@
-import { formatCurrencyFromKrwAtRate } from '@/lib/finance/currency';
+import { formatCompactCurrencyFromKrwAtRate } from '@/lib/finance/currency';
 import { Card } from '@/components/ui/card';
 import { KeyValueRow } from '@/components/ui/key-value-row';
 import { ProvenancePill } from './helpers';
@@ -30,41 +30,41 @@ export function SourcesUsesSection({ data }: { data: SampleReportData }) {
           </p>
           <dl className="mt-5 grid gap-3 text-sm">
             <KeyValueRow variant="inline" label="Sources · senior debt">
-              {formatCurrencyFromKrwAtRate(
+              {formatCompactCurrencyFromKrwAtRate(
                 proForma.summary.initialDebtFundingKrw,
                 displayCurrency,
                 fxRateToKrw
               )}
             </KeyValueRow>
             <KeyValueRow variant="inline" label="Sources · LP/GP equity">
-              {formatCurrencyFromKrwAtRate(
+              {formatCompactCurrencyFromKrwAtRate(
                 proForma.summary.initialEquityKrw,
                 displayCurrency,
                 fxRateToKrw
               )}
             </KeyValueRow>
             <KeyValueRow variant="inline" label="Sources · total">
-              {formatCurrencyFromKrwAtRate(sourcesTotalKrw, displayCurrency, fxRateToKrw)}
+              {formatCompactCurrencyFromKrwAtRate(sourcesTotalKrw, displayCurrency, fxRateToKrw)}
             </KeyValueRow>
             <KeyValueRow variant="inline" label="Uses · total project cost">
               {usesTotalKrw !== null
-                ? formatCurrencyFromKrwAtRate(usesTotalKrw, displayCurrency, fxRateToKrw)
+                ? formatCompactCurrencyFromKrwAtRate(usesTotalKrw, displayCurrency, fxRateToKrw)
                 : 'N/A (capex breakdown unavailable)'}
             </KeyValueRow>
             <KeyValueRow variant="inline" label="Funding surplus / (gap)">
               {fundingDeltaKrw !== null
-                ? formatCurrencyFromKrwAtRate(fundingDeltaKrw, displayCurrency, fxRateToKrw)
+                ? formatCompactCurrencyFromKrwAtRate(fundingDeltaKrw, displayCurrency, fxRateToKrw)
                 : '—'}
             </KeyValueRow>
             <KeyValueRow variant="inline" label="Reserves required">
-              {formatCurrencyFromKrwAtRate(
+              {formatCompactCurrencyFromKrwAtRate(
                 proForma.summary.reserveRequirementKrw,
                 displayCurrency,
                 fxRateToKrw
               )}
             </KeyValueRow>
             <KeyValueRow variant="inline" label="Peak equity exposure">
-              {formatCurrencyFromKrwAtRate(
+              {formatCompactCurrencyFromKrwAtRate(
                 proForma.summary.peakEquityExposureKrw,
                 displayCurrency,
                 fxRateToKrw
@@ -99,7 +99,7 @@ export function SourcesUsesSection({ data }: { data: SampleReportData }) {
                       <tr key={label}>
                         <td className="px-2 py-2 text-slate-300">{label}</td>
                         <td className="px-2 py-2 text-right font-mono">
-                          {formatCurrencyFromKrwAtRate(
+                          {formatCompactCurrencyFromKrwAtRate(
                             value as number,
                             displayCurrency,
                             fxRateToKrw
@@ -117,7 +117,7 @@ export function SourcesUsesSection({ data }: { data: SampleReportData }) {
                   <tr className="bg-white/[0.03] font-semibold">
                     <td className="px-2 py-2 text-white">Total</td>
                     <td className="px-2 py-2 text-right font-mono text-white">
-                      {formatCurrencyFromKrwAtRate(
+                      {formatCompactCurrencyFromKrwAtRate(
                         capexBreakdown.totalCapexKrw,
                         displayCurrency,
                         fxRateToKrw
@@ -165,7 +165,7 @@ export function SourcesUsesSection({ data }: { data: SampleReportData }) {
                 : 'Beyond model horizon'}
             </KeyValueRow>
             <KeyValueRow variant="inline" label="Net exit proceeds">
-              {formatCurrencyFromKrwAtRate(
+              {formatCompactCurrencyFromKrwAtRate(
                 proForma.summary.netExitProceedsKrw,
                 displayCurrency,
                 fxRateToKrw

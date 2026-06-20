@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { formatCurrencyFromKrwAtRate } from '@/lib/finance/currency';
+import { formatCompactCurrencyFromKrwAtRate } from '@/lib/finance/currency';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -64,7 +64,7 @@ export function CoverSection({ data }: { data: SampleReportData }) {
               <div className="metric-card">
                 <div className="fine-print">Base Case Value</div>
                 <div className="mt-3 text-2xl font-semibold text-white">
-                  {formatCurrencyFromKrwAtRate(
+                  {formatCompactCurrencyFromKrwAtRate(
                     latestRun.baseCaseValueKrw,
                     displayCurrency,
                     fxRateToKrw
@@ -289,7 +289,7 @@ export function CoverSection({ data }: { data: SampleReportData }) {
               <p className="mt-3 text-sm leading-7 text-slate-200">
                 {recommendation}. Scenario range spans{' '}
                 {bearValue !== null && bullValue !== null
-                  ? `${formatCurrencyFromKrwAtRate(bearValue, displayCurrency, fxRateToKrw)} – ${formatCurrencyFromKrwAtRate(bullValue, displayCurrency, fxRateToKrw)}`
+                  ? `${formatCompactCurrencyFromKrwAtRate(bearValue, displayCurrency, fxRateToKrw)} – ${formatCompactCurrencyFromKrwAtRate(bullValue, displayCurrency, fxRateToKrw)}`
                   : 'within scenario bounds'}{' '}
                 across the bear and bull cases. Confidence{' '}
                 {formatNumber(latestRun.confidenceScore, 1)} reflects current source coverage and

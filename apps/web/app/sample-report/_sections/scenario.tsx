@@ -1,4 +1,4 @@
-import { formatCurrencyFromKrwAtRate } from '@/lib/finance/currency';
+import { formatCompactCurrencyFromKrwAtRate } from '@/lib/finance/currency';
 import { Card } from '@/components/ui/card';
 import type { SampleReportData } from './types';
 
@@ -39,7 +39,11 @@ export function ScenarioSection({ data }: { data: SampleReportData }) {
                   <tr key={row.name} className={isBase ? 'bg-white/[0.03]' : ''}>
                     <td className="px-3 py-2 font-semibold text-white">{row.name}</td>
                     <td className="px-3 py-2 text-right font-mono text-xs">
-                      {formatCurrencyFromKrwAtRate(row.valuationKrw, displayCurrency, fxRateToKrw)}
+                      {formatCompactCurrencyFromKrwAtRate(
+                        row.valuationKrw,
+                        displayCurrency,
+                        fxRateToKrw
+                      )}
                     </td>
                     <td className="px-3 py-2 text-right font-mono text-xs text-slate-400">
                       {isBase

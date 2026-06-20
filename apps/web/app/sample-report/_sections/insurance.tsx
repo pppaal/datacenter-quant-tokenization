@@ -1,4 +1,4 @@
-import { formatCurrencyFromKrwAtRate } from '@/lib/finance/currency';
+import { formatCompactCurrencyFromKrwAtRate } from '@/lib/finance/currency';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { formatDate } from '@/lib/utils';
@@ -61,13 +61,17 @@ export function InsuranceSection({ data }: { data: SampleReportData }) {
                 </div>
                 <div className="mt-2 font-mono text-sm font-semibold text-white">
                   {tile.coverageKrw !== null
-                    ? formatCurrencyFromKrwAtRate(tile.coverageKrw, displayCurrency, fxRateToKrw)
+                    ? formatCompactCurrencyFromKrwAtRate(
+                        tile.coverageKrw,
+                        displayCurrency,
+                        fxRateToKrw
+                      )
                     : '—'}
                 </div>
                 <div className="mt-1 text-[10px] text-slate-500">
                   {tile.insurer ?? '—'}
                   {tile.premiumKrw !== null
-                    ? ` · premium ${formatCurrencyFromKrwAtRate(tile.premiumKrw, displayCurrency, fxRateToKrw)}`
+                    ? ` · premium ${formatCompactCurrencyFromKrwAtRate(tile.premiumKrw, displayCurrency, fxRateToKrw)}`
                     : ''}
                 </div>
                 {tile.expiresOn ? (
@@ -83,7 +87,7 @@ export function InsuranceSection({ data }: { data: SampleReportData }) {
           <div className="rounded-[12px] border border-white/5 bg-white/[0.015] px-3 py-2">
             <div className="text-[10px] uppercase tracking-wide text-slate-500">Total coverage</div>
             <div className="mt-1 font-mono text-sm text-white">
-              {formatCurrencyFromKrwAtRate(
+              {formatCompactCurrencyFromKrwAtRate(
                 insuranceSummary.totalCoverageKrw,
                 displayCurrency,
                 fxRateToKrw
@@ -95,7 +99,7 @@ export function InsuranceSection({ data }: { data: SampleReportData }) {
               Total annual premium
             </div>
             <div className="mt-1 font-mono text-sm text-white">
-              {formatCurrencyFromKrwAtRate(
+              {formatCompactCurrencyFromKrwAtRate(
                 insuranceSummary.totalPremiumKrw,
                 displayCurrency,
                 fxRateToKrw
@@ -106,7 +110,7 @@ export function InsuranceSection({ data }: { data: SampleReportData }) {
             <div className="text-[10px] uppercase tracking-wide text-slate-500">Avg deductible</div>
             <div className="mt-1 font-mono text-sm text-white">
               {insuranceSummary.averageDeductibleKrw !== null
-                ? formatCurrencyFromKrwAtRate(
+                ? formatCompactCurrencyFromKrwAtRate(
                     insuranceSummary.averageDeductibleKrw,
                     displayCurrency,
                     fxRateToKrw

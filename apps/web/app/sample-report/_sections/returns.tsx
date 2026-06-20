@@ -1,4 +1,4 @@
-import { formatCurrencyFromKrwAtRate } from '@/lib/finance/currency';
+import { formatCompactCurrencyFromKrwAtRate } from '@/lib/finance/currency';
 import { Card } from '@/components/ui/card';
 import { KeyValueRow } from '@/components/ui/key-value-row';
 import { ProvenancePill } from './helpers';
@@ -62,14 +62,18 @@ export function ReturnsSection({ data }: { data: SampleReportData }) {
           </p>
           <dl className="mt-5 grid gap-3 text-sm">
             <KeyValueRow variant="inline" label="Total commitment">
-              {formatCurrencyFromKrwAtRate(
+              {formatCompactCurrencyFromKrwAtRate(
                 capStack.totalCommitmentKrw,
                 displayCurrency,
                 fxRateToKrw
               )}
             </KeyValueRow>
             <KeyValueRow variant="inline" label="Drawn">
-              {formatCurrencyFromKrwAtRate(capStack.totalDrawnKrw, displayCurrency, fxRateToKrw)}
+              {formatCompactCurrencyFromKrwAtRate(
+                capStack.totalDrawnKrw,
+                displayCurrency,
+                fxRateToKrw
+              )}
             </KeyValueRow>
             <KeyValueRow variant="inline" label="Drawn / commitment">
               {capStack.totalCommitmentKrw === 0
@@ -103,11 +107,15 @@ export function ReturnsSection({ data }: { data: SampleReportData }) {
                         ) : null}
                       </td>
                       <td className="px-2 py-2 text-right font-mono">
-                        {formatCurrencyFromKrwAtRate(f.commitmentKrw, displayCurrency, fxRateToKrw)}
+                        {formatCompactCurrencyFromKrwAtRate(
+                          f.commitmentKrw,
+                          displayCurrency,
+                          fxRateToKrw
+                        )}
                       </td>
                       <td className="px-2 py-2 text-right font-mono text-slate-400">
                         {f.drawnAmountKrw !== null
-                          ? formatCurrencyFromKrwAtRate(
+                          ? formatCompactCurrencyFromKrwAtRate(
                               f.drawnAmountKrw,
                               displayCurrency,
                               fxRateToKrw

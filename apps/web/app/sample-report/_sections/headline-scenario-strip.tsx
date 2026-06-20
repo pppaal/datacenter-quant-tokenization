@@ -1,4 +1,4 @@
-import { formatCurrencyFromKrwAtRate } from '@/lib/finance/currency';
+import { formatCompactCurrencyFromKrwAtRate } from '@/lib/finance/currency';
 import { formatPercent } from '@/lib/utils';
 import type { SampleReportData } from './types';
 
@@ -10,12 +10,12 @@ export function HeadlineScenarioStrip({ data }: { data: SampleReportData }) {
         {[
           [
             'Bull Case',
-            formatCurrencyFromKrwAtRate(bullValue, displayCurrency, fxRateToKrw),
+            formatCompactCurrencyFromKrwAtRate(bullValue, displayCurrency, fxRateToKrw),
             'upside scenario'
           ],
           [
             'Bear Case',
-            formatCurrencyFromKrwAtRate(bearValue, displayCurrency, fxRateToKrw),
+            formatCompactCurrencyFromKrwAtRate(bearValue, displayCurrency, fxRateToKrw),
             'downside scenario'
           ],
           ['Implied Yield', formatPercent(baseScenario?.impliedYieldPct), 'base scenario'],

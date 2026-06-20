@@ -1,4 +1,4 @@
-import { formatCurrencyFromKrwAtRate } from '@/lib/finance/currency';
+import { formatCompactCurrencyFromKrwAtRate } from '@/lib/finance/currency';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { buildLiquidityLadder } from '@/lib/services/im/liquidity';
@@ -248,7 +248,9 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                   ? 'border-rose-300/30 bg-rose-300/[0.04] text-rose-200'
                   : 'border-amber-300/30 bg-amber-300/[0.04] text-amber-200';
             const fmt = (v: number | null) =>
-              v !== null ? formatCurrencyFromKrwAtRate(v, displayCurrency, fxRateToKrw) : '—';
+              v !== null
+                ? formatCompactCurrencyFromKrwAtRate(v, displayCurrency, fxRateToKrw)
+                : '—';
             return (
               <div
                 key={cp.id}
@@ -367,13 +369,21 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                                 </td>
                                 <td className="px-2 py-2 text-right font-mono">
                                   {rev !== null
-                                    ? formatCurrencyFromKrwAtRate(rev, displayCurrency, fxRateToKrw)
+                                    ? formatCompactCurrencyFromKrwAtRate(
+                                        rev,
+                                        displayCurrency,
+                                        fxRateToKrw
+                                      )
                                     : '—'}
                                   {arrow(yoyRev)}
                                 </td>
                                 <td className="px-2 py-2 text-right font-mono">
                                   {ebd !== null
-                                    ? formatCurrencyFromKrwAtRate(ebd, displayCurrency, fxRateToKrw)
+                                    ? formatCompactCurrencyFromKrwAtRate(
+                                        ebd,
+                                        displayCurrency,
+                                        fxRateToKrw
+                                      )
                                     : '—'}
                                   {arrow(yoyEbd)}
                                 </td>
@@ -382,7 +392,7 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                                 </td>
                                 <td className="px-2 py-2 text-right font-mono text-slate-400">
                                   {debt !== null
-                                    ? formatCurrencyFromKrwAtRate(
+                                    ? formatCompactCurrencyFromKrwAtRate(
                                         debt,
                                         displayCurrency,
                                         fxRateToKrw
@@ -391,7 +401,11 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                                 </td>
                                 <td className="px-2 py-2 text-right font-mono text-slate-400">
                                   {eq !== null
-                                    ? formatCurrencyFromKrwAtRate(eq, displayCurrency, fxRateToKrw)
+                                    ? formatCompactCurrencyFromKrwAtRate(
+                                        eq,
+                                        displayCurrency,
+                                        fxRateToKrw
+                                      )
                                     : '—'}
                                 </td>
                               </tr>

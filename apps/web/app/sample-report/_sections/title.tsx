@@ -1,4 +1,4 @@
-import { formatCurrencyFromKrwAtRate } from '@/lib/finance/currency';
+import { formatCompactCurrencyFromKrwAtRate } from '@/lib/finance/currency';
 import { Card } from '@/components/ui/card';
 import { formatDate, formatNumber } from '@/lib/utils';
 import type { SampleReportData } from './types';
@@ -70,7 +70,7 @@ export function TitleSection({ data }: { data: SampleReportData }) {
                       </span>
                       <span className="font-mono text-xs text-slate-300">
                         {typeof e.securedAmountKrw === 'number'
-                          ? formatCurrencyFromKrwAtRate(
+                          ? formatCompactCurrencyFromKrwAtRate(
                               e.securedAmountKrw,
                               displayCurrency,
                               fxRateToKrw
@@ -109,7 +109,7 @@ export function TitleSection({ data }: { data: SampleReportData }) {
                     <div className="mt-1 text-[11px] text-slate-500">
                       {p.zoningCode ?? p.landUseType ?? 'zoning n/a'} ·
                       {typeof p.officialLandValueKrw === 'number'
-                        ? ` ${formatCurrencyFromKrwAtRate(p.officialLandValueKrw, displayCurrency, fxRateToKrw)} official`
+                        ? ` ${formatCompactCurrencyFromKrwAtRate(p.officialLandValueKrw, displayCurrency, fxRateToKrw)} official`
                         : ' no land value'}
                     </div>
                   </li>

@@ -1,4 +1,4 @@
-import { formatCurrencyFromKrwAtRate } from '@/lib/finance/currency';
+import { formatCompactCurrencyFromKrwAtRate } from '@/lib/finance/currency';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { formatDate, formatNumber } from '@/lib/utils';
@@ -114,7 +114,11 @@ export function CompsSection({ data }: { data: SampleReportData }) {
                     </td>
                     <td className="px-2 py-2 text-right font-mono">
                       {typeof c.priceKrw === 'number' && c.priceKrw > 0
-                        ? formatCurrencyFromKrwAtRate(c.priceKrw, displayCurrency, fxRateToKrw)
+                        ? formatCompactCurrencyFromKrwAtRate(
+                            c.priceKrw,
+                            displayCurrency,
+                            fxRateToKrw
+                          )
                         : '—'}
                     </td>
                     <td className="px-2 py-2 text-right font-mono">
