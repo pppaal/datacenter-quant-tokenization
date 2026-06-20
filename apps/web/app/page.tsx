@@ -74,7 +74,7 @@ function assetClassMeta(assetClass: AssetClass): {
     case AssetClass.DATA_CENTER:
       return { label: 'Data Center', tone: 'good' };
     case AssetClass.OFFICE:
-      return { label: 'Office', tone: 'warn' };
+      return { label: 'Office', tone: 'neutral' };
     default:
       return { label: toSentenceCase(assetClass.replace(/_/g, ' ')), tone: 'neutral' };
   }
