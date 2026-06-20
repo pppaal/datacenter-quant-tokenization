@@ -3,7 +3,9 @@
  * transactions (상업업무용 부동산).
  *
  * Endpoint: https://apis.data.go.kr/1613000/RTMSDataSvcNrgTrade/getRTMSDataSvcNrgTrade
- * Docs:    https://www.data.go.kr/data/15058038/openapi.do
+ * Docs:    https://www.data.go.kr/data/15126463/openapi.do
+ *          (active 상업업무용 매매 실거래가 listing; legacy id 15058038 may still
+ *           resolve. The endpoint path above is the maintained one regardless.)
  *
  * Required env:
  *   RTMS_SERVICE_KEY — obtained from 공공데이터포털 (data.go.kr) after free registration.
