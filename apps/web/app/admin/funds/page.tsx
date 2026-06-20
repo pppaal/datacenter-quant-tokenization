@@ -17,7 +17,7 @@ import {
   type FundRecord
 } from '@/lib/services/capital';
 import { formatCompactCurrencyFromKrwAtRate } from '@/lib/finance/currency';
-import { formatCurrency, formatNumber } from '@/lib/utils';
+import { formatNumber } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -108,19 +108,19 @@ export default async function FundsPage() {
                   <div>
                     <div className="fine-print">Commitments</div>
                     <div className="mt-2 text-sm text-white">
-                      {formatCurrency(dashboard.math.totalCommitmentKrw)}
+                      {krw(dashboard.math.totalCommitmentKrw)}
                     </div>
                   </div>
                   <div>
                     <div className="fine-print">Called</div>
                     <div className="mt-2 text-sm text-white">
-                      {formatCurrency(dashboard.math.totalCalledKrw)}
+                      {krw(dashboard.math.totalCalledKrw)}
                     </div>
                   </div>
                   <div>
                     <div className="fine-print">Distributed</div>
                     <div className="mt-2 text-sm text-white">
-                      {formatCurrency(dashboard.math.totalDistributedKrw)}
+                      {krw(dashboard.math.totalDistributedKrw)}
                     </div>
                   </div>
                   <div>

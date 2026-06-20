@@ -19,7 +19,11 @@ import {
   type PortfolioRecord
 } from '@/lib/services/portfolio';
 import { buildPortfolioDashboardData } from '@/lib/services/portfolio-dashboard';
-import { formatCurrency, formatNumber, formatPercent } from '@/lib/utils';
+import { formatCompactCurrencyFromKrwAtRate } from '@/lib/finance/currency';
+import { formatNumber, formatPercent } from '@/lib/utils';
+
+// Compact ₩조/억 for the KRW-only portfolio dashboard.
+const krw = (value: number | null | undefined) => formatCompactCurrencyFromKrwAtRate(value, 'KRW');
 
 export const dynamic = 'force-dynamic';
 
@@ -70,9 +74,7 @@ export default async function PortfolioPage() {
         <div className="mt-6 grid gap-4 md:grid-cols-3">
           <div className="metric-card">
             <div className="fine-print">Hold Value</div>
-            <div className="mt-3 text-4xl font-semibold text-white">
-              {formatCurrency(totalHoldValue)}
-            </div>
+            <div className="mt-3 text-4xl font-semibold text-white">{krw(totalHoldValue)}</div>
           </div>
           <div className="metric-card">
             <div className="fine-print">Held Assets</div>
@@ -155,9 +157,7 @@ export default async function PortfolioPage() {
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-slate-400">Total AUM</span>
-                  <span className="text-white">
-                    {formatCurrency(dashboardData.summary.totalAumKrw)}
-                  </span>
+                  <span className="text-white">{krw(dashboardData.summary.totalAumKrw)}</span>
                 </div>
               </div>
             </Card>
@@ -199,7 +199,7 @@ export default async function PortfolioPage() {
                   <div>
                     <div className="fine-print">Annualized NOI</div>
                     <div className="mt-2 text-sm text-white">
-                      {formatCurrency(dashboard.summary.annualizedNoiKrw)}
+                      {krw(dashboard.summary.annualizedNoiKrw)}
                     </div>
                   </div>
                   <div>

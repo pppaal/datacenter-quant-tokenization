@@ -1,8 +1,13 @@
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { formatCurrency, formatNumber, formatPercent, toSentenceCase } from '@/lib/utils';
+import { formatNumber, formatPercent, toSentenceCase } from '@/lib/utils';
+import { formatCompactCurrencyFromKrwAtRate } from '@/lib/finance/currency';
 import type { OperatorDashboardData } from '@/lib/services/operator-dashboard';
+
+// Compact ₩조/억 for the KRW-only operator dashboards (full 13-digit won is
+// unreadable in a metric card).
+const krw = (value: number | null | undefined) => formatCompactCurrencyFromKrwAtRate(value, 'KRW');
 
 type Props = {
   data: OperatorDashboardData;
@@ -43,9 +48,7 @@ export function OperatorDashboardPanel({ data }: Props) {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="metric-card">
           <div className="fine-print">Total AUM</div>
-          <div className="mt-3 text-4xl font-semibold text-white">
-            {formatCurrency(portfolio.totalAumKrw)}
-          </div>
+          <div className="mt-3 text-4xl font-semibold text-white">{krw(portfolio.totalAumKrw)}</div>
           <p className="mt-2 text-sm text-slate-400">
             Avg NOI yield{' '}
             {portfolio.avgNoiYieldPct > 0 ? `${portfolio.avgNoiYieldPct.toFixed(1)}%` : 'N/A'}
@@ -73,11 +76,10 @@ export function OperatorDashboardPanel({ data }: Props) {
         <div className="metric-card">
           <div className="fine-print">Committed Capital</div>
           <div className="mt-3 text-4xl font-semibold text-amber-300">
-            {formatCurrency(capital.totalCommittedKrw)}
+            {krw(capital.totalCommittedKrw)}
           </div>
           <p className="mt-2 text-sm text-slate-400">
-            Called {formatCurrency(capital.totalCalledKrw)} / Distributed{' '}
-            {formatCurrency(capital.totalDistributedKrw)}
+            Called {krw(capital.totalCalledKrw)} / Distributed {krw(capital.totalDistributedKrw)}
           </p>
         </div>
       </div>
