@@ -31,6 +31,8 @@ export type StatementPeriodInput = {
   currentLiabilities: number | null;
   operatingCashFlow: number | null;
   capex: number | null;
+  /** Optional extracted detail lines (FinancialLineItem) for this period. */
+  lineItems?: { key: string; label: string; value: number | null }[];
 };
 
 export type StatementRowKind = 'line' | 'subtotal' | 'total';
@@ -127,10 +129,33 @@ export function buildStatementView(periods: StatementPeriodInput[]): StatementVi
     ]
   };
 
-  return {
-    periods: periods.map((p) => p.label),
-    sections: [incomeStatement, balanceSheet, cashFlow]
-  };
+  const sections: StatementSection[] = [incomeStatement, balanceSheet, cashFlow];
+
+  // Detail lines (FinancialLineItem): union of keys across periods in first-seen
+  // order, each row carrying the per-period value (null where a period lacks it).
+  const order: string[] = [];
+  const labelByKey = new Map<string, string>();
+  for (const p of periods) {
+    for (const li of p.lineItems ?? []) {
+      if (!labelByKey.has(li.key)) {
+        order.push(li.key);
+        labelByKey.set(li.key, li.label);
+      }
+    }
+  }
+  if (order.length > 0) {
+    sections.push({
+      title: '상세 항목',
+      rows: order.map((key) => ({
+        label: labelByKey.get(key) ?? key,
+        kind: 'line',
+        indent: true,
+        values: periods.map((p) => p.lineItems?.find((li) => li.key === key)?.value ?? null)
+      }))
+    });
+  }
+
+  return { periods: periods.map((p) => p.label), sections };
 }
 
 /** A structural subset of the Prisma FinancialStatement payload (Decimal-bearing). */
@@ -150,6 +175,7 @@ type AssetStatementLike = {
   currentLiabilitiesKrw: unknown;
   operatingCashFlowKrw: unknown;
   capexKrw: unknown;
+  lineItems?: { lineKey: string; lineLabel: string; valueKrw: unknown }[];
 };
 
 /** Coerce stored Prisma statements (Decimal columns) into period inputs. */
@@ -168,7 +194,12 @@ export function fromAssetStatements(statements: AssetStatementLike[]): Statement
     currentAssets: toNumberOrNull(s.currentAssetsKrw),
     currentLiabilities: toNumberOrNull(s.currentLiabilitiesKrw),
     operatingCashFlow: toNumberOrNull(s.operatingCashFlowKrw),
-    capex: toNumberOrNull(s.capexKrw)
+    capex: toNumberOrNull(s.capexKrw),
+    lineItems: (s.lineItems ?? []).map((li) => ({
+      key: li.lineKey,
+      label: li.lineLabel,
+      value: toNumberOrNull(li.valueKrw)
+    }))
   }));
 }
 
