@@ -10,7 +10,7 @@ export const dynamic = 'force-static';
 export const metadata: Metadata = {
   title: '보안 · 컴플라이언스',
   description:
-    '인증 · RBAC · Edge 보호 · 관측 · 문서 무결성 · 블록체인 6개 방어 계층. PIPA · 자본시장법 · SOC2 · GDPR 대응 데이터 거버넌스.'
+    '인증 · RBAC · Edge 보호 · 관측 · 문서 무결성 · 블록체인 6개 방어 계층. PIPA · 자본시장법 정합성, SOC2 · GDPR 지향 데이터 거버넌스.'
 };
 
 const layers = [
@@ -64,9 +64,9 @@ const compliance = [
       '약정 · 캐피털콜 · 배당 · 분배 워크플로가 결정론적 재계산 가능. 감사 시 같은 입력으로 같은 출력 재현.'
   },
   {
-    standard: 'SOC2 Type II (지향)',
+    standard: 'SOC2 Type II (준비 중 / 로드맵)',
     posture:
-      '접근통제 · 변경관리 · 모니터링 · 사고대응 로그가 모두 코드 수준 헬퍼로 통합. 외부 감사 시 추가 도구 불필요.'
+      '접근통제 · 변경관리 · 모니터링 · 사고대응 로그를 코드 수준 헬퍼로 통합해 외부 감사 대응 기반을 마련. 정식 인증은 로드맵 단계.'
   },
   {
     standard: 'GDPR (역외 LP)',
@@ -214,8 +214,8 @@ export default function SecurityPage() {
                 실사팀 검토용 풀 패키지 제공.
               </h2>
               <p className="mt-3 text-sm leading-7 text-slate-400">
-                아키텍처 다이어그램, 위협 모델, 환경변수 분리 정책, 펜테스트 결과, 감사 로그 샘플을
-                NDA 후 제공합니다.
+                아키텍처 다이어그램, 위협 모델, 환경변수 분리 정책, 보안 통제 요약, 감사 로그 샘플을
+                NDA 후 제공합니다 (외부 펜테스트 결과는 로드맵).
               </p>
             </div>
             <Link href="/contact">

@@ -60,9 +60,9 @@ const tiers = [
       'SSO (SAML / OIDC)',
       '커스텀 RBAC 역할',
       '전담 보안 감사 자료',
-      '연 1회 펜테스트 포함',
+      '외부 펜테스트 도입 (로드맵)',
       'SLA 99.95% + 페이저',
-      'SOC2 Type II 대응'
+      'SOC2 Type II 준비 중 (로드맵)'
     ]
   }
 ];
@@ -70,7 +70,8 @@ const tiers = [
 const addOns = [
   {
     name: '데이터 소스 통합',
-    detail: 'RTMS · KEPCO · 한국감정원 · CBRE / JLL 등 외부 데이터 피드 설치 및 매핑.',
+    detail:
+      'RTMS · KEPCO · 한국감정원 등 공식 공개 데이터 연동, CBRE / JLL 스타일 큐레이션 벤치마크(추정치) 매핑.',
     price: '소스당 500만원 (1회)'
   },
   {
