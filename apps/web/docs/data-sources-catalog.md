@@ -97,6 +97,21 @@
 - **저장**: `HazardObservation` (hazardType = 'FLOOD' / 'STORM')
 - **용도**: SiteProfile flood risk score 정밀화
 
+### KDS 17 10 00 내진설계기준 — 지진구역 / 설계지반운동 (이미 구현)
+
+- **endpoint**: 없음 — 국토교통부 고시 KDS 17 10 00 §4.2 행정구역별 지진구역 표를
+  코드에 정적 인코딩 (keyless, 무(無)네트워크, 결정적).
+- **데이터**: 행정구역(시/도 + 시/군) → 지진구역 I/II → 지진구역계수 Z
+  (0.11g / 0.07g) → 재현주기별 설계지반가속도 (Z × 위험도계수 I, 50~2400년).
+- **라이선스**: 공공 고시 (무료).
+- **refresh**: 기준 개정 시 (비정기).
+- **통합 위치**: `lib/services/dc-intel/seismic-zone.ts`
+  (`resolveSeismicZone` / `seismicPgaByReturnPeriod`). property-analyzer
+  번들이 `seismicRiskScore`(0–5 스크리닝) + 노트로 surfacing.
+- **저장**: `SiteProfile.seismicRiskScore` (+ 노트).
+- **용도**: 시드 0–5 점수를 표준 기반 값으로 대체. 활성단층 grid(KIGAM)는
+  이를 정밀화하는 후속 작업.
+
 ### KIGAM 한국지질자원연구원 — 활성단층 / 지진위험
 
 - **endpoint**: 단층 GIS 데이터 (별도 다운로드)
