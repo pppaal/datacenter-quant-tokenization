@@ -224,6 +224,7 @@ export function OperatorDashboardPanel({ data }: Props) {
               >
                 <div className="flex min-w-0 flex-wrap items-center gap-3">
                   <Badge
+                    label={event.entityType}
                     tone={
                       event.statusLabel === 'SUCCESS'
                         ? 'good'
@@ -231,9 +232,7 @@ export function OperatorDashboardPanel({ data }: Props) {
                           ? 'danger'
                           : 'neutral'
                     }
-                  >
-                    {event.entityType}
-                  </Badge>
+                  />
                   <div className="min-w-0">
                     <div className="truncate text-sm font-semibold text-white">{event.action}</div>
                     <div className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">

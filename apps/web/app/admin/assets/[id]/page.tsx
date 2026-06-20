@@ -215,9 +215,9 @@ export default async function AssetDetailPage({
           <span className="font-mono text-xs text-muted">{asset.assetCode}</span>
         </div>
         <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted">
-          <Badge>{asset.assetClass}</Badge>
-          <Badge>{asset.status}</Badge>
-          <Badge tone="good">{asset.stage}</Badge>
+          <Badge label={asset.assetClass} />
+          <Badge label={asset.status} />
+          <Badge tone="good" label={asset.stage} />
           <span>{asset.address?.city ?? 'N/A'}</span>
           <span aria-hidden>·</span>
           <span>
@@ -869,7 +869,7 @@ export default async function AssetDetailPage({
             >
               {asset.readinessProject?.readinessStatus ?? 'NOT_STARTED'}
             </Badge>
-            <Badge>{asset.readinessProject?.reviewPhase ?? 'Committee review'}</Badge>
+            <Badge label={asset.readinessProject?.reviewPhase ?? 'Committee review'} />
           </div>
         </div>
 
