@@ -18,6 +18,7 @@ import type {
 } from '@/lib/services/public-data/types';
 import type { UnderwritingBundle } from '@/lib/services/valuation/types';
 import { classifyFreshness, type FreshnessBand } from '@/lib/services/im/freshness';
+import { resolveSeismicZone } from '@/lib/services/dc-intel/seismic-zone';
 
 /**
  * Provenance tier for a single material input. Ordered roughly by trust:
@@ -521,6 +522,14 @@ export function assembleBundle(input: AssemblerInput): UnderwritingBundle {
     updatedAt: now
   };
 
+  // KDS 17 10 00 seismic zone from the parcel's 시/도 + 시/군 (keyless, statutory
+  // lookup). Grounds the otherwise-null seismic score in the design standard.
+  const seismic = resolveSeismicZone({
+    province: input.parcel.jibunAddress.split(' ')[0],
+    city: input.districtName,
+    address: input.parcel.jibunAddress
+  });
+
   return {
     asset: {
       id: assetId,
@@ -583,10 +592,12 @@ export function assembleBundle(input: AssemblerInput): UnderwritingBundle {
         : 'Not power-reviewed',
       fiberAccess: input.grid?.fiberBackboneAvailable ? 'Backbone accessible' : 'Not confirmed',
       latencyProfile: 'Metro-tier',
-      siteNotes: input.macroMicro.notes,
+      siteNotes: seismic
+        ? `${input.macroMicro.notes} · 내진: KDS 17 10 00 지진구역 ${seismic.zone} (Z=${seismic.zoneFactorG}g, 500yr).`
+        : input.macroMicro.notes,
       floodRiskScore: null,
       wildfireRiskScore: null,
-      seismicRiskScore: null
+      seismicRiskScore: seismic ? seismic.hazardScore : null
     } as unknown as UnderwritingBundle['siteProfile'],
     buildingSnapshot: input.building
       ? ({
