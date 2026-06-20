@@ -11,7 +11,11 @@ import { resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-reque
 import { buildFundDashboard, buildFundOperatorBriefs, getFundById } from '@/lib/services/capital';
 import { buildFundPcap } from '@/lib/services/investor-reports';
 import { formatPcapRow } from '@/lib/services/fund-nav-format';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import { formatCompactCurrencyFromKrwAtRate } from '@/lib/finance/currency';
+import { formatDate } from '@/lib/utils';
+
+// Compact ₩조/억 for the KRW-only fund detail figures.
+const krw = (value: number | null | undefined) => formatCompactCurrencyFromKrwAtRate(value, 'KRW');
 
 export const dynamic = 'force-dynamic';
 
@@ -58,25 +62,25 @@ export default async function FundDetailPage({ params }: Props) {
         <Card>
           <div className="fine-print">Commitments</div>
           <div className="mt-3 text-3xl font-semibold text-white">
-            {formatCurrency(dashboard.math.totalCommitmentKrw)}
+            {krw(dashboard.math.totalCommitmentKrw)}
           </div>
         </Card>
         <Card>
           <div className="fine-print">Called</div>
           <div className="mt-3 text-3xl font-semibold text-white">
-            {formatCurrency(dashboard.math.totalCalledKrw)}
+            {krw(dashboard.math.totalCalledKrw)}
           </div>
         </Card>
         <Card>
           <div className="fine-print">Distributed</div>
           <div className="mt-3 text-3xl font-semibold text-white">
-            {formatCurrency(dashboard.math.totalDistributedKrw)}
+            {krw(dashboard.math.totalDistributedKrw)}
           </div>
         </Card>
         <Card>
           <div className="fine-print">Dry Powder</div>
           <div className="mt-3 text-3xl font-semibold text-white">
-            {formatCurrency(dashboard.math.dryPowderKrw)}
+            {krw(dashboard.math.dryPowderKrw)}
           </div>
         </Card>
       </div>
@@ -127,8 +131,8 @@ export default async function FundDetailPage({ params }: Props) {
                     </div>
                   </div>
                   <div className="text-right text-sm text-white">
-                    <div>{formatCurrency(toNumber(commitment.commitmentKrw))}</div>
-                    <div>called {formatCurrency(toNumber(commitment.calledKrw))}</div>
+                    <div>{krw(toNumber(commitment.commitmentKrw))}</div>
+                    <div>called {krw(toNumber(commitment.calledKrw))}</div>
                   </div>
                 </div>
               </div>
@@ -190,7 +194,7 @@ export default async function FundDetailPage({ params }: Props) {
                     </div>
                   </div>
                   <div className="text-right text-sm text-white">
-                    {formatCurrency(toNumber(call.amountKrw))}
+                    {krw(toNumber(call.amountKrw))}
                   </div>
                 </div>
               </div>
@@ -209,7 +213,7 @@ export default async function FundDetailPage({ params }: Props) {
                     </div>
                   </div>
                   <div className="text-right text-sm text-white">
-                    {formatCurrency(toNumber(distribution.amountKrw))}
+                    {krw(toNumber(distribution.amountKrw))}
                   </div>
                 </div>
               </div>
@@ -232,7 +236,7 @@ export default async function FundDetailPage({ params }: Props) {
         </div>
         <p className="mt-3 text-xs text-slate-400">
           Per-LP committed / called / distributed / unfunded, NAV share, and IRR / TVPI / DPI /
-          RVPI. Fund NAV {formatCurrency(pcap.navKrw)}
+          RVPI. Fund NAV {krw(pcap.navKrw)}
           {pcap.navUsedCostBasisFallback
             ? ` — includes cost-basis fallback for: ${pcap.navCostBasisFallbackAssets.join(', ')}.`
             : '.'}
