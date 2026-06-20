@@ -5,6 +5,15 @@
 > (등록 URL / 비용 / 승인시간 / 쿼터 / 함정)를 한 곳에. 최종 게이트는
 > `npm run prod:preflight`.
 
+## 빠른 시작
+
+```bash
+npm run setup:env   # .env.example → .env, 시크릿 2개 자동 생성 (.env는 gitignore)
+# 아래 A~C의 값들을 .env에 붙여넣기
+npm run prisma:generate && npm run prisma:migrate:deploy
+npm run prod:preflight   # 프로덕션 env 로드 상태에서 — 블로커 A를 강제
+```
+
 ## 먼저 알아야 할 구조적 사실 2가지
 
 1. **운영 데이터(딜·펀드·투자자·커밋먼트·캐피탈콜·분배·포트폴리오·월별 KPI·
