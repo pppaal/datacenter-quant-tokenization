@@ -310,11 +310,26 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                     </div>
                   </div>
                   {latestCa ? (
-                    <span
-                      className={`rounded-[10px] border px-2.5 py-1 font-mono text-[10px] uppercase tracking-wide ${riskTone}`}
-                    >
-                      {latestCa.riskLevel} · score {latestCa.score.toFixed(0)}
-                    </span>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {latestCa.grade ? (
+                        <span
+                          className={`rounded-[10px] border px-2.5 py-1 font-mono text-[10px] uppercase tracking-wide ${
+                            latestCa.investmentGrade
+                              ? 'border-emerald-300/30 bg-emerald-300/[0.04] text-emerald-200'
+                              : 'border-amber-300/30 bg-amber-300/[0.04] text-amber-200'
+                          }`}
+                        >
+                          {latestCa.grade}
+                          {latestCa.pdPct != null ? ` · PD ${latestCa.pdPct.toFixed(2)}%` : ''}
+                          {latestCa.investmentGrade ? ' · IG' : ''}
+                        </span>
+                      ) : null}
+                      <span
+                        className={`rounded-[10px] border px-2.5 py-1 font-mono text-[10px] uppercase tracking-wide ${riskTone}`}
+                      >
+                        {latestCa.riskLevel} · score {latestCa.score.toFixed(0)}
+                      </span>
+                    </div>
                   ) : null}
                 </div>
 
