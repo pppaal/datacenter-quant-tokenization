@@ -101,7 +101,7 @@ export default async function AssetsPage() {
                       </Link>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      <Badge>{asset.status}</Badge>
+                      <Badge label={asset.status} />
                       <Badge tone={latestRun ? 'good' : 'warn'}>{recommendation}</Badge>
                     </div>
                   </div>

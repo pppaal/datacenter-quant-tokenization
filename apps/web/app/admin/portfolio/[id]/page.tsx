@@ -144,7 +144,7 @@ export default async function PortfolioDetailPage({ params }: Props) {
                       <div className="text-lg font-semibold text-white">
                         {row.portfolioAsset.asset.name}
                       </div>
-                      <Badge>{row.portfolioAsset.status.toLowerCase()}</Badge>
+                      <Badge label={row.portfolioAsset.status} />
                       <Badge tone="neutral">
                         {row.portfolioAsset.asset.assetClass.replaceAll('_', ' ')}
                       </Badge>

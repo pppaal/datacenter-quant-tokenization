@@ -98,7 +98,7 @@ export default async function FundsPage() {
                   <div className="flex flex-wrap items-center gap-3">
                     <div className="text-2xl font-semibold text-white">{fund.name}</div>
                     <Badge>{fund.code}</Badge>
-                    {fund.strategy ? <Badge tone="neutral">{fund.strategy}</Badge> : null}
+                    {fund.strategy ? <Badge tone="neutral" label={fund.strategy} /> : null}
                   </div>
                   <p className="mt-3 text-sm leading-7 text-slate-300">
                     {dashboard.investorUpdateDraft}

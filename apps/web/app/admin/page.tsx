@@ -295,7 +295,7 @@ async function AdminOverviewLegacy() {
                       >
                         {item.area}
                       </Badge>
-                      <Badge>{item.priority}</Badge>
+                      <Badge label={item.priority} />
                     </div>
                     <div className="mt-3 text-lg font-semibold text-white">{item.title}</div>
                     <p className="mt-2 text-sm leading-7 text-slate-300">{item.detail}</p>
@@ -801,7 +801,7 @@ async function AdminOverviewLegacy() {
                           {asset.address?.city} / {asset.assetClass}
                         </div>
                       </div>
-                      <Badge>{asset.status}</Badge>
+                      <Badge label={asset.status} />
                     </div>
                     <div className="mt-4 grid gap-3 md:grid-cols-3">
                       <div>
