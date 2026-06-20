@@ -126,6 +126,39 @@
 - **저장**: `Parcel.officialLandValueKrw`
 - **용도**: 토지 가치 비교군
 
+### 한국전력거래소 SMP / REC (이미 구현 — free-key)
+
+- **endpoint**: data.go.kr/15076302 (계통한계가격조회). REC는 별도 키.
+- **데이터**: 육지/제주 시간별 SMP (원/kWh), REC 현물가.
+- **라이선스**: 무료 / data.go.kr 인증키.
+- **통합 위치**: `lib/sources/adapters/kpx-smp.ts` (`fetchKpxSmp`).
+  키(`KPX_SMP_SERVICE_KEY`) 없으면 fail-closed.
+- **용도**: DC 전력비 / PPA tariff 가정 실측화 (현재 140원/kWh 리터럴 대체).
+
+### 한강홍수통제소 빈도별 침수심 통계 (이미 구현 — free-key)
+
+- **endpoint**: data.go.kr/15141709 (국가하천 하천범람), 15141717 (도시침수).
+- **데이터**: 유역별·빈도별(100/200/500/기왕최대) 침수심 5단계 면적(km²).
+- **통합 위치**: `lib/sources/adapters/hrfco-flood.ts` (`fetchFloodDepthStats`).
+  `HRFCO_FLOOD_SERVICE_KEY` gate. 침수심 면적 가중 0–5 floodScore 도출.
+- **용도**: `SiteProfile.floodRiskScore` 정밀화.
+
+### 한국전력공사 분산전원 연계정보 (이미 구현 — free-key)
+
+- **endpoint**: data.go.kr/15031274.
+- **데이터**: 변전소별 연계용량 / 여유(잔여)용량 MW.
+- **통합 위치**: `lib/sources/adapters/kepco-dg-interconnect.ts`
+  (`fetchDgInterconnects`). `KEPCO_DG_SERVICE_KEY` gate.
+- **용도**: DC 입지 — 변전소 잔여용량 (KR 고유 핵심 신호).
+
+### KOFIA 채권 시가평가 기준수익률 (이미 구현 — free-key)
+
+- **endpoint**: openapi.kofia.or.kr (POST XML).
+- **데이터**: 등급(국고~BBB-)×만기별 시가평가 수익률 (%).
+- **통합 위치**: `lib/sources/adapters/kofia-bond-yields.ts`
+  (`fetchBondYields`). `KOFIA_API_KEY` gate.
+- **용도**: 등급별 크레딧 스프레드 anchor (IM 할인율/캐리 스프레드).
+
 ---
 
 ## Tier B — Paid / Partnership (6-12개월)
