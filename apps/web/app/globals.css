@@ -251,6 +251,33 @@ a {
 /* The global `* { border-color }` reset still points at --border (light),
    so default borders are already correct. */
 
+/* Zinc ramp (property-analyze tables, quarterly-report, KeyValueRow divider,
+   access-grants panel) was never remapped, so its light text + dark fills
+   rendered dark-on-light. Mirror the slate/white treatment. Attribute
+   selectors catch opacity variants (e.g. border-zinc-800/50). zinc-700..950
+   used AS TEXT stays dark (fine on light), like slate-700..950. */
+[class*='text-zinc-100'],
+[class*='text-zinc-200'] {
+  color: hsl(var(--foreground)) !important;
+}
+[class*='text-zinc-300'] {
+  color: hsl(var(--foreground-muted)) !important;
+}
+[class*='text-zinc-400'],
+[class*='text-zinc-500'],
+[class*='text-zinc-600'] {
+  color: hsl(var(--muted)) !important;
+}
+[class*='bg-zinc-950'],
+[class*='bg-zinc-900'],
+[class*='bg-zinc-800'] {
+  background-color: hsl(var(--panel-alt)) !important;
+}
+[class*='border-zinc-700'],
+[class*='border-zinc-800'] {
+  border-color: hsl(var(--border)) !important;
+}
+
 @media print {
   html,
   body {
@@ -291,7 +318,12 @@ a {
   .text-slate-300,
   .text-slate-200,
   .text-slate-400,
-  .text-slate-500 {
+  .text-slate-500,
+  [class*='text-zinc-100'],
+  [class*='text-zinc-200'],
+  [class*='text-zinc-300'],
+  [class*='text-zinc-400'],
+  [class*='text-zinc-500'] {
     color: #111827 !important;
   }
 
