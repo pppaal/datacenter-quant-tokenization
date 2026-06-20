@@ -241,9 +241,15 @@ export default async function SampleReportPage({
     holdYears: proForma?.years.length ?? 10,
     basisSource: (asset.purchasePriceKrw ?? 0) > 0 ? 'purchase_price' : 'capex_total'
   });
+  // Use the SAME live/env FX rate the rest of the page translates with, so the
+  // FX-exposure card's spot + USD value can't diverge from the cover's KRW→base
+  // figures (previously this fell back to a hardcoded 1380 inside buildFxExposure).
+  const fxLpBaseCurrency = displayCurrency === 'KRW' ? 'USD' : displayCurrency;
+  const fxLpBaseRateToKrw = (await getFxRateMap([fxLpBaseCurrency]))[fxLpBaseCurrency];
   const fxExposure = buildFxExposure(latestRun.baseCaseValueKrw, {
     assetCurrency: 'KRW',
-    lpBaseCurrency: displayCurrency === 'KRW' ? 'USD' : displayCurrency
+    lpBaseCurrency: fxLpBaseCurrency,
+    spotRate: fxLpBaseRateToKrw
   });
 
   // Tier 4 derivations:
