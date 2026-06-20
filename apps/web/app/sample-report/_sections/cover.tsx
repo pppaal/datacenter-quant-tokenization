@@ -246,7 +246,7 @@ export function CoverSection({ data }: { data: SampleReportData }) {
                             }`}
                           >
                             Δ {delta > 0 ? '+' : ''}
-                            {kpi.fmt(delta).replace(/[+\-]/g, (s) => s)}
+                            {kpi.fmt(delta)}
                           </div>
                         ) : null}
                       </div>
