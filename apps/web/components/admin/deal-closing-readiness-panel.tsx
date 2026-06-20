@@ -48,9 +48,9 @@ export function DealClosingReadinessPanel({ readiness, probability }: Props) {
           </div>
         </div>
         <div className="metric-card">
-          <div className="fine-print">Probability To Close</div>
+          <div className="fine-print">Execution Momentum</div>
           <div className="mt-3 text-3xl font-semibold text-white">
-            {formatNumber(probability.scorePct, 0)}%
+            {formatNumber(probability.scorePct, 0)}
           </div>
           <p className="mt-2 text-sm leading-7 text-slate-300">{probability.headline}</p>
         </div>
@@ -104,7 +104,7 @@ export function DealClosingReadinessPanel({ readiness, probability }: Props) {
                     : 'danger'
               }
             >
-              {probability.band.toLowerCase()} probability
+              {probability.band.toLowerCase()} momentum
             </Badge>
           </div>
           <div className="mt-4 grid gap-2">

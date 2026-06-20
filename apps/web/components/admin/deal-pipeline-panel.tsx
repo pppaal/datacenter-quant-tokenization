@@ -160,9 +160,9 @@ export function DealPipelinePanel({ summary }: Props) {
                   </div>
                 </div>
                 <div>
-                  <div className="fine-print">P(Close)</div>
+                  <div className="fine-print">Momentum</div>
                   <div className="mt-1">
-                    {formatNumber(deal.closeProbabilityPct, 0)}% /{' '}
+                    {formatNumber(deal.closeProbabilityPct, 0)} /{' '}
                     {deal.closeProbabilityBand.toLowerCase()}
                   </div>
                 </div>
