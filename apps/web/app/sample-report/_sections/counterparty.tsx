@@ -620,7 +620,7 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                           <span className={`mt-1.5 inline-block h-2 w-2 rounded-full ${dot}`} />
                           <div>
                             <div className="text-[10px] uppercase tracking-wide text-slate-400">
-                              Covenant alert · {label}
+                              Indicative covenant alert · {label}
                             </div>
                             <p className="mt-1 text-slate-100">{a.message}</p>
                             {a.firstBreachYear && a.firstBreachYear !== 'now' ? (
@@ -646,7 +646,13 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                 {/* Covenant headroom */}
                 {covenantHeadroom.length > 0 ? (
                   <div className="mt-5 rounded-[14px] border border-white/10 bg-white/[0.02] p-4">
-                    <div className="fine-print">Covenant headroom &amp; first-breach year</div>
+                    <div className="fine-print">
+                      Indicative covenant band &amp; first-breach year
+                    </div>
+                    <p className="mt-1 text-[10px] leading-4 text-slate-500">
+                      Generic sponsor-credit thresholds (leverage ≤4.0x, coverage ≥2.0x) — not the
+                      counterparty&rsquo;s actual loan covenants.
+                    </p>
                     <div className="mt-3 grid gap-3 md:grid-cols-2">
                       {covenantHeadroom.map((c) => {
                         const breachTone =
