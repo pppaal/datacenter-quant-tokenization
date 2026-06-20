@@ -2,6 +2,8 @@ import { notFound } from 'next/navigation';
 import { AssetClass } from '@prisma/client';
 import { resolveDisplayCurrency } from '@/lib/finance/currency';
 import { ImPrintMode } from '@/components/marketing/im-print-mode';
+import { ImExportButtons } from '@/components/marketing/im-export-buttons';
+import { imDeckFromReport } from '@/lib/services/exports/im-deck-from-report';
 import { ImToc } from '@/components/marketing/im-toc';
 import { SiteNav } from '@/components/marketing/site-nav';
 import { prisma } from '@/lib/db/prisma';
@@ -548,6 +550,26 @@ export default async function SampleReportPage({
       <ImToc items={visibleTocItems} />
 
       <CoverSection data={data} />
+
+      <section className="app-shell pt-4 print:hidden">
+        <div className="flex justify-end">
+          <ImExportButtons
+            deck={imDeckFromReport({
+              assetName: asset.name,
+              assetType: String(asset.assetClass),
+              market: asset.market,
+              recommendation,
+              confidenceScore: latestRun.confidenceScore ?? null,
+              baseValueKrw: returnsSnapshot.baseValueKrw,
+              goingInYieldPct: returnsSnapshot.goingInYieldPct,
+              exitCapPct: returnsSnapshot.exitCapPct,
+              minDscr: returnsSnapshot.minDscr,
+              upsideToBullPct: returnsSnapshot.upsideToBullPct,
+              downsideToBearPct: returnsSnapshot.downsideToBearPct
+            })}
+          />
+        </div>
+      </section>
 
       <HeadlineScenarioStrip data={data} />
 
