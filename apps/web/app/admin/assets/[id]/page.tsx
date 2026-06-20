@@ -21,6 +21,7 @@ import { DocumentUploadForm } from '@/components/admin/document-upload-form';
 import { FeatureSnapshotPanel } from '@/components/admin/feature-snapshot-panel';
 import { FinancialStatementsPanel } from '@/components/admin/financial-statements-panel';
 import { ComparativeStatementsPanel } from '@/components/admin/comparative-statements-panel';
+import { FinancialsExportButtons } from '@/components/admin/financials-export-buttons';
 import { CounterpartyCashflowPanel } from '@/components/admin/counterparty-cashflow-panel';
 import { AssetSustainabilityPanel } from '@/components/admin/asset-sustainability-panel';
 import { AssetRegistryPanel } from '@/components/admin/asset-registry-panel';
@@ -790,6 +791,12 @@ export default async function AssetDetailPage({
         displayCurrency={displayCurrency}
         fxRateToKrw={fxRateToKrw}
       />
+
+      {financialStatements.length > 0 ? (
+        <div className="flex justify-end print:hidden">
+          <FinancialsExportButtons assetId={id} />
+        </div>
+      ) : null}
 
       <ComparativeStatementsPanel statements={financialStatements} />
 
