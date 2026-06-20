@@ -147,3 +147,36 @@ test('buildIncomeStatement accepts Decimal-shaped inputs', () => {
   assert.equal(inc.ebitdaKrw, 250);
   assert.equal(inc.ebitdaMarginPct, 25);
 });
+
+test('buildIncomeStatement surfaces filed operating + net income when present', () => {
+  const inc = buildIncomeStatement({
+    ...SAMPLE,
+    operatingIncomeKrw: 7_200_000_000,
+    netIncomeKrw: 4_100_000_000
+  });
+  assert.equal(inc.operatingIncomeKrw, 7_200_000_000);
+  assert.equal(inc.netIncomeKrw, 4_100_000_000);
+});
+
+test('buildIncomeStatement returns null filed income when absent (proxy still computed)', () => {
+  const inc = buildIncomeStatement(SAMPLE);
+  assert.equal(inc.operatingIncomeKrw, null);
+  assert.equal(inc.netIncomeKrw, null);
+  assert.equal(inc.preTaxIncomeProxyKrw, 8_856_000_000 - 1_968_000_000);
+});
+
+test('buildCreditRatios adds 유동비율 only when current-portion lines exist', () => {
+  assert.equal(
+    buildCreditRatios(SAMPLE).some((r) => r.key === 'currentRatio'),
+    false
+  );
+  const withCurrent = buildCreditRatios({
+    ...SAMPLE,
+    currentAssetsKrw: 12_000_000_000,
+    currentLiabilitiesKrw: 6_000_000_000
+  });
+  const cr = withCurrent.find((r) => r.key === 'currentRatio');
+  assert.ok(cr);
+  assert.equal(cr!.value, 2);
+  assert.equal(cr!.tone, 'good');
+});

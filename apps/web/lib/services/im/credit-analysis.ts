@@ -23,11 +23,18 @@ export type FinancialStatementLike = {
   provenanceSystem?: string | null;
   revenueKrw?: Decimalish;
   ebitdaKrw?: Decimalish;
+  // Filed K-IFRS lines (영업이익 / 당기순이익) — when present these are the
+  // authoritative figures; the EBITDA-down proxies are only a fallback.
+  operatingIncomeKrw?: Decimalish;
+  netIncomeKrw?: Decimalish;
   cashKrw?: Decimalish;
   totalDebtKrw?: Decimalish;
   totalAssetsKrw?: Decimalish;
   totalEquityKrw?: Decimalish;
   interestExpenseKrw?: Decimalish;
+  // Current-portion lines for 유동비율 (current ratio).
+  currentAssetsKrw?: Decimalish;
+  currentLiabilitiesKrw?: Decimalish;
 };
 
 export type IncomeStatementSlice = {
@@ -37,6 +44,10 @@ export type IncomeStatementSlice = {
   interestExpenseKrw: number | null;
   /** EBITDA – interest expense — proxy for pre-tax income absent a full IS. */
   preTaxIncomeProxyKrw: number | null;
+  /** Filed operating income (영업이익), null when not on the statement. */
+  operatingIncomeKrw: number | null;
+  /** Filed net income (당기순이익), null when not on the statement. */
+  netIncomeKrw: number | null;
 };
 
 export type BalanceSheetSlice = {
@@ -63,7 +74,9 @@ export function buildIncomeStatement(stmt: FinancialStatementLike): IncomeStatem
     ebitdaKrw,
     ebitdaMarginPct,
     interestExpenseKrw,
-    preTaxIncomeProxyKrw
+    preTaxIncomeProxyKrw,
+    operatingIncomeKrw: toNum(stmt.operatingIncomeKrw),
+    netIncomeKrw: toNum(stmt.netIncomeKrw)
   };
 }
 
@@ -284,6 +297,28 @@ export function buildCreditRatios(stmt: FinancialStatementLike): CreditRatio[] {
               : 'Asset productivity below sector median.'
     }
   ];
+
+  // 유동비율 (current ratio) — only when the filing carries current-portion
+  // lines. KR convention: ≥200% (2.0x) ideal, ≥100% (1.0x) minimum.
+  const currentRatio = safeDiv(toNum(stmt.currentAssetsKrw), toNum(stmt.currentLiabilitiesKrw));
+  if (currentRatio !== null) {
+    ratios.push({
+      key: 'currentRatio',
+      label: 'Current ratio (유동비율)',
+      formula: 'Current assets ÷ current liabilities',
+      value: currentRatio,
+      unit: 'x',
+      benchmark: 2.0,
+      preferred: 'higher',
+      tone: currentRatio >= 2 ? 'good' : currentRatio >= 1 ? 'warn' : 'risk',
+      interpretation:
+        currentRatio >= 2
+          ? 'Comfortable short-term liquidity (≥200%).'
+          : currentRatio >= 1
+            ? 'Current assets cover current liabilities but below the 200% comfort level.'
+            : 'Current liabilities exceed current assets — short-term liquidity strain.'
+    });
+  }
 
   return ratios;
 }
