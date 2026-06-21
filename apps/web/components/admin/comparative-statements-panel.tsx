@@ -59,8 +59,14 @@ function StatementTable({ view }: { view: StatementView }) {
                     {r.label}
                   </td>
                   {r.values.map((v, i) => (
-                    <td key={i} className="px-4 py-2 text-right tabular-nums">
-                      {fmt(v)}
+                    <td key={i} className="px-4 py-2 text-right align-top tabular-nums">
+                      <div>{fmt(v)}</div>
+                      {r.yoy?.[i] != null ? (
+                        <div className="text-[10px] font-normal text-[hsl(var(--foreground-faint))]">
+                          YoY {r.yoy[i]! >= 0 ? '+' : ''}
+                          {r.yoy[i]!.toFixed(1)}%
+                        </div>
+                      ) : null}
                     </td>
                   ))}
                 </tr>
