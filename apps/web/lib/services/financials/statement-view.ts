@@ -53,6 +53,8 @@ export type StatementRow = {
    * CF→영업활동현금흐름). Aligned with `values`; null for the 상세 항목 section.
    */
   commonSize?: (number | null)[];
+  /** Trailing CAGR % over all periods (≥3 comparable periods); null otherwise. */
+  cagrPct?: number | null;
 };
 
 export type StatementSection = {
@@ -66,12 +68,62 @@ export type StatementIntegrity = {
   flags: string[];
 };
 
+/** Per-period filing completeness over the canonical metric set. */
+export type StatementCoverage = {
+  label: string;
+  present: number;
+  total: number;
+  coveragePct: number;
+};
+
 export type StatementView = {
   periods: string[];
   sections: StatementSection[];
   /** One entry per period (aligned with `periods`). */
   integrity: StatementIntegrity[];
+  /** One entry per period (aligned with `periods`). */
+  coverage: StatementCoverage[];
 };
+
+/** The canonical metric set a "complete" filing populates. */
+const COVERAGE_KEYS = [
+  'revenue',
+  'ebitda',
+  'operatingIncome',
+  'netIncome',
+  'interestExpense',
+  'cash',
+  'totalDebt',
+  'totalAssets',
+  'totalEquity',
+  'currentAssets',
+  'currentLiabilities',
+  'operatingCashFlow',
+  'capex'
+] as const;
+
+export function statementCoverage(periods: StatementPeriodInput[]): StatementCoverage[] {
+  return periods.map((p) => {
+    const present = COVERAGE_KEYS.filter((k) => p[k] !== null && p[k] !== undefined).length;
+    return {
+      label: p.label,
+      present,
+      total: COVERAGE_KEYS.length,
+      coveragePct: Math.round((present / COVERAGE_KEYS.length) * 100)
+    };
+  });
+}
+
+/** Trailing CAGR % over the period series (newest-first); null unless ≥3 + positive endpoints. */
+function cagrOf(values: (number | null)[]): number | null {
+  const defined = values.filter((v): v is number => v !== null);
+  if (values.length < 3 || defined.length < 3) return null;
+  const latest = values[0];
+  const earliest = values[values.length - 1];
+  const n = values.length;
+  if (latest === null || earliest === null || latest <= 0 || earliest <= 0) return null;
+  return round((Math.pow(latest / earliest, 1 / (n - 1)) - 1) * 100, 1);
+}
 
 /**
  * Flag statements that don't articulate or look mis-parsed, so the viewer
@@ -229,6 +281,7 @@ export function buildStatementView(periods: StatementPeriodInput[]): StatementVi
     const basis = sectionBasis(section.title, periods);
     for (const r of section.rows) {
       r.yoy = yoyOf(r.values);
+      r.cagrPct = cagrOf(r.values);
       if (basis) r.commonSize = commonSizeOf(r.values, basis);
     }
   }
@@ -236,7 +289,8 @@ export function buildStatementView(periods: StatementPeriodInput[]): StatementVi
   return {
     periods: periods.map((p) => p.label),
     sections,
-    integrity: checkStatementIntegrity(periods)
+    integrity: checkStatementIntegrity(periods),
+    coverage: statementCoverage(periods)
   };
 }
 
