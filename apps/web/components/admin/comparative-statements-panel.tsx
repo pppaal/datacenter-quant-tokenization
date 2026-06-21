@@ -6,6 +6,10 @@ import {
   type StatementRow,
   type StatementView
 } from '@/lib/services/financials/statement-view';
+import {
+  buildStatementCreditInsights,
+  type StatementCreditInsights
+} from '@/lib/services/credit/insights';
 
 type Props = {
   statements: AssetFinancialStatement[];
@@ -69,6 +73,49 @@ function StatementTable({ view }: { view: StatementView }) {
   );
 }
 
+function Chip({ text, tone }: { text: string; tone: 'bad' | 'warn' | 'good' }) {
+  const cls =
+    tone === 'bad'
+      ? 'border-[hsl(var(--danger)/0.25)] bg-[hsl(var(--danger-tint))] text-[hsl(var(--danger))]'
+      : tone === 'warn'
+        ? 'border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--warning-tint))] text-[hsl(var(--warning))]'
+        : 'border-[hsl(var(--success)/0.25)] bg-[hsl(var(--success-tint))] text-[hsl(var(--success))]';
+  return (
+    <span
+      className={`inline-block rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${cls}`}
+    >
+      {text}
+    </span>
+  );
+}
+
+/** Multi-period credit insights derived from the counterparty's filings. */
+function CreditInsightStrip({ insights }: { insights: StatementCreditInsights }) {
+  const { marginalFirm, trend, freshness } = insights;
+  const hasAny =
+    marginalFirm.isMarginalFirm ||
+    freshness.flag ||
+    trend.flags.length > 0 ||
+    trend.deteriorating.length > 0 ||
+    trend.improving.length > 0;
+  if (!hasAny) return null;
+  return (
+    <div className="mb-3 flex flex-wrap items-center gap-2">
+      {marginalFirm.isMarginalFirm ? <Chip text={marginalFirm.label} tone="bad" /> : null}
+      {trend.flags.map((f) => (
+        <Chip key={f} text={f} tone="bad" />
+      ))}
+      {trend.deteriorating.map((f) => (
+        <Chip key={f} text={`▼ ${f}`} tone="warn" />
+      ))}
+      {trend.improving.map((f) => (
+        <Chip key={f} text={`▲ ${f}`} tone="good" />
+      ))}
+      {freshness.flag ? <Chip text={freshness.flag} tone="warn" /> : null}
+    </div>
+  );
+}
+
 /**
  * Comparative IS / BS / CF (+ detail line items) per counterparty, built from
  * the same `buildStatementView` model the Excel export (#140) uses — so screen,
@@ -98,11 +145,13 @@ export function ComparativeStatementsPanel({ statements }: Props) {
       <div className="mt-5 space-y-8">
         {[...groups.entries()].map(([counterpartyId, rows]) => {
           const view = buildStatementView(fromAssetStatements(rows));
+          const insights = buildStatementCreditInsights(rows);
           return (
             <div key={counterpartyId}>
               <div className="mb-3 text-sm font-semibold text-[hsl(var(--foreground))]">
                 {rows[0]?.counterparty?.name ?? counterpartyId}
               </div>
+              <CreditInsightStrip insights={insights} />
               <StatementTable view={view} />
             </div>
           );
