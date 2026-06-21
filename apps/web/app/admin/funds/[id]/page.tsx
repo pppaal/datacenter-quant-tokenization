@@ -15,6 +15,8 @@ import { CapitalAccountExportButton } from '@/components/admin/capital-account-e
 import { XlsxDownloadButton } from '@/components/admin/xlsx-download-button';
 import { PrintButton } from '@/components/admin/print-button';
 import { FundEquityPanel } from '@/components/admin/fund-equity-panel';
+import { FinancialNotesEditor } from '@/components/admin/financial-notes-editor';
+import { getFinancialNotes } from '@/lib/services/financial-notes';
 import { formatCompactCurrencyFromKrwAtRate } from '@/lib/finance/currency';
 import { formatDate } from '@/lib/utils';
 
@@ -43,6 +45,7 @@ export default async function FundDetailPage({ params }: Props) {
   const dashboard = buildFundDashboard(fund);
   const briefs = buildFundOperatorBriefs(fund, dashboard);
   const pcap = await buildFundPcap(id);
+  const financialNotes = await getFinancialNotes({ fundId: id });
   const pcapRows = pcap.investors.map(formatPcapRow);
   const anyProRata = pcapRows.some((row) => row.proRataAllocated);
 
@@ -318,6 +321,17 @@ export default async function FundDetailPage({ params }: Props) {
           navKrw: dashboard.math.navKrw,
           netInvestedKrw: dashboard.math.netInvestedKrw
         }}
+      />
+
+      <FinancialNotesEditor
+        fundId={id}
+        notes={financialNotes.map((n) => ({
+          id: n.id,
+          noteKey: n.noteKey,
+          title: n.title,
+          body: n.body,
+          orderIndex: n.orderIndex
+        }))}
       />
 
       <Card>
