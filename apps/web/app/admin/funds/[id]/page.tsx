@@ -14,6 +14,7 @@ import { formatPcapRow } from '@/lib/services/fund-nav-format';
 import { CapitalAccountExportButton } from '@/components/admin/capital-account-export-button';
 import { XlsxDownloadButton } from '@/components/admin/xlsx-download-button';
 import { PrintButton } from '@/components/admin/print-button';
+import { FundEquityPanel } from '@/components/admin/fund-equity-panel';
 import { formatCompactCurrencyFromKrwAtRate } from '@/lib/finance/currency';
 import { formatDate } from '@/lib/utils';
 
@@ -308,6 +309,16 @@ export default async function FundDetailPage({ params }: Props) {
           </table>
         </div>
       </Card>
+
+      <FundEquityPanel
+        source={{
+          fundName: fund.name,
+          calledKrw: dashboard.math.totalCalledKrw,
+          distributedKrw: dashboard.math.totalDistributedKrw,
+          navKrw: dashboard.math.navKrw,
+          netInvestedKrw: dashboard.math.netInvestedKrw
+        }}
+      />
 
       <Card>
         <div className="eyebrow">Investor Reporting And DDQ</div>

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  fundEquityRows,
   fundReportSummaryRows,
   fundReportToXlsxSpec,
   type FundReportSource
@@ -57,11 +58,20 @@ test('null targetSize / zero called are handled', () => {
   assert.equal(rows.find((r) => r.item === 'DPI')!.value, null); // /0 guard
 });
 
-test('fundReportToXlsxSpec → buildXlsx → re-parse, 3 sheets + call total', async () => {
+test('fundEquityRows derives the contribution-basis equity roll (sums to NAV)', () => {
+  const rows = fundEquityRows(src);
+  // 기초 0 + 출자(called) − 분배(distributed) + 누적손익(nav − netInvested) = NAV.
+  const sum = rows.reduce((s, r) => s + r.amountKrw, 0);
+  assert.equal(sum, src.navKrw);
+  assert.equal(rows.find((r) => r.item.startsWith('출자'))!.amountKrw, src.calledKrw);
+  assert.equal(rows.find((r) => r.item.startsWith('분배'))!.amountKrw, -src.distributedKrw);
+});
+
+test('fundReportToXlsxSpec → buildXlsx → re-parse, 4 sheets + call total', async () => {
   const spec = fundReportToXlsxSpec(src);
   assert.deepEqual(
     spec.sheets.map((s) => s.name),
-    ['요약', '캐피탈콜', '분배']
+    ['요약', '캐피탈콜', '분배', '자본변동표']
   );
   const buf = await buildXlsx(spec);
   const { sheets } = await parseWorkbook(buf);
