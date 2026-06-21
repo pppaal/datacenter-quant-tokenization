@@ -4,6 +4,7 @@ import { resolveDisplayCurrency } from '@/lib/finance/currency';
 import { ImPrintMode } from '@/components/marketing/im-print-mode';
 import { ImExportButtons } from '@/components/marketing/im-export-buttons';
 import { imDeckFromReport } from '@/lib/services/exports/im-deck-from-report';
+import { summarizeScenarioSkew } from '@/lib/services/valuation/insights';
 import { ImToc } from '@/components/marketing/im-toc';
 import { SiteNav } from '@/components/marketing/site-nav';
 import { prisma } from '@/lib/db/prisma';
@@ -129,6 +130,10 @@ export default async function SampleReportPage({
   const leaseRoll = computeLeaseRollSummary(asset.leases ?? []);
   const capStack = computeCapitalStructure(asset.debtFacilities ?? []);
   const returnsSnapshot = computeReturnsSnapshot(scenarios);
+  const scenarioSkew = summarizeScenarioSkew({
+    upsidePct: returnsSnapshot.upsideToBullPct,
+    downsidePct: returnsSnapshot.downsideToBearPct
+  });
   const tenantCredit = rollupTenantCredit(asset.creditAssessments ?? []);
 
   // Cap rate decomposition — feeds Underwriting assumptions card.
@@ -570,6 +575,15 @@ export default async function SampleReportPage({
           />
         </div>
       </section>
+
+      {scenarioSkew.headline ? (
+        <section className="app-shell pt-2">
+          <p className="text-sm text-[hsl(var(--foreground-muted))]">
+            <span className="font-semibold text-[hsl(var(--foreground))]">시나리오 비대칭 · </span>
+            {scenarioSkew.headline}
+          </p>
+        </section>
+      ) : null}
 
       <HeadlineScenarioStrip data={data} />
 
