@@ -50,10 +50,43 @@ export type StatementSection = {
   rows: StatementRow[];
 };
 
+/** Per-period data-integrity flags (a non-articulating statement shouldn't be trusted). */
+export type StatementIntegrity = {
+  label: string;
+  flags: string[];
+};
+
 export type StatementView = {
   periods: string[];
   sections: StatementSection[];
+  /** One entry per period (aligned with `periods`). */
+  integrity: StatementIntegrity[];
 };
+
+/**
+ * Flag statements that don't articulate or look mis-parsed, so the viewer
+ * doesn't render an impaired/garbage statement as authoritative. Conservative:
+ * only flags clear violations, never on missing data.
+ */
+export function checkStatementIntegrity(periods: StatementPeriodInput[]): StatementIntegrity[] {
+  return periods.map((p) => {
+    const flags: string[] = [];
+    if (p.totalEquity !== null && p.totalEquity < 0) flags.push('자본잠식 (음수 자본)');
+    if (p.totalAssets !== null && p.totalEquity !== null && p.totalEquity > p.totalAssets) {
+      flags.push('자본 > 자산 (비정합)');
+    }
+    if (p.ebitda !== null && p.operatingIncome !== null && p.operatingIncome > p.ebitda) {
+      flags.push('영업이익 > EBITDA (비정합)');
+    }
+    if (p.revenue !== null && p.revenue > 0 && p.netIncome !== null && p.netIncome > p.revenue) {
+      flags.push('당기순이익 > 매출 (확인 필요)');
+    }
+    if (p.totalAssets !== null && p.currentAssets !== null && p.currentAssets > p.totalAssets + 1) {
+      flags.push('유동자산 > 자산총계 (비정합)');
+    }
+    return { label: p.label, flags };
+  });
+}
 
 function sub(a: number | null, b: number | null): number | null {
   if (a === null && b === null) return null;
@@ -155,7 +188,11 @@ export function buildStatementView(periods: StatementPeriodInput[]): StatementVi
     });
   }
 
-  return { periods: periods.map((p) => p.label), sections };
+  return {
+    periods: periods.map((p) => p.label),
+    sections,
+    integrity: checkStatementIntegrity(periods)
+  };
 }
 
 /** A structural subset of the Prisma FinancialStatement payload (Decimal-bearing). */
