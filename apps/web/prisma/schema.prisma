@@ -534,6 +534,27 @@ model Asset {
   insurancePolicies     InsurancePolicy[]
   carbonRecords         CarbonEmissionRecord[]
   sideLetters           SideLetter[]
+  financialNotes        FinancialNote[]
+}
+
+/// Qualitative financial-statement notes (주석) — the one part of the audited
+/// statement set that isn't derivable from numeric data. Scoped to a fund OR an
+/// asset (exactly one set in practice). Ordered by `orderIndex` for display.
+model FinancialNote {
+  id         String   @id @default(cuid())
+  fundId     String?
+  assetId    String?
+  noteKey    String
+  title      String
+  body       String
+  orderIndex Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  fund       Fund?    @relation(fields: [fundId], references: [id], onDelete: Cascade)
+  asset      Asset?   @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([fundId, orderIndex])
+  @@index([assetId, orderIndex])
 }
 
 model Address {
@@ -3124,6 +3145,7 @@ model Fund {
   distributions       Distribution[]
   investorReports     InvestorReport[]
   ddqResponses        DdqResponse[]
+  financialNotes      FinancialNote[]
 
   @@index([strategy, vintageYear])
 }
