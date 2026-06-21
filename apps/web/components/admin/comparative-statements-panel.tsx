@@ -152,6 +152,15 @@ export function ComparativeStatementsPanel({ statements }: Props) {
                 {rows[0]?.counterparty?.name ?? counterpartyId}
               </div>
               <CreditInsightStrip insights={insights} />
+              {view.integrity.some((p) => p.flags.length > 0) ? (
+                <div className="mb-3 flex flex-wrap items-center gap-2">
+                  {view.integrity.flatMap((p) =>
+                    p.flags.map((f) => (
+                      <Chip key={`${p.label}-${f}`} text={`${p.label}: ${f}`} tone="bad" />
+                    ))
+                  )}
+                </div>
+              ) : null}
               <StatementTable view={view} />
             </div>
           );
