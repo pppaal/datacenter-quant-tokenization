@@ -12,7 +12,7 @@
  * Granularity follows the schema (summary lines). Per-line `FinancialLineItem`
  * detail is a later layer; this is the always-available comparative core.
  */
-import { toNumberOrNull } from '@/lib/math';
+import { round, toNumberOrNull } from '@/lib/math';
 import type { XlsxWorkbookSpec } from '@/lib/services/exports/xlsx';
 
 /** One period's stored figures, already coerced to numbers (KRW). */
@@ -43,6 +43,16 @@ export type StatementRow = {
   indent: boolean;
   /** One value per period, aligned with `StatementView.periods`. */
   values: (number | null)[];
+  /**
+   * YoY % vs the next-older period (periods are newest-first), aligned with
+   * `values`; the oldest column is null. Null where either endpoint is null/0.
+   */
+  yoy?: (number | null)[];
+  /**
+   * Common-size %: this row as a % of the section base (IS→매출액, BS→자산총계,
+   * CF→영업활동현금흐름). Aligned with `values`; null for the 상세 항목 section.
+   */
+  commonSize?: (number | null)[];
 };
 
 export type StatementSection = {
@@ -91,6 +101,32 @@ export function checkStatementIntegrity(periods: StatementPeriodInput[]): Statem
 function sub(a: number | null, b: number | null): number | null {
   if (a === null && b === null) return null;
   return (a ?? 0) - (b ?? 0);
+}
+
+/** YoY % vs the next-older period (periods newest-first); oldest column null. */
+function yoyOf(values: (number | null)[]): (number | null)[] {
+  return values.map((v, i) => {
+    const prev = values[i + 1];
+    if (v === null || prev == null || prev === 0) return null;
+    return round(((v - prev) / Math.abs(prev)) * 100, 1);
+  });
+}
+
+/** Row value as a % of the per-period section base. */
+function commonSizeOf(values: (number | null)[], basis: (number | null)[]): (number | null)[] {
+  return values.map((v, i) => {
+    const b = basis[i];
+    if (v === null || b == null || b === 0) return null;
+    return round((v / b) * 100, 1);
+  });
+}
+
+/** Per-period base for a section's common-size (IS→revenue, BS→assets, CF→OCF). */
+function sectionBasis(title: string, periods: StatementPeriodInput[]): (number | null)[] | null {
+  if (title === '손익계산서') return periods.map((p) => p.revenue);
+  if (title === '재무상태표') return periods.map((p) => p.totalAssets);
+  if (title === '현금흐름표') return periods.map((p) => p.operatingCashFlow);
+  return null; // 상세 항목: no common-size base
 }
 
 function row(
@@ -186,6 +222,15 @@ export function buildStatementView(periods: StatementPeriodInput[]): StatementVi
         values: periods.map((p) => p.lineItems?.find((li) => li.key === key)?.value ?? null)
       }))
     });
+  }
+
+  // Attach YoY + common-size to every row (pure, aligned with `periods`).
+  for (const section of sections) {
+    const basis = sectionBasis(section.title, periods);
+    for (const r of section.rows) {
+      r.yoy = yoyOf(r.values);
+      if (basis) r.commonSize = commonSizeOf(r.values, basis);
+    }
   }
 
   return {
