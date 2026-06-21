@@ -9,12 +9,21 @@ type Props = {
   deck: ImDeckInput;
 };
 
+function filenameFrom(header: string | null, fallback: string): string {
+  if (!header) return fallback;
+  const m = /filename="?([^"]+)"?/.exec(header);
+  return m?.[1] ?? fallback;
+}
+
 /**
  * Public IM export triggers. PDF uses the browser print path (?print=1 →
  * ImPrintMode adds .im-print and prints, with the #137 @media print styling).
- * PowerPoint is generated entirely client-side via pptxgenjs (dynamic-imported
- * on click so it stays out of the initial bundle), so the public sample IM can
- * export without any server route or auth.
+ * PowerPoint POSTs the deck to the public server route `/api/public/im-deck`
+ * which renders the .pptx server-side — pptxgenjs (node:fs / node:https) must
+ * NOT be bundled into the browser, so generation stays on the server.
+ *
+ * Note: `import type { ImDeckInput }` is erased at build time, so it does not
+ * pull pptxgenjs into the client bundle.
  */
 export function ImExportButtons({ deck }: Props) {
   const [busy, setBusy] = useState(false);
@@ -28,12 +37,18 @@ export function ImExportButtons({ deck }: Props) {
   async function downloadPptx() {
     setBusy(true);
     try {
-      const { buildImPptxBlob, deckFilename } = await import('@/lib/services/exports/im-pptx');
-      const blob = await buildImPptxBlob(deck);
+      const res = await fetch('/api/public/im-deck', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(deck)
+      });
+      if (!res.ok) return;
+      const blob = await res.blob();
+      const name = filenameFrom(res.headers.get('Content-Disposition'), 'investment-memo.pptx');
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = deckFilename(deck.title);
+      a.download = name;
       document.body.appendChild(a);
       a.click();
       a.remove();
