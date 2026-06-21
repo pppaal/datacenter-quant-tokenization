@@ -158,6 +158,15 @@ export function ComparativeStatementsPanel({ statements }: Props) {
                 {rows[0]?.counterparty?.name ?? counterpartyId}
               </div>
               <CreditInsightStrip insights={insights} />
+              <div className="mb-3 flex flex-wrap items-center gap-2">
+                {view.coverage.map((c) => (
+                  <Chip
+                    key={c.label}
+                    text={`${c.label} 충실도 ${c.present}/${c.total}`}
+                    tone={c.coveragePct >= 70 ? 'good' : c.coveragePct >= 40 ? 'warn' : 'bad'}
+                  />
+                ))}
+              </div>
               {view.integrity.some((p) => p.flags.length > 0) ? (
                 <div className="mb-3 flex flex-wrap items-center gap-2">
                   {view.integrity.flatMap((p) =>
