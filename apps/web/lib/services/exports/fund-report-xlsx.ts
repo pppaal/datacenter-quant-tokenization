@@ -66,6 +66,22 @@ export function fundReportSummaryRows(
   ];
 }
 
+/**
+ * Statement of changes in equity (자본변동표), contribution basis, inception-to-
+ * date — derived exactly from existing data: 출자(납입) − 분배 + 누적평가·운용손익
+ * = 기말자본(NAV). `netInvestedKrw` is `called − distributed`, so the plug
+ * (`NAV − netInvested`) is the cumulative valuation/operating result. Returns
+ * the component rows (the 기말자본 total is added by the sheet/panel).
+ */
+export function fundEquityRows(src: FundReportSource): { item: string; amountKrw: number }[] {
+  return [
+    { item: '기초 자본 (설정 시)', amountKrw: 0 },
+    { item: '출자(LP 납입) 누계', amountKrw: src.calledKrw },
+    { item: '분배 (LP) 누계', amountKrw: -src.distributedKrw },
+    { item: '누적 평가·운용손익', amountKrw: src.navKrw - src.netInvestedKrw }
+  ];
+}
+
 export function fundReportToXlsxSpec(src: FundReportSource): XlsxWorkbookSpec {
   const callTotal = src.calls.reduce((s, c) => s + c.amountKrw, 0);
   const distTotal = src.distributions.reduce((s, d) => s + d.amountKrw, 0);
@@ -103,6 +119,15 @@ export function fundReportToXlsxSpec(src: FundReportSource): XlsxWorkbookSpec {
         ],
         rows: src.distributions,
         totals: { date: '합계', amountKrw: distTotal, purpose: '', status: '' }
+      },
+      {
+        name: '자본변동표',
+        columns: [
+          { header: '항목', key: 'item', type: 'text', width: 26 },
+          { header: '금액(KRW)', key: 'amountKrw', type: 'currency', width: 20 }
+        ],
+        rows: fundEquityRows(src),
+        totals: { item: '기말 자본 (NAV)', amountKrw: src.navKrw }
       }
     ]
   };
