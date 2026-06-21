@@ -254,8 +254,13 @@ function addSectionSlide(
   addFooter(slide, footer, pageNo);
 }
 
-/** Assemble the slides (shared by the Node-buffer and browser-blob writers). */
-function assembleDeck(input: ImDeckInput): pptxgen {
+/**
+ * Render an `ImDeckInput` to a .pptx byte buffer. Server-side only (pptxgenjs
+ * pulls node:fs / node:https, so it must never be bundled for the browser —
+ * callers like the public IM go through /api/public/im-deck). Async because
+ * pptxgenjs serializes the OOXML zip asynchronously.
+ */
+export async function buildImPptx(input: ImDeckInput): Promise<Buffer> {
   const pptx = new pptxgen();
   pptx.defineLayout({ name: 'WIDE', width: 13.33, height: 7.5 });
   pptx.layout = 'WIDE';
@@ -264,25 +269,9 @@ function assembleDeck(input: ImDeckInput): pptxgen {
 
   addCover(pptx, input);
   input.sections.forEach((section, i) => addSectionSlide(pptx, section, input.footer, i + 2));
-  return pptx;
-}
 
-/**
- * Render an `ImDeckInput` to a .pptx byte buffer (Node — server routes/scripts).
- * Async because pptxgenjs serializes the OOXML zip asynchronously.
- */
-export async function buildImPptx(input: ImDeckInput): Promise<Buffer> {
-  const out = await assembleDeck(input).write({ outputType: 'nodebuffer' });
+  const out = await pptx.write({ outputType: 'nodebuffer' });
   return out as Buffer;
-}
-
-/**
- * Render an `ImDeckInput` to a `Blob` (browser — client-side download without a
- * server route, so a public page like the sample IM can export without auth).
- */
-export async function buildImPptxBlob(input: ImDeckInput): Promise<Blob> {
-  const out = await assembleDeck(input).write({ outputType: 'blob' });
-  return out as Blob;
 }
 
 /** Filename-safe slug for the downloaded deck. */
