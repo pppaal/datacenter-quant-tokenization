@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, startTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { useRouterRefresh } from '@/lib/hooks/use-router-refresh';
 
 export function ResearchRefreshButton() {
-  const router = useRouter();
+  const { isRefreshing, refresh } = useRouterRefresh();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -13,7 +13,7 @@ export function ResearchRefreshButton() {
     <div>
       <Button
         variant="secondary"
-        disabled={submitting}
+        disabled={submitting || isRefreshing}
         onClick={async () => {
           setSubmitting(true);
           setError(null);
@@ -30,7 +30,7 @@ export function ResearchRefreshButton() {
               throw new Error(payload?.error ?? 'Failed to refresh research workspace');
             }
 
-            startTransition(() => router.refresh());
+            refresh();
           } catch (caughtError) {
             setError(
               caughtError instanceof Error
@@ -42,7 +42,7 @@ export function ResearchRefreshButton() {
           }
         }}
       >
-        {submitting ? 'Refreshing Research...' : 'Run Research Sync'}
+        {submitting || isRefreshing ? 'Refreshing Research...' : 'Run Research Sync'}
       </Button>
       {error ? <p className="mt-2 text-sm text-rose-300">{error}</p> : null}
     </div>

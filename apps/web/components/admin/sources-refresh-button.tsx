@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, startTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { useRouterRefresh } from '@/lib/hooks/use-router-refresh';
 
 export function SourcesRefreshButton() {
-  const router = useRouter();
+  const { isRefreshing: refreshing, refresh } = useRouterRefresh();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,7 +23,7 @@ export function SourcesRefreshButton() {
         throw new Error(body?.error ?? 'Failed to refresh source adapters');
       }
 
-      startTransition(() => router.refresh());
+      refresh();
     } catch (caughtError) {
       setError(
         caughtError instanceof Error ? caughtError.message : 'Failed to refresh source adapters'
@@ -35,8 +35,8 @@ export function SourcesRefreshButton() {
 
   return (
     <div className="space-y-2">
-      <Button onClick={handleRefresh} disabled={isRefreshing}>
-        {isRefreshing ? 'Refreshing Sources...' : 'Run Source Refresh'}
+      <Button onClick={handleRefresh} disabled={isRefreshing || refreshing}>
+        {isRefreshing || refreshing ? 'Refreshing Sources...' : 'Run Source Refresh'}
       </Button>
       {error ? <div className="text-sm text-rose-300">{error}</div> : null}
     </div>

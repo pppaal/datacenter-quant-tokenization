@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, startTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { useRouterRefresh } from '@/lib/hooks/use-router-refresh';
 
 export function OpsCycleButton() {
-  const router = useRouter();
+  const { isRefreshing, refresh } = useRouterRefresh();
   const [isRunning, setIsRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,7 +23,7 @@ export function OpsCycleButton() {
         throw new Error(body?.error ?? 'Failed to run ops cycle');
       }
 
-      startTransition(() => router.refresh());
+      refresh();
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : 'Failed to run ops cycle');
     } finally {
@@ -33,8 +33,8 @@ export function OpsCycleButton() {
 
   return (
     <div className="space-y-2">
-      <Button onClick={handleRun} disabled={isRunning}>
-        {isRunning ? 'Running Ops Cycle...' : 'Run Ops Cycle'}
+      <Button onClick={handleRun} disabled={isRunning || isRefreshing}>
+        {isRunning || isRefreshing ? 'Running Ops Cycle...' : 'Run Ops Cycle'}
       </Button>
       {error ? <div className="text-sm text-rose-300">{error}</div> : null}
     </div>
