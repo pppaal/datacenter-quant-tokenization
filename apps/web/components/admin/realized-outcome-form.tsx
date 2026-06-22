@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, startTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { SupportedCurrency } from '@/lib/finance/currency';
@@ -12,6 +11,7 @@ import {
   realizedOutcomeSchema,
   type RealizedOutcomeInput
 } from '@/lib/validations/realized-outcome';
+import { useRouterRefresh } from '@/lib/hooks/use-router-refresh';
 
 const numericFields: Array<keyof RealizedOutcomeInput> = [
   'occupancyPct',
@@ -52,7 +52,7 @@ export function RealizedOutcomeForm({
   assetId: string;
   inputCurrency?: SupportedCurrency;
 }) {
-  const router = useRouter();
+  const { isRefreshing, refresh } = useRouterRefresh();
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const form = useForm<RealizedOutcomeInput>({
@@ -91,7 +91,7 @@ export function RealizedOutcomeForm({
         exitCapRatePct: undefined,
         notes: undefined
       });
-      startTransition(() => router.refresh());
+      refresh();
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Failed to save realized outcome');
     } finally {
@@ -145,8 +145,8 @@ export function RealizedOutcomeForm({
         </p>
         <div className="flex items-center gap-3">
           {errorMessage ? <span className="text-sm text-rose-300">{errorMessage}</span> : null}
-          <Button type="submit" disabled={submitting}>
-            {submitting ? 'Saving...' : 'Save Realized Outcome'}
+          <Button type="submit" disabled={submitting || isRefreshing}>
+            {submitting || isRefreshing ? 'Saving...' : 'Save Realized Outcome'}
           </Button>
         </div>
       </div>
