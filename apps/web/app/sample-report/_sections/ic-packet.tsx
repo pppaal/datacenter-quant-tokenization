@@ -19,7 +19,7 @@ export function IcPacketSection({ data }: { data: SampleReportData }) {
             {asset.committeePackets.length === 1 ? '' : 's'}
           </Badge>
         </div>
-        <p className="mt-2 max-w-3xl text-sm text-slate-400">
+        <p className="mt-2 max-w-3xl text-sm text-[hsl(var(--foreground-muted))]">
           Investment committee packets prepared on the asset. Decision summary records the outcome
           (CONDITIONAL / APPROVED / DEFERRED / DECLINED); follow-up captures the resulting action
           items.
@@ -28,10 +28,10 @@ export function IcPacketSection({ data }: { data: SampleReportData }) {
           {asset.committeePackets.map((p) => {
             const statusTone =
               p.status === 'APPROVED'
-                ? 'border-emerald-300/30 bg-emerald-300/[0.04] text-emerald-200'
+                ? 'border-emerald-300/30 bg-emerald-300/[0.04] text-[hsl(var(--success))]'
                 : p.status === 'DECLINED'
-                  ? 'border-rose-300/30 bg-rose-300/[0.04] text-rose-200'
-                  : 'border-amber-300/30 bg-amber-300/[0.04] text-amber-200';
+                  ? 'border-rose-300/30 bg-rose-300/[0.04] text-[hsl(var(--danger))]'
+                  : 'border-amber-300/30 bg-amber-300/[0.04] text-[hsl(var(--warning))]';
             return (
               <li
                 key={p.id}
@@ -40,10 +40,10 @@ export function IcPacketSection({ data }: { data: SampleReportData }) {
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold text-white">{p.title}</span>
+                      <span className="font-semibold text-[hsl(var(--foreground))]">{p.title}</span>
                       <FreshnessDot observedAt={p.scheduledFor ?? p.updatedAt} />
                     </div>
-                    <div className="mt-1 text-[11px] text-slate-500">
+                    <div className="mt-1 text-[11px] text-[hsl(var(--muted))]">
                       <span className="font-mono">{p.packetCode}</span>
                       {p.scheduledFor ? ` · scheduled ${formatDate(p.scheduledFor)}` : ''}
                       {p.preparedByLabel ? ` · prepared by ${p.preparedByLabel}` : ''}
@@ -56,16 +56,16 @@ export function IcPacketSection({ data }: { data: SampleReportData }) {
                   </span>
                 </div>
                 {p.decisionSummary ? (
-                  <p className="mt-3 text-sm leading-6 text-slate-200">
-                    <span className="text-[10px] uppercase tracking-wide text-slate-500">
+                  <p className="mt-3 text-sm leading-6 text-[hsl(var(--foreground))]">
+                    <span className="text-[10px] uppercase tracking-wide text-[hsl(var(--muted))]">
                       Decision ·{' '}
                     </span>
                     {p.decisionSummary}
                   </p>
                 ) : null}
                 {p.followUpSummary ? (
-                  <p className="mt-2 text-sm leading-6 text-slate-300">
-                    <span className="text-[10px] uppercase tracking-wide text-slate-500">
+                  <p className="mt-2 text-sm leading-6 text-[hsl(var(--foreground-muted))]">
+                    <span className="text-[10px] uppercase tracking-wide text-[hsl(var(--muted))]">
                       Follow-up ·{' '}
                     </span>
                     {p.followUpSummary}

@@ -22,7 +22,7 @@ export function RisksSection({ data }: { data: SampleReportData }) {
                 <Badge tone="warn">{classifiedRisks.length} total</Badge>
               </div>
             </div>
-            <p className="mt-2 text-sm text-slate-400">
+            <p className="mt-2 text-sm text-[hsl(var(--foreground-muted))]">
               Outstanding underwriting risks, severity-ranked. Severity and category are inferred
               from the model’s risk language — confirm against diligence before committee sign-off.
             </p>
@@ -34,11 +34,13 @@ export function RisksSection({ data }: { data: SampleReportData }) {
                 >
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge tone={risk.tone}>{risk.severity}</Badge>
-                    <span className="text-[11px] uppercase tracking-[0.16em] text-slate-500">
+                    <span className="text-[11px] uppercase tracking-[0.16em] text-[hsl(var(--muted))]">
                       {risk.category}
                     </span>
                   </div>
-                  <span className="mt-2 block leading-6 text-slate-200">{risk.text}</span>
+                  <span className="mt-2 block leading-6 text-[hsl(var(--foreground))]">
+                    {risk.text}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -51,7 +53,7 @@ export function RisksSection({ data }: { data: SampleReportData }) {
               <div className="eyebrow">Due diligence checklist</div>
               <Badge>{latestRun.ddChecklist.length} open</Badge>
             </div>
-            <p className="mt-2 text-sm text-slate-400">
+            <p className="mt-2 text-sm text-[hsl(var(--foreground-muted))]">
               Outstanding diligence items required to close, tagged by discipline (inferred). Items
               resolve as documents and structured inputs replace placeholders, lifting confidence
               toward investment-committee promotion.
@@ -67,10 +69,10 @@ export function RisksSection({ data }: { data: SampleReportData }) {
                     className="mt-1.5 inline-block h-3 w-3 shrink-0 rounded-[3px] border border-slate-500"
                   />
                   <div className="min-w-0">
-                    <div className="text-[11px] uppercase tracking-[0.16em] text-slate-500">
+                    <div className="text-[11px] uppercase tracking-[0.16em] text-[hsl(var(--muted))]">
                       {inferRiskCategory(item)}
                     </div>
-                    <span className="leading-6 text-slate-200">{item}</span>
+                    <span className="leading-6 text-[hsl(var(--foreground))]">{item}</span>
                   </div>
                 </li>
               ))}

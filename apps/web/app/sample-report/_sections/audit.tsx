@@ -14,7 +14,7 @@ export function AuditSection({ data }: { data: SampleReportData }) {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <div className="eyebrow">Audit trail</div>
-            <p className="mt-2 max-w-3xl text-sm text-slate-400">
+            <p className="mt-2 max-w-3xl text-sm text-[hsl(var(--foreground-muted))]">
               Recent system events on the asset, valuation run, and counterparties. Establishes who
               touched the underwriting most recently — required for committee review of data lineage
               and for SOC-2 / fund-administrator review.
@@ -27,15 +27,17 @@ export function AuditSection({ data }: { data: SampleReportData }) {
             ) : null}
           </div>
         </div>
-        <div className="mt-3 text-[11px] text-slate-500">
+        <div className="mt-3 text-[11px] text-[hsl(var(--muted))]">
           Last event: {auditTrail.lastEventAt ? formatDate(auditTrail.lastEventAt) : '—'} · Distinct
           actors:{' '}
-          <span className="font-mono text-slate-300">{auditTrail.uniqueActors.join(', ')}</span>
+          <span className="font-mono text-[hsl(var(--foreground-muted))]">
+            {auditTrail.uniqueActors.join(', ')}
+          </span>
         </div>
         <div className="mt-4 overflow-x-auto rounded-[14px] border border-[hsl(var(--border))]">
           <table className="w-full text-xs">
             <thead>
-              <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-slate-500">
+              <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-[hsl(var(--muted))]">
                 <th className="px-2 py-2 font-semibold">When</th>
                 <th className="px-2 py-2 font-semibold">Actor</th>
                 <th className="px-2 py-2 font-semibold">Action</th>
@@ -43,23 +45,27 @@ export function AuditSection({ data }: { data: SampleReportData }) {
                 <th className="px-2 py-2 text-right font-semibold">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[hsl(var(--border))] text-slate-200">
+            <tbody className="divide-y divide-[hsl(var(--border))] text-[hsl(var(--foreground))]">
               {auditTrail.events.map((e) => {
                 const ok = /SUCCESS|OK/i.test(e.statusLabel);
                 return (
                   <tr key={e.id}>
-                    <td className="px-2 py-2 font-mono text-[10px] text-slate-400">
+                    <td className="px-2 py-2 font-mono text-[10px] text-[hsl(var(--foreground-muted))]">
                       {formatDate(e.createdAt)}
                     </td>
                     <td className="px-2 py-2">
-                      <div className="text-white">{e.actorIdentifier}</div>
-                      <div className="text-[10px] text-slate-500">{e.actorRole}</div>
+                      <div className="text-[hsl(var(--foreground))]">{e.actorIdentifier}</div>
+                      <div className="text-[10px] text-[hsl(var(--muted))]">{e.actorRole}</div>
                     </td>
-                    <td className="px-2 py-2 font-mono text-[11px] text-slate-300">{e.action}</td>
-                    <td className="px-2 py-2 text-[11px] text-slate-400">{e.entityType}</td>
+                    <td className="px-2 py-2 font-mono text-[11px] text-[hsl(var(--foreground-muted))]">
+                      {e.action}
+                    </td>
+                    <td className="px-2 py-2 text-[11px] text-[hsl(var(--foreground-muted))]">
+                      {e.entityType}
+                    </td>
                     <td
                       className={`px-2 py-2 text-right font-mono text-[10px] ${
-                        ok ? 'text-emerald-300' : 'text-rose-300'
+                        ok ? 'text-[hsl(var(--success))]' : 'text-[hsl(var(--danger))]'
                       }`}
                     >
                       {e.statusLabel}

@@ -22,7 +22,7 @@ export function SourcesUsesSection({ data }: { data: SampleReportData }) {
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <div className="eyebrow">Sources & Uses</div>
-          <p className="mt-2 text-sm text-slate-400">
+          <p className="mt-2 text-sm text-[hsl(var(--foreground-muted))]">
             Initial capitalization at close. Equity equals total cost less drawn debt at funding;
             uses are summed independently from the project capex breakdown below, and the funding
             line reconciles sources against that cost. Reserves accrue against the year-one equity
@@ -53,7 +53,7 @@ export function SourcesUsesSection({ data }: { data: SampleReportData }) {
             </KeyValueRow>
             <KeyValueRow variant="inline" label="Funding surplus / (gap)">
               {fundingDeltaKrw !== null ? (
-                <span className={fundingDeltaKrw < 0 ? 'text-rose-300' : undefined}>
+                <span className={fundingDeltaKrw < 0 ? 'text-[hsl(var(--danger))]' : undefined}>
                   {formatCompactCurrencyFromKrwAtRate(
                     fundingDeltaKrw,
                     displayCurrency,
@@ -84,13 +84,13 @@ export function SourcesUsesSection({ data }: { data: SampleReportData }) {
             <div className="mt-5 overflow-x-auto rounded-[14px] border border-[hsl(var(--border))]">
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-slate-500">
+                  <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-[hsl(var(--muted))]">
                     <th className="px-2 py-2 font-semibold">Uses · line item</th>
                     <th className="px-2 py-2 text-right font-semibold">Amount</th>
                     <th className="px-2 py-2 text-right font-semibold">% of total</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[hsl(var(--border))] text-slate-200">
+                <tbody className="divide-y divide-[hsl(var(--border))] text-[hsl(var(--foreground))]">
                   {(
                     [
                       ['Land', capexBreakdown.landValueKrw],
@@ -105,7 +105,7 @@ export function SourcesUsesSection({ data }: { data: SampleReportData }) {
                     .filter(([, v]) => typeof v === 'number' && v > 0)
                     .map(([label, value]) => (
                       <tr key={label}>
-                        <td className="px-2 py-2 text-slate-300">{label}</td>
+                        <td className="px-2 py-2 text-[hsl(var(--foreground-muted))]">{label}</td>
                         <td className="px-2 py-2 text-right font-mono">
                           {formatCompactCurrencyFromKrwAtRate(
                             value as number,
@@ -113,7 +113,7 @@ export function SourcesUsesSection({ data }: { data: SampleReportData }) {
                             fxRateToKrw
                           )}
                         </td>
-                        <td className="px-2 py-2 text-right font-mono text-slate-400">
+                        <td className="px-2 py-2 text-right font-mono text-[hsl(var(--foreground-muted))]">
                           {(
                             ((value as number) / (capexBreakdown.totalCapexKrw ?? 1)) *
                             100
@@ -123,15 +123,17 @@ export function SourcesUsesSection({ data }: { data: SampleReportData }) {
                       </tr>
                     ))}
                   <tr className="bg-[hsl(var(--surface-hover))] font-semibold">
-                    <td className="px-2 py-2 text-white">Total</td>
-                    <td className="px-2 py-2 text-right font-mono text-white">
+                    <td className="px-2 py-2 text-[hsl(var(--foreground))]">Total</td>
+                    <td className="px-2 py-2 text-right font-mono text-[hsl(var(--foreground))]">
                       {formatCompactCurrencyFromKrwAtRate(
                         capexBreakdown.totalCapexKrw,
                         displayCurrency,
                         fxRateToKrw
                       )}
                     </td>
-                    <td className="px-2 py-2 text-right font-mono text-slate-400">100.0%</td>
+                    <td className="px-2 py-2 text-right font-mono text-[hsl(var(--foreground-muted))]">
+                      100.0%
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -142,7 +144,7 @@ export function SourcesUsesSection({ data }: { data: SampleReportData }) {
 
         <Card>
           <div className="eyebrow">Equity returns</div>
-          <p className="mt-2 text-sm text-slate-400">
+          <p className="mt-2 text-sm text-[hsl(var(--foreground-muted))]">
             Levered returns computed from the year-by-year cash flow stream of the base case. Equity
             multiple = total distributions / initial equity.
           </p>

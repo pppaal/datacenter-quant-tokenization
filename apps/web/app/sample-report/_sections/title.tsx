@@ -20,7 +20,7 @@ export function TitleSection({ data }: { data: SampleReportData }) {
     <section id="im-title" className="app-shell py-4">
       <Card>
         <div className="eyebrow">Title, parcel &amp; planning diligence</div>
-        <p className="mt-2 max-w-3xl text-sm text-slate-400">
+        <p className="mt-2 max-w-3xl text-sm text-[hsl(var(--foreground-muted))]">
           Legal diligence anchors. Ownership establishes title; parcels carry zoning and official
           land valuation; encumbrances list liens and pledges; planning constraints capture zoning
           overlays and use restrictions.
@@ -37,12 +37,14 @@ export function TitleSection({ data }: { data: SampleReportData }) {
                     className="rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2 text-sm"
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-semibold text-white">{o.ownerName}</span>
-                      <span className="font-mono text-xs text-slate-400">
+                      <span className="font-semibold text-[hsl(var(--foreground))]">
+                        {o.ownerName}
+                      </span>
+                      <span className="font-mono text-xs text-[hsl(var(--foreground-muted))]">
                         {typeof o.ownershipPct === 'number' ? `${o.ownershipPct.toFixed(1)}%` : '—'}
                       </span>
                     </div>
-                    <div className="mt-1 text-[11px] text-slate-500">
+                    <div className="mt-1 text-[11px] text-[hsl(var(--muted))]">
                       {o.entityType ?? 'entity'} ·
                       {o.effectiveDate ? ` from ${formatDate(o.effectiveDate)}` : ' open-ended'}
                       {' · '}
@@ -64,11 +66,11 @@ export function TitleSection({ data }: { data: SampleReportData }) {
                     className="rounded-[14px] border border-rose-300/15 bg-rose-300/[0.04] px-3 py-2 text-sm"
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-semibold text-white">
+                      <span className="font-semibold text-[hsl(var(--foreground))]">
                         {e.encumbranceType}
                         {e.holderName ? ` · ${e.holderName}` : ''}
                       </span>
-                      <span className="font-mono text-xs text-slate-300">
+                      <span className="font-mono text-xs text-[hsl(var(--foreground-muted))]">
                         {typeof e.securedAmountKrw === 'number'
                           ? formatCompactCurrencyFromKrwAtRate(
                               e.securedAmountKrw,
@@ -78,7 +80,7 @@ export function TitleSection({ data }: { data: SampleReportData }) {
                           : '—'}
                       </span>
                     </div>
-                    <div className="mt-1 text-[11px] text-slate-500">
+                    <div className="mt-1 text-[11px] text-[hsl(var(--muted))]">
                       rank {e.priorityRank ?? '—'}
                       {e.statusLabel ? ` · ${e.statusLabel}` : ''}
                       {e.effectiveDate ? ` · from ${formatDate(e.effectiveDate)}` : ''}
@@ -99,14 +101,14 @@ export function TitleSection({ data }: { data: SampleReportData }) {
                     className="rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2 text-sm"
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-mono text-white">{p.parcelId}</span>
-                      <span className="text-[11px] text-slate-400">
+                      <span className="font-mono text-[hsl(var(--foreground))]">{p.parcelId}</span>
+                      <span className="text-[11px] text-[hsl(var(--foreground-muted))]">
                         {typeof p.landAreaSqm === 'number'
                           ? `${formatNumber(p.landAreaSqm, 0)} sqm`
                           : '—'}
                       </span>
                     </div>
-                    <div className="mt-1 text-[11px] text-slate-500">
+                    <div className="mt-1 text-[11px] text-[hsl(var(--muted))]">
                       {p.zoningCode ?? p.landUseType ?? 'zoning n/a'} ·
                       {typeof p.officialLandValueKrw === 'number'
                         ? ` ${formatCompactCurrencyFromKrwAtRate(p.officialLandValueKrw, displayCurrency, fxRateToKrw)} official`
@@ -128,14 +130,14 @@ export function TitleSection({ data }: { data: SampleReportData }) {
                     className="rounded-[14px] border border-amber-300/15 bg-amber-300/[0.04] px-3 py-2 text-sm"
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-semibold text-white">{c.title}</span>
+                      <span className="font-semibold text-[hsl(var(--foreground))]">{c.title}</span>
                       {c.severity ? (
-                        <span className="text-[10px] uppercase tracking-wide text-amber-300">
+                        <span className="text-[10px] uppercase tracking-wide text-[hsl(var(--warning))]">
                           {c.severity}
                         </span>
                       ) : null}
                     </div>
-                    <div className="mt-1 text-[11px] text-slate-400">
+                    <div className="mt-1 text-[11px] text-[hsl(var(--foreground-muted))]">
                       {c.constraintType}
                       {c.description ? ` · ${c.description}` : ''}
                     </div>
@@ -155,14 +157,14 @@ export function TitleSection({ data }: { data: SampleReportData }) {
                     className="rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2 text-sm"
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-semibold text-white">
+                      <span className="font-semibold text-[hsl(var(--foreground))]">
                         {b.buildingName ?? b.buildingIdentifier ?? 'Unnamed building'}
                       </span>
-                      <span className="text-[11px] text-slate-400">
+                      <span className="text-[11px] text-[hsl(var(--foreground-muted))]">
                         {b.completionDate ? formatDate(b.completionDate) : '—'}
                       </span>
                     </div>
-                    <div className="mt-1 text-[11px] text-slate-500">
+                    <div className="mt-1 text-[11px] text-[hsl(var(--muted))]">
                       {b.useType ?? 'use n/a'} · {b.floorCount ?? '–'}F / {b.basementCount ?? '–'}B
                       ·
                       {typeof b.grossFloorAreaSqm === 'number'

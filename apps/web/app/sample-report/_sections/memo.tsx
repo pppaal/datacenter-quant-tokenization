@@ -63,19 +63,27 @@ export function MemoSection({ data }: { data: SampleReportData }) {
         <Card>
           <div className="eyebrow">Investment Memo (IM)</div>
           <div className="mt-5 space-y-5">
-            <p className="text-base leading-8 text-slate-200">{latestRun.underwritingMemo}</p>
+            <p className="text-base leading-8 text-[hsl(var(--foreground))]">
+              {latestRun.underwritingMemo}
+            </p>
             <div className="grid gap-3 md:grid-cols-3">
               <div className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4">
                 <div className="fine-print">Asset Thesis</div>
-                <p className="mt-3 text-sm leading-7 text-slate-300">{assetThesis}</p>
+                <p className="mt-3 text-sm leading-7 text-[hsl(var(--foreground-muted))]">
+                  {assetThesis}
+                </p>
               </div>
               <div className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4">
                 <div className="fine-print">Return Profile</div>
-                <p className="mt-3 text-sm leading-7 text-slate-300">{returnProfile}</p>
+                <p className="mt-3 text-sm leading-7 text-[hsl(var(--foreground-muted))]">
+                  {returnProfile}
+                </p>
               </div>
               <div className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4">
                 <div className="fine-print">Diligence Posture</div>
-                <p className="mt-3 text-sm leading-7 text-slate-300">{diligencePosture}</p>
+                <p className="mt-3 text-sm leading-7 text-[hsl(var(--foreground-muted))]">
+                  {diligencePosture}
+                </p>
               </div>
             </div>
           </div>
@@ -84,16 +92,16 @@ export function MemoSection({ data }: { data: SampleReportData }) {
         <div className="grid gap-6">
           <Card>
             <div className="eyebrow">Committee Snapshot</div>
-            <div className="mt-4 grid gap-4 text-sm text-slate-300">
+            <div className="mt-4 grid gap-4 text-sm text-[hsl(var(--foreground-muted))]">
               <div className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4">
                 <div className="fine-print">Updated</div>
-                <div className="mt-2 text-lg font-semibold text-white">
+                <div className="mt-2 text-lg font-semibold text-[hsl(var(--foreground))]">
                   {formatDate(latestRun.createdAt)}
                 </div>
               </div>
               <div className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4">
                 <div className="fine-print">Latest Base Case</div>
-                <div className="mt-2 text-lg font-semibold text-white">
+                <div className="mt-2 text-lg font-semibold text-[hsl(var(--foreground))]">
                   {formatCompactCurrencyFromKrwAtRate(
                     latestRun.baseCaseValueKrw,
                     displayCurrency,
@@ -103,10 +111,12 @@ export function MemoSection({ data }: { data: SampleReportData }) {
               </div>
               <div className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4">
                 <div className="fine-print">Confidence</div>
-                <div className="mt-2 text-lg font-semibold text-white">
+                <div className="mt-2 text-lg font-semibold text-[hsl(var(--foreground))]">
                   {formatNumber(latestRun.confidenceScore, 1)}
                   {latestRun.confidenceScore !== null && latestRun.confidenceScore !== undefined ? (
-                    <span className="ml-1 text-xs font-normal text-slate-400">/ 10</span>
+                    <span className="ml-1 text-xs font-normal text-[hsl(var(--foreground-muted))]">
+                      / 10
+                    </span>
                   ) : null}
                 </div>
               </div>
@@ -115,7 +125,7 @@ export function MemoSection({ data }: { data: SampleReportData }) {
 
           <Card>
             <div className="eyebrow">Key Risks</div>
-            <ul className="mt-4 space-y-3 text-sm text-slate-300">
+            <ul className="mt-4 space-y-3 text-sm text-[hsl(var(--foreground-muted))]">
               {latestRun.keyRisks.map((risk) => (
                 <li
                   key={risk}
@@ -129,7 +139,7 @@ export function MemoSection({ data }: { data: SampleReportData }) {
 
           <Card>
             <div className="eyebrow">DD Checklist</div>
-            <ul className="mt-4 space-y-3 text-sm text-slate-300">
+            <ul className="mt-4 space-y-3 text-sm text-[hsl(var(--foreground-muted))]">
               {latestRun.ddChecklist.map((item) => (
                 <li
                   key={item}
@@ -174,11 +184,13 @@ export function MemoSection({ data }: { data: SampleReportData }) {
           {scenarios.map((scenario) => (
             <div
               key={scenario.id}
-              className="rounded-[22px] border border-[hsl(var(--border))] bg-slate-950/45 p-4"
+              className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4"
             >
               <div className="flex items-center justify-between gap-3">
-                <h3 className="text-lg font-semibold text-white">{scenario.name}</h3>
-                <span className="text-sm text-slate-400">
+                <h3 className="text-lg font-semibold text-[hsl(var(--foreground))]">
+                  {scenario.name}
+                </h3>
+                <span className="text-sm text-[hsl(var(--foreground-muted))]">
                   {formatCompactCurrencyFromKrwAtRate(
                     scenario.valuationKrw,
                     displayCurrency,
@@ -186,21 +198,21 @@ export function MemoSection({ data }: { data: SampleReportData }) {
                   )}
                 </span>
               </div>
-              <div className="mt-4 grid gap-3 text-sm text-slate-300 md:grid-cols-3">
+              <div className="mt-4 grid gap-3 text-sm text-[hsl(var(--foreground-muted))] md:grid-cols-3">
                 <div>
-                  <div className="text-slate-500">Implied Yield</div>
+                  <div className="text-[hsl(var(--muted))]">Implied Yield</div>
                   <div>{formatPercent(scenario.impliedYieldPct)}</div>
                 </div>
                 <div>
-                  <div className="text-slate-500">Exit Cap Rate</div>
+                  <div className="text-[hsl(var(--muted))]">Exit Cap Rate</div>
                   <div>{formatPercent(scenario.exitCapRatePct)}</div>
                 </div>
                 <div>
-                  <div className="text-slate-500">DSCR</div>
+                  <div className="text-[hsl(var(--muted))]">DSCR</div>
                   <div>{formatNumber(scenario.debtServiceCoverage, 2)}x</div>
                 </div>
               </div>
-              <p className="mt-3 text-sm text-slate-400">{scenario.notes}</p>
+              <p className="mt-3 text-sm text-[hsl(var(--foreground-muted))]">{scenario.notes}</p>
             </div>
           ))}
         </Card>
@@ -210,10 +222,10 @@ export function MemoSection({ data }: { data: SampleReportData }) {
 
           <Card className="hero-mesh print-hidden">
             <div className="eyebrow">Next Step</div>
-            <h2 className="mt-3 text-2xl font-semibold text-white">
+            <h2 className="mt-3 text-2xl font-semibold text-[hsl(var(--foreground))]">
               See how this IM is generated from a live workflow.
             </h2>
-            <p className="mt-4 text-sm leading-7 text-slate-300">
+            <p className="mt-4 text-sm leading-7 text-[hsl(var(--foreground-muted))]">
               Open the admin console to create a new asset, run the analysis, and produce a new
               committee-ready memo from live data and assumptions.
             </p>

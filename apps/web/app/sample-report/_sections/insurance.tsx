@@ -15,7 +15,7 @@ export function InsuranceSection({ data }: { data: SampleReportData }) {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <div className="eyebrow">Insurance register</div>
-            <p className="mt-2 max-w-3xl text-sm text-slate-400">
+            <p className="mt-2 max-w-3xl text-sm text-[hsl(var(--foreground-muted))]">
               Active policies covering property, business interruption, liability, construction, and
               cyber. Renewals expiring within 90 days are flagged for pre-IC review; coverage limits
               anchor the LP-side underwriting of catastrophic loss exposure.
@@ -51,15 +51,15 @@ export function InsuranceSection({ data }: { data: SampleReportData }) {
                 className={`rounded-[16px] border ${tone} p-3`}
               >
                 <div className="flex items-center justify-between gap-2">
-                  <div className="text-[11px] uppercase tracking-wide text-slate-500">
+                  <div className="text-[11px] uppercase tracking-wide text-[hsl(var(--muted))]">
                     {tile.label}
                   </div>
-                  <span className="flex items-center gap-1.5 text-[10px] text-slate-400">
+                  <span className="flex items-center gap-1.5 text-[10px] text-[hsl(var(--foreground-muted))]">
                     <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />
                     {tile.status}
                   </span>
                 </div>
-                <div className="mt-2 font-mono text-sm font-semibold text-white">
+                <div className="mt-2 font-mono text-sm font-semibold text-[hsl(var(--foreground))]">
                   {tile.coverageKrw !== null
                     ? formatCompactCurrencyFromKrwAtRate(
                         tile.coverageKrw,
@@ -68,14 +68,14 @@ export function InsuranceSection({ data }: { data: SampleReportData }) {
                       )
                     : '—'}
                 </div>
-                <div className="mt-1 text-[10px] text-slate-500">
+                <div className="mt-1 text-[10px] text-[hsl(var(--muted))]">
                   {tile.insurer ?? '—'}
                   {tile.premiumKrw !== null
                     ? ` · premium ${formatCompactCurrencyFromKrwAtRate(tile.premiumKrw, displayCurrency, fxRateToKrw)}`
                     : ''}
                 </div>
                 {tile.expiresOn ? (
-                  <div className="mt-1 text-[10px] text-slate-500">
+                  <div className="mt-1 text-[10px] text-[hsl(var(--muted))]">
                     Expires {formatDate(tile.expiresOn)}
                   </div>
                 ) : null}
@@ -85,8 +85,10 @@ export function InsuranceSection({ data }: { data: SampleReportData }) {
         </div>
         <div className="mt-4 grid gap-3 text-[11px] md:grid-cols-3">
           <div className="rounded-[12px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2">
-            <div className="text-[10px] uppercase tracking-wide text-slate-500">Total coverage</div>
-            <div className="mt-1 font-mono text-sm text-white">
+            <div className="text-[10px] uppercase tracking-wide text-[hsl(var(--muted))]">
+              Total coverage
+            </div>
+            <div className="mt-1 font-mono text-sm text-[hsl(var(--foreground))]">
               {formatCompactCurrencyFromKrwAtRate(
                 insuranceSummary.totalCoverageKrw,
                 displayCurrency,
@@ -95,10 +97,10 @@ export function InsuranceSection({ data }: { data: SampleReportData }) {
             </div>
           </div>
           <div className="rounded-[12px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2">
-            <div className="text-[10px] uppercase tracking-wide text-slate-500">
+            <div className="text-[10px] uppercase tracking-wide text-[hsl(var(--muted))]">
               Total annual premium
             </div>
-            <div className="mt-1 font-mono text-sm text-white">
+            <div className="mt-1 font-mono text-sm text-[hsl(var(--foreground))]">
               {formatCompactCurrencyFromKrwAtRate(
                 insuranceSummary.totalPremiumKrw,
                 displayCurrency,
@@ -107,8 +109,10 @@ export function InsuranceSection({ data }: { data: SampleReportData }) {
             </div>
           </div>
           <div className="rounded-[12px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2">
-            <div className="text-[10px] uppercase tracking-wide text-slate-500">Avg deductible</div>
-            <div className="mt-1 font-mono text-sm text-white">
+            <div className="text-[10px] uppercase tracking-wide text-[hsl(var(--muted))]">
+              Avg deductible
+            </div>
+            <div className="mt-1 font-mono text-sm text-[hsl(var(--foreground))]">
               {insuranceSummary.averageDeductibleKrw !== null
                 ? formatCompactCurrencyFromKrwAtRate(
                     insuranceSummary.averageDeductibleKrw,

@@ -39,12 +39,14 @@ export function CoverSection({ data }: { data: SampleReportData }) {
           <div className="space-y-5">
             <div>
               <div className="fine-print">Committee Draft · {formatDate(latestRun.createdAt)}</div>
-              <h1 className="mt-3 text-5xl font-semibold leading-[0.96] tracking-[-0.05em] text-white md:text-6xl">
+              <h1 className="mt-3 text-5xl font-semibold leading-[0.96] tracking-[-0.05em] text-[hsl(var(--foreground))] md:text-6xl">
                 {asset.name}
               </h1>
             </div>
 
-            <p className="max-w-3xl text-lg leading-8 text-slate-300">{asset.description}</p>
+            <p className="max-w-3xl text-lg leading-8 text-[hsl(var(--foreground-muted))]">
+              {asset.description}
+            </p>
 
             <div className="print-hidden flex flex-wrap gap-3" data-im-print-hidden>
               <PrintImButton />
@@ -56,33 +58,37 @@ export function CoverSection({ data }: { data: SampleReportData }) {
             <div className="grid gap-4 md:grid-cols-3">
               <div className="metric-card">
                 <div className="fine-print">Recommendation</div>
-                <div className="mt-3 text-2xl font-semibold text-white">{recommendation}</div>
-                <p className="mt-2 text-sm text-slate-400">
+                <div className="mt-3 text-2xl font-semibold text-[hsl(var(--foreground))]">
+                  {recommendation}
+                </div>
+                <p className="mt-2 text-sm text-[hsl(var(--foreground-muted))]">
                   Confidence, scenario spread, and diligence posture aggregated.
                 </p>
               </div>
               <div className="metric-card">
                 <div className="fine-print">Base Case Value</div>
-                <div className="mt-3 text-2xl font-semibold text-white">
+                <div className="mt-3 text-2xl font-semibold text-[hsl(var(--foreground))]">
                   {formatCompactCurrencyFromKrwAtRate(
                     latestRun.baseCaseValueKrw,
                     displayCurrency,
                     fxRateToKrw
                   )}
                 </div>
-                <p className="mt-2 text-sm text-slate-400">
+                <p className="mt-2 text-sm text-[hsl(var(--foreground-muted))]">
                   Underwriting base case anchoring the committee view.
                 </p>
               </div>
               <div className="metric-card">
                 <div className="fine-print">Confidence Score</div>
-                <div className="mt-3 text-2xl font-semibold text-white">
+                <div className="mt-3 text-2xl font-semibold text-[hsl(var(--foreground))]">
                   {formatNumber(latestRun.confidenceScore, 1)}
                   {latestRun.confidenceScore !== null && latestRun.confidenceScore !== undefined ? (
-                    <span className="ml-1 text-sm font-normal text-slate-400">/ 10</span>
+                    <span className="ml-1 text-sm font-normal text-[hsl(var(--foreground-muted))]">
+                      / 10
+                    </span>
                   ) : null}
                 </div>
-                <p className="mt-2 text-sm text-slate-400">
+                <p className="mt-2 text-sm text-[hsl(var(--foreground-muted))]">
                   Composite of input coverage, freshness, and fallback usage.
                 </p>
               </div>
@@ -146,12 +152,14 @@ export function CoverSection({ data }: { data: SampleReportData }) {
                 <a
                   key={kpi.label}
                   href={kpi.href}
-                  className="group bg-slate-950/80 px-3 py-2.5 transition hover:bg-slate-900"
+                  className="group bg-[hsl(var(--panel-alt))] px-3 py-2.5 transition hover:bg-[hsl(var(--surface-hover))]"
                 >
-                  <div className="text-[10px] uppercase tracking-wide text-slate-500">
+                  <div className="text-[10px] uppercase tracking-wide text-[hsl(var(--muted))]">
                     {kpi.label}
                   </div>
-                  <div className="mt-1 font-mono text-sm font-semibold text-white">{kpi.value}</div>
+                  <div className="mt-1 font-mono text-sm font-semibold text-[hsl(var(--foreground))]">
+                    {kpi.value}
+                  </div>
                 </a>
               ))}
             </div>
@@ -159,15 +167,17 @@ export function CoverSection({ data }: { data: SampleReportData }) {
             {compareAsset && compareLatestRun ? (
               <div className="mt-5 rounded-[18px] border border-[hsl(var(--border-strong))] bg-[hsl(var(--panel-alt))] p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="text-[11px] uppercase tracking-wide text-slate-400">
+                  <div className="text-[11px] uppercase tracking-wide text-[hsl(var(--foreground-muted))]">
                     Compare vs.{' '}
-                    <span className="font-mono text-slate-200">{compareAsset.assetCode}</span>
+                    <span className="font-mono text-[hsl(var(--foreground))]">
+                      {compareAsset.assetCode}
+                    </span>
                     {' — '}
-                    <span className="text-slate-300">{compareAsset.name}</span>
+                    <span className="text-[hsl(var(--foreground-muted))]">{compareAsset.name}</span>
                   </div>
                   <a
                     href={`/sample-report`}
-                    className="text-[10px] text-slate-500 hover:text-slate-300"
+                    className="text-[10px] text-[hsl(var(--muted))] hover:text-[hsl(var(--foreground-muted))]"
                   >
                     clear ✕
                   </a>
@@ -224,14 +234,14 @@ export function CoverSection({ data }: { data: SampleReportData }) {
                         key={kpi.label}
                         className="rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2"
                       >
-                        <div className="text-[10px] uppercase tracking-wide text-slate-500">
+                        <div className="text-[10px] uppercase tracking-wide text-[hsl(var(--muted))]">
                           {kpi.label}
                         </div>
                         <div className="mt-1 flex items-baseline justify-between gap-2 font-mono text-xs">
-                          <span className="font-semibold text-white">
+                          <span className="font-semibold text-[hsl(var(--foreground))]">
                             {kpi.thisVal !== null ? kpi.fmt(kpi.thisVal) : '—'}
                           </span>
-                          <span className="text-slate-500">
+                          <span className="text-[hsl(var(--muted))]">
                             {kpi.otherVal !== null ? kpi.fmt(kpi.otherVal) : '—'}
                           </span>
                         </div>
@@ -239,10 +249,10 @@ export function CoverSection({ data }: { data: SampleReportData }) {
                           <div
                             className={`mt-1 text-[10px] font-mono ${
                               delta > 0
-                                ? 'text-emerald-300'
+                                ? 'text-[hsl(var(--success))]'
                                 : delta < 0
-                                  ? 'text-rose-300'
-                                  : 'text-slate-400'
+                                  ? 'text-[hsl(var(--danger))]'
+                                  : 'text-[hsl(var(--foreground-muted))]'
                             }`}
                           >
                             Δ {delta > 0 ? '+' : ''}
@@ -260,7 +270,7 @@ export function CoverSection({ data }: { data: SampleReportData }) {
           <Card className="grid gap-4">
             <div>
               <div className="eyebrow">Memo Cover</div>
-              <div className="mt-4 grid gap-3 text-sm text-slate-300">
+              <div className="mt-4 grid gap-3 text-sm text-[hsl(var(--foreground-muted))]">
                 <div className="flex items-center justify-between rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-4 py-3">
                   <span>Prepared On</span>
                   <span>{formatDate(latestRun.createdAt)}</span>
@@ -286,7 +296,7 @@ export function CoverSection({ data }: { data: SampleReportData }) {
 
             <div className="rounded-[24px] border border-accent/20 bg-accent/10 p-5">
               <div className="fine-print text-accent">Recommendation</div>
-              <p className="mt-3 text-sm leading-7 text-slate-200">
+              <p className="mt-3 text-sm leading-7 text-[hsl(var(--foreground))]">
                 {recommendation}. Scenario range spans{' '}
                 {bearValue !== null && bullValue !== null
                   ? `${formatCompactCurrencyFromKrwAtRate(bearValue, displayCurrency, fxRateToKrw)} – ${formatCompactCurrencyFromKrwAtRate(bullValue, displayCurrency, fxRateToKrw)}`

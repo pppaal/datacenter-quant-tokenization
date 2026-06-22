@@ -17,14 +17,14 @@ export function RealizedSection({ data }: { data: SampleReportData }) {
         {asset.realizedOutcomes && asset.realizedOutcomes.length > 0 ? (
           <Card>
             <div className="eyebrow">Realized outcomes</div>
-            <p className="mt-2 text-sm text-slate-400">
+            <p className="mt-2 text-sm text-[hsl(var(--foreground-muted))]">
               Realized occupancy, NOI, and DSCR observations on the asset. Used to calibrate
               underwriting against actual performance.
             </p>
             <div className="mt-5 overflow-x-auto rounded-[14px] border border-[hsl(var(--border))]">
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-slate-500">
+                  <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-[hsl(var(--muted))]">
                     <th className="px-2 py-2 font-semibold">Date</th>
                     <th className="px-2 py-2 text-right font-semibold">Occ</th>
                     <th className="px-2 py-2 text-right font-semibold">NOI</th>
@@ -33,10 +33,12 @@ export function RealizedSection({ data }: { data: SampleReportData }) {
                     <th className="px-2 py-2 text-right font-semibold">Source</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[hsl(var(--border))] text-slate-200">
+                <tbody className="divide-y divide-[hsl(var(--border))] text-[hsl(var(--foreground))]">
                   {asset.realizedOutcomes.map((o) => (
                     <tr key={o.id}>
-                      <td className="px-2 py-2 text-slate-400">{formatDate(o.observationDate)}</td>
+                      <td className="px-2 py-2 text-[hsl(var(--foreground-muted))]">
+                        {formatDate(o.observationDate)}
+                      </td>
                       <td className="px-2 py-2 text-right font-mono">
                         {typeof o.occupancyPct === 'number' ? `${o.occupancyPct.toFixed(1)}%` : '—'}
                       </td>
@@ -59,7 +61,7 @@ export function RealizedSection({ data }: { data: SampleReportData }) {
                           ? `${o.exitCapRatePct.toFixed(2)}%`
                           : '—'}
                       </td>
-                      <td className="px-2 py-2 text-right text-[10px] text-slate-400">
+                      <td className="px-2 py-2 text-right text-[10px] text-[hsl(var(--foreground-muted))]">
                         {o.sourceSystem}
                       </td>
                     </tr>
@@ -78,7 +80,7 @@ export function RealizedSection({ data }: { data: SampleReportData }) {
                 {pipelineToShow.length} project{pipelineToShow.length === 1 ? '' : 's'}
               </Badge>
             </div>
-            <p className="mt-2 text-sm text-slate-400">
+            <p className="mt-2 text-sm text-[hsl(var(--foreground-muted))]">
               Announced supply competing for absorption during the hold period.
               {asset.pipelineProjects?.length === 0 && pipelineToShow.length > 0
                 ? ' Submarket-wide entries shown where no asset-tied projects are recorded.'
@@ -87,7 +89,7 @@ export function RealizedSection({ data }: { data: SampleReportData }) {
             <div className="mt-5 overflow-x-auto rounded-[14px] border border-[hsl(var(--border))]">
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-slate-500">
+                  <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-[hsl(var(--muted))]">
                     <th className="px-2 py-2 font-semibold">Project</th>
                     <th className="px-2 py-2 font-semibold">Submarket</th>
                     <th className="px-2 py-2 font-semibold">Stage</th>
@@ -95,17 +97,23 @@ export function RealizedSection({ data }: { data: SampleReportData }) {
                     <th className="px-2 py-2 text-right font-semibold">Delivery</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[hsl(var(--border))] text-slate-200">
+                <tbody className="divide-y divide-[hsl(var(--border))] text-[hsl(var(--foreground))]">
                   {pipelineToShow.map((p) => (
                     <tr key={p.id}>
                       <td className="px-2 py-2">
-                        <div className="text-white">{p.projectName}</div>
+                        <div className="text-[hsl(var(--foreground))]">{p.projectName}</div>
                         {p.sponsorName ? (
-                          <div className="text-[10px] text-slate-500">{p.sponsorName}</div>
+                          <div className="text-[10px] text-[hsl(var(--muted))]">
+                            {p.sponsorName}
+                          </div>
                         ) : null}
                       </td>
-                      <td className="px-2 py-2 text-slate-300">{p.region ?? p.market}</td>
-                      <td className="px-2 py-2 text-slate-300">{p.stageLabel ?? '—'}</td>
+                      <td className="px-2 py-2 text-[hsl(var(--foreground-muted))]">
+                        {p.region ?? p.market}
+                      </td>
+                      <td className="px-2 py-2 text-[hsl(var(--foreground-muted))]">
+                        {p.stageLabel ?? '—'}
+                      </td>
                       <td className="px-2 py-2 text-right font-mono">
                         {typeof p.expectedPowerMw === 'number'
                           ? `${p.expectedPowerMw.toFixed(0)} MW`
@@ -113,7 +121,7 @@ export function RealizedSection({ data }: { data: SampleReportData }) {
                             ? `${formatNumber(p.expectedAreaSqm, 0)} sqm`
                             : '—'}
                       </td>
-                      <td className="px-2 py-2 text-right font-mono text-slate-400">
+                      <td className="px-2 py-2 text-right font-mono text-[hsl(var(--foreground-muted))]">
                         {p.expectedDeliveryDate ? formatDate(p.expectedDeliveryDate) : '—'}
                       </td>
                     </tr>

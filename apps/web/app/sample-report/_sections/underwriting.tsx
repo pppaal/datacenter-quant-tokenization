@@ -13,7 +13,7 @@ export function UnderwritingSection({ data }: { data: SampleReportData }) {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <div className="eyebrow">Underwriting assumptions (base case)</div>
-            <p className="mt-2 max-w-3xl text-sm text-slate-400">
+            <p className="mt-2 max-w-3xl text-sm text-[hsl(var(--foreground-muted))]">
               Inputs anchoring the base scenario on this run. Cap rate and discount rate are the
               primary value drivers; tax leakage and SPV economics drive the gap between unlevered
               and equity returns.
@@ -114,7 +114,7 @@ export function UnderwritingSection({ data }: { data: SampleReportData }) {
             </dl>
           </div>
         </div>
-        <p className="mt-4 text-[11px] text-slate-500">
+        <p className="mt-4 text-[11px] text-[hsl(var(--muted))]">
           Stage / location / permit / flood / wildfire multipliers applied during scenario
           generation:&nbsp; stage{' '}
           {underwriting.stageFactor !== null ? underwriting.stageFactor.toFixed(2) : '—'} · location
@@ -131,7 +131,7 @@ export function UnderwritingSection({ data }: { data: SampleReportData }) {
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
                 <div className="fine-print">Cap rate decomposition</div>
-                <p className="mt-1 max-w-3xl text-xs text-slate-400">
+                <p className="mt-1 max-w-3xl text-xs text-[hsl(var(--foreground-muted))]">
                   Bridges the headline cap rate into 6 components so the LP can see what is driving
                   the price. RFR and growth from the macro feed; submarket spread from comp
                   regression; obsolescence from vintage age. The sector premium (ERP × beta) uses
@@ -144,32 +144,36 @@ export function UnderwritingSection({ data }: { data: SampleReportData }) {
             <div className="mt-4 overflow-x-auto rounded-[12px] border border-[hsl(var(--border))]">
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-slate-500">
+                  <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-[hsl(var(--muted))]">
                     <th className="px-2 py-2 font-semibold">Component</th>
                     <th className="px-2 py-2 text-right font-semibold">Sign</th>
                     <th className="px-2 py-2 text-right font-semibold">pct</th>
                     <th className="px-2 py-2 font-semibold">Notes</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[hsl(var(--border))] text-slate-200">
+                <tbody className="divide-y divide-[hsl(var(--border))] text-[hsl(var(--foreground))]">
                   {capRateDecomp.components.map((c) => (
                     <tr key={c.key}>
-                      <td className="px-2 py-2 text-slate-300">{c.label}</td>
+                      <td className="px-2 py-2 text-[hsl(var(--foreground-muted))]">{c.label}</td>
                       <td
                         className={`px-2 py-2 text-right font-mono ${
-                          c.sign === '+' ? 'text-amber-300' : 'text-emerald-300'
+                          c.sign === '+'
+                            ? 'text-[hsl(var(--warning))]'
+                            : 'text-[hsl(var(--success))]'
                         }`}
                       >
                         {c.sign}
                       </td>
                       <td className="px-2 py-2 text-right font-mono">{c.pct.toFixed(2)}%</td>
-                      <td className="px-2 py-2 text-[10px] text-slate-400">{c.notes}</td>
+                      <td className="px-2 py-2 text-[10px] text-[hsl(var(--foreground-muted))]">
+                        {c.notes}
+                      </td>
                     </tr>
                   ))}
                   <tr className="bg-[hsl(var(--surface-hover))] font-semibold">
-                    <td className="px-2 py-2 text-white">Implied cap rate</td>
+                    <td className="px-2 py-2 text-[hsl(var(--foreground))]">Implied cap rate</td>
                     <td className="px-2 py-2"></td>
-                    <td className="px-2 py-2 text-right font-mono text-white">
+                    <td className="px-2 py-2 text-right font-mono text-[hsl(var(--foreground))]">
                       {capRateDecomp.capRatePct.toFixed(2)}%
                     </td>
                     <td className="px-2 py-2"></td>

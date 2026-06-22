@@ -21,7 +21,7 @@ export function ReturnsSection({ data }: { data: SampleReportData }) {
       <div className="grid gap-4 lg:grid-cols-3">
         <Card>
           <div className="eyebrow">Returns snapshot</div>
-          <p className="mt-2 text-sm text-slate-400">
+          <p className="mt-2 text-sm text-[hsl(var(--foreground-muted))]">
             Headline returns from the latest valuation run. Going-in yield and exit cap reflect the
             base case; minimum DSCR is the floor across all scenarios.
           </p>
@@ -55,7 +55,7 @@ export function ReturnsSection({ data }: { data: SampleReportData }) {
 
         <Card>
           <div className="eyebrow">Capital structure</div>
-          <p className="mt-2 text-sm text-slate-400">
+          <p className="mt-2 text-sm text-[hsl(var(--foreground-muted))]">
             {capStack.facilityCount === 0
               ? 'No facilities recorded. Presented unlevered pending committed financing.'
               : `${capStack.facilityCount} facility${capStack.facilityCount === 1 ? '' : 'ies'} aggregated.`}
@@ -88,7 +88,7 @@ export function ReturnsSection({ data }: { data: SampleReportData }) {
             <div className="mt-5 overflow-x-auto rounded-[14px] border border-[hsl(var(--border))]">
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-slate-500">
+                  <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-[hsl(var(--muted))]">
                     <th className="px-2 py-2 font-semibold">Facility</th>
                     <th className="px-2 py-2 text-right font-semibold">Commit</th>
                     <th className="px-2 py-2 text-right font-semibold">Drawn</th>
@@ -97,13 +97,13 @@ export function ReturnsSection({ data }: { data: SampleReportData }) {
                     <th className="px-2 py-2 text-right font-semibold">Amort</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[hsl(var(--border))] text-slate-200">
+                <tbody className="divide-y divide-[hsl(var(--border))] text-[hsl(var(--foreground))]">
                   {asset.debtFacilities.map((f) => (
                     <tr key={f.id}>
                       <td className="px-2 py-2">
-                        <div className="text-white">{f.facilityType}</div>
+                        <div className="text-[hsl(var(--foreground))]">{f.facilityType}</div>
                         {f.lenderName ? (
-                          <div className="text-[10px] text-slate-500">{f.lenderName}</div>
+                          <div className="text-[10px] text-[hsl(var(--muted))]">{f.lenderName}</div>
                         ) : null}
                       </td>
                       <td className="px-2 py-2 text-right font-mono">
@@ -113,7 +113,7 @@ export function ReturnsSection({ data }: { data: SampleReportData }) {
                           fxRateToKrw
                         )}
                       </td>
-                      <td className="px-2 py-2 text-right font-mono text-slate-400">
+                      <td className="px-2 py-2 text-right font-mono text-[hsl(var(--foreground-muted))]">
                         {f.drawnAmountKrw !== null
                           ? formatCompactCurrencyFromKrwAtRate(
                               f.drawnAmountKrw,
@@ -125,12 +125,12 @@ export function ReturnsSection({ data }: { data: SampleReportData }) {
                       <td className="px-2 py-2 text-right font-mono">
                         {f.interestRatePct.toFixed(2)}%
                       </td>
-                      <td className="px-2 py-2 text-right font-mono text-slate-400">
+                      <td className="px-2 py-2 text-right font-mono text-[hsl(var(--foreground-muted))]">
                         {f.amortizationTermMonths
                           ? `${(f.amortizationTermMonths / 12).toFixed(0)} yr`
                           : '—'}
                       </td>
-                      <td className="px-2 py-2 text-right text-[10px] text-slate-400">
+                      <td className="px-2 py-2 text-right text-[10px] text-[hsl(var(--foreground-muted))]">
                         {f.amortizationProfile.replace(/_/g, ' ').toLowerCase()}
                         {typeof f.balloonPct === 'number' && f.balloonPct > 0
                           ? ` · ${f.balloonPct.toFixed(0)}% balloon`
@@ -147,7 +147,7 @@ export function ReturnsSection({ data }: { data: SampleReportData }) {
 
         <Card>
           <div className="eyebrow">Tenancy snapshot</div>
-          <p className="mt-2 text-sm text-slate-400">
+          <p className="mt-2 text-sm text-[hsl(var(--foreground-muted))]">
             {leaseRoll.leaseCount === 0
               ? 'No leases on file. Pre-stabilization; rent underwriting is projected.'
               : `${leaseRoll.leaseCount} lease${leaseRoll.leaseCount === 1 ? '' : 's'} aggregated; weighted by leasedKw.`}
@@ -179,7 +179,7 @@ export function ReturnsSection({ data }: { data: SampleReportData }) {
             <div className="mt-5 overflow-x-auto rounded-[14px] border border-[hsl(var(--border))]">
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-slate-500">
+                  <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-[hsl(var(--muted))]">
                     <th className="px-2 py-2 font-semibold">Tenant</th>
                     <th className="px-2 py-2 text-right font-semibold">kW</th>
                     <th className="px-2 py-2 text-right font-semibold">Term</th>
@@ -189,7 +189,7 @@ export function ReturnsSection({ data }: { data: SampleReportData }) {
                     <th className="px-2 py-2 text-right font-semibold">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[hsl(var(--border))] text-slate-200">
+                <tbody className="divide-y divide-[hsl(var(--border))] text-[hsl(var(--foreground))]">
                   {asset.leases.map((lease) => {
                     const mtmGap =
                       lease.markToMarketRatePerKwKrw && lease.baseRatePerKwKrw > 0
@@ -199,17 +199,19 @@ export function ReturnsSection({ data }: { data: SampleReportData }) {
                         : null;
                     return (
                       <tr key={lease.id}>
-                        <td className="px-2 py-2 text-white">{lease.tenantName}</td>
+                        <td className="px-2 py-2 text-[hsl(var(--foreground))]">
+                          {lease.tenantName}
+                        </td>
                         <td className="px-2 py-2 text-right font-mono">
                           {formatNumber(lease.leasedKw, 0)}
                         </td>
-                        <td className="px-2 py-2 text-right font-mono text-slate-400">
+                        <td className="px-2 py-2 text-right font-mono text-[hsl(var(--foreground-muted))]">
                           Y{lease.startYear}–{lease.startYear + lease.termYears - 1}
                         </td>
                         <td className="px-2 py-2 text-right font-mono">
                           {formatNumber(lease.baseRatePerKwKrw, 0)}
                         </td>
-                        <td className="px-2 py-2 text-right font-mono text-slate-400">
+                        <td className="px-2 py-2 text-right font-mono text-[hsl(var(--foreground-muted))]">
                           {lease.annualEscalationPct !== null
                             ? `${lease.annualEscalationPct.toFixed(1)}%`
                             : '—'}
@@ -217,7 +219,7 @@ export function ReturnsSection({ data }: { data: SampleReportData }) {
                         <td className="px-2 py-2 text-right font-mono">
                           {mtmGap !== null ? `${mtmGap >= 0 ? '+' : ''}${mtmGap.toFixed(1)}%` : '—'}
                         </td>
-                        <td className="px-2 py-2 text-right text-[10px] text-slate-400">
+                        <td className="px-2 py-2 text-right text-[10px] text-[hsl(var(--foreground-muted))]">
                           {lease.status}
                         </td>
                       </tr>
@@ -225,7 +227,7 @@ export function ReturnsSection({ data }: { data: SampleReportData }) {
                   })}
                 </tbody>
               </table>
-              <p className="border-t border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-2 py-2 text-[10px] text-slate-500">
+              <p className="border-t border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-2 py-2 text-[10px] text-[hsl(var(--muted))]">
                 WALT = Σ(term × kW) / Σ(kW); weighted in-place rent uses the same kW weighting on
                 contract rate; MTM gap = blended market rate / blended in-place rate − 1.
               </p>
