@@ -1,15 +1,15 @@
 'use client';
 
-import { useState, startTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { useRouterRefresh } from '@/lib/hooks/use-router-refresh';
 
 type Props = {
   dealId: string;
 };
 
 export function DealRestoreButton({ dealId }: Props) {
-  const router = useRouter();
+  const { isRefreshing, refresh } = useRouterRefresh();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -18,7 +18,7 @@ export function DealRestoreButton({ dealId }: Props) {
       <Button
         type="button"
         variant="secondary"
-        disabled={busy}
+        disabled={busy || isRefreshing}
         onClick={async () => {
           setBusy(true);
           setError(null);
@@ -35,7 +35,7 @@ export function DealRestoreButton({ dealId }: Props) {
             if (!response.ok) {
               throw new Error('Failed to restore deal');
             }
-            startTransition(() => router.refresh());
+            refresh();
           } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to restore deal.');
           } finally {
@@ -43,7 +43,7 @@ export function DealRestoreButton({ dealId }: Props) {
           }
         }}
       >
-        {busy ? 'Restoring...' : 'Restore'}
+        {busy || isRefreshing ? 'Restoring...' : 'Restore'}
       </Button>
       {error ? (
         <p role="alert" className="text-xs text-red-400">

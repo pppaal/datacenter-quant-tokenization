@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, startTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { useRouterRefresh } from '@/lib/hooks/use-router-refresh';
 
 type Props = {
   snapshotId: string | null;
@@ -15,7 +15,7 @@ export function ResearchHouseViewApprovalButton({
   disabled = false,
   compact = false
 }: Props) {
-  const router = useRouter();
+  const { isRefreshing, refresh } = useRouterRefresh();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,7 +42,7 @@ export function ResearchHouseViewApprovalButton({
         throw new Error(payload?.error ?? 'Failed to approve house view');
       }
 
-      startTransition(() => router.refresh());
+      refresh();
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : 'Failed to approve house view');
     } finally {
@@ -56,9 +56,9 @@ export function ResearchHouseViewApprovalButton({
         type="button"
         variant={compact ? 'ghost' : 'secondary'}
         onClick={approve}
-        disabled={disabled || submitting}
+        disabled={disabled || submitting || isRefreshing}
       >
-        {submitting ? 'Approving...' : 'Approve House View'}
+        {submitting || isRefreshing ? 'Approving...' : 'Approve House View'}
       </Button>
       {error ? <div className="text-xs text-rose-300">{error}</div> : null}
     </div>

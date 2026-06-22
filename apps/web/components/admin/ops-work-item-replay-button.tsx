@@ -1,15 +1,15 @@
 'use client';
 
-import { useState, startTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { useRouterRefresh } from '@/lib/hooks/use-router-refresh';
 
 type OpsWorkItemReplayButtonProps = {
   workItemId: string;
 };
 
 export function OpsWorkItemReplayButton({ workItemId }: OpsWorkItemReplayButtonProps) {
-  const router = useRouter();
+  const { isRefreshing, refresh } = useRouterRefresh();
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -32,7 +32,7 @@ export function OpsWorkItemReplayButton({ workItemId }: OpsWorkItemReplayButtonP
       }
 
       setFeedback(`Work item requeued as ${payload?.workItem?.status?.toLowerCase() ?? 'queued'}.`);
-      startTransition(() => router.refresh());
+      refresh();
     } catch (caughtError) {
       setError(
         caughtError instanceof Error ? caughtError.message : 'Failed to requeue ops work item.'
@@ -48,10 +48,10 @@ export function OpsWorkItemReplayButton({ workItemId }: OpsWorkItemReplayButtonP
         type="button"
         variant="secondary"
         onClick={replay}
-        disabled={submitting}
+        disabled={submitting || isRefreshing}
         data-testid="ops-work-item-replay-button"
       >
-        {submitting ? 'Requeuing...' : 'Requeue Work Item'}
+        {submitting || isRefreshing ? 'Requeuing...' : 'Requeue Work Item'}
       </Button>
       {feedback ? (
         <div
