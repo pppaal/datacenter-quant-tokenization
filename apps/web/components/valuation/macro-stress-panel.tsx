@@ -38,56 +38,68 @@ function ScenarioCard({
   const tone = verdictTone(scenario.verdict);
   const borderClass =
     tone === 'good'
-      ? 'border-emerald-400/20 bg-emerald-500/[0.04]'
+      ? 'border-[hsl(var(--success)/0.25)] bg-[hsl(var(--success-tint))]'
       : tone === 'warn'
-        ? 'border-rose-400/20 bg-rose-500/[0.04]'
-        : 'border-amber-400/20 bg-amber-500/[0.04]';
+        ? 'border-[hsl(var(--danger)/0.25)] bg-[hsl(var(--danger-tint))]'
+        : 'border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--warning-tint))]';
 
   return (
     <div className={`rounded-[26px] border p-4 ${borderClass}`}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <div className="text-sm font-semibold text-white">{scenario.scenarioName}</div>
-          <div className="mt-1 text-xs text-slate-400">{scenario.description}</div>
+          <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
+            {scenario.scenarioName}
+          </div>
+          <div className="mt-1 text-xs text-[hsl(var(--foreground-muted))]">
+            {scenario.description}
+          </div>
         </div>
         <Badge tone={tone}>{scenario.verdict}</Badge>
       </div>
 
       <div className="mt-3 grid gap-2 md:grid-cols-4">
-        <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-3">
-          <div className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Equity IRR</div>
-          <div className="mt-1 text-sm font-semibold text-white">
+        <div className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-3">
+          <div className="text-[11px] uppercase tracking-[0.16em] text-[hsl(var(--muted))]">
+            Equity IRR
+          </div>
+          <div className="mt-1 text-sm font-semibold text-[hsl(var(--foreground))]">
             {scenario.stressed.equityIrr !== null
               ? `${formatNumber(scenario.stressed.equityIrr, 2)}%`
               : 'N/A'}
           </div>
-          <div className="text-[11px] text-slate-400">
+          <div className="text-[11px] text-[hsl(var(--foreground-muted))]">
             {formatDelta(scenario.equityIrrDeltaPct, 'pp')}
           </div>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-3">
-          <div className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Multiple</div>
-          <div className="mt-1 text-sm font-semibold text-white">
+        <div className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-3">
+          <div className="text-[11px] uppercase tracking-[0.16em] text-[hsl(var(--muted))]">
+            Multiple
+          </div>
+          <div className="mt-1 text-sm font-semibold text-[hsl(var(--foreground))]">
             {formatNumber(scenario.stressed.equityMultiple, 2)}x
           </div>
-          <div className="text-[11px] text-slate-400">
+          <div className="text-[11px] text-[hsl(var(--foreground-muted))]">
             {formatDelta(scenario.equityMultipleDelta, 'x')}
           </div>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-3">
-          <div className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Worst DSCR</div>
-          <div className="mt-1 text-sm font-semibold text-white">
+        <div className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-3">
+          <div className="text-[11px] uppercase tracking-[0.16em] text-[hsl(var(--muted))]">
+            Worst DSCR
+          </div>
+          <div className="mt-1 text-sm font-semibold text-[hsl(var(--foreground))]">
             {scenario.worstDscr !== null ? `${formatNumber(scenario.worstDscr, 2)}x` : 'N/A'}
           </div>
-          <div className="text-[11px] text-slate-400">
+          <div className="text-[11px] text-[hsl(var(--foreground-muted))]">
             {scenario.worstDscr !== null && scenario.worstDscr < 1.0
               ? 'Covenant breach'
               : 'Covenant safe'}
           </div>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-3">
-          <div className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Ending Debt</div>
-          <div className="mt-1 text-sm font-semibold text-white">
+        <div className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-3">
+          <div className="text-[11px] uppercase tracking-[0.16em] text-[hsl(var(--muted))]">
+            Ending Debt
+          </div>
+          <div className="mt-1 text-sm font-semibold text-[hsl(var(--foreground))]">
             {formatCurrencyFromKrwAtRate(
               scenario.stressedEndingDebtKrw,
               displayCurrency,
@@ -97,10 +109,10 @@ function ScenarioCard({
         </div>
       </div>
 
-      <div className="mt-3 text-xs text-slate-300">{scenario.commentary}</div>
+      <div className="mt-3 text-xs text-[hsl(var(--foreground-muted))]">{scenario.commentary}</div>
 
       {scenario.correlationPenaltyApplied ? (
-        <div className="mt-3 rounded-2xl border border-orange-400/20 bg-orange-500/[0.06] px-3 py-2 text-xs text-orange-100">
+        <div className="mt-3 rounded-2xl border border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--warning-tint))] px-3 py-2 text-xs text-[hsl(var(--warning))]">
           {scenario.correlationPenaltyApplied.commentary}
         </div>
       ) : null}
@@ -110,16 +122,16 @@ function ScenarioCard({
           {scenario.lineItemImpacts.map((item) => (
             <div
               key={item.label}
-              className="rounded-2xl border border-white/10 bg-slate-950/35 p-3"
+              className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-3"
             >
-              <div className="text-[11px] uppercase tracking-[0.16em] text-slate-500">
+              <div className="text-[11px] uppercase tracking-[0.16em] text-[hsl(var(--muted))]">
                 {item.label}
               </div>
-              <div className="mt-1 text-sm text-white">
+              <div className="mt-1 text-sm text-[hsl(var(--foreground))]">
                 {formatCurrencyFromKrwAtRate(item.stressedKrw, displayCurrency, fxRateToKrw)}
               </div>
               <div
-                className={`text-[11px] ${item.deltaPct >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}
+                className={`text-[11px] ${item.deltaPct >= 0 ? 'text-[hsl(var(--success))]' : 'text-[hsl(var(--danger))]'}`}
               >
                 {item.deltaPct >= 0 ? '+' : ''}
                 {formatNumber(item.deltaPct, 2)}%
@@ -138,37 +150,42 @@ function FactorAttributionBar({ attribution }: { attribution: MacroFactorAttribu
   );
 
   return (
-    <div className="rounded-[26px] border border-white/10 bg-white/[0.03] p-4">
+    <div className="rounded-[26px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <div className="text-sm font-semibold text-white">
+          <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
             Factor Attribution: {attribution.scenarioName}
           </div>
-          <div className="mt-1 text-xs text-slate-400">
+          <div className="mt-1 text-xs text-[hsl(var(--foreground-muted))]">
             Isolates each factor's contribution to the total IRR shift.
           </div>
         </div>
-        <div className="text-xs text-slate-400">
+        <div className="text-xs text-[hsl(var(--foreground-muted))]">
           Total IRR shift: {formatDelta(attribution.totalIrrDeltaPct, 'pp')}
         </div>
       </div>
 
       <div className="mt-4 space-y-2">
         {sortedFactors.map((f) => (
-          <div key={f.factor} className="rounded-2xl border border-white/10 bg-slate-950/40 p-3">
+          <div
+            key={f.factor}
+            className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-3"
+          >
             <div className="flex items-center justify-between gap-3 text-sm">
-              <span className="font-medium text-white">{f.factorLabel}</span>
-              <span className="text-slate-300">
+              <span className="font-medium text-[hsl(var(--foreground))]">{f.factorLabel}</span>
+              <span className="text-[hsl(var(--foreground-muted))]">
                 {formatDelta(f.isolatedIrrDeltaPct, 'pp')} ·{' '}
-                <span className="text-slate-500">
+                <span className="text-[hsl(var(--muted))]">
                   {formatNumber(f.contributionShareOfTotalDelta, 0)}% share
                 </span>
               </span>
             </div>
-            <div className="mt-2 h-1.5 w-full rounded-full bg-slate-800">
+            <div className="mt-2 h-1.5 w-full rounded-full bg-[hsl(var(--surface-hover))]">
               <div
                 className={`h-1.5 rounded-full ${
-                  (f.isolatedIrrDeltaPct ?? 0) < 0 ? 'bg-rose-400' : 'bg-emerald-400'
+                  (f.isolatedIrrDeltaPct ?? 0) < 0
+                    ? 'bg-[hsl(var(--danger))]'
+                    : 'bg-[hsl(var(--success))]'
                 }`}
                 style={{ width: `${Math.min(100, f.contributionShareOfTotalDelta)}%` }}
               />
@@ -206,7 +223,7 @@ export function MacroStressPanel({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="eyebrow">Macro Stress Pro Forma</div>
-          <div className="mt-2 text-sm text-slate-400">
+          <div className="mt-2 text-sm text-[hsl(var(--foreground-muted))]">
             Full re-run of the underwriting pipeline under macro scenarios.
           </div>
         </div>
@@ -216,35 +233,37 @@ export function MacroStressPanel({
       </div>
 
       <div className="mt-4 grid gap-3 md:grid-cols-4">
-        <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-3">
-          <div className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Baseline IRR</div>
-          <div className="mt-1 text-lg font-semibold text-white">
+        <div className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-3">
+          <div className="text-[11px] uppercase tracking-[0.16em] text-[hsl(var(--muted))]">
+            Baseline IRR
+          </div>
+          <div className="mt-1 text-lg font-semibold text-[hsl(var(--foreground))]">
             {analysis.baseline.equityIrr !== null
               ? `${formatNumber(analysis.baseline.equityIrr, 2)}%`
               : 'N/A'}
           </div>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-3">
-          <div className="text-[11px] uppercase tracking-[0.16em] text-slate-500">
+        <div className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-3">
+          <div className="text-[11px] uppercase tracking-[0.16em] text-[hsl(var(--muted))]">
             Baseline Multiple
           </div>
-          <div className="mt-1 text-lg font-semibold text-white">
+          <div className="mt-1 text-lg font-semibold text-[hsl(var(--foreground))]">
             {formatNumber(analysis.baseline.equityMultiple, 2)}x
           </div>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-3">
-          <div className="text-[11px] uppercase tracking-[0.16em] text-slate-500">
+        <div className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-3">
+          <div className="text-[11px] uppercase tracking-[0.16em] text-[hsl(var(--muted))]">
             Baseline Cash-on-Cash
           </div>
-          <div className="mt-1 text-lg font-semibold text-white">
+          <div className="mt-1 text-lg font-semibold text-[hsl(var(--foreground))]">
             {formatNumber(analysis.baseline.averageCashOnCash, 2)}%
           </div>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-3">
-          <div className="text-[11px] uppercase tracking-[0.16em] text-slate-500">
+        <div className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-3">
+          <div className="text-[11px] uppercase tracking-[0.16em] text-[hsl(var(--muted))]">
             Baseline Payback
           </div>
-          <div className="mt-1 text-lg font-semibold text-white">
+          <div className="mt-1 text-lg font-semibold text-[hsl(var(--foreground))]">
             {analysis.baseline.paybackYear !== null
               ? `Year ${analysis.baseline.paybackYear}`
               : 'Beyond horizon'}

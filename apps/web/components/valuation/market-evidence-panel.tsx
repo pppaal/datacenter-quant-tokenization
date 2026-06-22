@@ -87,7 +87,7 @@ export function MarketEvidencePanel({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="eyebrow">Market Evidence</div>
-          <h3 className="mt-2 text-2xl font-semibold text-white">
+          <h3 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
             Live comps and market indicator feed
           </h3>
         </div>
@@ -107,27 +107,31 @@ export function MarketEvidencePanel({
             topTransactionComps.map((comp) => (
               <div
                 key={comp.id}
-                className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+                className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="text-sm font-semibold text-white">{comp.comparableType}</div>
-                    <div className="mt-1 text-base text-slate-200">{comp.region}</div>
+                    <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
+                      {comp.comparableType}
+                    </div>
+                    <div className="mt-1 text-base text-[hsl(var(--foreground))]">
+                      {comp.region}
+                    </div>
                   </div>
-                  <div className="text-right text-sm text-slate-400">
+                  <div className="text-right text-sm text-[hsl(var(--foreground-muted))]">
                     {formatDate(comp.transactionDate)}
                   </div>
                 </div>
-                <div className="mt-3 text-sm text-slate-300">
+                <div className="mt-3 text-sm text-[hsl(var(--foreground-muted))]">
                   {formatCompPricing(assetClass, comp, displayCurrency, fxRateToKrw)}
                 </div>
-                <div className="mt-2 text-xs uppercase tracking-[0.18em] text-slate-500">
+                <div className="mt-2 text-xs uppercase tracking-[0.18em] text-[hsl(var(--muted))]">
                   {comp.buyerType ?? 'buyer n/a'} / {comp.sellerType ?? 'seller n/a'}
                 </div>
               </div>
             ))
           ) : (
-            <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
+            <div className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4 text-sm text-[hsl(var(--foreground-muted))]">
               No transaction comps loaded from the market feed yet.
             </div>
           )}
@@ -139,24 +143,28 @@ export function MarketEvidencePanel({
             topRentComps.map((comp) => (
               <div
                 key={comp.id}
-                className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+                className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="text-sm font-semibold text-white">{comp.comparableType}</div>
-                    <div className="mt-1 text-base text-slate-200">{comp.region}</div>
+                    <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
+                      {comp.comparableType}
+                    </div>
+                    <div className="mt-1 text-base text-[hsl(var(--foreground))]">
+                      {comp.region}
+                    </div>
                   </div>
-                  <div className="text-right text-sm text-slate-400">
+                  <div className="text-right text-sm text-[hsl(var(--foreground-muted))]">
                     {formatDate(comp.observationDate)}
                   </div>
                 </div>
-                <div className="mt-3 text-sm text-slate-300">
+                <div className="mt-3 text-sm text-[hsl(var(--foreground-muted))]">
                   {formatRentComp(assetClass, comp, displayCurrency, fxRateToKrw)}
                 </div>
               </div>
             ))
           ) : (
-            <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
+            <div className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4 text-sm text-[hsl(var(--foreground-muted))]">
               No rent comps loaded from the market feed yet.
             </div>
           )}
@@ -170,19 +178,19 @@ export function MarketEvidencePanel({
             topIndicators.map((indicator) => (
               <div
                 key={indicator.id}
-                className="rounded-[20px] border border-white/10 bg-white/[0.03] px-4 py-4"
+                className="rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-4 py-4"
               >
                 <div className="fine-print">{indicator.indicatorKey.replace(/_/g, ' ')}</div>
-                <div className="mt-2 text-lg font-semibold text-white">
+                <div className="mt-2 text-lg font-semibold text-[hsl(var(--foreground))]">
                   {formatNumber(indicator.value)} {indicator.unit ?? ''}
                 </div>
-                <div className="mt-1 text-sm text-slate-400">
+                <div className="mt-1 text-sm text-[hsl(var(--foreground-muted))]">
                   {indicator.region ?? 'region n/a'} / {formatDate(indicator.observationDate)}
                 </div>
               </div>
             ))
           ) : (
-            <div className="rounded-[20px] border border-white/10 bg-white/[0.03] px-4 py-4 text-sm text-slate-400 md:col-span-2 xl:col-span-3">
+            <div className="rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-4 py-4 text-sm text-[hsl(var(--foreground-muted))] md:col-span-2 xl:col-span-3">
               No market indicators loaded from the market feed yet.
             </div>
           )}

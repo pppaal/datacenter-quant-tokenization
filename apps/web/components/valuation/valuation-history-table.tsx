@@ -43,9 +43,11 @@ export function ValuationHistoryTable({
     <Card className="overflow-hidden p-0">
       <div className="border-b border-border px-6 py-4">
         <div className="eyebrow">Valuation History</div>
-        <div className="mt-2 text-sm text-slate-400">Recent run comparison and re-run status.</div>
+        <div className="mt-2 text-sm text-[hsl(var(--foreground-muted))]">
+          Recent run comparison and re-run status.
+        </div>
       </div>
-      <div className="grid grid-cols-[1.2fr_0.9fr_0.8fr_0.7fr_0.9fr] gap-4 border-b border-border px-6 py-4 text-xs uppercase tracking-[0.24em] text-slate-500">
+      <div className="grid grid-cols-[1.2fr_0.9fr_0.8fr_0.7fr_0.9fr] gap-4 border-b border-border px-6 py-4 text-xs uppercase tracking-[0.24em] text-[hsl(var(--muted))]">
         <div>Run</div>
         <div>Base Case</div>
         <div>Confidence</div>
@@ -62,11 +64,11 @@ export function ValuationHistoryTable({
           <Link
             key={run.id}
             href={`/admin/valuations/${run.id}`}
-            className="grid grid-cols-[1.2fr_0.9fr_0.8fr_0.7fr_0.9fr] gap-4 border-b border-border/70 px-6 py-5 text-sm text-slate-300 transition hover:bg-white/5"
+            className="grid grid-cols-[1.2fr_0.9fr_0.8fr_0.7fr_0.9fr] gap-4 border-b border-border/70 px-6 py-5 text-sm text-[hsl(var(--foreground-muted))] transition hover:bg-[hsl(var(--surface-hover))]"
           >
             <div>
-              <div className="font-semibold text-white">{run.runLabel}</div>
-              <div className="mt-2 text-xs text-slate-500">
+              <div className="font-semibold text-[hsl(var(--foreground))]">{run.runLabel}</div>
+              <div className="mt-2 text-xs text-[hsl(var(--muted))]">
                 {formatDate(run.createdAt)} / {run.engineVersion}
               </div>
             </div>

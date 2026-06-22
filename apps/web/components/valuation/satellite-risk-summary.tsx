@@ -29,8 +29,10 @@ export function SatelliteRiskSummary({
   const recentMaxFireRadiativePowerMw = snapshot?.recentMaxFireRadiativePowerMw ?? null;
 
   return (
-    <div className={cn('rounded-2xl border border-border bg-slate-950/40 p-4', className)}>
-      {title ? <div className="text-slate-500">{title}</div> : null}
+    <div
+      className={cn('rounded-2xl border border-border bg-[hsl(var(--panel-alt))] p-4', className)}
+    >
+      {title ? <div className="text-[hsl(var(--muted))]">{title}</div> : null}
       <div className="mt-2 flex items-start justify-between gap-3">
         <div>
           <div className="flex flex-wrap gap-2">
@@ -42,19 +44,21 @@ export function SatelliteRiskSummary({
             </Badge>
           </div>
           {!compact && climateNote ? (
-            <div className="mt-3 text-sm text-slate-400">{climateNote}</div>
+            <div className="mt-3 text-sm text-[hsl(var(--foreground-muted))]">{climateNote}</div>
           ) : null}
           {!compact && !climateNote ? (
-            <div className="mt-3 text-sm text-slate-500">No satellite climate overlay yet.</div>
+            <div className="mt-3 text-sm text-[hsl(var(--muted))]">
+              No satellite climate overlay yet.
+            </div>
           ) : null}
         </div>
-        <div className="text-right text-xs text-slate-500">
+        <div className="text-right text-xs text-[hsl(var(--muted))]">
           <div>Flood {formatNumber(floodRiskScore, 1)}</div>
           <div className="mt-1">Fire {formatNumber(wildfireRiskScore, 1)}</div>
         </div>
       </div>
       {showOverlayMetrics && (recentSatellitePrecipMm !== null || recentFireHotspots !== null) && (
-        <div className="mt-3 grid gap-2 text-xs text-slate-500 md:grid-cols-2">
+        <div className="mt-3 grid gap-2 text-xs text-[hsl(var(--muted))] md:grid-cols-2">
           <div>GPM precipitation {formatNumber(recentSatellitePrecipMm, 1)} mm/day</div>
           <div>
             FIRMS hotspots {formatNumber(recentFireHotspots, 0)}

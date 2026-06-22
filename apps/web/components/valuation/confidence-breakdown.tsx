@@ -170,7 +170,7 @@ export function ConfidenceBreakdown(input: AssetConfidenceInput) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="eyebrow">Confidence Breakdown</div>
-          <div className="mt-2 text-2xl font-semibold text-white">
+          <div className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
             {input.confidenceScore !== null && input.confidenceScore !== undefined
               ? `${formatNumber(input.confidenceScore, 1)} / 10`
               : 'N/A'}
@@ -178,15 +178,22 @@ export function ConfidenceBreakdown(input: AssetConfidenceInput) {
         </div>
         <Badge tone={rerun.tone}>{rerun.label}</Badge>
       </div>
-      <p className="text-sm leading-6 text-slate-300">{rerun.detail}</p>
+      <p className="text-sm leading-6 text-[hsl(var(--foreground-muted))]">{rerun.detail}</p>
       <div className="grid gap-4 xl:grid-cols-2">
         {drivers.map((driver) => (
-          <div key={driver.label} className="rounded-2xl border border-border bg-slate-950/40 p-4">
+          <div
+            key={driver.label}
+            className="rounded-2xl border border-border bg-[hsl(var(--panel-alt))] p-4"
+          >
             <div className="flex items-center justify-between gap-3">
-              <div className="text-sm font-semibold text-white">{driver.label}</div>
+              <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
+                {driver.label}
+              </div>
               <Badge tone={driver.tone}>{driver.value}</Badge>
             </div>
-            <p className="mt-3 text-sm leading-6 text-slate-300">{driver.detail}</p>
+            <p className="mt-3 text-sm leading-6 text-[hsl(var(--foreground-muted))]">
+              {driver.detail}
+            </p>
           </div>
         ))}
       </div>

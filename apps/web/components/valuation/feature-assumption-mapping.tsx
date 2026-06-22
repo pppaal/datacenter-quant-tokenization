@@ -19,7 +19,7 @@ export function FeatureAssumptionMapping({ rows }: { rows: FeatureAssumptionMapp
       </div>
 
       {rows.length === 0 ? (
-        <div className="mt-4 rounded-[22px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
+        <div className="mt-4 rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4 text-sm text-[hsl(var(--foreground-muted))]">
           No promoted feature-to-assumption mappings were resolved for this valuation run.
         </div>
       ) : (
@@ -27,12 +27,14 @@ export function FeatureAssumptionMapping({ rows }: { rows: FeatureAssumptionMapp
           {rows.map((row, index) => (
             <div
               key={`${row.snapshotId}-${row.featureKey}-${row.targetPath}-${index}`}
-              className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+              className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4"
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <div className="text-sm font-semibold text-white">{row.featureLabel}</div>
-                  <div className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">
+                  <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
+                    {row.featureLabel}
+                  </div>
+                  <div className="mt-1 text-xs uppercase tracking-[0.18em] text-[hsl(var(--muted))]">
                     {toSentenceCase(row.namespace)} / {row.featureKey}
                   </div>
                 </div>
@@ -43,24 +45,28 @@ export function FeatureAssumptionMapping({ rows }: { rows: FeatureAssumptionMapp
               </div>
 
               <div className="mt-4 grid gap-3 md:grid-cols-3">
-                <div className="rounded-2xl border border-border bg-slate-950/40 p-3">
-                  <div className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                <div className="rounded-2xl border border-border bg-[hsl(var(--panel-alt))] p-3">
+                  <div className="text-[11px] uppercase tracking-[0.18em] text-[hsl(var(--muted))]">
                     Feature Value
                   </div>
-                  <div className="mt-2 text-sm text-white">{row.featureValue}</div>
+                  <div className="mt-2 text-sm text-[hsl(var(--foreground))]">
+                    {row.featureValue}
+                  </div>
                 </div>
-                <div className="rounded-2xl border border-border bg-slate-950/40 p-3">
-                  <div className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                <div className="rounded-2xl border border-border bg-[hsl(var(--panel-alt))] p-3">
+                  <div className="text-[11px] uppercase tracking-[0.18em] text-[hsl(var(--muted))]">
                     {row.targetLabel}
                   </div>
-                  <div className="mt-2 text-sm text-white">{row.appliedValue}</div>
+                  <div className="mt-2 text-sm text-[hsl(var(--foreground))]">
+                    {row.appliedValue}
+                  </div>
                 </div>
-                <div className="rounded-2xl border border-border bg-slate-950/40 p-3">
-                  <div className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                <div className="rounded-2xl border border-border bg-[hsl(var(--panel-alt))] p-3">
+                  <div className="text-[11px] uppercase tracking-[0.18em] text-[hsl(var(--muted))]">
                     Trace
                   </div>
-                  <div className="mt-2 text-sm text-white">{row.targetPath}</div>
-                  <div className="mt-1 text-xs text-slate-500">
+                  <div className="mt-2 text-sm text-[hsl(var(--foreground))]">{row.targetPath}</div>
+                  <div className="mt-1 text-xs text-[hsl(var(--muted))]">
                     {row.freshnessLabel ?? row.sourceVersion ?? 'current run snapshot'}
                   </div>
                 </div>

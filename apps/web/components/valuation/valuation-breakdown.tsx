@@ -197,15 +197,20 @@ function MetricList({ title, metrics }: { title: string; metrics: Metric[] }) {
       <div className="eyebrow">{title}</div>
       <div className="grid gap-3 md:grid-cols-2">
         {metrics.map((metric) => (
-          <div key={metric.label} className="rounded-2xl border border-border bg-slate-950/40 p-4">
-            <div className="text-xs uppercase tracking-[0.18em] text-slate-500">{metric.label}</div>
+          <div
+            key={metric.label}
+            className="rounded-2xl border border-border bg-[hsl(var(--panel-alt))] p-4"
+          >
+            <div className="text-xs uppercase tracking-[0.18em] text-[hsl(var(--muted))]">
+              {metric.label}
+            </div>
             <div
               className={`mt-2 text-lg font-semibold ${
                 metric.tone === 'good'
-                  ? 'text-emerald-300'
+                  ? 'text-[hsl(var(--success))]'
                   : metric.tone === 'warn'
-                    ? 'text-amber-300'
-                    : 'text-white'
+                    ? 'text-[hsl(var(--warning))]'
+                    : 'text-[hsl(var(--foreground))]'
               }`}
             >
               {metric.value}
@@ -297,9 +302,16 @@ export function ValuationBreakdown({
               )
             ]
           ].map(([label, value]) => (
-            <div key={label} className="rounded-2xl border border-border bg-slate-950/40 p-4">
-              <div className="text-xs uppercase tracking-[0.18em] text-slate-500">{label}</div>
-              <div className="mt-2 text-lg font-semibold text-white">{value}</div>
+            <div
+              key={label}
+              className="rounded-2xl border border-border bg-[hsl(var(--panel-alt))] p-4"
+            >
+              <div className="text-xs uppercase tracking-[0.18em] text-[hsl(var(--muted))]">
+                {label}
+              </div>
+              <div className="mt-2 text-lg font-semibold text-[hsl(var(--foreground))]">
+                {value}
+              </div>
             </div>
           ))}
         </div>
@@ -309,12 +321,14 @@ export function ValuationBreakdown({
             {debtBreakdown.facilities.map((facility) => (
               <div
                 key={`${facility.label}-${facility.facilityTypeLabel}`}
-                className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+                className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4"
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <div className="text-sm font-semibold text-white">{facility.label}</div>
-                    <div className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">
+                    <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
+                      {facility.label}
+                    </div>
+                    <div className="mt-1 text-xs uppercase tracking-[0.18em] text-[hsl(var(--muted))]">
                       {facility.facilityTypeLabel} / {facility.amortizationLabel}
                     </div>
                   </div>
@@ -325,11 +339,11 @@ export function ValuationBreakdown({
                 </div>
 
                 <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-                  <div className="rounded-2xl border border-border bg-slate-950/40 p-3">
-                    <div className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                  <div className="rounded-2xl border border-border bg-[hsl(var(--panel-alt))] p-3">
+                    <div className="text-[11px] uppercase tracking-[0.18em] text-[hsl(var(--muted))]">
                       Commitment
                     </div>
-                    <div className="mt-2 text-sm text-white">
+                    <div className="mt-2 text-sm text-[hsl(var(--foreground))]">
                       {formatCurrencyFromKrwAtRate(
                         facility.commitmentKrw,
                         displayCurrency,
@@ -337,11 +351,11 @@ export function ValuationBreakdown({
                       )}
                     </div>
                   </div>
-                  <div className="rounded-2xl border border-border bg-slate-950/40 p-3">
-                    <div className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                  <div className="rounded-2xl border border-border bg-[hsl(var(--panel-alt))] p-3">
+                    <div className="text-[11px] uppercase tracking-[0.18em] text-[hsl(var(--muted))]">
                       Drawn / Scheduled
                     </div>
-                    <div className="mt-2 text-sm text-white">
+                    <div className="mt-2 text-sm text-[hsl(var(--foreground))]">
                       {formatCurrencyFromKrwAtRate(
                         facility.drawnAmountKrw,
                         displayCurrency,
@@ -349,19 +363,19 @@ export function ValuationBreakdown({
                       )}
                     </div>
                   </div>
-                  <div className="rounded-2xl border border-border bg-slate-950/40 p-3">
-                    <div className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                  <div className="rounded-2xl border border-border bg-[hsl(var(--panel-alt))] p-3">
+                    <div className="text-[11px] uppercase tracking-[0.18em] text-[hsl(var(--muted))]">
                       Rate Contribution
                     </div>
-                    <div className="mt-2 text-sm text-white">
+                    <div className="mt-2 text-sm text-[hsl(var(--foreground))]">
                       {formatPercent(facility.rateContributionPct, 2)}
                     </div>
                   </div>
-                  <div className="rounded-2xl border border-border bg-slate-950/40 p-3">
-                    <div className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                  <div className="rounded-2xl border border-border bg-[hsl(var(--panel-alt))] p-3">
+                    <div className="text-[11px] uppercase tracking-[0.18em] text-[hsl(var(--muted))]">
                       Reserve Load
                     </div>
-                    <div className="mt-2 text-sm text-white">
+                    <div className="mt-2 text-sm text-[hsl(var(--foreground))]">
                       {formatCurrencyFromKrwAtRate(
                         facility.reserveContributionKrw,
                         displayCurrency,
@@ -369,18 +383,18 @@ export function ValuationBreakdown({
                       )}
                     </div>
                   </div>
-                  <div className="rounded-2xl border border-border bg-slate-950/40 p-3">
-                    <div className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                  <div className="rounded-2xl border border-border bg-[hsl(var(--panel-alt))] p-3">
+                    <div className="text-[11px] uppercase tracking-[0.18em] text-[hsl(var(--muted))]">
                       Ending Balance Proxy
                     </div>
-                    <div className="mt-2 text-sm text-white">
+                    <div className="mt-2 text-sm text-[hsl(var(--foreground))]">
                       {formatCurrencyFromKrwAtRate(
                         facility.endingBalanceContributionKrw,
                         displayCurrency,
                         fxRateToKrw
                       )}
                     </div>
-                    <div className="mt-1 text-xs text-slate-500">
+                    <div className="mt-1 text-xs text-[hsl(var(--muted))]">
                       {facility.drawCount} draws in schedule
                     </div>
                   </div>
@@ -389,7 +403,7 @@ export function ValuationBreakdown({
             ))}
           </div>
         ) : (
-          <div className="mt-4 rounded-[22px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
+          <div className="mt-4 rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4 text-sm text-[hsl(var(--foreground-muted))]">
             No stored debt facilities yet. The current valuation is likely leaning on the synthetic
             underwriting facility.
           </div>

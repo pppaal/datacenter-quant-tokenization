@@ -32,7 +32,7 @@ export function LeaseExpiryLadder({
     return (
       <Card id="lease-expiry-ladder">
         <div className="eyebrow">Lease Expiry Ladder</div>
-        <div className="mt-4 rounded-[22px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
+        <div className="mt-4 rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4 text-sm text-[hsl(var(--foreground-muted))]">
           No lease rows yet. Add contracted demand first to see expiry and rollover concentration.
         </div>
       </Card>
@@ -44,43 +44,45 @@ export function LeaseExpiryLadder({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="eyebrow">Lease Expiry Ladder</div>
-          <div className="mt-2 text-sm text-slate-400">
+          <div className="mt-2 text-sm text-[hsl(var(--foreground-muted))]">
             Expiry concentration, renewal assumptions, and modeled rollover window by lease year.
           </div>
         </div>
-        <div className="text-sm text-slate-400">
+        <div className="text-sm text-[hsl(var(--foreground-muted))]">
           {formatNumber(ladder.rows.length, 0)} expiry buckets
         </div>
       </div>
 
       <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-2xl border border-border bg-slate-950/40 p-4">
-          <div className="text-xs uppercase tracking-[0.18em] text-slate-500">
+        <div className="rounded-2xl border border-border bg-[hsl(var(--panel-alt))] p-4">
+          <div className="text-xs uppercase tracking-[0.18em] text-[hsl(var(--muted))]">
             Total Contracted kW
           </div>
-          <div className="mt-2 text-lg font-semibold text-white">
+          <div className="mt-2 text-lg font-semibold text-[hsl(var(--foreground))]">
             {formatNumber(ladder.totalContractedKw, 0)} kW
           </div>
         </div>
-        <div className="rounded-2xl border border-border bg-slate-950/40 p-4">
-          <div className="text-xs uppercase tracking-[0.18em] text-slate-500">Near-Term Expiry</div>
-          <div className="mt-2 text-lg font-semibold text-white">
+        <div className="rounded-2xl border border-border bg-[hsl(var(--panel-alt))] p-4">
+          <div className="text-xs uppercase tracking-[0.18em] text-[hsl(var(--muted))]">
+            Near-Term Expiry
+          </div>
+          <div className="mt-2 text-lg font-semibold text-[hsl(var(--foreground))]">
             {formatNumber(ladder.nearTermExpiryKw, 0)} kW
           </div>
         </div>
-        <div className="rounded-2xl border border-border bg-slate-950/40 p-4">
-          <div className="text-xs uppercase tracking-[0.18em] text-slate-500">
+        <div className="rounded-2xl border border-border bg-[hsl(var(--panel-alt))] p-4">
+          <div className="text-xs uppercase tracking-[0.18em] text-[hsl(var(--muted))]">
             Weighted Renewal Prob.
           </div>
-          <div className="mt-2 text-lg font-semibold text-white">
+          <div className="mt-2 text-lg font-semibold text-[hsl(var(--foreground))]">
             {formatMaybe(ladder.weightedRenewProbabilityPct)}%
           </div>
         </div>
-        <div className="rounded-2xl border border-border bg-slate-950/40 p-4">
-          <div className="text-xs uppercase tracking-[0.18em] text-slate-500">
+        <div className="rounded-2xl border border-border bg-[hsl(var(--panel-alt))] p-4">
+          <div className="text-xs uppercase tracking-[0.18em] text-[hsl(var(--muted))]">
             Latest Expiry Year
           </div>
-          <div className="mt-2 text-lg font-semibold text-white">
+          <div className="mt-2 text-lg font-semibold text-[hsl(var(--foreground))]">
             {ladder.latestExpiryYear !== null
               ? `Year ${formatNumber(ladder.latestExpiryYear, 0)}`
               : 'N/A'}
@@ -91,7 +93,7 @@ export function LeaseExpiryLadder({
       <div className="mt-5 overflow-x-auto">
         <table className="min-w-full border-separate border-spacing-y-2 text-sm">
           <thead>
-            <tr className="text-left text-xs uppercase tracking-[0.16em] text-slate-500">
+            <tr className="text-left text-xs uppercase tracking-[0.16em] text-[hsl(var(--muted))]">
               <th className="px-3 py-2">Expiry</th>
               <th className="px-3 py-2 text-right">Expiring kW</th>
               <th className="px-3 py-2 text-right">Leases</th>
@@ -107,16 +109,16 @@ export function LeaseExpiryLadder({
             {ladder.rows.map((row) => (
               <tr
                 key={row.expiryYear}
-                className="rounded-2xl border border-white/10 bg-white/[0.03] text-slate-200"
+                className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] text-[hsl(var(--foreground))]"
               >
-                <td className="px-3 py-3 font-medium text-white">
+                <td className="px-3 py-3 font-medium text-[hsl(var(--foreground))]">
                   {rolloverBasePath ? (
                     <Link
                       href={`${rolloverBasePath}?rolloverYear=${row.expiryYear}#lease-rollover-drilldown`}
                       className={`rounded-full border px-3 py-1 text-xs uppercase tracking-[0.16em] transition ${
                         selectedRolloverYear === row.expiryYear
-                          ? 'border-amber-300/40 bg-amber-200/15 text-white'
-                          : 'border-white/10 bg-slate-950/40 text-slate-200 hover:border-amber-300/30 hover:text-white'
+                          ? 'border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--warning-tint))] text-[hsl(var(--foreground))]'
+                          : 'border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] text-[hsl(var(--foreground))] hover:border-[hsl(var(--warning)/0.25)] hover:text-[hsl(var(--foreground))]'
                       }`}
                     >
                       Year {row.expiryYear}
@@ -147,7 +149,7 @@ export function LeaseExpiryLadder({
                     rolloverBasePath ? (
                       <Link
                         href={`${rolloverBasePath}?rolloverYear=${row.expiryYear}#lease-rollover-drilldown`}
-                        className="rounded-full border border-amber-400/15 bg-amber-500/[0.06] px-3 py-1 text-xs text-amber-50/85 transition hover:border-amber-300/30 hover:text-white"
+                        className="rounded-full border border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--warning-tint))] px-3 py-1 text-xs text-[hsl(var(--warning))] transition hover:border-[hsl(var(--warning)/0.25)] hover:text-[hsl(var(--foreground))]"
                       >
                         {`Y${row.firstRenewalStartYear} - Y${row.lastModeledRenewalEndYear}`}
                       </Link>
@@ -167,7 +169,7 @@ export function LeaseExpiryLadder({
       <div className="mt-5 overflow-x-auto">
         <table className="min-w-full border-separate border-spacing-y-2 text-sm">
           <thead>
-            <tr className="text-left text-xs uppercase tracking-[0.16em] text-slate-500">
+            <tr className="text-left text-xs uppercase tracking-[0.16em] text-[hsl(var(--muted))]">
               <th className="px-3 py-2">Tenant</th>
               <th className="px-3 py-2 text-right">Expiry</th>
               <th className="px-3 py-2 text-right">kW</th>
@@ -181,13 +183,13 @@ export function LeaseExpiryLadder({
             {ladder.details.map((detail) => (
               <tr
                 key={detail.leaseId}
-                className="rounded-2xl border border-white/10 bg-slate-950/30 text-slate-300"
+                className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] text-[hsl(var(--foreground-muted))]"
               >
-                <td className="px-3 py-3 text-white">
+                <td className="px-3 py-3 text-[hsl(var(--foreground))]">
                   {leaseBasePath ? (
                     <Link
                       href={`${leaseBasePath}#lease-${detail.leaseId}`}
-                      className="rounded-full border border-white/10 bg-slate-950/40 px-3 py-1 text-xs text-slate-200 transition hover:border-amber-300/30 hover:text-white"
+                      className="rounded-full border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-1 text-xs text-[hsl(var(--foreground))] transition hover:border-[hsl(var(--warning)/0.25)] hover:text-[hsl(var(--foreground))]"
                     >
                       {detail.tenantName}
                     </Link>

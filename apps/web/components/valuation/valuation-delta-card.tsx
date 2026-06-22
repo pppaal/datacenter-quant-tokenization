@@ -43,7 +43,7 @@ export function ValuationDeltaCard({
     return (
       <Card>
         <div className="eyebrow">Run Delta</div>
-        <p className="mt-4 text-sm leading-6 text-slate-300">
+        <p className="mt-4 text-sm leading-6 text-[hsl(var(--foreground-muted))]">
           This is the earliest stored run for this asset, so there is no previous valuation snapshot
           to compare against yet.
         </p>
@@ -71,28 +71,34 @@ export function ValuationDeltaCard({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="eyebrow">Run Delta</div>
-          <div className="mt-2 text-sm text-slate-400">Compared with {previousRun.runLabel}</div>
+          <div className="mt-2 text-sm text-[hsl(var(--foreground-muted))]">
+            Compared with {previousRun.runLabel}
+          </div>
         </div>
         <Badge tone={deltaTone(baseDelta)}>{formatDelta(baseDelta, 'currency')}</Badge>
       </div>
       <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-2xl border border-border bg-slate-950/40 p-4">
-          <div className="text-xs uppercase tracking-[0.18em] text-slate-500">Base Case Delta</div>
-          <div className="mt-2 text-lg font-semibold text-white">
+        <div className="rounded-2xl border border-border bg-[hsl(var(--panel-alt))] p-4">
+          <div className="text-xs uppercase tracking-[0.18em] text-[hsl(var(--muted))]">
+            Base Case Delta
+          </div>
+          <div className="mt-2 text-lg font-semibold text-[hsl(var(--foreground))]">
             {formatDelta(baseDelta, 'currency')}
           </div>
         </div>
-        <div className="rounded-2xl border border-border bg-slate-950/40 p-4">
-          <div className="text-xs uppercase tracking-[0.18em] text-slate-500">Confidence Delta</div>
-          <div className="mt-2 text-lg font-semibold text-white">
+        <div className="rounded-2xl border border-border bg-[hsl(var(--panel-alt))] p-4">
+          <div className="text-xs uppercase tracking-[0.18em] text-[hsl(var(--muted))]">
+            Confidence Delta
+          </div>
+          <div className="mt-2 text-lg font-semibold text-[hsl(var(--foreground))]">
             {formatDelta(confidenceDelta, 'number')}
           </div>
         </div>
-        <div className="rounded-2xl border border-border bg-slate-950/40 p-4">
-          <div className="text-xs uppercase tracking-[0.18em] text-slate-500">
+        <div className="rounded-2xl border border-border bg-[hsl(var(--panel-alt))] p-4">
+          <div className="text-xs uppercase tracking-[0.18em] text-[hsl(var(--muted))]">
             Cap / Discount Shift
           </div>
-          <div className="mt-2 text-lg font-semibold text-white">
+          <div className="mt-2 text-lg font-semibold text-[hsl(var(--foreground))]">
             {formatDelta(capRateDelta, 'bps')} / {formatDelta(discountRateDelta, 'bps')}
           </div>
         </div>

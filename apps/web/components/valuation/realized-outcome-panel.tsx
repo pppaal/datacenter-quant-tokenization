@@ -32,8 +32,10 @@ export function RealizedOutcomePanel({
       <div className="flex items-center justify-between gap-4">
         <div>
           <div className="eyebrow">Realized Outcomes</div>
-          <h3 className="mt-2 text-xl font-semibold text-white">Forecast vs actual asset path</h3>
-          <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-400">
+          <h3 className="mt-2 text-xl font-semibold text-[hsl(var(--foreground))]">
+            Forecast vs actual asset path
+          </h3>
+          <p className="mt-2 max-w-2xl text-sm leading-7 text-[hsl(var(--foreground-muted))]">
             This is the first validation layer against actual occupancy, NOI, value, and DSCR after
             the underwriting run. It lets the macro team check whether regime overlays translated
             into realized asset results.
@@ -47,60 +49,60 @@ export function RealizedOutcomePanel({
       {comparison.status === 'MATCHED' && comparison.match ? (
         <>
           <div className="mt-5 grid gap-4 md:grid-cols-4">
-            <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+            <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-5">
               <div className="fine-print">Observed On</div>
-              <div className="mt-3 text-2xl font-semibold text-white">
+              <div className="mt-3 text-2xl font-semibold text-[hsl(var(--foreground))]">
                 {formatDate(comparison.match.observationDate)}
               </div>
-              <p className="mt-2 text-sm text-slate-400">
+              <p className="mt-2 text-sm text-[hsl(var(--foreground-muted))]">
                 {formatNumber(comparison.match.horizonDays, 0)} days after run
               </p>
             </div>
-            <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+            <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-5">
               <div className="fine-print">Actual Value Move</div>
-              <div className="mt-3 text-2xl font-semibold text-white">
+              <div className="mt-3 text-2xl font-semibold text-[hsl(var(--foreground))]">
                 {comparison.match.actualValueChangePct === null
                   ? 'N/A'
                   : formatPercent(comparison.match.actualValueChangePct)}
               </div>
-              <p className="mt-2 text-sm text-slate-400">
+              <p className="mt-2 text-sm text-[hsl(var(--foreground-muted))]">
                 {comparison.match.valueForecastErrorPct === null
                   ? 'No forecast error yet.'
                   : `Forecast error ${formatPercent(comparison.match.valueForecastErrorPct)}`}
               </p>
             </div>
-            <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+            <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-5">
               <div className="fine-print">Actual DSCR Move</div>
-              <div className="mt-3 text-2xl font-semibold text-white">
+              <div className="mt-3 text-2xl font-semibold text-[hsl(var(--foreground))]">
                 {comparison.match.actualDscrChangePct === null
                   ? 'N/A'
                   : formatPercent(comparison.match.actualDscrChangePct)}
               </div>
-              <p className="mt-2 text-sm text-slate-400">
+              <p className="mt-2 text-sm text-[hsl(var(--foreground-muted))]">
                 {comparison.match.dscrForecastErrorPct === null
                   ? 'No DSCR forecast error yet.'
                   : `Forecast error ${formatPercent(comparison.match.dscrForecastErrorPct)}`}
               </p>
             </div>
-            <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+            <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-5">
               <div className="fine-print">Occupancy Gap</div>
-              <div className="mt-3 text-2xl font-semibold text-white">
+              <div className="mt-3 text-2xl font-semibold text-[hsl(var(--foreground))]">
                 {comparison.match.occupancyGapPct === null
                   ? 'N/A'
                   : formatPercent(comparison.match.occupancyGapPct)}
               </div>
-              <p className="mt-2 text-sm text-slate-400">
+              <p className="mt-2 text-sm text-[hsl(var(--foreground-muted))]">
                 Actual occupancy against the underwriting assumption.
               </p>
             </div>
           </div>
 
-          <div className="mt-5 rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+          <div className="mt-5 rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-5">
             <div className="fine-print">Observed Snapshot</div>
             <div className="mt-4 grid gap-4 md:grid-cols-4">
               <div>
                 <div className="fine-print">Realized Value</div>
-                <div className="mt-2 text-lg font-semibold text-white">
+                <div className="mt-2 text-lg font-semibold text-[hsl(var(--foreground))]">
                   {formatCurrencyFromKrwAtRate(
                     comparison.match.valuationKrw,
                     displayCurrency,
@@ -110,7 +112,7 @@ export function RealizedOutcomePanel({
               </div>
               <div>
                 <div className="fine-print">Actual NOI</div>
-                <div className="mt-2 text-lg font-semibold text-white">
+                <div className="mt-2 text-lg font-semibold text-[hsl(var(--foreground))]">
                   {formatCurrencyFromKrwAtRate(
                     comparison.match.noiKrw,
                     displayCurrency,
@@ -120,7 +122,7 @@ export function RealizedOutcomePanel({
               </div>
               <div>
                 <div className="fine-print">Actual DSCR</div>
-                <div className="mt-2 text-lg font-semibold text-white">
+                <div className="mt-2 text-lg font-semibold text-[hsl(var(--foreground))]">
                   {comparison.match.debtServiceCoverage === null
                     ? 'N/A'
                     : `${formatNumber(comparison.match.debtServiceCoverage, 2)}x`}
@@ -128,21 +130,25 @@ export function RealizedOutcomePanel({
               </div>
               <div>
                 <div className="fine-print">Rent Growth</div>
-                <div className="mt-2 text-lg font-semibold text-white">
+                <div className="mt-2 text-lg font-semibold text-[hsl(var(--foreground))]">
                   {comparison.match.rentGrowthPct === null
                     ? 'N/A'
                     : formatPercent(comparison.match.rentGrowthPct)}
                 </div>
               </div>
             </div>
-            <p className="mt-4 text-sm leading-7 text-slate-300">{comparison.commentary}</p>
+            <p className="mt-4 text-sm leading-7 text-[hsl(var(--foreground-muted))]">
+              {comparison.commentary}
+            </p>
             {comparison.match.notes ? (
-              <p className="mt-3 text-sm leading-7 text-slate-400">{comparison.match.notes}</p>
+              <p className="mt-3 text-sm leading-7 text-[hsl(var(--foreground-muted))]">
+                {comparison.match.notes}
+              </p>
             ) : null}
           </div>
         </>
       ) : (
-        <div className="mt-5 rounded-[24px] border border-white/10 bg-white/[0.03] p-5 text-sm text-slate-400">
+        <div className="mt-5 rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-5 text-sm text-[hsl(var(--foreground-muted))]">
           {comparison.commentary}
         </div>
       )}
@@ -152,10 +158,10 @@ export function RealizedOutcomePanel({
           outcomes.map((outcome) => (
             <div
               key={outcome.id}
-              className="rounded-[22px] border border-white/10 bg-slate-950/35 p-4"
+              className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4"
             >
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="text-sm font-semibold text-white">
+                <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
                   {formatDate(outcome.observationDate)}
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -167,7 +173,7 @@ export function RealizedOutcomePanel({
                   ) : null}
                 </div>
               </div>
-              <div className="mt-3 grid gap-3 text-sm text-slate-300 md:grid-cols-4">
+              <div className="mt-3 grid gap-3 text-sm text-[hsl(var(--foreground-muted))] md:grid-cols-4">
                 <div>
                   <div className="fine-print">Value</div>
                   <div>
@@ -200,12 +206,14 @@ export function RealizedOutcomePanel({
                 </div>
               </div>
               {outcome.notes ? (
-                <p className="mt-3 text-sm leading-7 text-slate-400">{outcome.notes}</p>
+                <p className="mt-3 text-sm leading-7 text-[hsl(var(--foreground-muted))]">
+                  {outcome.notes}
+                </p>
               ) : null}
             </div>
           ))
         ) : (
-          <div className="rounded-[22px] border border-white/10 bg-slate-950/35 p-4 text-sm text-slate-400">
+          <div className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4 text-sm text-[hsl(var(--foreground-muted))]">
             No realized outcomes captured yet for this asset.
           </div>
         )}
