@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, startTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { useRouterRefresh } from '@/lib/hooks/use-router-refresh';
 
 type ReadinessAction = 'stage' | 'register' | 'anchor';
 
@@ -32,7 +32,7 @@ const actionCopy: Record<
 };
 
 export function ReadinessActionPanel({ assetId }: { assetId: string }) {
-  const router = useRouter();
+  const { isRefreshing, refresh } = useRouterRefresh();
   const [busy, setBusy] = useState<ReadinessAction | null>(null);
   const [feedback, setFeedback] = useState<{ tone: 'good' | 'danger'; message: string } | null>(
     null
@@ -56,7 +56,7 @@ export function ReadinessActionPanel({ assetId }: { assetId: string }) {
         tone: 'good',
         message: actionCopy[action].successLabel
       });
-      startTransition(() => router.refresh());
+      refresh();
     } catch (error) {
       setFeedback({
         tone: 'danger',
@@ -77,7 +77,7 @@ export function ReadinessActionPanel({ assetId }: { assetId: string }) {
           onClick={() => {
             void run(action);
           }}
-          disabled={busy !== null}
+          disabled={busy !== null || isRefreshing}
           data-testid={`readiness-${action}`}
         >
           {busy === action ? actionCopy[action].runningLabel : actionCopy[action].label}

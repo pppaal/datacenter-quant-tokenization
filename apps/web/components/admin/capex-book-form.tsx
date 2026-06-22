@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, startTransition } from 'react';
+import { useState } from 'react';
 import { CapexCategory } from '@prisma/client';
-import { useRouter } from 'next/navigation';
 import { type SupportedCurrency } from '@/lib/finance/currency';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { useRouterRefresh } from '@/lib/hooks/use-router-refresh';
 
 type CapexDraft = {
   id?: string;
@@ -61,7 +61,7 @@ export function CapexBookForm({
   inputCurrency?: SupportedCurrency;
   defaultItems: CapexDefaultValue[];
 }) {
-  const router = useRouter();
+  const { isRefreshing, refresh } = useRouterRefresh();
   const [items, setItems] = useState<CapexDraft[]>(() =>
     defaultItems.length > 0 ? defaultItems.map((item) => buildDraft(item)) : [buildDraft()]
   );
@@ -105,7 +105,7 @@ export function CapexBookForm({
         throw new Error(result?.error ?? 'Failed to save CAPEX line item');
       }
 
-      startTransition(() => router.refresh());
+      refresh();
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Failed to save CAPEX line item');
     } finally {
@@ -135,7 +135,7 @@ export function CapexBookForm({
         throw new Error(result?.error ?? 'Failed to delete CAPEX line item');
       }
 
-      startTransition(() => router.refresh());
+      refresh();
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Failed to delete CAPEX line item');
     } finally {
@@ -162,14 +162,18 @@ export function CapexBookForm({
                 <Button
                   type="button"
                   variant="secondary"
-                  disabled={submittingId === item.localId || deletingId === item.localId}
+                  disabled={
+                    submittingId === item.localId || deletingId === item.localId || isRefreshing
+                  }
                   onClick={() => handleDelete(item)}
                 >
                   {deletingId === item.localId ? 'Deleting...' : 'Delete'}
                 </Button>
                 <Button
                   type="button"
-                  disabled={submittingId === item.localId || deletingId === item.localId}
+                  disabled={
+                    submittingId === item.localId || deletingId === item.localId || isRefreshing
+                  }
                   onClick={() => handleSave(item)}
                 >
                   {submittingId === item.localId

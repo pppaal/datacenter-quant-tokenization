@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, startTransition } from 'react';
+import { useState } from 'react';
 import { AmortizationProfile, DebtFacilityType } from '@prisma/client';
-import { useRouter } from 'next/navigation';
 import { type SupportedCurrency } from '@/lib/finance/currency';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { useRouterRefresh } from '@/lib/hooks/use-router-refresh';
 
 type DebtDrawDraft = {
   localId: string;
@@ -115,7 +115,7 @@ export function DebtBookForm({
   inputCurrency?: SupportedCurrency;
   defaultFacilities: DebtFacilityDefaultValue[];
 }) {
-  const router = useRouter();
+  const { isRefreshing, refresh } = useRouterRefresh();
   const [facilities, setFacilities] = useState<DebtFacilityDraft[]>(() =>
     defaultFacilities.length > 0
       ? defaultFacilities.map((facility) => buildFacilityDraft(facility))
@@ -225,7 +225,7 @@ export function DebtBookForm({
         throw new Error(result?.error ?? 'Failed to save debt facility');
       }
 
-      startTransition(() => router.refresh());
+      refresh();
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Failed to save debt facility');
     } finally {
@@ -255,7 +255,7 @@ export function DebtBookForm({
         throw new Error(result?.error ?? 'Failed to delete debt facility');
       }
 
-      startTransition(() => router.refresh());
+      refresh();
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Failed to delete debt facility');
     } finally {
@@ -282,14 +282,22 @@ export function DebtBookForm({
                 <Button
                   type="button"
                   variant="secondary"
-                  disabled={submittingId === facility.localId || deletingId === facility.localId}
+                  disabled={
+                    submittingId === facility.localId ||
+                    deletingId === facility.localId ||
+                    isRefreshing
+                  }
                   onClick={() => handleDelete(facility)}
                 >
                   {deletingId === facility.localId ? 'Deleting...' : 'Delete'}
                 </Button>
                 <Button
                   type="button"
-                  disabled={submittingId === facility.localId || deletingId === facility.localId}
+                  disabled={
+                    submittingId === facility.localId ||
+                    deletingId === facility.localId ||
+                    isRefreshing
+                  }
                   onClick={() => handleSave(facility)}
                 >
                   {submittingId === facility.localId

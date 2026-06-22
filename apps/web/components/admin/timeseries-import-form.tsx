@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, startTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { useRouterRefresh } from '@/lib/hooks/use-router-refresh';
 
 const SAMPLE_CSV = `target,market,region,assetClass,assetTier,indicatorKey,observationDate,value,unit,sourceSystem,label,frequency
 macro,KR,,,,kr.cpi_yoy_pct,2024-01-01,3.2,pct,kosis-historical,CPI YoY,monthly
@@ -21,7 +21,7 @@ type Summary = {
 };
 
 export function TimeseriesImportForm() {
-  const router = useRouter();
+  const { isRefreshing, refresh } = useRouterRefresh();
   const [csv, setCsv] = useState(SAMPLE_CSV);
   const [busy, setBusy] = useState(false);
   const [banner, setBanner] = useState<{ tone: 'good' | 'warn'; text: string } | null>(null);
@@ -54,7 +54,7 @@ export function TimeseriesImportForm() {
           tone: 'good',
           text: `Imported · ${body.summary.macroInserted + body.summary.marketInserted} new · ${body.summary.macroUpdated + body.summary.marketUpdated} updated`
         });
-        startTransition(() => router.refresh());
+        refresh();
       }
     } finally {
       setBusy(false);
@@ -83,11 +83,16 @@ export function TimeseriesImportForm() {
         spellCheck={false}
       />
       <div className="flex flex-wrap gap-3">
-        <Button type="button" disabled={busy} onClick={() => submit(true)}>
+        <Button type="button" disabled={busy || isRefreshing} onClick={() => submit(true)}>
           {busy ? 'Validating…' : 'Validate (dry run)'}
         </Button>
-        <Button type="button" variant="ghost" disabled={busy} onClick={() => submit(false)}>
-          {busy ? 'Importing…' : 'Import'}
+        <Button
+          type="button"
+          variant="ghost"
+          disabled={busy || isRefreshing}
+          onClick={() => submit(false)}
+        >
+          {busy || isRefreshing ? 'Importing…' : 'Import'}
         </Button>
       </div>
       {errors.length > 0 ? (

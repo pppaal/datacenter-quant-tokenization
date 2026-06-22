@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, startTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { AssetStage } from '@prisma/client';
 import { type SupportedCurrency } from '@/lib/finance/currency';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { useRouterRefresh } from '@/lib/hooks/use-router-refresh';
 
 type ComparableDraft = {
   id?: string;
@@ -92,7 +92,7 @@ export function ComparableBookForm({
   defaultSetNotes?: string | null;
   defaultEntries: ComparableDefaultValue[];
 }) {
-  const router = useRouter();
+  const { isRefreshing, refresh } = useRouterRefresh();
   const [setName, setSetName] = useState(defaultSetName ?? '');
   const [setNotes, setSetNotes] = useState(defaultSetNotes ?? '');
   const [entries, setEntries] = useState<ComparableDraft[]>(() =>
@@ -151,7 +151,7 @@ export function ComparableBookForm({
         throw new Error(result?.error ?? 'Failed to save comparable');
       }
 
-      startTransition(() => router.refresh());
+      refresh();
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Failed to save comparable');
     } finally {
@@ -181,7 +181,7 @@ export function ComparableBookForm({
         throw new Error(result?.error ?? 'Failed to delete comparable');
       }
 
-      startTransition(() => router.refresh());
+      refresh();
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Failed to delete comparable');
     } finally {
@@ -228,14 +228,18 @@ export function ComparableBookForm({
                 <Button
                   type="button"
                   variant="secondary"
-                  disabled={submittingId === entry.localId || deletingId === entry.localId}
+                  disabled={
+                    submittingId === entry.localId || deletingId === entry.localId || isRefreshing
+                  }
                   onClick={() => handleDelete(entry)}
                 >
                   {deletingId === entry.localId ? 'Deleting...' : 'Delete'}
                 </Button>
                 <Button
                   type="button"
-                  disabled={submittingId === entry.localId || deletingId === entry.localId}
+                  disabled={
+                    submittingId === entry.localId || deletingId === entry.localId || isRefreshing
+                  }
                   onClick={() => handleSave(entry)}
                 >
                   {submittingId === entry.localId

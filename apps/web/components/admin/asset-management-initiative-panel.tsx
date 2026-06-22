@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, startTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { TaskPriority, TaskStatus } from '@prisma/client';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,6 +8,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { useRouterRefresh } from '@/lib/hooks/use-router-refresh';
 
 type InitiativeRecord = {
   id: string;
@@ -51,7 +51,7 @@ function InitiativeRow({
   portfolioAssetId: string;
   initiative: InitiativeRecord;
 }) {
-  const router = useRouter();
+  const { isRefreshing, refresh } = useRouterRefresh();
   const [status, setStatus] = useState<TaskStatus>(initiative.status);
   const [priority, setPriority] = useState<TaskPriority>(initiative.priority);
   const [ownerName, setOwnerName] = useState(initiative.ownerName ?? '');
@@ -92,7 +92,7 @@ function InitiativeRow({
       }
 
       setFeedback('Initiative updated.');
-      startTransition(() => router.refresh());
+      refresh();
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : 'Failed to update initiative');
     } finally {
@@ -125,10 +125,10 @@ function InitiativeRow({
           type="button"
           variant="secondary"
           onClick={save}
-          disabled={submitting}
+          disabled={submitting || isRefreshing}
           data-testid="initiative-save"
         >
-          {submitting ? 'Saving...' : 'Save'}
+          {submitting || isRefreshing ? 'Saving...' : 'Save'}
         </Button>
       </div>
 
@@ -197,7 +197,7 @@ export function AssetManagementInitiativePanel({
   assetName,
   initiatives
 }: AssetManagementInitiativePanelProps) {
-  const router = useRouter();
+  const { isRefreshing, refresh } = useRouterRefresh();
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('');
   const [priority, setPriority] = useState<TaskPriority>('MEDIUM');
@@ -241,7 +241,7 @@ export function AssetManagementInitiativePanel({
       setTargetDate('');
       setSummary('');
       setNextStep('');
-      startTransition(() => router.refresh());
+      refresh();
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : 'Failed to create initiative');
     } finally {
@@ -300,10 +300,10 @@ export function AssetManagementInitiativePanel({
         <Button
           type="button"
           onClick={createInitiative}
-          disabled={submitting}
+          disabled={submitting || isRefreshing}
           data-testid="initiative-create-submit"
         >
-          {submitting ? 'Adding...' : 'Add Initiative'}
+          {submitting || isRefreshing ? 'Adding...' : 'Add Initiative'}
         </Button>
       </div>
       <div className="mt-3">
