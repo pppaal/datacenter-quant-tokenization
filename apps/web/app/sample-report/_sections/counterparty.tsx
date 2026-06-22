@@ -48,7 +48,7 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
             {asset.counterparties.length === 1 ? 'y' : 'ies'}
           </Badge>
         </div>
-        <p className="mt-2 max-w-3xl text-sm text-slate-400">
+        <p className="mt-2 max-w-3xl text-sm text-[hsl(var(--foreground-muted))]">
           Filed financials, derived credit ratios benchmarked against KR sponsor peer medians,
           10-year projection, CFADS-based DSCR forward path, distribution waterfall, liquidity
           ladder, and 4×4 sensitivity grid.
@@ -78,51 +78,57 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                   key={label}
                   className="rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4"
                 >
-                  <div className="text-[10px] uppercase tracking-wide text-slate-400">
+                  <div className="text-[10px] uppercase tracking-wide text-[hsl(var(--foreground-muted))]">
                     {label} · {rollup!.weightingBasis}-weighted
                   </div>
                   <div className="mt-3 grid gap-3 md:grid-cols-4">
                     <div>
-                      <div className="text-[10px] uppercase tracking-wide text-slate-500">
+                      <div className="text-[10px] uppercase tracking-wide text-[hsl(var(--muted))]">
                         Avg score
                       </div>
-                      <div className="mt-1 font-mono text-sm font-semibold text-white">
+                      <div className="mt-1 font-mono text-sm font-semibold text-[hsl(var(--foreground))]">
                         {rollup!.averageScore !== null ? rollup!.averageScore.toFixed(0) : '—'}
                       </div>
                     </div>
                     <div>
-                      <div className="text-[10px] uppercase tracking-wide text-slate-500">
+                      <div className="text-[10px] uppercase tracking-wide text-[hsl(var(--muted))]">
                         Wtd leverage
                       </div>
-                      <div className="mt-1 font-mono text-sm font-semibold text-white">
+                      <div className="mt-1 font-mono text-sm font-semibold text-[hsl(var(--foreground))]">
                         {rollup!.weightedLeverage !== null
                           ? `${rollup!.weightedLeverage.toFixed(2)}x`
                           : '—'}
                       </div>
                     </div>
                     <div>
-                      <div className="text-[10px] uppercase tracking-wide text-slate-500">
+                      <div className="text-[10px] uppercase tracking-wide text-[hsl(var(--muted))]">
                         Wtd interest coverage
                       </div>
-                      <div className="mt-1 font-mono text-sm font-semibold text-white">
+                      <div className="mt-1 font-mono text-sm font-semibold text-[hsl(var(--foreground))]">
                         {rollup!.weightedInterestCoverage !== null
                           ? `${rollup!.weightedInterestCoverage.toFixed(2)}x`
                           : '—'}
                       </div>
                     </div>
                     <div>
-                      <div className="text-[10px] uppercase tracking-wide text-slate-500">
+                      <div className="text-[10px] uppercase tracking-wide text-[hsl(var(--muted))]">
                         Risk mix
                       </div>
                       <div className="mt-1 font-mono text-[11px]">
-                        <span className="text-emerald-300">{rollup!.riskMix.LOW} LOW</span>
+                        <span className="text-[hsl(var(--success))]">
+                          {rollup!.riskMix.LOW} LOW
+                        </span>
                         {' · '}
-                        <span className="text-amber-300">{rollup!.riskMix.MODERATE} MOD</span>
+                        <span className="text-[hsl(var(--warning))]">
+                          {rollup!.riskMix.MODERATE} MOD
+                        </span>
                         {' · '}
-                        <span className="text-rose-300">{rollup!.riskMix.HIGH} HIGH</span>
+                        <span className="text-[hsl(var(--danger))]">
+                          {rollup!.riskMix.HIGH} HIGH
+                        </span>
                       </div>
                       {rollup!.weakestCounterpartyName ? (
-                        <div className="mt-1 text-[10px] text-slate-500">
+                        <div className="mt-1 text-[10px] text-[hsl(var(--muted))]">
                           Weakest: {rollup!.weakestCounterpartyName}
                         </div>
                       ) : null}
@@ -145,12 +151,14 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                   className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4"
                 >
                   <div className="flex items-baseline justify-between gap-2">
-                    <div className="font-semibold text-white">{cp.name}</div>
-                    <span className="text-[10px] uppercase tracking-wide text-slate-500">
+                    <div className="font-semibold text-[hsl(var(--foreground))]">{cp.name}</div>
+                    <span className="text-[10px] uppercase tracking-wide text-[hsl(var(--muted))]">
                       {cp.role}
                     </span>
                   </div>
-                  <p className="mt-2 text-xs text-slate-400">No financial statement on file.</p>
+                  <p className="mt-2 text-xs text-[hsl(var(--foreground-muted))]">
+                    No financial statement on file.
+                  </p>
                 </div>
               );
             }
@@ -243,10 +251,10 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
             );
             const riskTone =
               latestCa?.riskLevel === 'LOW'
-                ? 'border-emerald-300/30 bg-emerald-300/[0.04] text-emerald-200'
+                ? 'border-emerald-300/30 bg-emerald-300/[0.04] text-[hsl(var(--success))]'
                 : latestCa?.riskLevel === 'HIGH'
-                  ? 'border-rose-300/30 bg-rose-300/[0.04] text-rose-200'
-                  : 'border-amber-300/30 bg-amber-300/[0.04] text-amber-200';
+                  ? 'border-rose-300/30 bg-rose-300/[0.04] text-[hsl(var(--danger))]'
+                  : 'border-amber-300/30 bg-amber-300/[0.04] text-[hsl(var(--warning))]';
             const fmt = (v: number | null) =>
               v !== null
                 ? formatCompactCurrencyFromKrwAtRate(v, displayCurrency, fxRateToKrw)
@@ -260,27 +268,29 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <div className="flex items-center gap-2">
-                      <div className="text-base font-semibold text-white">{cp.name}</div>
+                      <div className="text-base font-semibold text-[hsl(var(--foreground))]">
+                        {cp.name}
+                      </div>
                       {(() => {
                         const provSys = latestFs.provenanceSystem ?? '';
                         const sourceLabel = provSys.toUpperCase().includes('DART')
                           ? {
                               text: 'DART filing',
-                              tone: 'border-emerald-300/30 bg-emerald-300/[0.04] text-emerald-200'
+                              tone: 'border-emerald-300/30 bg-emerald-300/[0.04] text-[hsl(var(--success))]'
                             }
                           : provSys.toUpperCase().includes('AUDIT')
                             ? {
                                 text: 'Audited',
-                                tone: 'border-emerald-300/30 bg-emerald-300/[0.04] text-emerald-200'
+                                tone: 'border-emerald-300/30 bg-emerald-300/[0.04] text-[hsl(var(--success))]'
                               }
                             : provSys.toUpperCase().includes('UPLOAD')
                               ? {
                                   text: 'Uploaded filing',
-                                  tone: 'border-amber-300/30 bg-amber-300/[0.04] text-amber-200'
+                                  tone: 'border-amber-300/30 bg-amber-300/[0.04] text-[hsl(var(--warning))]'
                                 }
                               : {
                                   text: 'Management estimate',
-                                  tone: 'border-slate-300/30 bg-slate-300/[0.04] text-slate-300'
+                                  tone: 'border-slate-300/30 bg-slate-300/[0.04] text-[hsl(var(--foreground-muted))]'
                                 };
                         return (
                           <span
@@ -291,7 +301,7 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                         );
                       })()}
                     </div>
-                    <div className="mt-1 text-[11px] text-slate-500">
+                    <div className="mt-1 text-[11px] text-[hsl(var(--muted))]">
                       <span className="uppercase tracking-wide">{cp.role}</span>
                       {' · '}
                       <span>{latestFs.fiscalPeriod ?? 'FY'}</span>
@@ -315,8 +325,8 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                         <span
                           className={`rounded-[10px] border px-2.5 py-1 font-mono text-[10px] uppercase tracking-wide ${
                             latestCa.investmentGrade
-                              ? 'border-emerald-300/30 bg-emerald-300/[0.04] text-emerald-200'
-                              : 'border-amber-300/30 bg-amber-300/[0.04] text-amber-200'
+                              ? 'border-emerald-300/30 bg-emerald-300/[0.04] text-[hsl(var(--success))]'
+                              : 'border-amber-300/30 bg-amber-300/[0.04] text-[hsl(var(--warning))]'
                           }`}
                         >
                           {latestCa.grade}
@@ -340,7 +350,7 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                     <div className="mt-3 overflow-x-auto rounded-[12px] border border-[hsl(var(--border))]">
                       <table className="w-full text-xs">
                         <thead>
-                          <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-slate-500">
+                          <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-[hsl(var(--muted))]">
                             <th className="px-2 py-2 font-semibold">Period</th>
                             <th className="px-2 py-2 text-right font-semibold">Revenue</th>
                             <th className="px-2 py-2 text-right font-semibold">EBITDA</th>
@@ -349,7 +359,7 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                             <th className="px-2 py-2 text-right font-semibold">Equity</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-[hsl(var(--border))] text-slate-200">
+                        <tbody className="divide-y divide-[hsl(var(--border))] text-[hsl(var(--foreground))]">
                           {cp.financialStatements!.slice(0, 5).map((row, idx, arr) => {
                             const next = arr[idx + 1] ?? null;
                             const num = (d: { toNumber: () => number } | null | undefined) =>
@@ -369,7 +379,10 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                                 : null;
                             const arrow = (delta: number | null) => {
                               if (delta === null) return null;
-                              const tone = delta > 0 ? 'text-emerald-300' : 'text-rose-300';
+                              const tone =
+                                delta > 0
+                                  ? 'text-[hsl(var(--success))]'
+                                  : 'text-[hsl(var(--danger))]';
                               const sign = delta > 0 ? '▲' : '▼';
                               return (
                                 <div className={`text-[9px] ${tone}`}>
@@ -379,7 +392,7 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                             };
                             return (
                               <tr key={`${row.fiscalYear ?? idx}`}>
-                                <td className="px-2 py-2 font-mono text-slate-400">
+                                <td className="px-2 py-2 font-mono text-[hsl(var(--foreground-muted))]">
                                   {row.fiscalPeriod ?? 'FY'} {row.fiscalYear ?? ''}
                                 </td>
                                 <td className="px-2 py-2 text-right font-mono">
@@ -402,10 +415,10 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                                     : '—'}
                                   {arrow(yoyEbd)}
                                 </td>
-                                <td className="px-2 py-2 text-right font-mono text-slate-400">
+                                <td className="px-2 py-2 text-right font-mono text-[hsl(var(--foreground-muted))]">
                                   {margin !== null ? `${margin.toFixed(1)}%` : '—'}
                                 </td>
-                                <td className="px-2 py-2 text-right font-mono text-slate-400">
+                                <td className="px-2 py-2 text-right font-mono text-[hsl(var(--foreground-muted))]">
                                   {debt !== null
                                     ? formatCompactCurrencyFromKrwAtRate(
                                         debt,
@@ -414,7 +427,7 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                                       )
                                     : '—'}
                                 </td>
-                                <td className="px-2 py-2 text-right font-mono text-slate-400">
+                                <td className="px-2 py-2 text-right font-mono text-[hsl(var(--foreground-muted))]">
                                   {eq !== null
                                     ? formatCompactCurrencyFromKrwAtRate(
                                         eq,
@@ -438,51 +451,65 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                     <div className="fine-print">Income statement</div>
                     <dl className="mt-3 space-y-1.5 text-xs">
                       <div className="flex justify-between">
-                        <dt className="text-slate-400">Revenue</dt>
-                        <dd className="font-mono text-white">{fmt(inc.revenueKrw)}</dd>
+                        <dt className="text-[hsl(var(--foreground-muted))]">Revenue</dt>
+                        <dd className="font-mono text-[hsl(var(--foreground))]">
+                          {fmt(inc.revenueKrw)}
+                        </dd>
                       </div>
                       <div className="flex justify-between">
-                        <dt className="text-slate-400">EBITDA</dt>
-                        <dd className="font-mono text-white">{fmt(inc.ebitdaKrw)}</dd>
+                        <dt className="text-[hsl(var(--foreground-muted))]">EBITDA</dt>
+                        <dd className="font-mono text-[hsl(var(--foreground))]">
+                          {fmt(inc.ebitdaKrw)}
+                        </dd>
                       </div>
                       <div className="flex justify-between">
-                        <dt className="text-slate-400">EBITDA margin</dt>
-                        <dd className="font-mono text-white">
+                        <dt className="text-[hsl(var(--foreground-muted))]">EBITDA margin</dt>
+                        <dd className="font-mono text-[hsl(var(--foreground))]">
                           {inc.ebitdaMarginPct !== null
                             ? `${inc.ebitdaMarginPct.toFixed(1)}%`
                             : '—'}
                         </dd>
                       </div>
                       <div className="flex justify-between">
-                        <dt className="text-slate-400">D&amp;A (assumed)</dt>
-                        <dd className="font-mono text-white">{fmt(cashFlow.daKrw)}</dd>
+                        <dt className="text-[hsl(var(--foreground-muted))]">D&amp;A (assumed)</dt>
+                        <dd className="font-mono text-[hsl(var(--foreground))]">
+                          {fmt(cashFlow.daKrw)}
+                        </dd>
                       </div>
                       <div className="flex justify-between">
-                        <dt className="text-slate-400">EBIT</dt>
-                        <dd className="font-mono text-white">{fmt(cashFlow.ebitKrw)}</dd>
+                        <dt className="text-[hsl(var(--foreground-muted))]">EBIT</dt>
+                        <dd className="font-mono text-[hsl(var(--foreground))]">
+                          {fmt(cashFlow.ebitKrw)}
+                        </dd>
                       </div>
                       {inc.operatingIncomeKrw !== null ? (
                         <div className="flex justify-between">
-                          <dt className="text-slate-400">Operating income (영업이익, filed)</dt>
-                          <dd className="font-mono text-white">{fmt(inc.operatingIncomeKrw)}</dd>
+                          <dt className="text-[hsl(var(--foreground-muted))]">
+                            Operating income (영업이익, filed)
+                          </dt>
+                          <dd className="font-mono text-[hsl(var(--foreground))]">
+                            {fmt(inc.operatingIncomeKrw)}
+                          </dd>
                         </div>
                       ) : null}
                       <div className="flex justify-between">
-                        <dt className="text-slate-400">Interest expense</dt>
-                        <dd className="font-mono text-white">{fmt(inc.interestExpenseKrw)}</dd>
+                        <dt className="text-[hsl(var(--foreground-muted))]">Interest expense</dt>
+                        <dd className="font-mono text-[hsl(var(--foreground))]">
+                          {fmt(inc.interestExpenseKrw)}
+                        </dd>
                       </div>
                       <div className="flex justify-between border-t border-[hsl(var(--border))] pt-1.5">
-                        <dt className="text-slate-300">
+                        <dt className="text-[hsl(var(--foreground-muted))]">
                           {inc.netIncomeKrw !== null
                             ? 'Net income (당기순이익, filed)'
                             : 'Net income (post-tax, est.)'}
                         </dt>
-                        <dd className="font-mono font-semibold text-white">
+                        <dd className="font-mono font-semibold text-[hsl(var(--foreground))]">
                           {fmt(inc.netIncomeKrw ?? cashFlow.netIncomeKrw)}
                         </dd>
                       </div>
                     </dl>
-                    <p className="mt-3 text-[10px] leading-4 text-slate-500">
+                    <p className="mt-3 text-[10px] leading-4 text-[hsl(var(--muted))]">
                       D&amp;A: {(DEFAULT_CASH_FLOW_ASSUMPTIONS.daRateOfRevenue * 100).toFixed(1)}%
                       of revenue (sector proxy); tax: {(taxRateDecimal * 100).toFixed(1)}%
                       {asset.taxAssumption?.corporateTaxPct !== undefined &&
@@ -496,34 +523,44 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                     <div className="fine-print">Balance sheet</div>
                     <dl className="mt-3 space-y-1.5 text-xs">
                       <div className="flex justify-between">
-                        <dt className="text-slate-400">Total assets</dt>
-                        <dd className="font-mono text-white">{fmt(bs.totalAssetsKrw)}</dd>
+                        <dt className="text-[hsl(var(--foreground-muted))]">Total assets</dt>
+                        <dd className="font-mono text-[hsl(var(--foreground))]">
+                          {fmt(bs.totalAssetsKrw)}
+                        </dd>
                       </div>
                       <div className="flex justify-between">
-                        <dt className="text-slate-400">Cash</dt>
-                        <dd className="font-mono text-white">{fmt(bs.cashKrw)}</dd>
+                        <dt className="text-[hsl(var(--foreground-muted))]">Cash</dt>
+                        <dd className="font-mono text-[hsl(var(--foreground))]">
+                          {fmt(bs.cashKrw)}
+                        </dd>
                       </div>
                       <div className="flex justify-between">
-                        <dt className="text-slate-400">Total debt</dt>
-                        <dd className="font-mono text-white">{fmt(bs.totalDebtKrw)}</dd>
+                        <dt className="text-[hsl(var(--foreground-muted))]">Total debt</dt>
+                        <dd className="font-mono text-[hsl(var(--foreground))]">
+                          {fmt(bs.totalDebtKrw)}
+                        </dd>
                       </div>
                       <div className="flex justify-between">
-                        <dt className="text-slate-400">Net debt</dt>
-                        <dd className="font-mono text-white">{fmt(bs.netDebtKrw)}</dd>
+                        <dt className="text-[hsl(var(--foreground-muted))]">Net debt</dt>
+                        <dd className="font-mono text-[hsl(var(--foreground))]">
+                          {fmt(bs.netDebtKrw)}
+                        </dd>
                       </div>
                       <div className="flex justify-between">
-                        <dt className="text-slate-400">Other liabilities</dt>
-                        <dd className="font-mono text-white">{fmt(bs.otherLiabilitiesKrw)}</dd>
+                        <dt className="text-[hsl(var(--foreground-muted))]">Other liabilities</dt>
+                        <dd className="font-mono text-[hsl(var(--foreground))]">
+                          {fmt(bs.otherLiabilitiesKrw)}
+                        </dd>
                       </div>
                       <div className="flex justify-between border-t border-[hsl(var(--border))] pt-1.5">
-                        <dt className="text-slate-300">Total equity</dt>
-                        <dd className="font-mono font-semibold text-white">
+                        <dt className="text-[hsl(var(--foreground-muted))]">Total equity</dt>
+                        <dd className="font-mono font-semibold text-[hsl(var(--foreground))]">
                           {fmt(bs.totalEquityKrw)}
                         </dd>
                       </div>
                       <div className="flex justify-between">
-                        <dt className="text-slate-400">Equity ratio</dt>
-                        <dd className="font-mono text-white">
+                        <dt className="text-[hsl(var(--foreground-muted))]">Equity ratio</dt>
+                        <dd className="font-mono text-[hsl(var(--foreground))]">
                           {bs.equityRatio !== null ? `${(bs.equityRatio * 100).toFixed(1)}%` : '—'}
                         </dd>
                       </div>
@@ -537,45 +574,51 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                     <div className="fine-print">Cash flow</div>
                     <dl className="mt-3 space-y-1.5 text-xs">
                       <div className="flex justify-between">
-                        <dt className="text-slate-400">Operating cash flow</dt>
-                        <dd className="font-mono text-white">
+                        <dt className="text-[hsl(var(--foreground-muted))]">Operating cash flow</dt>
+                        <dd className="font-mono text-[hsl(var(--foreground))]">
                           {fmt(cashFlow.operatingCashFlowKrw)}
                         </dd>
                       </div>
                       <div className="flex justify-between">
-                        <dt className="text-slate-400">Maintenance capex</dt>
-                        <dd className="font-mono text-white">
+                        <dt className="text-[hsl(var(--foreground-muted))]">Maintenance capex</dt>
+                        <dd className="font-mono text-[hsl(var(--foreground))]">
                           ({fmt(cashFlow.maintenanceCapexKrw)})
                         </dd>
                       </div>
                       <div className="flex justify-between border-t border-[hsl(var(--border))] pt-1.5">
-                        <dt className="text-slate-300">Free cash flow</dt>
-                        <dd className="font-mono font-semibold text-white">
+                        <dt className="text-[hsl(var(--foreground-muted))]">Free cash flow</dt>
+                        <dd className="font-mono font-semibold text-[hsl(var(--foreground))]">
                           {fmt(cashFlow.freeCashFlowKrw)}
                         </dd>
                       </div>
                       <div className="flex justify-between">
-                        <dt className="text-slate-400">CFADS</dt>
-                        <dd className="font-mono text-white">{fmt(cashFlow.cfadsKrw)}</dd>
+                        <dt className="text-[hsl(var(--foreground-muted))]">CFADS</dt>
+                        <dd className="font-mono text-[hsl(var(--foreground))]">
+                          {fmt(cashFlow.cfadsKrw)}
+                        </dd>
                       </div>
                       <div className="flex justify-between">
-                        <dt className="text-slate-400">Debt service (interest + principal)</dt>
-                        <dd className="font-mono text-white">{fmt(cashFlow.debtServiceKrw)}</dd>
+                        <dt className="text-[hsl(var(--foreground-muted))]">
+                          Debt service (interest + principal)
+                        </dt>
+                        <dd className="font-mono text-[hsl(var(--foreground))]">
+                          {fmt(cashFlow.debtServiceKrw)}
+                        </dd>
                       </div>
                     </dl>
                   </div>
                   <div className="rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4">
                     <div className="fine-print">CFADS DSCR (lender-grade)</div>
-                    <div className="mt-3 text-3xl font-semibold text-white">
+                    <div className="mt-3 text-3xl font-semibold text-[hsl(var(--foreground))]">
                       {cashFlow.cfadsDscr !== null ? `${cashFlow.cfadsDscr.toFixed(2)}x` : '—'}
                     </div>
-                    <p className="mt-2 text-[11px] leading-5 text-slate-400">
+                    <p className="mt-2 text-[11px] leading-5 text-[hsl(var(--foreground-muted))]">
                       CFADS ÷ debt service (interest + scheduled principal). Tighter than the
                       headline EBITDA / interest coverage above because it nets out cash tax and
                       maintenance capex. The 2.0x lender minimum is the typical project- finance
                       covenant.
                     </p>
-                    <div className="mt-3 grid gap-1.5 text-[10px] text-slate-500">
+                    <div className="mt-3 grid gap-1.5 text-[10px] text-[hsl(var(--muted))]">
                       <div>
                         D&amp;A proxy:{' '}
                         {(DEFAULT_CASH_FLOW_ASSUMPTIONS.daRateOfRevenue * 100).toFixed(1)}% of
@@ -619,18 +662,18 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                         >
                           <span className={`mt-1.5 inline-block h-2 w-2 rounded-full ${dot}`} />
                           <div>
-                            <div className="text-[10px] uppercase tracking-wide text-slate-400">
+                            <div className="text-[10px] uppercase tracking-wide text-[hsl(var(--foreground-muted))]">
                               Indicative covenant alert · {label}
                             </div>
-                            <p className="mt-1 text-slate-100">{a.message}</p>
+                            <p className="mt-1 text-[hsl(var(--foreground))]">{a.message}</p>
                             {a.firstBreachYear && a.firstBreachYear !== 'now' ? (
-                              <p className="mt-1 text-[11px] text-slate-400">
+                              <p className="mt-1 text-[11px] text-[hsl(var(--foreground-muted))]">
                                 First breach in{' '}
-                                <span className="font-mono text-slate-200">
+                                <span className="font-mono text-[hsl(var(--foreground))]">
                                   {a.firstBreachYear}
                                 </span>
                                 ; worst{' '}
-                                <span className="font-mono text-slate-200">
+                                <span className="font-mono text-[hsl(var(--foreground))]">
                                   {a.worstValue !== null ? `${a.worstValue.toFixed(2)}x` : '—'}
                                 </span>{' '}
                                 in {a.worstYear ?? '—'}.
@@ -649,7 +692,7 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                     <div className="fine-print">
                       Indicative covenant band &amp; first-breach year
                     </div>
-                    <p className="mt-1 text-[10px] leading-4 text-slate-500">
+                    <p className="mt-1 text-[10px] leading-4 text-[hsl(var(--muted))]">
                       Generic sponsor-credit thresholds (leverage ≤4.0x, coverage ≥2.0x) — not the
                       counterparty&rsquo;s actual loan covenants.
                     </p>
@@ -666,21 +709,23 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                           >
                             <div className="flex items-baseline justify-between gap-2">
                               <div>
-                                <div className="text-sm font-semibold text-white">
+                                <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
                                   {c.ratioLabel}
                                 </div>
-                                <div className="text-[10px] text-slate-500">
+                                <div className="text-[10px] text-[hsl(var(--muted))]">
                                   Covenant {c.preferred === 'lower' ? '≤' : '≥'}{' '}
                                   {c.benchmark.toFixed(2)}x
                                 </div>
                               </div>
                               <div className="text-right font-mono text-xs">
-                                <div className="text-white">
+                                <div className="text-[hsl(var(--foreground))]">
                                   {c.currentValue !== null ? `${c.currentValue.toFixed(2)}x` : '—'}
                                 </div>
                                 <div
                                   className={
-                                    (c.headroomPct ?? 0) >= 0 ? 'text-emerald-300' : 'text-rose-300'
+                                    (c.headroomPct ?? 0) >= 0
+                                      ? 'text-[hsl(var(--success))]'
+                                      : 'text-[hsl(var(--danger))]'
                                   }
                                 >
                                   {c.headroomPct !== null
@@ -689,11 +734,11 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                                 </div>
                               </div>
                             </div>
-                            <div className="mt-2 text-[11px] text-slate-400">
+                            <div className="mt-2 text-[11px] text-[hsl(var(--foreground-muted))]">
                               {c.firstBreachYear === null ? (
                                 <>
                                   No breach across the projection horizon. Worst observed:{' '}
-                                  <span className="text-white">
+                                  <span className="text-[hsl(var(--foreground))]">
                                     {c.worstValue !== null ? `${c.worstValue.toFixed(2)}x` : '—'}
                                   </span>{' '}
                                   in {c.worstYear ?? '—'}.
@@ -701,11 +746,11 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                               ) : (
                                 <>
                                   First breach in{' '}
-                                  <span className="font-semibold text-rose-200">
+                                  <span className="font-semibold text-[hsl(var(--danger))]">
                                     {c.firstBreachYear}
                                   </span>
                                   ; worst{' '}
-                                  <span className="text-white">
+                                  <span className="text-[hsl(var(--foreground))]">
                                     {c.worstValue !== null ? `${c.worstValue.toFixed(2)}x` : '—'}
                                   </span>{' '}
                                   in {c.worstYear ?? '—'}.
@@ -726,13 +771,13 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                       <div className="fine-print">
                         Liquidity ladder — asset facility vs sponsor liquid resources
                       </div>
-                      <div className="text-[10px] text-slate-500">
+                      <div className="text-[10px] text-[hsl(var(--muted))]">
                         12mo coverage:{' '}
                         <span
                           className={
                             (liquidity.liquidityCoverage ?? 0) >= 1
-                              ? 'text-emerald-300'
-                              : 'text-rose-300'
+                              ? 'text-[hsl(var(--success))]'
+                              : 'text-[hsl(var(--danger))]'
                           }
                         >
                           {liquidity.liquidityCoverage !== null
@@ -744,7 +789,7 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                     <div className="mt-3 overflow-x-auto rounded-[12px] border border-[hsl(var(--border))]">
                       <table className="w-full text-xs">
                         <thead>
-                          <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-slate-500">
+                          <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-[hsl(var(--muted))]">
                             <th className="px-2 py-2 font-semibold">Facility</th>
                             <th className="px-2 py-2 text-right font-semibold">Drawn</th>
                             <th className="px-2 py-2 text-right font-semibold">Rate</th>
@@ -754,10 +799,12 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                             <th className="px-2 py-2 text-right font-semibold">Balloon yr</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-[hsl(var(--border))] text-slate-200">
+                        <tbody className="divide-y divide-[hsl(var(--border))] text-[hsl(var(--foreground))]">
                           {liquidity.rows.map((row) => (
                             <tr key={row.facilityKey}>
-                              <td className="px-2 py-2 text-slate-300">{row.label}</td>
+                              <td className="px-2 py-2 text-[hsl(var(--foreground-muted))]">
+                                {row.label}
+                              </td>
                               <td className="px-2 py-2 text-right font-mono">
                                 {fmt(row.drawnKrw)}
                               </td>
@@ -775,7 +822,7 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                               <td className="px-2 py-2 text-right font-mono">
                                 {fmt(row.balloonKrw)}
                               </td>
-                              <td className="px-2 py-2 text-right font-mono text-slate-400">
+                              <td className="px-2 py-2 text-right font-mono text-[hsl(var(--foreground-muted))]">
                                 {row.balloonYear ?? '—'}
                               </td>
                             </tr>
@@ -783,27 +830,27 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                         </tbody>
                       </table>
                     </div>
-                    <div className="mt-3 grid gap-1.5 text-[10px] text-slate-500">
+                    <div className="mt-3 grid gap-1.5 text-[10px] text-[hsl(var(--muted))]">
                       <div>
                         12-month debt service (interest + scheduled principal):{' '}
-                        <span className="font-mono text-slate-300">
+                        <span className="font-mono text-[hsl(var(--foreground-muted))]">
                           {fmt(liquidity.twelveMonthDebtServiceKrw)}
                         </span>
                       </div>
                       <div>
                         Resources: cash{' '}
-                        <span className="font-mono text-slate-300">
+                        <span className="font-mono text-[hsl(var(--foreground-muted))]">
                           {fmt(liquidity.cashOnHandKrw)}
                         </span>{' '}
                         + estimated annual operating CF{' '}
-                        <span className="font-mono text-slate-300">
+                        <span className="font-mono text-[hsl(var(--foreground-muted))]">
                           {fmt(liquidity.estimatedAnnualCashFlowKrw)}
                         </span>
                       </div>
                       {liquidity.peakAnnualPrincipalKrw !== null ? (
                         <div>
                           Peak principal repayment year:{' '}
-                          <span className="font-mono text-slate-300">
+                          <span className="font-mono text-[hsl(var(--foreground-muted))]">
                             {liquidity.peakYear ?? '—'}
                           </span>{' '}
                           ({fmt(liquidity.peakAnnualPrincipalKrw)})
@@ -818,7 +865,7 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                   <div className="mt-5 rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4">
                     <div className="flex flex-wrap items-baseline justify-between gap-2">
                       <div className="fine-print">Distribution waterfall</div>
-                      <div className="text-[10px] text-slate-500">
+                      <div className="text-[10px] text-[hsl(var(--muted))]">
                         Hurdle{' '}
                         {waterfall.hurdleRatePct !== null
                           ? `${waterfall.hurdleRatePct.toFixed(1)}%`
@@ -838,7 +885,7 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                     <div className="mt-3 overflow-x-auto rounded-[12px] border border-[hsl(var(--border))]">
                       <table className="w-full text-xs">
                         <thead>
-                          <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-slate-500">
+                          <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-[hsl(var(--muted))]">
                             <th className="px-2 py-2 font-semibold">Tier</th>
                             <th className="px-2 py-2 text-right font-semibold">IRR threshold</th>
                             <th className="px-2 py-2 text-right font-semibold">LP</th>
@@ -846,10 +893,10 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                             <th className="px-2 py-2 font-semibold">Description</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-[hsl(var(--border))] text-slate-200">
+                        <tbody className="divide-y divide-[hsl(var(--border))] text-[hsl(var(--foreground))]">
                           {waterfall.tiers.map((t) => (
                             <tr key={t.tier}>
-                              <td className="px-2 py-2 text-white">{t.tier}</td>
+                              <td className="px-2 py-2 text-[hsl(var(--foreground))]">{t.tier}</td>
                               <td className="px-2 py-2 text-right font-mono">
                                 {t.irrThresholdPct !== null
                                   ? `${t.irrThresholdPct.toFixed(1)}%`
@@ -861,7 +908,7 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                               <td className="px-2 py-2 text-right font-mono">
                                 {t.gpSharePct.toFixed(0)}%
                               </td>
-                              <td className="px-2 py-2 text-[11px] text-slate-400">
+                              <td className="px-2 py-2 text-[11px] text-[hsl(var(--foreground-muted))]">
                                 {t.description}
                               </td>
                             </tr>
@@ -870,19 +917,19 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                       </table>
                     </div>
                     {waterfall.lpTakePct !== null && waterfall.gpTakePct !== null ? (
-                      <p className="mt-3 text-[11px] leading-5 text-slate-400">
+                      <p className="mt-3 text-[11px] leading-5 text-[hsl(var(--foreground-muted))]">
                         At projected equity IRR{' '}
-                        <span className="font-mono text-slate-200">
+                        <span className="font-mono text-[hsl(var(--foreground))]">
                           {waterfall.projectedEquityIrrPct !== null
                             ? `${waterfall.projectedEquityIrrPct.toFixed(1)}%`
                             : '—'}
                         </span>
                         : illustrative LP take{' '}
-                        <span className="font-mono text-emerald-200">
+                        <span className="font-mono text-[hsl(var(--success))]">
                           ≈ {waterfall.lpTakePct.toFixed(0)}%
                         </span>{' '}
                         / GP take{' '}
-                        <span className="font-mono text-amber-200">
+                        <span className="font-mono text-[hsl(var(--warning))]">
                           ≈ {waterfall.gpTakePct.toFixed(0)}%
                         </span>
                         . Catch-up dollar amount and side-letter LP-specific terms not modeled.
@@ -897,14 +944,14 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                   <div className="mt-3 overflow-x-auto rounded-[14px] border border-[hsl(var(--border))]">
                     <table className="w-full text-xs">
                       <thead>
-                        <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-slate-500">
+                        <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-[hsl(var(--muted))]">
                           <th className="px-2 py-2 font-semibold">Ratio</th>
                           <th className="px-2 py-2 text-right font-semibold">Value</th>
                           <th className="px-2 py-2 text-right font-semibold">Benchmark</th>
                           <th className="px-2 py-2 font-semibold">Interpretation</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-[hsl(var(--border))] text-slate-200">
+                      <tbody className="divide-y divide-[hsl(var(--border))] text-[hsl(var(--foreground))]">
                         {ratios.map((r) => {
                           const dotTone =
                             r.tone === 'good'
@@ -926,20 +973,22 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                                 <div className="flex items-center gap-2">
                                   <span className={`h-1.5 w-1.5 rounded-full ${dotTone}`} />
                                   <div>
-                                    <div className="text-white">{r.label}</div>
-                                    <div className="text-[10px] text-slate-500">{r.formula}</div>
+                                    <div className="text-[hsl(var(--foreground))]">{r.label}</div>
+                                    <div className="text-[10px] text-[hsl(var(--muted))]">
+                                      {r.formula}
+                                    </div>
                                   </div>
                                 </div>
                               </td>
-                              <td className="px-2 py-2 text-right font-mono text-white">
+                              <td className="px-2 py-2 text-right font-mono text-[hsl(var(--foreground))]">
                                 {fmtVal(r.value)}
                               </td>
-                              <td className="px-2 py-2 text-right font-mono text-slate-400">
+                              <td className="px-2 py-2 text-right font-mono text-[hsl(var(--foreground-muted))]">
                                 {r.benchmark !== null
                                   ? `${r.preferred === 'higher' ? '≥' : '≤'} ${fmtVal(r.benchmark)}`
                                   : '—'}
                               </td>
-                              <td className="px-2 py-2 text-[11px] text-slate-300">
+                              <td className="px-2 py-2 text-[11px] text-[hsl(var(--foreground-muted))]">
                                 {r.interpretation}
                               </td>
                             </tr>
@@ -954,12 +1003,14 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                 <div className="mt-5 rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4">
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
                     <div className="fine-print">Peer benchmarks — {peerComparison.sectorLabel}</div>
-                    <div className="text-[9px] text-slate-500">{peerComparison.sourceCaveat}</div>
+                    <div className="text-[9px] text-[hsl(var(--muted))]">
+                      {peerComparison.sourceCaveat}
+                    </div>
                   </div>
                   <div className="mt-3 overflow-x-auto rounded-[12px] border border-[hsl(var(--border))]">
                     <table className="w-full text-xs">
                       <thead>
-                        <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-slate-500">
+                        <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-[hsl(var(--muted))]">
                           <th className="px-2 py-2 font-semibold">Ratio</th>
                           <th className="px-2 py-2 text-right font-semibold">This sponsor</th>
                           <th className="px-2 py-2 text-right font-semibold">P25</th>
@@ -968,7 +1019,7 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                           <th className="px-2 py-2 text-right font-semibold">Band</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-[hsl(var(--border))] text-slate-200">
+                      <tbody className="divide-y divide-[hsl(var(--border))] text-[hsl(var(--foreground))]">
                         {peerComparison.comparisons.map((c) => {
                           const ratioLabel =
                             ratios.find((r) => r.key === c.ratioKey)?.label ?? c.ratioKey;
@@ -981,12 +1032,12 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                           };
                           const bandTone =
                             c.band === 'top'
-                              ? 'text-emerald-300'
+                              ? 'text-[hsl(var(--success))]'
                               : c.band === 'mid'
-                                ? 'text-amber-300'
+                                ? 'text-[hsl(var(--warning))]'
                                 : c.band === 'bottom'
-                                  ? 'text-rose-300'
-                                  : 'text-slate-500';
+                                  ? 'text-[hsl(var(--danger))]'
+                                  : 'text-[hsl(var(--muted))]';
                           const bandLabel =
                             c.band === 'top'
                               ? 'Top quartile'
@@ -997,17 +1048,19 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                                   : 'n/a';
                           return (
                             <tr key={c.ratioKey}>
-                              <td className="px-2 py-2 text-slate-300">{ratioLabel}</td>
-                              <td className="px-2 py-2 text-right font-mono text-white">
+                              <td className="px-2 py-2 text-[hsl(var(--foreground-muted))]">
+                                {ratioLabel}
+                              </td>
+                              <td className="px-2 py-2 text-right font-mono text-[hsl(var(--foreground))]">
                                 {fmtVal(c.observedValue)}
                               </td>
-                              <td className="px-2 py-2 text-right font-mono text-slate-400">
+                              <td className="px-2 py-2 text-right font-mono text-[hsl(var(--foreground-muted))]">
                                 {fmtVal(c.pct25)}
                               </td>
-                              <td className="px-2 py-2 text-right font-mono text-slate-400">
+                              <td className="px-2 py-2 text-right font-mono text-[hsl(var(--foreground-muted))]">
                                 {fmtVal(c.median)}
                               </td>
-                              <td className="px-2 py-2 text-right font-mono text-slate-400">
+                              <td className="px-2 py-2 text-right font-mono text-[hsl(var(--foreground-muted))]">
                                 {fmtVal(c.pct75)}
                               </td>
                               <td
@@ -1028,7 +1081,7 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                   <div className="mt-5">
                     <div className="flex flex-wrap items-baseline justify-between gap-2">
                       <div className="fine-print">10-year projection</div>
-                      <div className="text-[10px] text-slate-500">
+                      <div className="text-[10px] text-[hsl(var(--muted))]">
                         Revenue growth: {growthInput.value.toFixed(1)}%/yr · Debt amort:{' '}
                         {amortInput.value.toFixed(1)}%/yr · Margin held constant
                       </div>
@@ -1036,7 +1089,7 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                     <div className="mt-3 overflow-x-auto rounded-[14px] border border-[hsl(var(--border))]">
                       <table className="w-full text-xs">
                         <thead>
-                          <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-slate-500">
+                          <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-[hsl(var(--muted))]">
                             <th className="px-2 py-2 font-semibold">Year</th>
                             <th className="px-2 py-2 text-right font-semibold">Revenue</th>
                             <th className="px-2 py-2 text-right font-semibold">EBITDA</th>
@@ -1047,19 +1100,21 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                             <th className="px-2 py-2 text-right font-semibold">CFADS DSCR</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-[hsl(var(--border))] text-slate-200">
+                        <tbody className="divide-y divide-[hsl(var(--border))] text-[hsl(var(--foreground))]">
                           {projection.map((row, idx) => {
                             const cfadsRow = cfadsProjection[idx] ?? null;
                             return (
                               <tr key={row.year}>
-                                <td className="px-2 py-2 font-mono text-slate-400">{row.year}</td>
+                                <td className="px-2 py-2 font-mono text-[hsl(var(--foreground-muted))]">
+                                  {row.year}
+                                </td>
                                 <td className="px-2 py-2 text-right font-mono">
                                   {fmt(row.revenueKrw)}
                                 </td>
                                 <td className="px-2 py-2 text-right font-mono">
                                   {fmt(row.ebitdaKrw)}
                                 </td>
-                                <td className="px-2 py-2 text-right font-mono text-slate-400">
+                                <td className="px-2 py-2 text-right font-mono text-[hsl(var(--foreground-muted))]">
                                   {row.ebitdaMarginPct !== null
                                     ? `${row.ebitdaMarginPct.toFixed(1)}%`
                                     : '—'}
@@ -1081,8 +1136,8 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                                     <span
                                       className={
                                         cfadsRow.cfadsDscr >= 2.0
-                                          ? 'text-emerald-300'
-                                          : 'text-rose-300'
+                                          ? 'text-[hsl(var(--success))]'
+                                          : 'text-[hsl(var(--danger))]'
                                       }
                                     >
                                       {cfadsRow.cfadsDscr.toFixed(2)}x
@@ -1097,17 +1152,21 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                         </tbody>
                       </table>
                     </div>
-                    <ul className="mt-3 space-y-1 text-[10px] text-slate-500">
+                    <ul className="mt-3 space-y-1 text-[10px] text-[hsl(var(--muted))]">
                       <li>
-                        <span className="text-slate-400">Revenue growth source:</span>{' '}
+                        <span className="text-[hsl(var(--foreground-muted))]">
+                          Revenue growth source:
+                        </span>{' '}
                         {growthInput.provenance}
                       </li>
                       <li>
-                        <span className="text-slate-400">Debt amortization source:</span>{' '}
+                        <span className="text-[hsl(var(--foreground-muted))]">
+                          Debt amortization source:
+                        </span>{' '}
                         {amortInput.provenance}
                       </li>
                       <li>
-                        <span className="text-slate-400">Baseline rate:</span>{' '}
+                        <span className="text-[hsl(var(--foreground-muted))]">Baseline rate:</span>{' '}
                         {rateInput.provenance}
                       </li>
                     </ul>
@@ -1121,14 +1180,14 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                       <div className="fine-print">
                         Sensitivity — interest coverage at every shock combo
                       </div>
-                      <div className="text-[10px] text-slate-500">
+                      <div className="text-[10px] text-[hsl(var(--muted))]">
                         Covenant floor: leverage ≤ 4.0x · coverage ≥ 2.0x
                       </div>
                     </div>
                     <div className="mt-3 overflow-x-auto rounded-[14px] border border-[hsl(var(--border))]">
                       <table className="w-full text-xs">
                         <thead>
-                          <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-slate-500">
+                          <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-[hsl(var(--muted))]">
                             <th className="px-2 py-2 font-semibold">
                               EBITDA shock ↓ / Rate shock →
                             </th>
@@ -1140,26 +1199,26 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                             ))}
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-[hsl(var(--border))] text-slate-200">
+                        <tbody className="divide-y divide-[hsl(var(--border))] text-[hsl(var(--foreground))]">
                           {sensitivityMatrix.cells.map((row, ri) => (
                             <tr key={sensitivityMatrix.ebitdaShocks[ri]}>
-                              <td className="px-2 py-2 text-slate-400">
+                              <td className="px-2 py-2 text-[hsl(var(--foreground-muted))]">
                                 {sensitivityMatrix.ebitdaShocks[ri]! >= 0 ? '+' : ''}
                                 {sensitivityMatrix.ebitdaShocks[ri]}%
                               </td>
                               {row.map((cell, ci) => {
                                 const tone =
                                   cell.passesCovenant === true
-                                    ? 'bg-emerald-300/[0.06] text-emerald-200'
+                                    ? 'bg-emerald-300/[0.06] text-[hsl(var(--success))]'
                                     : cell.passesCovenant === false
-                                      ? 'bg-rose-300/[0.06] text-rose-200'
+                                      ? 'bg-rose-300/[0.06] text-[hsl(var(--danger))]'
                                       : '';
                                 return (
                                   <td key={ci} className={`px-2 py-2 text-right font-mono ${tone}`}>
                                     {cell.interestCoverage !== null
                                       ? `${cell.interestCoverage.toFixed(2)}x`
                                       : '—'}
-                                    <div className="text-[9px] text-slate-500">
+                                    <div className="text-[9px] text-[hsl(var(--muted))]">
                                       lev{' '}
                                       {cell.leverage !== null
                                         ? `${cell.leverage.toFixed(2)}x`
@@ -1173,7 +1232,7 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                         </tbody>
                       </table>
                     </div>
-                    <p className="mt-3 text-[10px] leading-4 text-slate-500">
+                    <p className="mt-3 text-[10px] leading-4 text-[hsl(var(--muted))]">
                       Each cell shows interest coverage and leverage at the shock combo. Green =
                       covenant pass; rose = covenant breach. Rate shock conservatively assumes 100%
                       of the debt balance reprices on a parallel curve shift — actual exposure
@@ -1185,8 +1244,8 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                 ) : null}
 
                 {latestCa?.summary ? (
-                  <p className="mt-5 rounded-[12px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2 text-xs leading-5 text-slate-300">
-                    <span className="text-[10px] uppercase tracking-wide text-slate-500">
+                  <p className="mt-5 rounded-[12px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2 text-xs leading-5 text-[hsl(var(--foreground-muted))]">
+                    <span className="text-[10px] uppercase tracking-wide text-[hsl(var(--muted))]">
                       Credit assessment ·{' '}
                     </span>
                     {latestCa.summary}

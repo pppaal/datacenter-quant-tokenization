@@ -13,7 +13,7 @@ export function EsgSection({ data }: { data: SampleReportData }) {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <div className="eyebrow">ESG &amp; sustainability</div>
-            <p className="mt-2 max-w-3xl text-sm text-slate-400">
+            <p className="mt-2 max-w-3xl text-sm text-[hsl(var(--foreground-muted))]">
               Operational sustainability metrics anchoring LP-side ESG disclosure. PUE governs
               Scope-2 carbon intensity; renewable share governs Scope-2 reduction path; backup
               autonomy governs Tier-rated uptime and outage exposure.
@@ -31,8 +31,9 @@ export function EsgSection({ data }: { data: SampleReportData }) {
           ) : null}
         </div>
         {esgSummary.utility ? (
-          <div className="mt-3 text-[11px] text-slate-500">
-            Utility: <span className="text-slate-300">{esgSummary.utility}</span>
+          <div className="mt-3 text-[11px] text-[hsl(var(--muted))]">
+            Utility:{' '}
+            <span className="text-[hsl(var(--foreground-muted))]">{esgSummary.utility}</span>
           </div>
         ) : null}
         <div className="mt-5 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
@@ -56,22 +57,24 @@ export function EsgSection({ data }: { data: SampleReportData }) {
             return (
               <div key={row.key} className={`rounded-[16px] border ${tone} p-3`}>
                 <div className="flex items-center justify-between gap-2">
-                  <div className="text-[11px] uppercase tracking-wide text-slate-500">
+                  <div className="text-[11px] uppercase tracking-wide text-[hsl(var(--muted))]">
                     {row.label}
                   </div>
                   {row.band ? (
-                    <span className="flex items-center gap-1.5 text-[10px] text-slate-400">
+                    <span className="flex items-center gap-1.5 text-[10px] text-[hsl(var(--foreground-muted))]">
                       <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />
                       {row.band}
                     </span>
                   ) : null}
                 </div>
-                <div className="mt-2 font-mono text-lg font-semibold text-white">
+                <div className="mt-2 font-mono text-lg font-semibold text-[hsl(var(--foreground))]">
                   {row.value !== null
                     ? `${row.value.toFixed(row.unit === '%' ? 0 : 2)}${row.unit ? ` ${row.unit}` : ''}`
                     : '—'}
                 </div>
-                <p className="mt-1 text-[11px] leading-5 text-slate-400">{row.interpretation}</p>
+                <p className="mt-1 text-[11px] leading-5 text-[hsl(var(--foreground-muted))]">
+                  {row.interpretation}
+                </p>
               </div>
             );
           })}
@@ -129,7 +132,7 @@ export function EsgSection({ data }: { data: SampleReportData }) {
                   <div className="mt-3 overflow-x-auto rounded-[12px] border border-[hsl(var(--border))]">
                     <table className="w-full text-xs">
                       <thead>
-                        <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-slate-500">
+                        <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-[hsl(var(--muted))]">
                           <th className="px-2 py-2 font-semibold">Scope</th>
                           <th className="px-2 py-2 font-semibold">Category</th>
                           <th className="px-2 py-2 text-right font-semibold">Vintage</th>
@@ -138,16 +141,16 @@ export function EsgSection({ data }: { data: SampleReportData }) {
                           <th className="px-2 py-2 font-semibold">Verifier</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-[hsl(var(--border))] text-slate-200">
+                      <tbody className="divide-y divide-[hsl(var(--border))] text-[hsl(var(--foreground))]">
                         {primary.map((rec) => (
                           <tr key={rec.id}>
-                            <td className="px-2 py-2 font-mono text-slate-300">
+                            <td className="px-2 py-2 font-mono text-[hsl(var(--foreground-muted))]">
                               Scope {rec.scope}
                             </td>
-                            <td className="px-2 py-2 text-[11px] text-slate-300">
+                            <td className="px-2 py-2 text-[11px] text-[hsl(var(--foreground-muted))]">
                               {rec.category.replace(/_/g, ' ').toLowerCase()}
                             </td>
-                            <td className="px-2 py-2 text-right font-mono text-slate-400">
+                            <td className="px-2 py-2 text-right font-mono text-[hsl(var(--foreground-muted))]">
                               {rec.vintageYear}
                             </td>
                             <td className="px-2 py-2 text-right font-mono">
@@ -155,13 +158,15 @@ export function EsgSection({ data }: { data: SampleReportData }) {
                                 maximumFractionDigits: 0
                               })}
                             </td>
-                            <td className="px-2 py-2 text-[10px] text-slate-400">
+                            <td className="px-2 py-2 text-[10px] text-[hsl(var(--foreground-muted))]">
                               {rec.methodology ?? '—'}
                             </td>
-                            <td className="px-2 py-2 text-[10px] text-slate-400">
+                            <td className="px-2 py-2 text-[10px] text-[hsl(var(--foreground-muted))]">
                               {rec.verifiedBy ?? '—'}
                               {rec.notes ? (
-                                <div className="text-[9px] text-slate-500">{rec.notes}</div>
+                                <div className="text-[9px] text-[hsl(var(--muted))]">
+                                  {rec.notes}
+                                </div>
                               ) : null}
                             </td>
                           </tr>
@@ -170,8 +175,8 @@ export function EsgSection({ data }: { data: SampleReportData }) {
                     </table>
                   </div>
                   {alternates.length > 0 ? (
-                    <p className="mt-3 text-[10px] leading-5 text-slate-500">
-                      <span className="font-semibold uppercase tracking-wide text-slate-400">
+                    <p className="mt-3 text-[10px] leading-5 text-[hsl(var(--muted))]">
+                      <span className="font-semibold uppercase tracking-wide text-[hsl(var(--foreground-muted))]">
                         Alternate methodologies on file:{' '}
                       </span>
                       {alternates
@@ -202,9 +207,9 @@ export function EsgSection({ data }: { data: SampleReportData }) {
                   ? ' (derived — for comparison vs verified above)'
                   : ''}
               </div>
-              <div className="text-[10px] text-slate-500">
+              <div className="text-[10px] text-[hsl(var(--muted))]">
                 Total ≈{' '}
-                <span className="font-mono text-slate-300">
+                <span className="font-mono text-[hsl(var(--foreground-muted))]">
                   {emissionsBreakdown.totalAnnualtCO2e.toLocaleString(undefined, {
                     maximumFractionDigits: 0
                   })}{' '}
@@ -237,19 +242,19 @@ export function EsgSection({ data }: { data: SampleReportData }) {
                   key={s.label}
                   className="rounded-[12px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2"
                 >
-                  <div className="text-[10px] uppercase tracking-wide text-slate-500">
+                  <div className="text-[10px] uppercase tracking-wide text-[hsl(var(--muted))]">
                     {s.label}
                   </div>
-                  <div className="mt-1 font-mono text-sm font-semibold text-white">
+                  <div className="mt-1 font-mono text-sm font-semibold text-[hsl(var(--foreground))]">
                     {s.value !== null
                       ? `${s.value.toLocaleString(undefined, { maximumFractionDigits: 0 })} tCO2e/yr`
                       : '—'}
                   </div>
-                  <div className="mt-1 text-[10px] text-slate-500">{s.sub}</div>
+                  <div className="mt-1 text-[10px] text-[hsl(var(--muted))]">{s.sub}</div>
                 </div>
               ))}
             </div>
-            <ul className="mt-3 space-y-1 text-[10px] text-slate-500">
+            <ul className="mt-3 space-y-1 text-[10px] text-[hsl(var(--muted))]">
               {emissionsBreakdown.notes.map((n) => (
                 <li key={n}>· {n}</li>
               ))}

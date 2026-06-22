@@ -24,7 +24,7 @@ export function ResearchSection({ data }: { data: SampleReportData }) {
               <div className="eyebrow">Research desk publications</div>
               <Badge>{asset.researchSnapshots.length}</Badge>
             </div>
-            <p className="mt-2 text-sm text-slate-400">
+            <p className="mt-2 text-sm text-[hsl(var(--foreground-muted))]">
               Approved research snapshots anchoring the asset macro context. Each snapshot freshness
               status determines whether the underwriting may rely on it without a refresh.
             </p>
@@ -35,20 +35,22 @@ export function ResearchSection({ data }: { data: SampleReportData }) {
                   className="rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2 text-sm"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="font-semibold text-white">{s.title}</span>
+                    <span className="font-semibold text-[hsl(var(--foreground))]">{s.title}</span>
                     <div className="flex items-center gap-2">
                       <FreshnessDot observedAt={s.snapshotDate} />
-                      <span className="text-[10px] uppercase tracking-wide text-slate-500">
+                      <span className="text-[10px] uppercase tracking-wide text-[hsl(var(--muted))]">
                         {s.freshnessStatus ?? 'n/a'}
                       </span>
                     </div>
                   </div>
-                  <div className="mt-1 text-[11px] text-slate-500">
+                  <div className="mt-1 text-[11px] text-[hsl(var(--muted))]">
                     {formatDate(s.snapshotDate)} · {s.snapshotType}
                     {s.sourceSystem ? ` · ${s.sourceSystem}` : ''}
                   </div>
                   {s.summary ? (
-                    <p className="mt-2 text-xs leading-5 text-slate-300">{s.summary}</p>
+                    <p className="mt-2 text-xs leading-5 text-[hsl(var(--foreground-muted))]">
+                      {s.summary}
+                    </p>
                   ) : null}
                 </li>
               ))}
@@ -62,7 +64,7 @@ export function ResearchSection({ data }: { data: SampleReportData }) {
               <div className="eyebrow">Research coverage queue</div>
               <Badge>{asset.coverageTasks.filter((t) => t.status === 'OPEN').length} open</Badge>
             </div>
-            <p className="mt-2 text-sm text-slate-400">
+            <p className="mt-2 text-sm text-[hsl(var(--foreground-muted))]">
               Outstanding research coverage items for the asset. HIGH-priority open items reduce
               confidence and require closure prior to investment committee.
             </p>
@@ -80,22 +82,28 @@ export function ResearchSection({ data }: { data: SampleReportData }) {
                     className={`rounded-[14px] border px-3 py-2 text-sm ${priorityTone}`}
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="font-semibold text-white">{t.title}</span>
+                      <span className="font-semibold text-[hsl(var(--foreground))]">{t.title}</span>
                       <div className="flex items-center gap-2 text-[10px] uppercase tracking-wide">
-                        <span className="text-slate-500">{t.taskType}</span>
-                        <span className="text-slate-300">{t.priority}</span>
+                        <span className="text-[hsl(var(--muted))]">{t.taskType}</span>
+                        <span className="text-[hsl(var(--foreground-muted))]">{t.priority}</span>
                         <span
-                          className={t.status === 'OPEN' ? 'text-rose-300' : 'text-emerald-300'}
+                          className={
+                            t.status === 'OPEN'
+                              ? 'text-[hsl(var(--danger))]'
+                              : 'text-[hsl(var(--success))]'
+                          }
                         >
                           {t.status}
                         </span>
                       </div>
                     </div>
                     {t.notes ? (
-                      <p className="mt-1 text-[11px] leading-5 text-slate-400">{t.notes}</p>
+                      <p className="mt-1 text-[11px] leading-5 text-[hsl(var(--foreground-muted))]">
+                        {t.notes}
+                      </p>
                     ) : null}
                     {t.dueDate ? (
-                      <div className="mt-1 text-[10px] text-slate-500">
+                      <div className="mt-1 text-[10px] text-[hsl(var(--muted))]">
                         due {formatDate(t.dueDate)}
                       </div>
                     ) : null}
@@ -112,7 +120,7 @@ export function ResearchSection({ data }: { data: SampleReportData }) {
               <div className="eyebrow">AI insights</div>
               <Badge>{asset.aiInsights.length}</Badge>
             </div>
-            <p className="mt-2 text-sm text-slate-400">
+            <p className="mt-2 text-sm text-[hsl(var(--foreground-muted))]">
               Model-generated commentary on the asset and its valuation runs. Each insight carries
               model attribution and an evidence reference.
             </p>
@@ -123,15 +131,17 @@ export function ResearchSection({ data }: { data: SampleReportData }) {
                   className="rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2 text-sm"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="font-semibold text-white">
+                    <span className="font-semibold text-[hsl(var(--foreground))]">
                       {insight.title ?? insight.insightType}
                     </span>
-                    <span className="text-[10px] uppercase tracking-wide text-slate-500">
+                    <span className="text-[10px] uppercase tracking-wide text-[hsl(var(--muted))]">
                       {insight.modelName} · {insight.status}
                     </span>
                   </div>
-                  <p className="mt-2 text-xs leading-5 text-slate-300">{insight.content}</p>
-                  <div className="mt-1 text-[10px] text-slate-500">
+                  <p className="mt-2 text-xs leading-5 text-[hsl(var(--foreground-muted))]">
+                    {insight.content}
+                  </p>
+                  <div className="mt-1 text-[10px] text-[hsl(var(--muted))]">
                     {formatDate(insight.createdAt)} · {insight.insightType}
                   </div>
                 </li>

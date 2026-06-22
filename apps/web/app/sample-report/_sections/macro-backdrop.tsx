@@ -13,7 +13,7 @@ export function MacroBackdropSection({ data }: { data: SampleReportData }) {
     <section id="im-macro" className="app-shell py-4">
       <Card>
         <div className="eyebrow">Macro backdrop</div>
-        <p className="mt-2 text-sm text-slate-400">
+        <p className="mt-2 text-sm text-[hsl(var(--foreground-muted))]">
           Latest reading per series from the official-source feed (KOSIS / BOK ECOS). The cap-rate
           and discount-rate underwriting both anchor here.
         </p>
@@ -24,8 +24,12 @@ export function MacroBackdropSection({ data }: { data: SampleReportData }) {
               className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4"
             >
               <div className="fine-print">{point.label}</div>
-              <div className="mt-2 text-xl font-semibold text-white">{formatMacroValue(point)}</div>
-              <div className="mt-1 text-xs text-slate-500">{formatDate(point.observationDate)}</div>
+              <div className="mt-2 text-xl font-semibold text-[hsl(var(--foreground))]">
+                {formatMacroValue(point)}
+              </div>
+              <div className="mt-1 text-xs text-[hsl(var(--muted))]">
+                {formatDate(point.observationDate)}
+              </div>
             </div>
           ))}
         </div>

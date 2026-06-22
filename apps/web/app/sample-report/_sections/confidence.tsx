@@ -9,7 +9,7 @@ export function ConfidenceSection({ data }: { data: SampleReportData }) {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <div className="eyebrow">Confidence score breakdown</div>
-            <p className="mt-2 max-w-3xl text-sm text-slate-400">
+            <p className="mt-2 max-w-3xl text-sm text-[hsl(var(--foreground-muted))]">
               Coverage-driven composite. Each external section, structured section, and anchor
               signal contributes; physical-risk signals subtract. Present (green) and absent (slate)
               signals are listed below — closing the absent ones lifts the score.
@@ -17,11 +17,11 @@ export function ConfidenceSection({ data }: { data: SampleReportData }) {
           </div>
           <div className="rounded-[16px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-4 py-3 text-right">
             <div className="fine-print">Final score</div>
-            <div className="mt-1 text-2xl font-semibold text-white">
+            <div className="mt-1 text-2xl font-semibold text-[hsl(var(--foreground))]">
               {confidenceBreakdown.finalScore.toFixed(1)}
-              <span className="ml-1 text-sm font-normal text-slate-500">/ 10</span>
+              <span className="ml-1 text-sm font-normal text-[hsl(var(--muted))]">/ 10</span>
             </div>
-            <div className="text-[10px] text-slate-500">
+            <div className="text-[10px] text-[hsl(var(--muted))]">
               {confidenceBreakdown.presentCount} / {confidenceBreakdown.totalCount} positive signals
               present
             </div>
@@ -60,9 +60,9 @@ export function ConfidenceSection({ data }: { data: SampleReportData }) {
                       >
                         <div className="flex items-center gap-2">
                           <span className={`inline-block h-2 w-2 rounded-full ${dot}`} />
-                          <span className="text-slate-200">{row.label}</span>
+                          <span className="text-[hsl(var(--foreground))]">{row.label}</span>
                         </div>
-                        <span className="font-mono text-xs text-slate-400">
+                        <span className="font-mono text-xs text-[hsl(var(--foreground-muted))]">
                           {row.present
                             ? `${sign}${row.weight.toFixed(2)} pts`
                             : isPenalty
@@ -77,7 +77,7 @@ export function ConfidenceSection({ data }: { data: SampleReportData }) {
             );
           })}
         </div>
-        <p className="mt-4 text-[11px] text-slate-500">
+        <p className="mt-4 text-[11px] text-[hsl(var(--muted))]">
           Per-signal weights are the data-center underwriting framework’s nominal contributions. The
           final score is clamped between 4.5 and 9.9 and adjusted by a credit overlay; the listed
           contributions are illustrative and do not reconcile exactly to the printed value.

@@ -23,8 +23,8 @@ export function HeadlineScenarioStrip({ data }: { data: SampleReportData }) {
         ].map(([label, value, detail]) => (
           <div key={label} className="metric-card">
             <div className="fine-print">{label}</div>
-            <div className="mt-3 text-2xl font-semibold text-white">{value}</div>
-            <p className="mt-2 text-sm text-slate-400">{detail}</p>
+            <div className="mt-3 text-2xl font-semibold text-[hsl(var(--foreground))]">{value}</div>
+            <p className="mt-2 text-sm text-[hsl(var(--foreground-muted))]">{detail}</p>
           </div>
         ))}
       </div>

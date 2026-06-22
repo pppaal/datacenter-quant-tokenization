@@ -14,7 +14,7 @@ export function CapexSection({ data }: { data: SampleReportData }) {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="eyebrow">Capex schedule (line items)</div>
-            <p className="mt-2 max-w-3xl text-sm text-slate-400">
+            <p className="mt-2 max-w-3xl text-sm text-[hsl(var(--foreground-muted))]">
               Capex schedule by trade package and spend year. Sources &amp; Uses above carries the
               category aggregates; this view splits the underlying budget lines, with
               embedded-in-price vs incremental capex flagged on each row.
@@ -28,7 +28,7 @@ export function CapexSection({ data }: { data: SampleReportData }) {
         <div className="mt-5 overflow-x-auto rounded-[14px] border border-[hsl(var(--border))]">
           <table className="w-full text-xs">
             <thead>
-              <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-slate-500">
+              <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-[hsl(var(--muted))]">
                 <th className="px-2 py-2 font-semibold">Category</th>
                 <th className="px-2 py-2 font-semibold">Label</th>
                 <th className="px-2 py-2 text-right font-semibold">Year</th>
@@ -36,21 +36,21 @@ export function CapexSection({ data }: { data: SampleReportData }) {
                 <th className="px-2 py-2 text-right font-semibold">Amount</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[hsl(var(--border))] text-slate-200">
+            <tbody className="divide-y divide-[hsl(var(--border))] text-[hsl(var(--foreground))]">
               {asset.capexLineItems.map((item) => (
                 <tr key={item.id}>
-                  <td className="px-2 py-2 text-[10px] uppercase tracking-wide text-slate-400">
+                  <td className="px-2 py-2 text-[10px] uppercase tracking-wide text-[hsl(var(--foreground-muted))]">
                     {item.category.replace(/_/g, ' ').toLowerCase()}
                   </td>
-                  <td className="px-2 py-2 text-slate-200">{item.label}</td>
-                  <td className="px-2 py-2 text-right font-mono text-slate-400">
+                  <td className="px-2 py-2 text-[hsl(var(--foreground))]">{item.label}</td>
+                  <td className="px-2 py-2 text-right font-mono text-[hsl(var(--foreground-muted))]">
                     Y{item.spendYear}
                   </td>
                   <td className="px-2 py-2 text-right text-[10px]">
                     {item.isEmbedded ? (
-                      <span className="text-amber-300">in price</span>
+                      <span className="text-[hsl(var(--warning))]">in price</span>
                     ) : (
-                      <span className="text-slate-500">additional</span>
+                      <span className="text-[hsl(var(--muted))]">additional</span>
                     )}
                   </td>
                   <td className="px-2 py-2 text-right font-mono">
@@ -63,10 +63,10 @@ export function CapexSection({ data }: { data: SampleReportData }) {
                 </tr>
               ))}
               <tr className="bg-[hsl(var(--surface-hover))] font-semibold">
-                <td className="px-2 py-2 text-white" colSpan={4}>
+                <td className="px-2 py-2 text-[hsl(var(--foreground))]" colSpan={4}>
                   Total
                 </td>
-                <td className="px-2 py-2 text-right font-mono text-white">
+                <td className="px-2 py-2 text-right font-mono text-[hsl(var(--foreground))]">
                   {formatCompactCurrencyFromKrwAtRate(
                     asset.capexLineItems.reduce((sum, i) => sum + i.amountKrw, 0),
                     displayCurrency,

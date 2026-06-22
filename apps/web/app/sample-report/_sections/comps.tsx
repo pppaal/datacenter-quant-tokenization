@@ -21,7 +21,7 @@ export function CompsSection({ data }: { data: SampleReportData }) {
     <section id="im-comps" className="app-shell py-4">
       <Card>
         <div className="eyebrow">Comparable transactions &amp; rent comps</div>
-        <p className="mt-2 max-w-3xl text-sm text-slate-400">
+        <p className="mt-2 max-w-3xl text-sm text-[hsl(var(--foreground-muted))]">
           Submarket comparables anchoring cap-rate and rent underwriting. Transaction comps support
           the value approach; rent comps support WALT and mark-to-market. Each row references its
           source.
@@ -34,7 +34,7 @@ export function CompsSection({ data }: { data: SampleReportData }) {
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <div className="fine-print">Hedonic-fitted comparable price</div>
-              <p className="mt-1 max-w-3xl text-xs text-slate-400">
+              <p className="mt-1 max-w-3xl text-xs text-[hsl(var(--foreground-muted))]">
                 OLS log-linear regression of comp price/sqm on size, vintage, submarket, tier, and
                 deal-structure dummies. Returns the fitted price/sqm for this asset controlled for
                 those features — independent of the raw comp average.
@@ -51,32 +51,32 @@ export function CompsSection({ data }: { data: SampleReportData }) {
           {hedonicFit ? (
             <div className="mt-4 grid gap-3 md:grid-cols-3">
               <div className="rounded-[12px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2">
-                <div className="text-[10px] uppercase tracking-wide text-slate-500">
+                <div className="text-[10px] uppercase tracking-wide text-[hsl(var(--muted))]">
                   Fitted price / sqm
                 </div>
-                <div className="mt-1 font-mono text-sm font-semibold text-white">
+                <div className="mt-1 font-mono text-sm font-semibold text-[hsl(var(--foreground))]">
                   {formatNumber(hedonicFit.fittedPricePerSqmKrw, 0)} KRW
                 </div>
               </div>
               <div className="rounded-[12px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2">
-                <div className="text-[10px] uppercase tracking-wide text-slate-500">
+                <div className="text-[10px] uppercase tracking-wide text-[hsl(var(--muted))]">
                   Adjusted R²
                 </div>
-                <div className="mt-1 font-mono text-sm text-white">
+                <div className="mt-1 font-mono text-sm text-[hsl(var(--foreground))]">
                   {hedonicFit.adjustedRSquared.toFixed(3)}
                 </div>
               </div>
               <div className="rounded-[12px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2">
-                <div className="text-[10px] uppercase tracking-wide text-slate-500">
+                <div className="text-[10px] uppercase tracking-wide text-[hsl(var(--muted))]">
                   Residual SE (log)
                 </div>
-                <div className="mt-1 font-mono text-sm text-white">
+                <div className="mt-1 font-mono text-sm text-[hsl(var(--foreground))]">
                   {hedonicFit.residualStdErr.toFixed(3)}
                 </div>
               </div>
             </div>
           ) : (
-            <p className="mt-3 text-[11px] leading-5 text-slate-400">
+            <p className="mt-3 text-[11px] leading-5 text-[hsl(var(--foreground-muted))]">
               Need at least {Math.max(4 - hedonicCompInputs.length, 1)} more comparable transactions
               to identify the regression. Add MOLIT 실거래가 ingest for faster fill.
             </p>
@@ -87,7 +87,7 @@ export function CompsSection({ data }: { data: SampleReportData }) {
           <div className="mt-5 overflow-x-auto rounded-[14px] border border-[hsl(var(--border))]">
             <table className="w-full text-xs">
               <thead>
-                <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-slate-500">
+                <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-[hsl(var(--muted))]">
                   <th className="px-2 py-2 font-semibold">Date</th>
                   <th className="px-2 py-2 font-semibold">Submarket</th>
                   <th className="px-2 py-2 font-semibold">Type / tier</th>
@@ -96,20 +96,20 @@ export function CompsSection({ data }: { data: SampleReportData }) {
                   <th className="px-2 py-2 text-right font-semibold">Source</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[hsl(var(--border))] text-slate-200">
+              <tbody className="divide-y divide-[hsl(var(--border))] text-[hsl(var(--foreground))]">
                 {txCompsToShow.slice(0, 8).map((c) => (
                   <tr key={c.id}>
-                    <td className="px-2 py-2 text-slate-400">
+                    <td className="px-2 py-2 text-[hsl(var(--foreground-muted))]">
                       {c.transactionDate ? formatDate(c.transactionDate) : '—'}
                     </td>
                     <td className="px-2 py-2">
-                      <div className="text-white">{c.region}</div>
-                      <div className="text-[10px] text-slate-500">{c.market}</div>
+                      <div className="text-[hsl(var(--foreground))]">{c.region}</div>
+                      <div className="text-[10px] text-[hsl(var(--muted))]">{c.market}</div>
                     </td>
-                    <td className="px-2 py-2 text-slate-300">
+                    <td className="px-2 py-2 text-[hsl(var(--foreground-muted))]">
                       <div>{c.comparableType}</div>
                       {c.assetTier ? (
-                        <div className="text-[10px] text-slate-500">{c.assetTier}</div>
+                        <div className="text-[10px] text-[hsl(var(--muted))]">{c.assetTier}</div>
                       ) : null}
                     </td>
                     <td className="px-2 py-2 text-right font-mono">
@@ -124,7 +124,7 @@ export function CompsSection({ data }: { data: SampleReportData }) {
                     <td className="px-2 py-2 text-right font-mono">
                       {typeof c.capRatePct === 'number' ? `${c.capRatePct.toFixed(2)}%` : '—'}
                     </td>
-                    <td className="px-2 py-2 text-right text-[10px] text-slate-400">
+                    <td className="px-2 py-2 text-right text-[10px] text-[hsl(var(--foreground-muted))]">
                       {c.sourceSystem}
                     </td>
                   </tr>
@@ -138,7 +138,7 @@ export function CompsSection({ data }: { data: SampleReportData }) {
           <div className="mt-5 overflow-x-auto rounded-[14px] border border-[hsl(var(--border))]">
             <table className="w-full text-xs">
               <thead>
-                <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-slate-500">
+                <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-[hsl(var(--muted))]">
                   <th className="px-2 py-2 font-semibold">As of</th>
                   <th className="px-2 py-2 font-semibold">Submarket</th>
                   <th className="px-2 py-2 font-semibold">Type</th>
@@ -148,17 +148,19 @@ export function CompsSection({ data }: { data: SampleReportData }) {
                   <th className="px-2 py-2 text-right font-semibold">Source</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[hsl(var(--border))] text-slate-200">
+              <tbody className="divide-y divide-[hsl(var(--border))] text-[hsl(var(--foreground))]">
                 {rentCompsToShow.slice(0, 8).map((r) => (
                   <tr key={r.id}>
-                    <td className="px-2 py-2 text-slate-400">
+                    <td className="px-2 py-2 text-[hsl(var(--foreground-muted))]">
                       {r.observationDate ? formatDate(r.observationDate) : '—'}
                     </td>
                     <td className="px-2 py-2">
-                      <div className="text-white">{r.region}</div>
-                      <div className="text-[10px] text-slate-500">{r.market}</div>
+                      <div className="text-[hsl(var(--foreground))]">{r.region}</div>
+                      <div className="text-[10px] text-[hsl(var(--muted))]">{r.market}</div>
                     </td>
-                    <td className="px-2 py-2 text-slate-300">{r.comparableType}</td>
+                    <td className="px-2 py-2 text-[hsl(var(--foreground-muted))]">
+                      {r.comparableType}
+                    </td>
                     <td className="px-2 py-2 text-right font-mono">
                       {typeof r.monthlyRatePerKwKrw === 'number'
                         ? `${formatNumber(r.monthlyRatePerKwKrw, 0)}`
@@ -172,7 +174,7 @@ export function CompsSection({ data }: { data: SampleReportData }) {
                     <td className="px-2 py-2 text-right font-mono">
                       {typeof r.occupancyPct === 'number' ? `${r.occupancyPct.toFixed(0)}%` : '—'}
                     </td>
-                    <td className="px-2 py-2 text-right text-[10px] text-slate-400">
+                    <td className="px-2 py-2 text-right text-[10px] text-[hsl(var(--foreground-muted))]">
                       {r.sourceSystem}
                     </td>
                   </tr>

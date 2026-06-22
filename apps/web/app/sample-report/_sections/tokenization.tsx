@@ -17,7 +17,7 @@ export function TokenizationSection({ data }: { data: SampleReportData }) {
             {asset.tokenization.paused ? 'PAUSED' : 'ACTIVE'}
           </Badge>
         </div>
-        <p className="mt-2 max-w-3xl text-sm text-slate-400">
+        <p className="mt-2 max-w-3xl text-sm text-[hsl(var(--foreground-muted))]">
           On-chain registration. The identity registry gates KYC; the compliance contract enforces
           transfer rules; lockup, max-holders, and country-restriction modules deploy where
           configured.

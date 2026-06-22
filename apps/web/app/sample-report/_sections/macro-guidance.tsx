@@ -13,7 +13,7 @@ export function MacroGuidanceSection({ data }: { data: SampleReportData }) {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <div className="eyebrow">Macro regime overlay</div>
-            <p className="mt-2 max-w-3xl text-sm text-slate-400">
+            <p className="mt-2 max-w-3xl text-sm text-[hsl(var(--foreground-muted))]">
               Per-driver overlay applied to the base scenario before the proforma runs. Discount and
               exit cap widen in tight capital markets; occupancy and growth tighten when leasing is
               soft; replacement cost steps up with construction inflation.
@@ -22,7 +22,7 @@ export function MacroGuidanceSection({ data }: { data: SampleReportData }) {
           <Badge>macro-regime-engine</Badge>
         </div>
         {macroGuidance.weightLine ? (
-          <p className="mt-4 rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2 text-xs text-slate-300">
+          <p className="mt-4 rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2 text-xs text-[hsl(var(--foreground-muted))]">
             {macroGuidance.weightLine}
           </p>
         ) : null}
@@ -41,14 +41,20 @@ export function MacroGuidanceSection({ data }: { data: SampleReportData }) {
             const isWiden =
               (badShift === 'add' && value > 0) || (badShift === 'subtract' && value < 0);
             const tone =
-              value === 0 ? 'text-white' : isWiden ? 'text-rose-300' : 'text-emerald-300';
+              value === 0
+                ? 'text-[hsl(var(--foreground))]'
+                : isWiden
+                  ? 'text-[hsl(var(--danger))]'
+                  : 'text-[hsl(var(--success))]';
             const sign = value > 0 ? '+' : '';
             return (
               <div
                 key={label}
                 className="rounded-[16px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-3"
               >
-                <div className="text-[11px] uppercase tracking-wide text-slate-500">{label}</div>
+                <div className="text-[11px] uppercase tracking-wide text-[hsl(var(--muted))]">
+                  {label}
+                </div>
                 <div className={`mt-2 font-mono text-sm ${tone}`}>
                   {sign}
                   {value.toFixed(2)} {unit}
@@ -58,9 +64,12 @@ export function MacroGuidanceSection({ data }: { data: SampleReportData }) {
           })}
         </div>
         {macroGuidance.summary.length > 0 ? (
-          <ul className="mt-5 space-y-1 text-xs leading-5 text-slate-400">
+          <ul className="mt-5 space-y-1 text-xs leading-5 text-[hsl(var(--foreground-muted))]">
             {macroGuidance.summary.map((line) => (
-              <li key={line} className="before:mr-2 before:text-slate-600 before:content-['→']">
+              <li
+                key={line}
+                className="before:mr-2 before:text-[hsl(var(--muted))] before:content-['→']"
+              >
                 {line}
               </li>
             ))}

@@ -24,7 +24,9 @@ export function FxSection({ data }: { data: SampleReportData }) {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <div className="eyebrow">FX exposure</div>
-            <p className="mt-2 max-w-3xl text-sm text-slate-400">{fxExposure.notes}</p>
+            <p className="mt-2 max-w-3xl text-sm text-[hsl(var(--foreground-muted))]">
+              {fxExposure.notes}
+            </p>
           </div>
           <Badge
             tone={
@@ -40,28 +42,32 @@ export function FxSection({ data }: { data: SampleReportData }) {
         </div>
         <div className="mt-5 grid gap-3 md:grid-cols-3">
           <div className="rounded-[16px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-3">
-            <div className="text-[10px] uppercase tracking-wide text-slate-500">Asset currency</div>
-            <div className="mt-2 font-mono text-lg font-semibold text-white">
+            <div className="text-[10px] uppercase tracking-wide text-[hsl(var(--muted))]">
+              Asset currency
+            </div>
+            <div className="mt-2 font-mono text-lg font-semibold text-[hsl(var(--foreground))]">
               {fxExposure.assetCurrency}
             </div>
           </div>
           <div className="rounded-[16px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-3">
-            <div className="text-[10px] uppercase tracking-wide text-slate-500">
+            <div className="text-[10px] uppercase tracking-wide text-[hsl(var(--muted))]">
               LP base currency
             </div>
-            <div className="mt-2 font-mono text-lg font-semibold text-white">
+            <div className="mt-2 font-mono text-lg font-semibold text-[hsl(var(--foreground))]">
               {fxExposure.lpBaseCurrency}
             </div>
           </div>
           <div className="rounded-[16px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-3">
-            <div className="text-[10px] uppercase tracking-wide text-slate-500">Spot</div>
-            <div className="mt-2 font-mono text-sm text-white">{fxExposure.spotRateLabel}</div>
+            <div className="text-[10px] uppercase tracking-wide text-[hsl(var(--muted))]">Spot</div>
+            <div className="mt-2 font-mono text-sm text-[hsl(var(--foreground))]">
+              {fxExposure.spotRateLabel}
+            </div>
           </div>
         </div>
         <div className="mt-5 overflow-x-auto rounded-[14px] border border-[hsl(var(--border))]">
           <table className="w-full text-xs">
             <thead>
-              <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-slate-500">
+              <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-[hsl(var(--muted))]">
                 <th className="px-2 py-2 font-semibold">FX shock</th>
                 {fxExposure.sensitivity.map((s) => (
                   <th key={s.shockPct} className="px-2 py-2 text-right font-semibold">
@@ -73,16 +79,16 @@ export function FxSection({ data }: { data: SampleReportData }) {
             </thead>
             <tbody>
               <tr>
-                <td className="px-2 py-2 text-slate-400">
+                <td className="px-2 py-2 text-[hsl(var(--foreground-muted))]">
                   Asset value in {fxExposure.lpBaseCurrency}
                 </td>
                 {fxExposure.sensitivity.map((s) => {
                   const tone =
                     s.shockPct < 0
-                      ? 'text-emerald-300'
+                      ? 'text-[hsl(var(--success))]'
                       : s.shockPct > 0
-                        ? 'text-rose-300'
-                        : 'text-white';
+                        ? 'text-[hsl(var(--danger))]'
+                        : 'text-[hsl(var(--foreground))]';
                   return (
                     <td key={s.shockPct} className={`px-2 py-2 text-right font-mono ${tone}`}>
                       {formatBase(s.baseCurrencyValue)}
@@ -93,7 +99,7 @@ export function FxSection({ data }: { data: SampleReportData }) {
             </tbody>
           </table>
         </div>
-        <p className="mt-3 text-[10px] leading-4 text-slate-500">
+        <p className="mt-3 text-[10px] leading-4 text-[hsl(var(--muted))]">
           Negative shock = KRW strengthens vs {fxExposure.lpBaseCurrency} (translation gain).
           Positive shock = KRW weakens (translation loss). No deal-level NDF / forward hedge is
           modeled.

@@ -15,7 +15,7 @@ export function FeaturesSection({ data }: { data: SampleReportData }) {
           <div className="eyebrow">Feature snapshots</div>
           <Badge>{asset.featureSnapshots.length}</Badge>
         </div>
-        <p className="mt-2 max-w-3xl text-sm text-slate-400">
+        <p className="mt-2 max-w-3xl text-sm text-[hsl(var(--foreground-muted))]">
           Underwriting input bundles by namespace (site, power, revenue, legal, permit, market,
           readiness, satellite). Each snapshot captures the inputs read at run time, supporting
           exact reproducibility on re-run.
@@ -26,15 +26,20 @@ export function FeaturesSection({ data }: { data: SampleReportData }) {
               key={s.id}
               className="rounded-[16px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-3"
             >
-              <div className="text-[11px] uppercase tracking-wide text-slate-500">
+              <div className="text-[11px] uppercase tracking-wide text-[hsl(var(--muted))]">
                 {s.featureNamespace}
               </div>
-              <div className="mt-2 font-mono text-xs text-slate-300">
+              <div className="mt-2 font-mono text-xs text-[hsl(var(--foreground-muted))]">
                 {s.values?.length ?? 0} value{(s.values?.length ?? 0) === 1 ? '' : 's'}
               </div>
-              <div className="mt-1 text-[10px] text-slate-500">{formatDate(s.snapshotDate)}</div>
+              <div className="mt-1 text-[10px] text-[hsl(var(--muted))]">
+                {formatDate(s.snapshotDate)}
+              </div>
               {s.sourceVersion ? (
-                <div className="mt-1 truncate text-[10px] text-slate-600" title={s.sourceVersion}>
+                <div
+                  className="mt-1 truncate text-[10px] text-[hsl(var(--muted))]"
+                  title={s.sourceVersion}
+                >
                   v{s.sourceVersion}
                 </div>
               ) : null}

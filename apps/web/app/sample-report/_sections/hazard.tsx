@@ -15,7 +15,7 @@ export function HazardSection({ data }: { data: SampleReportData }) {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <div className="eyebrow">Site hazard scores</div>
-            <p className="mt-2 max-w-3xl text-sm text-slate-400">
+            <p className="mt-2 max-w-3xl text-sm text-[hsl(var(--foreground-muted))]">
               Per-asset physical-risk readings. Flood and wildfire each carry a confidence-score
               penalty (×0.05 and ×0.04 respectively). Insurance pricing and reserve sizing track the
               same readings.
@@ -55,19 +55,23 @@ export function HazardSection({ data }: { data: SampleReportData }) {
               <div key={label} className={`rounded-[18px] border p-4 ${tone}`}>
                 <div className="flex items-center gap-2">
                   <span className={`inline-block h-2 w-2 rounded-full ${dotTone}`} />
-                  <div className="text-[11px] uppercase tracking-wide text-slate-500">{label}</div>
+                  <div className="text-[11px] uppercase tracking-wide text-[hsl(var(--muted))]">
+                    {label}
+                  </div>
                 </div>
-                <div className="mt-3 text-2xl font-semibold text-white">
+                <div className="mt-3 text-2xl font-semibold text-[hsl(var(--foreground))]">
                   {score !== null && score !== undefined ? score.toFixed(1) : '—'}
                 </div>
-                <div className="mt-1 text-xs text-slate-400">{desc.label} band</div>
+                <div className="mt-1 text-xs text-[hsl(var(--foreground-muted))]">
+                  {desc.label} band
+                </div>
               </div>
             );
           })}
         </div>
         {asset.siteProfile.siteNotes ? (
-          <p className="mt-4 rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2 text-xs leading-5 text-slate-400">
-            <span className="font-semibold text-slate-300">Notes: </span>
+          <p className="mt-4 rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2 text-xs leading-5 text-[hsl(var(--foreground-muted))]">
+            <span className="font-semibold text-[hsl(var(--foreground-muted))]">Notes: </span>
             {asset.siteProfile.siteNotes}
           </p>
         ) : null}

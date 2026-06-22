@@ -48,10 +48,10 @@ export function FooterCtaSection() {
     <section className="app-shell space-y-6 py-10">
       <div className="max-w-3xl">
         <div className="eyebrow">용어 해설</div>
-        <h2 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-white md:text-4xl">
+        <h2 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-[hsl(var(--foreground))] md:text-4xl">
           이 메모에서 쓰는 평가 용어.
         </h2>
-        <p className="mt-3 text-sm leading-7 text-slate-400">
+        <p className="mt-3 text-sm leading-7 text-[hsl(var(--foreground-muted))]">
           샘플 IM은 영문 IC 양식을 그대로 보여줍니다. 표기된 평가 · 시나리오 · 신뢰도 용어는 아래
           정의를 참고해 주세요.
         </p>
@@ -60,10 +60,12 @@ export function FooterCtaSection() {
         {glossary.map((entry) => (
           <Card key={entry.term} className="min-h-[170px]">
             <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <h3 className="text-lg font-semibold text-white">{entry.term}</h3>
-              <span className="text-sm text-slate-400">{entry.ko}</span>
+              <h3 className="text-lg font-semibold text-[hsl(var(--foreground))]">{entry.term}</h3>
+              <span className="text-sm text-[hsl(var(--foreground-muted))]">{entry.ko}</span>
             </div>
-            <p className="mt-3 text-sm leading-7 text-slate-400">{entry.body}</p>
+            <p className="mt-3 text-sm leading-7 text-[hsl(var(--foreground-muted))]">
+              {entry.body}
+            </p>
           </Card>
         ))}
       </div>

@@ -18,9 +18,9 @@ export function ProvenancePill({
   const text = summarizeProvenance(entries);
   if (!text) return null;
   return (
-    <div className="mt-3 flex flex-wrap items-center gap-2 rounded-[12px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-1.5 text-[11px] text-slate-400">
-      <span className="uppercase tracking-wide text-slate-500">Source</span>
-      <span className="font-mono text-slate-300">{text}</span>
+    <div className="mt-3 flex flex-wrap items-center gap-2 rounded-[12px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-1.5 text-[11px] text-[hsl(var(--foreground-muted))]">
+      <span className="uppercase tracking-wide text-[hsl(var(--muted))]">Source</span>
+      <span className="font-mono text-[hsl(var(--foreground-muted))]">{text}</span>
     </div>
   );
 }
@@ -38,10 +38,10 @@ export function FreshnessDot({
     f.band === 'fresh' ? 'bg-emerald-300' : f.band === 'recent' ? 'bg-amber-300' : 'bg-rose-300';
   const textTone =
     f.band === 'fresh'
-      ? 'text-emerald-300'
+      ? 'text-[hsl(var(--success))]'
       : f.band === 'recent'
-        ? 'text-amber-300'
-        : 'text-rose-300';
+        ? 'text-[hsl(var(--warning))]'
+        : 'text-[hsl(var(--danger))]';
   return (
     <span className="inline-flex items-center gap-1.5 text-[10px]" title={`Observed ${f.label}`}>
       <span className={`inline-block h-1.5 w-1.5 rounded-full ${dotTone}`} />
