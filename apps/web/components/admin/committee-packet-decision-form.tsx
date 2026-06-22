@@ -89,7 +89,7 @@ export function CommitteePacketDecisionForm({ packetId }: { packetId: string }) 
       />
       <div className="flex items-center justify-between gap-3">
         {error ? (
-          <div className="text-xs text-rose-300">{error}</div>
+          <div className="text-xs text-[hsl(var(--danger))]">{error}</div>
         ) : (
           <div className="text-xs text-slate-500">Write the IC outcome into packet lineage.</div>
         )}

@@ -121,7 +121,7 @@ export function DocumentUploadForm({ assetId, dealId }: { assetId?: string; deal
       </div>
       {success ? (
         <div
-          className="text-sm text-emerald-300"
+          className="text-sm text-[hsl(var(--success))]"
           data-testid="document-upload-feedback"
           role="status"
         >
@@ -129,7 +129,11 @@ export function DocumentUploadForm({ assetId, dealId }: { assetId?: string; deal
         </div>
       ) : null}
       {error ? (
-        <div className="text-sm text-rose-300" data-testid="document-upload-feedback" role="alert">
+        <div
+          className="text-sm text-[hsl(var(--danger))]"
+          data-testid="document-upload-feedback"
+          role="alert"
+        >
           {error}
         </div>
       ) : null}

@@ -89,7 +89,7 @@ export function ValuationApprovalForm({
         />
       </label>
 
-      {error ? <p className="text-sm text-rose-300">{error}</p> : null}
+      {error ? <p className="text-sm text-[hsl(var(--danger))]">{error}</p> : null}
 
       <div className="flex justify-end">
         <Button type="submit" disabled={submitting}>

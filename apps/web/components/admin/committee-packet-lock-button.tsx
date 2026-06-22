@@ -55,7 +55,7 @@ export function CommitteePacketLockButton({
         {busy || isRefreshing ? 'Locking...' : 'Lock Packet'}
       </Button>
       {disabledReason ? <div className="text-xs text-slate-500">{disabledReason}</div> : null}
-      {error ? <div className="text-xs text-rose-300">{error}</div> : null}
+      {error ? <div className="text-xs text-[hsl(var(--danger))]">{error}</div> : null}
     </div>
   );
 }

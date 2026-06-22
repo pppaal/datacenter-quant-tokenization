@@ -60,7 +60,7 @@ export function ResearchHouseViewApprovalButton({
       >
         {submitting || isRefreshing ? 'Approving...' : 'Approve House View'}
       </Button>
-      {error ? <div className="text-xs text-rose-300">{error}</div> : null}
+      {error ? <div className="text-xs text-[hsl(var(--danger))]">{error}</div> : null}
     </div>
   );
 }

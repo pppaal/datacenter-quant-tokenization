@@ -207,7 +207,7 @@ export function AssetMediaManager({
                 <button
                   onClick={() => remove(m.id)}
                   disabled={busy}
-                  className="text-xs text-rose-300 hover:text-rose-200 disabled:opacity-50"
+                  className="text-xs text-[hsl(var(--danger))] hover:text-rose-200 disabled:opacity-50"
                 >
                   Delete
                 </button>

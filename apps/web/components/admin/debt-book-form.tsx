@@ -576,7 +576,9 @@ export function DebtBookForm({
           the synthetic facility fallback.
         </p>
         <div className="flex items-center gap-3">
-          {errorMessage ? <span className="text-sm text-rose-300">{errorMessage}</span> : null}
+          {errorMessage ? (
+            <span className="text-sm text-[hsl(var(--danger))]">{errorMessage}</span>
+          ) : null}
           <Button
             type="button"
             variant="secondary"

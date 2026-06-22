@@ -29,12 +29,12 @@ type ResultState =
 
 function scoreRingTone(score: number): { ring: string; text: string; label: string } {
   if (score >= 70) {
-    return { ring: 'border-emerald-400/70', text: 'text-emerald-300', label: 'Strong' };
+    return { ring: 'border-emerald-400/70', text: 'text-[hsl(var(--success))]', label: 'Strong' };
   }
   if (score >= 40) {
-    return { ring: 'border-amber-400/70', text: 'text-amber-300', label: 'Watch' };
+    return { ring: 'border-amber-400/70', text: 'text-[hsl(var(--warning))]', label: 'Watch' };
   }
-  return { ring: 'border-rose-400/70', text: 'text-rose-300', label: 'Caution' };
+  return { ring: 'border-rose-400/70', text: 'text-[hsl(var(--danger))]', label: 'Caution' };
 }
 
 export function AiAssistantButton({ kind, entityId }: Props) {
@@ -156,7 +156,7 @@ function DealScorePanel({ data }: { data: DealScoreResult }) {
 
       <div className="grid gap-4 md:grid-cols-2">
         <div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 p-4">
-          <div className="text-xs font-semibold uppercase tracking-wide text-emerald-300">
+          <div className="text-xs font-semibold uppercase tracking-wide text-[hsl(var(--success))]">
             Green flags
           </div>
           {data.greenFlags.length > 0 ? (
@@ -170,7 +170,7 @@ function DealScorePanel({ data }: { data: DealScoreResult }) {
           )}
         </div>
         <div className="rounded-md border border-rose-500/30 bg-rose-500/5 p-4">
-          <div className="text-xs font-semibold uppercase tracking-wide text-rose-300">
+          <div className="text-xs font-semibold uppercase tracking-wide text-[hsl(var(--danger))]">
             Red flags
           </div>
           {data.redFlags.length > 0 ? (

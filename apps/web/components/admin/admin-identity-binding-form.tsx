@@ -119,7 +119,7 @@ export function AdminIdentityBindingForm({
       </div>
       {feedback ? (
         <div
-          className="text-sm text-emerald-300"
+          className="text-sm text-[hsl(var(--success))]"
           data-testid="identity-binding-feedback"
           role="status"
         >
@@ -127,7 +127,11 @@ export function AdminIdentityBindingForm({
         </div>
       ) : null}
       {error ? (
-        <div className="text-sm text-rose-300" data-testid="identity-binding-feedback" role="alert">
+        <div
+          className="text-sm text-[hsl(var(--danger))]"
+          data-testid="identity-binding-feedback"
+          role="alert"
+        >
           {error}
         </div>
       ) : null}

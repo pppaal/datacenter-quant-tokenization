@@ -190,7 +190,11 @@ export function ComplianceModulesPanel({
                 >
                   <div className="text-sm text-slate-200">
                     ISO numeric <span className="font-mono">{row.code}</span> —{' '}
-                    <span className={row.blocked ? 'text-amber-300' : 'text-emerald-300'}>
+                    <span
+                      className={
+                        row.blocked ? 'text-[hsl(var(--warning))]' : 'text-[hsl(var(--success))]'
+                      }
+                    >
                       {row.blocked ? 'BLOCKED' : 'allowed'}
                     </span>
                   </div>

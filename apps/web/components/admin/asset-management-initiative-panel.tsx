@@ -186,8 +186,8 @@ function InitiativeRow({
         />
       </div>
 
-      {feedback ? <div className="mt-2 text-sm text-emerald-300">{feedback}</div> : null}
-      {error ? <div className="mt-2 text-sm text-rose-300">{error}</div> : null}
+      {feedback ? <div className="mt-2 text-sm text-[hsl(var(--success))]">{feedback}</div> : null}
+      {error ? <div className="mt-2 text-sm text-[hsl(var(--danger))]">{error}</div> : null}
     </div>
   );
 }
@@ -314,7 +314,7 @@ export function AssetManagementInitiativePanel({
           className="min-h-[96px]"
         />
       </div>
-      {error ? <div className="mt-2 text-sm text-rose-300">{error}</div> : null}
+      {error ? <div className="mt-2 text-sm text-[hsl(var(--danger))]">{error}</div> : null}
 
       <div className="mt-6 space-y-3">
         {initiatives.length === 0 ? (

@@ -146,7 +146,7 @@ export function AuditLogPanel({ data, filters }: Props) {
                 <Link
                   href={removeHref}
                   aria-label={`Clear ${chip.label} filter`}
-                  className="text-slate-400 transition hover:text-rose-300"
+                  className="text-slate-400 transition hover:text-[hsl(var(--danger))]"
                 >
                   x
                 </Link>

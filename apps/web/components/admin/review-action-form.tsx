@@ -10,11 +10,11 @@ import { useRouterRefresh } from '@/lib/hooks/use-router-refresh';
 function toneForStatus(status: ReviewStatus) {
   switch (status) {
     case ReviewStatus.APPROVED:
-      return 'text-emerald-300';
+      return 'text-[hsl(var(--success))]';
     case ReviewStatus.REJECTED:
-      return 'text-rose-300';
+      return 'text-[hsl(var(--danger))]';
     default:
-      return 'text-amber-300';
+      return 'text-[hsl(var(--warning))]';
   }
 }
 
@@ -112,7 +112,11 @@ export function ReviewActionForm({
         </div>
       </div>
       {errorMessage ? (
-        <div className="text-sm text-rose-300" data-testid="review-feedback" role="alert">
+        <div
+          className="text-sm text-[hsl(var(--danger))]"
+          data-testid="review-feedback"
+          role="alert"
+        >
           {errorMessage}
         </div>
       ) : null}

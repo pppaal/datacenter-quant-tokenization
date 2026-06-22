@@ -44,7 +44,7 @@ export function ResearchRefreshButton() {
       >
         {submitting || isRefreshing ? 'Refreshing Research...' : 'Run Research Sync'}
       </Button>
-      {error ? <p className="mt-2 text-sm text-rose-300">{error}</p> : null}
+      {error ? <p className="mt-2 text-sm text-[hsl(var(--danger))]">{error}</p> : null}
     </div>
   );
 }

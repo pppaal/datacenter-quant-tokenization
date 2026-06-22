@@ -190,7 +190,9 @@ function OverrideEditorCard({
           without redeploying.
         </div>
         <div className="flex items-center gap-3">
-          {errorMessage ? <span className="text-sm text-rose-300">{errorMessage}</span> : null}
+          {errorMessage ? (
+            <span className="text-sm text-[hsl(var(--danger))]">{errorMessage}</span>
+          ) : null}
           <Button type="button" onClick={save} disabled={submitting}>
             {submitting ? 'Saving...' : 'Save Override'}
           </Button>
@@ -413,7 +415,9 @@ export function MacroProfileOverrideForm({
             numbers apply first.
           </div>
           <div className="flex items-center gap-3">
-            {errorMessage ? <span className="text-sm text-rose-300">{errorMessage}</span> : null}
+            {errorMessage ? (
+              <span className="text-sm text-[hsl(var(--danger))]">{errorMessage}</span>
+            ) : null}
             <Button type="button" onClick={createOverride} disabled={submitting}>
               {submitting ? 'Creating...' : 'Create Override'}
             </Button>
