@@ -149,6 +149,7 @@ export default function PropertyAnalyzePage({ mapConfig }: { mapConfig: MapProvi
   const irRows = report?.sensitivities?.interestRate ?? [];
   const md = report?.sensitivities?.macroDriven;
   const tornado = report?.sensitivities?.tornado;
+  const valuationInsights = report?.valuationInsights;
   const refi = report?.refinancing;
   const wf = report?.gpLpWaterfall;
   const dq = report?.assumptionsQuality ?? report?.autoAnalyze?.provenance;
@@ -431,7 +432,7 @@ export default function PropertyAnalyzePage({ mapConfig }: { mapConfig: MapProvi
               </div>
 
               <div id="risk" className="mt-6 scroll-mt-24 space-y-6">
-                {mc && <MonteCarloSection mc={mc} />}
+                {mc && <MonteCarloSection mc={mc} insight={valuationInsights?.monteCarlo} />}
                 <DebtCovenantSection dc={dc} />
               </div>
 
@@ -440,7 +441,11 @@ export default function PropertyAnalyzePage({ mapConfig }: { mapConfig: MapProvi
                 <InterestRateSensitivitySection irRows={irRows} />
                 <MacroDrivenSensitivitySection md={md} />
                 {tornado && tornado.drivers.length > 0 && (
-                  <TornadoSensitivitySection tornado={tornado} pfx={pfx} />
+                  <TornadoSensitivitySection
+                    tornado={tornado}
+                    pfx={pfx}
+                    insight={valuationInsights?.tornado}
+                  />
                 )}
               </div>
 
