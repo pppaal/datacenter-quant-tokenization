@@ -34,6 +34,12 @@ import {
   type SensitivityMatrix,
   type TornadoResult
 } from '@/lib/services/valuation/sensitivity';
+import {
+  summarizeMonteCarloRisk,
+  summarizeTornado,
+  type MonteCarloInsight,
+  type TornadoInsight
+} from '@/lib/services/valuation/insights';
 import { analyzeRefinancing, type RefinanceAnalysis } from '@/lib/services/valuation/refinancing';
 import { analyzeCovenants, type CovenantAnalysis } from '@/lib/services/valuation/covenants';
 import {
@@ -113,6 +119,11 @@ export type FullReport = {
     interestRate: OneWaySensitivityRow[];
     macroDriven: MacroDrivenSensitivityMatrix;
     tornado: TornadoResult;
+  };
+  /** Plain-language IC insights derived from the tornado + Monte-Carlo structs. */
+  valuationInsights: {
+    tornado: TornadoInsight;
+    monteCarlo: MonteCarloInsight;
   };
   refinancing: RefinanceAnalysis;
   macro: {
@@ -582,6 +593,30 @@ export async function buildFullReport(
     headlineEndOfYearLeveredIrrPct: returnMetricsEndOfYear.equityIrr
   });
 
+  const valuationInsights = {
+    tornado: summarizeTornado(
+      tornado.drivers.map((d) => ({
+        label: d.label,
+        irrSwing: d.irrSwing,
+        lowIrr: d.lowIrr,
+        highIrr: d.highIrr,
+        deltaLabel: d.deltaLabel
+      })),
+      tornado.baseEquityIrr ?? 0
+    ),
+    monteCarlo: summarizeMonteCarloRisk({
+      baseLeveredIrrPct: monteCarlo.baseLeveredIrr ?? monteCarlo.leveredIrr.p50 ?? 0,
+      p5Pct: monteCarlo.leveredIrr.tail.p5,
+      p50Pct: monteCarlo.leveredIrr.p50,
+      expectedShortfall95Pct: monteCarlo.leveredIrr.tail.expectedShortfall95,
+      probBelowZeroPct:
+        (monteCarlo.probLeveredIrrBelow.find((p) => p.targetPct === 0)?.probability ?? null) ===
+        null
+          ? null
+          : monteCarlo.probLeveredIrrBelow.find((p) => p.targetPct === 0)!.probability * 100
+    })
+  };
+
   return {
     autoAnalyze: auto,
     proForma,
@@ -598,6 +633,7 @@ export async function buildFullReport(
       macroDriven,
       tornado
     },
+    valuationInsights,
     refinancing,
     macro: {
       regime: regimeBlock,

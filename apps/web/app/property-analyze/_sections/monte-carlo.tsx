@@ -1,8 +1,24 @@
 import { Section, pct } from './shared';
 
-export function MonteCarloSection({ mc }: { mc: any }) {
+export function MonteCarloSection({
+  mc,
+  insight
+}: {
+  mc: any;
+  insight?: { bullets: string[]; optimismGapPct: number | null };
+}) {
   return (
     <Section title={`5b. Monte Carlo (${mc.iterations} iter, seed ${mc.seed})`}>
+      {insight && insight.bullets.length > 0 ? (
+        <div className="mb-3 rounded-md border border-indigo-500/30 bg-indigo-500/5 p-3 text-xs text-zinc-300">
+          <div className="mb-1 font-semibold text-zinc-200">리스크 인사이트</div>
+          <ul className="list-disc space-y-0.5 pl-4">
+            {insight.bullets.map((b) => (
+              <li key={b}>{b}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
       <div className="mb-2 text-xs text-zinc-400">
         Correlated truncated-normal draws on entry cap / exit cap / rent growth / interest rate via
         Cholesky decomposition. Joint-stress tails (rates ↑ &amp; caps ↑ &amp; growth ↓) are modeled

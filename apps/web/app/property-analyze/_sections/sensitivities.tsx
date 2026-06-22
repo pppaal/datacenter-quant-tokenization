@@ -117,13 +117,33 @@ export function MacroDrivenSensitivitySection({ md }: { md: any }) {
   );
 }
 
-export function TornadoSensitivitySection({ tornado, pfx }: { tornado: any; pfx: any }) {
+export function TornadoSensitivitySection({
+  tornado,
+  pfx,
+  insight
+}: {
+  tornado: any;
+  pfx: any;
+  insight?: { bullets: string[]; concentrationFlag: boolean; topDriver: string | null };
+}) {
   return (
     <Section
       title="Tornado — Driver Sensitivity (levered IRR swing)"
       collapsible
       defaultOpen={false}
     >
+      {insight && insight.bullets.length > 0 ? (
+        <div className="mb-3 rounded-md border border-indigo-500/30 bg-indigo-500/5 p-3 text-xs text-zinc-300">
+          <div className="mb-1 font-semibold text-zinc-200">
+            인사이트{insight.concentrationFlag ? ' · 민감도 집중' : ''}
+          </div>
+          <ul className="list-disc space-y-0.5 pl-4">
+            {insight.bullets.map((b) => (
+              <li key={b}>{b}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
       <div className="mb-2 text-xs text-zinc-400">
         Base equity IRR: {tornado.baseEquityIrr === null ? 'N/A' : pct(tornado.baseEquityIrr)} ·
         drivers ranked by absolute IRR swing for a +/- shock.
