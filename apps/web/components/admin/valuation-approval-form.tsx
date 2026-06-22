@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, startTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { useRouterRefresh } from '@/lib/hooks/use-router-refresh';
 
 type ApprovalStatus = 'PENDING_REVIEW' | 'APPROVED' | 'CONDITIONAL' | 'REJECTED';
 
@@ -18,7 +18,7 @@ export function ValuationApprovalForm({
   approvalStatus: ApprovalStatus;
   approvalNotes?: string | null;
 }) {
-  const router = useRouter();
+  const { isRefreshing, refresh } = useRouterRefresh();
   const [status, setStatus] = useState<ApprovalStatus>(approvalStatus);
   const [notes, setNotes] = useState(approvalNotes ?? '');
   const [submitting, setSubmitting] = useState(false);
@@ -49,7 +49,7 @@ export function ValuationApprovalForm({
             throw new Error(payload?.error ?? 'Failed to update approval');
           }
 
-          startTransition(() => router.refresh());
+          refresh();
         } catch (caughtError) {
           setError(
             caughtError instanceof Error ? caughtError.message : 'Failed to update approval'
@@ -92,8 +92,8 @@ export function ValuationApprovalForm({
       {error ? <p className="text-sm text-[hsl(var(--danger))]">{error}</p> : null}
 
       <div className="flex justify-end">
-        <Button type="submit" disabled={submitting}>
-          {submitting ? 'Saving...' : 'Update Approval'}
+        <Button type="submit" disabled={submitting || isRefreshing}>
+          {submitting || isRefreshing ? 'Saving...' : 'Update Approval'}
         </Button>
       </div>
     </form>

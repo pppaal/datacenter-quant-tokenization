@@ -1,13 +1,13 @@
 'use client';
 
-import { startTransition, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
+import { useRouterRefresh } from '@/lib/hooks/use-router-refresh';
 import { formatCompactCurrencyFromKrwAtRate, type SupportedCurrency } from '@/lib/finance/currency';
 import {
   assetRiskRegisterEntrySchema,
@@ -60,7 +60,7 @@ function SeverityTag({ value }: { value?: Severity | null }) {
 }
 
 export function RiskRegisterForm({ assetId, entries, inputCurrency = 'KRW', fxRateToKrw }: Props) {
-  const router = useRouter();
+  const { isRefreshing, refresh } = useRouterRefresh();
   const [submitting, setSubmitting] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
@@ -89,7 +89,7 @@ export function RiskRegisterForm({ assetId, entries, inputCurrency = 'KRW', fxRa
         throw new Error(payload?.error ?? 'Failed to save risk');
       }
       form.reset({ likelihood: 'MEDIUM', impact: 'MEDIUM', status: 'OPEN', inputCurrency });
-      startTransition(() => router.refresh());
+      refresh();
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Failed to save risk');
     } finally {
@@ -105,7 +105,7 @@ export function RiskRegisterForm({ assetId, entries, inputCurrency = 'KRW', fxRa
         method: 'DELETE'
       });
       if (!response.ok) throw new Error('Failed to delete risk');
-      startTransition(() => router.refresh());
+      refresh();
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Failed to delete risk');
     } finally {
@@ -121,7 +121,7 @@ export function RiskRegisterForm({ assetId, entries, inputCurrency = 'KRW', fxRa
         method: 'POST'
       });
       if (!response.ok) throw new Error('Failed to generate risk register');
-      startTransition(() => router.refresh());
+      refresh();
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Failed to generate risk register');
     } finally {
@@ -146,8 +146,13 @@ export function RiskRegisterForm({ assetId, entries, inputCurrency = 'KRW', fxRa
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button type="button" variant="secondary" onClick={onGenerate} disabled={generating}>
-            {generating ? 'Generating…' : 'Generate from analysis'}
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={onGenerate}
+            disabled={generating || isRefreshing}
+          >
+            {generating || isRefreshing ? 'Generating…' : 'Generate from analysis'}
           </Button>
           <Button type="button" variant="secondary" onClick={() => setShowForm((value) => !value)}>
             {showForm ? 'Close' : 'Add Risk'}
@@ -231,7 +236,7 @@ export function RiskRegisterForm({ assetId, entries, inputCurrency = 'KRW', fxRa
                     <button
                       type="button"
                       onClick={() => onDelete(entry.id)}
-                      disabled={busyId === entry.id}
+                      disabled={busyId === entry.id || isRefreshing}
                       className="text-xs text-[hsl(var(--danger))] hover:underline disabled:opacity-50"
                     >
                       {busyId === entry.id ? '…' : 'Remove'}
@@ -360,8 +365,8 @@ export function RiskRegisterForm({ assetId, entries, inputCurrency = 'KRW', fxRa
             {errorMessage ? (
               <span className="text-sm text-[hsl(var(--danger))]">{errorMessage}</span>
             ) : null}
-            <Button type="submit" disabled={submitting}>
-              {submitting ? 'Saving…' : 'Save Risk'}
+            <Button type="submit" disabled={submitting || isRefreshing}>
+              {submitting || isRefreshing ? 'Saving…' : 'Save Risk'}
             </Button>
           </div>
         </form>

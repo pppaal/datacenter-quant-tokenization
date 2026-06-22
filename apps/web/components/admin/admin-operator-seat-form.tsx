@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, startTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
+import { useRouterRefresh } from '@/lib/hooks/use-router-refresh';
 
 type AdminOperatorSeatFormProps = {
   userId: string;
@@ -18,7 +18,7 @@ export function AdminOperatorSeatForm({
   isActive,
   sessionVersion
 }: AdminOperatorSeatFormProps) {
-  const router = useRouter();
+  const { isRefreshing, refresh } = useRouterRefresh();
   const [role, setRole] = useState(currentRole);
   const [active, setActive] = useState(isActive);
   const [submitting, setSubmitting] = useState(false);
@@ -62,7 +62,7 @@ export function AdminOperatorSeatForm({
       }
 
       setFeedback('Operator seat updated.');
-      startTransition(() => router.refresh());
+      refresh();
     } catch (caughtError) {
       setError(
         caughtError instanceof Error ? caughtError.message : 'Failed to update operator seat.'
@@ -102,7 +102,7 @@ export function AdminOperatorSeatForm({
       }
 
       setFeedback('Operator sessions revoked.');
-      startTransition(() => router.refresh());
+      refresh();
     } catch (caughtError) {
       setError(
         caughtError instanceof Error ? caughtError.message : 'Failed to revoke operator sessions.'
@@ -144,16 +144,16 @@ export function AdminOperatorSeatForm({
         <Button
           type="button"
           onClick={submit}
-          disabled={submitting}
+          disabled={submitting || isRefreshing}
           data-testid="operator-seat-save"
         >
-          {submitting ? 'Saving...' : 'Save Seat'}
+          {submitting || isRefreshing ? 'Saving...' : 'Save Seat'}
         </Button>
         <Button
           type="button"
           variant="secondary"
           onClick={revokeSessions}
-          disabled={submitting}
+          disabled={submitting || isRefreshing}
           data-testid="operator-seat-revoke"
         >
           Revoke Sessions

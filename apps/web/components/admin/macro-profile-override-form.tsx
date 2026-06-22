@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, startTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { AssetClass } from '@prisma/client';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { useRouterRefresh } from '@/lib/hooks/use-router-refresh';
 
 export type MacroProfileOverrideView = {
   id: string;
@@ -133,7 +133,7 @@ function OverrideEditorCard({
   override: MacroProfileOverrideView;
   onSaved: (next: MacroProfileOverrideView) => void;
 }) {
-  const router = useRouter();
+  const { isRefreshing, refresh } = useRouterRefresh();
   const [draft, setDraft] = useState<OverrideDraft>(() => draftFromOverride(override));
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -156,7 +156,7 @@ function OverrideEditorCard({
         throw new Error((payload?.error as string | undefined) ?? 'Failed to update override');
 
       onSaved(normalizeRecord(payload ?? {}));
-      startTransition(() => router.refresh());
+      refresh();
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Failed to update override');
     } finally {
@@ -193,8 +193,8 @@ function OverrideEditorCard({
           {errorMessage ? (
             <span className="text-sm text-[hsl(var(--danger))]">{errorMessage}</span>
           ) : null}
-          <Button type="button" onClick={save} disabled={submitting}>
-            {submitting ? 'Saving...' : 'Save Override'}
+          <Button type="button" onClick={save} disabled={submitting || isRefreshing}>
+            {submitting || isRefreshing ? 'Saving...' : 'Save Override'}
           </Button>
         </div>
       </div>
@@ -342,7 +342,7 @@ export function MacroProfileOverrideForm({
 }: {
   initialOverrides: MacroProfileOverrideView[];
 }) {
-  const router = useRouter();
+  const { isRefreshing, refresh } = useRouterRefresh();
   const [overrides, setOverrides] = useState(initialOverrides);
   const [draft, setDraft] = useState<OverrideDraft>(emptyDraft);
   const [submitting, setSubmitting] = useState(false);
@@ -374,7 +374,7 @@ export function MacroProfileOverrideForm({
         )
       );
       setDraft(emptyDraft());
-      startTransition(() => router.refresh());
+      refresh();
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Failed to create override');
     } finally {
@@ -418,8 +418,8 @@ export function MacroProfileOverrideForm({
             {errorMessage ? (
               <span className="text-sm text-[hsl(var(--danger))]">{errorMessage}</span>
             ) : null}
-            <Button type="button" onClick={createOverride} disabled={submitting}>
-              {submitting ? 'Creating...' : 'Create Override'}
+            <Button type="button" onClick={createOverride} disabled={submitting || isRefreshing}>
+              {submitting || isRefreshing ? 'Creating...' : 'Create Override'}
             </Button>
           </div>
         </div>
