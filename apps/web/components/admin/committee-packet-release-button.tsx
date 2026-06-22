@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, startTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { useRouterRefresh } from '@/lib/hooks/use-router-refresh';
 
 export function CommitteePacketReleaseButton({ packetId }: { packetId: string }) {
-  const router = useRouter();
+  const { isRefreshing, refresh } = useRouterRefresh();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,7 +29,7 @@ export function CommitteePacketReleaseButton({ packetId }: { packetId: string })
         const payload = (await response.json().catch(() => null)) as { error?: string } | null;
         throw new Error(payload?.error ?? 'Failed to release packet');
       }
-      startTransition(() => router.refresh());
+      refresh();
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : 'Failed to release packet');
     } finally {
@@ -43,10 +43,10 @@ export function CommitteePacketReleaseButton({ packetId }: { packetId: string })
         type="button"
         variant="ghost"
         onClick={onClick}
-        disabled={busy}
+        disabled={busy || isRefreshing}
         data-testid="ic-packet-release-button"
       >
-        {busy ? 'Releasing...' : 'Release Packet'}
+        {busy || isRefreshing ? 'Releasing...' : 'Release Packet'}
       </Button>
       {error ? <div className="text-xs text-rose-300">{error}</div> : null}
     </div>

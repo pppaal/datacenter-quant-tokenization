@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, startTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { useRouterRefresh } from '@/lib/hooks/use-router-refresh';
 
 export function CommitteePacketLockButton({
   packetId,
@@ -13,7 +13,7 @@ export function CommitteePacketLockButton({
   disabled: boolean;
   disabledReason?: string | null;
 }) {
-  const router = useRouter();
+  const { isRefreshing, refresh } = useRouterRefresh();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,7 +35,7 @@ export function CommitteePacketLockButton({
         const payload = (await response.json().catch(() => null)) as { error?: string } | null;
         throw new Error(payload?.error ?? 'Failed to lock packet');
       }
-      startTransition(() => router.refresh());
+      refresh();
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : 'Failed to lock packet');
     } finally {
@@ -48,11 +48,11 @@ export function CommitteePacketLockButton({
       <Button
         type="button"
         variant="ghost"
-        disabled={disabled || busy}
+        disabled={disabled || busy || isRefreshing}
         onClick={onClick}
         data-testid="ic-packet-lock-button"
       >
-        {busy ? 'Locking...' : 'Lock Packet'}
+        {busy || isRefreshing ? 'Locking...' : 'Lock Packet'}
       </Button>
       {disabledReason ? <div className="text-xs text-slate-500">{disabledReason}</div> : null}
       {error ? <div className="text-xs text-rose-300">{error}</div> : null}

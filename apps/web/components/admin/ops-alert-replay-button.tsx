@@ -1,15 +1,15 @@
 'use client';
 
-import { useState, startTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { useRouterRefresh } from '@/lib/hooks/use-router-refresh';
 
 type OpsAlertReplayButtonProps = {
   deliveryId: string;
 };
 
 export function OpsAlertReplayButton({ deliveryId }: OpsAlertReplayButtonProps) {
-  const router = useRouter();
+  const { isRefreshing, refresh } = useRouterRefresh();
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -34,7 +34,7 @@ export function OpsAlertReplayButton({ deliveryId }: OpsAlertReplayButtonProps) 
       setFeedback(
         `Replay recorded as ${payload?.delivery?.statusLabel?.toLowerCase() ?? 'delivered'}.`
       );
-      startTransition(() => router.refresh());
+      refresh();
     } catch (caughtError) {
       setError(
         caughtError instanceof Error ? caughtError.message : 'Failed to replay alert delivery.'
@@ -50,10 +50,10 @@ export function OpsAlertReplayButton({ deliveryId }: OpsAlertReplayButtonProps) 
         type="button"
         variant="secondary"
         onClick={replay}
-        disabled={submitting}
+        disabled={submitting || isRefreshing}
         data-testid="ops-alert-replay-button"
       >
-        {submitting ? 'Replaying...' : 'Replay Alert'}
+        {submitting || isRefreshing ? 'Replaying...' : 'Replay Alert'}
       </Button>
       {feedback ? (
         <div
