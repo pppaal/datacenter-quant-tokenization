@@ -27,8 +27,10 @@ export function ForecastPredictionPanel({
       <div className="flex items-center justify-between gap-4">
         <div>
           <div className="eyebrow">Boosted Forecast</div>
-          <h3 className="mt-2 text-xl font-semibold text-white">12-Month ML Drift View</h3>
-          <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-400">
+          <h3 className="mt-2 text-xl font-semibold text-[hsl(var(--foreground))]">
+            12-Month ML Drift View
+          </h3>
+          <p className="mt-2 max-w-2xl text-sm leading-7 text-[hsl(var(--foreground-muted))]">
             Lightweight gradient boosting on historical valuation paths. This is a learned forecast
             layer, separate from the deterministic scenario and Monte Carlo screens.
           </p>
@@ -47,7 +49,7 @@ export function ForecastPredictionPanel({
               <Badge tone="neutral">{readingGuide.challengerModelKey}</Badge>
             ) : null}
           </div>
-          <div className="mt-3 space-y-2 text-sm leading-7 text-slate-200">
+          <div className="mt-3 space-y-2 text-sm leading-7 text-[hsl(var(--foreground))]">
             <p>{readingGuide.leadSentence}</p>
             <p>{readingGuide.constraintSentence}</p>
             <p>{readingGuide.downsideSentence}</p>
@@ -56,29 +58,29 @@ export function ForecastPredictionPanel({
       ) : null}
 
       <div className="mt-5 grid gap-4 md:grid-cols-4">
-        <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+        <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-5">
           <div className="fine-print">Training pairs</div>
-          <div className="mt-3 text-3xl font-semibold text-white">
+          <div className="mt-3 text-3xl font-semibold text-[hsl(var(--foreground))]">
             {formatNumber(forecast.sampleCount, 0)}
           </div>
-          <p className="mt-2 text-sm text-slate-400">
+          <p className="mt-2 text-sm text-[hsl(var(--foreground-muted))]">
             {formatNumber(forecast.assetCoverage, 0)} assets with sequential history.
           </p>
         </div>
-        <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+        <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-5">
           <div className="fine-print">Value Drift</div>
-          <div className="mt-3 text-3xl font-semibold text-white">
+          <div className="mt-3 text-3xl font-semibold text-[hsl(var(--foreground))]">
             {forecast.predictedValueChangePct === null
               ? 'N/A'
               : formatPercent(forecast.predictedValueChangePct)}
           </div>
-          <p className="mt-2 text-sm text-slate-400">
+          <p className="mt-2 text-sm text-[hsl(var(--foreground-muted))]">
             {forecast.forecastHorizonMonths}-month predicted change.
           </p>
         </div>
-        <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+        <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-5">
           <div className="fine-print">Predicted Value</div>
-          <div className="mt-3 text-3xl font-semibold text-white">
+          <div className="mt-3 text-3xl font-semibold text-[hsl(var(--foreground))]">
             {forecast.predictedValueKrw === null
               ? 'N/A'
               : formatCurrencyFromKrwAtRate(
@@ -87,16 +89,18 @@ export function ForecastPredictionPanel({
                   fxRateToKrw
                 )}
           </div>
-          <p className="mt-2 text-sm text-slate-400">Model-implied next horizon valuation.</p>
+          <p className="mt-2 text-sm text-[hsl(var(--foreground-muted))]">
+            Model-implied next horizon valuation.
+          </p>
         </div>
-        <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+        <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-5">
           <div className="fine-print">Predicted DSCR</div>
-          <div className="mt-3 text-3xl font-semibold text-white">
+          <div className="mt-3 text-3xl font-semibold text-[hsl(var(--foreground))]">
             {forecast.predictedDscr === null
               ? 'N/A'
               : `${formatNumber(forecast.predictedDscr, 2)}x`}
           </div>
-          <p className="mt-2 text-sm text-slate-400">
+          <p className="mt-2 text-sm text-[hsl(var(--foreground-muted))]">
             {forecast.predictedDscrChangePct === null
               ? 'Not enough data.'
               : `${formatPercent(forecast.predictedDscrChangePct)} drift`}
@@ -105,28 +109,36 @@ export function ForecastPredictionPanel({
       </div>
 
       <div className="mt-5 grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-        <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+        <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-5">
           <div className="fine-print">Model Note</div>
-          <p className="mt-3 text-sm leading-7 text-slate-300">{forecast.commentary}</p>
+          <p className="mt-3 text-sm leading-7 text-[hsl(var(--foreground-muted))]">
+            {forecast.commentary}
+          </p>
         </div>
-        <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+        <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-5">
           <div className="fine-print">Top Drivers</div>
           <div className="mt-3 space-y-2">
             {forecast.topDrivers.length > 0 ? (
               forecast.topDrivers.map((driver) => (
                 <div
                   key={driver.featureKey}
-                  className="flex items-center justify-between gap-3 text-sm text-slate-300"
+                  className="flex items-center justify-between gap-3 text-sm text-[hsl(var(--foreground-muted))]"
                 >
                   <span>{driver.label}</span>
-                  <span className={driver.contribution < 0 ? 'text-amber-300' : 'text-emerald-300'}>
+                  <span
+                    className={
+                      driver.contribution < 0
+                        ? 'text-[hsl(var(--warning))]'
+                        : 'text-[hsl(var(--success))]'
+                    }
+                  >
                     {driver.contribution > 0 ? '+' : ''}
                     {formatNumber(driver.contribution, 2)}
                   </span>
                 </div>
               ))
             ) : (
-              <div className="text-sm text-slate-500">
+              <div className="text-sm text-[hsl(var(--muted))]">
                 More sequential valuation history is needed before feature attribution becomes
                 meaningful.
               </div>

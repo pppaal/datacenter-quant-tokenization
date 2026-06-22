@@ -13,15 +13,17 @@ function barWidth(strength: number) {
 }
 
 function borderClass(direction: string) {
-  if (direction === 'TAILWIND') return 'border-emerald-400/30 bg-emerald-400/10';
-  if (direction === 'HEADWIND') return 'border-amber-300/30 bg-amber-300/10';
-  return 'border-white/10 bg-white/[0.03]';
+  if (direction === 'TAILWIND')
+    return 'border-[hsl(var(--success)/0.25)] bg-[hsl(var(--success-tint))]';
+  if (direction === 'HEADWIND')
+    return 'border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--warning-tint))]';
+  return 'border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))]';
 }
 
 function fillClass(direction: string) {
-  if (direction === 'TAILWIND') return 'bg-emerald-400/80';
-  if (direction === 'HEADWIND') return 'bg-amber-300/80';
-  return 'bg-slate-400/70';
+  if (direction === 'TAILWIND') return 'bg-[hsl(var(--success))]';
+  if (direction === 'HEADWIND') return 'bg-[hsl(var(--warning))]';
+  return 'bg-[hsl(var(--muted))]';
 }
 
 export function MacroTransmissionMap({ impacts }: { impacts: MacroImpactMatrix }) {
@@ -47,11 +49,11 @@ export function MacroTransmissionMap({ impacts }: { impacts: MacroImpactMatrix }
   }));
 
   return (
-    <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+    <div className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="fine-print">Transmission Map</div>
-          <p className="mt-2 text-sm leading-7 text-slate-300">
+          <p className="mt-2 text-sm leading-7 text-[hsl(var(--foreground-muted))]">
             Shows which macro factors are currently feeding which underwriting transmission
             dimensions.
           </p>
@@ -69,10 +71,12 @@ export function MacroTransmissionMap({ impacts }: { impacts: MacroImpactMatrix }
           {factors.map((factor) => (
             <div
               key={factor.key}
-              className="rounded-[18px] border border-white/10 bg-slate-950/35 p-4"
+              className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4"
             >
-              <div className="text-sm font-semibold text-white">{factor.label}</div>
-              <div className="mt-2 text-xs uppercase tracking-[0.14em] text-slate-500">
+              <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
+                {factor.label}
+              </div>
+              <div className="mt-2 text-xs uppercase tracking-[0.14em] text-[hsl(var(--muted))]">
                 {factor.count} active path{factor.count === 1 ? '' : 's'}
               </div>
             </div>
@@ -87,20 +91,22 @@ export function MacroTransmissionMap({ impacts }: { impacts: MacroImpactMatrix }
               className={cn('rounded-[18px] border p-4', borderClass(path.direction))}
             >
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="text-sm font-semibold text-white">
+                <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
                   {path.factorLabel} {'->'} {path.targetLabel}
                 </div>
                 <Badge tone={toneForImpact(path.direction)}>
                   {path.direction.toLowerCase()} / {formatNumber(path.strength, 2)}
                 </Badge>
               </div>
-              <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-950/60">
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-[hsl(var(--surface-hover))]">
                 <div
                   className={cn('h-full rounded-full', fillClass(path.direction))}
                   style={{ width: barWidth(path.strength) }}
                 />
               </div>
-              <p className="mt-3 text-sm leading-7 text-slate-300">{path.rationale}</p>
+              <p className="mt-3 text-sm leading-7 text-[hsl(var(--foreground-muted))]">
+                {path.rationale}
+              </p>
             </div>
           ))}
         </div>
@@ -110,15 +116,17 @@ export function MacroTransmissionMap({ impacts }: { impacts: MacroImpactMatrix }
           {dimensions.map((dimension) => (
             <div
               key={dimension.key}
-              className="rounded-[18px] border border-white/10 bg-slate-950/35 p-4"
+              className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4"
             >
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="text-sm font-semibold text-white">{dimension.label}</div>
+                <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
+                  {dimension.label}
+                </div>
                 <Badge tone={toneForImpact(dimension.direction)}>
                   {dimension.direction.toLowerCase()}
                 </Badge>
               </div>
-              <div className="mt-3 text-2xl font-semibold text-white">
+              <div className="mt-3 text-2xl font-semibold text-[hsl(var(--foreground))]">
                 {formatNumber(dimension.score, 2)}
               </div>
             </div>

@@ -221,18 +221,25 @@ export function ValuationSignals({ confidenceScore, assumptions, provenance = []
     <Card className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="eyebrow">Driver Commentary</div>
-        <div className="text-xs uppercase tracking-[0.18em] text-slate-500">
+        <div className="text-xs uppercase tracking-[0.18em] text-[hsl(var(--muted))]">
           Interpretation layer
         </div>
       </div>
       <div className="grid gap-4 xl:grid-cols-2">
         {signals.map((signal) => (
-          <div key={signal.title} className="rounded-2xl border border-border bg-slate-950/40 p-4">
+          <div
+            key={signal.title}
+            className="rounded-2xl border border-border bg-[hsl(var(--panel-alt))] p-4"
+          >
             <div className="flex items-center justify-between gap-3">
-              <div className="text-sm font-semibold text-white">{signal.title}</div>
+              <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
+                {signal.title}
+              </div>
               <Badge tone={signal.tone}>{signal.summary}</Badge>
             </div>
-            <p className="mt-3 text-sm leading-6 text-slate-300">{signal.detail}</p>
+            <p className="mt-3 text-sm leading-6 text-[hsl(var(--foreground-muted))]">
+              {signal.detail}
+            </p>
           </div>
         ))}
       </div>

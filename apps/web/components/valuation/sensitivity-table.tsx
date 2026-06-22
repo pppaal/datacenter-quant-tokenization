@@ -87,20 +87,20 @@ function MatrixRun({
           gridTemplateColumns: `minmax(140px, 1.2fr) repeat(${columns.length}, minmax(140px, 1fr))`
         }}
       >
-        <div className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-3 text-xs uppercase tracking-[0.18em] text-slate-500">
+        <div className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-4 py-3 text-xs uppercase tracking-[0.18em] text-[hsl(var(--muted))]">
           {rowAxisLabel} / {columnAxisLabel}
         </div>
         {columns.map((column) => (
           <div
             key={`${run.id}-column-${column}`}
-            className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-3 text-center text-xs uppercase tracking-[0.18em] text-slate-400"
+            className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-4 py-3 text-center text-xs uppercase tracking-[0.18em] text-[hsl(var(--foreground-muted))]"
           >
             {column}
           </div>
         ))}
         {rows.map((row, rowIndex) => (
           <div key={`${run.id}-row-group-${row}`} className="contents">
-            <div className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-4 text-sm font-semibold text-white">
+            <div className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-4 py-4 text-sm font-semibold text-[hsl(var(--foreground))]">
               {row}
             </div>
             {columns.map((column, columnIndex) => {
@@ -110,12 +110,18 @@ function MatrixRun({
               return (
                 <div
                   key={`${run.id}-${row}-${column}`}
-                  className="rounded-[18px] border border-white/10 bg-slate-950/40 px-4 py-4 text-sm"
+                  className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-4 py-4 text-sm"
                 >
-                  <div className={point.deltaPct < 0 ? 'text-rose-300' : 'text-emerald-300'}>
+                  <div
+                    className={
+                      point.deltaPct < 0
+                        ? 'text-[hsl(var(--danger))]'
+                        : 'text-[hsl(var(--success))]'
+                    }
+                  >
                     {formatPercent(point.deltaPct)}
                   </div>
-                  <div className="mt-2 text-white">
+                  <div className="mt-2 text-[hsl(var(--foreground))]">
                     {formatMetric(point, displayCurrency, fxRateToKrw)}
                   </div>
                 </div>
@@ -160,8 +166,10 @@ export function SensitivityTable({
             <div key={run.id} className="space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <h3 className="text-xl font-semibold text-white">{run.title}</h3>
-                  <p className="mt-1 text-sm text-slate-400">
+                  <h3 className="text-xl font-semibold text-[hsl(var(--foreground))]">
+                    {run.title}
+                  </h3>
+                  <p className="mt-1 text-sm text-[hsl(var(--foreground-muted))]">
                     Baseline {run.baselineMetricName}:{' '}
                     {run.baselineMetricName === 'Value'
                       ? formatCurrencyFromKrwAtRate(
@@ -193,10 +201,12 @@ export function SensitivityTable({
                   {groupPoints(run.points).map(([shockLabel, points]) => (
                     <div
                       key={`${run.id}-${shockLabel}`}
-                      className="rounded-[20px] border border-white/10 bg-white/[0.03] px-4 py-4 text-sm"
+                      className="rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-4 py-4 text-sm"
                     >
                       <div className="flex items-center justify-between gap-3">
-                        <span className="font-semibold text-white">{shockLabel}</span>
+                        <span className="font-semibold text-[hsl(var(--foreground))]">
+                          {shockLabel}
+                        </span>
                         {run.runType === 'MONTE_CARLO' ? (
                           <Badge>{shockLabel}</Badge>
                         ) : (
@@ -206,16 +216,18 @@ export function SensitivityTable({
                       <div className="mt-3 space-y-3">
                         {points.map((point) => (
                           <div key={point.id}>
-                            <div className="text-xs uppercase tracking-[0.12em] text-slate-500">
+                            <div className="text-xs uppercase tracking-[0.12em] text-[hsl(var(--muted))]">
                               {point.variableLabel}
                             </div>
                             <div className="mt-1 flex items-center justify-between gap-3">
-                              <div className="text-white">
+                              <div className="text-[hsl(var(--foreground))]">
                                 {formatMetric(point, displayCurrency, fxRateToKrw)}
                               </div>
                               <div
                                 className={
-                                  point.deltaPct < 0 ? 'text-rose-300' : 'text-emerald-300'
+                                  point.deltaPct < 0
+                                    ? 'text-[hsl(var(--danger))]'
+                                    : 'text-[hsl(var(--success))]'
                                 }
                               >
                                 {formatPercent(point.deltaPct)}
@@ -232,18 +244,26 @@ export function SensitivityTable({
                   {run.points.map((point) => (
                     <div
                       key={point.id}
-                      className="rounded-[20px] border border-white/10 bg-white/[0.03] px-4 py-4 text-sm"
+                      className="rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-4 py-4 text-sm"
                     >
                       <div className="flex items-center justify-between gap-3">
-                        <span className="font-semibold text-white">
+                        <span className="font-semibold text-[hsl(var(--foreground))]">
                           {point.variableLabel} {point.shockLabel}
                         </span>
-                        <span className={point.deltaPct < 0 ? 'text-rose-300' : 'text-emerald-300'}>
+                        <span
+                          className={
+                            point.deltaPct < 0
+                              ? 'text-[hsl(var(--danger))]'
+                              : 'text-[hsl(var(--success))]'
+                          }
+                        >
                           {formatPercent(point.deltaPct)}
                         </span>
                       </div>
-                      <div className="mt-2 text-slate-400">{point.metricName}</div>
-                      <div className="mt-1 text-base text-white">
+                      <div className="mt-2 text-[hsl(var(--foreground-muted))]">
+                        {point.metricName}
+                      </div>
+                      <div className="mt-1 text-base text-[hsl(var(--foreground))]">
                         {formatMetric(point, displayCurrency, fxRateToKrw)}
                       </div>
                     </div>

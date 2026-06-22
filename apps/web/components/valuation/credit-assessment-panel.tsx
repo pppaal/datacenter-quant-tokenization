@@ -50,9 +50,11 @@ export function CreditAssessmentPanel({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="eyebrow">Credit View</div>
-          <h3 className="mt-2 text-xl font-semibold text-white">Counterparty financial strength</h3>
+          <h3 className="mt-2 text-xl font-semibold text-[hsl(var(--foreground))]">
+            Counterparty financial strength
+          </h3>
         </div>
-        <div className="text-xs uppercase tracking-[0.18em] text-slate-500">
+        <div className="text-xs uppercase tracking-[0.18em] text-[hsl(var(--muted))]">
           Derived from uploaded financials
         </div>
       </div>
@@ -67,14 +69,14 @@ export function CreditAssessmentPanel({
           return (
             <div
               key={assessment.id}
-              className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+              className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-5"
             >
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  <div className="text-lg font-semibold text-white">
+                  <div className="text-lg font-semibold text-[hsl(var(--foreground))]">
                     {assessment.counterparty.name}
                   </div>
-                  <div className="mt-1 text-sm text-slate-400">
+                  <div className="mt-1 text-sm text-[hsl(var(--foreground-muted))]">
                     {assessment.counterparty.role} / {assessment.assessmentType}
                   </div>
                 </div>
@@ -84,70 +86,72 @@ export function CreditAssessmentPanel({
                 </div>
               </div>
 
-              <p className="mt-4 text-sm leading-7 text-slate-300">{assessment.summary}</p>
+              <p className="mt-4 text-sm leading-7 text-[hsl(var(--foreground-muted))]">
+                {assessment.summary}
+              </p>
 
               <div className="mt-4 grid gap-3 text-sm md:grid-cols-2 xl:grid-cols-4">
-                <div className="rounded-[18px] border border-white/10 bg-slate-950/40 p-3">
+                <div className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-3">
                   <div className="fine-print">Leverage</div>
-                  <div className="mt-2 text-white">
+                  <div className="mt-2 text-[hsl(var(--foreground))]">
                     {metrics.leverageMultiple !== undefined && metrics.leverageMultiple !== null
                       ? `${formatNumber(metrics.leverageMultiple, 2)}x`
                       : 'N/A'}
                   </div>
                 </div>
-                <div className="rounded-[18px] border border-white/10 bg-slate-950/40 p-3">
+                <div className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-3">
                   <div className="fine-print">Debt / Equity</div>
-                  <div className="mt-2 text-white">
+                  <div className="mt-2 text-[hsl(var(--foreground))]">
                     {metrics.debtToEquityRatio !== undefined && metrics.debtToEquityRatio !== null
                       ? `${formatNumber(metrics.debtToEquityRatio, 2)}x`
                       : 'N/A'}
                   </div>
                 </div>
-                <div className="rounded-[18px] border border-white/10 bg-slate-950/40 p-3">
+                <div className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-3">
                   <div className="fine-print">Interest Coverage</div>
-                  <div className="mt-2 text-white">
+                  <div className="mt-2 text-[hsl(var(--foreground))]">
                     {metrics.interestCoverage !== undefined && metrics.interestCoverage !== null
                       ? `${formatNumber(metrics.interestCoverage, 2)}x`
                       : 'N/A'}
                   </div>
                 </div>
-                <div className="rounded-[18px] border border-white/10 bg-slate-950/40 p-3">
+                <div className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-3">
                   <div className="fine-print">Cash / Debt</div>
-                  <div className="mt-2 text-white">
+                  <div className="mt-2 text-[hsl(var(--foreground))]">
                     {metrics.cashToDebtRatio !== undefined && metrics.cashToDebtRatio !== null
                       ? `${formatNumber(metrics.cashToDebtRatio, 2)}x`
                       : 'N/A'}
                   </div>
                 </div>
-                <div className="rounded-[18px] border border-white/10 bg-slate-950/40 p-3">
+                <div className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-3">
                   <div className="fine-print">Current Ratio</div>
-                  <div className="mt-2 text-white">
+                  <div className="mt-2 text-[hsl(var(--foreground))]">
                     {metrics.currentRatio !== undefined && metrics.currentRatio !== null
                       ? `${formatNumber(metrics.currentRatio, 2)}x`
                       : 'N/A'}
                   </div>
                 </div>
-                <div className="rounded-[18px] border border-white/10 bg-slate-950/40 p-3">
+                <div className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-3">
                   <div className="fine-print">OCF / Debt</div>
-                  <div className="mt-2 text-white">
+                  <div className="mt-2 text-[hsl(var(--foreground))]">
                     {metrics.operatingCashFlowToDebtRatio !== undefined &&
                     metrics.operatingCashFlowToDebtRatio !== null
                       ? `${formatNumber(metrics.operatingCashFlowToDebtRatio, 2)}x`
                       : 'N/A'}
                   </div>
                 </div>
-                <div className="rounded-[18px] border border-white/10 bg-slate-950/40 p-3">
+                <div className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-3">
                   <div className="fine-print">Maturity Coverage</div>
-                  <div className="mt-2 text-white">
+                  <div className="mt-2 text-[hsl(var(--foreground))]">
                     {metrics.currentMaturityCoverage !== undefined &&
                     metrics.currentMaturityCoverage !== null
                       ? `${formatNumber(metrics.currentMaturityCoverage, 2)}x`
                       : 'N/A'}
                   </div>
                 </div>
-                <div className="rounded-[18px] border border-white/10 bg-slate-950/40 p-3">
+                <div className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-3">
                   <div className="fine-print">Working Capital</div>
-                  <div className="mt-2 text-white">
+                  <div className="mt-2 text-[hsl(var(--foreground))]">
                     {metrics.workingCapitalKrw !== undefined && metrics.workingCapitalKrw !== null
                       ? formatCurrencyFromKrwAtRate(
                           metrics.workingCapitalKrw,
@@ -159,7 +163,7 @@ export function CreditAssessmentPanel({
                 </div>
               </div>
 
-              <div className="mt-3 text-xs uppercase tracking-[0.18em] text-slate-500">
+              <div className="mt-3 text-xs uppercase tracking-[0.18em] text-[hsl(var(--muted))]">
                 Assessed {formatDate(assessment.createdAt)}
               </div>
             </div>

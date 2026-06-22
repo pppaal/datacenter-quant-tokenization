@@ -34,7 +34,7 @@ export function ValuationQualityPanel({ asset, assumptions, provenance = [] }: P
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="eyebrow">Valuation Quality</div>
-          <div className="mt-2 text-2xl font-semibold text-white">
+          <div className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
             Coverage, gaps, and source pressure
           </div>
         </div>
@@ -51,29 +51,38 @@ export function ValuationQualityPanel({ asset, assumptions, provenance = [] }: P
 
       <div className="grid gap-4 xl:grid-cols-3">
         {summary.coverage.map((item) => (
-          <div key={item.key} className="rounded-2xl border border-border bg-slate-950/40 p-4">
+          <div
+            key={item.key}
+            className="rounded-2xl border border-border bg-[hsl(var(--panel-alt))] p-4"
+          >
             <div className="flex items-center justify-between gap-3">
-              <div className="text-sm font-semibold text-white">{item.label}</div>
+              <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
+                {item.label}
+              </div>
               <Badge tone={item.status}>{item.status}</Badge>
             </div>
-            <p className="mt-3 text-sm leading-6 text-slate-300">{item.detail}</p>
+            <p className="mt-3 text-sm leading-6 text-[hsl(var(--foreground-muted))]">
+              {item.detail}
+            </p>
           </div>
         ))}
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[1fr_1fr]">
-        <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
-          <div className="text-sm font-semibold text-white">Top Missing Inputs</div>
+        <div className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4">
+          <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
+            Top Missing Inputs
+          </div>
           {summary.missingInputs.length === 0 ? (
-            <p className="mt-3 text-sm text-emerald-300">
+            <p className="mt-3 text-sm text-[hsl(var(--success))]">
               Core lease, comparable, CAPEX, power, permit, and legal inputs are all present.
             </p>
           ) : (
-            <ul className="mt-3 space-y-3 text-sm text-slate-300">
+            <ul className="mt-3 space-y-3 text-sm text-[hsl(var(--foreground-muted))]">
               {summary.missingInputs.map((item) => (
                 <li
                   key={item}
-                  className="rounded-2xl border border-white/10 bg-slate-950/30 px-4 py-3"
+                  className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-4 py-3"
                 >
                   {item}
                 </li>
@@ -82,15 +91,17 @@ export function ValuationQualityPanel({ asset, assumptions, provenance = [] }: P
           )}
         </div>
 
-        <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+        <div className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4">
           <div className="flex items-center justify-between gap-3">
-            <div className="text-sm font-semibold text-white">Active Feature Sources</div>
-            <div className="text-xs uppercase tracking-[0.18em] text-slate-500">
+            <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
+              Active Feature Sources
+            </div>
+            <div className="text-xs uppercase tracking-[0.18em] text-[hsl(var(--muted))]">
               {formatNumber(summary.featureSources.length, 0)} attached
             </div>
           </div>
           {summary.featureSources.length === 0 ? (
-            <p className="mt-3 text-sm text-slate-400">
+            <p className="mt-3 text-sm text-[hsl(var(--foreground-muted))]">
               No promoted feature snapshots were attached to this valuation run.
             </p>
           ) : (
@@ -98,15 +109,19 @@ export function ValuationQualityPanel({ asset, assumptions, provenance = [] }: P
               {summary.featureSources.map((source) => (
                 <div
                   key={`${source.namespace}-${source.sourceVersion}`}
-                  className="rounded-2xl border border-white/10 bg-slate-950/30 p-3"
+                  className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-3"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="text-sm font-semibold text-white">{source.label}</div>
-                    <div className="font-mono text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                    <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
+                      {source.label}
+                    </div>
+                    <div className="font-mono text-[11px] uppercase tracking-[0.18em] text-[hsl(var(--muted))]">
                       {source.namespace}
                     </div>
                   </div>
-                  <div className="mt-2 text-sm text-slate-300">{source.sourceVersion}</div>
+                  <div className="mt-2 text-sm text-[hsl(var(--foreground-muted))]">
+                    {source.sourceVersion}
+                  </div>
                 </div>
               ))}
             </div>

@@ -50,8 +50,10 @@ export function StabilizedIncomePanel({ view, displayCurrency = 'KRW', fxRateToK
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="eyebrow">Stabilized Valuation</div>
-          <h3 className="mt-2 text-2xl font-semibold text-white">Direct-capitalization view</h3>
-          <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400">
+          <h3 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
+            Direct-capitalization view
+          </h3>
+          <p className="mt-3 max-w-3xl text-sm leading-7 text-[hsl(var(--foreground-muted))]">
             {view.assetClass ? toSentenceCase(view.assetClass) : 'This asset class'} is valued on a
             stabilized direct-capitalization basis — stabilized NOI capitalized at the market cap
             rate — rather than a multi-year DCF.
@@ -64,15 +66,22 @@ export function StabilizedIncomePanel({ view, displayCurrency = 'KRW', fxRateToK
 
       <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {summary.map(([label, value]) => (
-          <div key={label} className="rounded-2xl border border-white/10 bg-slate-950/40 p-4">
-            <div className="text-xs uppercase tracking-[0.18em] text-slate-500">{label}</div>
-            <div className="mt-2 text-lg font-semibold text-white">{value}</div>
+          <div
+            key={label}
+            className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4"
+          >
+            <div className="text-xs uppercase tracking-[0.18em] text-[hsl(var(--muted))]">
+              {label}
+            </div>
+            <div className="mt-2 text-lg font-semibold text-[hsl(var(--foreground))]">{value}</div>
           </div>
         ))}
       </div>
 
-      <div className="mt-5 rounded-[26px] border border-white/10 bg-white/[0.03] p-4">
-        <div className="text-xs uppercase tracking-[0.18em] text-slate-500">NOI Bridge</div>
+      <div className="mt-5 rounded-[26px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4">
+        <div className="text-xs uppercase tracking-[0.18em] text-[hsl(var(--muted))]">
+          NOI Bridge
+        </div>
         <table className="mt-3 w-full text-sm">
           <tbody>
             {bridge.map(([label, value, tone, negative]) => (
@@ -80,10 +89,10 @@ export function StabilizedIncomePanel({ view, displayCurrency = 'KRW', fxRateToK
                 key={label}
                 className={
                   tone === 'emphasis'
-                    ? 'font-semibold text-white'
+                    ? 'font-semibold text-[hsl(var(--foreground))]'
                     : tone === 'subtotal'
-                      ? 'font-medium text-slate-100'
-                      : 'text-slate-300'
+                      ? 'font-medium text-[hsl(var(--foreground))]'
+                      : 'text-[hsl(var(--foreground-muted))]'
                 }
               >
                 <td className="py-2">{label}</td>

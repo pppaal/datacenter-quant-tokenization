@@ -38,15 +38,15 @@ export function MacroDecompositionPanel({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="eyebrow">Macro Decomposition</div>
-          <h3 className="mt-2 text-xl font-semibold text-white">
+          <h3 className="mt-2 text-xl font-semibold text-[hsl(var(--foreground))]">
             Why The Underwriting View Changed
           </h3>
-          <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-400">
+          <p className="mt-2 max-w-2xl text-sm leading-7 text-[hsl(var(--foreground-muted))]">
             Compares the current macro interpretation against the previous valuation run and shows
             which overlays, transmission scores, and factors actually moved.
           </p>
         </div>
-        <div className="text-xs uppercase tracking-[0.18em] text-slate-500">
+        <div className="text-xs uppercase tracking-[0.18em] text-[hsl(var(--muted))]">
           {decomposition.previousCreatedAt
             ? `vs ${decomposition.previousRunLabel} / ${formatDate(decomposition.previousCreatedAt)}`
             : 'first comparable run'}
@@ -57,7 +57,7 @@ export function MacroDecompositionPanel({
         {decomposition.summary.map((line) => (
           <div
             key={line}
-            className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4 text-sm leading-7 text-slate-300"
+            className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4 text-sm leading-7 text-[hsl(var(--foreground-muted))]"
           >
             {line}
           </div>
@@ -71,10 +71,12 @@ export function MacroDecompositionPanel({
             {decomposition.guidanceChanges.map((item) => (
               <div
                 key={item.key}
-                className="rounded-[18px] border border-white/10 bg-white/[0.03] p-4"
+                className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4"
               >
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="text-sm font-semibold text-white">{item.label}</div>
+                  <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
+                    {item.label}
+                  </div>
                   <Badge tone={toneForDelta(item.delta)}>
                     {formatShift(item.delta, item.unit)}
                   </Badge>
@@ -82,19 +84,19 @@ export function MacroDecompositionPanel({
                 <div className="mt-3 grid gap-3 sm:grid-cols-3">
                   <div>
                     <div className="fine-print">Current</div>
-                    <div className="mt-2 text-lg font-semibold text-white">
+                    <div className="mt-2 text-lg font-semibold text-[hsl(var(--foreground))]">
                       {formatShift(item.currentValue, item.unit)}
                     </div>
                   </div>
                   <div>
                     <div className="fine-print">Previous</div>
-                    <div className="mt-2 text-lg font-semibold text-white">
+                    <div className="mt-2 text-lg font-semibold text-[hsl(var(--foreground))]">
                       {formatShift(item.previousValue, item.unit)}
                     </div>
                   </div>
                   <div>
                     <div className="fine-print">Delta</div>
-                    <div className="mt-2 text-lg font-semibold text-white">
+                    <div className="mt-2 text-lg font-semibold text-[hsl(var(--foreground))]">
                       {formatShift(item.delta, item.unit)}
                     </div>
                   </div>
@@ -110,10 +112,12 @@ export function MacroDecompositionPanel({
             {decomposition.impactChanges.map((item) => (
               <div
                 key={item.key}
-                className="rounded-[18px] border border-white/10 bg-white/[0.03] p-4"
+                className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4"
               >
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="text-sm font-semibold text-white">{item.label}</div>
+                  <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
+                    {item.label}
+                  </div>
                   <div className="flex gap-2">
                     <Badge tone={toneForImpact(item.previousDirection)}>
                       prev {item.previousDirection?.toLowerCase() ?? 'n/a'}
@@ -126,19 +130,19 @@ export function MacroDecompositionPanel({
                 <div className="mt-3 grid gap-3 sm:grid-cols-3">
                   <div>
                     <div className="fine-print">Current</div>
-                    <div className="mt-2 text-lg font-semibold text-white">
+                    <div className="mt-2 text-lg font-semibold text-[hsl(var(--foreground))]">
                       {formatNumber(item.currentScore, 2)}
                     </div>
                   </div>
                   <div>
                     <div className="fine-print">Previous</div>
-                    <div className="mt-2 text-lg font-semibold text-white">
+                    <div className="mt-2 text-lg font-semibold text-[hsl(var(--foreground))]">
                       {item.previousScore === null ? 'N/A' : formatNumber(item.previousScore, 2)}
                     </div>
                   </div>
                   <div>
                     <div className="fine-print">Delta</div>
-                    <div className="mt-2 text-lg font-semibold text-white">
+                    <div className="mt-2 text-lg font-semibold text-[hsl(var(--foreground))]">
                       {item.delta === null
                         ? 'N/A'
                         : `${item.delta > 0 ? '+' : ''}${formatNumber(item.delta, 2)}`}
@@ -157,10 +161,12 @@ export function MacroDecompositionPanel({
           {decomposition.factorDrivers.map((item) => (
             <div
               key={item.key}
-              className="rounded-[18px] border border-white/10 bg-white/[0.03] p-4"
+              className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4"
             >
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="text-sm font-semibold text-white">{item.label}</div>
+                <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
+                  {item.label}
+                </div>
                 <div className="flex gap-2">
                   <Badge
                     tone={
@@ -189,26 +195,28 @@ export function MacroDecompositionPanel({
               <div className="mt-3 grid gap-3 sm:grid-cols-3">
                 <div>
                   <div className="fine-print">Current</div>
-                  <div className="mt-2 text-lg font-semibold text-white">
+                  <div className="mt-2 text-lg font-semibold text-[hsl(var(--foreground))]">
                     {formatFactorValue(item.currentValue)}
                   </div>
                 </div>
                 <div>
                   <div className="fine-print">Previous</div>
-                  <div className="mt-2 text-lg font-semibold text-white">
+                  <div className="mt-2 text-lg font-semibold text-[hsl(var(--foreground))]">
                     {formatFactorValue(item.previousValue)}
                   </div>
                 </div>
                 <div>
                   <div className="fine-print">Delta</div>
-                  <div className="mt-2 text-lg font-semibold text-white">
+                  <div className="mt-2 text-lg font-semibold text-[hsl(var(--foreground))]">
                     {item.delta === null
                       ? 'Direction change'
                       : `${item.delta > 0 ? '+' : ''}${formatNumber(item.delta, 2)}`}
                   </div>
                 </div>
               </div>
-              <p className="mt-3 text-sm leading-7 text-slate-300">{item.commentary}</p>
+              <p className="mt-3 text-sm leading-7 text-[hsl(var(--foreground-muted))]">
+                {item.commentary}
+              </p>
             </div>
           ))}
         </div>

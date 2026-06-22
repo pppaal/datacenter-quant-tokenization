@@ -86,10 +86,12 @@ export function MacroRegimePanel({ macroRegime }: { macroRegime: MacroInterpreta
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="eyebrow">Macro Regime</div>
-          <h3 className="mt-2 text-xl font-semibold text-white">
+          <h3 className="mt-2 text-xl font-semibold text-[hsl(var(--foreground))]">
             {macroRegime.market} / {assetClassLabel}
           </h3>
-          <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-400">{profile.label}</p>
+          <p className="mt-2 max-w-2xl text-sm leading-7 text-[hsl(var(--foreground-muted))]">
+            {profile.label}
+          </p>
           {profile.adjustmentSummary.length > 0 ? (
             <div className="mt-3 flex flex-wrap gap-2">
               {profile.adjustmentSummary.map((item) => (
@@ -98,7 +100,7 @@ export function MacroRegimePanel({ macroRegime }: { macroRegime: MacroInterpreta
             </div>
           ) : null}
         </div>
-        <div className="text-xs uppercase tracking-[0.18em] text-slate-500">
+        <div className="text-xs uppercase tracking-[0.18em] text-[hsl(var(--muted))]">
           {macroRegime.asOf ? `as of ${formatDate(macroRegime.asOf)}` : 'latest snapshot'}
         </div>
       </div>
@@ -108,14 +110,16 @@ export function MacroRegimePanel({ macroRegime }: { macroRegime: MacroInterpreta
           {regimes.map((regime) => (
             <div
               key={regime.key}
-              className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+              className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4"
             >
               <div className="flex items-center justify-between gap-3">
                 <div className="fine-print">{regime.label}</div>
                 <Badge tone={toneForRegime(regime.state)}>{regime.state.toLowerCase()}</Badge>
               </div>
-              <p className="mt-3 text-sm leading-7 text-slate-300">{regime.commentary}</p>
-              <div className="mt-3 space-y-1 text-xs text-slate-500">
+              <p className="mt-3 text-sm leading-7 text-[hsl(var(--foreground-muted))]">
+                {regime.commentary}
+              </p>
+              <div className="mt-3 space-y-1 text-xs text-[hsl(var(--muted))]">
                 {regime.signals.map((signal) => (
                   <div key={signal}>{signal}</div>
                 ))}
@@ -138,10 +142,12 @@ export function MacroRegimePanel({ macroRegime }: { macroRegime: MacroInterpreta
           ].map(([label, value]) => (
             <div
               key={label}
-              className="rounded-[18px] border border-white/10 bg-slate-950/35 px-4 py-3"
+              className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-4 py-3"
             >
               <div className="fine-print">{label}</div>
-              <div className="mt-2 text-lg font-semibold text-white">{value}</div>
+              <div className="mt-2 text-lg font-semibold text-[hsl(var(--foreground))]">
+                {value}
+              </div>
             </div>
           ))}
         </div>
@@ -156,14 +162,16 @@ export function MacroRegimePanel({ macroRegime }: { macroRegime: MacroInterpreta
           ].map(([label, value]) => (
             <div
               key={label}
-              className="rounded-[18px] border border-white/10 bg-slate-950/35 px-4 py-3"
+              className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-4 py-3"
             >
               <div className="fine-print">{label}</div>
-              <div className="mt-2 text-lg font-semibold text-white">{value}</div>
+              <div className="mt-2 text-lg font-semibold text-[hsl(var(--foreground))]">
+                {value}
+              </div>
             </div>
           ))}
         </div>
-        <div className="mt-4 space-y-2 text-sm text-slate-200">
+        <div className="mt-4 space-y-2 text-sm text-[hsl(var(--foreground))]">
           {guidance.summary.map((line) => (
             <p key={line}>{line}</p>
           ))}
@@ -177,7 +185,7 @@ export function MacroRegimePanel({ macroRegime }: { macroRegime: MacroInterpreta
             {factors.map((point) => (
               <div
                 key={point.key}
-                className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+                className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4"
               >
                 <div className="flex items-center justify-between gap-3">
                   <div className="fine-print">{point.label}</div>
@@ -185,11 +193,13 @@ export function MacroRegimePanel({ macroRegime }: { macroRegime: MacroInterpreta
                     {point.isObserved ? point.direction.toLowerCase() : 'unknown'}
                   </Badge>
                 </div>
-                <div className="mt-3 text-2xl font-semibold text-white">
+                <div className="mt-3 text-2xl font-semibold text-[hsl(var(--foreground))]">
                   {formatFactorValue(point)}
                 </div>
-                <p className="mt-3 text-sm leading-7 text-slate-300">{point.commentary}</p>
-                <div className="mt-3 space-y-1 text-xs text-slate-500">
+                <p className="mt-3 text-sm leading-7 text-[hsl(var(--foreground-muted))]">
+                  {point.commentary}
+                </p>
+                <div className="mt-3 space-y-1 text-xs text-[hsl(var(--muted))]">
                   {point.inputs.map((item) => (
                     <div key={item}>{item}</div>
                   ))}
@@ -207,7 +217,7 @@ export function MacroRegimePanel({ macroRegime }: { macroRegime: MacroInterpreta
             {impactDimensions.map((dimension) => (
               <div
                 key={dimension.key}
-                className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+                className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4"
               >
                 <div className="flex items-center justify-between gap-3">
                   <div className="fine-print">{dimension.label}</div>
@@ -215,11 +225,13 @@ export function MacroRegimePanel({ macroRegime }: { macroRegime: MacroInterpreta
                     {dimension.direction.toLowerCase()}
                   </Badge>
                 </div>
-                <div className="mt-3 text-2xl font-semibold text-white">
+                <div className="mt-3 text-2xl font-semibold text-[hsl(var(--foreground))]">
                   {formatNumber(dimension.score, 2)}
                 </div>
-                <p className="mt-3 text-sm leading-7 text-slate-300">{dimension.commentary}</p>
-                <div className="mt-3 space-y-1 text-xs text-slate-500">
+                <p className="mt-3 text-sm leading-7 text-[hsl(var(--foreground-muted))]">
+                  {dimension.commentary}
+                </p>
+                <div className="mt-3 space-y-1 text-xs text-[hsl(var(--muted))]">
                   {dimension.channels.map((item) => (
                     <div key={item}>{item}</div>
                   ))}
@@ -230,27 +242,29 @@ export function MacroRegimePanel({ macroRegime }: { macroRegime: MacroInterpreta
           <div className="mt-4">
             <MacroTransmissionMap impacts={macroRegime.impacts} />
           </div>
-          <div className="mt-4 rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+          <div className="mt-4 rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4">
             <div className="fine-print">Transmission Paths</div>
             <div className="mt-4 grid gap-3">
               {impactPaths.map((path) => (
                 <div
                   key={`${path.factorKey}-${path.targetKey}`}
-                  className="rounded-[18px] border border-white/10 bg-slate-950/35 p-4"
+                  className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="text-sm font-semibold text-white">
+                    <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
                       {path.factorLabel} {'->'} {path.targetLabel}
                     </div>
                     <Badge tone={toneForImpact(path.direction)}>
                       {path.direction.toLowerCase()} / {formatNumber(path.strength, 2)}
                     </Badge>
                   </div>
-                  <p className="mt-2 text-sm leading-7 text-slate-300">{path.rationale}</p>
+                  <p className="mt-2 text-sm leading-7 text-[hsl(var(--foreground-muted))]">
+                    {path.rationale}
+                  </p>
                 </div>
               ))}
             </div>
-            <div className="mt-4 space-y-2 text-sm text-slate-200">
+            <div className="mt-4 space-y-2 text-sm text-[hsl(var(--foreground))]">
               {impactSummary.map((line) => (
                 <p key={line}>{line}</p>
               ))}
@@ -263,7 +277,7 @@ export function MacroRegimePanel({ macroRegime }: { macroRegime: MacroInterpreta
         {macroRegime.series.map((point) => (
           <div
             key={point.seriesKey}
-            className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+            className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4"
           >
             <div className="flex items-center justify-between gap-3">
               <div className="fine-print">{point.label}</div>
@@ -271,8 +285,10 @@ export function MacroRegimePanel({ macroRegime }: { macroRegime: MacroInterpreta
                 {point.sourceStatus.toLowerCase()}
               </Badge>
             </div>
-            <div className="mt-3 text-2xl font-semibold text-white">{formatMacroValue(point)}</div>
-            <div className="mt-2 text-xs uppercase tracking-[0.18em] text-slate-500">
+            <div className="mt-3 text-2xl font-semibold text-[hsl(var(--foreground))]">
+              {formatMacroValue(point)}
+            </div>
+            <div className="mt-2 text-xs uppercase tracking-[0.18em] text-[hsl(var(--muted))]">
               {point.sourceSystem}
             </div>
           </div>

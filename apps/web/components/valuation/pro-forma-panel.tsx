@@ -253,22 +253,26 @@ function StatementTable({
   ]);
 
   return (
-    <div className="rounded-[26px] border border-white/10 bg-white/[0.03] p-4">
+    <div className="rounded-[26px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <div className="text-xs uppercase tracking-[0.18em] text-slate-500">{section.title}</div>
-          <div className="mt-1 text-sm text-slate-400">{section.subtitle}</div>
+          <div className="text-xs uppercase tracking-[0.18em] text-[hsl(var(--muted))]">
+            {section.title}
+          </div>
+          <div className="mt-1 text-sm text-[hsl(var(--foreground-muted))]">{section.subtitle}</div>
         </div>
         <div className="flex flex-wrap gap-2">
           {section.highlights.map((highlight) => (
             <div
               key={`${section.title}-${highlight.label}`}
-              className="rounded-2xl border border-white/10 bg-slate-950/50 px-3 py-2"
+              className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-3 py-2"
             >
-              <div className="text-[11px] uppercase tracking-[0.16em] text-slate-500">
+              <div className="text-[11px] uppercase tracking-[0.16em] text-[hsl(var(--muted))]">
                 {highlight.label}
               </div>
-              <div className="mt-1 text-sm font-medium text-white">{highlight.value}</div>
+              <div className="mt-1 text-sm font-medium text-[hsl(var(--foreground))]">
+                {highlight.value}
+              </div>
             </div>
           ))}
         </div>
@@ -277,8 +281,8 @@ function StatementTable({
       <div className="overflow-x-auto">
         <table className="min-w-full border-separate border-spacing-y-2 text-sm">
           <thead>
-            <tr className="text-left text-xs uppercase tracking-[0.16em] text-slate-500">
-              <th className="sticky left-0 z-20 min-w-[240px] bg-slate-950/95 px-3 py-2 backdrop-blur">
+            <tr className="text-left text-xs uppercase tracking-[0.16em] text-[hsl(var(--muted))]">
+              <th className="sticky left-0 z-20 min-w-[240px] bg-[hsl(var(--surface-hover))] px-3 py-2 backdrop-blur">
                 Line Item
               </th>
               {years.map((year) => {
@@ -291,8 +295,8 @@ function StatementTable({
                         href={`${rolloverBasePath}?rolloverYear=${year.year}#lease-rollover-drilldown`}
                         className={`inline-flex rounded-full border px-3 py-1 transition ${
                           isActive
-                            ? 'border-amber-300/40 bg-amber-200/15 text-white'
-                            : 'border-white/10 bg-slate-950/40 text-slate-300 hover:border-amber-300/30 hover:text-white'
+                            ? 'border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--warning-tint))] text-[hsl(var(--foreground))]'
+                            : 'border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] text-[hsl(var(--foreground-muted))] hover:border-[hsl(var(--warning)/0.25)] hover:text-[hsl(var(--foreground))]'
                         }`}
                       >
                         Year {year.year}
@@ -309,24 +313,24 @@ function StatementTable({
             {section.rows.map((row) => {
               const toneClass =
                 row.tone === 'emphasis'
-                  ? 'border-white/20 bg-white/[0.08] font-semibold text-white'
+                  ? 'border-[hsl(var(--border-strong))] bg-[hsl(var(--surface-hover))] font-semibold text-[hsl(var(--foreground))]'
                   : row.tone === 'subtotal'
-                    ? 'border-white/15 bg-white/[0.05] font-medium text-slate-100'
-                    : 'border-white/10 bg-white/[0.02] text-slate-200';
+                    ? 'border-[hsl(var(--border-strong))] bg-[hsl(var(--surface-hover))] font-medium text-[hsl(var(--foreground))]'
+                    : 'border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] text-[hsl(var(--foreground))]';
 
               return (
                 <tr
                   key={`${section.title}-${row.key}`}
                   className={`rounded-2xl border ${toneClass}`}
                 >
-                  <td className="sticky left-0 z-10 bg-slate-950/95 px-3 py-3 backdrop-blur">
+                  <td className="sticky left-0 z-10 bg-[hsl(var(--surface-hover))] px-3 py-3 backdrop-blur">
                     {row.label}
                   </td>
                   {years.map((year) => {
                     const value = row.value(year);
                     const valueClass =
                       row.displayAsNegative && value !== null && value > 0
-                        ? 'text-rose-200'
+                        ? 'text-[hsl(var(--danger))]'
                         : 'text-inherit';
                     const shouldLinkToDrilldown =
                       Boolean(rolloverBasePath) &&
@@ -347,7 +351,7 @@ function StatementTable({
                         {shouldLinkToDrilldown && value !== null ? (
                           <Link
                             href={`${rolloverBasePath}?rolloverYear=${year.year}#lease-rollover-drilldown`}
-                            className="inline-flex rounded-full border border-amber-400/15 bg-amber-500/[0.06] px-3 py-1 text-amber-50/85 transition hover:border-amber-300/30 hover:text-white"
+                            className="inline-flex rounded-full border border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--warning-tint))] px-3 py-1 text-[hsl(var(--warning))] transition hover:border-[hsl(var(--warning)/0.25)] hover:text-[hsl(var(--foreground))]"
                           >
                             {formattedValue}
                           </Link>
@@ -642,7 +646,7 @@ export function ProFormaPanel({
     return (
       <Card>
         <div className="eyebrow">Base Case Pro Forma</div>
-        <div className="mt-4 rounded-[22px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
+        <div className="mt-4 rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4 text-sm text-[hsl(var(--foreground-muted))]">
           No stored base-case pro forma yet. Run a fresh valuation after the new cash-flow model is
           saved.
         </div>
@@ -738,7 +742,7 @@ export function ProFormaPanel({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="eyebrow">Base Case Pro Forma</div>
-          <div className="mt-2 text-sm text-slate-400">
+          <div className="mt-2 text-sm text-[hsl(var(--foreground-muted))]">
             Revenue, operating costs, financing, and equity cash flow laid out as a statement.
           </div>
         </div>
@@ -751,15 +755,15 @@ export function ProFormaPanel({
                 : 'n/a'}
             </Badge>
           ) : null}
-          <span className="text-sm text-slate-400">
+          <span className="text-sm text-[hsl(var(--foreground-muted))]">
             {formatNumber(proForma.years.length, 0)} forecast years
           </span>
         </div>
       </div>
 
       {returnCards.length > 0 ? (
-        <div className="mt-4 rounded-[26px] border border-emerald-500/20 bg-emerald-500/[0.04] p-4">
-          <div className="text-xs uppercase tracking-[0.18em] text-emerald-200/80">
+        <div className="mt-4 rounded-[26px] border border-[hsl(var(--success)/0.25)] bg-[hsl(var(--success-tint))] p-4">
+          <div className="text-xs uppercase tracking-[0.18em] text-[hsl(var(--success))]">
             Return Metrics
           </div>
           <div className="mt-3 grid gap-3 md:grid-cols-3 xl:grid-cols-6">
@@ -768,16 +772,18 @@ export function ProFormaPanel({
                 key={label}
                 className={`rounded-2xl border p-4 ${
                   tone === 'good'
-                    ? 'border-emerald-400/20 bg-emerald-500/[0.06]'
+                    ? 'border-[hsl(var(--success)/0.25)] bg-[hsl(var(--success-tint))]'
                     : tone === 'warn'
-                      ? 'border-orange-400/20 bg-orange-500/[0.06]'
-                      : 'border-white/10 bg-slate-950/40'
+                      ? 'border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--warning-tint))]'
+                      : 'border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))]'
                 }`}
               >
-                <div className="text-[11px] uppercase tracking-[0.16em] text-slate-500">
+                <div className="text-[11px] uppercase tracking-[0.16em] text-[hsl(var(--muted))]">
                   {label}
                 </div>
-                <div className="mt-2 text-lg font-semibold text-white">{value}</div>
+                <div className="mt-2 text-lg font-semibold text-[hsl(var(--foreground))]">
+                  {value}
+                </div>
               </div>
             ))}
           </div>
@@ -786,9 +792,14 @@ export function ProFormaPanel({
 
       <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {summaryCards.map(([label, value, fmt]) => (
-          <div key={label} className="rounded-2xl border border-border bg-slate-950/40 p-4">
-            <div className="text-xs uppercase tracking-[0.18em] text-slate-500">{label}</div>
-            <div className="mt-2 text-lg font-semibold text-white">
+          <div
+            key={label}
+            className="rounded-2xl border border-border bg-[hsl(var(--panel-alt))] p-4"
+          >
+            <div className="text-xs uppercase tracking-[0.18em] text-[hsl(var(--muted))]">
+              {label}
+            </div>
+            <div className="mt-2 text-lg font-semibold text-[hsl(var(--foreground))]">
               {fmt === 'year'
                 ? `Year ${formatNumber(value, 0)}`
                 : fmt === 'percent'
@@ -802,29 +813,31 @@ export function ProFormaPanel({
       </div>
 
       {rolloverHighlights.length > 0 ? (
-        <div className="mt-4 rounded-[26px] border border-amber-500/20 bg-amber-500/[0.06] p-4">
-          <div className="text-xs uppercase tracking-[0.18em] text-amber-200/80">
+        <div className="mt-4 rounded-[26px] border border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--warning-tint))] p-4">
+          <div className="text-xs uppercase tracking-[0.18em] text-[hsl(var(--warning))]">
             Rollover Watch
           </div>
-          <div className="mt-2 text-sm text-amber-50/80">
+          <div className="mt-2 text-sm text-[hsl(var(--warning))]">
             Renewal-driven years, mark-to-market rollover pricing, and repeat-cycle exposure.
           </div>
           <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             {rolloverHighlights.map((highlight) => (
               <div
                 key={highlight.label}
-                className="rounded-2xl border border-amber-400/15 bg-slate-950/35 p-4"
+                className="rounded-2xl border border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--panel-alt))] p-4"
               >
-                <div className="text-[11px] uppercase tracking-[0.16em] text-amber-100/60">
+                <div className="text-[11px] uppercase tracking-[0.16em] text-[hsl(var(--warning))]">
                   {highlight.label}
                 </div>
-                <div className="mt-2 text-lg font-semibold text-white">{highlight.value}</div>
+                <div className="mt-2 text-lg font-semibold text-[hsl(var(--foreground))]">
+                  {highlight.value}
+                </div>
               </div>
             ))}
           </div>
           {rolloverBasePath && renewalYears.length > 0 ? (
             <div className="mt-4 flex flex-wrap items-center gap-2">
-              <div className="text-[11px] uppercase tracking-[0.16em] text-amber-100/60">
+              <div className="text-[11px] uppercase tracking-[0.16em] text-[hsl(var(--warning))]">
                 Jump To Monthly Window
               </div>
               {renewalYears.map((year) => {
@@ -835,8 +848,8 @@ export function ProFormaPanel({
                     href={`${rolloverBasePath}?rolloverYear=${year}#lease-rollover-drilldown`}
                     className={`rounded-full border px-3 py-1 text-xs uppercase tracking-[0.16em] transition ${
                       isActive
-                        ? 'border-amber-300/40 bg-amber-200/15 text-white'
-                        : 'border-amber-400/15 bg-slate-950/35 text-amber-50/75 hover:border-amber-300/30 hover:text-white'
+                        ? 'border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--warning-tint))] text-[hsl(var(--foreground))]'
+                        : 'border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--panel-alt))] text-[hsl(var(--warning))] hover:border-[hsl(var(--warning)/0.25)] hover:text-[hsl(var(--foreground))]'
                     }`}
                   >
                     Year {year}
@@ -845,7 +858,7 @@ export function ProFormaPanel({
               })}
               <Link
                 href={`${rolloverBasePath}#lease-rollover-drilldown`}
-                className="rounded-full border border-white/10 bg-slate-950/35 px-3 py-1 text-xs uppercase tracking-[0.16em] text-slate-300 transition hover:border-white/20 hover:text-white"
+                className="rounded-full border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-1 text-xs uppercase tracking-[0.16em] text-[hsl(var(--foreground-muted))] transition hover:border-[hsl(var(--border-strong))] hover:text-[hsl(var(--foreground))]"
               >
                 All
               </Link>
@@ -856,25 +869,27 @@ export function ProFormaPanel({
 
       {firstYear ? (
         <div className="mt-4 grid gap-3 lg:grid-cols-3">
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-            <div className="text-xs uppercase tracking-[0.16em] text-slate-500">Year 1 DSCR</div>
-            <div className="mt-2 text-lg font-semibold text-white">
+          <div className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4">
+            <div className="text-xs uppercase tracking-[0.16em] text-[hsl(var(--muted))]">
+              Year 1 DSCR
+            </div>
+            <div className="mt-2 text-lg font-semibold text-[hsl(var(--foreground))]">
               {firstYear.dscr !== null ? `${formatNumber(firstYear.dscr, 2)}x` : 'N/A'}
             </div>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-            <div className="text-xs uppercase tracking-[0.16em] text-slate-500">
+          <div className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4">
+            <div className="text-xs uppercase tracking-[0.16em] text-[hsl(var(--muted))]">
               Year 1 Occupied Load
             </div>
-            <div className="mt-2 text-lg font-semibold text-white">
+            <div className="mt-2 text-lg font-semibold text-[hsl(var(--foreground))]">
               {formatNumber(firstYear.occupiedKw, 0)} kW
             </div>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-            <div className="text-xs uppercase tracking-[0.16em] text-slate-500">
+          <div className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4">
+            <div className="text-xs uppercase tracking-[0.16em] text-[hsl(var(--muted))]">
               Year 1 Total Op. Revenue
             </div>
-            <div className="mt-2 text-lg font-semibold text-white">
+            <div className="mt-2 text-lg font-semibold text-[hsl(var(--foreground))]">
               {formatCurrencyFromKrwAtRate(
                 firstYear.totalOperatingRevenueKrw,
                 displayCurrency,
