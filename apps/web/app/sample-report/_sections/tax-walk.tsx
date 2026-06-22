@@ -29,10 +29,10 @@ export function TaxWalkSection({ data }: { data: SampleReportData }) {
             )}
           </Badge>
         </div>
-        <div className="mt-5 overflow-x-auto rounded-[14px] border border-white/10">
+        <div className="mt-5 overflow-x-auto rounded-[14px] border border-[hsl(var(--border))]">
           <table className="w-full text-xs">
             <thead>
-              <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+              <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-slate-500">
                 <th className="px-2 py-2 font-semibold">Tax line</th>
                 <th className="px-2 py-2 text-right font-semibold">Rate</th>
                 <th className="px-2 py-2 text-right font-semibold">Base</th>
@@ -40,7 +40,7 @@ export function TaxWalkSection({ data }: { data: SampleReportData }) {
                 <th className="px-2 py-2 font-semibold">Notes</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5 text-slate-200">
+            <tbody className="divide-y divide-[hsl(var(--border))] text-slate-200">
               {taxWalk.rows.map((row) => (
                 <tr key={row.category}>
                   <td className="px-2 py-2 text-white">{row.label}</td>
@@ -59,7 +59,7 @@ export function TaxWalkSection({ data }: { data: SampleReportData }) {
                   <td className="px-2 py-2 text-[10px] text-slate-400">{row.notes}</td>
                 </tr>
               ))}
-              <tr className="bg-white/[0.03]">
+              <tr className="bg-[hsl(var(--surface-hover))]">
                 <td className="px-2 py-2 font-semibold text-white" colSpan={3}>
                   Total
                 </td>

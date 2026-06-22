@@ -44,7 +44,7 @@ export function EsgSection({ data }: { data: SampleReportData }) {
                   ? 'border-amber-300/30 bg-amber-300/[0.03]'
                   : row.tone === 'risk'
                     ? 'border-rose-300/30 bg-rose-300/[0.03]'
-                    : 'border-white/10 bg-white/[0.02]';
+                    : 'border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))]';
             const dot =
               row.tone === 'good'
                 ? 'bg-emerald-300'
@@ -112,7 +112,7 @@ export function EsgSection({ data }: { data: SampleReportData }) {
               }
               const totalPrimary = primary.reduce((s, r) => s + r.tco2e, 0);
               return (
-                <div className="mt-5 rounded-[14px] border border-white/10 bg-white/[0.02] p-4">
+                <div className="mt-5 rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4">
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
                     <div className="fine-print">Carbon emissions register (verified)</div>
                     <div className="flex flex-wrap gap-2">
@@ -126,10 +126,10 @@ export function EsgSection({ data }: { data: SampleReportData }) {
                       </Badge>
                     </div>
                   </div>
-                  <div className="mt-3 overflow-x-auto rounded-[12px] border border-white/10">
+                  <div className="mt-3 overflow-x-auto rounded-[12px] border border-[hsl(var(--border))]">
                     <table className="w-full text-xs">
                       <thead>
-                        <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+                        <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-slate-500">
                           <th className="px-2 py-2 font-semibold">Scope</th>
                           <th className="px-2 py-2 font-semibold">Category</th>
                           <th className="px-2 py-2 text-right font-semibold">Vintage</th>
@@ -138,7 +138,7 @@ export function EsgSection({ data }: { data: SampleReportData }) {
                           <th className="px-2 py-2 font-semibold">Verifier</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-white/5 text-slate-200">
+                      <tbody className="divide-y divide-[hsl(var(--border))] text-slate-200">
                         {primary.map((rec) => (
                           <tr key={rec.id}>
                             <td className="px-2 py-2 font-mono text-slate-300">
@@ -194,7 +194,7 @@ export function EsgSection({ data }: { data: SampleReportData }) {
           : null}
 
         {emissionsBreakdown.totalAnnualtCO2e !== null ? (
-          <div className="mt-5 rounded-[14px] border border-white/10 bg-white/[0.02] p-4">
+          <div className="mt-5 rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <div className="fine-print">
                 Scope 1 / 2 / 3 emissions estimate
@@ -235,7 +235,7 @@ export function EsgSection({ data }: { data: SampleReportData }) {
               ].map((s) => (
                 <div
                   key={s.label}
-                  className="rounded-[12px] border border-white/5 bg-white/[0.02] px-3 py-2"
+                  className="rounded-[12px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2"
                 >
                   <div className="text-[10px] uppercase tracking-wide text-slate-500">
                     {s.label}

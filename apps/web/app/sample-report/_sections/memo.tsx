@@ -65,15 +65,15 @@ export function MemoSection({ data }: { data: SampleReportData }) {
           <div className="mt-5 space-y-5">
             <p className="text-base leading-8 text-slate-200">{latestRun.underwritingMemo}</p>
             <div className="grid gap-3 md:grid-cols-3">
-              <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+              <div className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4">
                 <div className="fine-print">Asset Thesis</div>
                 <p className="mt-3 text-sm leading-7 text-slate-300">{assetThesis}</p>
               </div>
-              <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+              <div className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4">
                 <div className="fine-print">Return Profile</div>
                 <p className="mt-3 text-sm leading-7 text-slate-300">{returnProfile}</p>
               </div>
-              <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+              <div className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4">
                 <div className="fine-print">Diligence Posture</div>
                 <p className="mt-3 text-sm leading-7 text-slate-300">{diligencePosture}</p>
               </div>
@@ -85,13 +85,13 @@ export function MemoSection({ data }: { data: SampleReportData }) {
           <Card>
             <div className="eyebrow">Committee Snapshot</div>
             <div className="mt-4 grid gap-4 text-sm text-slate-300">
-              <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+              <div className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4">
                 <div className="fine-print">Updated</div>
                 <div className="mt-2 text-lg font-semibold text-white">
                   {formatDate(latestRun.createdAt)}
                 </div>
               </div>
-              <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+              <div className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4">
                 <div className="fine-print">Latest Base Case</div>
                 <div className="mt-2 text-lg font-semibold text-white">
                   {formatCompactCurrencyFromKrwAtRate(
@@ -101,7 +101,7 @@ export function MemoSection({ data }: { data: SampleReportData }) {
                   )}
                 </div>
               </div>
-              <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+              <div className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4">
                 <div className="fine-print">Confidence</div>
                 <div className="mt-2 text-lg font-semibold text-white">
                   {formatNumber(latestRun.confidenceScore, 1)}
@@ -119,7 +119,7 @@ export function MemoSection({ data }: { data: SampleReportData }) {
               {latestRun.keyRisks.map((risk) => (
                 <li
                   key={risk}
-                  className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-3"
+                  className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-4 py-3"
                 >
                   {risk}
                 </li>
@@ -133,7 +133,7 @@ export function MemoSection({ data }: { data: SampleReportData }) {
               {latestRun.ddChecklist.map((item) => (
                 <li
                   key={item}
-                  className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-3"
+                  className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-4 py-3"
                 >
                   {item}
                 </li>
@@ -174,7 +174,7 @@ export function MemoSection({ data }: { data: SampleReportData }) {
           {scenarios.map((scenario) => (
             <div
               key={scenario.id}
-              className="rounded-[22px] border border-white/10 bg-slate-950/45 p-4"
+              className="rounded-[22px] border border-[hsl(var(--border))] bg-slate-950/45 p-4"
             >
               <div className="flex items-center justify-between gap-3">
                 <h3 className="text-lg font-semibold text-white">{scenario.name}</h3>

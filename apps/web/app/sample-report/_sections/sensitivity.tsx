@@ -29,7 +29,7 @@ export function SensitivitySection({ data }: { data: SampleReportData }) {
             return (
               <div
                 key={grid.runId}
-                className="rounded-[18px] border border-white/10 bg-white/[0.02] p-4"
+                className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4"
               >
                 <div className="flex items-end justify-between gap-3">
                   <div>
@@ -42,10 +42,10 @@ export function SensitivitySection({ data }: { data: SampleReportData }) {
                     Base = <span className="font-mono">{fmt(grid.baselineValue)}</span>
                   </div>
                 </div>
-                <div className="mt-4 overflow-x-auto rounded-[14px] border border-white/10">
+                <div className="mt-4 overflow-x-auto rounded-[14px] border border-[hsl(var(--border))]">
                   <table className="w-full text-xs">
                     <thead>
-                      <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+                      <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-slate-500">
                         <th className="px-2 py-1.5 font-semibold">{grid.rowAxisLabel}</th>
                         {grid.columnLabels.map((c) => (
                           <th key={c} className="px-2 py-1.5 text-right font-semibold">
@@ -54,7 +54,7 @@ export function SensitivitySection({ data }: { data: SampleReportData }) {
                         ))}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-white/5 text-slate-200">
+                    <tbody className="divide-y divide-[hsl(var(--border))] text-slate-200">
                       {grid.rowLabels.map((rowLabel, r) => (
                         <tr key={rowLabel}>
                           <td className="px-2 py-1.5 text-slate-400">{rowLabel}</td>

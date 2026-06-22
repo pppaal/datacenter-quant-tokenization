@@ -22,7 +22,7 @@ export function UnderwritingSection({ data }: { data: SampleReportData }) {
           <Badge tone="good">{latestRun.engineVersion}</Badge>
         </div>
         <div className="mt-5 grid gap-4 md:grid-cols-3">
-          <div className="rounded-[18px] border border-white/10 bg-white/[0.02] p-4">
+          <div className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4">
             <div className="fine-print">Valuation rates</div>
             <dl className="mt-3 space-y-2 text-sm">
               <KeyValueRow variant="inline" label="Cap rate">
@@ -54,7 +54,7 @@ export function UnderwritingSection({ data }: { data: SampleReportData }) {
             </dl>
           </div>
 
-          <div className="rounded-[18px] border border-white/10 bg-white/[0.02] p-4">
+          <div className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4">
             <div className="fine-print">Tax stack</div>
             <dl className="mt-3 space-y-2 text-sm">
               <KeyValueRow variant="inline" label="Corporate tax">
@@ -83,7 +83,7 @@ export function UnderwritingSection({ data }: { data: SampleReportData }) {
             </dl>
           </div>
 
-          <div className="rounded-[18px] border border-white/10 bg-white/[0.02] p-4">
+          <div className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4">
             <div className="fine-print">SPV & promote</div>
             <dl className="mt-3 space-y-2 text-sm">
               <KeyValueRow variant="inline" label="Mgmt fee">
@@ -127,7 +127,7 @@ export function UnderwritingSection({ data }: { data: SampleReportData }) {
         </p>
 
         {capRateDecomp ? (
-          <div className="mt-5 rounded-[16px] border border-white/10 bg-white/[0.02] p-4">
+          <div className="mt-5 rounded-[16px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
                 <div className="fine-print">Cap rate decomposition</div>
@@ -141,17 +141,17 @@ export function UnderwritingSection({ data }: { data: SampleReportData }) {
               </div>
               <Badge>{capRateDecomp.capRatePct.toFixed(2)}% implied</Badge>
             </div>
-            <div className="mt-4 overflow-x-auto rounded-[12px] border border-white/10">
+            <div className="mt-4 overflow-x-auto rounded-[12px] border border-[hsl(var(--border))]">
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+                  <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-slate-500">
                     <th className="px-2 py-2 font-semibold">Component</th>
                     <th className="px-2 py-2 text-right font-semibold">Sign</th>
                     <th className="px-2 py-2 text-right font-semibold">pct</th>
                     <th className="px-2 py-2 font-semibold">Notes</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/5 text-slate-200">
+                <tbody className="divide-y divide-[hsl(var(--border))] text-slate-200">
                   {capRateDecomp.components.map((c) => (
                     <tr key={c.key}>
                       <td className="px-2 py-2 text-slate-300">{c.label}</td>
@@ -166,7 +166,7 @@ export function UnderwritingSection({ data }: { data: SampleReportData }) {
                       <td className="px-2 py-2 text-[10px] text-slate-400">{c.notes}</td>
                     </tr>
                   ))}
-                  <tr className="bg-white/[0.03] font-semibold">
+                  <tr className="bg-[hsl(var(--surface-hover))] font-semibold">
                     <td className="px-2 py-2 text-white">Implied cap rate</td>
                     <td className="px-2 py-2"></td>
                     <td className="px-2 py-2 text-right font-mono text-white">

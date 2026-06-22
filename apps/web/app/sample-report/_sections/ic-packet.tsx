@@ -33,7 +33,10 @@ export function IcPacketSection({ data }: { data: SampleReportData }) {
                   ? 'border-rose-300/30 bg-rose-300/[0.04] text-rose-200'
                   : 'border-amber-300/30 bg-amber-300/[0.04] text-amber-200';
             return (
-              <li key={p.id} className="rounded-[16px] border border-white/10 bg-white/[0.02] p-4">
+              <li
+                key={p.id}
+                className="rounded-[16px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4"
+              >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <div className="flex items-center gap-2">

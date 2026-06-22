@@ -38,7 +38,7 @@ export function InsuranceSection({ data }: { data: SampleReportData }) {
                 ? 'border-amber-300/30 bg-amber-300/[0.04]'
                 : tile.status === 'EXPIRED'
                   ? 'border-rose-300/30 bg-rose-300/[0.04]'
-                  : 'border-white/10 bg-white/[0.02]';
+                  : 'border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))]';
             const dot =
               tile.status === 'EXPIRING'
                 ? 'bg-amber-300'
@@ -84,7 +84,7 @@ export function InsuranceSection({ data }: { data: SampleReportData }) {
           })}
         </div>
         <div className="mt-4 grid gap-3 text-[11px] md:grid-cols-3">
-          <div className="rounded-[12px] border border-white/5 bg-white/[0.015] px-3 py-2">
+          <div className="rounded-[12px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2">
             <div className="text-[10px] uppercase tracking-wide text-slate-500">Total coverage</div>
             <div className="mt-1 font-mono text-sm text-white">
               {formatCompactCurrencyFromKrwAtRate(
@@ -94,7 +94,7 @@ export function InsuranceSection({ data }: { data: SampleReportData }) {
               )}
             </div>
           </div>
-          <div className="rounded-[12px] border border-white/5 bg-white/[0.015] px-3 py-2">
+          <div className="rounded-[12px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2">
             <div className="text-[10px] uppercase tracking-wide text-slate-500">
               Total annual premium
             </div>
@@ -106,7 +106,7 @@ export function InsuranceSection({ data }: { data: SampleReportData }) {
               )}
             </div>
           </div>
-          <div className="rounded-[12px] border border-white/5 bg-white/[0.015] px-3 py-2">
+          <div className="rounded-[12px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2">
             <div className="text-[10px] uppercase tracking-wide text-slate-500">Avg deductible</div>
             <div className="mt-1 font-mono text-sm text-white">
               {insuranceSummary.averageDeductibleKrw !== null

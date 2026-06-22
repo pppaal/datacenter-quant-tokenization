@@ -30,7 +30,7 @@ export function RisksSection({ data }: { data: SampleReportData }) {
               {classifiedRisks.map((risk, idx) => (
                 <li
                   key={`risk-${idx}`}
-                  className="rounded-[14px] border border-white/10 bg-white/[0.02] px-3 py-2 text-sm"
+                  className="rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2 text-sm"
                 >
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge tone={risk.tone}>{risk.severity}</Badge>
@@ -60,7 +60,7 @@ export function RisksSection({ data }: { data: SampleReportData }) {
               {latestRun.ddChecklist.map((item, idx) => (
                 <li
                   key={`dd-${idx}`}
-                  className="flex gap-3 rounded-[14px] border border-white/5 bg-white/[0.02] px-3 py-2 text-sm"
+                  className="flex gap-3 rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2 text-sm"
                 >
                   <span
                     aria-hidden

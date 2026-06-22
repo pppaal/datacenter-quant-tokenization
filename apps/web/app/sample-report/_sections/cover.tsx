@@ -91,7 +91,7 @@ export function CoverSection({ data }: { data: SampleReportData }) {
             {/* Dense KPI strip — the "above-the-fold" numbers an LP
                   scans before reading the memo. Each cell links to the
                   card that explains it. */}
-            <div className="grid gap-px overflow-hidden rounded-[18px] border border-white/10 bg-white/10 sm:grid-cols-3 lg:grid-cols-6">
+            <div className="grid gap-px overflow-hidden rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] sm:grid-cols-3 lg:grid-cols-6">
               {[
                 {
                   label: 'Equity IRR',
@@ -157,7 +157,7 @@ export function CoverSection({ data }: { data: SampleReportData }) {
             </div>
 
             {compareAsset && compareLatestRun ? (
-              <div className="mt-5 rounded-[18px] border border-white/15 bg-white/[0.02] p-4">
+              <div className="mt-5 rounded-[18px] border border-[hsl(var(--border-strong))] bg-[hsl(var(--panel-alt))] p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="text-[11px] uppercase tracking-wide text-slate-400">
                     Compare vs.{' '}
@@ -222,7 +222,7 @@ export function CoverSection({ data }: { data: SampleReportData }) {
                     return (
                       <div
                         key={kpi.label}
-                        className="rounded-[14px] border border-white/5 bg-white/[0.015] px-3 py-2"
+                        className="rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2"
                       >
                         <div className="text-[10px] uppercase tracking-wide text-slate-500">
                           {kpi.label}
@@ -261,15 +261,15 @@ export function CoverSection({ data }: { data: SampleReportData }) {
             <div>
               <div className="eyebrow">Memo Cover</div>
               <div className="mt-4 grid gap-3 text-sm text-slate-300">
-                <div className="flex items-center justify-between rounded-[20px] border border-white/10 bg-white/[0.03] px-4 py-3">
+                <div className="flex items-center justify-between rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-4 py-3">
                   <span>Prepared On</span>
                   <span>{formatDate(latestRun.createdAt)}</span>
                 </div>
-                <div className="flex items-center justify-between rounded-[20px] border border-white/10 bg-white/[0.03] px-4 py-3">
+                <div className="flex items-center justify-between rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-4 py-3">
                   <span>Location</span>
                   <span>{asset.address?.city ?? 'N/A'}</span>
                 </div>
-                <div className="flex items-center justify-between rounded-[20px] border border-white/10 bg-white/[0.03] px-4 py-3">
+                <div className="flex items-center justify-between rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-4 py-3">
                   <span>{isDataCenter ? 'Power Capacity' : 'Rentable Area'}</span>
                   <span>
                     {isDataCenter
@@ -277,7 +277,7 @@ export function CoverSection({ data }: { data: SampleReportData }) {
                       : `${formatNumber(asset.rentableAreaSqm ?? asset.grossFloorAreaSqm)} sqm`}
                   </span>
                 </div>
-                <div className="flex items-center justify-between rounded-[20px] border border-white/10 bg-white/[0.03] px-4 py-3">
+                <div className="flex items-center justify-between rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-4 py-3">
                   <span>Model Version</span>
                   <span>{latestRun.engineVersion}</span>
                 </div>

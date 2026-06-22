@@ -85,10 +85,10 @@ export function ReturnsSection({ data }: { data: SampleReportData }) {
             </KeyValueRow>
           </dl>
           {asset.debtFacilities && asset.debtFacilities.length > 0 ? (
-            <div className="mt-5 overflow-x-auto rounded-[14px] border border-white/10">
+            <div className="mt-5 overflow-x-auto rounded-[14px] border border-[hsl(var(--border))]">
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+                  <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-slate-500">
                     <th className="px-2 py-2 font-semibold">Facility</th>
                     <th className="px-2 py-2 text-right font-semibold">Commit</th>
                     <th className="px-2 py-2 text-right font-semibold">Drawn</th>
@@ -97,7 +97,7 @@ export function ReturnsSection({ data }: { data: SampleReportData }) {
                     <th className="px-2 py-2 text-right font-semibold">Amort</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/5 text-slate-200">
+                <tbody className="divide-y divide-[hsl(var(--border))] text-slate-200">
                   {asset.debtFacilities.map((f) => (
                     <tr key={f.id}>
                       <td className="px-2 py-2">
@@ -176,10 +176,10 @@ export function ReturnsSection({ data }: { data: SampleReportData }) {
             </KeyValueRow>
           </dl>
           {asset.leases && asset.leases.length > 0 ? (
-            <div className="mt-5 overflow-x-auto rounded-[14px] border border-white/10">
+            <div className="mt-5 overflow-x-auto rounded-[14px] border border-[hsl(var(--border))]">
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+                  <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-slate-500">
                     <th className="px-2 py-2 font-semibold">Tenant</th>
                     <th className="px-2 py-2 text-right font-semibold">kW</th>
                     <th className="px-2 py-2 text-right font-semibold">Term</th>
@@ -189,7 +189,7 @@ export function ReturnsSection({ data }: { data: SampleReportData }) {
                     <th className="px-2 py-2 text-right font-semibold">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/5 text-slate-200">
+                <tbody className="divide-y divide-[hsl(var(--border))] text-slate-200">
                   {asset.leases.map((lease) => {
                     const mtmGap =
                       lease.markToMarketRatePerKwKrw && lease.baseRatePerKwKrw > 0
@@ -225,7 +225,7 @@ export function ReturnsSection({ data }: { data: SampleReportData }) {
                   })}
                 </tbody>
               </table>
-              <p className="border-t border-white/5 bg-white/[0.02] px-2 py-2 text-[10px] text-slate-500">
+              <p className="border-t border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-2 py-2 text-[10px] text-slate-500">
                 WALT = Σ(term × kW) / Σ(kW); weighted in-place rent uses the same kW weighting on
                 contract rate; MTM gap = blended market rate / blended in-place rate − 1.
               </p>

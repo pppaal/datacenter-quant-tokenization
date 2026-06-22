@@ -30,7 +30,7 @@ export function CompsSection({ data }: { data: SampleReportData }) {
             : ''}
         </p>
 
-        <div className="mt-5 rounded-[14px] border border-white/10 bg-white/[0.02] p-4">
+        <div className="mt-5 rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <div className="fine-print">Hedonic-fitted comparable price</div>
@@ -50,7 +50,7 @@ export function CompsSection({ data }: { data: SampleReportData }) {
           </div>
           {hedonicFit ? (
             <div className="mt-4 grid gap-3 md:grid-cols-3">
-              <div className="rounded-[12px] border border-white/5 bg-white/[0.015] px-3 py-2">
+              <div className="rounded-[12px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2">
                 <div className="text-[10px] uppercase tracking-wide text-slate-500">
                   Fitted price / sqm
                 </div>
@@ -58,7 +58,7 @@ export function CompsSection({ data }: { data: SampleReportData }) {
                   {formatNumber(hedonicFit.fittedPricePerSqmKrw, 0)} KRW
                 </div>
               </div>
-              <div className="rounded-[12px] border border-white/5 bg-white/[0.015] px-3 py-2">
+              <div className="rounded-[12px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2">
                 <div className="text-[10px] uppercase tracking-wide text-slate-500">
                   Adjusted R²
                 </div>
@@ -66,7 +66,7 @@ export function CompsSection({ data }: { data: SampleReportData }) {
                   {hedonicFit.adjustedRSquared.toFixed(3)}
                 </div>
               </div>
-              <div className="rounded-[12px] border border-white/5 bg-white/[0.015] px-3 py-2">
+              <div className="rounded-[12px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2">
                 <div className="text-[10px] uppercase tracking-wide text-slate-500">
                   Residual SE (log)
                 </div>
@@ -84,10 +84,10 @@ export function CompsSection({ data }: { data: SampleReportData }) {
         </div>
 
         {txCompsToShow.length > 0 ? (
-          <div className="mt-5 overflow-x-auto rounded-[14px] border border-white/10">
+          <div className="mt-5 overflow-x-auto rounded-[14px] border border-[hsl(var(--border))]">
             <table className="w-full text-xs">
               <thead>
-                <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+                <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-slate-500">
                   <th className="px-2 py-2 font-semibold">Date</th>
                   <th className="px-2 py-2 font-semibold">Submarket</th>
                   <th className="px-2 py-2 font-semibold">Type / tier</th>
@@ -96,7 +96,7 @@ export function CompsSection({ data }: { data: SampleReportData }) {
                   <th className="px-2 py-2 text-right font-semibold">Source</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5 text-slate-200">
+              <tbody className="divide-y divide-[hsl(var(--border))] text-slate-200">
                 {txCompsToShow.slice(0, 8).map((c) => (
                   <tr key={c.id}>
                     <td className="px-2 py-2 text-slate-400">
@@ -135,10 +135,10 @@ export function CompsSection({ data }: { data: SampleReportData }) {
         ) : null}
 
         {rentCompsToShow.length > 0 ? (
-          <div className="mt-5 overflow-x-auto rounded-[14px] border border-white/10">
+          <div className="mt-5 overflow-x-auto rounded-[14px] border border-[hsl(var(--border))]">
             <table className="w-full text-xs">
               <thead>
-                <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+                <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-slate-500">
                   <th className="px-2 py-2 font-semibold">As of</th>
                   <th className="px-2 py-2 font-semibold">Submarket</th>
                   <th className="px-2 py-2 font-semibold">Type</th>
@@ -148,7 +148,7 @@ export function CompsSection({ data }: { data: SampleReportData }) {
                   <th className="px-2 py-2 text-right font-semibold">Source</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5 text-slate-200">
+              <tbody className="divide-y divide-[hsl(var(--border))] text-slate-200">
                 {rentCompsToShow.slice(0, 8).map((r) => (
                   <tr key={r.id}>
                     <td className="px-2 py-2 text-slate-400">

@@ -21,10 +21,10 @@ export function PnlSection({ data }: { data: SampleReportData }) {
           </div>
           <Badge tone="good">{proForma.years.length} year hold</Badge>
         </div>
-        <div className="mt-5 overflow-x-auto rounded-[18px] border border-white/10">
+        <div className="mt-5 overflow-x-auto rounded-[18px] border border-[hsl(var(--border))]">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-white/[0.04] text-left text-xs uppercase tracking-wide text-slate-500">
+              <tr className="bg-[hsl(var(--surface-hover))] text-left text-xs uppercase tracking-wide text-slate-500">
                 <th className="px-3 py-2 font-semibold">Year</th>
                 <th className="px-3 py-2 text-right font-semibold">Revenue</th>
                 <th className="px-3 py-2 text-right font-semibold">Opex</th>
@@ -34,7 +34,7 @@ export function PnlSection({ data }: { data: SampleReportData }) {
                 <th className="px-3 py-2 text-right font-semibold">Distributions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5 text-slate-200">
+            <tbody className="divide-y divide-[hsl(var(--border))] text-slate-200">
               {proForma.years.map((year) => {
                 const toMillions = (n: number) => `₩${formatNumber(n / 1_000_000, 0)}`;
                 return (

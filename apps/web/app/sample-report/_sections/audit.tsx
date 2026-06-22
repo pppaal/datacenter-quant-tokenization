@@ -32,10 +32,10 @@ export function AuditSection({ data }: { data: SampleReportData }) {
           actors:{' '}
           <span className="font-mono text-slate-300">{auditTrail.uniqueActors.join(', ')}</span>
         </div>
-        <div className="mt-4 overflow-x-auto rounded-[14px] border border-white/10">
+        <div className="mt-4 overflow-x-auto rounded-[14px] border border-[hsl(var(--border))]">
           <table className="w-full text-xs">
             <thead>
-              <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+              <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-slate-500">
                 <th className="px-2 py-2 font-semibold">When</th>
                 <th className="px-2 py-2 font-semibold">Actor</th>
                 <th className="px-2 py-2 font-semibold">Action</th>
@@ -43,7 +43,7 @@ export function AuditSection({ data }: { data: SampleReportData }) {
                 <th className="px-2 py-2 text-right font-semibold">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5 text-slate-200">
+            <tbody className="divide-y divide-[hsl(var(--border))] text-slate-200">
               {auditTrail.events.map((e) => {
                 const ok = /SUCCESS|OK/i.test(e.statusLabel);
                 return (

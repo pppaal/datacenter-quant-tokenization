@@ -22,7 +22,10 @@ export function FeaturesSection({ data }: { data: SampleReportData }) {
         </p>
         <div className="mt-5 grid gap-3 md:grid-cols-2 lg:grid-cols-4">
           {asset.featureSnapshots.map((s) => (
-            <div key={s.id} className="rounded-[16px] border border-white/10 bg-white/[0.02] p-3">
+            <div
+              key={s.id}
+              className="rounded-[16px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-3"
+            >
               <div className="text-[11px] uppercase tracking-wide text-slate-500">
                 {s.featureNamespace}
               </div>
