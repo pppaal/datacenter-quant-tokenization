@@ -10,6 +10,10 @@ import {
   buildStatementCreditInsights,
   type StatementCreditInsights
 } from '@/lib/services/credit/insights';
+import {
+  buildStatementQualityInsights,
+  type StatementQualityInsights
+} from '@/lib/services/credit/dupont';
 
 type Props = {
   statements: AssetFinancialStatement[];
@@ -123,6 +127,38 @@ function CreditInsightStrip({ insights }: { insights: StatementCreditInsights })
 }
 
 /**
+ * DuPont ROE decomposition + earnings-quality (OCF vs NI) for the latest filing.
+ * Renders the ROE walk and a tone-coded earnings-quality chip so the reader sees
+ * whether ROE is operating- or leverage-driven and whether cash backs earnings.
+ */
+function QualityInsightStrip({ quality }: { quality: StatementQualityInsights }) {
+  const { dupont, earningsQuality } = quality;
+  if (!dupont.headline && !earningsQuality.headline) return null;
+  const eqTone: 'good' | 'warn' | 'bad' =
+    earningsQuality.classification === 'strong'
+      ? 'good'
+      : earningsQuality.classification === 'weak'
+        ? 'bad'
+        : 'warn';
+  return (
+    <div className="mb-3 space-y-1.5">
+      {dupont.headline ? (
+        <p className="text-xs text-[hsl(var(--foreground-muted))]">
+          <span className="font-semibold text-[hsl(var(--foreground))]">DuPont · </span>
+          {dupont.headline}
+        </p>
+      ) : null}
+      {earningsQuality.headline ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-semibold text-[hsl(var(--foreground))]">이익의 질</span>
+          <Chip text={earningsQuality.headline} tone={eqTone} />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/**
  * Comparative IS / BS / CF (+ detail line items) per counterparty, built from
  * the same `buildStatementView` model the Excel export (#140) uses — so screen,
  * Excel, and PDF stay in lockstep. Additive to FinancialStatementsPanel (which
@@ -150,14 +186,26 @@ export function ComparativeStatementsPanel({ statements }: Props) {
       </p>
       <div className="mt-5 space-y-8">
         {[...groups.entries()].map(([counterpartyId, rows]) => {
-          const view = buildStatementView(fromAssetStatements(rows));
+          const periods = fromAssetStatements(rows);
+          const view = buildStatementView(periods);
           const insights = buildStatementCreditInsights(rows);
+          const quality = buildStatementQualityInsights(
+            periods.map((p) => ({
+              label: p.label,
+              netIncome: p.netIncome,
+              revenue: p.revenue,
+              totalAssets: p.totalAssets,
+              totalEquity: p.totalEquity,
+              operatingCashFlow: p.operatingCashFlow
+            }))
+          );
           return (
             <div key={counterpartyId}>
               <div className="mb-3 text-sm font-semibold text-[hsl(var(--foreground))]">
                 {rows[0]?.counterparty?.name ?? counterpartyId}
               </div>
               <CreditInsightStrip insights={insights} />
+              <QualityInsightStrip quality={quality} />
               <div className="mb-3 flex flex-wrap items-center gap-2">
                 {view.coverage.map((c) => (
                   <Chip
