@@ -1,7 +1,6 @@
 'use client';
 
-import { useId, useState, startTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useId, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { DocumentType } from '@prisma/client';
@@ -10,9 +9,10 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { documentUploadSchema, type DocumentUploadInput } from '@/lib/validations/document';
+import { useRouterRefresh } from '@/lib/hooks/use-router-refresh';
 
 export function DocumentUploadForm({ assetId, dealId }: { assetId?: string; dealId?: string }) {
-  const router = useRouter();
+  const { isRefreshing, refresh } = useRouterRefresh();
   const fileInputId = useId();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -52,7 +52,7 @@ export function DocumentUploadForm({ assetId, dealId }: { assetId?: string; deal
       form.reset({ assetId, dealId });
       fileInput.value = '';
       setSuccess(`Document uploaded: ${values.title}`);
-      startTransition(() => router.refresh());
+      refresh();
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : 'Upload failed');
     } finally {
@@ -115,8 +115,12 @@ export function DocumentUploadForm({ assetId, dealId }: { assetId?: string; deal
           Uploads are stored through the Next.js backend and immediately linked into document
           history, summaries, and future memo evidence.
         </p>
-        <Button type="submit" disabled={submitting} data-testid="document-upload-submit">
-          {submitting ? 'Uploading...' : 'Upload Document'}
+        <Button
+          type="submit"
+          disabled={submitting || isRefreshing}
+          data-testid="document-upload-submit"
+        >
+          {submitting || isRefreshing ? 'Uploading...' : 'Upload Document'}
         </Button>
       </div>
       {success ? (

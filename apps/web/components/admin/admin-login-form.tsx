@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, startTransition } from 'react';
+import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { useRouterRefresh } from '@/lib/hooks/use-router-refresh';
 
 export function AdminLoginForm() {
   const router = useRouter();
+  const { isRefreshing, refresh } = useRouterRefresh();
   const searchParams = useSearchParams();
   const [user, setUser] = useState('');
   const [password, setPassword] = useState('');
@@ -32,7 +34,7 @@ export function AdminLoginForm() {
       }
 
       router.push(searchParams?.get('next') || '/admin');
-      startTransition(() => router.refresh());
+      refresh();
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : 'Unable to sign in.');
     } finally {
@@ -74,8 +76,8 @@ export function AdminLoginForm() {
           {error}
         </div>
       ) : null}
-      <Button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? 'Signing In...' : 'Start Operator Session'}
+      <Button type="submit" disabled={isSubmitting || isRefreshing}>
+        {isSubmitting || isRefreshing ? 'Signing In...' : 'Start Operator Session'}
       </Button>
     </form>
   );

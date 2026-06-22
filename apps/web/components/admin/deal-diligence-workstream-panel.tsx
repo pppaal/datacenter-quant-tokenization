@@ -5,8 +5,7 @@ import {
   DealDiligenceWorkstreamType,
   DocumentType
 } from '@prisma/client';
-import { useState, startTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -14,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { formatDate, toSentenceCase } from '@/lib/utils';
+import { useRouterRefresh } from '@/lib/hooks/use-router-refresh';
 
 type Workstream = {
   id: string;
@@ -97,7 +97,7 @@ export function DealDiligenceWorkstreamPanel({
   workstreams,
   availableDocuments
 }: Props) {
-  const router = useRouter();
+  const { isRefreshing, refresh } = useRouterRefresh();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -123,7 +123,7 @@ export function DealDiligenceWorkstreamPanel({
       await work();
       setNotice(successMessage);
       setTimeout(() => setNotice(null), 4000);
-      startTransition(() => router.refresh());
+      refresh();
     } catch (mutationError) {
       setError(mutationError instanceof Error ? mutationError.message : 'Request failed');
     } finally {
@@ -250,8 +250,10 @@ export function DealDiligenceWorkstreamPanel({
           placeholder="Internal notes or specialist comments"
         />
         <div className="flex justify-end">
-          <Button type="submit" disabled={busy === 'create-workstream'}>
-            {busy === 'create-workstream' ? 'Saving...' : 'Open / Update Workstream'}
+          <Button type="submit" disabled={busy === 'create-workstream' || isRefreshing}>
+            {busy === 'create-workstream' || isRefreshing
+              ? 'Saving...'
+              : 'Open / Update Workstream'}
           </Button>
         </div>
       </form>
@@ -401,7 +403,7 @@ export function DealDiligenceWorkstreamPanel({
                 <Button
                   type="button"
                   variant="ghost"
-                  disabled={busy === `deliverable-${workstream.id}`}
+                  disabled={busy === `deliverable-${workstream.id}` || isRefreshing}
                   onClick={(event) => {
                     const form = event.currentTarget.form;
                     const documentSelect = form?.querySelector<HTMLSelectElement>(
@@ -455,7 +457,7 @@ export function DealDiligenceWorkstreamPanel({
                   type="button"
                   variant="ghost"
                   data-testid="upload-deliverable-submit"
-                  disabled={busy === `upload-deliverable-${workstream.id}`}
+                  disabled={busy === `upload-deliverable-${workstream.id}` || isRefreshing}
                   onClick={(event) => {
                     const form = event.currentTarget.form;
                     const titleInput = form?.querySelector<HTMLInputElement>(
@@ -526,7 +528,7 @@ export function DealDiligenceWorkstreamPanel({
               <Button
                 type="submit"
                 variant="secondary"
-                disabled={busy === `workstream-${workstream.id}`}
+                disabled={busy === `workstream-${workstream.id}` || isRefreshing}
               >
                 {busy === `workstream-${workstream.id}` ? 'Saving...' : 'Update Workstream'}
               </Button>

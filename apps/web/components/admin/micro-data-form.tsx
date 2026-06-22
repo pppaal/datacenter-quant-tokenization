@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, startTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ReviewStatus } from '@prisma/client';
@@ -11,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { microDataSchema, type MicroDataInput } from '@/lib/validations/micro-data';
+import { useRouterRefresh } from '@/lib/hooks/use-router-refresh';
 
 const numericFields: Array<keyof MicroDataInput> = [
   'substationDistanceKm',
@@ -87,7 +87,7 @@ export function MicroDataForm({
     note?: string | null;
   }>;
 }) {
-  const router = useRouter();
+  const { isRefreshing, refresh } = useRouterRefresh();
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const form = useForm<MicroDataInput>({
@@ -127,7 +127,7 @@ export function MicroDataForm({
         throw new Error(payload?.error ?? 'Failed to save micro data');
       }
 
-      startTransition(() => router.refresh());
+      refresh();
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Failed to save micro data');
     } finally {
@@ -231,8 +231,8 @@ export function MicroDataForm({
           {errorMessage ? (
             <span className="text-sm text-[hsl(var(--danger))]">{errorMessage}</span>
           ) : null}
-          <Button type="submit" disabled={submitting}>
-            {submitting ? 'Saving...' : 'Save Micro Data'}
+          <Button type="submit" disabled={submitting || isRefreshing}>
+            {submitting || isRefreshing ? 'Saving...' : 'Save Micro Data'}
           </Button>
         </div>
       </div>

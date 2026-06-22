@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, startTransition } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { useRouterRefresh } from '@/lib/hooks/use-router-refresh';
 
 export function AdminSessionButton() {
   const router = useRouter();
+  const { isRefreshing, refresh } = useRouterRefresh();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,7 +26,7 @@ export function AdminSessionButton() {
         throw new Error('Sign-out failed. You are still signed in — please try again.');
       }
       router.push('/admin/login');
-      startTransition(() => router.refresh());
+      refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Sign-out failed. Please try again.');
     } finally {
@@ -34,8 +36,13 @@ export function AdminSessionButton() {
 
   return (
     <div className="space-y-2">
-      <Button type="button" variant="secondary" onClick={handleSignOut} disabled={isSubmitting}>
-        {isSubmitting ? 'Ending Session...' : 'End Session'}
+      <Button
+        type="button"
+        variant="secondary"
+        onClick={handleSignOut}
+        disabled={isSubmitting || isRefreshing}
+      >
+        {isSubmitting || isRefreshing ? 'Ending Session...' : 'End Session'}
       </Button>
       {error ? (
         <p role="alert" className="text-xs text-[hsl(var(--danger))]">
