@@ -8,8 +8,9 @@ function actionClassName(variant: 'secondary' | 'ghost' = 'secondary') {
   return cn(
     'inline-flex min-h-11 items-center justify-center rounded-full px-5 py-2.5 text-sm font-semibold tracking-[-0.01em] transition duration-200',
     variant === 'secondary' &&
-      'border border-white/12 bg-white/[0.04] text-slate-100 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-white/[0.08]',
-    variant === 'ghost' && 'text-slate-300 hover:bg-white/5 hover:text-white'
+      'border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] text-[hsl(var(--foreground))] hover:-translate-y-0.5 hover:border-accent/40 hover:bg-[hsl(var(--surface-hover))]',
+    variant === 'ghost' &&
+      'text-[hsl(var(--foreground-muted))] hover:bg-[hsl(var(--surface-hover))] hover:text-[hsl(var(--foreground))]'
   );
 }
 
@@ -23,7 +24,7 @@ export function ReportExportBar({
   report: DealReport;
 }) {
   return (
-    <div className="print-hidden flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-white/10 bg-white/[0.03] px-5 py-4">
+    <div className="print-hidden flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-5 py-4">
       <div className="flex flex-wrap items-center gap-2">
         <Badge>{report.audienceLabel}</Badge>
         <div className="fine-print">Version {report.versionLabel}</div>

@@ -17,12 +17,16 @@ function renderFactGrid(
       {facts.map((fact) => (
         <div
           key={`${keyPrefix}-${fact.label}`}
-          className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+          className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4"
         >
           <div className="fine-print">{fact.label}</div>
-          <div className="mt-3 text-lg font-semibold text-white">{fact.value}</div>
+          <div className="mt-3 text-lg font-semibold text-[hsl(var(--foreground))]">
+            {fact.value}
+          </div>
           {fact.detail ? (
-            <p className="mt-2 text-sm leading-7 text-slate-400">{fact.detail}</p>
+            <p className="mt-2 text-sm leading-7 text-[hsl(var(--foreground-muted))]">
+              {fact.detail}
+            </p>
           ) : null}
         </div>
       ))}
@@ -35,7 +39,7 @@ function renderBody(section: ReportSection | undefined) {
   return (
     <div className="space-y-4">
       {section.body.map((paragraph) => (
-        <p key={paragraph} className="text-sm leading-8 text-slate-300">
+        <p key={paragraph} className="text-sm leading-8 text-[hsl(var(--foreground-muted))]">
           {paragraph}
         </p>
       ))}
@@ -53,8 +57,8 @@ function renderBullets(section: ReportSection | undefined, tone: 'neutral' | 'wa
           className={[
             'rounded-[18px] border px-4 py-3 text-sm leading-7',
             tone === 'warn'
-              ? 'border-amber-500/20 bg-amber-500/10 text-amber-100'
-              : 'border-white/10 bg-white/[0.03] text-slate-300'
+              ? 'border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--warning-tint))] text-[hsl(var(--warning))]'
+              : 'border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] text-[hsl(var(--foreground-muted))]'
           ].join(' ')}
         >
           {bullet}
@@ -94,7 +98,7 @@ export function ReportIcMemoSheet({
           <Badge>{assetCode}</Badge>
         </div>
 
-        <div className="mt-4 rounded-[20px] border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-sm leading-7 text-amber-100">
+        <div className="mt-4 rounded-[20px] border border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--warning-tint))] px-4 py-3 text-sm leading-7 text-[hsl(var(--warning))]">
           {report.distributionNotice}
         </div>
 
@@ -102,34 +106,36 @@ export function ReportIcMemoSheet({
           <div className="space-y-5">
             <div>
               <div className="eyebrow">Investment Committee Draft</div>
-              <h1 className="mt-3 text-5xl font-semibold leading-[0.96] tracking-[-0.05em] text-white md:text-6xl">
+              <h1 className="mt-3 text-5xl font-semibold leading-[0.96] tracking-[-0.05em] text-[hsl(var(--foreground))] md:text-6xl">
                 {assetName}
               </h1>
               <p className="mt-3 text-base font-medium text-accent">{report.title}</p>
             </div>
-            <p className="max-w-4xl text-base leading-8 text-slate-200">{report.heroSummary}</p>
+            <p className="max-w-4xl text-base leading-8 text-[hsl(var(--foreground))]">
+              {report.heroSummary}
+            </p>
           </div>
 
           <Card className="grid gap-4">
             <div className="eyebrow">{decision?.kicker ?? 'Decision Request'}</div>
-            <h2 className="text-2xl font-semibold text-white">
+            <h2 className="text-2xl font-semibold text-[hsl(var(--foreground))]">
               {decision?.title ?? 'Committee Posture'}
             </h2>
             {renderBody(decision)}
-            <div className="grid gap-3 text-sm text-slate-300">
-              <div className="flex items-center justify-between rounded-[20px] border border-white/10 bg-white/[0.03] px-4 py-3">
+            <div className="grid gap-3 text-sm text-[hsl(var(--foreground-muted))]">
+              <div className="flex items-center justify-between rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-4 py-3">
                 <span>Asset</span>
                 <span>{assetName}</span>
               </div>
-              <div className="flex items-center justify-between rounded-[20px] border border-white/10 bg-white/[0.03] px-4 py-3">
+              <div className="flex items-center justify-between rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-4 py-3">
                 <span>Location</span>
                 <span>{locationLabel}</span>
               </div>
-              <div className="flex items-center justify-between rounded-[20px] border border-white/10 bg-white/[0.03] px-4 py-3">
+              <div className="flex items-center justify-between rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-4 py-3">
                 <span>Generated</span>
                 <span>{report.generatedAtLabel}</span>
               </div>
-              <div className="flex items-center justify-between rounded-[20px] border border-white/10 bg-white/[0.03] px-4 py-3">
+              <div className="flex items-center justify-between rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-4 py-3">
                 <span>Version</span>
                 <span>{report.versionLabel}</span>
               </div>
@@ -142,9 +148,13 @@ export function ReportIcMemoSheet({
         {heroFacts.map((fact) => (
           <div key={fact.label} className="metric-card">
             <div className="fine-print">{fact.label}</div>
-            <div className="mt-3 text-2xl font-semibold text-white">{fact.value}</div>
+            <div className="mt-3 text-2xl font-semibold text-[hsl(var(--foreground))]">
+              {fact.value}
+            </div>
             {fact.detail ? (
-              <p className="mt-2 text-sm leading-7 text-slate-400">{fact.detail}</p>
+              <p className="mt-2 text-sm leading-7 text-[hsl(var(--foreground-muted))]">
+                {fact.detail}
+              </p>
             ) : null}
           </div>
         ))}
@@ -153,7 +163,7 @@ export function ReportIcMemoSheet({
       <section className="report-export-appendix grid gap-6 xl:grid-cols-[1.02fr_0.98fr]">
         <Card>
           <div className="eyebrow">{transaction?.kicker ?? 'Transaction Context'}</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">
+          <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
             {transaction?.title ?? 'Why This Deal Is On The Table'}
           </h2>
           <div className="mt-5">{renderBody(transaction)}</div>
@@ -167,7 +177,7 @@ export function ReportIcMemoSheet({
 
         <Card>
           <div className="eyebrow">{valuation?.kicker ?? 'Valuation'}</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">
+          <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
             {valuation?.title ?? 'Underwriting And Downside Frame'}
           </h2>
           <div className="mt-5">{renderFactGrid(valuation?.facts, 'valuation')}</div>
@@ -177,7 +187,7 @@ export function ReportIcMemoSheet({
       <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
         <Card>
           <div className="eyebrow">{cashflow?.kicker ?? 'Cash Flow'}</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">
+          <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
             {cashflow?.title ?? 'Opening-Year Cash Flow And Capital Stack'}
           </h2>
           <div className="mt-5">{renderFactGrid(cashflow?.facts, 'cashflow')}</div>
@@ -191,7 +201,7 @@ export function ReportIcMemoSheet({
 
         <Card>
           <div className="eyebrow">{diligence?.kicker ?? 'Diligence'}</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">
+          <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
             {diligence?.title ?? 'Coverage And Gating Items'}
           </h2>
           <div className="mt-5">{renderFactGrid(diligence?.facts, 'diligence')}</div>
@@ -207,18 +217,22 @@ export function ReportIcMemoSheet({
       <section className="grid gap-6 xl:grid-cols-[1.02fr_0.98fr]">
         <Card>
           <div className="eyebrow">Evidence Pack</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">Linked Support Documents</h2>
+          <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
+            Linked Support Documents
+          </h2>
           <div className="mt-5 grid gap-4 md:grid-cols-2">
             {evidenceDocs.map((document) => (
               <div
                 key={document.id}
-                className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-4"
+                className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-4 py-4"
               >
-                <div className="text-sm font-semibold text-white">{document.title}</div>
-                <div className="mt-2 text-xs uppercase tracking-[0.16em] text-slate-500">
+                <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
+                  {document.title}
+                </div>
+                <div className="mt-2 text-xs uppercase tracking-[0.16em] text-[hsl(var(--muted))]">
                   {document.documentType} / v{document.currentVersion}
                 </div>
-                <p className="report-export-doc-summary mt-3 text-sm leading-7 text-slate-400">
+                <p className="report-export-doc-summary mt-3 text-sm leading-7 text-[hsl(var(--foreground-muted))]">
                   {document.summary ?? 'No document summary is currently stored.'}
                 </p>
               </div>
@@ -228,17 +242,23 @@ export function ReportIcMemoSheet({
 
         <Card>
           <div className="eyebrow">Traceability</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">Control And Integrity</h2>
+          <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
+            Control And Integrity
+          </h2>
           <div className="mt-5 space-y-3">
             {traceability.map((fact) => (
               <div
                 key={fact.label}
-                className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-4"
+                className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-4 py-4"
               >
                 <div className="fine-print">{fact.label}</div>
-                <div className="mt-2 text-lg font-semibold text-white">{fact.value}</div>
+                <div className="mt-2 text-lg font-semibold text-[hsl(var(--foreground))]">
+                  {fact.value}
+                </div>
                 {fact.detail ? (
-                  <p className="mt-2 text-sm leading-7 text-slate-400">{fact.detail}</p>
+                  <p className="mt-2 text-sm leading-7 text-[hsl(var(--foreground-muted))]">
+                    {fact.detail}
+                  </p>
                 ) : null}
               </div>
             ))}
@@ -249,15 +269,17 @@ export function ReportIcMemoSheet({
       <section>
         <Card>
           <div className="eyebrow">Control Sheet</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">Report Control Record</h2>
+          <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
+            Report Control Record
+          </h2>
           <div className="mt-5">{renderFactGrid(controlFacts, 'control')}</div>
         </Card>
       </section>
 
       <section>
-        <Card className="border-amber-500/20 bg-amber-500/10">
-          <div className="eyebrow text-amber-200">Distribution Note</div>
-          <p className="mt-3 text-sm leading-7 text-amber-100">{report.footerNotice}</p>
+        <Card className="border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--warning-tint))]">
+          <div className="eyebrow text-[hsl(var(--warning))]">Distribution Note</div>
+          <p className="mt-3 text-sm leading-7 text-[hsl(var(--warning))]">{report.footerNotice}</p>
         </Card>
       </section>
     </div>

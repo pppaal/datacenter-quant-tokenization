@@ -41,7 +41,7 @@ export function ReportExportCover({
   const leadFacts = report.heroFacts.slice(0, 3);
 
   return (
-    <section className="report-cover-page print-only rounded-[28px] border border-white/10 bg-white text-slate-900">
+    <section className="report-cover-page print-only rounded-[28px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] text-[hsl(var(--foreground))]">
       <div className="space-y-8 p-10">
         <div className="flex flex-wrap items-center gap-3">
           <Badge>{report.audienceLabel}</Badge>
@@ -49,57 +49,70 @@ export function ReportExportCover({
         </div>
 
         <div className="space-y-4">
-          <div className="font-mono text-[11px] uppercase tracking-[0.34em] text-slate-500">
+          <div className="font-mono text-[11px] uppercase tracking-[0.34em] text-[hsl(var(--muted))]">
             {coverTitle(report)}
           </div>
-          <h1 className="text-5xl font-semibold leading-[0.95] tracking-[-0.05em] text-slate-950">
+          <h1 className="text-5xl font-semibold leading-[0.95] tracking-[-0.05em] text-[hsl(var(--foreground))]">
             {assetName}
           </h1>
-          <p className="max-w-3xl text-base leading-8 text-slate-700">{coverSubtitle(report)}</p>
+          <p className="max-w-3xl text-base leading-8 text-[hsl(var(--foreground))]">
+            {coverSubtitle(report)}
+          </p>
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">
-          <div className="rounded-[20px] border border-slate-200 px-4 py-4">
-            <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-slate-500">
+          <div className="rounded-[20px] border border-[hsl(var(--border))] px-4 py-4">
+            <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-[hsl(var(--muted))]">
               Location
             </div>
-            <div className="mt-2 text-lg font-semibold text-slate-950">{locationLabel}</div>
+            <div className="mt-2 text-lg font-semibold text-[hsl(var(--foreground))]">
+              {locationLabel}
+            </div>
           </div>
-          <div className="rounded-[20px] border border-slate-200 px-4 py-4">
-            <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-slate-500">
+          <div className="rounded-[20px] border border-[hsl(var(--border))] px-4 py-4">
+            <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-[hsl(var(--muted))]">
               Generated
             </div>
-            <div className="mt-2 text-lg font-semibold text-slate-950">
+            <div className="mt-2 text-lg font-semibold text-[hsl(var(--foreground))]">
               {report.generatedAtLabel}
             </div>
           </div>
-          <div className="rounded-[20px] border border-slate-200 px-4 py-4">
-            <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-slate-500">
+          <div className="rounded-[20px] border border-[hsl(var(--border))] px-4 py-4">
+            <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-[hsl(var(--muted))]">
               Version
             </div>
-            <div className="mt-2 text-lg font-semibold text-slate-950">{report.versionLabel}</div>
+            <div className="mt-2 text-lg font-semibold text-[hsl(var(--foreground))]">
+              {report.versionLabel}
+            </div>
           </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">
           {leadFacts.map((fact) => (
-            <div key={fact.label} className="rounded-[20px] border border-slate-200 px-4 py-4">
-              <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-slate-500">
+            <div
+              key={fact.label}
+              className="rounded-[20px] border border-[hsl(var(--border))] px-4 py-4"
+            >
+              <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-[hsl(var(--muted))]">
                 {fact.label}
               </div>
-              <div className="mt-2 text-lg font-semibold text-slate-950">{fact.value}</div>
+              <div className="mt-2 text-lg font-semibold text-[hsl(var(--foreground))]">
+                {fact.value}
+              </div>
               {fact.detail ? (
-                <p className="mt-2 text-sm leading-7 text-slate-600">{fact.detail}</p>
+                <p className="mt-2 text-sm leading-7 text-[hsl(var(--muted))]">{fact.detail}</p>
               ) : null}
             </div>
           ))}
         </div>
 
-        <div className="rounded-[20px] border border-slate-200 bg-slate-50 px-5 py-5">
-          <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-slate-500">
+        <div className="rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-5 py-5">
+          <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-[hsl(var(--muted))]">
             Distribution Notice
           </div>
-          <p className="mt-3 text-sm leading-7 text-slate-700">{report.distributionNotice}</p>
+          <p className="mt-3 text-sm leading-7 text-[hsl(var(--foreground))]">
+            {report.distributionNotice}
+          </p>
         </div>
       </div>
     </section>

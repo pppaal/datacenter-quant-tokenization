@@ -24,12 +24,16 @@ function renderFacts(facts: ReportFact[] | undefined, keyPrefix: string) {
       {facts.map((fact) => (
         <div
           key={`${keyPrefix}-${fact.label}`}
-          className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+          className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4"
         >
           <div className="fine-print">{fact.label}</div>
-          <div className="mt-3 text-lg font-semibold text-white">{fact.value}</div>
+          <div className="mt-3 text-lg font-semibold text-[hsl(var(--foreground))]">
+            {fact.value}
+          </div>
           {fact.detail ? (
-            <p className="mt-2 text-sm leading-7 text-slate-400">{fact.detail}</p>
+            <p className="mt-2 text-sm leading-7 text-[hsl(var(--foreground-muted))]">
+              {fact.detail}
+            </p>
           ) : null}
         </div>
       ))}
@@ -42,7 +46,7 @@ function renderBody(section: ReportSection | undefined) {
   return (
     <div className="space-y-4">
       {section.body.map((paragraph) => (
-        <p key={paragraph} className="text-sm leading-8 text-slate-300">
+        <p key={paragraph} className="text-sm leading-8 text-[hsl(var(--foreground-muted))]">
           {paragraph}
         </p>
       ))}
@@ -57,19 +61,21 @@ function renderChecklist(items: ReportChecklistItem[] | undefined) {
       {items.map((item) => (
         <div
           key={`${item.label}-${item.detail}`}
-          className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-4"
+          className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-4 py-4"
         >
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="text-sm font-semibold text-white">{item.label}</div>
+            <div className="text-sm font-semibold text-[hsl(var(--foreground))]">{item.label}</div>
             <Badge tone={statusTone(item.status)}>{item.status}</Badge>
           </div>
-          <p className="mt-3 text-sm leading-7 text-slate-400">{item.detail}</p>
+          <p className="mt-3 text-sm leading-7 text-[hsl(var(--foreground-muted))]">
+            {item.detail}
+          </p>
           {item.sources?.length ? (
             <div className="mt-3 flex flex-wrap gap-2">
               {item.sources.map((source) => (
                 <span
                   key={`${item.label}-${source}`}
-                  className="inline-flex rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.18em] text-slate-400"
+                  className="inline-flex rounded-full border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.18em] text-[hsl(var(--foreground-muted))]"
                 >
                   {source}
                 </span>
@@ -111,7 +117,7 @@ export function ReportRiskMemoSheet({
           <Badge>{locationLabel}</Badge>
         </div>
 
-        <div className="mt-4 rounded-[20px] border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-sm leading-7 text-amber-100">
+        <div className="mt-4 rounded-[20px] border border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--warning-tint))] px-4 py-3 text-sm leading-7 text-[hsl(var(--warning))]">
           {report.distributionNotice}
         </div>
 
@@ -119,34 +125,36 @@ export function ReportRiskMemoSheet({
           <div className="space-y-5">
             <div>
               <div className="eyebrow">Internal Downside Note</div>
-              <h1 className="mt-3 text-5xl font-semibold leading-[0.96] tracking-[-0.05em] text-white md:text-6xl">
+              <h1 className="mt-3 text-5xl font-semibold leading-[0.96] tracking-[-0.05em] text-[hsl(var(--foreground))] md:text-6xl">
                 {assetName}
               </h1>
               <p className="mt-3 text-base font-medium text-accent">{report.title}</p>
             </div>
-            <p className="max-w-4xl text-base leading-8 text-slate-200">{report.heroSummary}</p>
+            <p className="max-w-4xl text-base leading-8 text-[hsl(var(--foreground))]">
+              {report.heroSummary}
+            </p>
           </div>
 
           <Card className="grid gap-4">
             <div className="eyebrow">{posture?.kicker ?? 'Risk Posture'}</div>
-            <h2 className="text-2xl font-semibold text-white">
+            <h2 className="text-2xl font-semibold text-[hsl(var(--foreground))]">
               {posture?.title ?? 'Current Downside View'}
             </h2>
             {renderBody(posture)}
-            <div className="grid gap-3 text-sm text-slate-300">
-              <div className="flex items-center justify-between rounded-[20px] border border-white/10 bg-white/[0.03] px-4 py-3">
+            <div className="grid gap-3 text-sm text-[hsl(var(--foreground-muted))]">
+              <div className="flex items-center justify-between rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-4 py-3">
                 <span>Asset</span>
                 <span>{assetName}</span>
               </div>
-              <div className="flex items-center justify-between rounded-[20px] border border-white/10 bg-white/[0.03] px-4 py-3">
+              <div className="flex items-center justify-between rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-4 py-3">
                 <span>Location</span>
                 <span>{locationLabel}</span>
               </div>
-              <div className="flex items-center justify-between rounded-[20px] border border-white/10 bg-white/[0.03] px-4 py-3">
+              <div className="flex items-center justify-between rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-4 py-3">
                 <span>Generated</span>
                 <span>{report.generatedAtLabel}</span>
               </div>
-              <div className="flex items-center justify-between rounded-[20px] border border-white/10 bg-white/[0.03] px-4 py-3">
+              <div className="flex items-center justify-between rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-4 py-3">
                 <span>Version</span>
                 <span>{report.versionLabel}</span>
               </div>
@@ -159,9 +167,13 @@ export function ReportRiskMemoSheet({
         {heroFacts.map((fact) => (
           <div key={fact.label} className="metric-card">
             <div className="fine-print">{fact.label}</div>
-            <div className="mt-3 text-2xl font-semibold text-white">{fact.value}</div>
+            <div className="mt-3 text-2xl font-semibold text-[hsl(var(--foreground))]">
+              {fact.value}
+            </div>
             {fact.detail ? (
-              <p className="mt-2 text-sm leading-7 text-slate-400">{fact.detail}</p>
+              <p className="mt-2 text-sm leading-7 text-[hsl(var(--foreground-muted))]">
+                {fact.detail}
+              </p>
             ) : null}
           </div>
         ))}
@@ -170,7 +182,7 @@ export function ReportRiskMemoSheet({
       <section className="report-export-appendix grid gap-6 xl:grid-cols-[0.98fr_1.02fr]">
         <Card>
           <div className="eyebrow">{primaryRisks?.kicker ?? 'Primary Risks'}</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">
+          <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
             {primaryRisks?.title ?? 'Issues Requiring Management Attention'}
           </h2>
           <div className="mt-5">{renderChecklist(primaryRisks?.checklist)}</div>
@@ -178,7 +190,7 @@ export function ReportRiskMemoSheet({
 
         <Card>
           <div className="eyebrow">{mitigation?.kicker ?? 'Mitigation'}</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">
+          <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
             {mitigation?.title ?? 'Near-Term Mitigants And Open Items'}
           </h2>
           <div className="mt-5">{renderChecklist(mitigation?.checklist)}</div>
@@ -188,13 +200,15 @@ export function ReportRiskMemoSheet({
       <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
         <Card>
           <div className="eyebrow">Risk Metrics</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">Downside Scorecard</h2>
+          <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
+            Downside Scorecard
+          </h2>
           <div className="mt-5">{renderFacts(posture?.facts, 'posture')}</div>
         </Card>
 
         <Card>
           <div className="eyebrow">{evidence?.kicker ?? 'Evidence'}</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">
+          <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
             {evidence?.title ?? 'Document Support'}
           </h2>
           <div className="mt-5">{renderFacts(evidence?.facts, 'evidence')}</div>
@@ -204,17 +218,23 @@ export function ReportRiskMemoSheet({
       <section className="grid gap-6 xl:grid-cols-[0.98fr_1.02fr]">
         <Card>
           <div className="eyebrow">Traceability</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">Control And Integrity</h2>
+          <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
+            Control And Integrity
+          </h2>
           <div className="mt-5 space-y-3">
             {traceability.map((fact) => (
               <div
                 key={fact.label}
-                className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-4"
+                className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-4 py-4"
               >
                 <div className="fine-print">{fact.label}</div>
-                <div className="mt-2 text-lg font-semibold text-white">{fact.value}</div>
+                <div className="mt-2 text-lg font-semibold text-[hsl(var(--foreground))]">
+                  {fact.value}
+                </div>
                 {fact.detail ? (
-                  <p className="mt-2 text-sm leading-7 text-slate-400">{fact.detail}</p>
+                  <p className="mt-2 text-sm leading-7 text-[hsl(var(--foreground-muted))]">
+                    {fact.detail}
+                  </p>
                 ) : null}
               </div>
             ))}
@@ -223,17 +243,23 @@ export function ReportRiskMemoSheet({
 
         <Card>
           <div className="eyebrow">Control Sheet</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">Report Control Record</h2>
+          <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
+            Report Control Record
+          </h2>
           <div className="mt-5 grid gap-4 md:grid-cols-2">
             {controlFacts.map((fact) => (
               <div
                 key={fact.label}
-                className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+                className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4"
               >
                 <div className="fine-print">{fact.label}</div>
-                <div className="mt-3 text-lg font-semibold text-white">{fact.value}</div>
+                <div className="mt-3 text-lg font-semibold text-[hsl(var(--foreground))]">
+                  {fact.value}
+                </div>
                 {fact.detail ? (
-                  <p className="mt-2 text-sm leading-7 text-slate-400">{fact.detail}</p>
+                  <p className="mt-2 text-sm leading-7 text-[hsl(var(--foreground-muted))]">
+                    {fact.detail}
+                  </p>
                 ) : null}
               </div>
             ))}
@@ -242,9 +268,9 @@ export function ReportRiskMemoSheet({
       </section>
 
       <section>
-        <Card className="border-amber-500/20 bg-amber-500/10">
-          <div className="eyebrow text-amber-200">Distribution Note</div>
-          <p className="mt-3 text-sm leading-7 text-amber-100">{report.footerNotice}</p>
+        <Card className="border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--warning-tint))]">
+          <div className="eyebrow text-[hsl(var(--warning))]">Distribution Note</div>
+          <p className="mt-3 text-sm leading-7 text-[hsl(var(--warning))]">{report.footerNotice}</p>
         </Card>
       </section>
     </div>
