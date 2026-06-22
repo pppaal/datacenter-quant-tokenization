@@ -66,7 +66,7 @@ export function RisksSection({ data }: { data: SampleReportData }) {
                 >
                   <span
                     aria-hidden
-                    className="mt-1.5 inline-block h-3 w-3 shrink-0 rounded-[3px] border border-slate-500"
+                    className="mt-1.5 inline-block h-3 w-3 shrink-0 rounded-[3px] border border-[hsl(var(--border-strong))]"
                   />
                   <div className="min-w-0">
                     <div className="text-[11px] uppercase tracking-[0.16em] text-[hsl(var(--muted))]">

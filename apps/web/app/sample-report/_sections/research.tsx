@@ -72,10 +72,10 @@ export function ResearchSection({ data }: { data: SampleReportData }) {
               {asset.coverageTasks.slice(0, 8).map((t) => {
                 const priorityTone =
                   t.priority === 'HIGH'
-                    ? 'border-rose-300/20 bg-rose-300/[0.04]'
+                    ? 'border-[hsl(var(--danger)/0.25)] bg-[hsl(var(--danger-tint))]'
                     : t.priority === 'LOW'
                       ? 'border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))]'
-                      : 'border-amber-300/15 bg-amber-300/[0.03]';
+                      : 'border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--warning-tint))]';
                 return (
                   <li
                     key={t.id}

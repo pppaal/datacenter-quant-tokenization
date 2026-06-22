@@ -37,20 +37,20 @@ export function HazardSection({ data }: { data: SampleReportData }) {
             const desc = describeHazard(score);
             const tone =
               desc.tone === 'good'
-                ? 'border-emerald-300/30 bg-emerald-300/[0.04]'
+                ? 'border-[hsl(var(--success)/0.25)] bg-[hsl(var(--success-tint))]'
                 : desc.tone === 'warn'
-                  ? 'border-amber-300/30 bg-amber-300/[0.04]'
+                  ? 'border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--warning-tint))]'
                   : desc.tone === 'risk'
-                    ? 'border-rose-300/30 bg-rose-300/[0.04]'
+                    ? 'border-[hsl(var(--danger)/0.25)] bg-[hsl(var(--danger-tint))]'
                     : 'border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))]';
             const dotTone =
               desc.tone === 'good'
-                ? 'bg-emerald-300'
+                ? 'bg-[hsl(var(--success))]'
                 : desc.tone === 'warn'
-                  ? 'bg-amber-300'
+                  ? 'bg-[hsl(var(--warning))]'
                   : desc.tone === 'risk'
-                    ? 'bg-rose-300'
-                    : 'bg-slate-600';
+                    ? 'bg-[hsl(var(--danger))]'
+                    : 'bg-[hsl(var(--muted))]';
             return (
               <div key={label} className={`rounded-[18px] border p-4 ${tone}`}>
                 <div className="flex items-center gap-2">
