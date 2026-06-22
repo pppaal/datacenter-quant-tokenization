@@ -4,7 +4,11 @@ import { resolveDisplayCurrency } from '@/lib/finance/currency';
 import { ImPrintMode } from '@/components/marketing/im-print-mode';
 import { ImExportButtons } from '@/components/marketing/im-export-buttons';
 import { imDeckFromReport } from '@/lib/services/exports/im-deck-from-report';
-import { summarizeScenarioSkew } from '@/lib/services/valuation/insights';
+import {
+  capRateGapToMarket,
+  hedonicResidual,
+  summarizeScenarioSkew
+} from '@/lib/services/valuation/insights';
 import { ImToc } from '@/components/marketing/im-toc';
 import { SiteNav } from '@/components/marketing/site-nav';
 import { prisma } from '@/lib/db/prisma';
@@ -344,6 +348,24 @@ export default async function SampleReportPage({
         })
       : null;
 
+  // Valuation insights: cap-rate build-up vs the deal's going-in cap, and the
+  // subject's price/sqm vs the size/vintage-adjusted hedonic fit.
+  const capRateGap =
+    capRateDecomp && returnsSnapshot.goingInYieldPct != null
+      ? capRateGapToMarket(capRateDecomp.capRatePct, returnsSnapshot.goingInYieldPct)
+      : null;
+  const hedonicInsight =
+    hedonicFit && hedonicTargetSize && hedonicTargetSize > 0 && investmentBasisKrw > 0
+      ? hedonicResidual(
+          {
+            fittedLogPricePerSqm: hedonicFit.fittedLogPricePerSqm,
+            residualStdErr: hedonicFit.residualStdErr,
+            adjustedRSquared: hedonicFit.adjustedRSquared
+          },
+          investmentBasisKrw / hedonicTargetSize
+        )
+      : null;
+
   // Pipeline projects — same fallback pattern as comps. Asset-direct
   // entries first, then submarket entries (assetId NULL, same market)
   // so the IM shows competitive supply even pre-stabilization.
@@ -576,12 +598,30 @@ export default async function SampleReportPage({
         </div>
       </section>
 
-      {scenarioSkew.headline ? (
+      {scenarioSkew.headline || capRateGap || (hedonicInsight && hedonicInsight.zScore !== null) ? (
         <section className="app-shell pt-2">
-          <p className="text-sm text-[hsl(var(--foreground-muted))]">
-            <span className="font-semibold text-[hsl(var(--foreground))]">시나리오 비대칭 · </span>
-            {scenarioSkew.headline}
-          </p>
+          <div className="space-y-1 text-sm text-[hsl(var(--foreground-muted))]">
+            {scenarioSkew.headline ? (
+              <p>
+                <span className="font-semibold text-[hsl(var(--foreground))]">
+                  시나리오 비대칭 ·{' '}
+                </span>
+                {scenarioSkew.headline}
+              </p>
+            ) : null}
+            {capRateGap ? (
+              <p>
+                <span className="font-semibold text-[hsl(var(--foreground))]">캡레이트 · </span>
+                {capRateGap.headline}
+              </p>
+            ) : null}
+            {hedonicInsight && hedonicInsight.zScore !== null ? (
+              <p>
+                <span className="font-semibold text-[hsl(var(--foreground))]">헤도닉 · </span>
+                {hedonicInsight.headline}
+              </p>
+            ) : null}
+          </div>
         </section>
       ) : null}
 
