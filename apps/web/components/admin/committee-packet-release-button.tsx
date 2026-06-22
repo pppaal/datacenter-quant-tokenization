@@ -48,7 +48,7 @@ export function CommitteePacketReleaseButton({ packetId }: { packetId: string })
       >
         {busy || isRefreshing ? 'Releasing...' : 'Release Packet'}
       </Button>
-      {error ? <div className="text-xs text-rose-300">{error}</div> : null}
+      {error ? <div className="text-xs text-[hsl(var(--danger))]">{error}</div> : null}
     </div>
   );
 }

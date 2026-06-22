@@ -68,11 +68,14 @@ export function QuickValuationRunButton({
         {submitting || isRefreshing ? 'Running...' : label}
       </Button>
       {success ? (
-        <p className="mt-2 text-sm text-emerald-300" data-testid="quick-valuation-feedback">
+        <p
+          className="mt-2 text-sm text-[hsl(var(--success))]"
+          data-testid="quick-valuation-feedback"
+        >
           {success}
         </p>
       ) : null}
-      {error ? <p className="mt-2 text-sm text-rose-300">{error}</p> : null}
+      {error ? <p className="mt-2 text-sm text-[hsl(var(--danger))]">{error}</p> : null}
     </div>
   );
 }

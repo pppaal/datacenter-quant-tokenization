@@ -38,7 +38,7 @@ export function SourcesRefreshButton() {
       <Button onClick={handleRefresh} disabled={isRefreshing || refreshing}>
         {isRefreshing || refreshing ? 'Refreshing Sources...' : 'Run Source Refresh'}
       </Button>
-      {error ? <div className="text-sm text-rose-300">{error}</div> : null}
+      {error ? <div className="text-sm text-[hsl(var(--danger))]">{error}</div> : null}
     </div>
   );
 }

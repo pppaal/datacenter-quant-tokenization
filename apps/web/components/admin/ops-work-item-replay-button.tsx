@@ -55,7 +55,7 @@ export function OpsWorkItemReplayButton({ workItemId }: OpsWorkItemReplayButtonP
       </Button>
       {feedback ? (
         <div
-          className="text-sm text-emerald-300"
+          className="text-sm text-[hsl(var(--success))]"
           data-testid="ops-work-item-replay-feedback"
           role="status"
         >
@@ -64,7 +64,7 @@ export function OpsWorkItemReplayButton({ workItemId }: OpsWorkItemReplayButtonP
       ) : null}
       {error ? (
         <div
-          className="text-sm text-rose-300"
+          className="text-sm text-[hsl(var(--danger))]"
           data-testid="ops-work-item-replay-feedback"
           role="alert"
         >

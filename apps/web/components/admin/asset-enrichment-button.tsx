@@ -57,7 +57,7 @@ export function AssetEnrichmentButton({
       >
         {submitting || isRefreshing ? 'Refreshing...' : label}
       </Button>
-      {error ? <p className="mt-2 text-sm text-rose-300">{error}</p> : null}
+      {error ? <p className="mt-2 text-sm text-[hsl(var(--danger))]">{error}</p> : null}
     </div>
   );
 }

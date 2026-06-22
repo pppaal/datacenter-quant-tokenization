@@ -38,7 +38,7 @@ export function AdminSessionButton() {
         {isSubmitting ? 'Ending Session...' : 'End Session'}
       </Button>
       {error ? (
-        <p role="alert" className="text-xs text-red-400">
+        <p role="alert" className="text-xs text-[hsl(var(--danger))]">
           {error}
         </p>
       ) : null}

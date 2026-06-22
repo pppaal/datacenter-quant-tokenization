@@ -157,12 +157,12 @@ function ReleaseRow({ report }: { report: InvestorReportRecord }) {
       </div>
 
       {report.publishedAt ? (
-        <div className="mt-3 text-xs text-emerald-300">
+        <div className="mt-3 text-xs text-[hsl(var(--success))]">
           Released {formatDateValue(report.publishedAt)}
         </div>
       ) : null}
-      {feedback ? <div className="mt-2 text-sm text-emerald-300">{feedback}</div> : null}
-      {error ? <div className="mt-2 text-sm text-rose-300">{error}</div> : null}
+      {feedback ? <div className="mt-2 text-sm text-[hsl(var(--success))]">{feedback}</div> : null}
+      {error ? <div className="mt-2 text-sm text-[hsl(var(--danger))]">{error}</div> : null}
     </div>
   );
 }

@@ -57,7 +57,7 @@ export function OpsAlertReplayButton({ deliveryId }: OpsAlertReplayButtonProps) 
       </Button>
       {feedback ? (
         <div
-          className="text-sm text-emerald-300"
+          className="text-sm text-[hsl(var(--success))]"
           data-testid="ops-alert-replay-feedback"
           role="status"
         >
@@ -65,7 +65,11 @@ export function OpsAlertReplayButton({ deliveryId }: OpsAlertReplayButtonProps) 
         </div>
       ) : null}
       {error ? (
-        <div className="text-sm text-rose-300" data-testid="ops-alert-replay-feedback" role="alert">
+        <div
+          className="text-sm text-[hsl(var(--danger))]"
+          data-testid="ops-alert-replay-feedback"
+          role="alert"
+        >
           {error}
         </div>
       ) : null}

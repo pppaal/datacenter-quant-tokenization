@@ -36,7 +36,7 @@ export function OpsCycleButton() {
       <Button onClick={handleRun} disabled={isRunning || isRefreshing}>
         {isRunning || isRefreshing ? 'Running Ops Cycle...' : 'Run Ops Cycle'}
       </Button>
-      {error ? <div className="text-sm text-rose-300">{error}</div> : null}
+      {error ? <div className="text-sm text-[hsl(var(--danger))]">{error}</div> : null}
     </div>
   );
 }

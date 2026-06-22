@@ -66,7 +66,7 @@ export function OperatorDashboardPanel({ data }: Props) {
         </div>
         <div className="metric-card">
           <div className="fine-print">Portfolio Assets</div>
-          <div className="mt-3 text-4xl font-semibold text-emerald-300">
+          <div className="mt-3 text-4xl font-semibold text-[hsl(var(--success))]">
             {formatNumber(portfolio.totalAssets, 0)}
           </div>
           <p className="mt-2 text-sm text-slate-400">
@@ -76,7 +76,7 @@ export function OperatorDashboardPanel({ data }: Props) {
         </div>
         <div className="metric-card">
           <div className="fine-print">Committed Capital</div>
-          <div className="mt-3 text-4xl font-semibold text-amber-300">
+          <div className="mt-3 text-4xl font-semibold text-[hsl(var(--warning))]">
             {krw(capital.totalCommittedKrw)}
           </div>
           <p className="mt-2 text-sm text-slate-400">
@@ -187,10 +187,10 @@ export function OperatorDashboardPanel({ data }: Props) {
                       <div
                         className={
                           item.severity === 'danger'
-                            ? 'text-3xl font-semibold text-rose-300'
+                            ? 'text-3xl font-semibold text-[hsl(var(--danger))]'
                             : item.severity === 'warn'
-                              ? 'text-3xl font-semibold text-amber-300'
-                              : 'text-3xl font-semibold text-emerald-300'
+                              ? 'text-3xl font-semibold text-[hsl(var(--warning))]'
+                              : 'text-3xl font-semibold text-[hsl(var(--success))]'
                         }
                       >
                         {formatNumber(item.count, 0)}

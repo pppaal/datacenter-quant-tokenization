@@ -67,7 +67,11 @@ export function ValuationRunForm({ assetId }: { assetId: string }) {
       </div>
       {feedback ? (
         <div
-          className={feedbackTone === 'good' ? 'text-sm text-emerald-300' : 'text-sm text-rose-300'}
+          className={
+            feedbackTone === 'good'
+              ? 'text-sm text-[hsl(var(--success))]'
+              : 'text-sm text-[hsl(var(--danger))]'
+          }
           data-testid="valuation-run-feedback"
           role={feedbackTone === 'good' ? 'status' : 'alert'}
         >
