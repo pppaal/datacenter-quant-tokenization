@@ -347,6 +347,13 @@ export function statementViewToXlsxSpec(view: StatementView, title: string): Xls
     type: 'currency' as const,
     width: 16
   }));
+  // Analysis columns (latest period): common-size %, YoY %, and CAGR % when ≥3 periods.
+  const hasCagr = view.periods.length >= 3;
+  const analysisCols = [
+    { header: '구성비(%)', key: 'cs', type: 'number' as const, width: 12 },
+    { header: 'YoY(%)', key: 'yoy', type: 'number' as const, width: 12 },
+    ...(hasCagr ? [{ header: 'CAGR(%)', key: 'cagr', type: 'number' as const, width: 12 }] : [])
+  ];
   return {
     title,
     sheets: view.sections.map((section) => {
@@ -359,11 +366,18 @@ export function statementViewToXlsxSpec(view: StatementView, title: string): Xls
         r.values.forEach((v, i) => {
           rec[`p${i}`] = v;
         });
+        rec.cs = r.commonSize?.[0] ?? null;
+        rec.yoy = r.yoy?.[0] ?? null;
+        if (hasCagr) rec.cagr = r.cagrPct ?? null;
         return rec;
       };
       return {
         name: section.title,
-        columns: [{ header: '과목', key: 'item', type: 'text' as const, width: 28 }, ...periodCols],
+        columns: [
+          { header: '과목', key: 'item', type: 'text' as const, width: 28 },
+          ...periodCols,
+          ...analysisCols
+        ],
         rows: dataRows.map(toRecord),
         totals: totalRow ? toRecord(totalRow) : undefined
       };
