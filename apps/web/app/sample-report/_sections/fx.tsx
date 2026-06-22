@@ -39,13 +39,13 @@ export function FxSection({ data }: { data: SampleReportData }) {
           </Badge>
         </div>
         <div className="mt-5 grid gap-3 md:grid-cols-3">
-          <div className="rounded-[16px] border border-white/10 bg-white/[0.02] p-3">
+          <div className="rounded-[16px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-3">
             <div className="text-[10px] uppercase tracking-wide text-slate-500">Asset currency</div>
             <div className="mt-2 font-mono text-lg font-semibold text-white">
               {fxExposure.assetCurrency}
             </div>
           </div>
-          <div className="rounded-[16px] border border-white/10 bg-white/[0.02] p-3">
+          <div className="rounded-[16px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-3">
             <div className="text-[10px] uppercase tracking-wide text-slate-500">
               LP base currency
             </div>
@@ -53,15 +53,15 @@ export function FxSection({ data }: { data: SampleReportData }) {
               {fxExposure.lpBaseCurrency}
             </div>
           </div>
-          <div className="rounded-[16px] border border-white/10 bg-white/[0.02] p-3">
+          <div className="rounded-[16px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-3">
             <div className="text-[10px] uppercase tracking-wide text-slate-500">Spot</div>
             <div className="mt-2 font-mono text-sm text-white">{fxExposure.spotRateLabel}</div>
           </div>
         </div>
-        <div className="mt-5 overflow-x-auto rounded-[14px] border border-white/10">
+        <div className="mt-5 overflow-x-auto rounded-[14px] border border-[hsl(var(--border))]">
           <table className="w-full text-xs">
             <thead>
-              <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+              <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-slate-500">
                 <th className="px-2 py-2 font-semibold">FX shock</th>
                 {fxExposure.sensitivity.map((s) => (
                   <th key={s.shockPct} className="px-2 py-2 text-right font-semibold">

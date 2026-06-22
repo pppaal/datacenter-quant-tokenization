@@ -32,7 +32,7 @@ export function ResearchSection({ data }: { data: SampleReportData }) {
               {asset.researchSnapshots.slice(0, 6).map((s) => (
                 <li
                   key={s.id}
-                  className="rounded-[14px] border border-white/5 bg-white/[0.02] px-3 py-2 text-sm"
+                  className="rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2 text-sm"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="font-semibold text-white">{s.title}</span>
@@ -72,7 +72,7 @@ export function ResearchSection({ data }: { data: SampleReportData }) {
                   t.priority === 'HIGH'
                     ? 'border-rose-300/20 bg-rose-300/[0.04]'
                     : t.priority === 'LOW'
-                      ? 'border-white/5 bg-white/[0.02]'
+                      ? 'border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))]'
                       : 'border-amber-300/15 bg-amber-300/[0.03]';
                 return (
                   <li
@@ -120,7 +120,7 @@ export function ResearchSection({ data }: { data: SampleReportData }) {
               {asset.aiInsights.slice(0, 6).map((insight) => (
                 <li
                   key={insight.id}
-                  className="rounded-[14px] border border-white/5 bg-white/[0.02] px-3 py-2 text-sm"
+                  className="rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2 text-sm"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="font-semibold text-white">

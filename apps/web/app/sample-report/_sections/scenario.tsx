@@ -15,10 +15,10 @@ export function ScenarioSection({ data }: { data: SampleReportData }) {
           Bull and bear cases reflect specific levers relative to base. Columns show the delta in
           implied yield, exit cap, and DSCR for each scenario versus the base case.
         </p>
-        <div className="mt-5 overflow-x-auto rounded-[18px] border border-white/10">
+        <div className="mt-5 overflow-x-auto rounded-[18px] border border-[hsl(var(--border))]">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-white/[0.04] text-left text-xs uppercase tracking-wide text-slate-500">
+              <tr className="bg-[hsl(var(--surface-hover))] text-left text-xs uppercase tracking-wide text-slate-500">
                 <th className="px-3 py-2 font-semibold">Case</th>
                 <th className="px-3 py-2 text-right font-semibold">Value</th>
                 <th className="px-3 py-2 text-right font-semibold">Δ value</th>
@@ -30,13 +30,13 @@ export function ScenarioSection({ data }: { data: SampleReportData }) {
                 <th className="px-3 py-2 text-right font-semibold">Δ DSCR</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5 text-slate-200">
+            <tbody className="divide-y divide-[hsl(var(--border))] text-slate-200">
               {scenarioDiff.map((row) => {
                 const isBase = row.name === 'Base';
                 const fmtBps = (v: number | null) =>
                   v === null ? '—' : `${v >= 0 ? '+' : ''}${v} bps`;
                 return (
-                  <tr key={row.name} className={isBase ? 'bg-white/[0.03]' : ''}>
+                  <tr key={row.name} className={isBase ? 'bg-[hsl(var(--surface-hover))]' : ''}>
                     <td className="px-3 py-2 font-semibold text-white">{row.name}</td>
                     <td className="px-3 py-2 text-right font-mono text-xs">
                       {formatCompactCurrencyFromKrwAtRate(
@@ -84,7 +84,7 @@ export function ScenarioSection({ data }: { data: SampleReportData }) {
           {scenarioDiff.map((row) => (
             <div
               key={`${row.name}-note`}
-              className="rounded-[14px] border border-white/5 bg-white/[0.02] px-3 py-2"
+              className="rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2"
             >
               <div className="text-[10px] uppercase tracking-wide text-slate-500">
                 {row.name} narrative

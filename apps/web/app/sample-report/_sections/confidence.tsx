@@ -15,7 +15,7 @@ export function ConfidenceSection({ data }: { data: SampleReportData }) {
               signals are listed below — closing the absent ones lifts the score.
             </p>
           </div>
-          <div className="rounded-[16px] border border-white/10 bg-white/[0.03] px-4 py-3 text-right">
+          <div className="rounded-[16px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-4 py-3 text-right">
             <div className="fine-print">Final score</div>
             <div className="mt-1 text-2xl font-semibold text-white">
               {confidenceBreakdown.finalScore.toFixed(1)}
@@ -41,7 +41,7 @@ export function ConfidenceSection({ data }: { data: SampleReportData }) {
             return (
               <div
                 key={group}
-                className="rounded-[18px] border border-white/10 bg-white/[0.02] p-4"
+                className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4"
               >
                 <div className="fine-print">{group}</div>
                 <ul className="mt-3 space-y-2 text-sm">
@@ -56,7 +56,7 @@ export function ConfidenceSection({ data }: { data: SampleReportData }) {
                     return (
                       <li
                         key={row.label}
-                        className="flex items-center justify-between gap-3 rounded-[12px] border border-white/5 bg-white/[0.015] px-3 py-2"
+                        className="flex items-center justify-between gap-3 rounded-[12px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2"
                       >
                         <div className="flex items-center gap-2">
                           <span className={`inline-block h-2 w-2 rounded-full ${dot}`} />

@@ -18,7 +18,7 @@ export function ProvenancePill({
   const text = summarizeProvenance(entries);
   if (!text) return null;
   return (
-    <div className="mt-3 flex flex-wrap items-center gap-2 rounded-[12px] border border-white/5 bg-white/[0.015] px-3 py-1.5 text-[11px] text-slate-400">
+    <div className="mt-3 flex flex-wrap items-center gap-2 rounded-[12px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-1.5 text-[11px] text-slate-400">
       <span className="uppercase tracking-wide text-slate-500">Source</span>
       <span className="font-mono text-slate-300">{text}</span>
     </div>

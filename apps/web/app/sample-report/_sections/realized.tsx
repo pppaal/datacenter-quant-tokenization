@@ -21,10 +21,10 @@ export function RealizedSection({ data }: { data: SampleReportData }) {
               Realized occupancy, NOI, and DSCR observations on the asset. Used to calibrate
               underwriting against actual performance.
             </p>
-            <div className="mt-5 overflow-x-auto rounded-[14px] border border-white/10">
+            <div className="mt-5 overflow-x-auto rounded-[14px] border border-[hsl(var(--border))]">
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+                  <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-slate-500">
                     <th className="px-2 py-2 font-semibold">Date</th>
                     <th className="px-2 py-2 text-right font-semibold">Occ</th>
                     <th className="px-2 py-2 text-right font-semibold">NOI</th>
@@ -33,7 +33,7 @@ export function RealizedSection({ data }: { data: SampleReportData }) {
                     <th className="px-2 py-2 text-right font-semibold">Source</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/5 text-slate-200">
+                <tbody className="divide-y divide-[hsl(var(--border))] text-slate-200">
                   {asset.realizedOutcomes.map((o) => (
                     <tr key={o.id}>
                       <td className="px-2 py-2 text-slate-400">{formatDate(o.observationDate)}</td>
@@ -84,10 +84,10 @@ export function RealizedSection({ data }: { data: SampleReportData }) {
                 ? ' Submarket-wide entries shown where no asset-tied projects are recorded.'
                 : ''}
             </p>
-            <div className="mt-5 overflow-x-auto rounded-[14px] border border-white/10">
+            <div className="mt-5 overflow-x-auto rounded-[14px] border border-[hsl(var(--border))]">
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+                  <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-slate-500">
                     <th className="px-2 py-2 font-semibold">Project</th>
                     <th className="px-2 py-2 font-semibold">Submarket</th>
                     <th className="px-2 py-2 font-semibold">Stage</th>
@@ -95,7 +95,7 @@ export function RealizedSection({ data }: { data: SampleReportData }) {
                     <th className="px-2 py-2 text-right font-semibold">Delivery</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/5 text-slate-200">
+                <tbody className="divide-y divide-[hsl(var(--border))] text-slate-200">
                   {pipelineToShow.map((p) => (
                     <tr key={p.id}>
                       <td className="px-2 py-2">

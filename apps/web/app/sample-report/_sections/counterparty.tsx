@@ -76,7 +76,7 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
               {strips.map(({ label, rollup }) => (
                 <div
                   key={label}
-                  className="rounded-[14px] border border-white/10 bg-white/[0.02] p-4"
+                  className="rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4"
                 >
                   <div className="text-[10px] uppercase tracking-wide text-slate-400">
                     {label} · {rollup!.weightingBasis}-weighted
@@ -142,7 +142,7 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
               return (
                 <div
                   key={cp.id}
-                  className="rounded-[18px] border border-white/10 bg-white/[0.02] p-4"
+                  className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4"
                 >
                   <div className="flex items-baseline justify-between gap-2">
                     <div className="font-semibold text-white">{cp.name}</div>
@@ -254,7 +254,7 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
             return (
               <div
                 key={cp.id}
-                className="rounded-[20px] border border-white/10 bg-white/[0.015] p-5"
+                className="rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5"
               >
                 {/* Header */}
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -335,12 +335,12 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
 
                 {/* Multi-year YoY trend (top three periods on file) */}
                 {(cp.financialStatements?.length ?? 0) >= 2 ? (
-                  <div className="mt-5 rounded-[14px] border border-white/10 bg-white/[0.02] p-4">
+                  <div className="mt-5 rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4">
                     <div className="fine-print">Multi-year trend</div>
-                    <div className="mt-3 overflow-x-auto rounded-[12px] border border-white/10">
+                    <div className="mt-3 overflow-x-auto rounded-[12px] border border-[hsl(var(--border))]">
                       <table className="w-full text-xs">
                         <thead>
-                          <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+                          <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-slate-500">
                             <th className="px-2 py-2 font-semibold">Period</th>
                             <th className="px-2 py-2 text-right font-semibold">Revenue</th>
                             <th className="px-2 py-2 text-right font-semibold">EBITDA</th>
@@ -349,7 +349,7 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                             <th className="px-2 py-2 text-right font-semibold">Equity</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-white/5 text-slate-200">
+                        <tbody className="divide-y divide-[hsl(var(--border))] text-slate-200">
                           {cp.financialStatements!.slice(0, 5).map((row, idx, arr) => {
                             const next = arr[idx + 1] ?? null;
                             const num = (d: { toNumber: () => number } | null | undefined) =>
@@ -434,7 +434,7 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
 
                 {/* Income statement + Balance sheet side-by-side */}
                 <div className="mt-5 grid gap-4 lg:grid-cols-2">
-                  <div className="rounded-[14px] border border-white/10 bg-white/[0.02] p-4">
+                  <div className="rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4">
                     <div className="fine-print">Income statement</div>
                     <dl className="mt-3 space-y-1.5 text-xs">
                       <div className="flex justify-between">
@@ -471,7 +471,7 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                         <dt className="text-slate-400">Interest expense</dt>
                         <dd className="font-mono text-white">{fmt(inc.interestExpenseKrw)}</dd>
                       </div>
-                      <div className="flex justify-between border-t border-white/5 pt-1.5">
+                      <div className="flex justify-between border-t border-[hsl(var(--border))] pt-1.5">
                         <dt className="text-slate-300">
                           {inc.netIncomeKrw !== null
                             ? 'Net income (당기순이익, filed)'
@@ -492,7 +492,7 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                       .
                     </p>
                   </div>
-                  <div className="rounded-[14px] border border-white/10 bg-white/[0.02] p-4">
+                  <div className="rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4">
                     <div className="fine-print">Balance sheet</div>
                     <dl className="mt-3 space-y-1.5 text-xs">
                       <div className="flex justify-between">
@@ -515,7 +515,7 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                         <dt className="text-slate-400">Other liabilities</dt>
                         <dd className="font-mono text-white">{fmt(bs.otherLiabilitiesKrw)}</dd>
                       </div>
-                      <div className="flex justify-between border-t border-white/5 pt-1.5">
+                      <div className="flex justify-between border-t border-[hsl(var(--border))] pt-1.5">
                         <dt className="text-slate-300">Total equity</dt>
                         <dd className="font-mono font-semibold text-white">
                           {fmt(bs.totalEquityKrw)}
@@ -533,7 +533,7 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
 
                 {/* Cash flow + FCF + CFADS DSCR */}
                 <div className="mt-5 grid gap-4 lg:grid-cols-2">
-                  <div className="rounded-[14px] border border-white/10 bg-white/[0.02] p-4">
+                  <div className="rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4">
                     <div className="fine-print">Cash flow</div>
                     <dl className="mt-3 space-y-1.5 text-xs">
                       <div className="flex justify-between">
@@ -548,7 +548,7 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                           ({fmt(cashFlow.maintenanceCapexKrw)})
                         </dd>
                       </div>
-                      <div className="flex justify-between border-t border-white/5 pt-1.5">
+                      <div className="flex justify-between border-t border-[hsl(var(--border))] pt-1.5">
                         <dt className="text-slate-300">Free cash flow</dt>
                         <dd className="font-mono font-semibold text-white">
                           {fmt(cashFlow.freeCashFlowKrw)}
@@ -564,7 +564,7 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                       </div>
                     </dl>
                   </div>
-                  <div className="rounded-[14px] border border-white/10 bg-white/[0.02] p-4">
+                  <div className="rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4">
                     <div className="fine-print">CFADS DSCR (lender-grade)</div>
                     <div className="mt-3 text-3xl font-semibold text-white">
                       {cashFlow.cfadsDscr !== null ? `${cashFlow.cfadsDscr.toFixed(2)}x` : '—'}
@@ -645,7 +645,7 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
 
                 {/* Covenant headroom */}
                 {covenantHeadroom.length > 0 ? (
-                  <div className="mt-5 rounded-[14px] border border-white/10 bg-white/[0.02] p-4">
+                  <div className="mt-5 rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4">
                     <div className="fine-print">
                       Indicative covenant band &amp; first-breach year
                     </div>
@@ -721,7 +721,7 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
 
                 {/* Liquidity ladder */}
                 {liquidity.rows.length > 0 && cp.role === 'SPONSOR' ? (
-                  <div className="mt-5 rounded-[14px] border border-white/10 bg-white/[0.02] p-4">
+                  <div className="mt-5 rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4">
                     <div className="flex flex-wrap items-baseline justify-between gap-2">
                       <div className="fine-print">
                         Liquidity ladder — asset facility vs sponsor liquid resources
@@ -741,10 +741,10 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                         </span>
                       </div>
                     </div>
-                    <div className="mt-3 overflow-x-auto rounded-[12px] border border-white/10">
+                    <div className="mt-3 overflow-x-auto rounded-[12px] border border-[hsl(var(--border))]">
                       <table className="w-full text-xs">
                         <thead>
-                          <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+                          <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-slate-500">
                             <th className="px-2 py-2 font-semibold">Facility</th>
                             <th className="px-2 py-2 text-right font-semibold">Drawn</th>
                             <th className="px-2 py-2 text-right font-semibold">Rate</th>
@@ -754,7 +754,7 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                             <th className="px-2 py-2 text-right font-semibold">Balloon yr</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-white/5 text-slate-200">
+                        <tbody className="divide-y divide-[hsl(var(--border))] text-slate-200">
                           {liquidity.rows.map((row) => (
                             <tr key={row.facilityKey}>
                               <td className="px-2 py-2 text-slate-300">{row.label}</td>
@@ -815,7 +815,7 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
 
                 {/* Distribution waterfall */}
                 {waterfall.tiers.length > 0 ? (
-                  <div className="mt-5 rounded-[14px] border border-white/10 bg-white/[0.02] p-4">
+                  <div className="mt-5 rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4">
                     <div className="flex flex-wrap items-baseline justify-between gap-2">
                       <div className="fine-print">Distribution waterfall</div>
                       <div className="text-[10px] text-slate-500">
@@ -835,10 +835,10 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                           : '—'}
                       </div>
                     </div>
-                    <div className="mt-3 overflow-x-auto rounded-[12px] border border-white/10">
+                    <div className="mt-3 overflow-x-auto rounded-[12px] border border-[hsl(var(--border))]">
                       <table className="w-full text-xs">
                         <thead>
-                          <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+                          <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-slate-500">
                             <th className="px-2 py-2 font-semibold">Tier</th>
                             <th className="px-2 py-2 text-right font-semibold">IRR threshold</th>
                             <th className="px-2 py-2 text-right font-semibold">LP</th>
@@ -846,7 +846,7 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                             <th className="px-2 py-2 font-semibold">Description</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-white/5 text-slate-200">
+                        <tbody className="divide-y divide-[hsl(var(--border))] text-slate-200">
                           {waterfall.tiers.map((t) => (
                             <tr key={t.tier}>
                               <td className="px-2 py-2 text-white">{t.tier}</td>
@@ -894,17 +894,17 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                 {/* Credit ratios table */}
                 <div className="mt-5">
                   <div className="fine-print">Credit ratios — vs typical PE-sponsor thresholds</div>
-                  <div className="mt-3 overflow-x-auto rounded-[14px] border border-white/10">
+                  <div className="mt-3 overflow-x-auto rounded-[14px] border border-[hsl(var(--border))]">
                     <table className="w-full text-xs">
                       <thead>
-                        <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+                        <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-slate-500">
                           <th className="px-2 py-2 font-semibold">Ratio</th>
                           <th className="px-2 py-2 text-right font-semibold">Value</th>
                           <th className="px-2 py-2 text-right font-semibold">Benchmark</th>
                           <th className="px-2 py-2 font-semibold">Interpretation</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-white/5 text-slate-200">
+                      <tbody className="divide-y divide-[hsl(var(--border))] text-slate-200">
                         {ratios.map((r) => {
                           const dotTone =
                             r.tone === 'good'
@@ -951,15 +951,15 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                 </div>
 
                 {/* Peer benchmark comparison */}
-                <div className="mt-5 rounded-[14px] border border-white/10 bg-white/[0.02] p-4">
+                <div className="mt-5 rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4">
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
                     <div className="fine-print">Peer benchmarks — {peerComparison.sectorLabel}</div>
                     <div className="text-[9px] text-slate-500">{peerComparison.sourceCaveat}</div>
                   </div>
-                  <div className="mt-3 overflow-x-auto rounded-[12px] border border-white/10">
+                  <div className="mt-3 overflow-x-auto rounded-[12px] border border-[hsl(var(--border))]">
                     <table className="w-full text-xs">
                       <thead>
-                        <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+                        <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-slate-500">
                           <th className="px-2 py-2 font-semibold">Ratio</th>
                           <th className="px-2 py-2 text-right font-semibold">This sponsor</th>
                           <th className="px-2 py-2 text-right font-semibold">P25</th>
@@ -968,7 +968,7 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                           <th className="px-2 py-2 text-right font-semibold">Band</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-white/5 text-slate-200">
+                      <tbody className="divide-y divide-[hsl(var(--border))] text-slate-200">
                         {peerComparison.comparisons.map((c) => {
                           const ratioLabel =
                             ratios.find((r) => r.key === c.ratioKey)?.label ?? c.ratioKey;
@@ -1033,10 +1033,10 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                         {amortInput.value.toFixed(1)}%/yr · Margin held constant
                       </div>
                     </div>
-                    <div className="mt-3 overflow-x-auto rounded-[14px] border border-white/10">
+                    <div className="mt-3 overflow-x-auto rounded-[14px] border border-[hsl(var(--border))]">
                       <table className="w-full text-xs">
                         <thead>
-                          <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+                          <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-slate-500">
                             <th className="px-2 py-2 font-semibold">Year</th>
                             <th className="px-2 py-2 text-right font-semibold">Revenue</th>
                             <th className="px-2 py-2 text-right font-semibold">EBITDA</th>
@@ -1047,7 +1047,7 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                             <th className="px-2 py-2 text-right font-semibold">CFADS DSCR</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-white/5 text-slate-200">
+                        <tbody className="divide-y divide-[hsl(var(--border))] text-slate-200">
                           {projection.map((row, idx) => {
                             const cfadsRow = cfadsProjection[idx] ?? null;
                             return (
@@ -1125,10 +1125,10 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                         Covenant floor: leverage ≤ 4.0x · coverage ≥ 2.0x
                       </div>
                     </div>
-                    <div className="mt-3 overflow-x-auto rounded-[14px] border border-white/10">
+                    <div className="mt-3 overflow-x-auto rounded-[14px] border border-[hsl(var(--border))]">
                       <table className="w-full text-xs">
                         <thead>
-                          <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+                          <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-slate-500">
                             <th className="px-2 py-2 font-semibold">
                               EBITDA shock ↓ / Rate shock →
                             </th>
@@ -1140,7 +1140,7 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                             ))}
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-white/5 text-slate-200">
+                        <tbody className="divide-y divide-[hsl(var(--border))] text-slate-200">
                           {sensitivityMatrix.cells.map((row, ri) => (
                             <tr key={sensitivityMatrix.ebitdaShocks[ri]}>
                               <td className="px-2 py-2 text-slate-400">
@@ -1185,7 +1185,7 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                 ) : null}
 
                 {latestCa?.summary ? (
-                  <p className="mt-5 rounded-[12px] border border-white/5 bg-white/[0.02] px-3 py-2 text-xs leading-5 text-slate-300">
+                  <p className="mt-5 rounded-[12px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2 text-xs leading-5 text-slate-300">
                     <span className="text-[10px] uppercase tracking-wide text-slate-500">
                       Credit assessment ·{' '}
                     </span>

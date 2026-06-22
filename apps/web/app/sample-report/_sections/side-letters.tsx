@@ -26,10 +26,10 @@ export function SideLettersSection({ data }: { data: SampleReportData }) {
             {asset.sideLetters.length === 1 ? '' : 's'}
           </Badge>
         </div>
-        <div className="mt-5 overflow-x-auto rounded-[14px] border border-white/10">
+        <div className="mt-5 overflow-x-auto rounded-[14px] border border-[hsl(var(--border))]">
           <table className="w-full text-xs">
             <thead>
-              <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+              <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-slate-500">
                 <th className="px-2 py-2 font-semibold">LP</th>
                 <th className="px-2 py-2 font-semibold">Category</th>
                 <th className="px-2 py-2 font-semibold">Term</th>
@@ -37,7 +37,7 @@ export function SideLettersSection({ data }: { data: SampleReportData }) {
                 <th className="px-2 py-2 text-right font-semibold">MFN</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5 text-slate-200">
+            <tbody className="divide-y divide-[hsl(var(--border))] text-slate-200">
               {asset.sideLetters.map((sl) => (
                 <tr key={sl.id}>
                   <td className="px-2 py-2">
@@ -49,7 +49,7 @@ export function SideLettersSection({ data }: { data: SampleReportData }) {
                     ) : null}
                   </td>
                   <td className="px-2 py-2">
-                    <span className="rounded-[6px] border border-white/10 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wide text-slate-300">
+                    <span className="rounded-[6px] border border-[hsl(var(--border))] px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wide text-slate-300">
                       {sl.termCategory.replace(/_/g, ' ')}
                     </span>
                   </td>

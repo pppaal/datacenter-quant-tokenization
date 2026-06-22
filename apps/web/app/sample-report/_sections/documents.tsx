@@ -22,10 +22,10 @@ export function DocumentsSection({ data }: { data: SampleReportData }) {
           Source documents on file. Each version anchors specific evidence — lease schedule, power
           study, IC model, lender term sheet — and links through to the original filing.
         </p>
-        <div className="mt-5 overflow-x-auto rounded-[14px] border border-white/10">
+        <div className="mt-5 overflow-x-auto rounded-[14px] border border-[hsl(var(--border))]">
           <table className="w-full text-xs">
             <thead>
-              <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+              <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-slate-500">
                 <th className="px-2 py-2 font-semibold">Title</th>
                 <th className="px-2 py-2 font-semibold">Type</th>
                 <th className="px-2 py-2 text-right font-semibold">Version</th>
@@ -33,7 +33,7 @@ export function DocumentsSection({ data }: { data: SampleReportData }) {
                 <th className="px-2 py-2 text-right font-semibold">Source</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5 text-slate-200">
+            <tbody className="divide-y divide-[hsl(var(--border))] text-slate-200">
               {asset.documents.slice(0, 12).map((doc) => (
                 <tr key={doc.id}>
                   <td className="px-2 py-2">

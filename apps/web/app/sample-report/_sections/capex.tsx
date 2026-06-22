@@ -25,10 +25,10 @@ export function CapexSection({ data }: { data: SampleReportData }) {
             {asset.capexLineItems.length === 1 ? '' : 's'}
           </Badge>
         </div>
-        <div className="mt-5 overflow-x-auto rounded-[14px] border border-white/10">
+        <div className="mt-5 overflow-x-auto rounded-[14px] border border-[hsl(var(--border))]">
           <table className="w-full text-xs">
             <thead>
-              <tr className="bg-white/[0.04] text-left uppercase tracking-wide text-slate-500">
+              <tr className="bg-[hsl(var(--surface-hover))] text-left uppercase tracking-wide text-slate-500">
                 <th className="px-2 py-2 font-semibold">Category</th>
                 <th className="px-2 py-2 font-semibold">Label</th>
                 <th className="px-2 py-2 text-right font-semibold">Year</th>
@@ -36,7 +36,7 @@ export function CapexSection({ data }: { data: SampleReportData }) {
                 <th className="px-2 py-2 text-right font-semibold">Amount</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5 text-slate-200">
+            <tbody className="divide-y divide-[hsl(var(--border))] text-slate-200">
               {asset.capexLineItems.map((item) => (
                 <tr key={item.id}>
                   <td className="px-2 py-2 text-[10px] uppercase tracking-wide text-slate-400">
@@ -62,7 +62,7 @@ export function CapexSection({ data }: { data: SampleReportData }) {
                   </td>
                 </tr>
               ))}
-              <tr className="bg-white/[0.03] font-semibold">
+              <tr className="bg-[hsl(var(--surface-hover))] font-semibold">
                 <td className="px-2 py-2 text-white" colSpan={4}>
                   Total
                 </td>

@@ -25,7 +25,7 @@ export function SiteMediaSection({ data }: { data: SampleReportData }) {
           {asset.media.map((m) => (
             <figure
               key={m.id}
-              className="overflow-hidden rounded-[18px] border border-white/10 bg-slate-950/60"
+              className="overflow-hidden rounded-[18px] border border-[hsl(var(--border))] bg-slate-950/60"
             >
               <div className="aspect-video w-full bg-slate-900">
                 {m.mimeType.startsWith('image/') ? (

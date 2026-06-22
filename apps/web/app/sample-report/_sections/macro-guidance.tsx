@@ -22,7 +22,7 @@ export function MacroGuidanceSection({ data }: { data: SampleReportData }) {
           <Badge>macro-regime-engine</Badge>
         </div>
         {macroGuidance.weightLine ? (
-          <p className="mt-4 rounded-[14px] border border-white/5 bg-white/[0.02] px-3 py-2 text-xs text-slate-300">
+          <p className="mt-4 rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2 text-xs text-slate-300">
             {macroGuidance.weightLine}
           </p>
         ) : null}
@@ -46,7 +46,7 @@ export function MacroGuidanceSection({ data }: { data: SampleReportData }) {
             return (
               <div
                 key={label}
-                className="rounded-[16px] border border-white/10 bg-white/[0.02] p-3"
+                className="rounded-[16px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-3"
               >
                 <div className="text-[11px] uppercase tracking-wide text-slate-500">{label}</div>
                 <div className={`mt-2 font-mono text-sm ${tone}`}>

@@ -34,7 +34,7 @@ export function TitleSection({ data }: { data: SampleReportData }) {
                 {asset.ownershipRecords.map((o) => (
                   <li
                     key={o.id}
-                    className="rounded-[14px] border border-white/5 bg-white/[0.02] px-3 py-2 text-sm"
+                    className="rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2 text-sm"
                   >
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-semibold text-white">{o.ownerName}</span>
@@ -96,7 +96,7 @@ export function TitleSection({ data }: { data: SampleReportData }) {
                 {asset.parcels.map((p) => (
                   <li
                     key={p.id}
-                    className="rounded-[14px] border border-white/5 bg-white/[0.02] px-3 py-2 text-sm"
+                    className="rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2 text-sm"
                   >
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-mono text-white">{p.parcelId}</span>
@@ -152,7 +152,7 @@ export function TitleSection({ data }: { data: SampleReportData }) {
                 {asset.buildingRecords.map((b) => (
                   <li
                     key={b.id}
-                    className="rounded-[14px] border border-white/5 bg-white/[0.02] px-3 py-2 text-sm"
+                    className="rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2 text-sm"
                   >
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-semibold text-white">

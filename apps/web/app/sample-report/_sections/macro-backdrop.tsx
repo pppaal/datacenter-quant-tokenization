@@ -21,7 +21,7 @@ export function MacroBackdropSection({ data }: { data: SampleReportData }) {
           {macroBackdrop.map((point) => (
             <div
               key={point.seriesKey}
-              className="rounded-[18px] border border-white/10 bg-white/[0.03] p-4"
+              className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4"
             >
               <div className="fine-print">{point.label}</div>
               <div className="mt-2 text-xl font-semibold text-white">{formatMacroValue(point)}</div>

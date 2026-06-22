@@ -42,7 +42,7 @@ export function HazardSection({ data }: { data: SampleReportData }) {
                   ? 'border-amber-300/30 bg-amber-300/[0.04]'
                   : desc.tone === 'risk'
                     ? 'border-rose-300/30 bg-rose-300/[0.04]'
-                    : 'border-white/10 bg-white/[0.02]';
+                    : 'border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))]';
             const dotTone =
               desc.tone === 'good'
                 ? 'bg-emerald-300'
@@ -66,7 +66,7 @@ export function HazardSection({ data }: { data: SampleReportData }) {
           })}
         </div>
         {asset.siteProfile.siteNotes ? (
-          <p className="mt-4 rounded-[14px] border border-white/5 bg-white/[0.02] px-3 py-2 text-xs leading-5 text-slate-400">
+          <p className="mt-4 rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2 text-xs leading-5 text-slate-400">
             <span className="font-semibold text-slate-300">Notes: </span>
             {asset.siteProfile.siteNotes}
           </p>
