@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, startTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { ReviewStatus } from '@prisma/client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import type { ReviewableRecordType } from '@/lib/services/review';
+import { useRouterRefresh } from '@/lib/hooks/use-router-refresh';
 
 function toneForStatus(status: ReviewStatus) {
   switch (status) {
@@ -29,7 +29,7 @@ export function ReviewActionForm({
   currentStatus: ReviewStatus;
   currentNotes?: string | null;
 }) {
-  const router = useRouter();
+  const { isRefreshing, refresh } = useRouterRefresh();
   const [reviewNotes, setReviewNotes] = useState(currentNotes ?? '');
   const [submitting, setSubmitting] = useState<'APPROVE' | 'REJECT' | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -57,7 +57,7 @@ export function ReviewActionForm({
         throw new Error(payload?.error ?? 'Failed to review evidence.');
       }
 
-      startTransition(() => router.refresh());
+      refresh();
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Failed to review evidence.');
     } finally {
@@ -95,7 +95,7 @@ export function ReviewActionForm({
           <Button
             type="button"
             variant="secondary"
-            disabled={submitting !== null}
+            disabled={submitting !== null || isRefreshing}
             onClick={() => submit('REJECT')}
             data-testid="review-reject"
           >
@@ -103,7 +103,7 @@ export function ReviewActionForm({
           </Button>
           <Button
             type="button"
-            disabled={submitting !== null}
+            disabled={submitting !== null || isRefreshing}
             onClick={() => submit('APPROVE')}
             data-testid="review-approve"
           >

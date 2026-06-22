@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, startTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useRouterRefresh } from '@/lib/hooks/use-router-refresh';
 
 export function ValuationRunForm({ assetId }: { assetId: string }) {
-  const router = useRouter();
+  const { isRefreshing, refresh } = useRouterRefresh();
   const [runLabel, setRunLabel] = useState('Latest committee scenario');
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -35,7 +35,7 @@ export function ValuationRunForm({ assetId }: { assetId: string }) {
           if (!response.ok) throw new Error('Valuation failed');
           setFeedbackTone('good');
           setFeedback(`Valuation run queued: ${runLabel}`);
-          startTransition(() => router.refresh());
+          refresh();
         } catch (error) {
           setFeedbackTone('danger');
           setFeedback(error instanceof Error ? error.message : 'Valuation failed');
@@ -57,8 +57,12 @@ export function ValuationRunForm({ assetId }: { assetId: string }) {
           This runs the return analysis through the Next.js API route and refreshes the asset
           dossier with a new generated IM.
         </p>
-        <Button type="submit" disabled={submitting} data-testid="valuation-run-submit">
-          {submitting ? 'Running...' : 'Run Analysis + Generate IM'}
+        <Button
+          type="submit"
+          disabled={submitting || isRefreshing}
+          data-testid="valuation-run-submit"
+        >
+          {submitting || isRefreshing ? 'Running...' : 'Run Analysis + Generate IM'}
         </Button>
       </div>
       {feedback ? (
