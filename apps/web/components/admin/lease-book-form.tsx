@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, startTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useRouterRefresh } from '@/lib/hooks/use-router-refresh';
 import { LeaseStatus, ReviewStatus } from '@prisma/client';
 import { type SupportedCurrency } from '@/lib/finance/currency';
 import { Badge } from '@/components/ui/badge';
@@ -205,13 +205,23 @@ export function LeaseBookForm({
   inputCurrency?: SupportedCurrency;
   defaultLeases: LeaseDefaultValue[];
 }) {
-  const router = useRouter();
+  const { isRefreshing, refresh } = useRouterRefresh();
   const [leases, setLeases] = useState<LeaseDraft[]>(() =>
     defaultLeases.length > 0 ? defaultLeases.map((lease) => buildDraft(lease)) : [buildDraft()]
   );
   const [submittingId, setSubmittingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Release the busy row only after the post-mutation router.refresh() settles
+  // (isRefreshing flips false once the fresh server data has painted), so the
+  // Save/Delete controls stay disabled across the whole round-trip.
+  useEffect(() => {
+    if (!isRefreshing) {
+      setSubmittingId(null);
+      setDeletingId(null);
+    }
+  }, [isRefreshing]);
 
   const updateLease = (localId: string, key: keyof LeaseDraft, value: string) => {
     setLeases((current) =>
@@ -366,10 +376,11 @@ export function LeaseBookForm({
         throw new Error(result?.error ?? 'Failed to save lease');
       }
 
-      startTransition(() => router.refresh());
+      // Hold the row busy until the refreshed server data paints; the effect
+      // below clears submittingId once the refresh transition settles.
+      refresh();
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Failed to save lease');
-    } finally {
       setSubmittingId(null);
     }
   };
@@ -396,10 +407,9 @@ export function LeaseBookForm({
         throw new Error(result?.error ?? 'Failed to delete lease');
       }
 
-      startTransition(() => router.refresh());
+      refresh();
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Failed to delete lease');
-    } finally {
       setDeletingId(null);
     }
   };

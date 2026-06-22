@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, startTransition } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActivityType,
   DealBidStatus,
@@ -14,7 +14,7 @@ import {
   RiskSeverity,
   TaskPriority
 } from '@prisma/client';
-import { useRouter } from 'next/navigation';
+import { useRouterRefresh } from '@/lib/hooks/use-router-refresh';
 import type {
   DealDetailRecord,
   DealExecutionSnapshot,
@@ -58,7 +58,7 @@ type Props = {
 };
 
 export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
-  const router = useRouter();
+  const { isRefreshing, refresh } = useRouterRefresh();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -155,6 +155,15 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
     }
   }, [deal.counterparties, noteCounterpartyId, noteRole]);
 
+  // Once a mutation's router.refresh() transition settles, release the busy
+  // control. `isRefreshing` only flips false *after* the fresh server data has
+  // painted, so the active button stays disabled across the whole round-trip.
+  useEffect(() => {
+    if (!isRefreshing) {
+      setBusy(null);
+    }
+  }, [isRefreshing]);
+
   const noteCounterparties = deal.counterparties.filter(
     (counterparty) => counterparty.role === noteRole
   );
@@ -189,10 +198,11 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
       if (successMessage) {
         setNotice(successMessage);
       }
-      startTransition(() => router.refresh());
+      // Keep the triggering control busy until the refreshed server data has
+      // painted; the effect below clears `busy` once `isRefreshing` settles.
+      refresh();
     } catch (mutationError) {
       setError(mutationError instanceof Error ? mutationError.message : 'Request failed');
-    } finally {
       setBusy(null);
     }
   }
