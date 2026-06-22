@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, startTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useRouterRefresh } from '@/lib/hooks/use-router-refresh';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,10 +32,19 @@ export function AssetMediaManager({
   assetId: string;
   initialMedia: MediaItem[];
 }) {
-  const router = useRouter();
+  const { isRefreshing, refresh } = useRouterRefresh();
   const [items, setItems] = useState<MediaItem[]>(initialMedia);
   const [busy, setBusy] = useState(false);
   const [banner, setBanner] = useState<{ tone: 'good' | 'warn'; text: string } | null>(null);
+
+  // Keep the upload/delete controls busy until the post-mutation
+  // router.refresh() settles (isRefreshing flips false once the fresh server
+  // data has painted), rather than the instant the transition is kicked.
+  useEffect(() => {
+    if (!isRefreshing) {
+      setBusy(false);
+    }
+  }, [isRefreshing]);
 
   const [kind, setKind] = useState<(typeof KINDS)[number]>('HERO');
   const [caption, setCaption] = useState('');
@@ -78,13 +87,12 @@ export function AssetMediaManager({
       setBanner({ tone: 'good', text: 'Uploaded.' });
       setFile(null);
       setCaption('');
-      startTransition(() => router.refresh());
+      refresh();
     } catch (err) {
       setBanner({
         tone: 'warn',
         text: err instanceof Error ? err.message : 'Upload failed'
       });
-    } finally {
       setBusy(false);
     }
   }
@@ -100,13 +108,12 @@ export function AssetMediaManager({
       }
       setItems((prev) => prev.filter((m) => m.id !== id));
       setBanner({ tone: 'good', text: 'Deleted.' });
-      startTransition(() => router.refresh());
+      refresh();
     } catch (err) {
       setBanner({
         tone: 'warn',
         text: err instanceof Error ? err.message : 'Delete failed'
       });
-    } finally {
       setBusy(false);
     }
   }
