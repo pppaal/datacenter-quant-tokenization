@@ -109,7 +109,8 @@ test('statementViewToXlsxSpec → buildXlsx → round-trips period values', asyn
   const buf = await buildXlsx(spec);
   const { sheets } = await parseWorkbook(buf);
   const is = sheets.find((s) => s.name === '손익계산서')!;
-  assert.deepEqual(is.headers, ['과목', '2026', '2025']);
+  // period value columns + analysis columns (2 periods → no CAGR).
+  assert.deepEqual(is.headers, ['과목', '2026', '2025', '구성비(%)', 'YoY(%)']);
   // 매출액 row (indented) with both periods.
   const revenue = is.rows.find((r) => String(r[0]).includes('매출액'))!;
   assert.deepEqual([revenue[1], revenue[2]], [41200, 39800]);
