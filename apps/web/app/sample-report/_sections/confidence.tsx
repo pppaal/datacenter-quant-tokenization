@@ -49,9 +49,9 @@ export function ConfidenceSection({ data }: { data: SampleReportData }) {
                     const isPenalty = row.direction === 'subtract';
                     const dot = row.present
                       ? isPenalty
-                        ? 'bg-rose-400'
-                        : 'bg-emerald-400'
-                      : 'bg-slate-700';
+                        ? 'bg-[hsl(var(--danger))]'
+                        : 'bg-[hsl(var(--success))]'
+                      : 'bg-[hsl(var(--muted))]';
                     const sign = isPenalty ? '−' : '+';
                     return (
                       <li

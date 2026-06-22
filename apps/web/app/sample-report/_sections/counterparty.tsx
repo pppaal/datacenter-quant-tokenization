@@ -251,10 +251,10 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
             );
             const riskTone =
               latestCa?.riskLevel === 'LOW'
-                ? 'border-emerald-300/30 bg-emerald-300/[0.04] text-[hsl(var(--success))]'
+                ? 'border-[hsl(var(--success)/0.25)] bg-[hsl(var(--success-tint))] text-[hsl(var(--success))]'
                 : latestCa?.riskLevel === 'HIGH'
-                  ? 'border-rose-300/30 bg-rose-300/[0.04] text-[hsl(var(--danger))]'
-                  : 'border-amber-300/30 bg-amber-300/[0.04] text-[hsl(var(--warning))]';
+                  ? 'border-[hsl(var(--danger)/0.25)] bg-[hsl(var(--danger-tint))] text-[hsl(var(--danger))]'
+                  : 'border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--warning-tint))] text-[hsl(var(--warning))]';
             const fmt = (v: number | null) =>
               v !== null
                 ? formatCompactCurrencyFromKrwAtRate(v, displayCurrency, fxRateToKrw)
@@ -276,21 +276,21 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                         const sourceLabel = provSys.toUpperCase().includes('DART')
                           ? {
                               text: 'DART filing',
-                              tone: 'border-emerald-300/30 bg-emerald-300/[0.04] text-[hsl(var(--success))]'
+                              tone: 'border-[hsl(var(--success)/0.25)] bg-[hsl(var(--success-tint))] text-[hsl(var(--success))]'
                             }
                           : provSys.toUpperCase().includes('AUDIT')
                             ? {
                                 text: 'Audited',
-                                tone: 'border-emerald-300/30 bg-emerald-300/[0.04] text-[hsl(var(--success))]'
+                                tone: 'border-[hsl(var(--success)/0.25)] bg-[hsl(var(--success-tint))] text-[hsl(var(--success))]'
                               }
                             : provSys.toUpperCase().includes('UPLOAD')
                               ? {
                                   text: 'Uploaded filing',
-                                  tone: 'border-amber-300/30 bg-amber-300/[0.04] text-[hsl(var(--warning))]'
+                                  tone: 'border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--warning-tint))] text-[hsl(var(--warning))]'
                                 }
                               : {
                                   text: 'Management estimate',
-                                  tone: 'border-slate-300/30 bg-slate-300/[0.04] text-[hsl(var(--foreground-muted))]'
+                                  tone: 'border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] text-[hsl(var(--foreground-muted))]'
                                 };
                         return (
                           <span
@@ -325,8 +325,8 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                         <span
                           className={`rounded-[10px] border px-2.5 py-1 font-mono text-[10px] uppercase tracking-wide ${
                             latestCa.investmentGrade
-                              ? 'border-emerald-300/30 bg-emerald-300/[0.04] text-[hsl(var(--success))]'
-                              : 'border-amber-300/30 bg-amber-300/[0.04] text-[hsl(var(--warning))]'
+                              ? 'border-[hsl(var(--success)/0.25)] bg-[hsl(var(--success-tint))] text-[hsl(var(--success))]'
+                              : 'border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--warning-tint))] text-[hsl(var(--warning))]'
                           }`}
                         >
                           {latestCa.grade}
@@ -644,11 +644,14 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                     {covenantAlerts.map((a) => {
                       const tone =
                         a.severity === 'critical'
-                          ? 'border-rose-300/40 bg-rose-300/[0.06]'
+                          ? 'border-[hsl(var(--danger)/0.25)] bg-[hsl(var(--danger-tint))]'
                           : a.severity === 'warning'
-                            ? 'border-amber-300/40 bg-amber-300/[0.05]'
-                            : 'border-amber-300/20 bg-amber-300/[0.03]';
-                      const dot = a.severity === 'critical' ? 'bg-rose-300' : 'bg-amber-300';
+                            ? 'border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--warning-tint))]'
+                            : 'border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--warning-tint))]';
+                      const dot =
+                        a.severity === 'critical'
+                          ? 'bg-[hsl(var(--danger))]'
+                          : 'bg-[hsl(var(--warning))]';
                       const label =
                         a.severity === 'critical'
                           ? 'Critical'
@@ -700,8 +703,8 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                       {covenantHeadroom.map((c) => {
                         const breachTone =
                           c.firstBreachYear === null
-                            ? 'border-emerald-300/30 bg-emerald-300/[0.03]'
-                            : 'border-rose-300/30 bg-rose-300/[0.04]';
+                            ? 'border-[hsl(var(--success)/0.25)] bg-[hsl(var(--success-tint))]'
+                            : 'border-[hsl(var(--danger)/0.25)] bg-[hsl(var(--danger-tint))]';
                         return (
                           <div
                             key={c.ratioKey}
@@ -955,12 +958,12 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                         {ratios.map((r) => {
                           const dotTone =
                             r.tone === 'good'
-                              ? 'bg-emerald-300'
+                              ? 'bg-[hsl(var(--success))]'
                               : r.tone === 'warn'
-                                ? 'bg-amber-300'
+                                ? 'bg-[hsl(var(--warning))]'
                                 : r.tone === 'risk'
-                                  ? 'bg-rose-300'
-                                  : 'bg-slate-600';
+                                  ? 'bg-[hsl(var(--danger))]'
+                                  : 'bg-[hsl(var(--muted))]';
                           const fmtVal = (v: number | null) => {
                             if (v === null) return '—';
                             if (r.unit === 'x') return `${v.toFixed(2)}x`;
@@ -1209,9 +1212,9 @@ export function CounterpartySection({ data }: { data: SampleReportData }) {
                               {row.map((cell, ci) => {
                                 const tone =
                                   cell.passesCovenant === true
-                                    ? 'bg-emerald-300/[0.06] text-[hsl(var(--success))]'
+                                    ? 'bg-[hsl(var(--success-tint))] text-[hsl(var(--success))]'
                                     : cell.passesCovenant === false
-                                      ? 'bg-rose-300/[0.06] text-[hsl(var(--danger))]'
+                                      ? 'bg-[hsl(var(--danger-tint))] text-[hsl(var(--danger))]'
                                       : '';
                                 return (
                                   <td key={ci} className={`px-2 py-2 text-right font-mono ${tone}`}>

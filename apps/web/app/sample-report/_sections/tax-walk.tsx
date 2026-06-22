@@ -82,7 +82,7 @@ export function TaxWalkSection({ data }: { data: SampleReportData }) {
           </table>
         </div>
         {taxWalk.basisCaveat ? (
-          <p className="mt-3 rounded-[12px] border border-amber-300/20 bg-amber-300/[0.04] px-3 py-2 text-[10px] leading-5 text-[hsl(var(--warning))]">
+          <p className="mt-3 rounded-[12px] border border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--warning-tint))] px-3 py-2 text-[10px] leading-5 text-[hsl(var(--warning))]">
             <span className="font-semibold uppercase tracking-wide text-[hsl(var(--warning))]">
               Basis caveat ·{' '}
             </span>

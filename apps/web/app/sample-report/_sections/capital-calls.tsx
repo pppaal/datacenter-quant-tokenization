@@ -15,7 +15,7 @@ export function CapitalCallsSection({ data }: { data: SampleReportData }) {
           <div>
             <div className="flex items-center gap-2">
               <div className="eyebrow">Capital call schedule</div>
-              <span className="rounded-[6px] border border-amber-300/30 bg-amber-300/[0.04] px-1.5 py-0.5 text-[9px] font-mono uppercase tracking-wide text-[hsl(var(--warning))]">
+              <span className="rounded-[6px] border border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--warning-tint))] px-1.5 py-0.5 text-[9px] font-mono uppercase tracking-wide text-[hsl(var(--warning))]">
                 INDICATIVE
               </span>
             </div>

@@ -35,16 +35,16 @@ export function InsuranceSection({ data }: { data: SampleReportData }) {
           {insuranceSummary.tilesByType.map((tile) => {
             const tone =
               tile.status === 'EXPIRING'
-                ? 'border-amber-300/30 bg-amber-300/[0.04]'
+                ? 'border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--warning-tint))]'
                 : tile.status === 'EXPIRED'
-                  ? 'border-rose-300/30 bg-rose-300/[0.04]'
+                  ? 'border-[hsl(var(--danger)/0.25)] bg-[hsl(var(--danger-tint))]'
                   : 'border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))]';
             const dot =
               tile.status === 'EXPIRING'
-                ? 'bg-amber-300'
+                ? 'bg-[hsl(var(--warning))]'
                 : tile.status === 'EXPIRED'
-                  ? 'bg-rose-300'
-                  : 'bg-emerald-300';
+                  ? 'bg-[hsl(var(--danger))]'
+                  : 'bg-[hsl(var(--success))]';
             return (
               <div
                 key={`${tile.policyType}-${tile.insurer ?? ''}-${tile.expiresOn ?? ''}`}

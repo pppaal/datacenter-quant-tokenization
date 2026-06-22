@@ -35,7 +35,11 @@ export function FreshnessDot({
   const f = classifyFreshness(observedAt);
   if (!f.band) return null;
   const dotTone =
-    f.band === 'fresh' ? 'bg-emerald-300' : f.band === 'recent' ? 'bg-amber-300' : 'bg-rose-300';
+    f.band === 'fresh'
+      ? 'bg-[hsl(var(--success))]'
+      : f.band === 'recent'
+        ? 'bg-[hsl(var(--warning))]'
+        : 'bg-[hsl(var(--danger))]';
   const textTone =
     f.band === 'fresh'
       ? 'text-[hsl(var(--success))]'

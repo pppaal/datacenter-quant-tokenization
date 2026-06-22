@@ -28,10 +28,10 @@ export function IcPacketSection({ data }: { data: SampleReportData }) {
           {asset.committeePackets.map((p) => {
             const statusTone =
               p.status === 'APPROVED'
-                ? 'border-emerald-300/30 bg-emerald-300/[0.04] text-[hsl(var(--success))]'
+                ? 'border-[hsl(var(--success)/0.25)] bg-[hsl(var(--success-tint))] text-[hsl(var(--success))]'
                 : p.status === 'DECLINED'
-                  ? 'border-rose-300/30 bg-rose-300/[0.04] text-[hsl(var(--danger))]'
-                  : 'border-amber-300/30 bg-amber-300/[0.04] text-[hsl(var(--warning))]';
+                  ? 'border-[hsl(var(--danger)/0.25)] bg-[hsl(var(--danger-tint))] text-[hsl(var(--danger))]'
+                  : 'border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--warning-tint))] text-[hsl(var(--warning))]';
             return (
               <li
                 key={p.id}

@@ -40,20 +40,20 @@ export function EsgSection({ data }: { data: SampleReportData }) {
           {esgSummary.rows.map((row) => {
             const tone =
               row.tone === 'good'
-                ? 'border-emerald-300/30 bg-emerald-300/[0.03]'
+                ? 'border-[hsl(var(--success)/0.25)] bg-[hsl(var(--success-tint))]'
                 : row.tone === 'warn'
-                  ? 'border-amber-300/30 bg-amber-300/[0.03]'
+                  ? 'border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--warning-tint))]'
                   : row.tone === 'risk'
-                    ? 'border-rose-300/30 bg-rose-300/[0.03]'
+                    ? 'border-[hsl(var(--danger)/0.25)] bg-[hsl(var(--danger-tint))]'
                     : 'border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))]';
             const dot =
               row.tone === 'good'
-                ? 'bg-emerald-300'
+                ? 'bg-[hsl(var(--success))]'
                 : row.tone === 'warn'
-                  ? 'bg-amber-300'
+                  ? 'bg-[hsl(var(--warning))]'
                   : row.tone === 'risk'
-                    ? 'bg-rose-300'
-                    : 'bg-slate-600';
+                    ? 'bg-[hsl(var(--danger))]'
+                    : 'bg-[hsl(var(--muted))]';
             return (
               <div key={row.key} className={`rounded-[16px] border ${tone} p-3`}>
                 <div className="flex items-center justify-between gap-2">

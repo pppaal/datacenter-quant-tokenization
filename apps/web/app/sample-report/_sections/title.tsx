@@ -63,7 +63,7 @@ export function TitleSection({ data }: { data: SampleReportData }) {
                 {asset.encumbranceRecords.map((e) => (
                   <li
                     key={e.id}
-                    className="rounded-[14px] border border-rose-300/15 bg-rose-300/[0.04] px-3 py-2 text-sm"
+                    className="rounded-[14px] border border-[hsl(var(--danger)/0.25)] bg-[hsl(var(--danger-tint))] px-3 py-2 text-sm"
                   >
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-semibold text-[hsl(var(--foreground))]">
@@ -127,7 +127,7 @@ export function TitleSection({ data }: { data: SampleReportData }) {
                 {asset.planningConstraints.map((c) => (
                   <li
                     key={c.id}
-                    className="rounded-[14px] border border-amber-300/15 bg-amber-300/[0.04] px-3 py-2 text-sm"
+                    className="rounded-[14px] border border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--warning-tint))] px-3 py-2 text-sm"
                   >
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-semibold text-[hsl(var(--foreground))]">{c.title}</span>
