@@ -1,9 +1,9 @@
 'use client';
 
-import { useMemo, useState, startTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
+import { useRouterRefresh } from '@/lib/hooks/use-router-refresh';
 
 type IdentityCandidate = {
   id: string;
@@ -27,7 +27,7 @@ export function AdminIdentityBindingForm({
   hasMapping,
   candidates
 }: AdminIdentityBindingFormProps) {
-  const router = useRouter();
+  const { isRefreshing, refresh } = useRouterRefresh();
   const suggestedCandidateId = useMemo(() => {
     if (!emailSnapshot) {
       return '';
@@ -66,7 +66,7 @@ export function AdminIdentityBindingForm({
       setFeedback(
         nextUserId ? 'Identity mapped to canonical operator.' : 'Identity mapping cleared.'
       );
-      startTransition(() => router.refresh());
+      refresh();
     } catch (caughtError) {
       setError(
         caughtError instanceof Error ? caughtError.message : 'Failed to update identity binding.'
@@ -97,16 +97,16 @@ export function AdminIdentityBindingForm({
       <div className="flex flex-wrap gap-3">
         <Button
           type="button"
-          disabled={submitting !== null || !selectedUserId}
+          disabled={submitting !== null || isRefreshing || !selectedUserId}
           onClick={() => updateBinding(selectedUserId, 'map')}
           data-testid="identity-binding-map"
         >
-          {submitting === 'map' ? 'Mapping...' : 'Map Identity'}
+          {submitting === 'map' || isRefreshing ? 'Mapping...' : 'Map Identity'}
         </Button>
         <Button
           type="button"
           variant="secondary"
-          disabled={submitting !== null || !hasMapping}
+          disabled={submitting !== null || isRefreshing || !hasMapping}
           onClick={() => updateBinding(null, 'clear')}
           data-testid="identity-binding-clear"
         >

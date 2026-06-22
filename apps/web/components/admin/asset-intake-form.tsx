@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, startTransition } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { assetIntakeSchema, type AssetIntakeInput } from '@/lib/validations/asset';
+import { useRouterRefresh } from '@/lib/hooks/use-router-refresh';
 
 type Props = {
   defaultValues?: Partial<AssetIntakeInput>;
@@ -170,6 +171,7 @@ function withCurrencyLabel(
 
 export function AssetIntakeForm({ defaultValues, assetId }: Props) {
   const router = useRouter();
+  const { isRefreshing, refresh } = useRouterRefresh();
   const [submitting, setSubmitting] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const form = useForm<AssetIntakeInput>({
@@ -247,7 +249,7 @@ export function AssetIntakeForm({ defaultValues, assetId }: Props) {
 
       const result = await response.json();
       router.push(`/admin/assets/${result.id}`);
-      startTransition(() => router.refresh());
+      refresh();
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : 'Failed to save asset.');
     } finally {
@@ -427,8 +429,8 @@ export function AssetIntakeForm({ defaultValues, assetId }: Props) {
           Saving this record updates the shared asset profile used by enrichment adapters, valuation
           runs, document uploads, and the downstream review layer.
         </p>
-        <Button type="submit" disabled={submitting}>
-          {submitting ? 'Saving...' : assetId ? 'Update Asset' : 'Create Asset'}
+        <Button type="submit" disabled={submitting || isRefreshing}>
+          {submitting || isRefreshing ? 'Saving...' : assetId ? 'Update Asset' : 'Create Asset'}
         </Button>
       </div>
     </form>

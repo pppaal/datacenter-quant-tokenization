@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, useState, startTransition } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { PropertyMap } from '@/components/admin/property-map';
 import type { MapProviderConfig } from '@/lib/maps/config';
 import type { PropertyExplorerData } from '@/lib/services/property-explorer';
 import { formatNumber, toSentenceCase } from '@/lib/utils';
+import { useRouterRefresh } from '@/lib/hooks/use-router-refresh';
 
 type Props = {
   data: PropertyExplorerData;
@@ -18,6 +19,7 @@ type Props = {
 
 export function PropertyExplorerPanel({ data, mapConfig }: Props) {
   const router = useRouter();
+  const { isRefreshing, refresh } = useRouterRefresh();
   const [selectedId, setSelectedId] = useState(data.candidates[0]?.id ?? null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -46,7 +48,7 @@ export function PropertyExplorerPanel({ data, mapConfig }: Props) {
       }
 
       router.push(`/admin/assets/${payload.id}`);
-      startTransition(() => router.refresh());
+      refresh();
     } catch (caughtError) {
       setError(
         caughtError instanceof Error
@@ -191,10 +193,12 @@ export function PropertyExplorerPanel({ data, mapConfig }: Props) {
                 ) : (
                   <Button
                     onClick={() => bootstrapCandidate(selected.id)}
-                    disabled={busyId === selected.id}
+                    disabled={busyId === selected.id || isRefreshing}
                     data-testid="property-explorer-bootstrap"
                   >
-                    {busyId === selected.id ? 'Bootstrapping...' : 'Bootstrap Asset Dossier'}
+                    {busyId === selected.id || isRefreshing
+                      ? 'Bootstrapping...'
+                      : 'Bootstrap Asset Dossier'}
                   </Button>
                 )}
                 <Link href="/admin/assets/new">

@@ -1,12 +1,12 @@
 'use client';
 
 import { CommitteeDecisionOutcome } from '@prisma/client';
-import { useState, startTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { toSentenceCase } from '@/lib/utils';
+import { useRouterRefresh } from '@/lib/hooks/use-router-refresh';
 
 const outcomes = [
   CommitteeDecisionOutcome.APPROVED,
@@ -16,7 +16,7 @@ const outcomes = [
 ] as const;
 
 export function CommitteePacketDecisionForm({ packetId }: { packetId: string }) {
-  const router = useRouter();
+  const { isRefreshing, refresh } = useRouterRefresh();
   const [outcome, setOutcome] = useState<CommitteeDecisionOutcome>(
     CommitteeDecisionOutcome.APPROVED
   );
@@ -48,7 +48,7 @@ export function CommitteePacketDecisionForm({ packetId }: { packetId: string }) 
 
       setNotes('');
       setFollowUpActions('');
-      startTransition(() => router.refresh());
+      refresh();
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : 'Failed to record decision');
     } finally {
@@ -97,10 +97,10 @@ export function CommitteePacketDecisionForm({ packetId }: { packetId: string }) 
           type="button"
           variant="secondary"
           onClick={onSubmit}
-          disabled={busy}
+          disabled={busy || isRefreshing}
           data-testid="ic-packet-decision-submit"
         >
-          {busy ? 'Saving...' : 'Record Decision'}
+          {busy || isRefreshing ? 'Saving...' : 'Record Decision'}
         </Button>
       </div>
     </div>

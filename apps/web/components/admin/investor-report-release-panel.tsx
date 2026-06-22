@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, startTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { InvestorReportReleaseStatus } from '@prisma/client';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { useRouterRefresh } from '@/lib/hooks/use-router-refresh';
 
 type InvestorReportRecord = {
   id: string;
@@ -45,7 +45,7 @@ function formatDateValue(value: Date | null) {
 }
 
 function ReleaseRow({ report }: { report: InvestorReportRecord }) {
-  const router = useRouter();
+  const { isRefreshing, refresh } = useRouterRefresh();
   const [releaseStatus, setReleaseStatus] = useState<InvestorReportReleaseStatus>(
     report.releaseStatus
   );
@@ -82,7 +82,7 @@ function ReleaseRow({ report }: { report: InvestorReportRecord }) {
       setFeedback(
         releaseStatus === 'RELEASED' ? 'Investor report released.' : 'Release workflow updated.'
       );
-      startTransition(() => router.refresh());
+      refresh();
     } catch (caughtError) {
       setError(
         caughtError instanceof Error
@@ -117,10 +117,10 @@ function ReleaseRow({ report }: { report: InvestorReportRecord }) {
           type="button"
           variant="secondary"
           onClick={save}
-          disabled={submitting || isReleased}
+          disabled={submitting || isRefreshing || isReleased}
           data-testid="investor-report-release-save"
         >
-          {submitting ? 'Saving...' : isReleased ? 'Released' : 'Save Workflow'}
+          {submitting || isRefreshing ? 'Saving...' : isReleased ? 'Released' : 'Save Workflow'}
         </Button>
       </div>
 

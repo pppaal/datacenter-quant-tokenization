@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, startTransition } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AssetClass, DealOriginationSource, DealStage } from '@prisma/client';
@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { dealCreateSchema, type DealCreateInput } from '@/lib/validations/deal';
+import { useRouterRefresh } from '@/lib/hooks/use-router-refresh';
 
 type AssetOption = {
   id: string;
@@ -34,6 +35,7 @@ const numericFields = new Set<keyof DealCreateInput>([
 
 export function DealCreateForm({ assets }: Props) {
   const router = useRouter();
+  const { isRefreshing, refresh } = useRouterRefresh();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const form = useForm<DealCreateInput>({
@@ -77,7 +79,7 @@ export function DealCreateForm({ assets }: Props) {
 
       const deal = await response.json();
       router.push(`/admin/deals/${deal.id}`);
-      startTransition(() => router.refresh());
+      refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create deal.');
     } finally {
@@ -247,8 +249,8 @@ export function DealCreateForm({ assets }: Props) {
           This creates the execution record only. Detailed diligence tasks, counterparties, notes,
           and risks are added on the deal page.
         </p>
-        <Button type="submit" disabled={submitting}>
-          {submitting ? 'Opening...' : 'Open Deal'}
+        <Button type="submit" disabled={submitting || isRefreshing}>
+          {submitting || isRefreshing ? 'Opening...' : 'Open Deal'}
         </Button>
       </div>
     </form>
