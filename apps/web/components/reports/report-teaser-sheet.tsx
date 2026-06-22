@@ -8,10 +8,15 @@ function findSection(report: DealReport, id: string) {
 
 function renderFactCard(fact: ReportFact, key: string) {
   return (
-    <div key={key} className="rounded-[22px] border border-white/10 bg-white/[0.04] p-4">
+    <div
+      key={key}
+      className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4"
+    >
       <div className="fine-print">{fact.label}</div>
-      <div className="mt-3 text-lg font-semibold text-white">{fact.value}</div>
-      {fact.detail ? <p className="mt-2 text-sm leading-7 text-slate-400">{fact.detail}</p> : null}
+      <div className="mt-3 text-lg font-semibold text-[hsl(var(--foreground))]">{fact.value}</div>
+      {fact.detail ? (
+        <p className="mt-2 text-sm leading-7 text-[hsl(var(--foreground-muted))]">{fact.detail}</p>
+      ) : null}
     </div>
   );
 }
@@ -21,7 +26,7 @@ function renderBody(section: ReportSection | undefined) {
   return (
     <div className="space-y-3">
       {section.body.map((paragraph) => (
-        <p key={paragraph} className="text-sm leading-8 text-slate-300">
+        <p key={paragraph} className="text-sm leading-8 text-[hsl(var(--foreground-muted))]">
           {paragraph}
         </p>
       ))}
@@ -42,8 +47,8 @@ function renderBulletList(
           className={[
             'rounded-[18px] border px-4 py-3 text-sm leading-7',
             tone === 'danger'
-              ? 'border-rose-500/20 bg-rose-500/10 text-rose-100'
-              : 'border-white/10 bg-white/[0.03] text-slate-300'
+              ? 'border-[hsl(var(--danger)/0.25)] bg-[hsl(var(--danger-tint))] text-[hsl(var(--danger))]'
+              : 'border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] text-[hsl(var(--foreground-muted))]'
           ].join(' ')}
         >
           {bullet}
@@ -85,7 +90,7 @@ export function ReportTeaserSheet({
           <Badge>{locationLabel}</Badge>
         </div>
 
-        <div className="mt-4 rounded-[20px] border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-sm leading-7 text-amber-100">
+        <div className="mt-4 rounded-[20px] border border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--warning-tint))] px-4 py-3 text-sm leading-7 text-[hsl(var(--warning))]">
           {report.distributionNotice}
         </div>
 
@@ -93,30 +98,32 @@ export function ReportTeaserSheet({
           <div className="space-y-5">
             <div>
               <div className="eyebrow">Institutional One-Page Teaser</div>
-              <h1 className="mt-3 text-5xl font-semibold leading-[0.96] tracking-[-0.05em] text-white md:text-6xl">
+              <h1 className="mt-3 text-5xl font-semibold leading-[0.96] tracking-[-0.05em] text-[hsl(var(--foreground))] md:text-6xl">
                 {assetName}
               </h1>
               <p className="mt-3 text-base font-medium text-accent">{report.title}</p>
             </div>
-            <p className="max-w-4xl text-base leading-8 text-slate-200">{report.heroSummary}</p>
+            <p className="max-w-4xl text-base leading-8 text-[hsl(var(--foreground))]">
+              {report.heroSummary}
+            </p>
           </div>
 
           <Card className="grid gap-3">
             <div className="eyebrow">Process Control</div>
-            <div className="grid gap-3 text-sm text-slate-300">
-              <div className="flex items-center justify-between rounded-[20px] border border-white/10 bg-white/[0.03] px-4 py-3">
+            <div className="grid gap-3 text-sm text-[hsl(var(--foreground-muted))]">
+              <div className="flex items-center justify-between rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-4 py-3">
                 <span>Asset</span>
                 <span>{assetName}</span>
               </div>
-              <div className="flex items-center justify-between rounded-[20px] border border-white/10 bg-white/[0.03] px-4 py-3">
+              <div className="flex items-center justify-between rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-4 py-3">
                 <span>Location</span>
                 <span>{locationLabel}</span>
               </div>
-              <div className="flex items-center justify-between rounded-[20px] border border-white/10 bg-white/[0.03] px-4 py-3">
+              <div className="flex items-center justify-between rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-4 py-3">
                 <span>Generated</span>
                 <span>{report.generatedAtLabel}</span>
               </div>
-              <div className="flex items-center justify-between rounded-[20px] border border-white/10 bg-white/[0.03] px-4 py-3">
+              <div className="flex items-center justify-between rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-4 py-3">
                 <span>Version</span>
                 <span>{report.versionLabel}</span>
               </div>
@@ -132,7 +139,7 @@ export function ReportTeaserSheet({
       <section className="report-teaser-block grid gap-5 xl:grid-cols-[1.04fr_0.96fr]">
         <Card>
           <div className="eyebrow">{situation?.kicker ?? 'Situation'}</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">
+          <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
             {situation?.title ?? 'Opportunity Frame'}
           </h2>
           <div className="mt-5">{renderBody(situation)}</div>
@@ -146,7 +153,7 @@ export function ReportTeaserSheet({
 
         <Card>
           <div className="eyebrow">{snapshot?.kicker ?? 'Snapshot'}</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">
+          <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
             {snapshot?.title ?? 'Asset And Pricing Snapshot'}
           </h2>
           <div className="mt-5 grid gap-4 md:grid-cols-2">
@@ -158,7 +165,7 @@ export function ReportTeaserSheet({
       <section className="report-teaser-block grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
         <Card>
           <div className="eyebrow">{process?.kicker ?? 'Process'}</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">
+          <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
             {process?.title ?? 'Current Process Position'}
           </h2>
           <div className="mt-5">{renderBulletList(process)}</div>
@@ -166,7 +173,7 @@ export function ReportTeaserSheet({
 
         <Card>
           <div className="eyebrow">{risks?.kicker ?? 'Key Flags'}</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">
+          <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
             {risks?.title ?? 'Primary Risks'}
           </h2>
           <div className="mt-5">{renderBulletList(risks, 'danger')}</div>
@@ -176,7 +183,7 @@ export function ReportTeaserSheet({
       <section className="report-teaser-block grid gap-5 xl:grid-cols-[1.04fr_0.96fr]">
         <Card>
           <div className="eyebrow">{materials?.kicker ?? 'Materials'}</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">
+          <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
             {materials?.title ?? 'Data Room Excerpt'}
           </h2>
           <div className="mt-5 space-y-3">
@@ -184,13 +191,13 @@ export function ReportTeaserSheet({
               materials.bullets.map((bullet) => (
                 <div
                   key={bullet}
-                  className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-3 text-sm leading-7 text-slate-300"
+                  className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-4 py-3 text-sm leading-7 text-[hsl(var(--foreground-muted))]"
                 >
                   {bullet}
                 </div>
               ))
             ) : (
-              <div className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-slate-400">
+              <div className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-4 py-3 text-sm text-[hsl(var(--foreground-muted))]">
                 No data room excerpt is available yet.
               </div>
             )}
@@ -199,20 +206,22 @@ export function ReportTeaserSheet({
 
         <Card>
           <div className="eyebrow">Support Pack</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">
+          <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
             Versioned Documents And Integrity
           </h2>
           <div className="mt-5 space-y-3">
             {supportPack.map((document) => (
               <div
                 key={document.id}
-                className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-4"
+                className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-4 py-4"
               >
-                <div className="text-sm font-semibold text-white">{document.title}</div>
-                <div className="mt-2 text-xs uppercase tracking-[0.16em] text-slate-500">
+                <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
+                  {document.title}
+                </div>
+                <div className="mt-2 text-xs uppercase tracking-[0.16em] text-[hsl(var(--muted))]">
                   {document.documentType} / v{document.currentVersion}
                 </div>
-                <p className="report-teaser-doc-summary mt-3 text-sm leading-7 text-slate-400">
+                <p className="report-teaser-doc-summary mt-3 text-sm leading-7 text-[hsl(var(--foreground-muted))]">
                   {document.summary ?? 'No document summary is currently stored.'}
                 </p>
               </div>
@@ -224,17 +233,23 @@ export function ReportTeaserSheet({
       <section className="report-teaser-block report-export-appendix grid gap-5 xl:grid-cols-[0.98fr_1.02fr]">
         <Card>
           <div className="eyebrow">Traceability</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">Control And Audit Trail</h2>
+          <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
+            Control And Audit Trail
+          </h2>
           <div className="mt-5 space-y-3">
             {traceability.map((fact) => (
               <div
                 key={fact.label}
-                className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-4"
+                className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-4 py-4"
               >
                 <div className="fine-print">{fact.label}</div>
-                <div className="mt-2 text-lg font-semibold text-white">{fact.value}</div>
+                <div className="mt-2 text-lg font-semibold text-[hsl(var(--foreground))]">
+                  {fact.value}
+                </div>
                 {fact.detail ? (
-                  <p className="mt-2 text-sm leading-7 text-slate-400">{fact.detail}</p>
+                  <p className="mt-2 text-sm leading-7 text-[hsl(var(--foreground-muted))]">
+                    {fact.detail}
+                  </p>
                 ) : null}
               </div>
             ))}
@@ -243,22 +258,28 @@ export function ReportTeaserSheet({
 
         <Card>
           <div className="eyebrow">Control Sheet</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">Distribution Controls</h2>
+          <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
+            Distribution Controls
+          </h2>
           <div className="mt-5 grid gap-4 md:grid-cols-2">
             {controlFacts.map((fact) => renderFactCard(fact, `control-${fact.label}`))}
           </div>
-          <div className="mt-6 rounded-[20px] border border-amber-500/20 bg-amber-500/10 p-5">
-            <div className="fine-print text-amber-200">Distribution Note</div>
-            <p className="mt-3 text-sm leading-7 text-amber-100">{report.footerNotice}</p>
+          <div className="mt-6 rounded-[20px] border border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--warning-tint))] p-5">
+            <div className="fine-print text-[hsl(var(--warning))]">Distribution Note</div>
+            <p className="mt-3 text-sm leading-7 text-[hsl(var(--warning))]">
+              {report.footerNotice}
+            </p>
           </div>
         </Card>
       </section>
 
-      <section className="report-teaser-footer rounded-[20px] border border-white/10 bg-white/[0.03] px-5 py-4">
-        <div className="grid gap-3 text-xs uppercase tracking-[0.16em] text-slate-500 md:grid-cols-[1.2fr_0.8fr_1fr]">
+      <section className="report-teaser-footer rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-5 py-4">
+        <div className="grid gap-3 text-xs uppercase tracking-[0.16em] text-[hsl(var(--muted))] md:grid-cols-[1.2fr_0.8fr_1fr]">
           <div>
             {report.versionLabel}
-            <span className="ml-2 text-slate-400">Generated {report.generatedAtLabel}</span>
+            <span className="ml-2 text-[hsl(var(--foreground-muted))]">
+              Generated {report.generatedAtLabel}
+            </span>
           </div>
           <div>{assetCode}</div>
           <div className="md:text-right">{report.footerNotice}</div>

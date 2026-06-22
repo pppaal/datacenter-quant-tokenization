@@ -28,7 +28,7 @@ export function ReportShell({
           <Badge>{assetCode}</Badge>
         </div>
 
-        <div className="mt-4 rounded-[20px] border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-sm leading-7 text-amber-100">
+        <div className="mt-4 rounded-[20px] border border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--warning-tint))] px-4 py-3 text-sm leading-7 text-[hsl(var(--warning))]">
           {report.distributionNotice}
         </div>
 
@@ -36,31 +36,33 @@ export function ReportShell({
           <div className="space-y-5">
             <div>
               <div className="eyebrow">Institutional Underwriting Output</div>
-              <h1 className="mt-3 text-5xl font-semibold leading-[0.96] tracking-[-0.05em] text-white md:text-6xl">
+              <h1 className="mt-3 text-5xl font-semibold leading-[0.96] tracking-[-0.05em] text-[hsl(var(--foreground))] md:text-6xl">
                 {report.title}
                 <br />
                 {assetName}
               </h1>
             </div>
-            <p className="max-w-4xl text-base leading-8 text-slate-200">{report.heroSummary}</p>
+            <p className="max-w-4xl text-base leading-8 text-[hsl(var(--foreground))]">
+              {report.heroSummary}
+            </p>
           </div>
 
           <Card className="grid gap-4">
             <div className="eyebrow">Document Control</div>
-            <div className="grid gap-3 text-sm text-slate-300">
-              <div className="flex items-center justify-between rounded-[20px] border border-white/10 bg-white/[0.03] px-4 py-3">
+            <div className="grid gap-3 text-sm text-[hsl(var(--foreground-muted))]">
+              <div className="flex items-center justify-between rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-4 py-3">
                 <span>Asset</span>
                 <span>{assetName}</span>
               </div>
-              <div className="flex items-center justify-between rounded-[20px] border border-white/10 bg-white/[0.03] px-4 py-3">
+              <div className="flex items-center justify-between rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-4 py-3">
                 <span>Location</span>
                 <span>{locationLabel}</span>
               </div>
-              <div className="flex items-center justify-between rounded-[20px] border border-white/10 bg-white/[0.03] px-4 py-3">
+              <div className="flex items-center justify-between rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-4 py-3">
                 <span>Generated</span>
                 <span>{report.generatedAtLabel}</span>
               </div>
-              <div className="flex items-center justify-between rounded-[20px] border border-white/10 bg-white/[0.03] px-4 py-3">
+              <div className="flex items-center justify-between rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-4 py-3">
                 <span>Version</span>
                 <span>{report.versionLabel}</span>
               </div>
@@ -73,9 +75,13 @@ export function ReportShell({
         {report.heroFacts.map((fact) => (
           <div key={fact.label} className="metric-card">
             <div className="fine-print">{fact.label}</div>
-            <div className="mt-3 text-2xl font-semibold text-white">{fact.value}</div>
+            <div className="mt-3 text-2xl font-semibold text-[hsl(var(--foreground))]">
+              {fact.value}
+            </div>
             {fact.detail ? (
-              <p className="mt-2 text-sm leading-7 text-slate-400">{fact.detail}</p>
+              <p className="mt-2 text-sm leading-7 text-[hsl(var(--foreground-muted))]">
+                {fact.detail}
+              </p>
             ) : null}
           </div>
         ))}
@@ -85,12 +91,17 @@ export function ReportShell({
         {report.sections.map((section) => (
           <Card key={section.id}>
             {section.kicker ? <div className="eyebrow">{section.kicker}</div> : null}
-            <h2 className="mt-2 text-2xl font-semibold text-white">{section.title}</h2>
+            <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
+              {section.title}
+            </h2>
 
             {section.body?.length ? (
               <div className="mt-5 space-y-4">
                 {section.body.map((paragraph) => (
-                  <p key={paragraph} className="text-sm leading-8 text-slate-300">
+                  <p
+                    key={paragraph}
+                    className="text-sm leading-8 text-[hsl(var(--foreground-muted))]"
+                  >
                     {paragraph}
                   </p>
                 ))}
@@ -102,12 +113,16 @@ export function ReportShell({
                 {section.facts.map((fact) => (
                   <div
                     key={`${section.id}-${fact.label}`}
-                    className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+                    className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4"
                   >
                     <div className="fine-print">{fact.label}</div>
-                    <div className="mt-3 text-lg font-semibold text-white">{fact.value}</div>
+                    <div className="mt-3 text-lg font-semibold text-[hsl(var(--foreground))]">
+                      {fact.value}
+                    </div>
                     {fact.detail ? (
-                      <p className="mt-2 text-sm leading-7 text-slate-400">{fact.detail}</p>
+                      <p className="mt-2 text-sm leading-7 text-[hsl(var(--foreground-muted))]">
+                        {fact.detail}
+                      </p>
                     ) : null}
                   </div>
                 ))}
@@ -115,11 +130,11 @@ export function ReportShell({
             ) : null}
 
             {section.bullets?.length ? (
-              <ul className="mt-5 space-y-3 text-sm text-slate-300">
+              <ul className="mt-5 space-y-3 text-sm text-[hsl(var(--foreground-muted))]">
                 {section.bullets.map((bullet) => (
                   <li
                     key={`${section.id}-${bullet}`}
-                    className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-3"
+                    className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-4 py-3"
                   >
                     {bullet}
                   </li>
@@ -132,19 +147,23 @@ export function ReportShell({
                 {section.checklist.map((item) => (
                   <div
                     key={`${section.id}-${item.label}`}
-                    className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-4"
+                    className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-4 py-4"
                   >
                     <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div className="text-sm font-semibold text-white">{item.label}</div>
+                      <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
+                        {item.label}
+                      </div>
                       <Badge tone={checklistTone(item.status)}>{item.status}</Badge>
                     </div>
-                    <p className="mt-3 text-sm leading-7 text-slate-400">{item.detail}</p>
+                    <p className="mt-3 text-sm leading-7 text-[hsl(var(--foreground-muted))]">
+                      {item.detail}
+                    </p>
                     {item.sources?.length ? (
                       <div className="mt-3 flex flex-wrap gap-2">
                         {item.sources.map((source) => (
                           <span
                             key={`${section.id}-${item.label}-${source}`}
-                            className="inline-flex rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.18em] text-slate-400"
+                            className="inline-flex rounded-full border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.18em] text-[hsl(var(--foreground-muted))]"
                           >
                             {source}
                           </span>
@@ -162,10 +181,12 @@ export function ReportShell({
       <section className="grid gap-6 print-break xl:grid-cols-[1.02fr_0.98fr]">
         <Card>
           <div className="eyebrow">Document Schedule</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">Versioned Support Pack</h2>
+          <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
+            Versioned Support Pack
+          </h2>
           <div className="mt-5 overflow-x-auto">
-            <table className="min-w-full text-left text-sm text-slate-300">
-              <thead className="text-slate-500">
+            <table className="min-w-full text-left text-sm text-[hsl(var(--foreground-muted))]">
+              <thead className="text-[hsl(var(--muted))]">
                 <tr>
                   <th className="px-0 py-3 font-medium">Document</th>
                   <th className="px-4 py-3 font-medium">Type</th>
@@ -176,11 +197,13 @@ export function ReportShell({
               </thead>
               <tbody>
                 {report.documents.map((document) => (
-                  <tr key={document.id} className="border-t border-white/10 align-top">
+                  <tr key={document.id} className="border-t border-[hsl(var(--border))] align-top">
                     <td className="px-0 py-4">
-                      <div className="font-medium text-white">{document.title}</div>
+                      <div className="font-medium text-[hsl(var(--foreground))]">
+                        {document.title}
+                      </div>
                       {document.summary ? (
-                        <div className="mt-1 text-xs leading-6 text-slate-400">
+                        <div className="mt-1 text-xs leading-6 text-[hsl(var(--foreground-muted))]">
                           {document.summary}
                         </div>
                       ) : null}
@@ -191,7 +214,7 @@ export function ReportShell({
                     <td className="px-4 py-4">
                       <div>{document.hash ? document.hash.slice(0, 12) : 'N/A'}</div>
                       {document.anchoredTxHash ? (
-                        <div className="mt-1 text-xs text-slate-400">
+                        <div className="mt-1 text-xs text-[hsl(var(--foreground-muted))]">
                           Anchor {document.anchoredTxHash.slice(0, 12)} /{' '}
                           {document.chainId ?? 'Unknown'}
                         </div>
@@ -206,17 +229,23 @@ export function ReportShell({
 
         <Card>
           <div className="eyebrow">Traceability</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">Export Control And Integrity</h2>
+          <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
+            Export Control And Integrity
+          </h2>
           <div className="mt-5 space-y-3">
             {report.traceability.map((fact) => (
               <div
                 key={fact.label}
-                className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-4"
+                className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] px-4 py-4"
               >
                 <div className="fine-print">{fact.label}</div>
-                <div className="mt-2 text-lg font-semibold text-white">{fact.value}</div>
+                <div className="mt-2 text-lg font-semibold text-[hsl(var(--foreground))]">
+                  {fact.value}
+                </div>
                 {fact.detail ? (
-                  <p className="mt-2 text-sm leading-7 text-slate-400">{fact.detail}</p>
+                  <p className="mt-2 text-sm leading-7 text-[hsl(var(--foreground-muted))]">
+                    {fact.detail}
+                  </p>
                 ) : null}
               </div>
             ))}
@@ -227,17 +256,23 @@ export function ReportShell({
       <section>
         <Card>
           <div className="eyebrow">Control Sheet</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">Report Control Record</h2>
+          <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
+            Report Control Record
+          </h2>
           <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {report.controlSheet.map((fact) => (
               <div
                 key={fact.label}
-                className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+                className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--surface-hover))] p-4"
               >
                 <div className="fine-print">{fact.label}</div>
-                <div className="mt-3 text-lg font-semibold text-white">{fact.value}</div>
+                <div className="mt-3 text-lg font-semibold text-[hsl(var(--foreground))]">
+                  {fact.value}
+                </div>
                 {fact.detail ? (
-                  <p className="mt-2 text-sm leading-7 text-slate-400">{fact.detail}</p>
+                  <p className="mt-2 text-sm leading-7 text-[hsl(var(--foreground-muted))]">
+                    {fact.detail}
+                  </p>
                 ) : null}
               </div>
             ))}
@@ -246,9 +281,9 @@ export function ReportShell({
       </section>
 
       <section>
-        <Card className="border-amber-500/20 bg-amber-500/10">
-          <div className="eyebrow text-amber-200">Distribution Note</div>
-          <p className="mt-3 text-sm leading-7 text-amber-100">{report.footerNotice}</p>
+        <Card className="border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--warning-tint))]">
+          <div className="eyebrow text-[hsl(var(--warning))]">Distribution Note</div>
+          <p className="mt-3 text-sm leading-7 text-[hsl(var(--warning))]">{report.footerNotice}</p>
         </Card>
       </section>
     </div>
