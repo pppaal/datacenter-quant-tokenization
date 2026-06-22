@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, startTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { useRouterRefresh } from '@/lib/hooks/use-router-refresh';
 
 type Props = {
   assetId: string;
@@ -21,7 +21,7 @@ export function QuickValuationRunButton({
   variant = 'primary',
   label = 'Re-run Analysis'
 }: Props) {
-  const router = useRouter();
+  const { isRefreshing, refresh } = useRouterRefresh();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -31,7 +31,7 @@ export function QuickValuationRunButton({
       <Button
         className={fullWidth ? 'w-full' : undefined}
         variant={variant}
-        disabled={submitting}
+        disabled={submitting || isRefreshing}
         onClick={async () => {
           setSubmitting(true);
           setError(null);
@@ -57,7 +57,7 @@ export function QuickValuationRunButton({
             }
 
             setSuccess(`Valuation run queued for ${assetCode ?? assetId}.`);
-            startTransition(() => router.refresh());
+            refresh();
           } catch (caughtError) {
             setError(caughtError instanceof Error ? caughtError.message : 'Failed to run analysis');
           } finally {
@@ -65,7 +65,7 @@ export function QuickValuationRunButton({
           }
         }}
       >
-        {submitting ? 'Running...' : label}
+        {submitting || isRefreshing ? 'Running...' : label}
       </Button>
       {success ? (
         <p className="mt-2 text-sm text-emerald-300" data-testid="quick-valuation-feedback">
