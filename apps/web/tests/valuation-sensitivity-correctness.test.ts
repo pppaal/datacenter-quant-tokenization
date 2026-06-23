@@ -187,3 +187,27 @@ test('FIX 3: buildCapRateExitSensitivity going-in cap-rate row is no longer iner
     `higher going-in cap (${highCapRow.equityMultiple}x) must out-earn lower (${lowCapRow.equityMultiple}x)`
   );
 });
+
+// ===========================================================================
+// FIX 4 — exit cap floored at >0 rather than zeroing the terminal value.
+// ===========================================================================
+test('FIX 4: buildCapRateExitSensitivity floors the exit cap instead of zeroing the terminal', () => {
+  // Base exit cap 0.5%, steps [-1.0,-0.5,0,0.5,1.0] → col values
+  // [-0.5, 0, 0.5, 1.0, 1.5]. The first two columns are <= 0 and pre-fix zeroed
+  // the terminal value, cratering the most-bullish (lowest-exit-cap) corner.
+  const matrix = buildCapRateExitSensitivity(makeProForma(), 10000, 5000, 6.0, 0.5, 4000);
+
+  const row = matrix.baseRowIndex;
+  const lowestExitCapCell = matrix.cells[row]![0]!; // exit cap −0.5% (clamped to 0.1%)
+  const highestExitCapCell = matrix.cells[row]![4]!; // exit cap 1.5%
+
+  // The lowest exit cap implies the HIGHEST terminal value → highest multiple.
+  assert.ok(
+    lowestExitCapCell.equityMultiple > 0,
+    'lowest-exit-cap corner must not crater to ~0 (terminal must be floored, not zeroed)'
+  );
+  assert.ok(
+    lowestExitCapCell.equityMultiple > highestExitCapCell.equityMultiple,
+    `lower exit cap (${lowestExitCapCell.equityMultiple}x) must out-earn higher exit cap (${highestExitCapCell.equityMultiple}x)`
+  );
+});

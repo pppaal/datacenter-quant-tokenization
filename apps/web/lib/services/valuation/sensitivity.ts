@@ -66,7 +66,15 @@ export function buildCapRateExitSensitivity(
 
   const cells: SensitivityCell[][] = rowValues.map((capRate, ri) =>
     colValues.map((exitCap, ci) => {
-      const adjustedTerminalValue = exitCap > 0 ? baseNoi / (exitCap / 100) : 0;
+      // Floor the exit cap at a small positive value rather than collapsing the
+      // terminal value to ZERO when a downward step pushes it to <= 0. A cap rate
+      // can never realistically be <= 0%, and zeroing the exit proceeds produces a
+      // discontinuous, wildly-pessimistic IRR for the lowest-exit-cap corner of a
+      // low-base-cap asset (the most BULLISH cell should show the HIGHEST value,
+      // not a sudden crater). 0.1% is a conservative floor that keeps the implied
+      // terminal value finite and ordered.
+      const effectiveExitCap = Math.max(exitCap, 0.1);
+      const adjustedTerminalValue = baseNoi / (effectiveExitCap / 100);
       const noiMultiplier = baseCapRatePct > 0 ? capRate / baseCapRatePct : 1;
       const noiDelta = Number(((noiMultiplier - 1) * 100).toFixed(2));
 
