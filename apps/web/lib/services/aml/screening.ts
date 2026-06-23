@@ -204,12 +204,19 @@ export function evaluateScreening(matches: ScreeningMatch[]): ScreeningOutcome {
     };
   }
 
-  const top = matches[0];
+  // Select the HIGHEST-scoring match in each class rather than trusting the
+  // caller to pre-sort. `evaluateScreening` is a public entry point; a provider
+  // (or a direct caller) that returns matches in arbitrary order must still see
+  // a confirmed (>= 0.85) hit classified as REJECTED, not merely ESCALATED.
+  // Reading index 0 of an unsorted array would UNDER-BLOCK a true sanctions hit.
+  const maxByScore = (a: ScreeningMatch, b: ScreeningMatch): ScreeningMatch =>
+    b.matchScore > a.matchScore ? b : a;
+  const top = matches.reduce(maxByScore);
   const sanctionsMatches = matches.filter((m) => m.listType !== 'PEP');
   const isPep = matches.some((m) => m.isPep);
 
   if (sanctionsMatches.length > 0) {
-    const topSanction = sanctionsMatches[0];
+    const topSanction = sanctionsMatches.reduce(maxByScore);
     if (topSanction.matchScore >= CONFIRMED_THRESHOLD) {
       return {
         status: 'REJECTED',

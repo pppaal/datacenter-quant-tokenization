@@ -12,7 +12,8 @@ import {
   screenAndRecord,
   nameSimilarity,
   findScreeningsDueForRescreen,
-  type DenylistEntry
+  type DenylistEntry,
+  type ScreeningMatch
 } from '@/lib/services/aml/screening';
 import { deriveRiskRating } from '@/lib/services/aml/risk-rating';
 import { runAuditPrune } from '../scripts/run-audit-log-pruner';
@@ -175,6 +176,29 @@ test('a non-Latin sanctioned name is screened as a HIT (no false negative)', asy
   const matches = await provider.screen({ name: 'Путин Владимир' });
   assert.ok(matches.length > 0, 'a same-script sanctioned name must produce a match');
   assert.equal(evaluateScreening(matches).blocked, true);
+});
+
+test('evaluateScreening classifies a confirmed hit even when matches are UNSORTED', () => {
+  // Regression: the reducer used to read `matches[0]`, assuming the caller
+  // pre-sorted descending by score. A confirmed (>= 0.85) sanctions hit placed
+  // anywhere but index 0 was UNDER-BLOCKED as merely ESCALATED. Selecting the
+  // max-scoring match fixes this (strictly tighter — never looser).
+  const unsorted: ScreeningMatch[] = [
+    { listType: 'OFAC', entryName: 'low', matchScore: 0.7, isPep: false, reason: 'x' },
+    { listType: 'OFAC', entryName: 'high', matchScore: 0.95, isPep: false, reason: 'y' }
+  ];
+  const outcome = evaluateScreening(unsorted);
+  assert.equal(outcome.status, 'REJECTED', 'top sanctions score 0.95 → REJECTED');
+  assert.equal(outcome.matchScore, 0.95);
+
+  // A PEP-only unsorted set must report the highest PEP score, not index 0.
+  const peps: ScreeningMatch[] = [
+    { listType: 'PEP', entryName: 'p-low', matchScore: 0.62, isPep: true, reason: 'x' },
+    { listType: 'PEP', entryName: 'p-high', matchScore: 0.88, isPep: true, reason: 'y' }
+  ];
+  const pepOutcome = evaluateScreening(peps);
+  assert.equal(pepOutcome.status, 'POTENTIAL_MATCH');
+  assert.equal(pepOutcome.matchScore, 0.88);
 });
 
 test('a sanctions hit BLOCKS (status REJECTED)', async () => {
