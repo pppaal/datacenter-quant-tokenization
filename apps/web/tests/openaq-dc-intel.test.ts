@@ -52,6 +52,29 @@ test('parseAirQuality averages per pollutant across stations and tracks asOf', (
   assert.ok(!('so2' in result));
 });
 
+test('parseAirQuality asOf is the chronologically latest reading across UTC offsets', () => {
+  // Two readings for the same pollutant whose ISO strings sort DIFFERENTLY as
+  // text than in real time:
+  //   "…T12:00:00+09:00" = 2026-06-10T03:00:00Z  (earlier instant, sorts LATER as text)
+  //   "…T04:00:00Z"      = 2026-06-10T04:00:00Z  (later instant, sorts EARLIER as text)
+  const stationOffset = {
+    results: [{ parameter: { name: 'pm25' }, value: 18, datetime: '2026-06-10T12:00:00+09:00' }]
+  };
+  const stationUtc = {
+    results: [{ parameter: { name: 'pm25' }, value: 22, datetime: '2026-06-10T04:00:00Z' }]
+  };
+
+  // Feed the later-instant reading SECOND and FIRST to prove order-independence.
+  const a = parseAirQuality({ results: [{ id: 1 }, { id: 2 }] }, [stationOffset, stationUtc]);
+  const b = parseAirQuality({ results: [{ id: 1 }, { id: 2 }] }, [stationUtc, stationOffset]);
+
+  // The true latest instant is the +0900 reading at 03:00Z? No — 04:00Z is later.
+  // Both orderings must resolve to the 04:00Z reading, not the lexically-larger
+  // "12:00:00+09:00" string.
+  assert.equal(a.asOf, '2026-06-10T04:00:00Z');
+  assert.equal(b.asOf, '2026-06-10T04:00:00Z');
+});
+
 test('fetchAirQuality parses the live two-step payload (key set)', async () => {
   process.env.OPENAQ_API_KEY = 'test-key';
   const calls: string[] = [];
