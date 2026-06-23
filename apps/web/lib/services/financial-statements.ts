@@ -783,6 +783,14 @@ export function buildCreditAssessmentFromStatement(statement: ParsedFinancialSta
   if (workingCapitalKrw !== null && workingCapitalKrw < 0) {
     score -= 8;
   }
+  // Negative EBITDA is a first-order distress signal, but it silently zeroes the
+  // leverage / interest-coverage metrics above (both gate on ebitda > 0), so the
+  // borrower would otherwise escape any penalty for it. Penalise it directly so a
+  // company with no earnings cushion can't screen the same as one merely missing
+  // EBITDA data.
+  if (statement.ebitdaKrw !== null && statement.ebitdaKrw < 0) {
+    score -= 20;
+  }
   if (statement.totalEquityKrw !== null && statement.totalEquityKrw <= 0) {
     score -= 18;
   }

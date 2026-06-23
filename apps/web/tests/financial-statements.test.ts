@@ -175,6 +175,27 @@ test('interest coverage is sign-agnostic on the parsed interest-expense sign', (
   assert.equal(negative.metrics.interestCoverage, 4);
 });
 
+test('negative EBITDA is penalised even though it nulls leverage/coverage metrics', () => {
+  // Negative EBITDA gates the leverage and interest-coverage metrics to null, so
+  // without a direct penalty a distressed borrower would score identically to one
+  // that merely omitted EBITDA. It must score strictly lower.
+  // interestExpense is null so interest-coverage scoring can't fire — this
+  // isolates the EBITDA penalty as the only difference between the two cases.
+  const distressed = buildCreditAssessmentFromStatement(
+    baseStatement({ ebitdaKrw: -4_000_000_000, interestExpenseKrw: null })
+  );
+  const missing = buildCreditAssessmentFromStatement(
+    baseStatement({ ebitdaKrw: null, interestExpenseKrw: null })
+  );
+  // Leverage (debt/EBITDA) still nulls on negative EBITDA (the multiple is
+  // meaningless), so the borrower would escape any leverage penalty.
+  assert.equal(distressed.metrics.leverageMultiple, null);
+  assert.ok(
+    distressed.score < missing.score,
+    `distressed ${distressed.score} should be below missing-EBITDA ${missing.score}`
+  );
+});
+
 test('financial statement ingestion persists statement, line items, and credit assessment', async () => {
   const calls: Record<string, any[]> = {
     counterpartyCreate: [],
