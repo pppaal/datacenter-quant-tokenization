@@ -66,22 +66,39 @@ export function buildCapRateExitSensitivity(
 
   const cells: SensitivityCell[][] = rowValues.map((capRate, ri) =>
     colValues.map((exitCap, ci) => {
-      const adjustedTerminalValue = exitCap > 0 ? baseNoi / (exitCap / 100) : 0;
+      // Floor the exit cap at a small positive value rather than collapsing the
+      // terminal value to ZERO when a downward step pushes it to <= 0. A cap rate
+      // can never realistically be <= 0%, and zeroing the exit proceeds produces a
+      // discontinuous, wildly-pessimistic IRR for the lowest-exit-cap corner of a
+      // low-base-cap asset (the most BULLISH cell should show the HIGHEST value,
+      // not a sudden crater). 0.1% is a conservative floor that keeps the implied
+      // terminal value finite and ordered.
+      const effectiveExitCap = Math.max(exitCap, 0.1);
+      const adjustedTerminalValue = baseNoi / (effectiveExitCap / 100);
       const noiMultiplier = baseCapRatePct > 0 ? capRate / baseCapRatePct : 1;
       const noiDelta = Number(((noiMultiplier - 1) * 100).toFixed(2));
 
+      // The going-in cap-rate axis must actually move the operating cash flows,
+      // otherwise the entire ROW dimension is inert: a higher going-in cap means
+      // a higher entry NOI yield (more income per KRW of basis), so scale the
+      // per-year operating distributions by noiMultiplier. Previously the row
+      // value was computed into noiDelta but never applied, so every row produced
+      // an identical IRR/multiple and the matrix was effectively one-dimensional.
       const cashFlows: number[] = [-initialEquityKrw];
       for (let i = 0; i < years.length; i++) {
         const year = years[i]!;
         const isTerminal = i === years.length - 1;
         const cf =
-          year.afterTaxDistributionKrw +
+          year.afterTaxDistributionKrw * noiMultiplier +
           (isTerminal ? adjustedTerminalValue - proForma.summary.endingDebtBalanceKrw : 0);
         cashFlows.push(cf);
       }
 
       const equityIrr = computeIrr(cashFlows);
-      const totalDistributions = years.reduce((sum, y) => sum + y.afterTaxDistributionKrw, 0);
+      const totalDistributions = years.reduce(
+        (sum, y) => sum + y.afterTaxDistributionKrw * noiMultiplier,
+        0
+      );
       const totalReturn =
         totalDistributions + adjustedTerminalValue - proForma.summary.endingDebtBalanceKrw;
       const equityMultiple =
@@ -114,8 +131,13 @@ export function buildOccupancyRentSensitivity(
   const occupancySteps = [-15, -10, -5, 0, 5];
   const rentSteps = [-20, -10, 0, 10, 20];
 
+  // Clamp BOTH ends of the occupancy axis. Without a lower floor a low base
+  // occupancy combined with a large negative step (e.g. base 10% − 15) produces
+  // a NEGATIVE occupancy, whose occMultiplier (occPct / baseOccupancyPct) flips
+  // sign and turns every operating distribution into a spurious inflow — an
+  // IRR/multiple that improves as occupancy collapses. Floor at 0%.
   const rowValues = occupancySteps.map((s) =>
-    Math.min(Number((baseOccupancyPct + s).toFixed(1)), 100)
+    Math.max(0, Math.min(Number((baseOccupancyPct + s).toFixed(1)), 100))
   );
   const colValues = rentSteps.map((s) => s);
 
@@ -195,7 +217,11 @@ export function buildInterestRateSensitivity(
   const years = proForma.years;
 
   return shiftsBps.map((shiftBps) => {
-    const rateMultiplier = 1 + shiftBps / 100 / Math.max(baseInterestRatePct, 1);
+    // Floor the debt-cost factor at 0: interest expense can fall to zero but
+    // never go NEGATIVE. With a low base rate (e.g. 0.5%) the divisor is floored
+    // at 1, so a −200bps shift would otherwise yield 1 + (−2)/1 = −1, producing
+    // negative interest and a spurious over-credit to equity distributions.
+    const rateMultiplier = Math.max(0, 1 + shiftBps / 100 / Math.max(baseInterestRatePct, 1));
     const debtCostFactor = rateMultiplier;
 
     const cashFlows: number[] = [-initialEquityKrw];
