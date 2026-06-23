@@ -259,3 +259,37 @@ test('applyCholesky on identity returns input', () => {
   assert.deepEqual(applyCholesky(I, [3, -2]), [3, -2]);
   assert.deepEqual(covarianceToCorrelation(I), I);
 });
+
+// ---------------------------------------------------------------------------
+// Correlation coefficients must stay within [-1, 1]
+// ---------------------------------------------------------------------------
+test('covarianceToCorrelation clamps off-diagonal to the [-1, 1] range', () => {
+  // A symmetric matrix whose off-diagonal exceeds sqrt(var_i · var_j) is not a
+  // valid covariance (it would imply |ρ| > 1). The conversion must still return
+  // a well-formed correlation matrix bounded by ±1.
+  const notPsd = [
+    [1, 2],
+    [2, 1]
+  ];
+  const corr = covarianceToCorrelation(notPsd);
+  assert.equal(corr[0]![0], 1);
+  assert.equal(corr[1]![1], 1);
+  assert.equal(corr[0]![1], 1, 'positive overshoot is clamped to +1');
+  assert.equal(corr[1]![0], 1);
+
+  const negativeOvershoot = [
+    [1, -3],
+    [-3, 4]
+  ];
+  const corrNeg = covarianceToCorrelation(negativeOvershoot);
+  assert.equal(corrNeg[0]![1], -1, 'negative overshoot is clamped to -1');
+  assert.equal(corrNeg[1]![0], -1);
+
+  // A genuine, in-range correlation is preserved (not clamped away).
+  const valid = [
+    [4, 1],
+    [1, 1]
+  ];
+  const corrValid = covarianceToCorrelation(valid);
+  assert.ok(Math.abs(corrValid[0]![1]! - 0.5) < 1e-12);
+});
