@@ -1168,6 +1168,122 @@ test('buildDealDiligenceSummary highlights missing and blocked specialist lanes'
   assert.ok(summary.uncoveredCoreTypes.includes(DealDiligenceWorkstreamType.TECHNICAL));
 });
 
+test('buildDealDiligenceSummary does not count non-core sign-offs toward core readiness', () => {
+  const withDeliverable = (id: string) => [
+    {
+      id: `${id}-deliverable`,
+      note: null,
+      document: {
+        id: `${id}-doc`,
+        title: `${id} report`,
+        documentType: 'REPORT',
+        currentVersion: 1,
+        documentHash: `hash-${id}`,
+        updatedAt: new Date()
+      }
+    }
+  ];
+
+  // Core lanes LEGAL / COMMERCIAL / TECHNICAL all exist with evidence, but
+  // only LEGAL is signed off. Two *non-core* lanes (TAX, INSURANCE) are also
+  // signed off, so the buggy `signedOffCount >= coreRequiredTypes.length`
+  // gate (3 total sign-offs >= 3 core) would falsely read as committee-ready.
+  const summary = buildDealDiligenceSummary(
+    {
+      assetClass: 'OFFICE',
+      asset: null
+    } as any,
+    [
+      {
+        id: 'dd_legal',
+        workstreamType: DealDiligenceWorkstreamType.LEGAL,
+        status: DealDiligenceWorkstreamStatus.SIGNED_OFF,
+        deliverables: withDeliverable('legal')
+      },
+      {
+        id: 'dd_commercial',
+        workstreamType: DealDiligenceWorkstreamType.COMMERCIAL,
+        status: DealDiligenceWorkstreamStatus.READY_FOR_SIGNOFF,
+        deliverables: withDeliverable('commercial')
+      },
+      {
+        id: 'dd_technical',
+        workstreamType: DealDiligenceWorkstreamType.TECHNICAL,
+        status: DealDiligenceWorkstreamStatus.READY_FOR_SIGNOFF,
+        deliverables: withDeliverable('technical')
+      },
+      {
+        id: 'dd_tax',
+        workstreamType: DealDiligenceWorkstreamType.TAX,
+        status: DealDiligenceWorkstreamStatus.SIGNED_OFF,
+        deliverables: withDeliverable('tax')
+      },
+      {
+        id: 'dd_insurance',
+        workstreamType: DealDiligenceWorkstreamType.INSURANCE,
+        status: DealDiligenceWorkstreamStatus.SIGNED_OFF,
+        deliverables: withDeliverable('insurance')
+      }
+    ] as any
+  );
+
+  // Three total sign-offs, but only ONE core lane (LEGAL) is signed off.
+  assert.equal(summary.signedOffCount, 3);
+  assert.equal(summary.signedOffCoreCount, 1);
+  assert.notEqual(summary.headline, 'Core specialist diligence is signed off and committee-ready.');
+
+  // Readiness must NOT mark the specialist sign-off gate as done.
+  const readiness = buildDealClosingReadiness(
+    {
+      id: 'deal_core',
+      stage: DealStage.IC,
+      asset: null,
+      assetClass: 'OFFICE',
+      counterparties: [],
+      documentRequests: [],
+      bidRevisions: [],
+      lenderQuotes: [],
+      negotiationEvents: [],
+      diligenceWorkstreams: [
+        {
+          id: 'dd_legal',
+          workstreamType: DealDiligenceWorkstreamType.LEGAL,
+          status: DealDiligenceWorkstreamStatus.SIGNED_OFF,
+          deliverables: withDeliverable('legal')
+        },
+        {
+          id: 'dd_commercial',
+          workstreamType: DealDiligenceWorkstreamType.COMMERCIAL,
+          status: DealDiligenceWorkstreamStatus.READY_FOR_SIGNOFF,
+          deliverables: withDeliverable('commercial')
+        },
+        {
+          id: 'dd_technical',
+          workstreamType: DealDiligenceWorkstreamType.TECHNICAL,
+          status: DealDiligenceWorkstreamStatus.READY_FOR_SIGNOFF,
+          deliverables: withDeliverable('technical')
+        },
+        {
+          id: 'dd_tax',
+          workstreamType: DealDiligenceWorkstreamType.TAX,
+          status: DealDiligenceWorkstreamStatus.SIGNED_OFF,
+          deliverables: withDeliverable('tax')
+        },
+        {
+          id: 'dd_insurance',
+          workstreamType: DealDiligenceWorkstreamType.INSURANCE,
+          status: DealDiligenceWorkstreamStatus.SIGNED_OFF,
+          deliverables: withDeliverable('insurance')
+        }
+      ]
+    } as any,
+    null
+  );
+  const specialistCheck = readiness.checks.find((check) => check.key === 'specialist-signoff');
+  assert.ok(specialistCheck);
+  assert.notEqual(specialistCheck?.status, 'done');
+});
+
 test('buildDealDiligenceWorkpaper and markdown export summarize specialist sign-off cleanly', () => {
   const now = new Date('2026-04-10T00:00:00.000Z');
   const workpaper = buildDealDiligenceWorkpaper({

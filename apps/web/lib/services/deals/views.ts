@@ -488,7 +488,7 @@ export function buildDealClosingReadiness(
       status:
         diligenceSummary.missingCoreTypes.length === 0 &&
         diligenceSummary.blockedCount === 0 &&
-        diligenceSummary.signedOffCount >= diligenceSummary.coreRequiredTypes.length &&
+        diligenceSummary.signedOffCoreCount >= diligenceSummary.coreRequiredTypes.length &&
         diligenceSummary.uncoveredCoreTypes.length === 0
           ? 'done'
           : stageIndex >= getStageIndex(DealStage.DD)
