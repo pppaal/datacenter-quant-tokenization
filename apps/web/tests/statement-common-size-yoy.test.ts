@@ -77,6 +77,21 @@ test('detail-line section has no common-size; single period has null YoY', () =>
   assert.equal(detail.rows[0].yoy?.[0], null); // only one period
 });
 
+test('common-size: null (not sign-flipped) when the CF base is negative', () => {
+  // A cash-burn period: operating cash flow is negative, so the CF section base
+  // is non-positive. Common-size % off a negative base would flip every sign and
+  // mislead — it must collapse to null instead.
+  const view = buildStatementView([
+    { ...periods[0], operatingCashFlow: -5000, capex: 1000 },
+    { ...periods[1], operatingCashFlow: 8000 }
+  ]);
+  const cf = view.sections.find((s) => s.title === '현금흐름표')!;
+  const capexRow = cf.rows.find((r) => r.label.startsWith('자본적지출'))!;
+  // Period 0 base is negative → null; period 1 base is positive → a real %.
+  assert.equal(capexRow.commonSize?.[0], null);
+  assert.equal(typeof capexRow.commonSize?.[1], 'number');
+});
+
 test('YoY null-safe when a period value is null', () => {
   const view = buildStatementView([
     { ...periods[0], netIncome: 1850 },

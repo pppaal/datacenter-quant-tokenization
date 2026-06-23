@@ -164,11 +164,17 @@ function yoyOf(values: (number | null)[]): (number | null)[] {
   });
 }
 
-/** Row value as a % of the per-period section base. */
+/**
+ * Row value as a % of the per-period section base. The base must be positive:
+ * common-size analysis expresses each line as a share of a positive aggregate
+ * (revenue / total assets / operating cash flow). A non-positive base — e.g. a
+ * period with negative operating cash flow — would flip the sign of every
+ * percentage and render a meaningless figure, so we collapse to null instead.
+ */
 function commonSizeOf(values: (number | null)[], basis: (number | null)[]): (number | null)[] {
   return values.map((v, i) => {
     const b = basis[i];
-    if (v === null || b == null || b === 0) return null;
+    if (v === null || b == null || b <= 0) return null;
     return round((v / b) * 100, 1);
   });
 }
