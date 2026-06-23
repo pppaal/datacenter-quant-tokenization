@@ -55,6 +55,20 @@ test('auditCitations: healthy report passes with zero errors', () => {
   assert.equal(audit.issues.filter((i) => i.severity === 'ERROR').length, 0);
 });
 
+test('auditCitations: duplicate source id raises a single DUPLICATE_SOURCE ERROR', () => {
+  const base = makeReport();
+  const report = makeReport({
+    // S1 appears twice → ambiguous footnote. Should be flagged once, as ERROR.
+    sources: [...base.sources, { ...base.sources[0]! }]
+  });
+  const audit = auditCitations(report);
+  assert.equal(audit.ok, false);
+  const dups = audit.issues.filter((i) => i.code === 'DUPLICATE_SOURCE');
+  assert.equal(dups.length, 1);
+  assert.equal(dups[0]!.sourceId, 'S1');
+  assert.equal(dups[0]!.severity, 'ERROR');
+});
+
 test('auditCitations: orphan marker in synthesis raises ERROR', () => {
   const report = makeReport({
     synthesis: '강남 cap rate 5.3% [S1]. 여의도 공실률 [S7].'

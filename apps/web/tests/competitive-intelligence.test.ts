@@ -205,6 +205,60 @@ test('buildCompetitiveIntelligence: transaction velocity buckets are correct', (
   assert.ok(report.transactionVelocity.trailing12mTotalKrw > 0);
 });
 
+test('buildCompetitiveIntelligence: future-dated comps do not inflate trailing windows', () => {
+  // A forward-stamped transaction (30 days AFTER asOf) and a future tenant move
+  // must be excluded from trailing velocity/absorption — previously the
+  // absolute day-distance counted them as "recent".
+  const futureTxn: CompTransaction = {
+    id: 'FUTURE',
+    dealDate: daysAhead(30),
+    priceKrw: 999_000_000_000,
+    gfaSqm: 5_000,
+    capRatePct: 5.0,
+    pricePerSqmKrw: 13_000_000,
+    buyerName: 'Future Fund',
+    sellerName: 'Future Seller',
+    assetLabel: 'Not Yet Built'
+  };
+  const futureMove: TenantMove = {
+    id: 'FUTURE_MOVE',
+    observationDate: daysAhead(20),
+    tenantName: 'Tomorrow Corp',
+    moveType: 'MOVED_IN',
+    areaSqm: 5_000,
+    fromAssetLabel: null,
+    toAssetLabel: 'Not Yet Built'
+  };
+
+  const withFuture = buildCompetitiveIntelligence({
+    ...baseInput,
+    transactions: [...baseInput.transactions, futureTxn],
+    tenantMoves: [...baseInput.tenantMoves, futureMove]
+  });
+  const baseline = buildCompetitiveIntelligence(baseInput);
+
+  assert.equal(
+    withFuture.transactionVelocity.last90dCount,
+    baseline.transactionVelocity.last90dCount
+  );
+  assert.equal(
+    withFuture.transactionVelocity.last365dCount,
+    baseline.transactionVelocity.last365dCount
+  );
+  assert.equal(
+    withFuture.transactionVelocity.trailing12mTotalKrw,
+    baseline.transactionVelocity.trailing12mTotalKrw
+  );
+  assert.equal(
+    withFuture.tenantSignals.last180dMoveInCount,
+    baseline.tenantSignals.last180dMoveInCount
+  );
+  assert.equal(
+    withFuture.tenantSignals.last180dNetAbsorptionSqm,
+    baseline.tenantSignals.last180dNetAbsorptionSqm
+  );
+});
+
 test('buildCompetitiveIntelligence: supply outlook counts only forward pipeline', () => {
   const report = buildCompetitiveIntelligence(baseInput);
   // delivered (past date) excluded; 200d & 400d included in 24mo window

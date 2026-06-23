@@ -180,8 +180,15 @@ function valuePercentile(value: number, sorted: number[]): number {
   return Math.round((below / sorted.length) * 100);
 }
 
-function daysBetween(a: Date, b: Date): number {
-  return Math.abs((b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24));
+/**
+ * True when `eventDate` falls within the trailing `windowDays` ending at `asOf`
+ * — i.e. it is on/before `asOf` and no more than `windowDays` old. A naive
+ * absolute day-distance would also match FUTURE-dated events (clock skew or a
+ * forward-stamped comp), which must NOT inflate trailing velocity/absorption.
+ */
+function withinTrailingWindow(eventDate: Date, asOf: Date, windowDays: number): boolean {
+  const ageDays = (asOf.getTime() - eventDate.getTime()) / (1000 * 60 * 60 * 24);
+  return ageDays >= 0 && ageDays <= windowDays;
 }
 
 // ---------------------------------------------------------------------------
@@ -189,11 +196,11 @@ function daysBetween(a: Date, b: Date): number {
 // ---------------------------------------------------------------------------
 
 function analyzeTransactionVelocity(txns: CompTransaction[], asOf: Date): TransactionVelocity {
-  const last90 = txns.filter((t) => daysBetween(t.dealDate, asOf) <= 90).length;
-  const last180 = txns.filter((t) => daysBetween(t.dealDate, asOf) <= 180).length;
-  const last365 = txns.filter((t) => daysBetween(t.dealDate, asOf) <= 365).length;
+  const last90 = txns.filter((t) => withinTrailingWindow(t.dealDate, asOf, 90)).length;
+  const last180 = txns.filter((t) => withinTrailingWindow(t.dealDate, asOf, 180)).length;
+  const last365 = txns.filter((t) => withinTrailingWindow(t.dealDate, asOf, 365)).length;
   const trailing12mTotal = txns
-    .filter((t) => daysBetween(t.dealDate, asOf) <= 365)
+    .filter((t) => withinTrailingWindow(t.dealDate, asOf, 365))
     .reduce((sum, t) => sum + t.priceKrw, 0);
   const prior180To365 = last365 - last180;
   let momentum: TransactionVelocity['momentum'];
@@ -248,7 +255,7 @@ function analyzeSupply(
 }
 
 function analyzeTenantSignals(moves: TenantMove[], asOf: Date): TenantSignals {
-  const recent = moves.filter((m) => daysBetween(m.observationDate, asOf) <= 180);
+  const recent = moves.filter((m) => withinTrailingWindow(m.observationDate, asOf, 180));
   const moveIn = recent.filter(
     (m) => m.moveType === 'MOVED_IN' || m.moveType === 'EXPANSION'
   ).length;

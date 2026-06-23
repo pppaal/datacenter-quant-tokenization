@@ -30,6 +30,7 @@ export type CitationIssue = {
     | 'UNCITED_CLAIM' // claim has empty sourceIds array
     | 'MISSING_PUBLISHER' // source has no publisher attribution
     | 'STALE_SOURCE' // published date more than 18 months before asOf
+    | 'DUPLICATE_SOURCE' // same source id appears more than once in `sources`
     | 'NO_SOURCES'; // report has zero sources (degenerate)
   sourceId?: string;
   claimIndex?: number;
@@ -73,6 +74,25 @@ export function auditCitations(report: ResearchReport): CitationAudit {
       code: 'NO_SOURCES',
       detail: '리포트에 인용 가능한 출처가 하나도 없습니다.'
     });
+  }
+
+  // Duplicate source ids silently double-count footnotes and make a citation
+  // marker ambiguous (which S1 does [S1] point to?). Flag each duplicated id
+  // exactly once as an ERROR — an audited report must have unique sources.
+  const seenSourceIds = new Set<string>();
+  const reportedDuplicateIds = new Set<string>();
+  for (const s of report.sources) {
+    if (seenSourceIds.has(s.id) && !reportedDuplicateIds.has(s.id)) {
+      reportedDuplicateIds.add(s.id);
+      const occurrences = report.sources.filter((o) => o.id === s.id).length;
+      issues.push({
+        severity: 'ERROR',
+        code: 'DUPLICATE_SOURCE',
+        sourceId: s.id,
+        detail: `${s.id} 출처 id가 sources 배열에 ${occurrences}번 중복되어 있습니다 — 각주가 모호해집니다.`
+      });
+    }
+    seenSourceIds.add(s.id);
   }
 
   for (const m of uniqueMarkers) {
