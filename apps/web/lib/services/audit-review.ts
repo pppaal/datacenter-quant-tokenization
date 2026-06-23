@@ -86,12 +86,25 @@ function isValidDate(value: Date | undefined): value is Date {
   return value instanceof Date && !Number.isNaN(value.getTime());
 }
 
+/**
+ * Normalize a requested page size to a safe integer within [1, MAX_LIMIT].
+ * Guards against `NaN`, fractional, negative, and oversized inputs — any of
+ * which would otherwise be forwarded as a Prisma `take` and either throw
+ * (non-integer `take`) or read an unbounded/empty page.
+ */
+export function resolveSafeAuditLimit(requested: number | undefined): number {
+  if (requested === undefined || !Number.isFinite(requested)) {
+    return DEFAULT_LIMIT;
+  }
+  const floored = Math.floor(requested);
+  return Math.max(1, Math.min(MAX_LIMIT, floored));
+}
+
 export async function listAuditEvents(
   filters: AuditEventFilters,
   db: Pick<PrismaClient, 'auditEvent'> = prisma
 ): Promise<AuditEventListResult> {
-  const requestedLimit = filters.limit ?? DEFAULT_LIMIT;
-  const safeLimit = Math.max(1, Math.min(MAX_LIMIT, requestedLimit));
+  const safeLimit = resolveSafeAuditLimit(filters.limit);
   const where = buildWhereClause(filters);
   const trimmedCursor = filters.cursor?.trim();
   const hasCursor = Boolean(trimmedCursor && trimmedCursor.length > 0);
