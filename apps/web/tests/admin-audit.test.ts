@@ -9,6 +9,7 @@ import {
 import {
   buildOpsAlertSummary,
   getDocumentStorageReadiness,
+  getSecurityOverview,
   listRecentOpsRuns,
   recordAuditEvent
 } from '@/lib/services/audit';
@@ -190,4 +191,83 @@ test('buildOpsAlertSummary escalates intervention when runs are stale or repeate
   assert.equal(summary.researchFailureStreak, 2);
   assert.equal(summary.failureStreakThreshold, 2);
   assert.ok(summary.interventionItems.some((item) => /failed 2 runs in a row/i.test(item)));
+});
+
+test('getSecurityOverview actorSummary dedups actors, derives last-seen from createdAt, and is stably ordered', async () => {
+  const t = (iso: string) => new Date(iso);
+  const auditRows = [
+    {
+      id: 'e1',
+      actorIdentifier: 'analyst',
+      actorRole: 'ANALYST',
+      action: 'a',
+      entityType: 'deal',
+      entityId: null,
+      assetId: null,
+      requestPath: null,
+      requestMethod: null,
+      ipAddress: null,
+      statusLabel: 'SUCCESS',
+      metadata: null,
+      createdAt: t('2026-05-01T00:00:00.000Z')
+    },
+    {
+      id: 'e2',
+      actorIdentifier: 'analyst',
+      actorRole: 'ANALYST',
+      action: 'b',
+      entityType: 'deal',
+      entityId: null,
+      assetId: null,
+      requestPath: null,
+      requestMethod: null,
+      ipAddress: null,
+      statusLabel: 'FAILED',
+      metadata: null,
+      // Newer than e1; proves last-seen tracks the max createdAt.
+      createdAt: t('2026-06-01T00:00:00.000Z')
+    },
+    {
+      id: 'e3',
+      actorIdentifier: 'admin',
+      actorRole: 'ADMIN',
+      action: 'c',
+      entityType: 'valuation',
+      entityId: null,
+      assetId: null,
+      requestPath: null,
+      requestMethod: null,
+      ipAddress: null,
+      statusLabel: 'SUCCESS',
+      metadata: null,
+      createdAt: t('2026-04-01T00:00:00.000Z')
+    }
+  ];
+
+  const emptyFindMany = async () => [];
+  const db = {
+    auditEvent: { findMany: async () => auditRows },
+    researchSyncRun: { findMany: emptyFindMany },
+    sourceRefreshRun: { findMany: emptyFindMany },
+    user: { findMany: emptyFindMany },
+    opsAlertDelivery: { findMany: emptyFindMany }
+    // adminIdentityBinding + opsWorkItem are optional and intentionally omitted.
+  };
+
+  const overview = await getSecurityOverview(db as any, { NODE_ENV: 'test' } as NodeJS.ProcessEnv);
+
+  // Two distinct actors despite three events (analyst deduped).
+  assert.equal(overview.actorSummary.length, 2);
+  const analyst = overview.actorSummary.find((a) => a.actorIdentifier === 'analyst')!;
+  assert.equal(analyst.eventCount, 2);
+  assert.equal(analyst.failureCount, 1);
+  // last-seen is the NEWER of the two analyst events, not the first encountered.
+  assert.equal(analyst.lastSeenAt.getTime(), t('2026-06-01T00:00:00.000Z').getTime());
+  // Ordering is by last-seen desc → analyst (Jun) before admin (Apr).
+  assert.equal(overview.actorSummary[0].actorIdentifier, 'analyst');
+
+  // The reconciling roll-up is exposed alongside the per-actor list.
+  assert.equal(overview.auditSummary.totalCount, 3);
+  assert.equal(overview.auditSummary.failureCount, 1);
+  assert.equal(overview.auditSummary.distinctActorCount, 2);
 });

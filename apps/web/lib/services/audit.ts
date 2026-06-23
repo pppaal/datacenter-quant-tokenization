@@ -8,6 +8,7 @@ import {
   listRecentAdminIdentityBindings
 } from '@/lib/security/admin-identity';
 import { listRecentOpsAlertDeliveries } from '@/lib/services/ops-alerts';
+import { summarizeAuditEvents } from '@/lib/services/audit-review';
 
 export type AuditEventInput = {
   actorIdentifier?: string | null;
@@ -580,30 +581,10 @@ export async function getSecurityOverview(
         })
       : Promise.resolve([])
   ]);
-  const actorSummaryMap = new Map<
-    string,
-    { actorIdentifier: string; actorRole: string; eventCount: number; lastSeenAt: Date }
-  >();
-
-  for (const event of auditEvents) {
-    const key = `${event.actorIdentifier}:${event.actorRole}`;
-    const existing = actorSummaryMap.get(key);
-
-    if (existing) {
-      existing.eventCount += 1;
-      if (event.createdAt > existing.lastSeenAt) {
-        existing.lastSeenAt = event.createdAt;
-      }
-      continue;
-    }
-
-    actorSummaryMap.set(key, {
-      actorIdentifier: event.actorIdentifier,
-      actorRole: event.actorRole,
-      eventCount: 1,
-      lastSeenAt: event.createdAt
-    });
-  }
+  // Reuse the audit-domain aggregator so actor dedup, last-seen (derived from
+  // `createdAt`), failure counting, and a stable tie-broken ordering stay
+  // consistent with the audit-review summary instead of being re-implemented.
+  const auditSummary = summarizeAuditEvents(auditEvents);
 
   return {
     auditEvents,
@@ -617,9 +598,8 @@ export async function getSecurityOverview(
     operatorSeats,
     opsAlertDeliveries,
     opsWorkItems,
-    actorSummary: [...actorSummaryMap.values()].sort(
-      (left, right) => right.lastSeenAt.getTime() - left.lastSeenAt.getTime()
-    ),
+    actorSummary: auditSummary.actors,
+    auditSummary,
     storageReadiness: getDocumentStorageReadiness(env),
     aiReadiness: getAiReadiness(env)
   };
