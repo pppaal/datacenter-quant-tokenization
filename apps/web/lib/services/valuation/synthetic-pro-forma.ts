@@ -250,6 +250,15 @@ export function buildSyntheticProForma(inputs: ProFormaInputs): {
   // sane band so a pathological opex draw cannot drive NOI negative or balloon.
   const opexNoiFactor = Math.min(1.5, Math.max(0.5, 1 - noiOpexHaircut));
 
+  // Revenue is back-derived from NOI as NOI / (1 − opexRatio). A caller passing
+  // opexRatio >= 1 (100% of revenue consumed by opex) makes the denominator zero
+  // or negative, which would otherwise yield Infinity/NaN or a negative revenue
+  // that silently corrupts every downstream line item. Clamp the opex ratio into
+  // [0, 0.95] so the implied gross margin is always at least 5%. The base/MC path
+  // already keeps opexRatio well inside this band, so this is a defensive guard
+  // for direct callers, not a behavioral change for existing inputs.
+  const safeOpexRatio = Math.min(0.95, Math.max(0, opexRatio));
+
   const acquisitionTax = Math.round(purchasePriceKrw * (acquisitionTaxPct / 100));
   const totalBasis = purchasePriceKrw + acquisitionTax;
 
@@ -335,8 +344,8 @@ export function buildSyntheticProForma(inputs: ProFormaInputs): {
     }
     // FIX 3: opex deviation from base actually moves NOI (factor 1 at base).
     baseNoiThisYear *= opexNoiFactor;
-    const revenue = Math.round(baseNoiThisYear / (1 - opexRatio));
-    const opex = Math.round(revenue * opexRatio);
+    const revenue = Math.round(baseNoiThisYear / (1 - safeOpexRatio));
+    const opex = Math.round(revenue * safeOpexRatio);
     const noi = revenue - opex;
     const cfads = noi;
 

@@ -6,6 +6,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { buildOccupancyRentSensitivity } from '@/lib/services/valuation/sensitivity';
+import {
+  buildSyntheticProForma,
+  type ProFormaInputs
+} from '@/lib/services/valuation/synthetic-pro-forma';
 import type { ProFormaBaseCase } from '@/lib/services/valuation/types';
 
 function makeProForma(): ProFormaBaseCase {
@@ -81,6 +85,32 @@ function makeProForma(): ProFormaBaseCase {
   };
 }
 
+function baseProFormaInputs(): ProFormaInputs {
+  const purchase = 100_000_000_000;
+  const capRatePct = 5.0;
+  return {
+    purchasePriceKrw: purchase,
+    ltvPct: 55,
+    interestRatePct: 4.5,
+    amortTermMonths: 360,
+    capRatePct,
+    exitCapRatePct: 5.5,
+    year1Noi: Math.round((purchase * capRatePct) / 100),
+    growthPct: 2.5,
+    opexRatio: 0.3,
+    propertyTaxPct: 0.3,
+    insurancePct: 0.1,
+    corpTaxPct: 22,
+    exitTaxPct: 22,
+    acquisitionTaxPct: 4.6,
+    landValuePct: 70,
+    depreciationYears: 40,
+    exitCostPct: 2.0,
+    propertyTaxGrowthPct: 2.0,
+    capexReservePct: 2.0
+  };
+}
+
 // ===========================================================================
 // FIX 1 — occupancy axis floors at 0; negative occupancy can't sign-flip flows.
 // ===========================================================================
@@ -106,4 +136,26 @@ test('FIX 1: buildOccupancyRentSensitivity floors occupancy at 0 (no negative-oc
     highestOcc.equityMultiple >= lowestOcc.equityMultiple,
     `higher occupancy (${highestOcc.equityMultiple}x) must not under-earn lower occupancy (${lowestOcc.equityMultiple}x)`
   );
+});
+
+// ===========================================================================
+// FIX 2 — opexRatio >= 1 no longer divides by zero (revenue stays finite/positive).
+// ===========================================================================
+test('FIX 2: buildSyntheticProForma guards opexRatio >= 1 (no Infinity/NaN revenue)', () => {
+  const built = buildSyntheticProForma({ ...baseProFormaInputs(), opexRatio: 1.0 });
+  const y1 = built.proForma.years[0]!;
+  assert.ok(Number.isFinite(y1.revenueKrw), 'revenue must be finite for opexRatio = 1.0');
+  assert.ok(y1.revenueKrw > 0, 'revenue must stay positive (clamped denominator)');
+  assert.ok(Number.isFinite(y1.operatingExpenseKrw) && y1.operatingExpenseKrw >= 0);
+
+  // opexRatio just above 1 (pathological) must also stay finite, not negative.
+  const over = buildSyntheticProForma({ ...baseProFormaInputs(), opexRatio: 1.4 });
+  const oy1 = over.proForma.years[0]!;
+  assert.ok(Number.isFinite(oy1.revenueKrw) && oy1.revenueKrw > 0);
+
+  // A normal opexRatio is unaffected (no behavioral change inside the band).
+  const normal = buildSyntheticProForma({ ...baseProFormaInputs(), opexRatio: 0.3 });
+  const ny1 = normal.proForma.years[0]!;
+  // year1Noi = 5B, revenue = 5B / 0.7 ≈ 7.142857B.
+  assert.equal(ny1.revenueKrw, Math.round(5_000_000_000 / 0.7));
 });
