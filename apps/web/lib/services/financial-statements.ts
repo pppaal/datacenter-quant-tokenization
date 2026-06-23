@@ -695,9 +695,17 @@ export function buildCreditAssessmentFromStatement(statement: ParsedFinancialSta
     statement.totalDebtKrw !== null && statement.totalEquityKrw && statement.totalEquityKrw > 0
       ? Number((statement.totalDebtKrw / statement.totalEquityKrw).toFixed(2))
       : null;
+  // Interest expense is stored with either sign depending on the source: the
+  // document parser keeps the filed sign (parenthesised "(2,400)" → negative),
+  // while the AI/DART paths emit a positive magnitude. Coverage is EBITDA over
+  // the *magnitude* of interest, so normalise with Math.abs — otherwise an
+  // identical company yields a coverage ratio from one ingest path and `null`
+  // from the other purely because of the parsed sign.
   const interestCoverage =
-    statement.ebitdaKrw !== null && statement.interestExpenseKrw && statement.interestExpenseKrw > 0
-      ? Number((statement.ebitdaKrw / statement.interestExpenseKrw).toFixed(2))
+    statement.ebitdaKrw !== null &&
+    statement.interestExpenseKrw !== null &&
+    Math.abs(statement.interestExpenseKrw) > 0
+      ? Number((statement.ebitdaKrw / Math.abs(statement.interestExpenseKrw)).toFixed(2))
       : null;
   const cashToDebtRatio =
     statement.cashKrw !== null && statement.totalDebtKrw && statement.totalDebtKrw > 0
