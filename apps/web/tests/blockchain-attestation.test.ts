@@ -83,6 +83,48 @@ test('buildNavAttestation supports custom totalSharesScaled', () => {
   assert.equal(att.navPerShare, 1000n * 10n ** 18n);
 });
 
+test('buildNavAttestation rejects a negative valuation instead of signing a garbage NAV', () => {
+  // Regression: a negative baseCaseValueKrw previously produced a negative
+  // navPerShare which would wrap/corrupt when encoded as an on-chain uint256.
+  assert.throws(
+    () =>
+      buildNavAttestation({
+        valuationRun: { id: 'r', baseCaseValueKrw: -100, createdAt: new Date(0) },
+        asset: { assetCode: 'A' }
+      }),
+    /non-negative/
+  );
+});
+
+test('buildNavAttestation rejects non-finite valuation', () => {
+  for (const bad of [NaN, Infinity, -Infinity]) {
+    assert.throws(
+      () =>
+        buildNavAttestation({
+          valuationRun: { id: 'r', baseCaseValueKrw: bad, createdAt: new Date(0) },
+          asset: { assetCode: 'A' }
+        }),
+      /finite/
+    );
+  }
+});
+
+test('buildNavAttestation rejects non-positive totalSharesScaled', () => {
+  assert.throws(
+    () =>
+      buildNavAttestation({
+        valuationRun: {
+          id: 'r',
+          baseCaseValueKrw: 100,
+          totalSharesScaled: 0n,
+          createdAt: new Date(0)
+        },
+        asset: { assetCode: 'A' }
+      }),
+    /positive number of shares/
+  );
+});
+
 test('attestationDigest is deterministic for same input', () => {
   const att = buildNavAttestation({
     valuationRun: { id: 'run', baseCaseValueKrw: 100, createdAt: new Date(0) },

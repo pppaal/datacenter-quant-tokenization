@@ -130,9 +130,22 @@ export function buildNavAttestation(opts: {
   quoteSymbol?: string;
 }): NavAttestation {
   const totalShares = opts.valuationRun.totalSharesScaled ?? 10n ** 18n;
+  if (totalShares <= 0n) {
+    throw new Error('totalSharesScaled must be a positive number of shares.');
+  }
+  const baseCaseValueKrw = opts.valuationRun.baseCaseValueKrw;
+  if (!Number.isFinite(baseCaseValueKrw)) {
+    throw new Error(`baseCaseValueKrw must be a finite number (got ${baseCaseValueKrw}).`);
+  }
+  if (baseCaseValueKrw < 0) {
+    // navPerShare is an on-chain uint256; a negative value would either
+    // wrap to a garbage huge number or fail at ABI encode far downstream.
+    // Reject it here with a clear domain error.
+    throw new Error(`baseCaseValueKrw must be non-negative (got ${baseCaseValueKrw}).`);
+  }
   // baseCaseValueKrw is JS number (KRW). Scale to 18 decimals before
   // dividing by totalShares to preserve precision.
-  const valueScaled = BigInt(Math.round(opts.valuationRun.baseCaseValueKrw)) * 10n ** 18n;
+  const valueScaled = BigInt(Math.round(baseCaseValueKrw)) * 10n ** 18n;
   const navPerShare = (valueScaled * 10n ** 18n) / totalShares;
   const symbol = opts.quoteSymbol ?? 'KRW';
   const navTimestamp = BigInt(Math.floor(opts.valuationRun.createdAt.getTime() / 1000));
