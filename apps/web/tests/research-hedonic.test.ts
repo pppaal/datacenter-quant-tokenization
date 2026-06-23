@@ -137,3 +137,25 @@ test('fitHedonic returns null for singular design', () => {
     assert.equal(fit.rSquared, 0);
   }
 });
+
+test('fitHedonic returns null (no NaN/0) for a non-positive query size', () => {
+  // A well-identified comp set, but the query asks for size 0. The design row
+  // takes ln(query.sizeSqm) → -Infinity, which previously produced a fitted
+  // price of 0 (silent corruption). The fit must instead be rejected.
+  const rows: CompRow[] = [];
+  for (let i = 0; i < 12; i += 1) {
+    rows.push(
+      comp({
+        pricePerSqmKrw: 1_000_000 + i * 5_000,
+        sizeSqm: 2_000 + i * 250,
+        vintageYear: 2010 + i
+      })
+    );
+  }
+  // Sanity: a valid query fits.
+  assert.ok(fitHedonic(rows, { sizeSqm: 3000 }));
+  // Degenerate query sizes are rejected rather than returning NaN/0.
+  assert.equal(fitHedonic(rows, { sizeSqm: 0 }), null);
+  assert.equal(fitHedonic(rows, { sizeSqm: -100 }), null);
+  assert.equal(fitHedonic(rows, { sizeSqm: Number.NaN }), null);
+});

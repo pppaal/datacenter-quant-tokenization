@@ -165,6 +165,13 @@ function buildFeatureNames(
  * thin to fit (fewer rows than parameters or zero variance in y).
  */
 export function fitHedonic(comps: CompRow[], query: HedonicQuery): HedonicFit | null {
+  // Guard the query: the design row takes ln(query.sizeSqm), so a non-positive
+  // or non-finite size yields -Infinity/NaN and silently corrupts the fitted
+  // price (fittedPricePerSqmKrw → 0 / NaN). Treat it as un-fittable.
+  if (typeof query.sizeSqm !== 'number' || !(query.sizeSqm > VALID_LN_THRESHOLD)) {
+    return null;
+  }
+
   // Filter to rows with enough info.
   const valid = comps.filter(
     (r) =>
