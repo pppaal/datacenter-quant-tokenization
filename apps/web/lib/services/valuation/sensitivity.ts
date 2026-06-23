@@ -70,18 +70,27 @@ export function buildCapRateExitSensitivity(
       const noiMultiplier = baseCapRatePct > 0 ? capRate / baseCapRatePct : 1;
       const noiDelta = Number(((noiMultiplier - 1) * 100).toFixed(2));
 
+      // The going-in cap-rate axis must actually move the operating cash flows,
+      // otherwise the entire ROW dimension is inert: a higher going-in cap means
+      // a higher entry NOI yield (more income per KRW of basis), so scale the
+      // per-year operating distributions by noiMultiplier. Previously the row
+      // value was computed into noiDelta but never applied, so every row produced
+      // an identical IRR/multiple and the matrix was effectively one-dimensional.
       const cashFlows: number[] = [-initialEquityKrw];
       for (let i = 0; i < years.length; i++) {
         const year = years[i]!;
         const isTerminal = i === years.length - 1;
         const cf =
-          year.afterTaxDistributionKrw +
+          year.afterTaxDistributionKrw * noiMultiplier +
           (isTerminal ? adjustedTerminalValue - proForma.summary.endingDebtBalanceKrw : 0);
         cashFlows.push(cf);
       }
 
       const equityIrr = computeIrr(cashFlows);
-      const totalDistributions = years.reduce((sum, y) => sum + y.afterTaxDistributionKrw, 0);
+      const totalDistributions = years.reduce(
+        (sum, y) => sum + y.afterTaxDistributionKrw * noiMultiplier,
+        0
+      );
       const totalReturn =
         totalDistributions + adjustedTerminalValue - proForma.summary.endingDebtBalanceKrw;
       const equityMultiple =

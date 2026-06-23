@@ -5,7 +5,10 @@
  */
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { buildOccupancyRentSensitivity } from '@/lib/services/valuation/sensitivity';
+import {
+  buildCapRateExitSensitivity,
+  buildOccupancyRentSensitivity
+} from '@/lib/services/valuation/sensitivity';
 import {
   buildSyntheticProForma,
   type ProFormaInputs
@@ -158,4 +161,29 @@ test('FIX 2: buildSyntheticProForma guards opexRatio >= 1 (no Infinity/NaN reven
   const ny1 = normal.proForma.years[0]!;
   // year1Noi = 5B, revenue = 5B / 0.7 ≈ 7.142857B.
   assert.equal(ny1.revenueKrw, Math.round(5_000_000_000 / 0.7));
+});
+
+// ===========================================================================
+// FIX 3 — going-in cap-rate ROW axis actually moves the result (not inert).
+// ===========================================================================
+test('FIX 3: buildCapRateExitSensitivity going-in cap-rate row is no longer inert', () => {
+  const matrix = buildCapRateExitSensitivity(makeProForma(), 10000, 5000, 6.0, 6.5, 4000);
+
+  // Hold exit cap fixed (center column) and vary the going-in cap row. A higher
+  // going-in cap = higher entry NOI yield = higher operating distributions =
+  // higher multiple. Pre-fix every row was identical because noiMultiplier was
+  // computed but never applied.
+  const col = matrix.baseColIndex;
+  const lowCapRow = matrix.cells[0]![col]!; // going-in cap 5.0%
+  const highCapRow = matrix.cells[4]![col]!; // going-in cap 7.0%
+
+  assert.notEqual(
+    lowCapRow.equityMultiple,
+    highCapRow.equityMultiple,
+    'going-in cap-rate rows must differ — the row axis must not be inert'
+  );
+  assert.ok(
+    highCapRow.equityMultiple > lowCapRow.equityMultiple,
+    `higher going-in cap (${highCapRow.equityMultiple}x) must out-earn lower (${lowCapRow.equityMultiple}x)`
+  );
 });
