@@ -15,7 +15,13 @@ export function deriveResearchFreshness(observedAt: Date | null | undefined): Re
     };
   }
 
-  const ageDays = Math.floor((Date.now() - observedAt.getTime()) / (1000 * 60 * 60 * 24));
+  // Clamp at 0: a future-dated observation (clock skew or a forward-stamped
+  // source) must not surface as a misleading negative age, and must still be
+  // treated as "current" rather than slipping past the freshness windows.
+  const ageDays = Math.max(
+    0,
+    Math.floor((Date.now() - observedAt.getTime()) / (1000 * 60 * 60 * 24))
+  );
   if (ageDays <= 30) {
     return { status: SourceStatus.FRESH, label: `${ageDays}d old`, observedAt };
   }
