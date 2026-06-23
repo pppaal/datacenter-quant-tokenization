@@ -133,3 +133,65 @@ test('summarizeAuditEvents classifies status case-insensitively', () => {
   assert.equal(s.successCount, 1);
   assert.equal(s.otherCount, 0);
 });
+
+// ---------------------------------------------------------------------------
+// Improvement 4: actor dedup, lastSeenAt from createdAt, entity grouping,
+// stable ordering regardless of input order.
+// ---------------------------------------------------------------------------
+test('summarizeAuditEvents dedups actors on identifier+role and tracks per-actor failures', () => {
+  const s = summarizeAuditEvents([
+    row({ actorIdentifier: 'a', actorRole: 'ADMIN', statusLabel: 'SUCCESS' }),
+    row({ actorIdentifier: 'a', actorRole: 'ADMIN', statusLabel: 'FAILED' }),
+    // Same identifier, different role -> a distinct actor entry.
+    row({ actorIdentifier: 'a', actorRole: 'ANALYST', statusLabel: 'SUCCESS' })
+  ]);
+  assert.equal(s.distinctActorCount, 2);
+  const adminActor = s.actors.find((x) => x.actorRole === 'ADMIN')!;
+  assert.equal(adminActor.eventCount, 2);
+  assert.equal(adminActor.failureCount, 1);
+});
+
+test('summarizeAuditEvents derives lastSeenAt/lastEventAt from the newest createdAt regardless of input order', () => {
+  const older = new Date('2026-01-01T00:00:00.000Z');
+  const newer = new Date('2026-06-01T00:00:00.000Z');
+  // Newest event delivered FIRST to prove it is not just "last row wins".
+  const s = summarizeAuditEvents([
+    row({ actorIdentifier: 'a', createdAt: newer }),
+    row({ actorIdentifier: 'a', createdAt: older })
+  ]);
+  assert.equal(s.lastEventAt?.getTime(), newer.getTime());
+  assert.equal(s.actors[0].lastSeenAt.getTime(), newer.getTime());
+});
+
+test('summarizeAuditEvents groups entity types with reconciling counts and stable order', () => {
+  const s = summarizeAuditEvents([
+    row({ entityType: 'deal' }),
+    row({ entityType: 'valuation' }),
+    row({ entityType: 'deal' }),
+    row({ entityType: 'deal' })
+  ]);
+  assert.equal(s.distinctEntityTypeCount, 2);
+  const totalByType = s.entityTypes.reduce((sum, t) => sum + t.eventCount, 0);
+  assert.equal(totalByType, s.totalCount);
+  // Highest-count entity type first (stable, count desc).
+  assert.equal(s.entityTypes[0].entityType, 'deal');
+  assert.equal(s.entityTypes[0].eventCount, 3);
+});
+
+test('summarizeAuditEvents actor ordering is deterministic for equal last-seen times (tie-broken)', () => {
+  const ts = new Date('2026-02-02T00:00:00.000Z');
+  const forward = summarizeAuditEvents([
+    row({ actorIdentifier: 'bob', createdAt: ts }),
+    row({ actorIdentifier: 'amy', createdAt: ts })
+  ]);
+  const reversed = summarizeAuditEvents([
+    row({ actorIdentifier: 'amy', createdAt: ts }),
+    row({ actorIdentifier: 'bob', createdAt: ts })
+  ]);
+  // Same tie-broken ordering regardless of input order.
+  assert.deepEqual(
+    forward.actors.map((a) => a.actorIdentifier),
+    reversed.actors.map((a) => a.actorIdentifier)
+  );
+  assert.equal(forward.actors[0].actorIdentifier, 'amy');
+});
