@@ -22,13 +22,24 @@ export type ImReportDeckSource = {
   downsideToBearPct: number | null;
 };
 
-/** Format a KRW amount compactly as 억/조. */
+/** Format a KRW amount compactly as 조/억/만/원. */
 export function krwCompact(value: number): string {
+  const abs = Math.abs(value);
   const eok = value / 100_000_000;
-  if (Math.abs(eok) >= 10_000) {
+  if (abs >= 1_000_000_000_000) {
+    // ≥ 1조 → 조 with one decimal.
     return `₩${(eok / 10_000).toLocaleString('en-US', { maximumFractionDigits: 1 })}조`;
   }
-  return `₩${Math.round(eok).toLocaleString('en-US')}억`;
+  if (abs >= 100_000_000) {
+    // ≥ 1억 → 억 with one decimal so sub-억 precision is not lost (a 1.5억 value
+    // must not round to ₩2억, matching the rest of the desk's 억 formatting).
+    return `₩${eok.toLocaleString('en-US', { maximumFractionDigits: 1 })}억`;
+  }
+  if (abs >= 10_000) {
+    // ≥ 1만 → 만 (whole units); avoids collapsing sub-억 figures to "₩0억".
+    return `₩${Math.round(value / 10_000).toLocaleString('en-US')}만`;
+  }
+  return `₩${Math.round(value).toLocaleString('en-US')}`;
 }
 
 function pct(value: number | null, digits = 1): string {
