@@ -146,6 +146,21 @@ export function checkStatementIntegrity(periods: StatementPeriodInput[]): Statem
     if (p.totalAssets !== null && p.currentAssets !== null && p.currentAssets > p.totalAssets + 1) {
       flags.push('유동자산 > 자산총계 (비정합)');
     }
+    if (
+      p.totalAssets !== null &&
+      p.currentLiabilities !== null &&
+      p.currentLiabilities > p.totalAssets + 1
+    ) {
+      // Current liabilities cannot exceed total assets on an articulating
+      // balance sheet (they are a subset of total liabilities ≤ assets). A
+      // breach is a parse/scale error, not a real position.
+      flags.push('유동부채 > 자산총계 (비정합)');
+    }
+    if (p.revenue !== null && p.revenue < 0) {
+      // Revenue (매출액) is a gross top-line and is non-negative by construction;
+      // a negative value indicates a mis-parsed sign or a netting error.
+      flags.push('매출액 음수 (비정합)');
+    }
     return { label: p.label, flags };
   });
 }
