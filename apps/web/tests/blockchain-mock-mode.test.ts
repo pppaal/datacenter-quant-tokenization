@@ -64,6 +64,19 @@ test('buildMockTxHash skips null and undefined parts', () => {
   assert.equal(direct, padded);
 });
 
+test('buildMockTxHash is unambiguous across delimiter-shifted parts', () => {
+  // Regression: the old join(':') let a part that itself contains ':' be
+  // confused with the boundary between two parts, so two logically distinct
+  // on-chain actions could collide on the same mock txHash.
+  assert.notEqual(buildMockTxHash('a', 'b:c'), buildMockTxHash('a:b', 'c'));
+  assert.notEqual(buildMockTxHash('a', 'bc'), buildMockTxHash('ab', 'c'));
+  // And a part whose text equals "len:value" framing must not collide with
+  // the real two-part call it could be mistaken for.
+  assert.notEqual(buildMockTxHash('1:x', 'y'), buildMockTxHash('x', 'y'));
+  // Still deterministic.
+  assert.equal(buildMockTxHash('a', 'b:c'), buildMockTxHash('a', 'b:c'));
+});
+
 test('mock-mode token-issuance returns deterministic txHashes', async () => {
   await withEnv({ BLOCKCHAIN_MOCK_MODE: 'true', NODE_ENV: 'development' }, async () => {
     const { mintTokens, burnTokens, forceTransfer, pauseToken, unpauseToken } =

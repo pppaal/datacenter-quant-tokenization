@@ -24,10 +24,23 @@ export function isTokenizationMockMode(env: NodeJS.ProcessEnv = process.env): bo
  * Deterministically derive a 32-byte tx hash from the call site so
  * downstream consumers (audit log, UI) get a stable identifier they can
  * compare across replays.
+ *
+ * `null` / `undefined` parts are dropped (so optional args don't shift the
+ * hash). The remaining parts are length-prefixed before joining, so a part
+ * that itself contains the delimiter cannot be confused with the boundary
+ * between two parts — e.g. `('a', 'b:c')` and `('a:b', 'c')` must produce
+ * distinct hashes. Without the length prefix both collapse to `"a:b:c"`,
+ * which would let two logically different on-chain actions collide on the
+ * same mock txHash.
  */
 export function buildMockTxHash(...parts: Array<string | number | bigint | null | undefined>): Hex {
-  const digest = createHash('sha256')
-    .update(parts.filter((p) => p !== null && p !== undefined).join(':'))
-    .digest('hex');
+  const canonical = parts
+    .filter((p) => p !== null && p !== undefined)
+    .map((p) => {
+      const s = String(p);
+      return `${s.length}:${s}`;
+    })
+    .join('|');
+  const digest = createHash('sha256').update(canonical).digest('hex');
   return `0x${digest}` as Hex;
 }
