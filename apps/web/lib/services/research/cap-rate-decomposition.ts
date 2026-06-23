@@ -70,6 +70,8 @@ export type CapRateDecomposition = {
 
 const DEFAULT_LIQUIDITY_BAND_BPS = 100; // 1.00% spread top to bottom of band
 const DEFAULT_OBSOLESCENCE_BPS_PER_YEAR = 5; // 0.05% per year of age
+/** Hard floor for the composed headline cap rate (10 bps) — see decomposeCapRate. */
+export const MIN_CAP_RATE_PCT = 0.1;
 
 /**
  * Compose the cap rate from its 5 components.  Returns the
@@ -161,8 +163,16 @@ export function decomposeCapRate(inputs: CapRateInputs): CapRateDecomposition {
     total += c.sign === '+' ? c.pct : -c.pct;
   }
 
+  // A composed cap rate at or below zero is economically meaningless — it
+  // implies an infinite/negative implied value (price = NOI / cap) and would
+  // poison any downstream valuation. When the growth offset (or an extreme
+  // liquidity tightening) overshoots the positive legs, floor the headline at
+  // MIN_CAP_RATE_PCT while preserving the raw signed total in `componentSumPct`
+  // so the divergence stays visible on the bridge.
+  const cappedTotal = Math.max(MIN_CAP_RATE_PCT, total);
+
   return {
-    capRatePct: round2(total),
+    capRatePct: round2(cappedTotal),
     components,
     componentSumPct: round2(total)
   };

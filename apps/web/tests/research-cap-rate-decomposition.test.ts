@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   decomposeCapRate,
-  estimateSubmarketSpread
+  estimateSubmarketSpread,
+  MIN_CAP_RATE_PCT
 } from '@/lib/services/research/cap-rate-decomposition';
 
 test('decomposeCapRate produces all 6 components', () => {
@@ -108,6 +109,41 @@ test('decomposeCapRate obsolescence ramps with age', () => {
   assert.equal(newOb.pct, 0);
   assert.ok(Math.abs(oldOb.pct - 1.5) < 0.01); // 30 yrs × 0.05
   assert.ok(oldAsset.capRatePct > newAsset.capRatePct);
+});
+
+test('decomposeCapRate floors a negative composed cap rate at MIN_CAP_RATE_PCT', () => {
+  // Growth offset (10%) overwhelms the thin positive legs → raw signed total
+  // is deeply negative. The headline cap rate must never go to/below zero
+  // (price = NOI / cap would blow up), but the raw total stays in componentSumPct.
+  const result = decomposeCapRate({
+    riskFreeRatePct: 1,
+    equityRiskPremiumPct: 1,
+    sectorBeta: 0.1,
+    submarketSpreadPct: 0,
+    growthExpectationPct: 10,
+    transactionVolumeIndex: 100,
+    vintageYear: 2026,
+    referenceYear: 2026
+  });
+  assert.equal(result.capRatePct, MIN_CAP_RATE_PCT);
+  assert.ok(result.componentSumPct < 0, 'raw signed total stays negative for diagnostics');
+  assert.ok(result.capRatePct > 0, 'headline cap rate must be strictly positive');
+});
+
+test('decomposeCapRate leaves a healthy positive cap rate untouched', () => {
+  const result = decomposeCapRate({
+    riskFreeRatePct: 3.5,
+    equityRiskPremiumPct: 5.0,
+    sectorBeta: 0.45,
+    submarketSpreadPct: 0.3,
+    growthExpectationPct: 2.0,
+    transactionVolumeIndex: 100,
+    vintageYear: 2020,
+    referenceYear: 2026
+  });
+  // Unchanged from the canonical 4.35 case → floor never engages.
+  assert.ok(Math.abs(result.capRatePct - 4.35) < 0.01);
+  assert.equal(result.capRatePct, result.componentSumPct);
 });
 
 test('estimateSubmarketSpread returns 0 for empty input', () => {
