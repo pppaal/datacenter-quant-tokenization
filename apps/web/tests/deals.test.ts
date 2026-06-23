@@ -45,7 +45,9 @@ import {
   updateDealDocumentRequest,
   updateDealLenderQuote,
   updateDealNegotiationEvent,
-  updateDealStage
+  updateDealRiskFlag,
+  updateDealStage,
+  updateDealTask
 } from '@/lib/services/deals';
 import {
   buildDealCloseProbabilitySummary,
@@ -1676,6 +1678,89 @@ test('updateDealStage enforces closing before asset management', async () => {
       ),
     /only after closing/
   );
+});
+
+test('updateDealTask preserves the original completion timestamp when editing a done task', async () => {
+  const completedAt = new Date(Date.now() - 1000 * 60 * 60 * 24 * 5);
+  let updateData: any;
+  const fakeDb = {
+    task: {
+      async findFirst() {
+        return {
+          id: 'task_1',
+          dealId: 'deal_1',
+          title: 'Old title',
+          status: TaskStatus.DONE,
+          completedAt
+        };
+      },
+      async update(args: any) {
+        updateData = args.data;
+        return { id: 'task_1', title: args.data.title ?? 'Old title', status: args.data.status };
+      }
+    },
+    activityLog: {
+      async create() {
+        return null;
+      }
+    },
+    dealExecutionProbabilitySnapshot: {
+      async create() {
+        return null;
+      }
+    }
+  };
+
+  await updateDealTask('deal_1', 'task_1', { title: 'Renamed task' }, fakeDb as any);
+
+  // Editing a still-DONE task must keep the original completion timestamp,
+  // not overwrite it with a fresh `new Date()`.
+  assert.equal(updateData.completedAt?.getTime(), completedAt.getTime());
+});
+
+test('updateDealRiskFlag preserves the original resolution timestamp when editing a resolved risk', async () => {
+  const resolvedAt = new Date(Date.now() - 1000 * 60 * 60 * 24 * 9);
+  let updateData: any;
+  const fakeDb = {
+    riskFlag: {
+      async findFirst() {
+        return {
+          id: 'risk_1',
+          dealId: 'deal_1',
+          title: 'Title risk',
+          severity: RiskSeverity.HIGH,
+          statusLabel: 'RESOLVED',
+          isResolved: true,
+          resolvedAt
+        };
+      },
+      async update(args: any) {
+        updateData = args.data;
+        return {
+          id: 'risk_1',
+          title: args.data.title ?? 'Title risk',
+          statusLabel: 'RESOLVED',
+          isResolved: args.data.isResolved
+        };
+      }
+    },
+    activityLog: {
+      async create() {
+        return null;
+      }
+    },
+    dealExecutionProbabilitySnapshot: {
+      async create() {
+        return null;
+      }
+    }
+  };
+
+  await updateDealRiskFlag('deal_1', 'risk_1', { detail: 'Added more context' }, fakeDb as any);
+
+  // Editing a still-resolved risk must keep the original resolution
+  // timestamp, not overwrite it with a fresh `new Date()`.
+  assert.equal(updateData.resolvedAt?.getTime(), resolvedAt.getTime());
 });
 
 test('buildDealStageChecklist reports missing stage requirements', () => {

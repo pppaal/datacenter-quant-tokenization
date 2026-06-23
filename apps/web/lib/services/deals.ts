@@ -2168,6 +2168,7 @@ export async function updateDealTask(
   if (!task) throw new Error('Task not found');
 
   const nextStatus = parsed.status ?? task.status;
+  const existingCompletedAt = 'completedAt' in task ? (task.completedAt ?? null) : null;
   const updated = await db.task.update({
     where: { id: taskId },
     data: {
@@ -2177,7 +2178,11 @@ export async function updateDealTask(
       priority: parsed.priority ?? undefined,
       ownerLabel: parsed.ownerLabel ?? undefined,
       dueDate: parsed.dueDate ?? undefined,
-      completedAt: nextStatus === TaskStatus.DONE ? new Date() : null
+      // Preserve the original completion timestamp when a task that is
+      // already DONE is edited (title/owner/etc.); only stamp a fresh
+      // completedAt on the transition into DONE. Mirrors the submittedAt /
+      // signedOffAt preservation in the bid / diligence updaters.
+      completedAt: nextStatus === TaskStatus.DONE ? (existingCompletedAt ?? new Date()) : null
     }
   });
 
@@ -2235,6 +2240,7 @@ export async function updateDealRiskFlag(
   if (!riskFlag) throw new Error('Risk flag not found');
 
   const nextResolved = parsed.isResolved ?? riskFlag.isResolved;
+  const existingResolvedAt = 'resolvedAt' in riskFlag ? (riskFlag.resolvedAt ?? null) : null;
   const updated = await db.riskFlag.update({
     where: { id: riskFlagId },
     data: {
@@ -2243,7 +2249,10 @@ export async function updateDealRiskFlag(
       severity: parsed.severity ?? undefined,
       statusLabel: parsed.statusLabel ?? undefined,
       isResolved: nextResolved,
-      resolvedAt: nextResolved ? new Date() : null
+      // Preserve the original resolution timestamp when an already-resolved
+      // risk is edited; only stamp a fresh resolvedAt on the transition into
+      // resolved. Mirrors the completedAt / submittedAt preservation pattern.
+      resolvedAt: nextResolved ? (existingResolvedAt ?? new Date()) : null
     }
   });
 
