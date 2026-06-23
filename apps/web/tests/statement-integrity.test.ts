@@ -50,6 +50,22 @@ test('current assets exceeding total assets flagged; missing data never flags', 
   assert.deepEqual(sparse.flags, []);
 });
 
+test('current liabilities exceeding total assets flagged (parse/scale error)', () => {
+  const [r] = checkStatementIntegrity([{ ...clean, currentLiabilities: 800000 }]);
+  assert.ok(r.flags.some((f) => f.includes('유동부채 > 자산총계')));
+  // and still clean when within bounds
+  const [ok] = checkStatementIntegrity([clean]);
+  assert.ok(!ok.flags.some((f) => f.includes('유동부채 > 자산총계')));
+});
+
+test('negative revenue flagged as a mis-parsed sign', () => {
+  const [r] = checkStatementIntegrity([{ ...clean, revenue: -100 }]);
+  assert.ok(r.flags.some((f) => f.includes('매출액 음수')));
+  // missing revenue never flags
+  const [sparse] = checkStatementIntegrity([{ ...clean, revenue: null }]);
+  assert.ok(!sparse.flags.some((f) => f.includes('매출액 음수')));
+});
+
 test('buildStatementView surfaces integrity aligned with periods', () => {
   const view = buildStatementView([clean, { ...clean, label: '2025', totalEquity: -1 }]);
   assert.equal(view.integrity.length, 2);

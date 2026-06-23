@@ -88,10 +88,15 @@ export function dupontDecomposition(input: DupontInput): DupontResult {
       ? (netIncome / totalAssets) * 100
       : null;
 
-  let driver: DupontResult['driver'] = 'balanced';
-  if (roaPct !== null) {
+  // Driver attribution only describes how a *positive* ROE is produced
+  // (operating return vs. leverage lift). For a non-positive ROE the firm is
+  // loss-making and leverage is amplifying the loss, not "driving" a return —
+  // labelling that 'leverage' (and printing "재무레버리지가 견인") inverts the
+  // meaning, so we report the loss explicitly instead.
+  let driver: DupontResult['driver'] = roePct <= 0 ? null : 'balanced';
+  if (roePct > 0 && roaPct !== null) {
     const lift = roePct - roaPct; // leverage contribution (pp)
-    if (roaPct <= 0 && roePct > 0) {
+    if (roaPct <= 0) {
       // Operating return is flat/negative; only gearing makes ROE positive.
       driver = 'leverage';
     } else if (Math.abs(lift) > Math.abs(roaPct)) {
@@ -107,11 +112,13 @@ export function dupontDecomposition(input: DupontInput): DupontResult {
       ? ` = 순이익률 ${netMarginPct}% × 자산회전율 ${assetTurnover}× × 재무레버리지 ${equityMultiplier}×`
       : '';
   const driverNote =
-    driver === 'leverage'
-      ? ' — ROE를 재무레버리지가 견인 (영업 자산수익률 취약)'
-      : driver === 'operating'
-        ? ' — ROE를 영업수익성이 견인'
-        : '';
+    roePct <= 0
+      ? ' — 적자 ROE (재무레버리지가 손실 확대)'
+      : driver === 'leverage'
+        ? ' — ROE를 재무레버리지가 견인 (영업 자산수익률 취약)'
+        : driver === 'operating'
+          ? ' — ROE를 영업수익성이 견인'
+          : '';
   const headline = `ROE ${roePct}%${factorStr}${driverNote}`;
 
   return { netMarginPct, assetTurnover, equityMultiplier, roePct, driver, headline };

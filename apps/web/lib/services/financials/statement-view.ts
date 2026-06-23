@@ -146,6 +146,21 @@ export function checkStatementIntegrity(periods: StatementPeriodInput[]): Statem
     if (p.totalAssets !== null && p.currentAssets !== null && p.currentAssets > p.totalAssets + 1) {
       flags.push('유동자산 > 자산총계 (비정합)');
     }
+    if (
+      p.totalAssets !== null &&
+      p.currentLiabilities !== null &&
+      p.currentLiabilities > p.totalAssets + 1
+    ) {
+      // Current liabilities cannot exceed total assets on an articulating
+      // balance sheet (they are a subset of total liabilities ≤ assets). A
+      // breach is a parse/scale error, not a real position.
+      flags.push('유동부채 > 자산총계 (비정합)');
+    }
+    if (p.revenue !== null && p.revenue < 0) {
+      // Revenue (매출액) is a gross top-line and is non-negative by construction;
+      // a negative value indicates a mis-parsed sign or a netting error.
+      flags.push('매출액 음수 (비정합)');
+    }
     return { label: p.label, flags };
   });
 }
@@ -164,11 +179,17 @@ function yoyOf(values: (number | null)[]): (number | null)[] {
   });
 }
 
-/** Row value as a % of the per-period section base. */
+/**
+ * Row value as a % of the per-period section base. The base must be positive:
+ * common-size analysis expresses each line as a share of a positive aggregate
+ * (revenue / total assets / operating cash flow). A non-positive base — e.g. a
+ * period with negative operating cash flow — would flip the sign of every
+ * percentage and render a meaningless figure, so we collapse to null instead.
+ */
 function commonSizeOf(values: (number | null)[], basis: (number | null)[]): (number | null)[] {
   return values.map((v, i) => {
     const b = basis[i];
-    if (v === null || b == null || b === 0) return null;
+    if (v === null || b == null || b <= 0) return null;
     return round((v / b) * 100, 1);
   });
 }

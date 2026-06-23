@@ -134,6 +134,68 @@ test('credit assessment builder uses liquidity and maturity coverage metrics', (
   assert.ok((assessment.metrics.workingCapitalKrw ?? 0) > 0);
 });
 
+function baseStatement(overrides: Record<string, unknown> = {}) {
+  return {
+    counterpartyName: 'Sign Test Co',
+    counterpartyRole: 'TENANT',
+    statementType: 'ANNUAL',
+    fiscalYear: 2024,
+    fiscalPeriod: 'FY',
+    currency: 'KRW',
+    revenueKrw: 42_000_000_000,
+    ebitdaKrw: 12_000_000_000,
+    operatingIncomeKrw: 9_500_000_000,
+    netIncomeKrw: 6_200_000_000,
+    cashKrw: 6_400_000_000,
+    operatingCashFlowKrw: 7_200_000_000,
+    capexKrw: -1_600_000_000,
+    totalDebtKrw: 26_000_000_000,
+    currentAssetsKrw: 13_500_000_000,
+    currentLiabilitiesKrw: 8_400_000_000,
+    currentDebtMaturitiesKrw: 4_900_000_000,
+    totalAssetsKrw: 72_000_000_000,
+    totalEquityKrw: 29_000_000_000,
+    interestExpenseKrw: 3_000_000_000,
+    lineItems: [],
+    ...overrides
+  } as Parameters<typeof buildCreditAssessmentFromStatement>[0];
+}
+
+test('interest coverage is sign-agnostic on the parsed interest-expense sign', () => {
+  // Same economics, two ingest paths: parenthesised filing stores a negative
+  // interest expense; AI/DART stores the positive magnitude. Coverage must be
+  // identical and positive — not null — in both cases.
+  const positive = buildCreditAssessmentFromStatement(
+    baseStatement({ interestExpenseKrw: 3_000_000_000 })
+  );
+  const negative = buildCreditAssessmentFromStatement(
+    baseStatement({ interestExpenseKrw: -3_000_000_000 })
+  );
+  assert.equal(positive.metrics.interestCoverage, 4); // 12,000 / 3,000
+  assert.equal(negative.metrics.interestCoverage, 4);
+});
+
+test('negative EBITDA is penalised even though it nulls leverage/coverage metrics', () => {
+  // Negative EBITDA gates the leverage and interest-coverage metrics to null, so
+  // without a direct penalty a distressed borrower would score identically to one
+  // that merely omitted EBITDA. It must score strictly lower.
+  // interestExpense is null so interest-coverage scoring can't fire — this
+  // isolates the EBITDA penalty as the only difference between the two cases.
+  const distressed = buildCreditAssessmentFromStatement(
+    baseStatement({ ebitdaKrw: -4_000_000_000, interestExpenseKrw: null })
+  );
+  const missing = buildCreditAssessmentFromStatement(
+    baseStatement({ ebitdaKrw: null, interestExpenseKrw: null })
+  );
+  // Leverage (debt/EBITDA) still nulls on negative EBITDA (the multiple is
+  // meaningless), so the borrower would escape any leverage penalty.
+  assert.equal(distressed.metrics.leverageMultiple, null);
+  assert.ok(
+    distressed.score < missing.score,
+    `distressed ${distressed.score} should be below missing-EBITDA ${missing.score}`
+  );
+});
+
 test('financial statement ingestion persists statement, line items, and credit assessment', async () => {
   const calls: Record<string, any[]> = {
     counterpartyCreate: [],
