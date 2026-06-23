@@ -114,8 +114,13 @@ export function buildOccupancyRentSensitivity(
   const occupancySteps = [-15, -10, -5, 0, 5];
   const rentSteps = [-20, -10, 0, 10, 20];
 
+  // Clamp BOTH ends of the occupancy axis. Without a lower floor a low base
+  // occupancy combined with a large negative step (e.g. base 10% − 15) produces
+  // a NEGATIVE occupancy, whose occMultiplier (occPct / baseOccupancyPct) flips
+  // sign and turns every operating distribution into a spurious inflow — an
+  // IRR/multiple that improves as occupancy collapses. Floor at 0%.
   const rowValues = occupancySteps.map((s) =>
-    Math.min(Number((baseOccupancyPct + s).toFixed(1)), 100)
+    Math.max(0, Math.min(Number((baseOccupancyPct + s).toFixed(1)), 100))
   );
   const colValues = rentSteps.map((s) => s);
 
