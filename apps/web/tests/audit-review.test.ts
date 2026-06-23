@@ -5,7 +5,12 @@
  */
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { listAuditEvents, resolveSafeAuditLimit } from '@/lib/services/audit-review';
+import {
+  listAuditEvents,
+  resolveSafeAuditLimit,
+  summarizeAuditEvents,
+  type SummarizableAuditEvent
+} from '@/lib/services/audit-review';
 
 type Captured = { findManyArgs: any; countArgs: any };
 
@@ -24,6 +29,24 @@ function makeAuditFake(rows: any[] = []): { db: any; captured: Captured } {
     }
   };
   return { db, captured };
+}
+
+function row(overrides: Partial<SummarizableAuditEvent> & { id?: string } = {}) {
+  return {
+    id: overrides.id ?? 'e1',
+    actorIdentifier: overrides.actorIdentifier ?? 'analyst',
+    actorRole: overrides.actorRole ?? 'ANALYST',
+    action: 'x.create',
+    entityType: overrides.entityType ?? 'deal',
+    entityId: null,
+    assetId: null,
+    requestPath: null,
+    requestMethod: null,
+    ipAddress: null,
+    statusLabel: overrides.statusLabel ?? 'SUCCESS',
+    metadata: null,
+    createdAt: overrides.createdAt ?? new Date('2026-01-01T00:00:00.000Z')
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -71,4 +94,42 @@ test('listAuditEvents forwards an integer take even for a fractional limit', asy
   // take = safeLimit + 1; must be an integer (Prisma rejects fractional take).
   assert.equal(captured.findManyArgs.take, 3);
   assert.ok(Number.isInteger(captured.findManyArgs.take));
+});
+
+// ---------------------------------------------------------------------------
+// Improvement 3: failure-rate / status partition reconciliation.
+// ---------------------------------------------------------------------------
+test('summarizeAuditEvents returns 0 failureRate on an empty set (no divide-by-zero)', () => {
+  const s = summarizeAuditEvents([]);
+  assert.equal(s.totalCount, 0);
+  assert.equal(s.failureRate, 0);
+  assert.ok(!Number.isNaN(s.failureRate));
+  assert.equal(s.lastEventAt, null);
+  assert.deepEqual(s.actors, []);
+  assert.deepEqual(s.entityTypes, []);
+});
+
+test('summarizeAuditEvents partitions statuses so success+failure+other reconciles', () => {
+  const s = summarizeAuditEvents([
+    row({ statusLabel: 'SUCCESS' }),
+    row({ statusLabel: 'FAILED' }),
+    row({ statusLabel: 'FAILED' }),
+    row({ statusLabel: 'RUNNING' }) // neither success nor failure
+  ]);
+  assert.equal(s.totalCount, 4);
+  assert.equal(s.successCount, 1);
+  assert.equal(s.failureCount, 2);
+  assert.equal(s.otherCount, 1);
+  assert.equal(s.successCount + s.failureCount + s.otherCount, s.totalCount);
+  assert.equal(s.failureRate, 0.5);
+});
+
+test('summarizeAuditEvents classifies status case-insensitively', () => {
+  const s = summarizeAuditEvents([
+    row({ statusLabel: 'failed' }),
+    row({ statusLabel: ' success ' })
+  ]);
+  assert.equal(s.failureCount, 1);
+  assert.equal(s.successCount, 1);
+  assert.equal(s.otherCount, 0);
 });
