@@ -58,6 +58,22 @@ test('dupont: strong operating return, low leverage → operating driver', () =>
   assert.equal(r.driver, 'operating');
 });
 
+test('dupont: negative ROE is not labelled leverage-driven', () => {
+  // Loss with positive equity: ROE and ROA are both negative. Leverage is
+  // amplifying the loss, not "driving" a return — driver must not be 'leverage'
+  // and the headline must not claim leverage carries the ROE.
+  const r = dupontDecomposition({
+    netIncome: -3000,
+    revenue: 41200,
+    totalAssets: 705350,
+    totalEquity: 275050
+  });
+  assert.ok(r.roePct !== null && r.roePct < 0);
+  assert.equal(r.driver, null);
+  assert.doesNotMatch(r.headline!, /견인/);
+  assert.match(r.headline!, /적자 ROE/);
+});
+
 test('dupont: null-safe on non-positive / missing denominators', () => {
   const r = dupontDecomposition({
     netIncome: 100,
