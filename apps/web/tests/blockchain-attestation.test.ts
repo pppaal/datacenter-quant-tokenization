@@ -32,8 +32,24 @@ test('symbolToBytes32 right-pads short symbols', () => {
   assert.equal(krw.slice(2, 8), '4b5257');
 });
 
+test('symbolToBytes32 accepts a 32-char ASCII symbol (fills bytes32 exactly)', () => {
+  // bytes32 holds 32 single-byte ASCII chars; a 32-char symbol must NOT throw.
+  const out = symbolToBytes32('A'.repeat(32));
+  assert.equal(out.length, 66);
+  assert.equal(out, `0x${'41'.repeat(32)}`);
+});
+
 test('symbolToBytes32 throws on overlong symbol', () => {
-  assert.throws(() => symbolToBytes32('A'.repeat(32)));
+  assert.throws(() => symbolToBytes32('A'.repeat(33)), /exceeds 32 bytes/);
+});
+
+test('symbolToBytes32 rejects non-ASCII instead of silently truncating', () => {
+  // Regression: "Ł" (U+0141) would be truncated to its low byte 0x41 ("A")
+  // by Uint8Array assignment, silently colliding with symbolToBytes32('A').
+  assert.throws(() => symbolToBytes32('Ł'), /printable ASCII/);
+  assert.throws(() => symbolToBytes32('KR₩'), /printable ASCII/);
+  // Sanity: the ASCII it would have collided with is still encodable.
+  assert.notEqual(symbolToBytes32('A'), '0x' + '00'.repeat(32));
 });
 
 test('buildNavAttestation derives navPerShare from baseCaseValueKrw', () => {

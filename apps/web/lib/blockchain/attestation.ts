@@ -79,14 +79,25 @@ export function toBytes32Identifier(input: string): Hex {
 
 /** Right-pad a short ASCII symbol like "KRW" into bytes32 — readable
  *  when decoded but still 32 bytes. Mirrors how AssetToken stores its
- *  quote symbol. */
+ *  quote symbol (`bytes32` of the UTF-8/ASCII bytes, right-padded).
+ *
+ *  Only printable single-byte ASCII (code points 0x01..0x7f) is accepted.
+ *  Multi-byte / non-ASCII input is rejected rather than silently mangled:
+ *  `charCodeAt` returns UTF-16 code units and assigning a value > 0xff into
+ *  a `Uint8Array` truncates to the low byte, so e.g. "Ł" (U+0141) would
+ *  otherwise collide with "A" (0x41) and produce a bytes32 the on-chain
+ *  contract never agrees with. */
 export function symbolToBytes32(symbol: string): Hex {
-  if (symbol.length > 31) {
-    throw new Error(`symbol "${symbol}" exceeds 31 bytes`);
+  if (symbol.length > 32) {
+    throw new Error(`symbol "${symbol}" exceeds 32 bytes`);
   }
   const bytes = new Uint8Array(32);
   for (let i = 0; i < symbol.length; i += 1) {
-    bytes[i] = symbol.charCodeAt(i);
+    const code = symbol.charCodeAt(i);
+    if (code === 0 || code > 0x7f) {
+      throw new Error(`symbol "${symbol}" must contain only printable ASCII (0x01..0x7f)`);
+    }
+    bytes[i] = code;
   }
   return toHex(bytes);
 }
