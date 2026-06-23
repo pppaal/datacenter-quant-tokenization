@@ -217,7 +217,11 @@ export function buildInterestRateSensitivity(
   const years = proForma.years;
 
   return shiftsBps.map((shiftBps) => {
-    const rateMultiplier = 1 + shiftBps / 100 / Math.max(baseInterestRatePct, 1);
+    // Floor the debt-cost factor at 0: interest expense can fall to zero but
+    // never go NEGATIVE. With a low base rate (e.g. 0.5%) the divisor is floored
+    // at 1, so a −200bps shift would otherwise yield 1 + (−2)/1 = −1, producing
+    // negative interest and a spurious over-credit to equity distributions.
+    const rateMultiplier = Math.max(0, 1 + shiftBps / 100 / Math.max(baseInterestRatePct, 1));
     const debtCostFactor = rateMultiplier;
 
     const cashFlows: number[] = [-initialEquityKrw];

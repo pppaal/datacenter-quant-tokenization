@@ -1,13 +1,27 @@
 /**
  * Correctness fixes for the valuation sensitivity engine + synthetic pro-forma.
- * Each test pins a specific bug present before the fix; it fails against the
- * prior code and passes after. Tests are added alongside their fix commit.
+ *
+ * Each test pins a specific bug that was present before the fix and would have
+ * failed against the prior code:
+ *
+ *   1. buildOccupancyRentSensitivity floored the occupancy axis at 100 but NOT
+ *      at 0, so a low base occupancy + large negative step produced a negative
+ *      occupancy whose multiplier flipped the sign of operating distributions.
+ *   2. buildSyntheticProForma back-derives revenue as NOI / (1 − opexRatio); an
+ *      opexRatio >= 1 divided by zero/negative → Infinity / NaN / negative revenue.
+ *   3. buildCapRateExitSensitivity computed a going-in-cap noiMultiplier but never
+ *      applied it, leaving the entire ROW axis inert (identical cells per row).
+ *   4. buildCapRateExitSensitivity zeroed the terminal value when a downward exit-
+ *      cap step pushed the cap <= 0, cratering the most-bullish corner.
+ *   5. buildInterestRateSensitivity let the debt-cost factor go NEGATIVE for a
+ *      large negative rate shift on a low base rate, over-crediting equity.
  */
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   buildCapRateExitSensitivity,
-  buildOccupancyRentSensitivity
+  buildOccupancyRentSensitivity,
+  buildInterestRateSensitivity
 } from '@/lib/services/valuation/sensitivity';
 import {
   buildSyntheticProForma,
@@ -15,6 +29,9 @@ import {
 } from '@/lib/services/valuation/synthetic-pro-forma';
 import type { ProFormaBaseCase } from '@/lib/services/valuation/types';
 
+// ---------------------------------------------------------------------------
+// Minimal pro-forma fixture (mirrors tests/sensitivity.test.ts shape).
+// ---------------------------------------------------------------------------
 function makeProForma(): ProFormaBaseCase {
   const makeYear = (year: number, noi: number, dist: number) => ({
     year,
@@ -209,5 +226,50 @@ test('FIX 4: buildCapRateExitSensitivity floors the exit cap instead of zeroing 
   assert.ok(
     lowestExitCapCell.equityMultiple > highestExitCapCell.equityMultiple,
     `lower exit cap (${lowestExitCapCell.equityMultiple}x) must out-earn higher exit cap (${highestExitCapCell.equityMultiple}x)`
+  );
+});
+
+// ===========================================================================
+// FIX 5 — interest-rate debt-cost factor cannot go negative on a low base rate.
+// ===========================================================================
+test('FIX 5: buildInterestRateSensitivity never produces a negative debt-cost factor', () => {
+  // Base rate 0.5% → divisor floored at 1, so a −200bps shift would otherwise be
+  // 1 + (−2)/1 = −1: negative interest, over-credited equity, and DSCR garbage.
+  const rows = buildInterestRateSensitivity(makeProForma(), 10000, 5000, 0.5, 50000);
+
+  for (const r of rows) {
+    if (r.equityIrr !== null)
+      assert.ok(Number.isFinite(r.equityIrr), `IRR finite @ ${r.shiftBps}bps`);
+    assert.ok(Number.isFinite(r.equityMultiple), `multiple finite @ ${r.shiftBps}bps`);
+    if (r.dscrYear1 !== null) {
+      assert.ok(r.dscrYear1 >= 0, `DSCR @ ${r.shiftBps}bps must be >= 0, got ${r.dscrYear1}`);
+    }
+  }
+
+  const cut200 = rows.find((r) => r.shiftBps === -200)!;
+  const cut100 = rows.find((r) => r.shiftBps === -100)!;
+
+  // The KEY assertion: with base rate 0.5%, BOTH −100bps and −200bps drive the
+  // debt-cost factor to its 0 floor (1 + (−1)/1 = 0, and 1 + (−2)/1 clamps to 0),
+  // i.e. interest is fully removed in both. Pre-fix the −200bps factor was −1, so
+  // interest went NEGATIVE and the −200bps cell over-credited equity, producing a
+  // STRICTLY HIGHER multiple than the −100bps cell (11.66x vs 11.54x) plus an
+  // absurd DSCR (38x from a negative debt-service denominator). After the floor
+  // both cells coincide at the zero-interest bound.
+  assert.equal(
+    cut200.equityMultiple,
+    cut100.equityMultiple,
+    'at a low base rate both deep cuts floor interest at 0 → identical multiple (no negative-interest over-credit)'
+  );
+  assert.ok(
+    cut200.dscrYear1 !== null && cut200.dscrYear1 === cut100.dscrYear1,
+    'the −200bps DSCR must match the −100bps zero-interest DSCR, not explode from a negative denominator'
+  );
+
+  // Directional sanity preserved: lower rates >= higher rates on the multiple.
+  const highest = rows.find((r) => r.shiftBps === 200)!;
+  assert.ok(
+    cut200.equityMultiple >= highest.equityMultiple,
+    'a rate cut must not under-perform a rate hike'
   );
 });
