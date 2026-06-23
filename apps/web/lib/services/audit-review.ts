@@ -56,18 +56,34 @@ function buildWhereClause(filters: AuditEventFilters): Prisma.AuditEventWhereInp
     where.statusLabel = { equals: filters.severity.trim().toUpperCase() };
   }
 
-  if (filters.startDate || filters.endDate) {
+  // Only apply a bound when it is a real, valid Date. A caller that builds a
+  // bound from user input (e.g. `new Date(queryParam)`) can pass an Invalid
+  // Date; forwarding `gte: Invalid Date` to Prisma either throws or silently
+  // matches nothing, so we ignore unusable bounds instead.
+  let validStart = isValidDate(filters.startDate) ? filters.startDate : undefined;
+  let validEnd = isValidDate(filters.endDate) ? filters.endDate : undefined;
+  // Transposed bounds (`startDate` after `endDate`) describe an impossible
+  // window that would silently return zero rows. Normalize by swapping so the
+  // caller gets the range they almost certainly meant rather than an empty page.
+  if (validStart && validEnd && validStart.getTime() > validEnd.getTime()) {
+    [validStart, validEnd] = [validEnd, validStart];
+  }
+  if (validStart || validEnd) {
     const createdAt: { gte?: Date; lte?: Date } = {};
-    if (filters.startDate) {
-      createdAt.gte = filters.startDate;
+    if (validStart) {
+      createdAt.gte = validStart;
     }
-    if (filters.endDate) {
-      createdAt.lte = filters.endDate;
+    if (validEnd) {
+      createdAt.lte = validEnd;
     }
     where.createdAt = createdAt;
   }
 
   return where;
+}
+
+function isValidDate(value: Date | undefined): value is Date {
+  return value instanceof Date && !Number.isNaN(value.getTime());
 }
 
 export async function listAuditEvents(
