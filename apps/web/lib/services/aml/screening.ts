@@ -61,13 +61,22 @@ export type DenylistEntry = {
 };
 
 function normalizeName(value: string): string {
-  return value
-    .normalize('NFKD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+  return (
+    value
+      .normalize('NFKD')
+      // Strip combining diacritical marks so accented Latin folds to ASCII
+      // (José → jose). `\p{Diacritic}` covers the U+0300–U+036F range and more.
+      .replace(/\p{Diacritic}/gu, '')
+      .toLowerCase()
+      // Keep letters/digits from ANY script (not just ASCII a-z0-9) so non-Latin
+      // sanctioned names — Cyrillic, Hangul, CJK, Arabic, etc. — are not silently
+      // erased to an empty token set. The previous `[^a-z0-9\s]` stripped every
+      // non-Latin code point, leaving an empty string → 0.0 similarity → a FALSE
+      // NEGATIVE against the denylist. Only punctuation/symbols collapse to space.
+      .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+  );
 }
 
 function toIsoDate(value: string | Date | null | undefined): string | null {

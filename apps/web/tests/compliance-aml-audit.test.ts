@@ -151,6 +151,32 @@ test('nameSimilarity is order- and case-insensitive', () => {
   assert.equal(nameSimilarity('Alice Smith', 'Bob Jones'), 0);
 });
 
+test('nameSimilarity matches non-Latin (Cyrillic/Hangul) names instead of erasing them', () => {
+  // Regression: the old `[^a-z0-9\s]` normalizer stripped EVERY non-ASCII code
+  // point, so a Cyrillic/Hangul/CJK name normalized to the empty string → an
+  // empty token set → 0.0 similarity → a FALSE NEGATIVE against the denylist.
+  // Same-script identical/reordered names must now score a strong match, while
+  // unrelated names still score 0.
+  assert.ok(
+    nameSimilarity('Владимир Путин', 'Путин Владимир') > 0.9,
+    'reordered Cyrillic name must match'
+  );
+  assert.equal(nameSimilarity('Владимир Путин', 'Иван Иванов'), 0, 'unrelated Cyrillic → 0');
+  assert.ok(nameSimilarity('김정은', '김정은') > 0.9, 'identical Hangul name must match');
+  // ASCII / accented-Latin behavior is unchanged.
+  assert.ok(nameSimilarity('José Müller', 'jose muller') > 0.9, 'accented Latin folds to ASCII');
+});
+
+test('a non-Latin sanctioned name is screened as a HIT (no false negative)', async () => {
+  const denylist: DenylistEntry[] = [{ name: 'Владимир Путин', listType: 'OFAC' }];
+  const provider = new LocalDenylistProvider({ entries: denylist });
+  // Same Cyrillic name, reordered — previously normalized to '' on both sides
+  // and slipped through with a 0.0 score below the 0.6 threshold.
+  const matches = await provider.screen({ name: 'Путин Владимир' });
+  assert.ok(matches.length > 0, 'a same-script sanctioned name must produce a match');
+  assert.equal(evaluateScreening(matches).blocked, true);
+});
+
 test('a sanctions hit BLOCKS (status REJECTED)', async () => {
   const provider = new LocalDenylistProvider({ entries: DENYLIST });
   const matches = await provider.screen({ name: 'Kim Jong Un', dateOfBirth: '1984-01-08' });
