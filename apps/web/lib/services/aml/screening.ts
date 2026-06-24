@@ -61,13 +61,22 @@ export type DenylistEntry = {
 };
 
 function normalizeName(value: string): string {
-  return value
-    .normalize('NFKD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+  return (
+    value
+      .normalize('NFKD')
+      // Strip combining diacritical marks so accented Latin folds to ASCII
+      // (José → jose). `\p{Diacritic}` covers the U+0300–U+036F range and more.
+      .replace(/\p{Diacritic}/gu, '')
+      .toLowerCase()
+      // Keep letters/digits from ANY script (not just ASCII a-z0-9) so non-Latin
+      // sanctioned names — Cyrillic, Hangul, CJK, Arabic, etc. — are not silently
+      // erased to an empty token set. The previous `[^a-z0-9\s]` stripped every
+      // non-Latin code point, leaving an empty string → 0.0 similarity → a FALSE
+      // NEGATIVE against the denylist. Only punctuation/symbols collapse to space.
+      .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+  );
 }
 
 function toIsoDate(value: string | Date | null | undefined): string | null {
@@ -195,12 +204,19 @@ export function evaluateScreening(matches: ScreeningMatch[]): ScreeningOutcome {
     };
   }
 
-  const top = matches[0];
+  // Select the HIGHEST-scoring match in each class rather than trusting the
+  // caller to pre-sort. `evaluateScreening` is a public entry point; a provider
+  // (or a direct caller) that returns matches in arbitrary order must still see
+  // a confirmed (>= 0.85) hit classified as REJECTED, not merely ESCALATED.
+  // Reading index 0 of an unsorted array would UNDER-BLOCK a true sanctions hit.
+  const maxByScore = (a: ScreeningMatch, b: ScreeningMatch): ScreeningMatch =>
+    b.matchScore > a.matchScore ? b : a;
+  const top = matches.reduce(maxByScore);
   const sanctionsMatches = matches.filter((m) => m.listType !== 'PEP');
   const isPep = matches.some((m) => m.isPep);
 
   if (sanctionsMatches.length > 0) {
-    const topSanction = sanctionsMatches[0];
+    const topSanction = sanctionsMatches.reduce(maxByScore);
     if (topSanction.matchScore >= CONFIRMED_THRESHOLD) {
       return {
         status: 'REJECTED',
