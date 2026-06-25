@@ -112,6 +112,34 @@ test('committee dashboard surfaces locked, conditional, and candidate packet act
   assert.ok(actionItems.some((item) => item.title.includes('deliverables linked')));
 });
 
+test('committee action items surface the earliest scheduled meeting regardless of input order', () => {
+  // Two SCHEDULED meetings supplied in REVERSE chronological order. The "next
+  // meeting" action must be the soonest one (April), not whichever appears
+  // first in the array (June).
+  const meetings = [
+    {
+      id: 'meeting-june',
+      title: 'June 2026 IC',
+      status: CommitteeMeetingStatus.SCHEDULED,
+      scheduledFor: new Date('2026-06-20T01:00:00.000Z'),
+      packets: []
+    },
+    {
+      id: 'meeting-april',
+      title: 'April 2026 IC',
+      status: CommitteeMeetingStatus.SCHEDULED,
+      scheduledFor: new Date('2026-04-15T01:00:00.000Z'),
+      packets: []
+    }
+  ];
+
+  const actionItems = buildCommitteeActionItems(meetings, [], []);
+  const meetingItem = actionItems.find((item) => item.key.startsWith('meeting:'));
+  assert.ok(meetingItem, 'expected a next-meeting action item');
+  assert.equal(meetingItem!.key, 'meeting:meeting-april');
+  assert.ok(meetingItem!.title.includes('April 2026 IC'));
+});
+
 test('committee packet lock readiness blocks lock until DD evidence and valuation approval are complete', () => {
   const blocked = buildCommitteePacketLockReadiness({
     id: 'packet-1',

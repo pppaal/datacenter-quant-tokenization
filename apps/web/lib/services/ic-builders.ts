@@ -55,9 +55,16 @@ export function buildCommitteeActionItems(
 ) {
   const items: ActionItem[] = [];
 
-  const nextMeeting = meetings.find(
-    (meeting) => meeting.status === CommitteeMeetingStatus.SCHEDULED && meeting.scheduledFor
-  );
+  // The "next" committee meeting is the SCHEDULED one with the earliest
+  // scheduledFor — NOT whichever happens to appear first in the input array.
+  // Relying on caller ordering silently surfaced the wrong meeting when the
+  // list was sorted by anything other than scheduledFor asc.
+  const nextMeeting = meetings
+    .filter(
+      (meeting): meeting is MeetingLike & { scheduledFor: Date } =>
+        meeting.status === CommitteeMeetingStatus.SCHEDULED && meeting.scheduledFor !== null
+    )
+    .sort((left, right) => left.scheduledFor.getTime() - right.scheduledFor.getTime())[0];
   const lockedPackets = packets.filter((packet) => packet.status === CommitteePacketStatus.LOCKED);
   const conditionalPackets = packets.filter(
     (packet) => packet.status === CommitteePacketStatus.CONDITIONAL
