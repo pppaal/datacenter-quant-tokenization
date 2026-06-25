@@ -116,6 +116,27 @@ test('withAdminApi path-param route returns 403 for under-privileged actor (no h
   assert.equal(ran, false, 'handler must not run for an under-privileged actor');
 });
 
+test('withAdminApi ADMIN gate returns 403 for VIEWER and ANALYST (operators/identity-bindings shape)', async () => {
+  // The migrated `PATCH /api/admin/operators` and
+  // `PATCH /api/admin/identity-bindings` use `requiredRole: 'ADMIN'`. Any
+  // authenticated actor below ADMIN must be denied with 403 (not silently
+  // allowed to mutate operator seats or remap SSO identity bindings).
+  for (const role of ['VIEWER', 'ANALYST'] as const) {
+    let ran = false;
+    const handler = withAdminApi({
+      requiredRole: 'ADMIN',
+      resolveActor: async () => actor(role),
+      async handler() {
+        ran = true;
+        return NextResponse.json({ ok: true });
+      }
+    });
+    const response = await handler(jsonRequest({ userId: 'u1' }));
+    assert.equal(response.status, 403, `${role} must be denied with 403`);
+    assert.equal(ran, false, `${role} must not reach the handler`);
+  }
+});
+
 test('withAdminApi enforces auth before body validation (401 on missing actor + bad body)', async () => {
   const handler = withAdminApi({
     requiredRole: 'ANALYST',
