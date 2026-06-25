@@ -130,7 +130,10 @@ export function computeLeaseRollSummary(leases: LeaseLike[]): WaltSummary {
       weightedAvgTermYears: 0,
       weightedRentPerKwKrw: 0,
       markToMarketGapPct: null,
-      leaseCount: leases.length
+      // leaseCount must reconcile with the underwritten (active) view every
+      // other field is computed over — counting EXPIRED/TERMINATED/CANCELLED
+      // leases here would overstate the roster behind a zero-capacity WALT.
+      leaseCount: active.length
     };
   }
   const weightedTerm = active.reduce((sum, l) => sum + l.termYears * l.leasedKw, 0) / totalLeasedKw;
@@ -160,7 +163,10 @@ export function computeLeaseRollSummary(leases: LeaseLike[]): WaltSummary {
     weightedAvgTermYears: weightedTerm,
     weightedRentPerKwKrw: weightedRent,
     markToMarketGapPct: mtmGapPct,
-    leaseCount: leases.length
+    // Reconcile with the underwritten (active) view: WALT, weighted rent, and
+    // total leased capacity are all computed over `active`, so the headline
+    // count must exclude EXPIRED/TERMINATED/CANCELLED leases too.
+    leaseCount: active.length
   };
 }
 
