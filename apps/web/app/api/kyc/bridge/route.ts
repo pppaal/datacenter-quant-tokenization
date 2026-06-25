@@ -10,6 +10,7 @@ import {
   resolveVerifiedAdminActorFromHeaders
 } from '@/lib/security/admin-request';
 import { recordAuditEvent } from '@/lib/services/audit';
+import { hasRequiredAdminRole } from '@/lib/security/admin-auth';
 import { bridgeKycToChain } from '@/lib/services/kyc/bridge';
 
 const BodySchema = z.object({
@@ -25,6 +26,15 @@ export async function POST(request: Request) {
   const ipAddress = getRequestIpAddress(request.headers);
   if (!actor) {
     return NextResponse.json({ error: 'Active operator session required.' }, { status: 401 });
+  }
+  if (!hasRequiredAdminRole(actor.role, 'ADMIN')) {
+    // Defense-in-depth alongside the middleware role gate
+    // (`getRequiredAdminRoleForPath` → ADMIN). The KYC→chain bridge is an
+    // irreversible on-chain action; never let it drop to "any active seat".
+    return NextResponse.json(
+      { error: 'Insufficient role. ADMIN access required.' },
+      { status: 403 }
+    );
   }
 
   let parsed;
