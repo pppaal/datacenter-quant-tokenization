@@ -15,11 +15,13 @@
  * The implementation uses one round-trip per check (pipelined INCR + EXPIRE).
  * For high-volume endpoints, consider Upstash's `Ratelimit` SDK instead.
  */
+import { env } from '@/lib/env';
+
 type LimitDecision = { allowed: boolean; retryAfterMs: number };
 
 function readUpstashConfig() {
-  const url = process.env.UPSTASH_REDIS_REST_URL?.trim();
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN?.trim();
+  const url = env().UPSTASH_REDIS_REST_URL;
+  const token = env().UPSTASH_REDIS_REST_TOKEN;
   if (!url || !token) return null;
   return { url: url.replace(/\/$/, ''), token };
 }

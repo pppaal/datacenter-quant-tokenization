@@ -8,6 +8,7 @@
  */
 import Anthropic from '@anthropic-ai/sdk';
 import { anthropicModel } from '@/lib/ai/models';
+import { env } from '@/lib/env';
 import type { ReturnMetrics } from '@/lib/services/valuation/return-metrics';
 import type { MonteCarloResult } from '@/lib/services/valuation/monte-carlo';
 import type { InvestmentVerdict } from '@/lib/services/valuation/investment-verdict';
@@ -154,7 +155,7 @@ function sanitizeFreeText(value: string, maxLen: number): string {
 }
 
 function resolveClient(): Anthropic | null {
-  const key = process.env.ANTHROPIC_API_KEY?.trim();
+  const key = env().ANTHROPIC_API_KEY;
   if (!key) return null;
   return new Anthropic({ apiKey: key });
 }

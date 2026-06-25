@@ -2,6 +2,7 @@ import type { PrismaClient } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { extractDocumentFactsWithAi } from '@/lib/ai/openai';
 import { openaiModel } from '@/lib/ai/models';
+import { env } from '@/lib/env';
 
 const DEFAULT_CHUNK_SIZE = 900;
 const DEFAULT_CHUNK_OVERLAP = 120;
@@ -229,7 +230,7 @@ export async function ingestDocumentExtraction(
   const run = await db.documentExtractionRun.create({
     data: {
       documentVersionId: input.documentVersionId,
-      modelName: process.env.OPENAI_API_KEY ? openaiModel() : 'heuristic-fallback',
+      modelName: env().OPENAI_API_KEY ? openaiModel() : 'heuristic-fallback',
       taskType: 'document_extract',
       status: 'COMPLETED',
       rawOutput: {

@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { env } from '@/lib/env';
 import { openaiModel } from './models';
 
 /**
@@ -17,11 +18,11 @@ export class OpenAIConfigurationError extends Error {
 let cachedClient: OpenAI | null = null;
 
 export function isOpenAIConfigured(): boolean {
-  return Boolean(process.env.OPENAI_API_KEY?.trim());
+  return Boolean(env().OPENAI_API_KEY);
 }
 
 export function getOpenAIClient(): OpenAI {
-  const apiKey = process.env.OPENAI_API_KEY?.trim();
+  const apiKey = env().OPENAI_API_KEY;
   if (!apiKey) {
     throw new OpenAIConfigurationError();
   }

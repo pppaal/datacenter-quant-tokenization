@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { env } from '@/lib/env';
 import { openaiModel } from '@/lib/ai/models';
 
 /**
@@ -20,8 +21,9 @@ const EMBEDDING_DIMENSIONS = 1536;
 void openaiModel;
 
 function getClient(): OpenAI | null {
-  if (!process.env.OPENAI_API_KEY) return null;
-  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const apiKey = env().OPENAI_API_KEY;
+  if (!apiKey) return null;
+  return new OpenAI({ apiKey });
 }
 
 export type EmbedResult = {

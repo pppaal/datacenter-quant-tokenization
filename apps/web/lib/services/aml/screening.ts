@@ -10,6 +10,7 @@
  */
 import type { Prisma, PrismaClient } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
+import { env } from '@/lib/env';
 
 export type ScreeningStatus =
   | 'CLEAR'
@@ -262,7 +263,7 @@ export function __resetSanctionsProviderForTests(): void {
   defaultProvider = null;
 }
 
-const RESCREEN_INTERVAL_DAYS = Number(process.env.AML_RESCREEN_INTERVAL_DAYS ?? 90);
+const RESCREEN_INTERVAL_DAYS = env().AML_RESCREEN_INTERVAL_DAYS ?? 90;
 
 export type ScreenAndRecordInput = {
   subject: ScreeningSubject;
