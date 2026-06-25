@@ -45,7 +45,9 @@ import {
   updateDealDocumentRequest,
   updateDealLenderQuote,
   updateDealNegotiationEvent,
-  updateDealStage
+  updateDealRiskFlag,
+  updateDealStage,
+  updateDealTask
 } from '@/lib/services/deals';
 import {
   buildDealCloseProbabilitySummary,
@@ -1168,6 +1170,122 @@ test('buildDealDiligenceSummary highlights missing and blocked specialist lanes'
   assert.ok(summary.uncoveredCoreTypes.includes(DealDiligenceWorkstreamType.TECHNICAL));
 });
 
+test('buildDealDiligenceSummary does not count non-core sign-offs toward core readiness', () => {
+  const withDeliverable = (id: string) => [
+    {
+      id: `${id}-deliverable`,
+      note: null,
+      document: {
+        id: `${id}-doc`,
+        title: `${id} report`,
+        documentType: 'REPORT',
+        currentVersion: 1,
+        documentHash: `hash-${id}`,
+        updatedAt: new Date()
+      }
+    }
+  ];
+
+  // Core lanes LEGAL / COMMERCIAL / TECHNICAL all exist with evidence, but
+  // only LEGAL is signed off. Two *non-core* lanes (TAX, INSURANCE) are also
+  // signed off, so the buggy `signedOffCount >= coreRequiredTypes.length`
+  // gate (3 total sign-offs >= 3 core) would falsely read as committee-ready.
+  const summary = buildDealDiligenceSummary(
+    {
+      assetClass: 'OFFICE',
+      asset: null
+    } as any,
+    [
+      {
+        id: 'dd_legal',
+        workstreamType: DealDiligenceWorkstreamType.LEGAL,
+        status: DealDiligenceWorkstreamStatus.SIGNED_OFF,
+        deliverables: withDeliverable('legal')
+      },
+      {
+        id: 'dd_commercial',
+        workstreamType: DealDiligenceWorkstreamType.COMMERCIAL,
+        status: DealDiligenceWorkstreamStatus.READY_FOR_SIGNOFF,
+        deliverables: withDeliverable('commercial')
+      },
+      {
+        id: 'dd_technical',
+        workstreamType: DealDiligenceWorkstreamType.TECHNICAL,
+        status: DealDiligenceWorkstreamStatus.READY_FOR_SIGNOFF,
+        deliverables: withDeliverable('technical')
+      },
+      {
+        id: 'dd_tax',
+        workstreamType: DealDiligenceWorkstreamType.TAX,
+        status: DealDiligenceWorkstreamStatus.SIGNED_OFF,
+        deliverables: withDeliverable('tax')
+      },
+      {
+        id: 'dd_insurance',
+        workstreamType: DealDiligenceWorkstreamType.INSURANCE,
+        status: DealDiligenceWorkstreamStatus.SIGNED_OFF,
+        deliverables: withDeliverable('insurance')
+      }
+    ] as any
+  );
+
+  // Three total sign-offs, but only ONE core lane (LEGAL) is signed off.
+  assert.equal(summary.signedOffCount, 3);
+  assert.equal(summary.signedOffCoreCount, 1);
+  assert.notEqual(summary.headline, 'Core specialist diligence is signed off and committee-ready.');
+
+  // Readiness must NOT mark the specialist sign-off gate as done.
+  const readiness = buildDealClosingReadiness(
+    {
+      id: 'deal_core',
+      stage: DealStage.IC,
+      asset: null,
+      assetClass: 'OFFICE',
+      counterparties: [],
+      documentRequests: [],
+      bidRevisions: [],
+      lenderQuotes: [],
+      negotiationEvents: [],
+      diligenceWorkstreams: [
+        {
+          id: 'dd_legal',
+          workstreamType: DealDiligenceWorkstreamType.LEGAL,
+          status: DealDiligenceWorkstreamStatus.SIGNED_OFF,
+          deliverables: withDeliverable('legal')
+        },
+        {
+          id: 'dd_commercial',
+          workstreamType: DealDiligenceWorkstreamType.COMMERCIAL,
+          status: DealDiligenceWorkstreamStatus.READY_FOR_SIGNOFF,
+          deliverables: withDeliverable('commercial')
+        },
+        {
+          id: 'dd_technical',
+          workstreamType: DealDiligenceWorkstreamType.TECHNICAL,
+          status: DealDiligenceWorkstreamStatus.READY_FOR_SIGNOFF,
+          deliverables: withDeliverable('technical')
+        },
+        {
+          id: 'dd_tax',
+          workstreamType: DealDiligenceWorkstreamType.TAX,
+          status: DealDiligenceWorkstreamStatus.SIGNED_OFF,
+          deliverables: withDeliverable('tax')
+        },
+        {
+          id: 'dd_insurance',
+          workstreamType: DealDiligenceWorkstreamType.INSURANCE,
+          status: DealDiligenceWorkstreamStatus.SIGNED_OFF,
+          deliverables: withDeliverable('insurance')
+        }
+      ]
+    } as any,
+    null
+  );
+  const specialistCheck = readiness.checks.find((check) => check.key === 'specialist-signoff');
+  assert.ok(specialistCheck);
+  assert.notEqual(specialistCheck?.status, 'done');
+});
+
 test('buildDealDiligenceWorkpaper and markdown export summarize specialist sign-off cleanly', () => {
   const now = new Date('2026-04-10T00:00:00.000Z');
   const workpaper = buildDealDiligenceWorkpaper({
@@ -1560,6 +1678,89 @@ test('updateDealStage enforces closing before asset management', async () => {
       ),
     /only after closing/
   );
+});
+
+test('updateDealTask preserves the original completion timestamp when editing a done task', async () => {
+  const completedAt = new Date(Date.now() - 1000 * 60 * 60 * 24 * 5);
+  let updateData: any;
+  const fakeDb = {
+    task: {
+      async findFirst() {
+        return {
+          id: 'task_1',
+          dealId: 'deal_1',
+          title: 'Old title',
+          status: TaskStatus.DONE,
+          completedAt
+        };
+      },
+      async update(args: any) {
+        updateData = args.data;
+        return { id: 'task_1', title: args.data.title ?? 'Old title', status: args.data.status };
+      }
+    },
+    activityLog: {
+      async create() {
+        return null;
+      }
+    },
+    dealExecutionProbabilitySnapshot: {
+      async create() {
+        return null;
+      }
+    }
+  };
+
+  await updateDealTask('deal_1', 'task_1', { title: 'Renamed task' }, fakeDb as any);
+
+  // Editing a still-DONE task must keep the original completion timestamp,
+  // not overwrite it with a fresh `new Date()`.
+  assert.equal(updateData.completedAt?.getTime(), completedAt.getTime());
+});
+
+test('updateDealRiskFlag preserves the original resolution timestamp when editing a resolved risk', async () => {
+  const resolvedAt = new Date(Date.now() - 1000 * 60 * 60 * 24 * 9);
+  let updateData: any;
+  const fakeDb = {
+    riskFlag: {
+      async findFirst() {
+        return {
+          id: 'risk_1',
+          dealId: 'deal_1',
+          title: 'Title risk',
+          severity: RiskSeverity.HIGH,
+          statusLabel: 'RESOLVED',
+          isResolved: true,
+          resolvedAt
+        };
+      },
+      async update(args: any) {
+        updateData = args.data;
+        return {
+          id: 'risk_1',
+          title: args.data.title ?? 'Title risk',
+          statusLabel: 'RESOLVED',
+          isResolved: args.data.isResolved
+        };
+      }
+    },
+    activityLog: {
+      async create() {
+        return null;
+      }
+    },
+    dealExecutionProbabilitySnapshot: {
+      async create() {
+        return null;
+      }
+    }
+  };
+
+  await updateDealRiskFlag('deal_1', 'risk_1', { detail: 'Added more context' }, fakeDb as any);
+
+  // Editing a still-resolved risk must keep the original resolution
+  // timestamp, not overwrite it with a fresh `new Date()`.
+  assert.equal(updateData.resolvedAt?.getTime(), resolvedAt.getTime());
 });
 
 test('buildDealStageChecklist reports missing stage requirements', () => {

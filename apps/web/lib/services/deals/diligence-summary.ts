@@ -36,6 +36,14 @@ export type DiligenceWorkstreamLike = {
 export type DealDiligenceSummary = {
   totalCount: number;
   signedOffCount: number;
+  /**
+   * Number of *core-required* workstream types whose lane is signed off.
+   * Distinct from `signedOffCount`, which counts every signed-off lane
+   * (including non-core lanes such as TAX / INSURANCE). Use this for any
+   * "are the core lanes signed off" gate so non-core sign-offs cannot
+   * inflate core readiness.
+   */
+  signedOffCoreCount: number;
   blockedCount: number;
   readyForSignoffCount: number;
   deliverableCount: number;
@@ -80,6 +88,9 @@ export function buildDealDiligenceSummary(
   const signedOff = workstreams.filter(
     (item) => item.status === DealDiligenceWorkstreamStatus.SIGNED_OFF
   );
+  const signedOffTypes = new Set(signedOff.map((item) => item.workstreamType));
+  const signedOffCoreCount = coreRequiredTypes.filter((type) => signedOffTypes.has(type)).length;
+  const allCoreSignedOff = signedOffCoreCount >= coreRequiredTypes.length;
   const blocked = workstreams.filter(
     (item) => item.status === DealDiligenceWorkstreamStatus.BLOCKED
   );
@@ -103,7 +114,7 @@ export function buildDealDiligenceSummary(
 
   const headline =
     missingCoreTypes.length === 0 && blocked.length === 0
-      ? signedOff.length >= coreRequiredTypes.length
+      ? allCoreSignedOff
         ? uncoveredCoreTypes.length === 0
           ? 'Core specialist diligence is signed off and committee-ready.'
           : 'Core specialist diligence is signed off, but supporting deliverables still need to be attached.'
@@ -115,6 +126,7 @@ export function buildDealDiligenceSummary(
   return {
     totalCount: workstreams.length,
     signedOffCount: signedOff.length,
+    signedOffCoreCount,
     blockedCount: blocked.length,
     readyForSignoffCount: readyForSignoff.length,
     deliverableCount,
