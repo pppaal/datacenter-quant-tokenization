@@ -37,6 +37,20 @@ export type PortfolioScenarioExplorationRow = {
 
 export type PortfolioOptimizationLab = {
   methodologyLabel: string;
+  /**
+   * TRUE so consumers can never mistake objectiveScorePct for a risk-optimized
+   * (mean-variance / efficient-frontier) result. This lab is a SCREENING
+   * HEURISTIC: it has no covariance matrix, no expected-return vector, and no
+   * efficient frontier. See `methodology` and `buildObjective` for the exact
+   * objective.
+   */
+  isHeuristicScreen: true;
+  /**
+   * Plain-language description of what objectiveScorePct actually is — the
+   * value of the ad-hoc screening objective (income-quality minus stress, with
+   * a self-HHI concentration penalty), NOT a risk-adjusted optimization output.
+   */
+  methodology: string;
   objectiveScorePct: number;
   summary: string;
   topMove: string;
@@ -44,6 +58,13 @@ export type PortfolioOptimizationLab = {
   assetRows: PortfolioOptimizationAssetRow[];
   scenarioRows: PortfolioScenarioExplorationRow[];
 };
+
+/** See PortfolioOptimizationLab.methodology — kept as a constant so the lab and the workspace item agree. */
+const HEURISTIC_METHODOLOGY =
+  'Screening heuristic, NOT mean-variance optimization. objectiveScorePct is the value of an ad-hoc ' +
+  'objective = Σ weightᵢ·(scoreᵢ − 0.45·stressᵢ) − 25·Σ weightᵢ² (a self-HHI concentration penalty). ' +
+  'There is no covariance matrix, no expected-return estimate, and no efficient frontier; the HHI term ' +
+  'rewards diversification by construction, it does not minimize portfolio variance.';
 
 type AssetSignal = ReturnType<typeof buildAssetSignal>;
 
@@ -261,6 +282,19 @@ function buildInitialWeights(portfolio: PortfolioRecord) {
   return roundWeightVector(portfolio.assets.map(() => 100 / Math.max(1, portfolio.assets.length)));
 }
 
+/**
+ * The screening objective. NOTE: this is NOT a mean-variance / risk-model
+ * objective. It is a heuristic score:
+ *
+ *   objective = Σ weightᵢ·(scoreᵢ − 0.45·stressᵢ)  −  25·Σ weightᵢ²
+ *
+ * The second term is a self-HHI (Herfindahl) CONCENTRATION penalty: it punishes
+ * weight that piles into a single holding, which nudges the search toward
+ * diversification BY CONSTRUCTION — it is NOT derived from any covariance of
+ * returns, and there is no expected-return or efficient-frontier estimate. Do
+ * not read objectiveScorePct as a risk-optimized result; see
+ * PortfolioOptimizationLab.isHeuristicScreen / .methodology.
+ */
 function buildObjective(
   weights: number[],
   signals: Array<{ scorePct: number; stressPenaltyPct: number }>
@@ -496,6 +530,8 @@ export function buildPortfolioOptimizationLab(
 
   return {
     methodologyLabel: 'Allocation screening heuristic',
+    isHeuristicScreen: true,
+    methodology: HEURISTIC_METHODOLOGY,
     objectiveScorePct,
     summary: `${portfolio.name} allocation screening reweights current holdings using a deterministic annealing-style search over an ad-hoc score combining income quality, leverage, rollover, covenant pressure, and research coverage. This is a screening heuristic, not a returns/covariance/risk-model optimization — it does not estimate expected returns or portfolio risk.`,
     topMove,
@@ -522,6 +558,8 @@ export function buildPortfolioOptimizationWorkspaceItem(portfolio: PortfolioReco
     portfolioName: portfolio.name,
     assetCount: portfolio.assets.length,
     methodologyLabel: lab.methodologyLabel,
+    isHeuristicScreen: lab.isHeuristicScreen,
+    methodology: lab.methodology,
     objectiveScorePct: lab.objectiveScorePct,
     topMove: lab.topMove,
     defensiveMove: lab.defensiveMove,
