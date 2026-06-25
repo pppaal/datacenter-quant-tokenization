@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { env } from '@/lib/env';
 import { openaiModel } from '@/lib/ai/models';
 import {
   computeAiPromptHash,
@@ -13,8 +14,9 @@ import type { UnderwritingAnalysis } from '@/lib/services/valuation-engine';
 const model = openaiModel();
 
 function getClient() {
-  if (!process.env.OPENAI_API_KEY) return null;
-  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const apiKey = env().OPENAI_API_KEY;
+  if (!apiKey) return null;
+  return new OpenAI({ apiKey });
 }
 
 type ChatMessage = { role: 'system' | 'user' | 'assistant'; content: string };

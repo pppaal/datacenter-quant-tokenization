@@ -9,6 +9,7 @@ import {
 } from '@/lib/blockchain/registry';
 import { awaitTxReceipt } from '@/lib/blockchain/tx';
 import { prisma } from '@/lib/db/prisma';
+import { env } from '@/lib/env';
 import { isRealProduction } from '@/lib/runtime-env';
 import { promoteAssetSnapshotsToFeatures } from '@/lib/services/feature-promotion';
 import { buildReviewPacketManifest } from '@/lib/services/review';
@@ -35,8 +36,8 @@ function getMockRegistryConfig() {
     chainName: 'mock-registry',
     registryAddress: '0x000000000000000000000000000000000000dEaD',
     metadataBaseUrl: (
-      process.env.BLOCKCHAIN_METADATA_BASE_URL ??
-      process.env.APP_BASE_URL ??
+      env().BLOCKCHAIN_METADATA_BASE_URL ??
+      env().APP_BASE_URL ??
       'http://localhost:3000'
     )
       .trim()

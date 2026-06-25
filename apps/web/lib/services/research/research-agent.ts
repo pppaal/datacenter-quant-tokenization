@@ -26,6 +26,7 @@
 
 import Anthropic from '@anthropic-ai/sdk';
 import { anthropicModel } from '@/lib/ai/models';
+import { env } from '@/lib/env';
 import type {
   MessageParam,
   Tool,
@@ -160,7 +161,7 @@ const TOOLS: Tool[] = [
 // ---------------------------------------------------------------------------
 
 function resolveClient(): Anthropic | null {
-  const key = process.env.ANTHROPIC_API_KEY?.trim();
+  const key = env().ANTHROPIC_API_KEY;
   if (!key) return null;
   return new Anthropic({ apiKey: key });
 }
