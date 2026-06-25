@@ -93,6 +93,29 @@ test('withAdminApi validates the body with zod (400) before invoking the handler
   assert.equal(ran, false, 'handler must not run on invalid body');
 });
 
+test('withAdminApi path-param route returns 403 for under-privileged actor (no handler run)', async () => {
+  // Mirrors the migrated `GET /api/admin/ic-packets/[id]/export` shape: a
+  // path-param GET that previously returned 401 for an authenticated actor
+  // lacking the ANALYST role. The handler must not run.
+  let ran = false;
+  const handler = withAdminApi<undefined, { id: string }>({
+    requiredRole: 'ANALYST',
+    resolveActor: async () => actor('VIEWER'),
+    auditEntityIdFromParams: (params) => params.id,
+    async handler() {
+      ran = true;
+      return NextResponse.json({ ok: true });
+    }
+  });
+
+  const request = new Request('http://localhost/api/admin/ic-packets/pkt_1/export', {
+    method: 'GET'
+  });
+  const response = await handler(request, { params: Promise.resolve({ id: 'pkt_1' }) });
+  assert.equal(response.status, 403);
+  assert.equal(ran, false, 'handler must not run for an under-privileged actor');
+});
+
 test('withAdminApi enforces auth before body validation (401 on missing actor + bad body)', async () => {
   const handler = withAdminApi({
     requiredRole: 'ANALYST',

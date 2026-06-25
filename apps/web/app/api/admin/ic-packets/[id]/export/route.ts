@@ -1,13 +1,7 @@
 import { NextResponse } from 'next/server';
-import { validationOrGenericError } from '@/lib/security/error-response';
 import { prisma } from '@/lib/db/prisma';
-import { recordAuditEvent } from '@/lib/services/audit';
 import { committeePacketInclude } from '@/lib/services/ic';
-import {
-  getRequestIpAddress,
-  resolveVerifiedAdminActorFromHeaders
-} from '@/lib/security/admin-request';
-import { hasRequiredAdminRole } from '@/lib/security/admin-auth';
+import { withAdminApi } from '@/lib/security/with-admin-api';
 
 export const dynamic = 'force-dynamic';
 
@@ -313,48 +307,23 @@ async function loadPacket(id: string) {
   });
 }
 
-export async function GET(
-  request: Request,
-  context: {
-    params: Promise<{
-      id: string;
-    }>;
-  }
-) {
-  const actor = await resolveVerifiedAdminActorFromHeaders(request.headers, prisma, {
-    allowBasic: false,
-    requireActiveSeat: true
-  });
+export const GET = withAdminApi<undefined, { id: string }>({
+  requiredRole: 'ANALYST',
+  auditAction: 'ic.packet.export',
+  auditEntityType: 'committee_packet',
+  auditEntityIdFromParams: (params) => params.id,
+  async handler({ params, request, requestId }) {
+    const { id } = params;
+    const format = new URL(request.url).searchParams.get('format')?.toLowerCase() ?? 'html';
 
-  if (!actor || !hasRequiredAdminRole(actor.role, 'ANALYST')) {
-    return NextResponse.json({ error: 'Operator session required.' }, { status: 401 });
-  }
-
-  const { id } = await context.params;
-  const format = new URL(request.url).searchParams.get('format')?.toLowerCase() ?? 'html';
-
-  try {
     const packet = await loadPacket(id);
 
     if (!packet) {
-      return NextResponse.json({ error: 'Committee packet not found.' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Committee packet not found.' },
+        { status: 404, headers: { 'X-Request-Id': requestId } }
+      );
     }
-
-    await recordAuditEvent({
-      actorIdentifier: actor.identifier,
-      actorRole: actor.role,
-      action: 'ic.packet.export',
-      entityType: 'committee_packet',
-      entityId: packet.id,
-      assetId: packet.assetId,
-      requestPath: new URL(request.url).pathname,
-      requestMethod: request.method,
-      ipAddress: getRequestIpAddress(request.headers),
-      metadata: {
-        packetCode: packet.packetCode,
-        format
-      }
-    });
 
     const safeCode = packet.packetCode.toLowerCase().replace(/[^a-z0-9-]+/g, '-');
     const fileBase = `ic-packet-${safeCode}`;
@@ -376,23 +345,5 @@ export async function GET(
         'Content-Disposition': `inline; filename="${fileBase}.html"`
       }
     });
-  } catch (error) {
-    await recordAuditEvent({
-      actorIdentifier: actor.identifier,
-      actorRole: actor.role,
-      action: 'ic.packet.export',
-      entityType: 'committee_packet',
-      entityId: id,
-      requestPath: new URL(request.url).pathname,
-      requestMethod: request.method,
-      ipAddress: getRequestIpAddress(request.headers),
-      statusLabel: 'FAILED',
-      metadata: {
-        error: error instanceof Error ? error.message : 'Failed to export committee packet',
-        format
-      }
-    });
-
-    return validationOrGenericError(error, { message: 'Failed to export committee packet.' });
   }
-}
+});
