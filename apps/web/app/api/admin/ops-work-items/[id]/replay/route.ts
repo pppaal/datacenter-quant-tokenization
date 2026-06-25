@@ -7,6 +7,7 @@ import {
 } from '@/lib/security/admin-request';
 import { recordAuditEvent } from '@/lib/services/audit';
 import { genericErrorResponse } from '@/lib/security/error-response';
+import { hasRequiredAdminRole } from '@/lib/security/admin-auth';
 
 export async function POST(
   request: Request,
@@ -23,7 +24,17 @@ export async function POST(
   const ipAddress = getRequestIpAddress(request.headers);
 
   if (!actor) {
+    // 401: no authenticated operator session.
     return NextResponse.json({ error: 'Active admin session required.' }, { status: 401 });
+  }
+  if (!hasRequiredAdminRole(actor.role, 'ADMIN')) {
+    // 403: authenticated but lacks the ADMIN role required to requeue ops work
+    // items. Defense-in-depth alongside the middleware role gate
+    // (`getRequiredAdminRoleForPath` → ADMIN).
+    return NextResponse.json(
+      { error: 'Insufficient role. ADMIN access required.' },
+      { status: 403 }
+    );
   }
 
   const { id } = await context.params;
