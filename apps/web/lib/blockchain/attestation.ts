@@ -79,14 +79,25 @@ export function toBytes32Identifier(input: string): Hex {
 
 /** Right-pad a short ASCII symbol like "KRW" into bytes32 — readable
  *  when decoded but still 32 bytes. Mirrors how AssetToken stores its
- *  quote symbol. */
+ *  quote symbol (`bytes32` of the UTF-8/ASCII bytes, right-padded).
+ *
+ *  Only printable single-byte ASCII (code points 0x01..0x7f) is accepted.
+ *  Multi-byte / non-ASCII input is rejected rather than silently mangled:
+ *  `charCodeAt` returns UTF-16 code units and assigning a value > 0xff into
+ *  a `Uint8Array` truncates to the low byte, so e.g. "Ł" (U+0141) would
+ *  otherwise collide with "A" (0x41) and produce a bytes32 the on-chain
+ *  contract never agrees with. */
 export function symbolToBytes32(symbol: string): Hex {
-  if (symbol.length > 31) {
-    throw new Error(`symbol "${symbol}" exceeds 31 bytes`);
+  if (symbol.length > 32) {
+    throw new Error(`symbol "${symbol}" exceeds 32 bytes`);
   }
   const bytes = new Uint8Array(32);
   for (let i = 0; i < symbol.length; i += 1) {
-    bytes[i] = symbol.charCodeAt(i);
+    const code = symbol.charCodeAt(i);
+    if (code === 0 || code > 0x7f) {
+      throw new Error(`symbol "${symbol}" must contain only printable ASCII (0x01..0x7f)`);
+    }
+    bytes[i] = code;
   }
   return toHex(bytes);
 }
@@ -119,9 +130,22 @@ export function buildNavAttestation(opts: {
   quoteSymbol?: string;
 }): NavAttestation {
   const totalShares = opts.valuationRun.totalSharesScaled ?? 10n ** 18n;
+  if (totalShares <= 0n) {
+    throw new Error('totalSharesScaled must be a positive number of shares.');
+  }
+  const baseCaseValueKrw = opts.valuationRun.baseCaseValueKrw;
+  if (!Number.isFinite(baseCaseValueKrw)) {
+    throw new Error(`baseCaseValueKrw must be a finite number (got ${baseCaseValueKrw}).`);
+  }
+  if (baseCaseValueKrw < 0) {
+    // navPerShare is an on-chain uint256; a negative value would either
+    // wrap to a garbage huge number or fail at ABI encode far downstream.
+    // Reject it here with a clear domain error.
+    throw new Error(`baseCaseValueKrw must be non-negative (got ${baseCaseValueKrw}).`);
+  }
   // baseCaseValueKrw is JS number (KRW). Scale to 18 decimals before
   // dividing by totalShares to preserve precision.
-  const valueScaled = BigInt(Math.round(opts.valuationRun.baseCaseValueKrw)) * 10n ** 18n;
+  const valueScaled = BigInt(Math.round(baseCaseValueKrw)) * 10n ** 18n;
   const navPerShare = (valueScaled * 10n ** 18n) / totalShares;
   const symbol = opts.quoteSymbol ?? 'KRW';
   const navTimestamp = BigInt(Math.floor(opts.valuationRun.createdAt.getTime() / 1000));

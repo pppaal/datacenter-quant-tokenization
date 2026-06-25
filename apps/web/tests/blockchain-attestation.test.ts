@@ -32,8 +32,24 @@ test('symbolToBytes32 right-pads short symbols', () => {
   assert.equal(krw.slice(2, 8), '4b5257');
 });
 
+test('symbolToBytes32 accepts a 32-char ASCII symbol (fills bytes32 exactly)', () => {
+  // bytes32 holds 32 single-byte ASCII chars; a 32-char symbol must NOT throw.
+  const out = symbolToBytes32('A'.repeat(32));
+  assert.equal(out.length, 66);
+  assert.equal(out, `0x${'41'.repeat(32)}`);
+});
+
 test('symbolToBytes32 throws on overlong symbol', () => {
-  assert.throws(() => symbolToBytes32('A'.repeat(32)));
+  assert.throws(() => symbolToBytes32('A'.repeat(33)), /exceeds 32 bytes/);
+});
+
+test('symbolToBytes32 rejects non-ASCII instead of silently truncating', () => {
+  // Regression: "Ł" (U+0141) would be truncated to its low byte 0x41 ("A")
+  // by Uint8Array assignment, silently colliding with symbolToBytes32('A').
+  assert.throws(() => symbolToBytes32('Ł'), /printable ASCII/);
+  assert.throws(() => symbolToBytes32('KR₩'), /printable ASCII/);
+  // Sanity: the ASCII it would have collided with is still encodable.
+  assert.notEqual(symbolToBytes32('A'), '0x' + '00'.repeat(32));
 });
 
 test('buildNavAttestation derives navPerShare from baseCaseValueKrw', () => {
@@ -65,6 +81,48 @@ test('buildNavAttestation supports custom totalSharesScaled', () => {
   });
   // 1B KRW / 1M shares = 1000 KRW per share, scaled = 1000 × 1e18
   assert.equal(att.navPerShare, 1000n * 10n ** 18n);
+});
+
+test('buildNavAttestation rejects a negative valuation instead of signing a garbage NAV', () => {
+  // Regression: a negative baseCaseValueKrw previously produced a negative
+  // navPerShare which would wrap/corrupt when encoded as an on-chain uint256.
+  assert.throws(
+    () =>
+      buildNavAttestation({
+        valuationRun: { id: 'r', baseCaseValueKrw: -100, createdAt: new Date(0) },
+        asset: { assetCode: 'A' }
+      }),
+    /non-negative/
+  );
+});
+
+test('buildNavAttestation rejects non-finite valuation', () => {
+  for (const bad of [NaN, Infinity, -Infinity]) {
+    assert.throws(
+      () =>
+        buildNavAttestation({
+          valuationRun: { id: 'r', baseCaseValueKrw: bad, createdAt: new Date(0) },
+          asset: { assetCode: 'A' }
+        }),
+      /finite/
+    );
+  }
+});
+
+test('buildNavAttestation rejects non-positive totalSharesScaled', () => {
+  assert.throws(
+    () =>
+      buildNavAttestation({
+        valuationRun: {
+          id: 'r',
+          baseCaseValueKrw: 100,
+          totalSharesScaled: 0n,
+          createdAt: new Date(0)
+        },
+        asset: { assetCode: 'A' }
+      }),
+    /positive number of shares/
+  );
 });
 
 test('attestationDigest is deterministic for same input', () => {
