@@ -6,8 +6,10 @@ import {
   listRecentOpsAlertDeliveries,
   maskOpsAlertDestination,
   parseOpsCycleAlertPayload,
+  persistOpsAlertAttempts,
   recordOpsAlertDelivery,
   replayOpsAlertDelivery,
+  resolveOpsAlertAttemptStatusLabel,
   sendOpsWebhookAlerts,
   sendOpsWebhookAlert,
   shouldNotifyOpsWebhook
@@ -237,6 +239,129 @@ test('parseOpsCycleAlertPayload accepts persisted ops payloads', () => {
   assert.equal(parsed?.status, 'FAILED');
   assert.equal(parsed?.attemptSummary?.sourceAttemptCount, 2);
   assert.equal(parsed?.sourceRun?.id, 'source_run_1');
+});
+
+test('parseOpsCycleAlertPayload coerces malformed attempt counts to a finite count', () => {
+  const parsed = parseOpsCycleAlertPayload({
+    status: 'SUCCESS',
+    actorIdentifier: 'ops@example.com',
+    alertSummary: 'recovered',
+    attemptSummary: {
+      // Non-numeric strings and structured junk previously produced NaN/0 which
+      // leaked into operator alert text on replay.
+      sourceAttemptCount: 'two attempts',
+      researchAttemptCount: {}
+    }
+  } as any);
+
+  assert.equal(parsed?.attemptSummary?.sourceAttemptCount, 1);
+  assert.equal(parsed?.attemptSummary?.researchAttemptCount, 1);
+  assert.equal(Number.isFinite(parsed?.attemptSummary?.sourceAttemptCount), true);
+
+  const message = buildOpsWebhookMessage(parsed!, { NODE_ENV: 'production' } as NodeJS.ProcessEnv);
+  assert.doesNotMatch(message.text, /NaN/);
+  assert.match(message.text, /attempts=source:1,research:1/);
+});
+
+test('parseOpsCycleAlertPayload floors valid fractional counts and keeps real retries', () => {
+  const parsed = parseOpsCycleAlertPayload({
+    status: 'FAILED',
+    actorIdentifier: 'ops@example.com',
+    alertSummary: 'boom',
+    attemptSummary: {
+      sourceAttemptCount: 3.9,
+      researchAttemptCount: 2
+    }
+  } as any);
+
+  assert.equal(parsed?.attemptSummary?.sourceAttemptCount, 3);
+  assert.equal(parsed?.attemptSummary?.researchAttemptCount, 2);
+});
+
+test('resolveOpsAlertAttemptStatusLabel marks suppression as SKIPPED, not FAILED', () => {
+  assert.equal(
+    resolveOpsAlertAttemptStatusLabel({ delivered: true, reason: 'failed' }),
+    'DELIVERED'
+  );
+  assert.equal(
+    resolveOpsAlertAttemptStatusLabel({ delivered: false, reason: 'success_suppressed' }),
+    'SKIPPED'
+  );
+  assert.equal(
+    resolveOpsAlertAttemptStatusLabel({ delivered: false, reason: 'recovery_suppressed' }),
+    'SKIPPED'
+  );
+  assert.equal(
+    resolveOpsAlertAttemptStatusLabel({ delivered: false, reason: 'missing_webhook' }),
+    'SKIPPED'
+  );
+  assert.equal(
+    resolveOpsAlertAttemptStatusLabel({ delivered: false, reason: 'delivery_error' }),
+    'FAILED'
+  );
+});
+
+test('persistOpsAlertAttempts records a suppressed success as SKIPPED', async () => {
+  // A healthy ops cycle whose alert is intentionally suppressed must not pollute
+  // the delivery history (and statusLabel-filtered monitoring) with FAILED rows.
+  const alert = await sendOpsWebhookAlerts(
+    {
+      status: 'SUCCESS',
+      actorIdentifier: 'ops@example.com',
+      alertSummary: 'ops cycle completed without retry'
+    },
+    {
+      OPS_ALERT_WEBHOOK_URL: 'https://hooks.example.com/ops'
+    } as unknown as NodeJS.ProcessEnv,
+    async () => new Response(null, { status: 200 })
+  );
+
+  assert.equal(alert.deliveredAny, false);
+  assert.equal(alert.attempts[0]?.reason, 'success_suppressed');
+
+  const rows: Array<{ statusLabel: string; reason?: string | null }> = [];
+  await persistOpsAlertAttempts(
+    alert.attempts,
+    { actorIdentifier: 'ops@example.com', environmentLabel: 'test', payload: {} as any },
+    {
+      opsAlertDelivery: {
+        async create(args: any) {
+          rows.push(args.data);
+          return { id: 'd1', createdAt: new Date(), ...args.data };
+        }
+      }
+    } as any
+  );
+
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0]?.statusLabel, 'SKIPPED');
+  assert.equal(rows[0]?.reason, 'success_suppressed');
+});
+
+test('persistOpsAlertAttempts still records a genuine delivery failure as FAILED', async () => {
+  const rows: Array<{ statusLabel: string }> = [];
+  await persistOpsAlertAttempts(
+    [
+      {
+        channel: 'webhook_primary',
+        destination: 'https://hooks.example.com/ops',
+        delivered: false,
+        reason: 'delivery_error',
+        errorMessage: 'boom'
+      }
+    ],
+    { actorIdentifier: 'ops@example.com', environmentLabel: 'test', payload: {} as any },
+    {
+      opsAlertDelivery: {
+        async create(args: any) {
+          rows.push(args.data);
+          return { id: 'd1', createdAt: new Date(), ...args.data };
+        }
+      }
+    } as any
+  );
+
+  assert.equal(rows[0]?.statusLabel, 'FAILED');
 });
 
 test('replayOpsAlertDelivery replays persisted webhook payloads', async () => {

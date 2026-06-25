@@ -383,6 +383,24 @@ export async function recordOpsAlertDelivery(
   });
 }
 
+// Reasons that mean "we intentionally did not deliver" (suppression / no target)
+// rather than "delivery was attempted and failed". These must persist as SKIPPED
+// so the alert-delivery history (and statusLabel-filtered ops monitoring) does not
+// count a healthy, intentionally-suppressed ops cycle as a delivery failure.
+const OPS_ALERT_SKIP_REASONS = new Set([
+  'missing_webhook',
+  'success_suppressed',
+  'recovery_suppressed'
+]);
+
+export function resolveOpsAlertAttemptStatusLabel(attempt: {
+  delivered: boolean;
+  reason: string;
+}): 'DELIVERED' | 'SKIPPED' | 'FAILED' {
+  if (attempt.delivered) return 'DELIVERED';
+  return OPS_ALERT_SKIP_REASONS.has(attempt.reason) ? 'SKIPPED' : 'FAILED';
+}
+
 export async function persistOpsAlertAttempts(
   attempts: Array<{
     channel: string;
@@ -419,7 +437,7 @@ export async function persistOpsAlertAttempts(
       {
         channel: attempt.channel,
         destination: attempt.destination,
-        statusLabel: attempt.delivered ? 'DELIVERED' : 'FAILED',
+        statusLabel: resolveOpsAlertAttemptStatusLabel(attempt),
         reason: attempt.reason,
         actorIdentifier: input.actorIdentifier,
         environmentLabel: input.environmentLabel,
@@ -467,6 +485,15 @@ export function parseOpsCycleAlertPayload(
   const actorIdentifier = candidate.actorIdentifier;
   const alertSummary = candidate.alertSummary;
 
+  // Persisted payloads can carry malformed attempt counts (non-numeric strings,
+  // objects, arrays). `Number(...)` would yield NaN/0 and leak into operator
+  // alert text on replay, so coerce to a finite positive integer (>= 1).
+  const coerceAttemptCount = (value: unknown): number => {
+    const parsed = Number(value ?? 1);
+    if (!Number.isFinite(parsed) || parsed < 1) return 1;
+    return Math.floor(parsed);
+  };
+
   if (
     (status !== 'SUCCESS' && status !== 'FAILED') ||
     typeof actorIdentifier !== 'string' ||
@@ -500,8 +527,8 @@ export function parseOpsCycleAlertPayload(
     alertSummary,
     attemptSummary: attemptSummaryCandidate
       ? {
-          sourceAttemptCount: Number(attemptSummaryCandidate.sourceAttemptCount ?? 1),
-          researchAttemptCount: Number(attemptSummaryCandidate.researchAttemptCount ?? 1)
+          sourceAttemptCount: coerceAttemptCount(attemptSummaryCandidate.sourceAttemptCount),
+          researchAttemptCount: coerceAttemptCount(attemptSummaryCandidate.researchAttemptCount)
         }
       : undefined,
     sourceRun: sourceRunCandidate

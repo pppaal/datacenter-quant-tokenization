@@ -112,7 +112,14 @@ export function buildPortfolioRiskSummary(runs: PortfolioRiskSourceRun[]) {
         getRiskLevelWeight(right.refinanceRiskLevel) * 3 +
         getRiskLevelWeight(right.covenantPressureLevel) * 2 +
         right.downsideDscrHaircutPct;
-      return rightScore - leftScore;
+      // Deterministic tie-break: equal-risk assets must not reorder with DB row
+      // order. Break by most-recent run, then asset code (matches the
+      // counterparty watchlist's createdAt tie-break).
+      return (
+        rightScore - leftScore ||
+        right.run.createdAt.getTime() - left.run.createdAt.getTime() ||
+        left.run.asset.assetCode.localeCompare(right.run.asset.assetCode)
+      );
     })
     .slice(0, 4)
     .map((item) => ({
@@ -558,8 +565,15 @@ export function buildDealReminderSummary(
   });
 
   return {
-    overdueDeals: normalized.filter((deal) => deal.overdueTaskCount > 0).length,
-    dueSoonDeals: normalized.filter((deal) => deal.dueSoonTaskCount > 0).length,
+    // Archived deals are excluded from every actionable counter (and from the
+    // reminders feed below); overdue/due-soon must match so an archived deal with
+    // stale tasks cannot inflate the dashboard's open-action counts.
+    overdueDeals: normalized.filter(
+      (deal) => deal.overdueTaskCount > 0 && deal.statusLabel !== 'ARCHIVED'
+    ).length,
+    dueSoonDeals: normalized.filter(
+      (deal) => deal.dueSoonTaskCount > 0 && deal.statusLabel !== 'ARCHIVED'
+    ).length,
     staleDeals: normalized.filter((deal) => deal.isStale && deal.statusLabel !== 'ARCHIVED').length,
     missingNextActionDeals: normalized.filter(
       (deal) => !deal.nextAction && deal.statusLabel !== 'ARCHIVED'
