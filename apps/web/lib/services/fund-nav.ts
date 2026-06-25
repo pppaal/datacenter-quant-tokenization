@@ -14,6 +14,7 @@
  * can be unit-tested with Prisma fakes.
  */
 
+import { Prisma } from '@prisma/client';
 import { toNumber } from '@/lib/math';
 import { computeXirr, type DatedCashflow } from '@/lib/finance/irr';
 
@@ -191,6 +192,103 @@ export function computeFundNavDetail(fund: FundNavInput): FundNavResult {
 /** Convenience wrapper returning just the NAV figure (KRW). */
 export function computeFundNavKrw(fund: FundNavInput): number {
   return computeFundNavDetail(fund).navKrw;
+}
+
+// ---------------------------------------------------------------------------
+// Single tokenized-asset NAV (for on-chain NAV attestation)
+// ---------------------------------------------------------------------------
+
+/** Coerce a Float | Prisma.Decimal | numeric-string to a `Prisma.Decimal`,
+ *  defaulting to 0 for null/undefined/non-finite — the Decimal analogue of
+ *  `toNumber`, used so the attestation path never round-trips through a lossy
+ *  JS `number` before the on-chain 18-decimal scaling. */
+function toDecimal(value: unknown, fallback = 0): Prisma.Decimal {
+  if (value == null) return new Prisma.Decimal(fallback);
+  if (value instanceof Prisma.Decimal)
+    return value.isFinite() ? value : new Prisma.Decimal(fallback);
+  try {
+    const d = new Prisma.Decimal(value as Prisma.Decimal.Value);
+    return d.isFinite() ? d : new Prisma.Decimal(fallback);
+  } catch {
+    return new Prisma.Decimal(fallback);
+  }
+}
+
+export type TokenizedAssetNavResult = {
+  /**
+   * Fund-share fair value of the single asset the token represents (KRW),
+   * carried as a `Prisma.Decimal` so it can be scaled to an 18-decimal
+   * on-chain `uint256` without the precision loss a JS `number` incurs above
+   * 2^53 KRW. This is the value the NAV attestation should sign.
+   */
+  navValueKrw: Prisma.Decimal;
+  source: FundAssetNavLine['source'];
+  ownershipFraction: number;
+  valuationDate: string | null;
+  usedCostBasisFallback: boolean;
+};
+
+/**
+ * Fund-NAV-aware fair value for the single asset backing a tokenized asset,
+ * returned as a `Prisma.Decimal`.
+ *
+ * This applies the SAME precedence and ownership math as
+ * {@link computeFundNavDetail} (hold-value override > latest valuation ×
+ * ownership > cost-basis fallback > 0) but for exactly one asset and in
+ * Decimal space, so the NAV attestation signs the fund-share value the token
+ * actually represents — not the raw whole-asset `baseCaseValueKrw`.
+ *
+ * `computeTokenizedAssetNavDetail(pa).navValueKrw.toNumber()` equals the
+ * single-asset `computeFundNavDetail({ portfolio: { assets: [pa] } }).navKrw`
+ * (modulo Decimal precision); the two are kept reconcilable by the
+ * `nav-attestation-reconciliation` test.
+ */
+export function computeTokenizedAssetNavDetail(pa: NavPortfolioAsset): TokenizedAssetNavResult {
+  const ownershipPct = pa.ownershipPct == null ? 100 : pa.ownershipPct;
+  const ownershipFraction = Math.max(0, ownershipPct) / 100;
+  const asset = pa.asset ?? ({} as NavPortfolioAsset['asset']);
+
+  const holdOverride = toDecimal(pa.currentHoldValueKrw);
+  if (holdOverride.greaterThan(0)) {
+    // Hold-value override is already a fund-share figure; do not re-apply ownership.
+    return {
+      navValueKrw: holdOverride,
+      source: 'HOLD_VALUE_OVERRIDE',
+      ownershipFraction: 1,
+      valuationDate: null,
+      usedCostBasisFallback: false
+    };
+  }
+
+  const latest = latestValuationKrw(asset.valuations);
+  if (latest && latest.value > 0) {
+    return {
+      navValueKrw: toDecimal(latest.value).mul(ownershipFraction),
+      source: 'VALUATION',
+      ownershipFraction,
+      valuationDate: latest.date,
+      usedCostBasisFallback: false
+    };
+  }
+
+  const cost = toDecimal(asset.purchasePriceKrw);
+  if (cost.greaterThan(0)) {
+    return {
+      navValueKrw: cost.mul(ownershipFraction),
+      source: 'COST_BASIS_FALLBACK',
+      ownershipFraction,
+      valuationDate: null,
+      usedCostBasisFallback: true
+    };
+  }
+
+  return {
+    navValueKrw: new Prisma.Decimal(0),
+    source: 'NONE',
+    ownershipFraction,
+    valuationDate: null,
+    usedCostBasisFallback: false
+  };
 }
 
 // ---------------------------------------------------------------------------

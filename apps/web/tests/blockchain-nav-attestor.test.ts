@@ -13,7 +13,8 @@ const PRIVATE_KEY = '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf
 
 const RUN = {
   id: 'run-attest-test',
-  baseCaseValueKrw: 259_936_015_008,
+  navValueKrw: 259_936_015_008,
+  totalSharesScaled: 10n ** 18n, // explicit 1:1 supply
   createdAt: new Date('2026-04-30T05:20:20.000Z')
 };
 const ASSET = { assetCode: 'SEOUL-GANGSEO-01' };

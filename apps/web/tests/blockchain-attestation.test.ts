@@ -52,16 +52,22 @@ test('symbolToBytes32 rejects non-ASCII instead of silently truncating', () => {
   assert.notEqual(symbolToBytes32('A'), '0x' + '00'.repeat(32));
 });
 
-test('buildNavAttestation derives navPerShare from baseCaseValueKrw', () => {
+// A genuine 1:1 token (1e18 base units == 1 whole share) so navPerShare ==
+// navValueKrw × 1e18. The supply is now ALWAYS explicit — there is no silent
+// 1e18 default — so this case is opted into, never assumed.
+const ONE_TO_ONE_SUPPLY = 10n ** 18n;
+
+test('buildNavAttestation derives navPerShare from navValueKrw and explicit supply', () => {
   const att = buildNavAttestation({
     valuationRun: {
       id: 'run-abc',
-      baseCaseValueKrw: 259_936_015_008,
+      navValueKrw: 259_936_015_008,
+      totalSharesScaled: ONE_TO_ONE_SUPPLY,
       createdAt: new Date('2026-04-30T05:20:20.000Z')
     },
     asset: { assetCode: 'SEOUL-GANGSEO-01' }
   });
-  // Single-share default → navPerShare === value × 1e18 (since totalShares = 1e18)
+  // 1:1 supply → navPerShare === value × 1e18 (since totalShares = 1e18)
   assert.equal(att.navPerShare, 259_936_015_008n * 10n ** 18n);
   assert.equal(
     att.navTimestamp,
@@ -69,11 +75,11 @@ test('buildNavAttestation derives navPerShare from baseCaseValueKrw', () => {
   );
 });
 
-test('buildNavAttestation supports custom totalSharesScaled', () => {
+test('buildNavAttestation supports a multi-share supply', () => {
   const att = buildNavAttestation({
     valuationRun: {
       id: 'run-xyz',
-      baseCaseValueKrw: 1_000_000_000,
+      navValueKrw: 1_000_000_000,
       totalSharesScaled: 10n ** 24n, // 1M shares × 1e18
       createdAt: new Date()
     },
@@ -83,13 +89,34 @@ test('buildNavAttestation supports custom totalSharesScaled', () => {
   assert.equal(att.navPerShare, 1000n * 10n ** 18n);
 });
 
+test('buildNavAttestation carries KRW above 2^53 without float precision loss', () => {
+  // Real fund NAVs can exceed Number.MAX_SAFE_INTEGER (~9.0e15). A JS number
+  // would round the trailing digits; the Decimal path must not.
+  const bigValue = '9007199254740993000'; // (2^53 + 1) × 1000 — not exactly representable as a JS number
+  const att = buildNavAttestation({
+    valuationRun: {
+      id: 'run-big',
+      navValueKrw: bigValue,
+      totalSharesScaled: ONE_TO_ONE_SUPPLY,
+      createdAt: new Date(0)
+    },
+    asset: { assetCode: 'BIG' }
+  });
+  assert.equal(att.navPerShare, BigInt(bigValue) * 10n ** 18n);
+});
+
 test('buildNavAttestation rejects a negative valuation instead of signing a garbage NAV', () => {
-  // Regression: a negative baseCaseValueKrw previously produced a negative
+  // Regression: a negative navValueKrw previously produced a negative
   // navPerShare which would wrap/corrupt when encoded as an on-chain uint256.
   assert.throws(
     () =>
       buildNavAttestation({
-        valuationRun: { id: 'r', baseCaseValueKrw: -100, createdAt: new Date(0) },
+        valuationRun: {
+          id: 'r',
+          navValueKrw: -100,
+          totalSharesScaled: ONE_TO_ONE_SUPPLY,
+          createdAt: new Date(0)
+        },
         asset: { assetCode: 'A' }
       }),
     /non-negative/
@@ -101,7 +128,12 @@ test('buildNavAttestation rejects non-finite valuation', () => {
     assert.throws(
       () =>
         buildNavAttestation({
-          valuationRun: { id: 'r', baseCaseValueKrw: bad, createdAt: new Date(0) },
+          valuationRun: {
+            id: 'r',
+            navValueKrw: bad,
+            totalSharesScaled: ONE_TO_ONE_SUPPLY,
+            createdAt: new Date(0)
+          },
           asset: { assetCode: 'A' }
         }),
       /finite/
@@ -115,7 +147,7 @@ test('buildNavAttestation rejects non-positive totalSharesScaled', () => {
       buildNavAttestation({
         valuationRun: {
           id: 'r',
-          baseCaseValueKrw: 100,
+          navValueKrw: 100,
           totalSharesScaled: 0n,
           createdAt: new Date(0)
         },
@@ -127,7 +159,12 @@ test('buildNavAttestation rejects non-positive totalSharesScaled', () => {
 
 test('attestationDigest is deterministic for same input', () => {
   const att = buildNavAttestation({
-    valuationRun: { id: 'run', baseCaseValueKrw: 100, createdAt: new Date(0) },
+    valuationRun: {
+      id: 'run',
+      navValueKrw: 100,
+      totalSharesScaled: ONE_TO_ONE_SUPPLY,
+      createdAt: new Date(0)
+    },
     asset: { assetCode: 'A' }
   });
   const d1 = attestationDigest(DOMAIN, att);
@@ -137,7 +174,12 @@ test('attestationDigest is deterministic for same input', () => {
 
 test('attestationDigest changes with chainId (replay protection)', () => {
   const att = buildNavAttestation({
-    valuationRun: { id: 'run', baseCaseValueKrw: 100, createdAt: new Date(0) },
+    valuationRun: {
+      id: 'run',
+      navValueKrw: 100,
+      totalSharesScaled: ONE_TO_ONE_SUPPLY,
+      createdAt: new Date(0)
+    },
     asset: { assetCode: 'A' }
   });
   const d1 = attestationDigest(DOMAIN, att);
@@ -147,7 +189,12 @@ test('attestationDigest changes with chainId (replay protection)', () => {
 
 test('signNavAttestation produces a 65-byte signature recoverable to the signer', async () => {
   const att = buildNavAttestation({
-    valuationRun: { id: 'run', baseCaseValueKrw: 12345, createdAt: new Date(1000000) },
+    valuationRun: {
+      id: 'run',
+      navValueKrw: 12345,
+      totalSharesScaled: ONE_TO_ONE_SUPPLY,
+      createdAt: new Date(1000000)
+    },
     asset: { assetCode: 'TEST' }
   });
   const { signature, signer } = await signNavAttestation(att, DOMAIN, PRIVATE_KEY);
@@ -157,7 +204,12 @@ test('signNavAttestation produces a 65-byte signature recoverable to the signer'
 
 test('splitSignature decomposes 65-byte sig into v/r/s', async () => {
   const att = buildNavAttestation({
-    valuationRun: { id: 'run2', baseCaseValueKrw: 999, createdAt: new Date(2000000) },
+    valuationRun: {
+      id: 'run2',
+      navValueKrw: 999,
+      totalSharesScaled: ONE_TO_ONE_SUPPLY,
+      createdAt: new Date(2000000)
+    },
     asset: { assetCode: 'B' }
   });
   const { signature } = await signNavAttestation(att, DOMAIN, PRIVATE_KEY);

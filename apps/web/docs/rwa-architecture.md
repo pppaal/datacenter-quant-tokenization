@@ -65,10 +65,15 @@ LP wallet ◀──tx──│ AssetToken (ERC-3643)   │ 보안토큰 자체
 
 ```ts
 const att = buildNavAttestation({
-  valuationRun: { id, baseCaseValueKrw, createdAt },
+  // navValueKrw = fund-NAV-aware value of the token's slice (ownership %,
+  // debt, other net assets — what computeFundNavDetail produces), NOT the raw
+  // whole-asset baseCaseValueKrw. totalSharesScaled = real AssetToken.totalSupply()
+  // (REQUIRED, > 0; there is no silent 1e18 default).
+  valuationRun: { id, navValueKrw, totalSharesScaled, createdAt },
   asset: { assetCode }
 });
 // att = { assetId, quoteSymbol, navPerShare, navTimestamp, nonce, runRef }
+//   navPerShare = navValueKrw × 1e18 / totalSharesScaled
 
 const { signature, signer } = await signNavAttestation(att, domain, PRIVATE_KEY);
 // signature = 65 bytes EIP-712 typed data signature
