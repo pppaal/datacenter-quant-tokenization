@@ -8,7 +8,7 @@
 - Korean macro and rates inputs: cap rates, debt cost, inflation, transaction, and construction cost benchmarks
 - Optional climate overlay: site-specific resiliency notes used for diligence support, with NASA POWER available as a free climatology source
 
-These are pulled through adapter services in [`apps/web/lib/sources/adapters`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/lib/sources/adapters). Each adapter supports env-based configuration, retries, rate-limit tolerant fetching, cache persistence, freshness metadata, and fallback behavior.
+These are pulled through adapter services in [`apps/web/lib/sources/adapters`](apps/web/lib/sources/adapters). Each adapter supports env-based configuration, retries, rate-limit tolerant fetching, cache persistence, freshness metadata, and fallback behavior.
 
 ## Manually Entered Data
 
@@ -17,7 +17,7 @@ These are pulled through adapter services in [`apps/web/lib/sources/adapters`](/
 - Analyst notes: site notes, extracted document text, inquiry content, and manual source overrides
 - Registry workstream notes: legal structure, next-action notes, and future anchoring readiness
 
-This data enters through admin intake and document workflows in [`apps/web/app/admin`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/app/admin).
+This data enters through admin intake and document workflows in [`apps/web/app/admin`](apps/web/app/admin).
 
 ## Derived Data
 
@@ -32,11 +32,11 @@ This data enters through admin intake and document workflows in [`apps/web/app/a
 
 Derived values are built by:
 
-- Enrichment workflow: [`apps/web/lib/services/assets.ts`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/lib/services/assets.ts)
-- Valuation engine: [`apps/web/lib/services/valuation-engine.ts`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/lib/services/valuation-engine.ts)
-- Document service: [`apps/web/lib/services/documents.ts`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/lib/services/documents.ts)
-- Portfolio service: [`apps/web/lib/services/portfolio.ts`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/lib/services/portfolio.ts)
-- Capital service: [`apps/web/lib/services/capital.ts`](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/lib/services/capital.ts)
+- Enrichment workflow: [`apps/web/lib/services/assets.ts`](apps/web/lib/services/assets.ts)
+- Valuation engine: [`apps/web/lib/services/valuation-engine.ts`](apps/web/lib/services/valuation-engine.ts)
+- Document service: [`apps/web/lib/services/documents.ts`](apps/web/lib/services/documents.ts)
+- Portfolio service: [`apps/web/lib/services/portfolio.ts`](apps/web/lib/services/portfolio.ts)
+- Capital service: [`apps/web/lib/services/capital.ts`](apps/web/lib/services/capital.ts)
 
 ## Future Onchain Data
 
@@ -49,8 +49,8 @@ The current platform keeps files, diligence logic, underwriting workflows, valua
 ## Storage Boundaries
 
 - PostgreSQL via Prisma stores domain records, cache rows, registry status, documents, and valuation outputs
-- Local document storage stores uploaded files under `DOCUMENT_STORAGE_DIR`
-- OpenAI is optional and only used for memo and document-summary generation when `OPENAI_API_KEY` is present
+- Document storage is selected at runtime by `createDocumentStorageFromEnv()` in [`apps/web/lib/storage/local.ts`](apps/web/lib/storage/local.ts): S3-compatible object storage when `DOCUMENT_STORAGE_BUCKET` is set, otherwise a local-filesystem fallback under `DOCUMENT_STORAGE_DIR`. The local filesystem is hard-blocked in production — the factory (and `npm run prod:preflight`) requires `DOCUMENT_STORAGE_BUCKET` when running as real production. Stored paths in the DB are opaque (`s3://bucket/key` for S3, cwd-relative for local) and resolved via `storage.read(path)` / `storage.presignedUrl(path)`.
+- AI providers are optional and gated by env keys (see [`apps/web/lib/env.ts`](apps/web/lib/env.ts)); every AI path has an offline/heuristic fallback when no key is set. `ANTHROPIC_API_KEY` powers narrative, investment-memo, and research generation; `OPENAI_API_KEY` powers document-text extraction and embeddings.
 
 ## Provenance Rules
 

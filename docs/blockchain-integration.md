@@ -1,5 +1,13 @@
 # Blockchain Integration
 
+> **Canonical source:** [`apps/web/docs/rwa-architecture.md`](../apps/web/docs/rwa-architecture.md) is the
+> up-to-date description of the contract stack (registry, identity, compliance,
+> token, NAV, distribution, waterfall, governance) and its `apps/web/lib/blockchain`
+> TS integration. This file documents the original **registry-only** wiring and
+> the web-app setup flow; it does not cover contracts added later (Waterfall,
+> EmergencyCouncil, NamespacedRegistrar, NavAttestor). When the two disagree,
+> trust `rwa-architecture.md`.
+
 This repository is structured for a registry-only blockchain layer across Korean real-estate research, underwriting, deal execution, portfolio operations, and capital-formation workflows.
 
 ## What Goes Onchain

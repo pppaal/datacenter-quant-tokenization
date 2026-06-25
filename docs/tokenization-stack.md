@@ -1,5 +1,15 @@
 # Tokenization Stack
 
+> **Canonical source:** [`apps/web/docs/rwa-architecture.md`](../apps/web/docs/rwa-architecture.md) is the
+> current, maintained description of the on-chain stack and the off-chain
+> integration in `apps/web/lib/blockchain`. The contract inventory below is a
+> point-in-time snapshot and is **missing contracts added later** — at minimum
+> `Waterfall.sol` (4-tier promote/hurdle), `EmergencyCouncil.sol`,
+> `NamespacedRegistrar.sol`, `NavAttestor` (EIP-712 NAV attestation), and
+> `KrHoldingLimitModule.sol`. Use this file for the API-surface, off-chain-mirror,
+> and deployment-manifest narrative; verify the contract list against
+> `rwa-architecture.md` and `packages/contracts/src/`.
+
 This document covers the RWA tokenization layer that sits on top of the
 registry-only base from `blockchain-integration.md`. If you only care about
 the off-chain registry, that other doc is enough. This one is for the
@@ -9,17 +19,17 @@ permissioned-share / distribution / OTC pre-clearance stack.
 
 All contracts live under `packages/contracts/src/tokenization/`.
 
-| Contract                  | Purpose                                                                 | Roles                                                                 |
-| ------------------------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| `IdentityRegistry`        | KYC whitelist keyed by wallet → (verified, countryCode)                 | `DEFAULT_ADMIN_ROLE`, `IDENTITY_MANAGER_ROLE`, `PAUSER_ROLE`         |
-| `ModularCompliance`       | Aggregator that ANDs module decisions                                   | `DEFAULT_ADMIN_ROLE`, `COMPLIANCE_ADMIN_ROLE`                         |
-| `MaxHoldersModule`        | Caps distinct holders (Reg D 99-holder style)                           | `DEFAULT_ADMIN_ROLE`                                                  |
-| `CountryRestrictModule`   | Blocks ISO-3166 numeric country codes                                   | `DEFAULT_ADMIN_ROLE`                                                  |
-| `LockupModule`            | Enforces holding period after acquisition                               | `DEFAULT_ADMIN_ROLE`                                                  |
-| `AssetToken`              | ERC-20 permissioned share bound to a single registry asset              | `DEFAULT_ADMIN_ROLE` (3-day delay), `AGENT_ROLE`, `PAUSER_ROLE`       |
-| `NavOracle`               | Monotonic NAV-per-share publisher with epoch counter                    | `DEFAULT_ADMIN_ROLE`, `ORACLE_WRITER_ROLE`, `PAUSER_ROLE`             |
-| `DividendDistributor`     | Pull-based Merkle distribution (dividends / coupons)                    | `DEFAULT_ADMIN_ROLE`, `DISTRIBUTOR_ROLE`, `PAUSER_ROLE`               |
-| `TransferAgent`           | OTC pre-clearance ticket manager; settles via `AssetToken.forceTransfer`| `DEFAULT_ADMIN_ROLE`, `OPERATOR_ROLE`, `ISSUER_ROLE`, `PAUSER_ROLE`   |
+| Contract                | Purpose                                                                  | Roles                                                               |
+| ----------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------- |
+| `IdentityRegistry`      | KYC whitelist keyed by wallet → (verified, countryCode)                  | `DEFAULT_ADMIN_ROLE`, `IDENTITY_MANAGER_ROLE`, `PAUSER_ROLE`        |
+| `ModularCompliance`     | Aggregator that ANDs module decisions                                    | `DEFAULT_ADMIN_ROLE`, `COMPLIANCE_ADMIN_ROLE`                       |
+| `MaxHoldersModule`      | Caps distinct holders (Reg D 99-holder style)                            | `DEFAULT_ADMIN_ROLE`                                                |
+| `CountryRestrictModule` | Blocks ISO-3166 numeric country codes                                    | `DEFAULT_ADMIN_ROLE`                                                |
+| `LockupModule`          | Enforces holding period after acquisition                                | `DEFAULT_ADMIN_ROLE`                                                |
+| `AssetToken`            | ERC-20 permissioned share bound to a single registry asset               | `DEFAULT_ADMIN_ROLE` (3-day delay), `AGENT_ROLE`, `PAUSER_ROLE`     |
+| `NavOracle`             | Monotonic NAV-per-share publisher with epoch counter                     | `DEFAULT_ADMIN_ROLE`, `ORACLE_WRITER_ROLE`, `PAUSER_ROLE`           |
+| `DividendDistributor`   | Pull-based Merkle distribution (dividends / coupons)                     | `DEFAULT_ADMIN_ROLE`, `DISTRIBUTOR_ROLE`, `PAUSER_ROLE`             |
+| `TransferAgent`         | OTC pre-clearance ticket manager; settles via `AssetToken.forceTransfer` | `DEFAULT_ADMIN_ROLE`, `OPERATOR_ROLE`, `ISSUER_ROLE`, `PAUSER_ROLE` |
 
 ### Security posture (repeated across the stack)
 
@@ -49,6 +59,7 @@ to log-scrape:
   counterparty for the RFQ admin UI
 
 Prisma is the side that can drift. Reconciliation strategy:
+
 1. On-chain events are authoritative.
 2. The service layer writes to Prisma only after `waitForTransactionReceipt`.
 3. Chain-id mismatch (`BLOCKCHAIN_CHAIN_ID` vs a row's `chainId`) throws at
@@ -59,19 +70,19 @@ Prisma is the side that can drift. Reconciliation strategy:
 Admin-only. All require `resolveVerifiedAdminActorFromHeaders` + an asset
 scope guard; all success and failure paths emit `AuditEvent`.
 
-| Route                                                       | Actions                                                          |
-| ----------------------------------------------------------- | ---------------------------------------------------------------- |
-| `/api/tokenization/deployments`                             | GET list · POST upsert                                           |
-| `/api/tokenization/identity`                                | GET wallet · POST register / updateCountry / remove              |
-| `/api/tokenization/issuance`                                | GET supply · POST mint / burn / forceTransfer / pause / unpause  |
-| `/api/tokenization/compliance`                              | GET modules · POST addModule / removeModule / block / unblock    |
-| `/api/tokenization/distributions`                           | GET list · POST draft / fund                                     |
-| `/api/tokenization/distributions/<id>/proofs/<holder>`      | Public proof endpoint for claimants                              |
-| `/api/tokenization/transfers`                               | GET list · POST open / approve / reject / settle / cancel / expire |
-| `/api/kyc/webhook/<provider>`                               | Provider-agnostic KYC webhook ingress                            |
-| `/api/kyc/bridge`                                           | Bridge a `KycRecord` to the on-chain identity registry           |
-| `/api/kyc/records`                                          | List KYC records                                                 |
-| `/api/admin/data-providers`                                 | Read-only: live vs mock mode for each public-data connector      |
+| Route                                                  | Actions                                                            |
+| ------------------------------------------------------ | ------------------------------------------------------------------ |
+| `/api/tokenization/deployments`                        | GET list · POST upsert                                             |
+| `/api/tokenization/identity`                           | GET wallet · POST register / updateCountry / remove                |
+| `/api/tokenization/issuance`                           | GET supply · POST mint / burn / forceTransfer / pause / unpause    |
+| `/api/tokenization/compliance`                         | GET modules · POST addModule / removeModule / block / unblock      |
+| `/api/tokenization/distributions`                      | GET list · POST draft / fund                                       |
+| `/api/tokenization/distributions/<id>/proofs/<holder>` | Public proof endpoint for claimants                                |
+| `/api/tokenization/transfers`                          | GET list · POST open / approve / reject / settle / cancel / expire |
+| `/api/kyc/webhook/<provider>`                          | Provider-agnostic KYC webhook ingress                              |
+| `/api/kyc/bridge`                                      | Bridge a `KycRecord` to the on-chain identity registry             |
+| `/api/kyc/records`                                     | List KYC records                                                   |
+| `/api/admin/data-providers`                            | Read-only: live vs mock mode for each public-data connector        |
 
 ## Environment
 
@@ -109,6 +120,7 @@ Recommended deploy order (see `packages/contracts/scripts/deploy-tokenization.ts
    first ticket is settled
 
 Post-deploy checklist:
+
 - Write the 4 deployment addresses into a `TokenizedAsset` row via
   `POST /api/tokenization/deployments`
 - Run `npm run contracts:export-abi` to regenerate the bundled ABI for the
@@ -120,6 +132,7 @@ Post-deploy checklist:
 
 CI (`.github/workflows/contracts-ci.yml`) runs on every `packages/contracts`
 change:
+
 - solhint lint
 - Hardhat compile
 - `test:unit` (now includes NavOracle, DividendDistributor, TransferAgent)
