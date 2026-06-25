@@ -19,6 +19,18 @@ async function getAssetContext(assetId: string, db: PrismaClient) {
   return asset;
 }
 
+// The validation schema defaults `isEmbedded` to `false`, which erases the
+// "field was omitted" signal. Recover it from the raw payload so a partial
+// update never silently flips an embedded line item back to non-embedded.
+function rawInputHasIsEmbedded(input: unknown): boolean {
+  return (
+    typeof input === 'object' &&
+    input !== null &&
+    'isEmbedded' in input &&
+    (input as { isEmbedded?: unknown }).isEmbedded !== undefined
+  );
+}
+
 function normalizeCapexInput(asset: Awaited<ReturnType<typeof getAssetContext>>, input: unknown) {
   const parsed = capexBookInputSchema.parse(input);
   const inputCurrency = resolveInputCurrency(
@@ -28,6 +40,7 @@ function normalizeCapexInput(asset: Awaited<ReturnType<typeof getAssetContext>>,
 
   return {
     ...parsed,
+    isEmbedded: rawInputHasIsEmbedded(input) ? parsed.isEmbedded : undefined,
     amountKrw:
       typeof parsed.amountKrw === 'number'
         ? convertToKrw(parsed.amountKrw, inputCurrency)
@@ -47,7 +60,7 @@ export async function createCapexLineItem(assetId: string, input: unknown, deps?
       label: normalized.label ?? 'CAPEX line item',
       amountKrw: normalized.amountKrw ?? 0,
       spendYear: normalized.spendYear ?? 0,
-      isEmbedded: normalized.isEmbedded,
+      isEmbedded: normalized.isEmbedded ?? false,
       notes: normalized.notes
     }
   });
@@ -77,7 +90,7 @@ export async function updateCapexLineItem(
       label: normalized.label ?? existing.label,
       amountKrw: normalized.amountKrw ?? existing.amountKrw,
       spendYear: normalized.spendYear ?? existing.spendYear,
-      isEmbedded: normalized.isEmbedded,
+      isEmbedded: normalized.isEmbedded ?? existing.isEmbedded,
       notes: normalized.notes ?? existing.notes
     }
   });

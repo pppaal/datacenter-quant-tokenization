@@ -106,3 +106,100 @@ test('capex book update and delete enforce asset ownership', async () => {
   assert.equal(capturedUpdate.data.isEmbedded, true);
   assert.equal(capturedDelete.where.id, 'capex_2');
 });
+
+test('capex update preserves isEmbedded when the field is omitted from the payload', async () => {
+  // Regression: the validation schema defaults `isEmbedded` to false, so a
+  // partial update (label only) used to silently flip an embedded line item
+  // back to non-embedded. That mis-classifies it as deferred CapEx, which
+  // inflates the idiosyncratic risk-register backlog factor.
+  let capturedUpdate: any;
+
+  const db = {
+    asset: {
+      async findUnique() {
+        return { id: 'asset_capex_3', market: 'KR', address: { country: 'KR' } };
+      }
+    },
+    capexLineItem: {
+      async findUnique() {
+        return {
+          id: 'capex_3',
+          assetId: 'asset_capex_3',
+          category: CapexCategory.ELECTRICAL,
+          label: 'Embedded switchgear',
+          amountKrw: 5000000000,
+          spendYear: 1,
+          isEmbedded: true,
+          notes: null
+        };
+      },
+      async update(args: any) {
+        capturedUpdate = args;
+        return { id: 'capex_3', ...args.data };
+      }
+    }
+  } as any;
+
+  await updateCapexLineItem(
+    'asset_capex_3',
+    'capex_3',
+    {
+      // Operator only edits the label; isEmbedded is intentionally omitted.
+      category: CapexCategory.ELECTRICAL,
+      label: 'Embedded switchgear (renamed)',
+      amountKrw: 5000000000
+    },
+    { db }
+  );
+
+  assert.equal(capturedUpdate.data.label, 'Embedded switchgear (renamed)');
+  assert.equal(
+    capturedUpdate.data.isEmbedded,
+    true,
+    'omitted isEmbedded must retain the existing embedded flag'
+  );
+});
+
+test('capex update can still clear isEmbedded when explicitly set to false', async () => {
+  let capturedUpdate: any;
+
+  const db = {
+    asset: {
+      async findUnique() {
+        return { id: 'asset_capex_4', market: 'KR', address: { country: 'KR' } };
+      }
+    },
+    capexLineItem: {
+      async findUnique() {
+        return {
+          id: 'capex_4',
+          assetId: 'asset_capex_4',
+          category: CapexCategory.ELECTRICAL,
+          label: 'Was embedded',
+          amountKrw: 1000000000,
+          spendYear: 1,
+          isEmbedded: true,
+          notes: null
+        };
+      },
+      async update(args: any) {
+        capturedUpdate = args;
+        return { id: 'capex_4', ...args.data };
+      }
+    }
+  } as any;
+
+  await updateCapexLineItem(
+    'asset_capex_4',
+    'capex_4',
+    {
+      category: CapexCategory.ELECTRICAL,
+      label: 'Now standalone',
+      amountKrw: 1000000000,
+      isEmbedded: false
+    },
+    { db }
+  );
+
+  assert.equal(capturedUpdate.data.isEmbedded, false);
+});
