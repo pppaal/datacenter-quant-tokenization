@@ -165,6 +165,77 @@ test('forecast sensitivity engine creates five-year value and dscr path', () => 
   );
 });
 
+test('forecast sensitivity surfaces a DSCR-path downside even when the value path drifts up', () => {
+  // Macro guidance that pushes the value path UP but the DSCR path sharply DOWN
+  // (high financing/debt-cost drag). The summary must report the real DSCR
+  // downside, not null, and strongestDownsideDeltaPct must be negative.
+  const result = buildForecastSensitivityRun({
+    baseCaseValueKrw: 100_000_000_000,
+    assumptions: {
+      macroRegime: {
+        guidance: {
+          occupancyShiftPct: 0,
+          growthShiftPct: 5,
+          debtCostShiftPct: 5
+        },
+        impacts: {
+          dimensions: [
+            { key: 'pricing', score: 2 },
+            { key: 'leasing', score: 2 },
+            { key: 'financing', score: 3 },
+            { key: 'refinancing', score: 0 },
+            { key: 'allocation', score: 1 }
+          ]
+        }
+      }
+    },
+    scenarios: [{ name: 'Base', debtServiceCoverage: 1.4 }]
+  });
+
+  // Value path is up (positive year-5 value delta), DSCR path is deeply negative.
+  assert.ok((result.summary.yearFiveValueDeltaPct ?? 0) > 0);
+  assert.ok((result.summary.yearFiveDscrDeltaPct ?? 0) < 0);
+
+  // The downside summary must reflect the DSCR collapse, never be null here, and
+  // never report a positive number in a "downside" field.
+  assert.ok(result.summary.strongestDownsideDriver !== null);
+  assert.ok((result.summary.strongestDownsideDeltaPct ?? 0) < 0);
+
+  // It must equal the most-negative deltaPct across ALL points (value + DSCR).
+  const mostNegative = Math.min(...result.points.map((point) => point.deltaPct));
+  assert.equal(result.summary.strongestDownsideDeltaPct, mostNegative);
+  assert.ok((result.summary.strongestDownsideDriver ?? '').includes('DSCR'));
+});
+
+test('forecast sensitivity reports no downside when every path drifts up', () => {
+  const result = buildForecastSensitivityRun({
+    baseCaseValueKrw: 100_000_000_000,
+    assumptions: {
+      macroRegime: {
+        guidance: {
+          occupancyShiftPct: 2,
+          growthShiftPct: 3,
+          debtCostShiftPct: -2
+        },
+        impacts: {
+          dimensions: [
+            { key: 'pricing', score: 1 },
+            { key: 'leasing', score: 2 },
+            { key: 'financing', score: -1 },
+            { key: 'refinancing', score: -1 },
+            { key: 'allocation', score: 1 }
+          ]
+        }
+      }
+    },
+    scenarios: [{ name: 'Base', debtServiceCoverage: 1.4 }]
+  });
+
+  assert.ok(result.points.every((point) => point.deltaPct >= 0));
+  assert.equal(result.summary.strongestDownsideDriver, null);
+  assert.equal(result.summary.strongestDownsideDeltaPct, null);
+});
+
 test('monte carlo sensitivity engine creates deterministic percentile envelope', () => {
   const result = buildMonteCarloSensitivityRun({
     baseCaseValueKrw: 100_000_000_000,
