@@ -628,17 +628,25 @@ export function buildForecastSensitivityRun(analysis: AnalysisLike): Sensitivity
     (point) => point.variableKey === 'forecast_dscr_path' && point.shockValue === 5
   );
 
+  // Surface the strongest downside across BOTH the value and DSCR paths, matching
+  // the most-negative-deltaPct convention used by every other run builder. The
+  // prior version only inspected the year-5 VALUE point, so a forecast where value
+  // drifts up while DSCR collapses reported `strongestDownsideDriver: null` (and
+  // even a POSITIVE `strongestDownsideDeltaPct`), hiding a real covenant downside.
+  const strongestDownside = points
+    .filter((point) => point.deltaPct < 0)
+    .sort((left, right) => left.deltaPct - right.deltaPct)[0];
+
   return {
     runType: 'FORECAST',
     title: 'Five-year macro forecast path',
     baselineMetricName: 'Value',
     baselineMetricValue: roundMetric(baselineValue),
     summary: {
-      strongestDownsideDriver:
-        yearFiveValue && yearFiveValue.deltaPct < 0
-          ? `Year 5 value ${yearFiveValue.deltaPct}%`
-          : null,
-      strongestDownsideDeltaPct: yearFiveValue?.deltaPct ?? null,
+      strongestDownsideDriver: strongestDownside
+        ? `${strongestDownside.variableLabel} ${strongestDownside.shockLabel} (${strongestDownside.metricName})`
+        : null,
+      strongestDownsideDeltaPct: strongestDownside?.deltaPct ?? null,
       pointCount: points.length,
       forecastYears: 5,
       yearFiveValueDeltaPct: yearFiveValue?.deltaPct ?? null,
