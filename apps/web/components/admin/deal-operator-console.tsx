@@ -230,7 +230,7 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
                   item.isCurrent
                     ? 'border-accent/40 bg-accent/10 text-white'
                     : item.isCompleted
-                      ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-200'
+                      ? 'border-[hsl(var(--success)/0.25)] bg-[hsl(var(--success-tint))] text-[hsl(var(--success))]'
                       : 'border-white/10 bg-white/[0.03] text-slate-400'
                 ].join(' ')}
               >
@@ -323,7 +323,7 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
                     origination.strengths.map((item) => (
                       <div
                         key={item}
-                        className="rounded-[18px] border border-emerald-500/20 bg-emerald-500/10 p-3 text-sm text-emerald-100"
+                        className="rounded-[18px] border border-[hsl(var(--success)/0.25)] bg-[hsl(var(--success-tint))] p-3 text-sm text-[hsl(var(--success))]"
                       >
                         {item}
                       </div>
@@ -342,7 +342,7 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
                     origination.blockers.map((item) => (
                       <div
                         key={item}
-                        className="rounded-[18px] border border-amber-500/20 bg-amber-500/10 p-3 text-sm text-amber-100"
+                        className="rounded-[18px] border border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--warning-tint))] p-3 text-sm text-[hsl(var(--warning))]"
                       >
                         {item}
                       </div>
@@ -796,7 +796,7 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
                           </div>
                         ) : null}
                         {!requestItem.document && matchSuggestion ? (
-                          <div className="mt-3 rounded-[18px] border border-amber-400/20 bg-amber-500/10 p-3 text-sm text-amber-100">
+                          <div className="mt-3 rounded-[18px] border border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--warning-tint))] p-3 text-sm text-[hsl(var(--warning))]">
                             Suggested document:{' '}
                             <span className="font-semibold">{matchSuggestion.documentTitle}</span>
                             {` `}(score {formatNumber(matchSuggestion.score, 0)})
@@ -804,7 +804,7 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
                               ? ` / queued ${formatDate(matchSuggestion.suggestedAt)}`
                               : ''}
                             {matchSuggestion.competingRequestTitles.length > 0 ? (
-                              <div className="mt-2 text-xs text-amber-200/90">
+                              <div className="mt-2 text-xs text-[hsl(var(--warning)/0.9)]">
                                 Also matched against:{' '}
                                 {matchSuggestion.competingRequestTitles.join(', ')}
                               </div>
@@ -1608,7 +1608,7 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
       <div className="space-y-6">
         {notice ? (
           <div
-            className="rounded-[24px] border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-100"
+            className="rounded-[24px] border border-[hsl(var(--success)/0.25)] bg-[hsl(var(--success-tint))] p-4 text-sm text-[hsl(var(--success))]"
             data-testid="deal-console-feedback"
             role="status"
           >
@@ -1617,7 +1617,7 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
         ) : null}
         {error ? (
           <div
-            className="rounded-[24px] border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-200"
+            className="rounded-[24px] border border-[hsl(var(--danger)/0.25)] bg-[hsl(var(--danger-tint))] p-4 text-sm text-[hsl(var(--danger))]"
             data-testid="deal-console-feedback"
             role="alert"
           >

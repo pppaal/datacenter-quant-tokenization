@@ -149,12 +149,12 @@ export function DealDiligenceWorkstreamPanel({
       </div>
 
       {notice ? (
-        <div className="rounded-[20px] border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-100">
+        <div className="rounded-[20px] border border-[hsl(var(--success)/0.25)] bg-[hsl(var(--success-tint))] p-4 text-sm text-[hsl(var(--success))]">
           {notice}
         </div>
       ) : null}
       {error ? (
-        <div className="rounded-[20px] border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-200">
+        <div className="rounded-[20px] border border-[hsl(var(--danger)/0.25)] bg-[hsl(var(--danger-tint))] p-4 text-sm text-[hsl(var(--danger))]">
           {error}
         </div>
       ) : null}

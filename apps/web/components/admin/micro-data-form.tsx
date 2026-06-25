@@ -138,7 +138,7 @@ export function MicroDataForm({
   return (
     <form className="space-y-6" onSubmit={onSubmit}>
       <input type="hidden" {...form.register('inputCurrency')} />
-      <div className="rounded-[24px] border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-100">
+      <div className="rounded-[24px] border border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--warning-tint))] p-4 text-sm text-[hsl(var(--warning))]">
         Saved micro updates now land in the normalized record layer as{' '}
         <span className="font-semibold">PENDING</span>. Only approved evidence is promoted into
         curated feature snapshots used by committee outputs.

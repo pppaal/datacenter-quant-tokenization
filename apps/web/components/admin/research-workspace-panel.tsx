@@ -512,7 +512,7 @@ export function ResearchWorkspacePanel({ data, activeTab, canApproveHouseView = 
               </div>
             ))}
             {data.coverageQueue.length === 0 ? (
-              <div className="rounded-[22px] border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
+              <div className="rounded-[22px] border border-[hsl(var(--success)/0.25)] bg-[hsl(var(--success-tint))] px-4 py-3 text-sm text-[hsl(var(--success))]">
                 No open research coverage tasks are currently blocking the workspace.
               </div>
             ) : null}

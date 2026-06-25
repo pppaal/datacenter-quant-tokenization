@@ -103,7 +103,7 @@ export function PropertyExplorerPanel({ data, mapConfig }: Props) {
       </div>
 
       {error ? (
-        <div className="rounded-[20px] border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-200">
+        <div className="rounded-[20px] border border-[hsl(var(--danger)/0.25)] bg-[hsl(var(--danger-tint))] p-4 text-sm text-[hsl(var(--danger))]">
           {error}
         </div>
       ) : null}
@@ -177,7 +177,7 @@ export function PropertyExplorerPanel({ data, mapConfig }: Props) {
                   {selected.blockers.map((blocker) => (
                     <div
                       key={blocker}
-                      className="rounded-[18px] border border-amber-400/20 bg-amber-400/10 p-3 text-sm text-amber-100"
+                      className="rounded-[18px] border border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--warning-tint))] p-3 text-sm text-[hsl(var(--warning))]"
                     >
                       {blocker}
                     </div>
