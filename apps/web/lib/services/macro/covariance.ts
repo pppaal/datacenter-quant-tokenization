@@ -301,8 +301,19 @@ export function covarianceToCorrelation(cov: number[][]): number[][] {
   const corr: number[][] = Array.from({ length: n }, () => new Array(n).fill(0));
   for (let i = 0; i < n; i++) {
     for (let j = 0; j < n; j++) {
+      if (i === j) {
+        corr[i]![j] = 1;
+        continue;
+      }
       const denom = sd[i]! * sd[j]!;
-      corr[i]![j] = i === j ? 1 : denom > 0 ? cov[i]![j]! / denom : 0;
+      // A correlation coefficient is bounded to [-1, 1] by definition. Clamp
+      // defensively: callers may pass a non-PSD covariance (this is a public
+      // helper), and even a PSD input can drift marginally past ±1 through the
+      // floating-point eigendecomposition + reconstruction in enforcePsd. An
+      // out-of-range value here would silently corrupt any downstream amplifier
+      // or shock-sizing that trusts |ρ| <= 1.
+      const rho = denom > 0 ? cov[i]![j]! / denom : 0;
+      corr[i]![j] = Math.max(-1, Math.min(1, rho));
     }
   }
   return corr;

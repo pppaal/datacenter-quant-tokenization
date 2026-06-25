@@ -155,9 +155,20 @@ export function buildMacroRegimeSnapshot(series: MacroSeries[]): MacroRegimeSnap
     left.label.localeCompare(right.label)
   );
 
+  // `asOf` must be the most recent observation date ACROSS all series, and
+  // `market` the market of that most-recent point — not whichever series sorts
+  // first alphabetically by label. The display order below stays label-sorted,
+  // but the snapshot's headline timestamp/market are derived independently from
+  // the freshest observation so downstream consumers (factors, regime, monitor,
+  // narrative) report the true `asOf`.
+  const freshest = latestSeries.reduce<MacroSeries | null>((acc, point) => {
+    if (!acc) return point;
+    return point.observationDate.getTime() > acc.observationDate.getTime() ? point : acc;
+  }, null);
+
   return {
-    market: latestSeries[0]?.market ?? 'N/A',
-    asOf: latestSeries[0]?.observationDate.toISOString() ?? null,
+    market: freshest?.market ?? 'N/A',
+    asOf: freshest?.observationDate.toISOString() ?? null,
     series: latestSeries.map((point) => ({
       seriesKey: point.seriesKey,
       label: point.label,
