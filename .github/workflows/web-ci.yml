@@ -34,7 +34,7 @@ jobs:
       ADMIN_SESSION_SECRET: ci-fixed-session-secret-32chars-1234
       OPS_CRON_TOKEN: ci-fixed-ops-cron-token
       APP_BASE_URL: https://ci.example.com
-      BLOCKCHAIN_MOCK_MODE: 'true'
+      BLOCKCHAIN_MOCK_MODE: "true"
       DOCUMENT_STORAGE_DIR: ./storage/documents
     steps:
       - uses: actions/checkout@v4
@@ -42,8 +42,8 @@ jobs:
       - name: Setup Node 20
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
           cache-dependency-path: apps/web/package-lock.json
 
       - name: Install
@@ -101,6 +101,34 @@ jobs:
 
       - name: Unit tests
         run: npm test
+
+      - name: Coverage report + ratcheting floor
+        # Uses Node's BUILT-IN test coverage (no c8/nyc dependency). The full
+        # suite measured 87.59% line coverage in CI on 2026-06-25 (the CI runner
+        # attributes coverage over a broader file set than a local run); the
+        # floor is set conservatively to 85 (rounded DOWN from the CI-measured
+        # number) so it cannot fail today but blocks regressions. RATCHET UP as
+        # coverage rises. Run `npm run test:coverage` locally to see the report.
+        env:
+          COVERAGE_LINE_FLOOR: "85"
+        run: |
+          set -o pipefail
+          npm run test:coverage 2>&1 | tee coverage.txt
+          # Node prints: "# all files | <line> | <branch> | <func> |"
+          LINE_PCT=$(grep -E '# all files' coverage.txt \
+            | tail -1 \
+            | awk -F'|' '{gsub(/ /,"",$2); print $2}')
+          if [ -z "$LINE_PCT" ]; then
+            echo "Could not parse line coverage from report; failing closed."
+            exit 1
+          fi
+          echo "Measured line coverage: ${LINE_PCT}% (floor: ${COVERAGE_LINE_FLOOR}%)"
+          # Integer-truncated comparison avoids a bc dependency.
+          if [ "${LINE_PCT%.*}" -lt "${COVERAGE_LINE_FLOOR}" ]; then
+            echo "::error::Line coverage ${LINE_PCT}% is below floor ${COVERAGE_LINE_FLOOR}%"
+            exit 1
+          fi
+          echo "Line coverage ${LINE_PCT}% meets floor ${COVERAGE_LINE_FLOOR}%."
 
       - name: Production build
         run: npm run build
