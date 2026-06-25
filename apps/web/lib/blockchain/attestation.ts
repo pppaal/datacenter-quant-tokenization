@@ -18,6 +18,7 @@
  *   // off-chain: store {att, signature} in a DB table or post to RPC
  *   // on-chain: NavAttestor.publish(att, signature)
  */
+import { Prisma } from '@prisma/client';
 import {
   type Address,
   type Hex,
@@ -28,6 +29,13 @@ import {
   toHex
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
+
+/** A KRW amount that may arrive as a Prisma `Decimal`, a `number`, or a
+ *  numeric string. The attestation pipeline carries the attested NAV as a
+ *  `Decimal` end to end so the scaling to an 18-decimal on-chain `uint256`
+ *  never loses precision the way a JS `number` does above 2^53 KRW
+ *  (~9.0e15). */
+export type DecimalLike = Prisma.Decimal | number | string;
 
 export type NavAttestation = {
   /** Asset identifier on-chain (immutable bytes32 derived from assetCode). */
@@ -104,9 +112,24 @@ export function symbolToBytes32(symbol: string): Hex {
 
 export type ValuationRunInput = {
   id: string;
-  baseCaseValueKrw: number;
-  /** Decimal share count outstanding — defaults to 1e18 (single-share asset). */
-  totalSharesScaled?: bigint;
+  /**
+   * Attested NAV the token claims to represent (KRW, in WHOLE units — NOT
+   * pre-scaled to 18 decimals). For a token over a fund/asset interest this
+   * MUST be the fund-NAV-aware value (ownership % applied, fund debt and
+   * other net assets netted) — i.e. what `computeFundNavDetail` produces for
+   * the token's slice — NOT the raw whole-asset `ValuationRun.baseCaseValueKrw`.
+   * Carried as `Decimal` so values above 2^53 KRW don't lose precision.
+   */
+  navValueKrw: DecimalLike;
+  /**
+   * Outstanding token supply in the token's own base units (already scaled to
+   * the token's `decimals()` — e.g. an 18-decimal ERC-20 reports
+   * `totalSupply()` pre-scaled). REQUIRED and must be > 0. There is no silent
+   * 1e18 default: a wrong/absent supply would make `navPerShare` equal the
+   * WHOLE-asset value instead of per-token, which the on-chain consumer can't
+   * detect. Source it from the live `AssetToken.totalSupply()`.
+   */
+  totalSharesScaled: bigint;
   /** When the run was actually struck (engine completion). */
   createdAt: Date;
   /** Optional explicit nonce; defaults to createdAt epoch ms (monotonic). */
@@ -117,36 +140,66 @@ export type AssetInput = {
   assetCode: string;
 };
 
+/** 18-decimal fixed-point scale used by the on-chain `navPerShare`. */
+const NAV_SCALE = 10n ** 18n;
+
 /**
- * Convert a ValuationRun + Asset row into a NavAttestation. Defaults:
- *   - quoteSymbol = "KRW"
- *   - totalSharesScaled = 10**18 (single-share asset; multi-share assets
- *     should pass the actual outstanding count scaled to 18 decimals).
- *   - navPerShare = baseCaseValueKrw × 10**18 / totalSharesScaled
+ * Coerce a {@link DecimalLike} KRW amount to a non-negative `Prisma.Decimal`,
+ * rejecting non-finite / negative inputs the same way the legacy `number`
+ * guards did. Kept as `Decimal` so the caller never round-trips through a
+ * lossy JS `number` before the bigint scaling boundary.
+ */
+function toNonNegativeDecimal(value: DecimalLike, label: string): Prisma.Decimal {
+  let d: Prisma.Decimal;
+  try {
+    d = value instanceof Prisma.Decimal ? value : new Prisma.Decimal(value);
+  } catch {
+    throw new Error(`${label} must be a finite number (got ${String(value)}).`);
+  }
+  if (!d.isFinite()) {
+    throw new Error(`${label} must be a finite number (got ${String(value)}).`);
+  }
+  if (d.isNegative()) {
+    // navPerShare is an on-chain uint256; a negative value would either wrap to
+    // a garbage huge number or fail at ABI encode far downstream. Reject here.
+    throw new Error(`${label} must be non-negative (got ${d.toString()}).`);
+  }
+  return d;
+}
+
+/**
+ * Convert a ValuationRun + Asset row into a NavAttestation.
+ *
+ *   - quoteSymbol defaults to "KRW".
+ *   - `totalSharesScaled` is a REQUIRED, explicit token supply (> 0) — there
+ *     is no silent 1e18 default, because a wrong supply would make
+ *     `navPerShare` the whole-asset value instead of per-token.
+ *   - `navPerShare = round(navValueKrw × 10**18 × 10**18 / totalSharesScaled)`,
+ *     computed in `Decimal` so KRW NAVs above 2^53 stay exact, then floored to
+ *     an integer at the final bigint boundary (floor-division dust < 1 unit is
+ *     dropped, matching the on-chain floor semantics).
  */
 export function buildNavAttestation(opts: {
   valuationRun: ValuationRunInput;
   asset: AssetInput;
   quoteSymbol?: string;
 }): NavAttestation {
-  const totalShares = opts.valuationRun.totalSharesScaled ?? 10n ** 18n;
+  const totalShares = opts.valuationRun.totalSharesScaled;
   if (totalShares <= 0n) {
     throw new Error('totalSharesScaled must be a positive number of shares.');
   }
-  const baseCaseValueKrw = opts.valuationRun.baseCaseValueKrw;
-  if (!Number.isFinite(baseCaseValueKrw)) {
-    throw new Error(`baseCaseValueKrw must be a finite number (got ${baseCaseValueKrw}).`);
-  }
-  if (baseCaseValueKrw < 0) {
-    // navPerShare is an on-chain uint256; a negative value would either
-    // wrap to a garbage huge number or fail at ABI encode far downstream.
-    // Reject it here with a clear domain error.
-    throw new Error(`baseCaseValueKrw must be non-negative (got ${baseCaseValueKrw}).`);
-  }
-  // baseCaseValueKrw is JS number (KRW). Scale to 18 decimals before
-  // dividing by totalShares to preserve precision.
-  const valueScaled = BigInt(Math.round(baseCaseValueKrw)) * 10n ** 18n;
-  const navPerShare = (valueScaled * 10n ** 18n) / totalShares;
+  const navValueKrw = toNonNegativeDecimal(opts.valuationRun.navValueKrw, 'navValueKrw');
+
+  // Scale to 18 decimals (× the 18-decimal navPerShare unit) in Decimal space,
+  // divide by the token supply, then floor to a bigint only at the very end.
+  // Doing the division in Decimal (not bigint) keeps the intermediate exact;
+  // toFixed(0, ROUND_DOWN) floors so we never over-attest per token.
+  const navPerShareDecimal = navValueKrw
+    .mul(NAV_SCALE.toString())
+    .mul(NAV_SCALE.toString())
+    .div(totalShares.toString());
+  const navPerShare = BigInt(navPerShareDecimal.toFixed(0, Prisma.Decimal.ROUND_DOWN));
+
   const symbol = opts.quoteSymbol ?? 'KRW';
   const navTimestamp = BigInt(Math.floor(opts.valuationRun.createdAt.getTime() / 1000));
   const nonce = opts.valuationRun.nonce ?? BigInt(opts.valuationRun.createdAt.getTime());
