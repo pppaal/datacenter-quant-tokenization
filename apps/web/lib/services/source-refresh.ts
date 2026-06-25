@@ -88,7 +88,7 @@ export async function getSourceRefreshHealth(db: SourceRefreshDb = prisma, now =
   const staleCutoff = new Date(now.getTime() - staleThresholdHours * 60 * 60 * 1000);
 
   const [sourceRows, assets] = await Promise.all([
-    listSourceStatus(db as PrismaClient),
+    listSourceStatus(db as PrismaClient, now),
     db.asset.findMany({
       select: {
         id: true,

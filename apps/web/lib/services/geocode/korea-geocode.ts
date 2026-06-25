@@ -140,11 +140,17 @@ export function reverseGeocode(location: LatLng): {
   parcel: ParcelIdentifier;
   districtName: string;
 } | null {
-  // Pick the nearest known address by great-circle distance.
+  // Pick the nearest known address. A raw sqrt(dLat² + dLng²) over WGS84 degrees
+  // is NOT proportional to ground distance at Korean latitudes: 1° of longitude
+  // spans only ~cos(lat) (≈0.79 at 37.5°N) as much ground as 1° of latitude, so
+  // an unscaled metric over-weights east-west separation and can pick the wrong
+  // nearest anchor. Scale the longitude delta by cos(latitude) so the comparison
+  // tracks true distance (consistent with the haversine used elsewhere).
   let best: { addr: KnownAddress; distance: number } | null = null;
   for (const addr of KNOWN_ADDRESSES) {
+    const meanLatRad = (((addr.latitude + location.latitude) / 2) * Math.PI) / 180;
     const dLat = addr.latitude - location.latitude;
-    const dLng = addr.longitude - location.longitude;
+    const dLng = (addr.longitude - location.longitude) * Math.cos(meanLatRad);
     const distance = Math.sqrt(dLat * dLat + dLng * dLng);
     if (!best || distance < best.distance) {
       best = { addr, distance };

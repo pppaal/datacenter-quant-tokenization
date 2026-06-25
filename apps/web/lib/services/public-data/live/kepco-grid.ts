@@ -96,29 +96,41 @@ export class LiveKepcoGridAccess implements GridAccessConnector {
   }
 }
 
+function hasFiniteCoords(r: SubstationRecord): boolean {
+  return Number.isFinite(r.latitude) && Number.isFinite(r.longitude);
+}
+
 function parseDataset(raw: string): SubstationRecord[] {
   const trimmed = raw.trim();
   if (trimmed.startsWith('[')) {
     const json = JSON.parse(trimmed) as SubstationRecord[];
-    return json.filter((r) => Number.isFinite(r.latitude) && Number.isFinite(r.longitude));
+    return json.filter(hasFiniteCoords);
   }
   // CSV fallback: name,lat,lng,availableCapacityMw,tariffKrwPerKwh,fiber,renewablePct
-  return trimmed
-    .split(/\r?\n/)
-    .filter((line) => line && !line.startsWith('#'))
-    .slice(1) // header
-    .map((line): SubstationRecord => {
-      const [name, lat, lng, cap, tariff, fiber, renewable] = line.split(',');
-      return {
-        name: name.trim(),
-        latitude: Number(lat),
-        longitude: Number(lng),
-        availableCapacityMw: cap === '' ? null : Number(cap),
-        tariffKrwPerKwh: Number(tariff),
-        fiberBackboneAvailable: fiber.trim().toLowerCase() === 'true',
-        renewableSourcingAvailablePct: renewable === '' ? null : Number(renewable)
-      };
-    });
+  return (
+    trimmed
+      .split(/\r?\n/)
+      .filter((line) => line && !line.startsWith('#'))
+      .slice(1) // header
+      .map((line): SubstationRecord => {
+        const [name, lat, lng, cap, tariff, fiber, renewable] = line.split(',');
+        return {
+          name: (name ?? '').trim(),
+          latitude: Number(lat),
+          longitude: Number(lng),
+          availableCapacityMw: !cap ? null : Number(cap),
+          tariffKrwPerKwh: Number(tariff),
+          fiberBackboneAvailable: (fiber ?? '').trim().toLowerCase() === 'true',
+          renewableSourcingAvailablePct: !renewable ? null : Number(renewable)
+        };
+      })
+      // A malformed row (missing/garbled coords) parses to NaN lat/lng. Without
+      // this filter such a row poisons nearest-substation selection: `d < NaN` is
+      // always false, so a NaN-distance record stays "best" forever and the
+      // adapter returns an invalid substation. Drop non-finite-coordinate rows,
+      // matching the JSON path.
+      .filter(hasFiniteCoords)
+  );
 }
 
 function haversineKm(a: LatLng, b: LatLng): number {

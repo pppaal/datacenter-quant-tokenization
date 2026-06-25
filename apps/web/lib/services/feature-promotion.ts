@@ -62,6 +62,13 @@ function dedupePromotedFeatures(features: PromotedFeature[]) {
       byKey.set(feature.key, feature);
       continue;
     }
+    // The numeric value is the promotable signal (it drives assumptions). Never
+    // let a text-only candidate clobber a feature that already carries a number:
+    // previously a longer free-text fact for the same key fell through to the
+    // text-length comparison below and silently dropped the numeric value.
+    if (currentHasNumber && !incomingHasNumber) {
+      continue;
+    }
 
     const currentTextLength = current.textValue?.length ?? 0;
     const incomingTextLength = feature.textValue?.length ?? 0;
