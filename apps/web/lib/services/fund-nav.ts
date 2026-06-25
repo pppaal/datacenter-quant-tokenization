@@ -267,6 +267,16 @@ function multiple(numerator: number, denominator: number): number {
 }
 
 /**
+ * Residual value an LP carries cannot be negative under limited liability — a
+ * mark-to-market loss drives the multiple below 1x, it does not produce a
+ * *negative* RVPI/TVPI. Floor the NAV (residual value) contribution at 0 so the
+ * reported multiples stay >= 0; the loss is already reflected by TVPI < 1.
+ */
+function residualValue(navKrw: number): number {
+  return Math.max(navKrw, 0);
+}
+
+/**
  * Build per-LP capital-account statements plus a fund-level rollup.
  *
  * NAV is the fair-value NAV from `computeFundNavDetail`. Each LP's NAV share is
@@ -351,8 +361,8 @@ export function buildPcap(params: {
     const irrPct = computeXirr(irrFlows);
 
     const dpiMultiple = multiple(distributedKrw, calledKrw);
-    const rvpiMultiple = multiple(navShareKrw, calledKrw);
-    const tvpiMultiple = multiple(distributedKrw + navShareKrw, calledKrw);
+    const rvpiMultiple = multiple(residualValue(navShareKrw), calledKrw);
+    const tvpiMultiple = multiple(distributedKrw + residualValue(navShareKrw), calledKrw);
 
     return {
       investorId: commitment.investorId,
@@ -411,9 +421,9 @@ export function buildPcap(params: {
       unfundedKrw: sum((i) => i.unfundedKrw),
       recallableKrw: sum((i) => i.recallableKrw),
       navShareKrw: totalNavShare,
-      tvpiMultiple: multiple(totalDistributed + totalNavShare, totalCalled),
+      tvpiMultiple: multiple(totalDistributed + residualValue(totalNavShare), totalCalled),
       dpiMultiple: multiple(totalDistributed, totalCalled),
-      rvpiMultiple: multiple(totalNavShare, totalCalled),
+      rvpiMultiple: multiple(residualValue(totalNavShare), totalCalled),
       irrPct: fundIrrPct
     },
     investors

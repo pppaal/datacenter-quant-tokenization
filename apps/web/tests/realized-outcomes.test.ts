@@ -78,6 +78,48 @@ test('buildRealizedOutcomeComparison matches the first realized observation afte
   assert.equal(comparison.match?.valueForecastErrorPct, -2);
 });
 
+test('a realized valuation of exactly 0 registers as a -100% value change (total write-off)', () => {
+  // Anchor relative to now so the observation always lands after the run.
+  const runDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+  const observationDate = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000);
+
+  const comparison = buildRealizedOutcomeComparison({
+    run: {
+      id: 'run-writeoff',
+      assetId: 'asset-z',
+      createdAt: runDate,
+      baseCaseValueKrw: 500_000,
+      assumptions: null,
+      asset: {
+        id: 'asset-z',
+        name: 'Impaired Tower',
+        assetCode: 'IMP-01',
+        assetClass: AssetClass.OFFICE
+      },
+      scenarios: [{ name: 'Base', debtServiceCoverage: 1.2 }]
+    },
+    outcomes: [
+      {
+        id: 'outcome-writeoff',
+        assetId: 'asset-z',
+        observationDate,
+        occupancyPct: 0,
+        noiKrw: 0,
+        rentGrowthPct: -100,
+        valuationKrw: 0, // total loss — must NOT be dropped as "no data"
+        debtServiceCoverage: 0,
+        exitCapRatePct: null,
+        notes: 'Asset written off to zero'
+      }
+    ]
+  });
+
+  assert.equal(comparison.status, 'MATCHED');
+  // Truthiness guard would have produced null here (0 is falsy); the fix
+  // surfaces the full -100% realized decline.
+  assert.equal(comparison.match?.actualValueChangePct, -100);
+});
+
 test('buildRealizedOutcomeSummary aggregates latest-run realized drift', () => {
   const summary = buildRealizedOutcomeSummary({
     runs: [

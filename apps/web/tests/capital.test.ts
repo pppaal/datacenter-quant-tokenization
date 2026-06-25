@@ -38,6 +38,34 @@ test('buildCommitmentMath summarizes commitments, calls, distributions, and dry 
   assert.equal(math.pendingDistributionsKrw, 5_000_000_000);
 });
 
+test('unfunded commitment and dry powder never go negative on an over-call', () => {
+  // Called capital exceeds commitments (e.g. recallable distributions re-drawn),
+  // so there is nothing left to draw: the undrawn figure must floor at 0, not
+  // report a phantom negative "remaining" commitment.
+  const math = buildCommitmentMath({
+    targetSizeKrw: null,
+    committedCapitalKrw: null,
+    investedCapitalKrw: null,
+    dryPowderKrw: null,
+    commitments: [
+      {
+        commitmentKrw: 100_000_000_000,
+        calledKrw: 120_000_000_000,
+        distributedKrw: 30_000_000_000
+      }
+    ],
+    capitalCalls: [],
+    distributions: []
+  } as any);
+
+  assert.equal(math.totalCommitmentKrw, 100_000_000_000);
+  assert.equal(math.totalCalledKrw, 120_000_000_000);
+  assert.equal(math.unfundedCommitmentKrw, 0);
+  assert.equal(math.dryPowderKrw, 0);
+  // netInvested is a different concept (called - distributed) and may stay signed.
+  assert.equal(math.netInvestedKrw, 90_000_000_000);
+});
+
 test('buildFundDashboard produces investor-update-ready summary', () => {
   const dashboard = buildFundDashboard({
     id: 'fund-1',

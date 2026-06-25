@@ -341,12 +341,16 @@ export function buildPortfolioDashboard(portfolio: PortfolioBundle) {
     assetCount: assetRows.length,
     grossHoldValueKrw: sum(assetRows.map((row) => row.holdValueKrw)),
     averageOccupancyPct: average(assetRows.map((row) => row.latest?.occupancyPct)),
-    annualizedNoiKrw: sum(assetRows.map((row) => toNumber(row.latest?.noiKrw))),
+    // MonthlyAssetKpi.noiKrw is a MONTHLY figure (it lives on the monthly KPI row
+    // and is annualized with ×12 in operator-dashboard.ts / portfolio-dashboard.ts).
+    // Annualize it here too — previously this summed monthly NOI but labeled and
+    // rendered it as "annualized NOI", under-reporting by 12×.
+    annualizedNoiKrw: sum(assetRows.map((row) => toNumber(row.latest?.noiKrw) * 12)),
     annualizedRevenueKrw: sum(
       assetRows.map((row) =>
         row.latest?.effectiveRentKrwPerSqmMonth != null && row.latest?.leasedAreaSqm != null
           ? row.latest.effectiveRentKrwPerSqmMonth * row.latest.leasedAreaSqm * 12
-          : toNumber(row.latest?.noiKrw)
+          : toNumber(row.latest?.noiKrw) * 12
       )
     ),
     watchlistCount: assetRows.filter(
