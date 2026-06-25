@@ -29,6 +29,25 @@ test('buildIncomeStatement computes margin + pre-tax proxy', () => {
   assert.equal(inc.preTaxIncomeProxyKrw, 8_856_000_000 - 1_968_000_000);
 });
 
+test('buildIncomeStatement reports 0% margin for break-even (zero) EBITDA, not null', () => {
+  // A legitimately reported zero EBITDA is a real break-even data point — it
+  // must surface as 0% margin, not be swallowed by a truthiness gate as
+  // "Insufficient inputs".
+  const inc = buildIncomeStatement({ revenueKrw: 10_000_000_000, ebitdaKrw: 0 });
+  assert.equal(inc.ebitdaKrw, 0);
+  assert.equal(inc.ebitdaMarginPct, 0);
+});
+
+test('buildIncomeStatement still returns null margin when revenue is zero (no div-by-zero)', () => {
+  const inc = buildIncomeStatement({ revenueKrw: 0, ebitdaKrw: 5_000_000_000 });
+  assert.equal(inc.ebitdaMarginPct, null);
+});
+
+test('buildIncomeStatement computes negative margin for negative EBITDA', () => {
+  const inc = buildIncomeStatement({ revenueKrw: 10_000_000_000, ebitdaKrw: -2_000_000_000 });
+  assert.equal(inc.ebitdaMarginPct, -20);
+});
+
 test('buildBalanceSheet computes net debt + equity ratio + other liabilities', () => {
   const bs = buildBalanceSheet(SAMPLE);
   assert.equal(bs.netDebtKrw, 34_440_000_000 - 2_952_000_000);
