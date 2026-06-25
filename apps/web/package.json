@@ -19,6 +19,7 @@
     "db:e2e:up": "docker compose -f compose.e2e.yml up -d",
     "db:e2e:down": "docker compose -f compose.e2e.yml down -v",
     "test": "bash -c 'shopt -s globstar; tsx --test tests/**/*.test.ts'",
+    "test:coverage": "bash -c 'shopt -s globstar; tsx --test --experimental-test-coverage tests/**/*.test.ts'",
     "lint": "eslint .",
     "lint:strict": "eslint . --max-warnings=0",
     "lint:fix": "eslint . --fix",
