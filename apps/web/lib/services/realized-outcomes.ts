@@ -165,8 +165,15 @@ export function buildRealizedOutcomeComparison({
   }
 
   const baseDscr = pickBaseDscr(run.scenarios) ?? null;
+  // A realized valuation of exactly 0 (a total write-off) is a legitimate
+  // observation and must register as a -100% value change, not be dropped.
+  // Use an explicit null/undefined check (mirroring the DSCR/occupancy guards
+  // below) instead of a truthiness check, which would silently treat 0 as "no
+  // data" and hide total losses.
   const actualValueChangePct =
-    matchedOutcome.valuationKrw && run.baseCaseValueKrw > 0
+    matchedOutcome.valuationKrw !== null &&
+    matchedOutcome.valuationKrw !== undefined &&
+    run.baseCaseValueKrw > 0
       ? round(((matchedOutcome.valuationKrw - run.baseCaseValueKrw) / run.baseCaseValueKrw) * 100)
       : null;
   const actualDscrChangePct =
