@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,8 @@ const requestTypes = [
 
 export function InquiryForm() {
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
   const form = useForm<InquiryInput>({
     resolver: zodResolver(inquirySchema),
     defaultValues: {
@@ -24,21 +26,37 @@ export function InquiryForm() {
     }
   });
 
-  const onSubmit = form.handleSubmit(async (values) => {
-    const response = await fetch('/api/inquiries', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(values)
-    });
+  const onSubmit = form.handleSubmit((values) => {
+    setError(null);
+    startTransition(async () => {
+      try {
+        const response = await fetch('/api/inquiries', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(values)
+        });
 
-    if (response.ok) {
-      setSubmitted(true);
-      form.reset({
-        requestType: 'Platform demo'
-      });
-    }
+        if (!response.ok) {
+          setSubmitted(false);
+          setError(
+            '문의 전송에 실패했습니다. 잠시 후 다시 시도해 주세요. (Submission failed — please try again.)'
+          );
+          return;
+        }
+
+        setSubmitted(true);
+        form.reset({
+          requestType: 'Platform demo'
+        });
+      } catch {
+        setSubmitted(false);
+        setError(
+          '네트워크 오류로 문의를 전송하지 못했습니다. (A network error prevented the request from being sent.)'
+        );
+      }
+    });
   });
 
   return (
@@ -67,7 +85,7 @@ export function InquiryForm() {
                 className={`rounded-2xl border px-3 py-3 text-left text-xs transition ${
                   form.watch('requestType') === type
                     ? 'border-accent/40 bg-accent/10 text-accent'
-                    : 'border-white/10 bg-white/[0.03] text-slate-400 hover:border-white/20 hover:text-white'
+                    : 'border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] text-[hsl(var(--muted))] hover:border-[hsl(var(--border-strong))] hover:text-[hsl(var(--foreground))]'
                 }`}
               >
                 {type}
@@ -86,13 +104,24 @@ export function InquiryForm() {
         />
       </label>
 
-      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-4">
-        <p className="max-w-xl text-sm text-slate-400">
-          {submitted
-            ? '문의가 접수되었습니다. The request is now stored in the institutional follow-up queue.'
-            : '문의 내용은 Next.js backend에 저장되며 자산과 문서 워크플로우와 같은 운영 콘솔에서 관리됩니다.'}
+      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[hsl(var(--border))] pt-4">
+        <p
+          className={
+            error
+              ? 'max-w-xl text-sm text-[hsl(var(--danger))]'
+              : 'max-w-xl text-sm text-[hsl(var(--muted))]'
+          }
+          role={error ? 'alert' : undefined}
+        >
+          {error
+            ? error
+            : submitted
+              ? '문의가 접수되었습니다. The request is now stored in the institutional follow-up queue.'
+              : '문의 내용은 Next.js backend에 저장되며 자산과 문서 워크플로우와 같은 운영 콘솔에서 관리됩니다.'}
         </p>
-        <Button type="submit">플랫폼 문의 보내기</Button>
+        <Button type="submit" disabled={isPending} aria-busy={isPending}>
+          {isPending ? '전송 중…' : '플랫폼 문의 보내기'}
+        </Button>
       </div>
     </form>
   );
