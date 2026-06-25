@@ -136,7 +136,7 @@ export function AdminOperatorSeatForm({
           <option value="inactive">inactive</option>
         </Select>
       </div>
-      <div className="rounded-[18px] border border-amber-400/20 bg-amber-500/10 p-3 text-xs leading-6 text-amber-100">
+      <div className="rounded-[18px] border border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--warning-tint))] p-3 text-xs leading-6 text-[hsl(var(--warning))]">
         Deactivating a seat or removing ADMIN role is a controlled action. Keep at least one other
         active ADMIN seat assigned before saving.
       </div>

@@ -186,7 +186,7 @@ export function NotificationBell() {
               </div>
             ) : null}
             {error ? (
-              <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-200">
+              <div className="rounded-2xl border border-[hsl(var(--danger)/0.25)] bg-[hsl(var(--danger-tint))] p-3 text-xs text-[hsl(var(--danger))]">
                 {error}
               </div>
             ) : null}

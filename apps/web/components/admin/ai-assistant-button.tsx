@@ -111,7 +111,7 @@ export function AiAssistantButton({ kind, entityId }: Props) {
       </div>
 
       {error ? (
-        <div className="rounded-md border border-rose-500/40 bg-rose-500/10 p-4 text-sm text-rose-200">
+        <div className="rounded-md border border-[hsl(var(--danger)/0.25)] bg-[hsl(var(--danger-tint))] p-4 text-sm text-[hsl(var(--danger))]">
           {error}
         </div>
       ) : null}
@@ -155,32 +155,32 @@ function DealScorePanel({ data }: { data: DealScoreResult }) {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 p-4">
+        <div className="rounded-md border border-[hsl(var(--success)/0.25)] bg-[hsl(var(--success-tint))] p-4">
           <div className="text-xs font-semibold uppercase tracking-wide text-[hsl(var(--success))]">
             Green flags
           </div>
           {data.greenFlags.length > 0 ? (
-            <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-emerald-100">
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-[hsl(var(--success))]">
               {data.greenFlags.map((flag, index) => (
                 <li key={`green-${index}-${flag.slice(0, 12)}`}>{flag}</li>
               ))}
             </ul>
           ) : (
-            <p className="mt-2 text-sm text-emerald-200/70">None identified.</p>
+            <p className="mt-2 text-sm text-[hsl(var(--success)/0.7)]">None identified.</p>
           )}
         </div>
-        <div className="rounded-md border border-rose-500/30 bg-rose-500/5 p-4">
+        <div className="rounded-md border border-[hsl(var(--danger)/0.25)] bg-[hsl(var(--danger-tint))] p-4">
           <div className="text-xs font-semibold uppercase tracking-wide text-[hsl(var(--danger))]">
             Red flags
           </div>
           {data.redFlags.length > 0 ? (
-            <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-rose-100">
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-[hsl(var(--danger))]">
               {data.redFlags.map((flag, index) => (
                 <li key={`red-${index}-${flag.slice(0, 12)}`}>{flag}</li>
               ))}
             </ul>
           ) : (
-            <p className="mt-2 text-sm text-rose-200/70">None identified.</p>
+            <p className="mt-2 text-sm text-[hsl(var(--danger)/0.7)]">None identified.</p>
           )}
         </div>
       </div>

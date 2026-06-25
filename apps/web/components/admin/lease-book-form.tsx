@@ -417,7 +417,7 @@ export function LeaseBookForm({
   return (
     <div id="lease-book" className="space-y-5">
       <div className="grid gap-4">
-        <div className="rounded-[24px] border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-100">
+        <div className="rounded-[24px] border border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--warning-tint))] p-4 text-sm text-[hsl(var(--warning))]">
           New or edited lease rows save into the normalized lease layer as{' '}
           <span className="font-semibold">PENDING</span>. Only approved leases are promoted into
           `revenue_micro` and treated as committee-ready evidence.

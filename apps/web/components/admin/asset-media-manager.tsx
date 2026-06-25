@@ -124,8 +124,8 @@ export function AssetMediaManager({
         <div
           className={`rounded-[14px] border px-4 py-2 text-sm ${
             banner.tone === 'good'
-              ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-200'
-              : 'border-amber-400/30 bg-amber-400/10 text-amber-200'
+              ? 'border-[hsl(var(--success)/0.25)] bg-[hsl(var(--success-tint))] text-[hsl(var(--success))]'
+              : 'border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--warning-tint))] text-[hsl(var(--warning))]'
           }`}
         >
           {banner.text}

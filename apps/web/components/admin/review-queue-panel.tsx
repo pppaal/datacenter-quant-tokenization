@@ -71,11 +71,11 @@ export function ReviewQueuePanel({
                     {summary.totals.rejected} rejected
                   </p>
                   {summary.pendingBlockers.length > 0 ? (
-                    <div className="mt-3 rounded-2xl border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs leading-6 text-amber-100">
+                    <div className="mt-3 rounded-2xl border border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--warning-tint))] px-3 py-2 text-xs leading-6 text-[hsl(var(--warning))]">
                       Approval blockers: {summary.pendingBlockers.slice(0, 3).join(' · ')}
                     </div>
                   ) : (
-                    <div className="mt-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-xs leading-6 text-emerald-100">
+                    <div className="mt-3 rounded-2xl border border-[hsl(var(--success)/0.25)] bg-[hsl(var(--success-tint))] px-3 py-2 text-xs leading-6 text-[hsl(var(--success))]">
                       No open approval blockers in the current evidence queue.
                     </div>
                   )}

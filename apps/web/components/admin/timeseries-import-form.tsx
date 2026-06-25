@@ -96,8 +96,10 @@ export function TimeseriesImportForm() {
         </Button>
       </div>
       {errors.length > 0 ? (
-        <div className="rounded-[16px] border border-amber-500/30 bg-amber-500/5 p-3 text-xs">
-          <div className="mb-1 font-semibold text-amber-200">{errors.length} parse errors</div>
+        <div className="rounded-[16px] border border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--warning-tint))] p-3 text-xs">
+          <div className="mb-1 font-semibold text-[hsl(var(--warning))]">
+            {errors.length} parse errors
+          </div>
           <ul className="space-y-1 text-slate-300">
             {errors.slice(0, 8).map((e) => (
               <li key={`${e.line}:${e.reason}`}>

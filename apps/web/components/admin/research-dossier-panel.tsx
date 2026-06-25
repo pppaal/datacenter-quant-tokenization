@@ -222,13 +222,13 @@ export function ResearchDossierPanel({ dossier, canApproveHouseView = false }: P
                 dossier.micro.pendingBlockers.slice(0, 5).map((blocker) => (
                   <div
                     key={blocker}
-                    className="rounded-2xl border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-amber-100"
+                    className="rounded-2xl border border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--warning-tint))] px-3 py-2 text-[hsl(var(--warning))]"
                   >
                     {blocker}
                   </div>
                 ))
               ) : (
-                <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-emerald-100">
+                <div className="rounded-2xl border border-[hsl(var(--success)/0.25)] bg-[hsl(var(--success-tint))] px-3 py-2 text-[hsl(var(--success))]">
                   No pending review blockers in the current evidence set.
                 </div>
               )}
@@ -353,8 +353,8 @@ export function ResearchDossierPanel({ dossier, canApproveHouseView = false }: P
                     key={`${item.label}-${item.detail}`}
                     className={`rounded-2xl border px-3 py-2 ${
                       item.severity === 'danger'
-                        ? 'border-rose-400/30 bg-rose-500/10 text-rose-100'
-                        : 'border-amber-400/30 bg-amber-500/10 text-amber-100'
+                        ? 'border-[hsl(var(--danger)/0.25)] bg-[hsl(var(--danger-tint))] text-[hsl(var(--danger))]'
+                        : 'border-[hsl(var(--warning)/0.25)] bg-[hsl(var(--warning-tint))] text-[hsl(var(--warning))]'
                     }`}
                   >
                     <div className="font-semibold">{item.label}</div>
@@ -362,7 +362,7 @@ export function ResearchDossierPanel({ dossier, canApproveHouseView = false }: P
                   </div>
                 ))
               ) : (
-                <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-emerald-100">
+                <div className="rounded-2xl border border-[hsl(var(--success)/0.25)] bg-[hsl(var(--success-tint))] px-3 py-2 text-[hsl(var(--success))]">
                   No source disagreement signals are currently surfacing in the dossier.
                 </div>
               )}
@@ -428,7 +428,7 @@ export function ResearchDossierPanel({ dossier, canApproveHouseView = false }: P
                   </div>
                 ))
               ) : (
-                <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-emerald-100">
+                <div className="rounded-2xl border border-[hsl(var(--success)/0.25)] bg-[hsl(var(--success-tint))] px-3 py-2 text-[hsl(var(--success))]">
                   No open research coverage tasks are blocking the current dossier.
                 </div>
               )}

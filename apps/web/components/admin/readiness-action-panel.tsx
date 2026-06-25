@@ -88,8 +88,8 @@ export function ReadinessActionPanel({ assetId }: { assetId: string }) {
           className={[
             'rounded-[22px] border p-4 text-sm leading-7 md:col-span-3',
             feedback.tone === 'good'
-              ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-100'
-              : 'border-rose-500/20 bg-rose-500/10 text-rose-100'
+              ? 'border-[hsl(var(--success)/0.25)] bg-[hsl(var(--success-tint))] text-[hsl(var(--success))]'
+              : 'border-[hsl(var(--danger)/0.25)] bg-[hsl(var(--danger-tint))] text-[hsl(var(--danger))]'
           ].join(' ')}
           data-testid="readiness-feedback"
           role={feedback.tone === 'good' ? 'status' : 'alert'}
