@@ -43,6 +43,13 @@ test('fund family totals aggregate and compute money-weighted multiples', () => 
   assert.equal(totals.navUsedCostBasisFallback, true);
 });
 
+test('fund family unfunded commitment floors at 0 when a fund is over-called', () => {
+  const totals = buildFundFamilyTotals([
+    math({ totalCommitmentKrw: 50_000_000_000, totalCalledKrw: 70_000_000_000 })
+  ]);
+  assert.equal(totals.unfundedCommitmentKrw, 0);
+});
+
 test('fund family totals are divide-by-zero safe', () => {
   const totals = buildFundFamilyTotals([]);
   assert.equal(totals.fundCount, 0);

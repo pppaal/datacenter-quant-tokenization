@@ -186,7 +186,12 @@ export function buildCommitmentMath(
     totalCommitmentKrw,
     totalCalledKrw,
     totalDistributedKrw,
-    unfundedCommitmentKrw: totalCommitmentKrw - totalCalledKrw,
+    // Unfunded commitment and modeled dry powder are the undrawn portion of
+    // commitments and can never be negative: an over-call (called > committed,
+    // e.g. via recallable distributions) leaves nothing left to draw, not a
+    // negative remainder. Mirrors the `Math.max(committed - called, 0)`
+    // convention already used per-investor in fund-waterfall.ts.
+    unfundedCommitmentKrw: Math.max(totalCommitmentKrw - totalCalledKrw, 0),
     netInvestedKrw: totalCalledKrw - totalDistributedKrw,
     /** Fair-value NAV (sum of latest asset valuations). 0 when portfolio not loaded. */
     navKrw: nav.navKrw,
@@ -201,7 +206,9 @@ export function buildCommitmentMath(
         ? totalCalledKrw - totalDistributedKrw
         : toNumber(fund.investedCapitalKrw),
     dryPowderKrw:
-      fund.dryPowderKrw == null ? totalCommitmentKrw - totalCalledKrw : toNumber(fund.dryPowderKrw)
+      fund.dryPowderKrw == null
+        ? Math.max(totalCommitmentKrw - totalCalledKrw, 0)
+        : toNumber(fund.dryPowderKrw)
   };
 }
 
@@ -244,7 +251,7 @@ export function buildFundFamilyTotals(maths: CommitmentMath[]): FundFamilyTotals
     totalCalledKrw,
     totalDistributedKrw,
     totalNavKrw,
-    unfundedCommitmentKrw: totalCommitmentKrw - totalCalledKrw,
+    unfundedCommitmentKrw: Math.max(totalCommitmentKrw - totalCalledKrw, 0),
     netInvestedKrw: totalCalledKrw - totalDistributedKrw,
     dpi: ratio(totalDistributedKrw),
     rvpi: ratio(totalNavKrw),
