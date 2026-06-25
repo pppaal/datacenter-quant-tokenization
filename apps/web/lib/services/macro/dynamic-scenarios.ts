@@ -152,33 +152,77 @@ export function generateTailRiskScenario(ctx: DynamicScenarioContext): MacroStre
   return fixedTailRiskScenario(ctx);
 }
 
+/**
+ * Build the deterministic mean correlated adverse shock vector from a covariance
+ * estimate. Exported for testing.
+ *
+ * The correlation structure is PRESERVED (this is the methodology fix). For each
+ * Cholesky-correlated draw x ~ N(0, Σ) we orient the WHOLE vector toward the
+ * aggregate adverse direction in one shot — by the sign of the projection
+ *
+ *   s = Σ_i adverseSign_i · x_i
+ *
+ * onto the adverse axis. When s < 0 we negate the ENTIRE vector (all components
+ * flip together), so the joint sign relationships the Cholesky encoded survive:
+ * two positively-correlated factors keep co-moving in the adverse draw, and
+ * flipping a correlation sign changes the joint result. Averaging the so-oriented
+ * draws over a deterministic ensemble gives the conditional mean of the joint
+ * distribution on its adverse half-space — NOT the per-component half-normal mean
+ * (the previous per-component `Math.abs` collapsed to independent marginals and
+ * discarded every off-diagonal covariance term, making the "correlated draw"
+ * claim false).
+ */
+export function buildCorrelatedAdverseShock(
+  covariance: number[][],
+  options?: { ensemble?: number; seed?: number; sigmaMultiple?: number }
+): number[] {
+  const dim = covariance.length;
+  if (dim === 0) return [];
+  const ensemble = options?.ensemble ?? 256;
+  const seed = options?.seed ?? TAIL_DRAW_SEED;
+  const sigmaMultiple = options?.sigmaMultiple ?? TAIL_SIGMA_MULTIPLE;
+
+  // adverseSign per dimension; default +1 for dimensions beyond the tail set so
+  // the helper is total for arbitrary covariance sizes (tests pass 2×2/3×3).
+  const adverseSigns = Array.from(
+    { length: dim },
+    (_, i) => (TAIL_DIMENSIONS[i]?.adverseSign as number | undefined) ?? 1
+  );
+  const L = choleskyPsd(covariance);
+  const rng = mulberry32(seed);
+  const accum = new Array(dim).fill(0);
+
+  for (let n = 0; n < ensemble; n++) {
+    const draw = drawCorrelatedShock(L, rng);
+    // Project the whole joint draw onto the adverse axis.
+    let projection = 0;
+    for (let i = 0; i < dim; i++) {
+      projection += (adverseSigns[i] ?? 1) * (draw[i] ?? 0);
+    }
+    // Orient the ENTIRE vector toward its adverse half-space in one flip,
+    // preserving the joint correlation structure across components.
+    const orient = projection < 0 ? -1 : 1;
+    for (let i = 0; i < dim; i++) {
+      accum[i] += orient * (draw[i] ?? 0);
+    }
+  }
+
+  // The conditional mean of the projection over its adverse half is ~0.8σ of the
+  // projection scale; rescale the averaged oriented vector so the adverse axis
+  // sits at ~sigmaMultiple σ, matching the documented tail severity.
+  const meanFoldToSigma = sigmaMultiple / 0.7979;
+  return accum.map((v) => (v / ensemble) * meanFoldToSigma);
+}
+
 function tryCovarianceTailRisk(ctx: DynamicScenarioContext): MacroStressScenario | null {
   const seriesKeys = TAIL_DIMENSIONS.map((d) => d.seriesKey);
   const estimate = estimateFactorCovariance(ctx.series ?? [], seriesKeys, ctx.market);
   if (!estimate.sufficient) return null;
 
-  // Mean adverse draw: shock_i = adverseSign_i · TAIL_SIGMA_MULTIPLE · σ_i,
-  // reshaped by the correlation structure of the covariance via Cholesky. We
-  // average a deterministic ensemble so the reported scenario reflects the
-  // joint covariance rather than one noisy draw, while staying reproducible.
-  const L = choleskyPsd(estimate.covariance);
-  const rng = mulberry32(TAIL_DRAW_SEED);
-  const ENSEMBLE = 256;
-  const accum = new Array(seriesKeys.length).fill(0);
-  for (let n = 0; n < ENSEMBLE; n++) {
-    const draw = drawCorrelatedShock(L, rng);
-    // Orient each component to its adverse tail and take the adverse magnitude.
-    for (let i = 0; i < draw.length; i++) {
-      const adverse = TAIL_DIMENSIONS[i]!.adverseSign * Math.abs(draw[i]!);
-      accum[i] += adverse;
-    }
-  }
-  // Mean of |N(0,σ²)| ≈ 0.8σ; scale the averaged magnitude up to TAIL_SIGMA_MULTIPLE σ.
-  const meanAbsToSigma = TAIL_SIGMA_MULTIPLE / 0.7979;
-  const shock = accum.map((v, i) => {
-    const mean = v / ENSEMBLE;
-    return TAIL_DIMENSIONS[i]!.adverseSign * Math.abs(mean) * meanAbsToSigma;
-  });
+  // Correlated adverse draw: orient the WHOLE joint vector toward the aggregate
+  // adverse direction (preserving the off-diagonal covariance structure),
+  // averaged over a deterministic, reproducible ensemble.
+  const shock = buildCorrelatedAdverseShock(estimate.covariance);
 
   const [rateChg, spreadChg, vacancyChg, growthChg, constructionChg] = shock;
 
