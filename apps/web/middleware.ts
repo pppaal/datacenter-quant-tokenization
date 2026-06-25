@@ -31,6 +31,21 @@ export function isPublicAdminPath(pathname: string) {
   return pathname === '/admin/login';
 }
 
+// Constant-time string comparison, Edge-runtime safe (Node's crypto
+// timingSafeEqual is unavailable in middleware). Folds the length difference
+// into the accumulator and never early-exits, so a `===` timing oracle can't
+// leak the matching-prefix length of OPS_CRON_TOKEN for byte-by-byte recovery.
+export function constantTimeEqual(a: string, b: string): boolean {
+  const len = Math.max(a.length, b.length);
+  let diff = a.length ^ b.length;
+  for (let i = 0; i < len; i += 1) {
+    const ca = i < a.length ? a.charCodeAt(i) : 0;
+    const cb = i < b.length ? b.charCodeAt(i) : 0;
+    diff |= ca ^ cb;
+  }
+  return diff === 0;
+}
+
 function isAuthorizedOpsRequest(request: NextRequest) {
   if (!request.nextUrl.pathname.startsWith('/api/ops/')) {
     return false;
@@ -46,7 +61,15 @@ function isAuthorizedOpsRequest(request: NextRequest) {
     ?.replace(/^Bearer\s+/i, '')
     .trim();
   const headerToken = request.headers.get('x-ops-cron-token')?.trim();
-  return bearer === expectedToken || headerToken === expectedToken;
+  // Evaluate both candidates (no short-circuit on a missing/blank header) and
+  // compare in constant time.
+  const bearerOk =
+    bearer !== undefined && bearer !== '' && constantTimeEqual(bearer, expectedToken);
+  const headerOk =
+    headerToken !== undefined &&
+    headerToken !== '' &&
+    constantTimeEqual(headerToken, expectedToken);
+  return bearerOk || headerOk;
 }
 
 function unauthorizedResponse(request: NextRequest) {
