@@ -81,7 +81,7 @@ function mapZoningRisk(
 }
 
 function buildRiskEngineInputs(asset: AssetForRiskEngine): IdiosyncraticRiskInputs {
-  const rentRoll: RentRollEntry[] = asset.leases.map((lease) => {
+  const perLease: RentRollEntry[] = asset.leases.map((lease) => {
     const lastStep = [...lease.steps].sort(
       (a, b) => b.endYear - a.endYear || b.stepOrder - a.stepOrder
     )[0];
@@ -96,6 +96,24 @@ function buildRiskEngineInputs(asset: AssetForRiskEngine): IdiosyncraticRiskInpu
       creditGrade: null
     };
   });
+
+  // The idiosyncratic-risk engine treats each rent-roll row as a distinct
+  // tenant (its HHI / top-tenant share sum over rows). A single tenant holding
+  // multiple leases (e.g. expanding into extra suites) must therefore be
+  // collapsed to one row, otherwise concentration risk is understated. Sum the
+  // tenant's rent and anchor rollover at its latest-expiring lease (the tenant
+  // isn't fully rolling until its last lease ends).
+  const byTenant = new Map<string, RentRollEntry>();
+  for (const entry of perLease) {
+    const existing = byTenant.get(entry.tenantName);
+    if (existing) {
+      existing.annualRentKrw += entry.annualRentKrw;
+      existing.leaseEndYear = Math.max(existing.leaseEndYear, entry.leaseEndYear);
+    } else {
+      byTenant.set(entry.tenantName, { ...entry });
+    }
+  }
+  const rentRoll: RentRollEntry[] = [...byTenant.values()];
 
   // Relative model-year schedule: anchor the rollover window at the earliest start.
   const startYears = asset.leases
