@@ -16,6 +16,7 @@ import { seedDealExecution } from './seeds/deals';
 import { buildCapexLineItems, deterministicDocumentHash } from './seeds/helpers';
 import { seedOfficeAsset } from './seeds/office';
 import { seedPortfolioAndCapitalShell } from './seeds/portfolio';
+import { assertSeedAllowed } from './seeds/prod-guard';
 import { seedQuarterlyMarketBootstrap } from './seeds/quarterly';
 import { seedResearchAndMacro } from './seeds/research';
 import { seedTokenization } from './seeds/tokenization';
@@ -23,6 +24,8 @@ import { seedTokenization } from './seeds/tokenization';
 const prisma = new PrismaClient();
 
 async function main() {
+  assertSeedAllowed();
+
   await prisma.investmentCommitteeDecision.deleteMany();
   await prisma.investmentCommitteePacket.deleteMany();
   await prisma.investmentCommitteeMeeting.deleteMany();
