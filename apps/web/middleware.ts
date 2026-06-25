@@ -8,7 +8,7 @@ import {
 import { ADMIN_SESSION_COOKIE, parseAdminSessionToken } from '@/lib/security/admin-session';
 import { applyEdgeRateLimit, isAllowedIp, resolveClientIp } from '@/lib/security/edge-protection';
 
-function isPublicApiPath(pathname: string) {
+export function isPublicApiPath(pathname: string) {
   return (
     pathname === '/api/health' ||
     pathname === '/api/inquiries' ||
@@ -27,7 +27,7 @@ function isPublicApiPath(pathname: string) {
   );
 }
 
-function isPublicAdminPath(pathname: string) {
+export function isPublicAdminPath(pathname: string) {
   return pathname === '/admin/login';
 }
 

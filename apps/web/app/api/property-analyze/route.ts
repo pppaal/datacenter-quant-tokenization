@@ -88,10 +88,15 @@ export async function POST(request: Request) {
     parsedBody = bodySchema.parse(raw);
   } catch (err) {
     if (err instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Invalid request body', details: err.issues },
-        { status: 400 }
-      );
+      // Surface only a flattened field summary (path + message) — never the raw
+      // `issues` array, which can echo received values back to an unauthenticated
+      // caller. Field-level messages preserve form feedback without disclosure.
+      const summary = err.issues
+        .map((issue) =>
+          issue.path.length ? `${issue.path.join('.')}: ${issue.message}` : issue.message
+        )
+        .join('; ');
+      return NextResponse.json({ error: summary || 'Invalid request body' }, { status: 400 });
     }
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
