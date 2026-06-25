@@ -130,6 +130,20 @@ function toPollutant(value: unknown): PollutantParameter | null {
  * (`datetime` can be a string or `{ utc }`; latest rows use `datetime` or
  * `datetimeLast`). Returns an ISO string or null.
  */
+/**
+ * True when `candidate` is a later instant than `current`. We compare by parsed
+ * epoch millis, NOT lexicographically: ISO-8601 strings with different UTC
+ * offsets (e.g. "…T12:00:00+09:00" = 03:00Z vs "…T04:00:00Z") sort differently
+ * as text than in real time, so a raw `>` would pick the wrong "latest" reading.
+ * Falls back to a string compare only when either value isn't a parseable date.
+ */
+function isChronologicallyAfter(candidate: string, current: string): boolean {
+  const c = Date.parse(candidate);
+  const k = Date.parse(current);
+  if (Number.isFinite(c) && Number.isFinite(k)) return c > k;
+  return candidate > current;
+}
+
 function extractTimestamp(row: Record<string, unknown>): string | null {
   const candidates = [row.datetime, row.datetimeLast, row.lastUpdated];
   for (const candidate of candidates) {
@@ -192,7 +206,7 @@ export function parseAirQuality(locationsBody: unknown, latestBodies: unknown[])
       acc[pollutant] = bucket;
 
       const ts = extractTimestamp(row);
-      if (ts && (latestTs === null || ts > latestTs)) latestTs = ts;
+      if (ts && (latestTs === null || isChronologicallyAfter(ts, latestTs))) latestTs = ts;
     }
   }
 

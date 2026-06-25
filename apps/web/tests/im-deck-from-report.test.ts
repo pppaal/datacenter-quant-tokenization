@@ -21,6 +21,17 @@ test('krwCompact renders 억/조', () => {
   assert.equal(krwCompact(12_300_000_000_000), '₩12.3조');
 });
 
+test('krwCompact preserves sub-억 precision instead of rounding away', () => {
+  // 1.5억 must not round to ₩2억 (the old Math.round(eok) behavior).
+  assert.equal(krwCompact(150_000_000), '₩1.5억');
+  // A 5천만 figure used to collapse to "₩1억" (round up) or "₩0억"; now it shows 만.
+  assert.equal(krwCompact(50_000_000), '₩5,000만');
+  // A 4천9백만 figure used to round to "₩0억"; now it shows 만.
+  assert.equal(krwCompact(49_000_000), '₩4,900만');
+  // Sub-만 figures fall through to whole 원.
+  assert.equal(krwCompact(7_500), '₩7,500');
+});
+
 test('imDeckFromReport builds a titled deck with metric + thesis sections', () => {
   const deck = imDeckFromReport(base);
   assert.match(deck.title, /여의도 프라임 — 투자심의 메모/);

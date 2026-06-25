@@ -45,6 +45,12 @@ export type MolitTransactionAggregate = {
   transactionCount: number;
   transactionVolumeKrw: number;
   medianPriceKrwPerSqm: number | null;
+  /**
+   * Raw per-sqm prices behind `medianPriceKrwPerSqm`. Carried so a quarter-level
+   * aggregate can pool prices across months and take a single median over the
+   * full population (avoids a median-of-medians).
+   */
+  pricesPerSqm: number[];
   sourceUrl: string;
   fetchedAt: string;
 };
@@ -78,6 +84,46 @@ function median(xs: number[]): number | null {
   const sorted = [...xs].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
   return sorted.length % 2 === 0 ? (sorted[mid - 1]! + sorted[mid]!) / 2 : sorted[mid]!;
+}
+
+/**
+ * Pure aggregation of MOLIT commercial rows for one month. Exported so the
+ * row-level math is unit-testable without a network round-trip.
+ *
+ * Two correctness rules:
+ *   1. `transactionCount` counts only rows with a valid (finite, > 0) deal
+ *      amount — i.e. the rows that actually contribute to `volumeKrw`. Rows with
+ *      a missing/blank/zero 거래금액 are dropped from BOTH the count and the
+ *      volume so the two never diverge (previously the count used the raw parsed
+ *      row total and silently over-counted unusable rows).
+ *   2. `pricesPerSqm` is returned RAW (not yet medianed) so a quarter-level
+ *      caller can pool prices across all months and take ONE median over the
+ *      pooled population, rather than a statistically-wrong median-of-medians.
+ */
+export function aggregateCommercialRows(items: MolitCommercialRow[]): {
+  transactionCount: number;
+  volumeKrw: number;
+  pricesPerSqm: number[];
+} {
+  let volumeKrw = 0;
+  let transactionCount = 0;
+  const pricesPerSqm: number[] = [];
+  for (const row of items) {
+    const manwon = Number(
+      String(row.거래금액 ?? '')
+        .replace(/,/g, '')
+        .trim()
+    );
+    const areaSqm = Number(String(row.건물면적 ?? '').trim());
+    if (!Number.isFinite(manwon) || manwon <= 0) continue;
+    const krw = manwon * 10_000;
+    volumeKrw += krw;
+    transactionCount += 1;
+    if (Number.isFinite(areaSqm) && areaSqm > 0) {
+      pricesPerSqm.push(krw / areaSqm);
+    }
+  }
+  return { transactionCount, volumeKrw, pricesPerSqm };
 }
 
 export async function fetchMolitCommercialMonth(
@@ -122,29 +168,15 @@ export async function fetchMolitCommercialMonth(
       ? [rawItems]
       : [];
 
-  let volumeKrw = 0;
-  const pricesPerSqm: number[] = [];
-  for (const row of items) {
-    const manwon = Number(
-      String(row.거래금액 ?? '')
-        .replace(/,/g, '')
-        .trim()
-    );
-    const areaSqm = Number(String(row.건물면적 ?? '').trim());
-    if (!Number.isFinite(manwon) || manwon <= 0) continue;
-    const krw = manwon * 10_000;
-    volumeKrw += krw;
-    if (Number.isFinite(areaSqm) && areaSqm > 0) {
-      pricesPerSqm.push(krw / areaSqm);
-    }
-  }
+  const { transactionCount, volumeKrw, pricesPerSqm } = aggregateCommercialRows(items);
 
   return {
     submarket: district,
     yyyymm,
-    transactionCount: items.length,
+    transactionCount,
     transactionVolumeKrw: volumeKrw,
     medianPriceKrwPerSqm: median(pricesPerSqm),
+    pricesPerSqm,
     sourceUrl: `MOLIT Commercial ${lawd} ${yyyymm}`,
     fetchedAt: new Date().toISOString()
   };
@@ -174,7 +206,11 @@ export async function aggregateQuarter(
 
   let count = 0;
   let volume = 0;
-  const prices: number[] = [];
+  // Pool the RAW per-sqm prices across all three months, then take ONE median
+  // over the full population. Medianing the three monthly medians (the prior
+  // behavior) is a statistically wrong "median of medians" that ignores how many
+  // transactions backed each month.
+  const pooledPrices: number[] = [];
   let any = false;
 
   for (const r of results) {
@@ -182,7 +218,7 @@ export async function aggregateQuarter(
     any = true;
     count += r.value.transactionCount;
     volume += r.value.transactionVolumeKrw;
-    if (r.value.medianPriceKrwPerSqm !== null) prices.push(r.value.medianPriceKrwPerSqm);
+    pooledPrices.push(...r.value.pricesPerSqm);
   }
 
   if (!any) return null;
@@ -192,7 +228,8 @@ export async function aggregateQuarter(
     yyyymm: quarter,
     transactionCount: count,
     transactionVolumeKrw: volume,
-    medianPriceKrwPerSqm: median(prices),
+    medianPriceKrwPerSqm: median(pooledPrices),
+    pricesPerSqm: pooledPrices,
     sourceUrl: `MOLIT Commercial aggregate ${quarter}`,
     fetchedAt: new Date().toISOString()
   };
