@@ -16,9 +16,16 @@
  * The math:
  *   - Build design matrix X (n × p) with intercept + numeric +
  *     one-hot encoded categorical dummies.
- *   - Solve normal equations (XᵀX) β = Xᵀy via Cholesky-style
- *     Gaussian elimination on the symmetric system.
+ *   - Invert (XᵀX) once via Gauss-Jordan with partial pivoting, then
+ *     β̂ = (XᵀX)⁻¹·Xᵀy.
  *   - Compute fitted value, residuals, R².
+ *   - OLS inference per coefficient (2026-06 quant audit): the retained
+ *     (XᵀX)⁻¹ gives Cov(β̂) = σ̂²·(XᵀX)⁻¹ with σ̂² = RSS/(n−k), so each
+ *     coefficient carries a standard error, t-statistic, exact Student-t
+ *     (df = n−k) two-sided p-value, and a VIF. A condition-number proxy
+ *     + VIF gate flag near-singular designs (`wellConditioned: false`)
+ *     so a deceptively high R² on collinear thin-market dummies is no
+ *     longer silently trusted.
  *
  * Shrinkage / Bayesian prior is NOT applied here — for thin
  * submarkets the caller should pass a wider-market subset and
@@ -42,9 +49,44 @@ export type HedonicQuery = {
   dealStructure?: string;
 };
 
+/**
+ * Per-coefficient OLS inference. All fields are derived from the
+ * closed-form OLS covariance Cov(β̂) = σ̂²·(XᵀX)⁻¹ with
+ * σ̂² = RSS/(n−k) (k = number of fitted parameters; the residual
+ * degrees of freedom are df = n−k). These are ADDITIVE — point
+ * estimates remain on `HedonicFit.coefficients` for backwards
+ * compatibility.
+ */
+export type CoefficientInference = {
+  /** Point estimate β̂_j (same value as `coefficients[name]`). */
+  estimate: number;
+  /** Standard error SE_j = sqrt(σ̂²·(XᵀX)⁻¹_jj). `null` when df ≤ 0. */
+  standardError: number | null;
+  /** t-statistic β̂_j / SE_j. `null` when SE is unavailable / zero. */
+  tStatistic: number | null;
+  /**
+   * Two-sided p-value Pr(|T_df| > |t|) under a Student-t with df = n−k.
+   * `null` when the t-statistic is unavailable.
+   */
+  pValue: number | null;
+  /**
+   * Variance-inflation factor for this regressor (the intercept is
+   * reported as `null`). VIF_j = (XᵀX)⁻¹_jj · S_jj, where S_jj is the
+   * centred sum-of-squares of column j; a value ≥ `VIF_WARN_THRESHOLD`
+   * flags problematic multicollinearity.
+   */
+  vif: number | null;
+};
+
 export type HedonicFit = {
   /** OLS coefficients keyed by feature name. */
   coefficients: Record<string, number>;
+  /**
+   * Per-coefficient OLS inference (SE / t / p / VIF) keyed by the same
+   * feature names as `coefficients`. ADDITIVE — added by the 2026-06
+   * quant audit; existing consumers can ignore it.
+   */
+  inference?: Record<string, CoefficientInference>;
   /** Fitted ln(price/sqm) at the query point. */
   fittedLogPricePerSqm: number;
   /** exp(fittedLogPricePerSqm) — the IM-renderable headline. */
@@ -59,9 +101,41 @@ export type HedonicFit = {
   adjustedRSquared: number;
   /** Mean residual standard error in log space. */
   residualStdErr: number;
+  /**
+   * Conditioning of the (XᵀX) normal-equations matrix. The condition
+   * number is the ratio of the largest to the smallest pivot magnitude
+   * encountered during Gauss-Jordan elimination — an O(1) proxy for the
+   * true 2-norm condition number that is monotone in collinearity. When
+   * it exceeds `CONDITION_NUMBER_WARN_THRESHOLD` (or any VIF exceeds
+   * `VIF_WARN_THRESHOLD`), `wellConditioned` is `false`: a high R² on
+   * such a fit reflects near-singular, unstable coefficients and must
+   * not be trusted in due diligence.
+   */
+  conditionNumber?: number;
+  /** `false` when the design is near-singular beyond a documented threshold. */
+  wellConditioned?: boolean;
+  /** Human-readable conditioning warnings (empty when well conditioned). */
+  warnings?: string[];
 };
 
 const VALID_LN_THRESHOLD = 1e-9;
+
+/**
+ * Condition-number proxy above which the (XᵀX) matrix is treated as
+ * near-singular. 1e8 ≈ losing half of double precision's ~16 significant
+ * digits to error propagation — a standard rule-of-thumb cutoff for an
+ * ill-conditioned normal-equations solve. (Because XᵀX squares the
+ * design's condition number, this corresponds to a design-matrix
+ * condition number of ~1e4.)
+ */
+const CONDITION_NUMBER_WARN_THRESHOLD = 1e8;
+
+/**
+ * VIF above which a regressor is flagged as multicollinear. 10 is the
+ * textbook threshold (Kutner et al.); it corresponds to R²_j > 0.9 of
+ * column j regressed on the other regressors.
+ */
+const VIF_WARN_THRESHOLD = 10;
 
 function uniqueValues(rows: CompRow[], key: keyof CompRow): string[] {
   const set = new Set<string>();
@@ -73,16 +147,39 @@ function uniqueValues(rows: CompRow[], key: keyof CompRow): string[] {
 }
 
 /**
- * Solve a symmetric positive-definite linear system A·x = b in-place.
- * Uses Gauss-Jordan with partial pivoting — adequate for small p
- * (we expect p ≤ 30 with realistic dummy counts). Throws on
- * singularity, which the caller handles by widening the comp set.
+ * Invert a symmetric positive-definite matrix `A` (here XᵀX) via
+ * Gauss-Jordan elimination with partial pivoting, AND return the
+ * conditioning proxy in the same pass.
+ *
+ * We need the full inverse (not just the solve) because OLS inference
+ * requires (XᵀX)⁻¹: Cov(β̂) = σ̂²·(XᵀX)⁻¹, so SE_j = sqrt(σ̂²·(XᵀX)⁻¹_jj).
+ * The original `solveLinearSystem` computed and discarded this — hence
+ * the audit finding that the model shipped point estimates with no
+ * defensible standard errors.
+ *
+ * The `conditionNumber` returned is max|pivot| / min|pivot| over the
+ * elimination. For an SPD matrix reduced with partial pivoting this is
+ * a cheap, monotone-in-collinearity proxy for the true 2-norm condition
+ * number κ₂(A) — it does not equal κ₂ exactly, but a near-singular
+ * (collinear-dummy) design drives a tiny final pivot and therefore a
+ * large ratio, which is exactly the signal we want to surface.
+ *
+ * Throws on exact singularity (pivot < 1e-12) — matching the previous
+ * behaviour so the caller still falls back to `null`.
  */
-function solveLinearSystem(A: number[][], b: number[]): number[] {
+function invertSymmetric(A: number[][]): { inverse: number[][]; conditionNumber: number } {
   const n = A.length;
-  const M: number[][] = A.map((row, i) => [...row, b[i]!]);
+  // Augment [A | I] and reduce the left block to I; the right block
+  // becomes A⁻¹.
+  const M: number[][] = A.map((row, i) => {
+    const ident = new Array<number>(n).fill(0);
+    ident[i] = 1;
+    return [...row, ...ident];
+  });
+  let maxPivot = 0;
+  let minPivot = Number.POSITIVE_INFINITY;
   for (let i = 0; i < n; i += 1) {
-    // Pivot
+    // Partial pivot on column i.
     let pivot = i;
     let maxAbs = Math.abs(M[i]![i] ?? 0);
     for (let k = i + 1; k < n; k += 1) {
@@ -94,27 +191,133 @@ function solveLinearSystem(A: number[][], b: number[]): number[] {
     if (maxAbs < 1e-12) {
       throw new Error('Singular system — design matrix likely rank-deficient');
     }
+    if (maxAbs > maxPivot) maxPivot = maxAbs;
+    if (maxAbs < minPivot) minPivot = maxAbs;
     if (pivot !== i) {
       const tmp = M[i]!;
       M[i] = M[pivot]!;
       M[pivot] = tmp;
     }
-    // Eliminate
     const piv = M[i]![i]!;
+    // Normalise pivot row.
+    for (let j = 0; j < 2 * n; j += 1) {
+      M[i]![j]! /= piv;
+    }
+    // Eliminate column i from all other rows.
     for (let k = 0; k < n; k += 1) {
       if (k === i) continue;
-      const factor = M[k]![i]! / piv;
+      const factor = M[k]![i]!;
       if (factor === 0) continue;
-      for (let j = i; j <= n; j += 1) {
+      for (let j = 0; j < 2 * n; j += 1) {
         M[k]![j]! -= factor * M[i]![j]!;
       }
     }
   }
-  const x = new Array<number>(n);
-  for (let i = 0; i < n; i += 1) {
-    x[i] = M[i]![n]! / M[i]![i]!;
+  const inverse: number[][] = M.map((row) => row.slice(n));
+  const conditionNumber = minPivot > 0 ? maxPivot / minPivot : Number.POSITIVE_INFINITY;
+  return { inverse, conditionNumber };
+}
+
+/**
+ * Regularised lower incomplete beta function I_x(a, b) via the
+ * Lentz continued-fraction expansion (Numerical Recipes §6.4). Used
+ * only to evaluate the Student-t CDF below. Converges to ~1e-12 in a
+ * few dozen iterations for the (a, b) ranges we hit (a = df/2, b = 1/2).
+ */
+function regularizedIncompleteBeta(x: number, a: number, b: number): number {
+  if (x <= 0) return 0;
+  if (x >= 1) return 1;
+  const lnBeta = logGamma(a) + logGamma(b) - logGamma(a + b);
+  const front = Math.exp(a * Math.log(x) + b * Math.log(1 - x) - lnBeta) / a;
+  // Continued fraction for the symmetric tail that converges fastest.
+  if (x < (a + 1) / (a + b + 2)) {
+    return front * betaContinuedFraction(x, a, b);
   }
-  return x;
+  return 1 - regularizedIncompleteBeta(1 - x, b, a);
+}
+
+function betaContinuedFraction(x: number, a: number, b: number): number {
+  const TINY = 1e-30;
+  const MAX_ITER = 300;
+  const EPS = 1e-14;
+  const qab = a + b;
+  const qap = a + 1;
+  const qam = a - 1;
+  let c = 1;
+  let d = 1 - (qab * x) / qap;
+  if (Math.abs(d) < TINY) d = TINY;
+  d = 1 / d;
+  let h = d;
+  for (let m = 1; m <= MAX_ITER; m += 1) {
+    const m2 = 2 * m;
+    // Even step.
+    let aa = (m * (b - m) * x) / ((qam + m2) * (a + m2));
+    d = 1 + aa * d;
+    if (Math.abs(d) < TINY) d = TINY;
+    c = 1 + aa / c;
+    if (Math.abs(c) < TINY) c = TINY;
+    d = 1 / d;
+    h *= d * c;
+    // Odd step.
+    aa = -((a + m) * (qab + m) * x) / ((a + m2) * (qap + m2));
+    d = 1 + aa * d;
+    if (Math.abs(d) < TINY) d = TINY;
+    c = 1 + aa / c;
+    if (Math.abs(c) < TINY) c = TINY;
+    d = 1 / d;
+    const del = d * c;
+    h *= del;
+    if (Math.abs(del - 1) < EPS) break;
+  }
+  return h;
+}
+
+/** Lanczos approximation of ln Γ(z) (accurate to ~1e-13 for z > 0). */
+function logGamma(z: number): number {
+  const g = 7;
+  const c = [
+    0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313,
+    -176.61502916214059, 12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6,
+    1.5056327351493116e-7
+  ];
+  if (z < 0.5) {
+    // Reflection formula.
+    return Math.log(Math.PI / Math.sin(Math.PI * z)) - logGamma(1 - z);
+  }
+  const zz = z - 1;
+  let x = c[0]!;
+  for (let i = 1; i < g + 2; i += 1) {
+    x += c[i]! / (zz + i);
+  }
+  const t = zz + g + 0.5;
+  return 0.5 * Math.log(2 * Math.PI) + (zz + 0.5) * Math.log(t) - t + Math.log(x);
+}
+
+/**
+ * Two-sided p-value Pr(|T_df| > |t|) for a Student-t with `df` degrees
+ * of freedom. Computed exactly (to numeric precision) from the
+ * regularised incomplete beta: Pr(|T| > |t|) = I_{df/(df+t²)}(df/2, 1/2).
+ * df = n − k throughout (k = number of fitted parameters). We use the
+ * exact t-distribution rather than a normal approximation because KR
+ * comp sets are routinely thin (df well under 30), where the normal
+ * understates the tails.
+ */
+function twoSidedTPValue(t: number, df: number): number {
+  if (!Number.isFinite(t) || df <= 0) return Number.NaN;
+  const x = df / (df + t * t);
+  return regularizedIncompleteBeta(x, df / 2, 0.5);
+}
+
+/** Multiply a p×p matrix by a length-p vector. */
+function matVec(A: number[][], v: number[]): number[] {
+  const p = A.length;
+  const out = new Array<number>(p).fill(0);
+  for (let i = 0; i < p; i += 1) {
+    let s = 0;
+    for (let j = 0; j < p; j += 1) s += A[i]![j]! * v[j]!;
+    out[i] = s;
+  }
+  return out;
 }
 
 function buildDesignRow(
@@ -244,12 +447,17 @@ export function fitHedonic(comps: CompRow[], query: HedonicQuery): HedonicFit | 
     }
   }
 
-  let beta: number[];
+  // Invert (XᵀX) once and reuse it for both the coefficient solve
+  // (β̂ = (XᵀX)⁻¹·Xᵀy) and OLS inference (Cov(β̂) = σ̂²·(XᵀX)⁻¹). The
+  // conditioning proxy comes out of the same factorisation.
+  let inverse: number[][];
+  let conditionNumber: number;
   try {
-    beta = solveLinearSystem(XtX, Xty);
+    ({ inverse, conditionNumber } = invertSymmetric(XtX));
   } catch {
     return null;
   }
+  const beta = matVec(inverse, Xty);
 
   // Fitted, residuals, R²
   const yMean = y.reduce((s, v) => s + v, 0) / n;
@@ -290,14 +498,83 @@ export function fitHedonic(comps: CompRow[], query: HedonicQuery): HedonicFit | 
   const coefficients: Record<string, number> = {};
   for (let j = 0; j < p; j += 1) coefficients[featureNames[j]!] = beta[j]!;
 
+  // OLS inference. df = n − k (k = p = number of fitted parameters).
+  // σ̂² = RSS/df is the unbiased residual variance; Cov(β̂) = σ̂²·(XᵀX)⁻¹.
+  const df = n - p;
+  const sigma2 = df > 0 ? ssRes / df : Number.NaN;
+
+  // Centred sum-of-squares per design column, S_jj = Σ(x_ij − x̄_j)², for
+  // the VIF scaling. (For the intercept column this is ~0, so VIF is
+  // reported as null there.)
+  const colMean = new Array<number>(p).fill(0);
+  for (let j = 0; j < p; j += 1) {
+    let s = 0;
+    for (let i = 0; i < n; i += 1) s += X[i]![j]!;
+    colMean[j] = s / n;
+  }
+  const colSS = new Array<number>(p).fill(0);
+  for (let j = 0; j < p; j += 1) {
+    let s = 0;
+    for (let i = 0; i < n; i += 1) {
+      const d = X[i]![j]! - colMean[j]!;
+      s += d * d;
+    }
+    colSS[j] = s;
+  }
+
+  let maxVif = 0;
+  const inference: Record<string, CoefficientInference> = {};
+  for (let j = 0; j < p; j += 1) {
+    const name = featureNames[j]!;
+    const invJj = inverse[j]![j]!;
+    const variance = Number.isFinite(sigma2) ? sigma2 * invJj : Number.NaN;
+    const standardError = Number.isFinite(variance) && variance >= 0 ? Math.sqrt(variance) : null;
+    const tStatistic =
+      standardError !== null && standardError > 0 ? beta[j]! / standardError : null;
+    const pValue = tStatistic !== null ? twoSidedTPValue(tStatistic, df) : null;
+    // The intercept's centred SS is ~0, so a VIF is undefined for it.
+    const isIntercept = name === 'intercept';
+    const vif = !isIntercept && colSS[j]! > VALID_LN_THRESHOLD ? invJj * colSS[j]! : null;
+    if (vif !== null && Number.isFinite(vif) && vif > maxVif) maxVif = vif;
+    inference[name] = {
+      estimate: beta[j]!,
+      standardError,
+      tStatistic,
+      pValue: pValue !== null && Number.isFinite(pValue) ? pValue : null,
+      vif: vif !== null && Number.isFinite(vif) ? vif : null
+    };
+  }
+
+  // Conditioning guard. A high R² on a near-singular design hides
+  // unstable coefficients; surface it rather than silently trusting it.
+  const warnings: string[] = [];
+  const conditionBad =
+    !Number.isFinite(conditionNumber) || conditionNumber > CONDITION_NUMBER_WARN_THRESHOLD;
+  const vifBad = maxVif >= VIF_WARN_THRESHOLD;
+  if (conditionBad) {
+    warnings.push(
+      `Ill-conditioned design: condition-number proxy ${conditionNumber.toExponential(2)} exceeds ${CONDITION_NUMBER_WARN_THRESHOLD.toExponential(0)}. Coefficients are numerically unstable; widen the comp set.`
+    );
+  }
+  if (vifBad) {
+    warnings.push(
+      `Multicollinearity: max VIF ${maxVif.toFixed(1)} ≥ ${VIF_WARN_THRESHOLD}. One or more regressors are near-collinear; coefficient SEs are inflated.`
+    );
+  }
+  const wellConditioned = !conditionBad && !vifBad;
+
   return {
     coefficients,
+    inference,
     fittedLogPricePerSqm: fittedLog,
     fittedPricePerSqmKrw: Math.exp(fittedLog),
     rSquared,
     adjustedRSquared: adjusted,
     n,
     p,
-    residualStdErr
+    residualStdErr,
+    conditionNumber,
+    wellConditioned,
+    warnings
   };
 }
