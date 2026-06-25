@@ -264,6 +264,74 @@ test('buildPortfolioDashboard aggregates hold KPIs, rollover watchlist, debt wal
   assert.ok(dashboard.operatorSummary.includes('Korea Income Portfolio'));
 });
 
+test('annualizedNoiKrw annualizes the MONTHLY MonthlyAssetKpi.noiKrw (x12)', () => {
+  // noiKrw lives on the monthly KPI row and is annualized with x12 elsewhere
+  // (operator-dashboard / portfolio-dashboard NOI yield). The portfolio summary
+  // must do the same: 1.8B + 2.0B per month -> 45.6B annualized, not 3.8B.
+  const baseAsset = (id: string, monthlyNoiKrw: number) => ({
+    id: `pa-${id}`,
+    status: PortfolioAssetStatus.ACTIVE,
+    currentHoldValueKrw: 100_000_000_000,
+    acquisitionCostKrw: 100_000_000_000,
+    asset: {
+      id: `asset-${id}`,
+      name: `Asset ${id}`,
+      assetCode: `A-${id}`,
+      assetClass: AssetClass.OFFICE,
+      market: 'KR',
+      address: { city: 'Seoul' },
+      valuations: [],
+      leases: [],
+      debtFacilities: [],
+      documents: [],
+      readinessProject: { onchainRecords: [] },
+      energySnapshot: null,
+      permitSnapshot: null,
+      ownershipRecords: [],
+      encumbranceRecords: [],
+      planningConstraints: [],
+      marketSnapshot: null,
+      macroFactors: [],
+      transactionComps: [],
+      rentComps: [],
+      pipelineProjects: [],
+      marketIndicatorSeries: [],
+      featureSnapshots: []
+    },
+    businessPlans: [],
+    initiatives: [],
+    monthlyKpis: [
+      {
+        periodStart: new Date('2026-01-01'),
+        occupancyPct: 90,
+        // No leasedAreaSqm/effectiveRent → annualizedRevenue falls back to NOI*12.
+        noiKrw: monthlyNoiKrw,
+        debtServiceCoverage: 1.4,
+        ltvPct: 50
+      }
+    ],
+    leaseRollSnapshots: [],
+    budgets: [],
+    capexProjects: [],
+    covenantTests: [],
+    exitCases: []
+  });
+
+  const dashboard = buildPortfolioDashboard({
+    id: 'p-noi',
+    code: 'KR-NOI',
+    name: 'NOI Portfolio',
+    market: 'KR',
+    assets: [baseAsset('1', 1_800_000_000), baseAsset('2', 2_000_000_000)]
+  } as any);
+
+  // (1.8B + 2.0B) monthly * 12 = 45.6B annualized.
+  assert.equal(dashboard.summary.annualizedNoiKrw, 45_600_000_000);
+  // Revenue fallback (no rent/area) also annualizes the monthly NOI.
+  assert.equal(dashboard.summary.annualizedRevenueKrw, 45_600_000_000);
+  assert.ok(dashboard.operatorSummary.includes('annualized NOI of KRW 45,600,000,000'));
+});
+
 test('buildPortfolioOperatorBriefs produces operator-facing research and watchlist narrative', () => {
   const portfolio = {
     id: 'portfolio-1',
