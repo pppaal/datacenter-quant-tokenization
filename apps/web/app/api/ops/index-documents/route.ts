@@ -6,6 +6,7 @@ import {
   indexDocumentForSearch,
   type IndexDocumentResult
 } from '@/lib/services/research/document-indexer';
+import { isOpsRequestAuthorized } from '../_auth';
 
 /**
  * Cron-triggered worker that finds DocumentVersion rows with extracted
@@ -34,15 +35,6 @@ const DEFAULT_BATCH = 5;
 const MAX_BATCH = 200;
 const MAX_BULK_SIZE = 1000;
 
-function isAuthorized(request: Request, expectedToken: string) {
-  const bearer = request.headers
-    .get('authorization')
-    ?.replace(/^Bearer\s+/i, '')
-    .trim();
-  const headerToken = request.headers.get('x-ops-cron-token')?.trim();
-  return bearer === expectedToken || headerToken === expectedToken;
-}
-
 function resolveBatchSize(url: URL): { size: number; mode: 'cron' | 'sized' | 'bulk' } {
   if (url.searchParams.get('bulk') === 'true') {
     return { size: MAX_BULK_SIZE, mode: 'bulk' };
@@ -62,7 +54,7 @@ export async function POST(request: Request) {
   if (!expectedToken) {
     return NextResponse.json({ error: 'OPS_CRON_TOKEN is not configured' }, { status: 503 });
   }
-  if (!isAuthorized(request, expectedToken)) {
+  if (!isOpsRequestAuthorized(request, expectedToken)) {
     return NextResponse.json({ error: 'Unauthorized cron trigger' }, { status: 401 });
   }
 
