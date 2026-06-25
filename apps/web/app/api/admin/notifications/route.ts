@@ -1,68 +1,24 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/db/prisma';
-import { recordAuditEvent } from '@/lib/services/audit';
+import { withAdminApi } from '@/lib/security/with-admin-api';
 import { listRecentNotifications } from '@/lib/services/notifications';
-import {
-  getRequestIpAddress,
-  resolveVerifiedAdminActorFromHeaders
-} from '@/lib/security/admin-request';
-import { hasRequiredAdminRole } from '@/lib/security/admin-auth';
-import { genericErrorResponse } from '@/lib/security/error-response';
 
-export async function GET(request: Request) {
-  const actor = await resolveVerifiedAdminActorFromHeaders(request.headers, prisma, {
-    allowBasic: false,
-    requireActiveSeat: true
-  });
-  const ipAddress = getRequestIpAddress(request.headers);
+// Migrated from a hand-rolled auth+audit block to `withAdminApi`. The wrapper
+// owns the exact same gate (VIEWER, active seat) and the success/failure audit
+// pair. The only behavioral delta is the audit `metadata.returned` count, which
+// the wrapper does not surface; the auth gate and audit action are unchanged.
+export const GET = withAdminApi({
+  // VIEWER is the wrapper default; stated explicitly to match the prior gate.
+  requiredRole: 'VIEWER',
+  auditAction: 'notifications.list',
+  auditEntityType: 'notification',
+  async handler({ request }) {
+    const url = new URL(request.url);
+    const limitParam = Number(url.searchParams.get('limit'));
+    const limit = Number.isFinite(limitParam) && limitParam > 0 ? Math.min(limitParam, 100) : 20;
 
-  if (!actor || !hasRequiredAdminRole(actor.role, 'VIEWER')) {
-    return NextResponse.json({ error: 'Admin session required.' }, { status: 401 });
-  }
-
-  const url = new URL(request.url);
-  const limitParam = Number(url.searchParams.get('limit'));
-  const limit = Number.isFinite(limitParam) && limitParam > 0 ? Math.min(limitParam, 100) : 20;
-
-  try {
     const notifications = await listRecentNotifications(limit);
     const unreadCount = notifications.filter((item) => item.readAt == null).length;
 
-    await recordAuditEvent({
-      actorIdentifier: actor.identifier,
-      actorRole: actor.role,
-      action: 'notifications.list',
-      entityType: 'notification',
-      requestPath: url.pathname,
-      requestMethod: request.method,
-      ipAddress,
-      metadata: {
-        returned: notifications.length
-      }
-    });
-
-    return NextResponse.json({
-      notifications,
-      unreadCount
-    });
-  } catch (error) {
-    await recordAuditEvent({
-      actorIdentifier: actor.identifier,
-      actorRole: actor.role,
-      action: 'notifications.list',
-      entityType: 'notification',
-      requestPath: url.pathname,
-      requestMethod: request.method,
-      ipAddress,
-      statusLabel: 'FAILED',
-      metadata: {
-        error: error instanceof Error ? error.message : 'Failed to list notifications'
-      }
-    });
-
-    return genericErrorResponse(error, {
-      status: 500,
-      context: { route: '/api/admin/notifications' }
-    });
+    return NextResponse.json({ notifications, unreadCount });
   }
-}
+});
