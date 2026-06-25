@@ -143,6 +143,37 @@ test('buildTaxWalk builds 6 lines and sums total cash outflow', () => {
   assert.equal(prop?.totalCashOutflowKrw, 3_400_000_000);
 });
 
+test('buildTaxWalk excludes the (non-tax) insurance premium from the tax-drag metric', () => {
+  const base = {
+    purchasePriceKrw: 100_000_000_000,
+    cumulativeNoiKrw: 50_000_000_000,
+    exitValueKrw: 130_000_000_000,
+    holdYears: 10
+  };
+  const taxesOnly = {
+    acquisitionTaxPct: 4.6,
+    propertyTaxPct: 0.34,
+    corporateTaxPct: 24.2,
+    exitTaxPct: 1.2,
+    withholdingTaxPct: 15.4
+  };
+  const withInsurance = buildTaxWalk({ ...taxesOnly, insurancePct: 0.5 }, base);
+  const withoutInsurance = buildTaxWalk(taxesOnly, base);
+
+  // Insurance is an operating expense already inside NOI — it must not change
+  // the "effective tax drag on gross profit" figure even though it adds a row
+  // and increases total cash outflow.
+  const insRow = withInsurance.rows.find((r) => r.category === 'insurance');
+  assert.ok(insRow, 'insurance row should still be rendered');
+  assert.ok(insRow!.totalCashOutflowKrw > 0);
+  assert.ok(withInsurance.totalCashOutflowKrw > withoutInsurance.totalCashOutflowKrw);
+  assert.ok(
+    Math.abs(withInsurance.effectiveDragOnGrossPct! - withoutInsurance.effectiveDragOnGrossPct!) <
+      1e-9,
+    'tax drag must be identical with or without insurance'
+  );
+});
+
 test('buildTaxWalk returns empty when no tax assumptions', () => {
   const w = buildTaxWalk(null, {
     purchasePriceKrw: 100_000_000_000,
