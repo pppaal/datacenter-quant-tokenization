@@ -604,7 +604,7 @@ export function listFreeMacroSourceCatalog(): FreeMacroSourceCatalogItem[] {
   ];
 }
 
-export async function listSourceStatus(db: PrismaClient = prisma) {
+export async function listSourceStatus(db: PrismaClient = prisma, now: Date = new Date()) {
   const caches = await db.sourceCache.findMany({
     orderBy: {
       fetchedAt: 'desc'
@@ -613,13 +613,26 @@ export async function listSourceStatus(db: PrismaClient = prisma) {
 
   return getKnownSystems().map((sourceSystem) => {
     const latest = caches.find((cache) => cache.sourceSystem === sourceSystem);
+    // The stored status reflects the moment the row was written. A row written
+    // FRESH (or MANUAL) but now past its expiresAt is no longer fresh data — the
+    // whole point of expiresAt is the TTL. Re-evaluate against `now` so ops
+    // health (which counts STALE vs FRESH) doesn't under-report sources that
+    // silently aged out of their cache window.
+    const expired =
+      latest?.expiresAt instanceof Date && latest.expiresAt.getTime() <= now.getTime();
+    const effectiveStatus =
+      latest?.status && expired && (latest.status === 'FRESH' || latest.status === 'MANUAL')
+        ? 'STALE'
+        : (latest?.status ?? 'NOT_QUERIED');
+
     return {
       sourceSystem,
       // A system that has never been queried is NOT_QUERIED, not FAILED —
       // "FAILED" implies an attempted fetch that broke, which misrepresents an
       // un-configured / never-run connector as an error.
-      status: latest?.status ?? 'NOT_QUERIED',
-      freshnessLabel: latest?.freshnessLabel ?? 'not yet queried',
+      status: effectiveStatus,
+      freshnessLabel:
+        expired && latest ? 'expired (past TTL)' : (latest?.freshnessLabel ?? 'not yet queried'),
       fetchedAt: latest?.fetchedAt ?? null,
       expiresAt: latest?.expiresAt ?? null,
       cacheKey: latest?.cacheKey ?? null
