@@ -1,25 +1,16 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
-import {
-  getRequestIpAddress,
-  resolveVerifiedAdminActorFromHeaders
-} from '@/lib/security/admin-request';
-import { recordAuditEvent } from '@/lib/services/audit';
-import { hasRequiredAdminRole } from '@/lib/security/admin-auth';
-import { genericErrorResponse } from '@/lib/security/error-response';
+import { withAdminApi } from '@/lib/security/with-admin-api';
 
-export async function GET(request: Request) {
-  const actor = await resolveVerifiedAdminActorFromHeaders(request.headers, prisma, {
-    allowBasic: false,
-    requireActiveSeat: true
-  });
-  const ipAddress = getRequestIpAddress(request.headers);
-
-  if (!actor || !hasRequiredAdminRole(actor.role, 'ADMIN')) {
-    return NextResponse.json({ error: 'Admin session required.' }, { status: 401 });
-  }
-
-  try {
+export const GET = withAdminApi({
+  // ADMIN-only (matches the middleware `getRequiredAdminRoleForPath` gate). The
+  // wrapper returns 401 for a missing actor and 403 for an authenticated actor
+  // lacking the ADMIN role — the hand-rolled handler previously collapsed both
+  // into a single 401.
+  requiredRole: 'ADMIN',
+  auditAction: 'research.snapshots.list',
+  auditEntityType: 'ResearchSnapshot',
+  async handler({ request }) {
     const url = new URL(request.url);
     const assetId = url.searchParams.get('assetId');
 
@@ -49,39 +40,6 @@ export async function GET(request: Request) {
       }
     });
 
-    await recordAuditEvent({
-      actorIdentifier: actor.identifier,
-      actorRole: actor.role,
-      action: 'research.snapshots.list',
-      entityType: 'ResearchSnapshot',
-      requestPath: new URL(request.url).pathname,
-      requestMethod: request.method,
-      ipAddress,
-      metadata: {
-        count: snapshots.length,
-        ...(assetId ? { assetId } : {})
-      }
-    });
-
     return NextResponse.json(snapshots);
-  } catch (error) {
-    await recordAuditEvent({
-      actorIdentifier: actor.identifier,
-      actorRole: actor.role,
-      action: 'research.snapshots.list',
-      entityType: 'ResearchSnapshot',
-      requestPath: new URL(request.url).pathname,
-      requestMethod: request.method,
-      ipAddress,
-      statusLabel: 'FAILED',
-      metadata: {
-        error: error instanceof Error ? error.message : 'Failed to list research snapshots'
-      }
-    });
-
-    return genericErrorResponse(error, {
-      status: 500,
-      context: { route: '/api/admin/research-snapshots' }
-    });
   }
-}
+});
