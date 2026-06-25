@@ -270,35 +270,39 @@ export function AssetIntakeForm({ defaultValues, assetId }: Props) {
 
   return (
     <form className="space-y-8" onSubmit={onSubmit}>
-      <div className="grid gap-4 rounded-[28px] border border-white/10 bg-white/[0.03] p-5 lg:grid-cols-[1.15fr_0.85fr]">
+      <div className="grid gap-4 rounded-[28px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5 lg:grid-cols-[1.15fr_0.85fr]">
         <div>
           <div className="eyebrow">{assetId ? 'Update Intake' : 'New Intake'}</div>
-          <h3 className="mt-3 text-2xl font-semibold text-white">
+          <h3 className="mt-3 text-2xl font-semibold text-[hsl(var(--foreground))]">
             {assetId ? 'Refine assumptions and rerun diligence' : 'Open a new underwriting case'}
           </h3>
-          <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-400">
+          <p className="mt-3 max-w-2xl text-sm leading-7 text-[hsl(var(--muted))]">
             This form writes directly into the underwriting OS and seeds the asset, address,
             research, and review workflow in one path.
           </p>
         </div>
-        <div className="grid gap-3 text-sm text-slate-300 sm:grid-cols-2">
+        <div className="grid gap-3 text-sm text-[hsl(var(--foreground-muted))] sm:grid-cols-2">
           <div className="metric-card">
             <div className="fine-print">1. Intake</div>
-            <div className="mt-2 text-base font-semibold text-white">Structured project record</div>
+            <div className="mt-2 text-base font-semibold text-[hsl(var(--foreground))]">
+              Structured project record
+            </div>
           </div>
           <div className="metric-card">
             <div className="fine-print">2. Enrich</div>
-            <div className="mt-2 text-base font-semibold text-white">
+            <div className="mt-2 text-base font-semibold text-[hsl(var(--foreground))]">
               Source overlays and permits
             </div>
           </div>
           <div className="metric-card">
             <div className="fine-print">3. Value</div>
-            <div className="mt-2 text-base font-semibold text-white">Scenario engine and memo</div>
+            <div className="mt-2 text-base font-semibold text-[hsl(var(--foreground))]">
+              Scenario engine and memo
+            </div>
           </div>
           <div className="metric-card">
             <div className="fine-print">4. Review</div>
-            <div className="mt-2 text-base font-semibold text-white">
+            <div className="mt-2 text-base font-semibold text-[hsl(var(--foreground))]">
               Memo and evidence readiness
             </div>
           </div>
@@ -308,7 +312,9 @@ export function AssetIntakeForm({ defaultValues, assetId }: Props) {
       <section className="space-y-4">
         <div>
           <div className="eyebrow">Identity</div>
-          <h4 className="mt-2 text-xl font-semibold text-white">Core project profile</h4>
+          <h4 className="mt-2 text-xl font-semibold text-[hsl(var(--foreground))]">
+            Core project profile
+          </h4>
         </div>
         <div className="grid gap-4 md:grid-cols-2">{profileFields.map(renderField)}</div>
         <div className="grid gap-4 md:grid-cols-2">
@@ -353,7 +359,7 @@ export function AssetIntakeForm({ defaultValues, assetId }: Props) {
             </Select>
           </label>
         </div>
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-[hsl(var(--muted))]">
           Monetary inputs are entered in {displayCurrency} and normalized to KRW internally for the
           current valuation, sensitivity, and memo engine.
         </p>
@@ -362,7 +368,9 @@ export function AssetIntakeForm({ defaultValues, assetId }: Props) {
       <section className="space-y-4">
         <div>
           <div className="eyebrow">Location</div>
-          <h4 className="mt-2 text-xl font-semibold text-white">Site and parcel context</h4>
+          <h4 className="mt-2 text-xl font-semibold text-[hsl(var(--foreground))]">
+            Site and parcel context
+          </h4>
         </div>
         <div className="grid gap-4 md:grid-cols-2">{locationFields.map(renderField)}</div>
       </section>
@@ -370,7 +378,7 @@ export function AssetIntakeForm({ defaultValues, assetId }: Props) {
       <section className="space-y-4">
         <div>
           <div className="eyebrow">Economics</div>
-          <h4 className="mt-2 text-xl font-semibold text-white">
+          <h4 className="mt-2 text-xl font-semibold text-[hsl(var(--foreground))]">
             {assetClass === AssetClass.DATA_CENTER
               ? 'Capacity and financing assumptions'
               : 'Income and exit assumptions'}
@@ -393,7 +401,9 @@ export function AssetIntakeForm({ defaultValues, assetId }: Props) {
       <section className="space-y-4">
         <div>
           <div className="eyebrow">Narrative</div>
-          <h4 className="mt-2 text-xl font-semibold text-white">Analyst context</h4>
+          <h4 className="mt-2 text-xl font-semibold text-[hsl(var(--foreground))]">
+            Analyst context
+          </h4>
         </div>
         <label className="space-y-2">
           <span className="fine-print">Description</span>
@@ -424,8 +434,8 @@ export function AssetIntakeForm({ defaultValues, assetId }: Props) {
         </p>
       ) : null}
 
-      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-5">
-        <p className="max-w-2xl text-sm text-slate-400">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[hsl(var(--border))] pt-5">
+        <p className="max-w-2xl text-sm text-[hsl(var(--muted))]">
           Saving this record updates the shared asset profile used by enrichment adapters, valuation
           runs, document uploads, and the downstream review layer.
         </p>

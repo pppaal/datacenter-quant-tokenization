@@ -67,7 +67,7 @@ export function ReviewActionForm({
 
   return (
     <div
-      className="space-y-3 rounded-[20px] border border-white/10 bg-slate-950/30 p-4"
+      className="space-y-3 rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4"
       data-testid="review-action-form"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -87,7 +87,7 @@ export function ReviewActionForm({
         data-testid="review-notes"
       />
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="max-w-md text-xs leading-6 text-slate-500">
+        <div className="max-w-md text-xs leading-6 text-[hsl(var(--muted))]">
           Approval refreshes the approved feature layer and downstream valuation, report, and
           readiness inputs for this asset.
         </div>

@@ -13,7 +13,9 @@ export function DealDataCoveragePanel({ coverage }: Props) {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="eyebrow">Data Coverage</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">Execution data readiness</h2>
+          <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
+            Execution data readiness
+          </h2>
         </div>
         <Badge
           tone={coverage.scorePct >= 75 ? 'good' : coverage.scorePct >= 50 ? 'warn' : 'danger'}
@@ -25,61 +27,61 @@ export function DealDataCoveragePanel({ coverage }: Props) {
       <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-5">
         <div className="metric-card">
           <div className="fine-print">Checks Complete</div>
-          <div className="mt-3 text-3xl font-semibold text-white">
+          <div className="mt-3 text-3xl font-semibold text-[hsl(var(--foreground))]">
             {coverage.completedCount} / {coverage.totalCount}
           </div>
         </div>
         <div className="metric-card">
           <div className="fine-print">Documents</div>
-          <div className="mt-3 text-3xl font-semibold text-white">
+          <div className="mt-3 text-3xl font-semibold text-[hsl(var(--foreground))]">
             {coverage.evidence.documentCount}
           </div>
         </div>
         <div className="metric-card">
           <div className="fine-print">Valuations</div>
-          <div className="mt-3 text-3xl font-semibold text-white">
+          <div className="mt-3 text-3xl font-semibold text-[hsl(var(--foreground))]">
             {coverage.evidence.valuationCount}
           </div>
         </div>
         <div className="metric-card">
           <div className="fine-print">Counterparties</div>
-          <div className="mt-3 text-3xl font-semibold text-white">
+          <div className="mt-3 text-3xl font-semibold text-[hsl(var(--foreground))]">
             {coverage.evidence.counterpartyCount}
           </div>
         </div>
         <div className="metric-card">
           <div className="fine-print">Bid Revisions</div>
-          <div className="mt-3 text-3xl font-semibold text-white">
+          <div className="mt-3 text-3xl font-semibold text-[hsl(var(--foreground))]">
             {coverage.evidence.bidRevisionCount}
           </div>
         </div>
         <div className="metric-card">
           <div className="fine-print">Lender Quotes</div>
-          <div className="mt-3 text-3xl font-semibold text-white">
+          <div className="mt-3 text-3xl font-semibold text-[hsl(var(--foreground))]">
             {coverage.evidence.lenderQuoteCount}
           </div>
         </div>
         <div className="metric-card">
           <div className="fine-print">Negotiation Events</div>
-          <div className="mt-3 text-3xl font-semibold text-white">
+          <div className="mt-3 text-3xl font-semibold text-[hsl(var(--foreground))]">
             {coverage.evidence.negotiationEventCount}
           </div>
         </div>
         <div className="metric-card">
           <div className="fine-print">DD Workstreams</div>
-          <div className="mt-3 text-3xl font-semibold text-white">
+          <div className="mt-3 text-3xl font-semibold text-[hsl(var(--foreground))]">
             {coverage.evidence.diligenceWorkstreamCount}
           </div>
         </div>
         <div className="metric-card">
           <div className="fine-print">Signed Off</div>
-          <div className="mt-3 text-3xl font-semibold text-white">
+          <div className="mt-3 text-3xl font-semibold text-[hsl(var(--foreground))]">
             {coverage.evidence.signedOffWorkstreamCount}
           </div>
         </div>
         <div className="metric-card">
           <div className="fine-print">Blocked</div>
-          <div className="mt-3 text-3xl font-semibold text-white">
+          <div className="mt-3 text-3xl font-semibold text-[hsl(var(--foreground))]">
             {coverage.evidence.blockedWorkstreamCount}
           </div>
         </div>
@@ -90,20 +92,22 @@ export function DealDataCoveragePanel({ coverage }: Props) {
           {coverage.checks.map((check) => (
             <div
               key={check.key}
-              className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+              className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5"
             >
               <div className="flex items-center justify-between gap-4">
-                <div className="text-sm font-semibold text-white">{check.title}</div>
+                <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
+                  {check.title}
+                </div>
                 <Badge tone={check.status === 'done' ? 'good' : 'warn'}>{check.status}</Badge>
               </div>
-              <p className="mt-3 text-sm leading-7 text-slate-400">{check.detail}</p>
+              <p className="mt-3 text-sm leading-7 text-[hsl(var(--muted))]">{check.detail}</p>
             </div>
           ))}
         </div>
 
-        <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+        <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5">
           <div className="fine-print">Current Gaps</div>
-          <div className="mt-3 text-base font-semibold text-white">
+          <div className="mt-3 text-base font-semibold text-[hsl(var(--foreground))]">
             {coverage.gaps.length > 0 ? 'What is still missing' : 'Core data is in place'}
           </div>
           <div className="mt-4 grid gap-2">
@@ -111,13 +115,13 @@ export function DealDataCoveragePanel({ coverage }: Props) {
               coverage.gaps.map((gap) => (
                 <div
                   key={gap}
-                  className="rounded-[18px] border border-white/10 bg-slate-950/35 px-4 py-3 text-sm text-slate-300"
+                  className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-4 py-3 text-sm text-[hsl(var(--foreground-muted))]"
                 >
                   {gap}
                 </div>
               ))
             ) : (
-              <div className="text-sm text-slate-400">
+              <div className="text-sm text-[hsl(var(--muted))]">
                 No immediate data gaps in the current execution record.
               </div>
             )}

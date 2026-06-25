@@ -82,7 +82,7 @@ export function DealFlowForm() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="eyebrow">Log a deal</div>
-          <p className="mt-1 text-sm text-slate-400">
+          <p className="mt-1 text-sm text-[hsl(var(--muted))]">
             Capture a deal you saw in the market — sale process, refi, JV, or development. Status
             defaults to LIVE; flip to LOST if a third party closed it (still useful as comp once the
             cap rate is disclosed).
@@ -189,7 +189,7 @@ export function DealFlowForm() {
           <textarea
             value={form.notes}
             onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
-            className="w-full rounded-[14px] border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white"
+            className="w-full rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2 text-sm text-[hsl(var(--foreground))]"
             rows={3}
             placeholder="Final-round bidding closes mid-Q3. KIS open to a JV partner up to 30%."
           />
@@ -206,7 +206,9 @@ export function DealFlowForm() {
 
 function Label({ children }: { children: React.ReactNode }) {
   return (
-    <label className="mb-1 block text-xs uppercase tracking-wide text-slate-500">{children}</label>
+    <label className="mb-1 block text-xs uppercase tracking-wide text-[hsl(var(--muted))]">
+      {children}
+    </label>
   );
 }
 
@@ -223,7 +225,7 @@ function Select({
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full rounded-[14px] border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white"
+      className="w-full rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2 text-sm text-[hsl(var(--foreground))]"
     >
       {options.map(([v, label]) => (
         <option key={v} value={v}>

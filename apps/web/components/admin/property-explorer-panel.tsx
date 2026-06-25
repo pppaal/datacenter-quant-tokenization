@@ -62,7 +62,7 @@ export function PropertyExplorerPanel({ data, mapConfig }: Props) {
 
   if (!selected) {
     return (
-      <Card className="rounded-[24px] border border-white/10 bg-white/[0.03] p-6 text-sm text-slate-400">
+      <Card className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-6 text-sm text-[hsl(var(--muted))]">
         No property candidates are staged yet.
       </Card>
     );
@@ -96,8 +96,8 @@ export function PropertyExplorerPanel({ data, mapConfig }: Props) {
         ].map(([label, value, detail]) => (
           <div key={label} className="metric-card">
             <div className="fine-print">{label}</div>
-            <div className="mt-2 text-2xl font-semibold text-white">{value}</div>
-            <p className="mt-2 text-xs leading-6 text-slate-400">{detail}</p>
+            <div className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">{value}</div>
+            <p className="mt-2 text-xs leading-6 text-[hsl(var(--muted))]">{detail}</p>
           </div>
         ))}
       </div>
@@ -113,7 +113,7 @@ export function PropertyExplorerPanel({ data, mapConfig }: Props) {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <div className="eyebrow">Property Explorer</div>
-              <h2 className="mt-2 text-2xl font-semibold text-white">
+              <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
                 Map-like intake surface for universal property screens
               </h2>
             </div>
@@ -129,10 +129,12 @@ export function PropertyExplorerPanel({ data, mapConfig }: Props) {
             />
 
             <div className="space-y-4">
-              <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+              <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5">
                 <div className="fine-print">{selected.assetCode}</div>
-                <h3 className="mt-2 text-2xl font-semibold text-white">{selected.name}</h3>
-                <p className="mt-3 text-sm leading-7 text-slate-400">
+                <h3 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
+                  {selected.name}
+                </h3>
+                <p className="mt-3 text-sm leading-7 text-[hsl(var(--muted))]">
                   {selected.addressLine1}, {selected.district}, {selected.city}, {selected.province}
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2">
@@ -144,34 +146,38 @@ export function PropertyExplorerPanel({ data, mapConfig }: Props) {
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+                <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5">
                   <div className="eyebrow">Investment screen</div>
-                  <p className="mt-3 text-sm leading-7 text-slate-300">
+                  <p className="mt-3 text-sm leading-7 text-[hsl(var(--foreground-muted))]">
                     {selected.investmentAngle}
                   </p>
                 </div>
-                <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+                <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5">
                   <div className="eyebrow">DD posture</div>
-                  <p className="mt-3 text-sm leading-7 text-slate-300">{selected.diligenceAngle}</p>
+                  <p className="mt-3 text-sm leading-7 text-[hsl(var(--foreground-muted))]">
+                    {selected.diligenceAngle}
+                  </p>
                 </div>
               </div>
 
-              <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+              <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5">
                 <div className="eyebrow">Official-source screen</div>
                 <div className="mt-4 grid gap-3 sm:grid-cols-3">
                   {selected.officialSignals.map((signal) => (
                     <div
                       key={signal.label}
-                      className="rounded-[18px] border border-white/10 bg-slate-950/55 p-3"
+                      className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-3"
                     >
                       <div className="fine-print">{signal.label}</div>
-                      <div className="mt-2 text-sm font-semibold text-white">{signal.value}</div>
+                      <div className="mt-2 text-sm font-semibold text-[hsl(var(--foreground))]">
+                        {signal.value}
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+              <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5">
                 <div className="eyebrow">Current blockers</div>
                 <div className="mt-4 space-y-2">
                   {selected.blockers.map((blocker) => (
@@ -211,7 +217,7 @@ export function PropertyExplorerPanel({ data, mapConfig }: Props) {
 
         <Card>
           <div className="eyebrow">Coverage Queue</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">
+          <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
             Universal screens ready to convert into full underwriting files
           </h2>
           <div className="mt-5 grid gap-3">
@@ -224,14 +230,16 @@ export function PropertyExplorerPanel({ data, mapConfig }: Props) {
                 className={`rounded-[22px] border p-4 text-left transition ${
                   candidate.id === selected.id
                     ? 'border-accent bg-accent/10'
-                    : 'border-white/10 bg-white/[0.03] hover:border-white/20 hover:bg-white/[0.05]'
+                    : 'border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] hover:border-[hsl(var(--border-strong))] hover:bg-[hsl(var(--surface-hover))]'
                 }`}
                 data-testid="property-explorer-row"
               >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <div className="text-base font-semibold text-white">{candidate.name}</div>
-                    <div className="mt-1 text-xs text-slate-400">
+                    <div className="text-base font-semibold text-[hsl(var(--foreground))]">
+                      {candidate.name}
+                    </div>
+                    <div className="mt-1 text-xs text-[hsl(var(--muted))]">
                       {candidate.district}, {candidate.city} /{' '}
                       {toSentenceCase(candidate.assetClass)}
                     </div>

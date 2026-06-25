@@ -165,11 +165,13 @@ function OverrideEditorCard({
   };
 
   return (
-    <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+    <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="fine-print">Existing Override</div>
-          <h4 className="mt-2 text-lg font-semibold text-white">{override.label}</h4>
+          <h4 className="mt-2 text-lg font-semibold text-[hsl(var(--foreground))]">
+            {override.label}
+          </h4>
           <div className="mt-2 flex flex-wrap gap-2">
             <Badge>{formatScope(override)}</Badge>
             <Badge tone={override.isActive ? 'good' : 'neutral'}>
@@ -177,15 +179,15 @@ function OverrideEditorCard({
             </Badge>
           </div>
         </div>
-        <div className="text-right text-xs uppercase tracking-[0.18em] text-slate-500">
+        <div className="text-right text-xs uppercase tracking-[0.18em] text-[hsl(var(--muted))]">
           Updated {new Date(override.updatedAt).toLocaleDateString()}
         </div>
       </div>
 
       <OverrideDraftFields draft={draft} onChange={setDraft} />
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-4">
-        <div className="text-sm text-slate-400">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[hsl(var(--border))] pt-4">
+        <div className="text-sm text-[hsl(var(--muted))]">
           Change this rule to rebalance capital, liquidity, leasing, and construction transmission
           without redeploying.
         </div>
@@ -384,24 +386,24 @@ export function MacroProfileOverrideForm({
 
   return (
     <div className="space-y-6">
-      <div className="rounded-[28px] border border-white/10 bg-slate-950/60 p-6">
+      <div className="rounded-[28px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <div className="eyebrow">New Override</div>
-            <h3 className="mt-2 text-2xl font-semibold text-white">
+            <h3 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
               Add market-specific transmission logic
             </h3>
-            <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400">
+            <p className="mt-3 max-w-3xl text-sm leading-7 text-[hsl(var(--muted))]">
               Use this layer to override the default macro sensitivity template for a country, asset
               class, or regex matched submarket without changing code.
             </p>
           </div>
           <div className="metric-card min-w-[220px]">
             <div className="fine-print">Live Rules</div>
-            <div className="mt-3 text-2xl font-semibold text-white">
+            <div className="mt-3 text-2xl font-semibold text-[hsl(var(--foreground))]">
               {overrides.filter((row) => row.isActive).length}
             </div>
-            <p className="mt-2 text-sm text-slate-400">
+            <p className="mt-2 text-sm text-[hsl(var(--muted))]">
               Active rules merge on top of the static registry at valuation time.
             </p>
           </div>
@@ -409,8 +411,8 @@ export function MacroProfileOverrideForm({
 
         <OverrideDraftFields draft={draft} onChange={setDraft} />
 
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-4">
-          <div className="text-sm text-slate-400">
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[hsl(var(--border))] pt-4">
+          <div className="text-sm text-[hsl(var(--muted))]">
             Scope by asset class, country, submarket regex, or any combination. Lower priority
             numbers apply first.
           </div>

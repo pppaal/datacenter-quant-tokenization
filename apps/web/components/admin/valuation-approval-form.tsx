@@ -69,7 +69,7 @@ export function ValuationApprovalForm({
               className={`rounded-full border px-3 py-2 text-xs tracking-[0.14em] ${
                 status === option
                   ? 'border-accent/40 bg-accent/10 text-accent'
-                  : 'border-white/10 bg-white/[0.03] text-slate-300'
+                  : 'border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] text-[hsl(var(--foreground-muted))]'
               }`}
               onClick={() => setStatus(option)}
             >

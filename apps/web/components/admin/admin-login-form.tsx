@@ -50,7 +50,7 @@ export function AdminLoginForm() {
         </label>
         <input
           id="user"
-          className="mt-2 w-full rounded-[18px] border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none transition focus:border-cyan-400/50"
+          className="mt-2 w-full rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-4 py-3 text-[hsl(var(--foreground))] outline-none transition focus:border-cyan-400/50"
           value={user}
           onChange={(event) => setUser(event.target.value)}
           autoComplete="username"
@@ -64,7 +64,7 @@ export function AdminLoginForm() {
         <input
           id="password"
           type="password"
-          className="mt-2 w-full rounded-[18px] border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none transition focus:border-cyan-400/50"
+          className="mt-2 w-full rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-4 py-3 text-[hsl(var(--foreground))] outline-none transition focus:border-cyan-400/50"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           autoComplete="current-password"

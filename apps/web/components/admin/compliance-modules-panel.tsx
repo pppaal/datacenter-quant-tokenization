@@ -91,10 +91,11 @@ export function ComplianceModulesPanel({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="eyebrow">Compliance modules</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">
-            {assetName} <span className="ml-2 text-sm font-normal text-slate-400">{assetCode}</span>
+          <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
+            {assetName}{' '}
+            <span className="ml-2 text-sm font-normal text-[hsl(var(--muted))]">{assetCode}</span>
           </h2>
-          <div className="mt-1 font-mono text-xs text-slate-500">
+          <div className="mt-1 font-mono text-xs text-[hsl(var(--muted))]">
             ModularCompliance {shortenHash(complianceAddress, 6)}
           </div>
         </div>
@@ -102,11 +103,11 @@ export function ComplianceModulesPanel({
       </div>
 
       <section className="space-y-3">
-        <div className="text-sm font-semibold uppercase tracking-wide text-slate-400">
+        <div className="text-sm font-semibold uppercase tracking-wide text-[hsl(var(--muted))]">
           Attached modules ({modules.length})
         </div>
         {modules.length === 0 ? (
-          <div className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-slate-400">
+          <div className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-4 py-3 text-sm text-[hsl(var(--muted))]">
             No compliance modules attached. Add one below to enforce holder, country, or lockup
             rules.
           </div>
@@ -115,9 +116,9 @@ export function ComplianceModulesPanel({
             {modules.map((address) => (
               <li
                 key={address}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-3"
+                className="flex flex-wrap items-center justify-between gap-3 rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-4 py-3"
               >
-                <div className="font-mono text-sm text-slate-200">{address}</div>
+                <div className="font-mono text-sm text-[hsl(var(--foreground))]">{address}</div>
                 <Button
                   variant="ghost"
                   disabled={busyKey === `remove:${address}`}
@@ -153,7 +154,7 @@ export function ComplianceModulesPanel({
           }}
         >
           <div className="grow">
-            <label className="mb-1 block text-xs uppercase tracking-wide text-slate-500">
+            <label className="mb-1 block text-xs uppercase tracking-wide text-[hsl(var(--muted))]">
               Add module address
             </label>
             <Input
@@ -168,27 +169,27 @@ export function ComplianceModulesPanel({
         </form>
       </section>
 
-      <section className="space-y-3 border-t border-white/10 pt-5">
-        <div className="text-sm font-semibold uppercase tracking-wide text-slate-400">
+      <section className="space-y-3 border-t border-[hsl(var(--border))] pt-5">
+        <div className="text-sm font-semibold uppercase tracking-wide text-[hsl(var(--muted))]">
           Country restrictions
         </div>
         {countryRestrictModuleAddress === null ? (
-          <div className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-slate-400">
+          <div className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-4 py-3 text-sm text-[hsl(var(--muted))]">
             CountryRestrictModule is not attached to this deployment. Attach a module first to
             manage country-level blocks.
           </div>
         ) : (
           <>
-            <div className="font-mono text-xs text-slate-500">
+            <div className="font-mono text-xs text-[hsl(var(--muted))]">
               CountryRestrictModule {shortenHash(countryRestrictModuleAddress, 6)}
             </div>
             <ul className="space-y-2">
               {blockedCountries.map((row) => (
                 <li
                   key={row.code}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-3"
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-4 py-3"
                 >
-                  <div className="text-sm text-slate-200">
+                  <div className="text-sm text-[hsl(var(--foreground))]">
                     ISO numeric <span className="font-mono">{row.code}</span> —{' '}
                     <span
                       className={
@@ -237,7 +238,7 @@ export function ComplianceModulesPanel({
               }}
             >
               <div>
-                <label className="mb-1 block text-xs uppercase tracking-wide text-slate-500">
+                <label className="mb-1 block text-xs uppercase tracking-wide text-[hsl(var(--muted))]">
                   Block new country (ISO numeric)
                 </label>
                 <Input
@@ -259,11 +260,11 @@ export function ComplianceModulesPanel({
         )}
       </section>
 
-      <section className="space-y-3 border-t border-white/10 pt-5">
-        <div className="text-sm font-semibold uppercase tracking-wide text-slate-400">
+      <section className="space-y-3 border-t border-[hsl(var(--border))] pt-5">
+        <div className="text-sm font-semibold uppercase tracking-wide text-[hsl(var(--muted))]">
           Transfer preflight
         </div>
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-[hsl(var(--muted))]">
           Read-only check: would the configured module stack permit a transfer from{' '}
           <span className="font-mono">from</span> to <span className="font-mono">to</span> for{' '}
           <span className="font-mono">amount</span> base units?
@@ -295,7 +296,7 @@ export function ComplianceModulesPanel({
           </Button>
         </form>
         {previewResult ? (
-          <div className="rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-slate-200">
+          <div className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-4 py-3 text-sm text-[hsl(var(--foreground))]">
             {previewResult}
           </div>
         ) : null}

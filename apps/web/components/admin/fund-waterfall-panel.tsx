@@ -26,20 +26,20 @@ export function FundWaterfallPanel({ data }: Props) {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="metric-card">
           <div className="fine-print">Total Committed</div>
-          <div className="mt-3 text-3xl font-semibold text-white">
+          <div className="mt-3 text-3xl font-semibold text-[hsl(var(--foreground))]">
             {formatCurrency(totals.committedKrw)}
           </div>
-          <div className="mt-2 text-xs text-slate-400">
+          <div className="mt-2 text-xs text-[hsl(var(--muted))]">
             {formatNumber(totals.investorCount, 0)} investors across{' '}
             {formatNumber(totals.vehicleCount, 0)} vehicles
           </div>
         </div>
         <div className="metric-card">
           <div className="fine-print">Called</div>
-          <div className="mt-3 text-3xl font-semibold text-white">
+          <div className="mt-3 text-3xl font-semibold text-[hsl(var(--foreground))]">
             {formatCurrency(totals.calledKrw)}
           </div>
-          <div className="mt-2 text-xs text-slate-400">
+          <div className="mt-2 text-xs text-[hsl(var(--muted))]">
             {totals.committedKrw > 0
               ? formatPercent((totals.calledKrw / totals.committedKrw) * 100)
               : '0%'}{' '}
@@ -48,17 +48,21 @@ export function FundWaterfallPanel({ data }: Props) {
         </div>
         <div className="metric-card">
           <div className="fine-print">Distributed</div>
-          <div className="mt-3 text-3xl font-semibold text-white">
+          <div className="mt-3 text-3xl font-semibold text-[hsl(var(--foreground))]">
             {formatCurrency(totals.distributedKrw)}
           </div>
-          <div className="mt-2 text-xs text-slate-400">DPI {totals.dpiMultiple.toFixed(2)}x</div>
+          <div className="mt-2 text-xs text-[hsl(var(--muted))]">
+            DPI {totals.dpiMultiple.toFixed(2)}x
+          </div>
         </div>
         <div className="metric-card">
           <div className="fine-print">NAV</div>
-          <div className="mt-3 text-3xl font-semibold text-white">
+          <div className="mt-3 text-3xl font-semibold text-[hsl(var(--foreground))]">
             {formatCurrency(totals.navKrw)}
           </div>
-          <div className="mt-2 text-xs text-slate-400">TVPI {totals.tvpiMultiple.toFixed(2)}x</div>
+          <div className="mt-2 text-xs text-[hsl(var(--muted))]">
+            TVPI {totals.tvpiMultiple.toFixed(2)}x
+          </div>
         </div>
       </div>
 
@@ -66,8 +70,10 @@ export function FundWaterfallPanel({ data }: Props) {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <div className="eyebrow">Distribution Waterfall</div>
-            <h3 className="mt-2 text-2xl font-semibold text-white">{fund.name}</h3>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
+            <h3 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
+              {fund.name}
+            </h3>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-[hsl(var(--muted))]">
               Four-tier waterfall across return of capital, preferred return at {hurdleRatePct}%
               hurdle, GP catch-up, and a {100 - carriedInterestPct}/{carriedInterestPct} carried
               interest split on residual distributions.
@@ -84,7 +90,7 @@ export function FundWaterfallPanel({ data }: Props) {
 
         {totalDistributed > 0 ? (
           <div className="space-y-3">
-            <div className="flex h-4 w-full overflow-hidden rounded-full border border-white/10 bg-white/[0.04]">
+            <div className="flex h-4 w-full overflow-hidden rounded-full border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))]">
               {tiers.map((tier) => {
                 const widthPct = (tier.totalKrw / totalDistributed) * 100;
                 if (widthPct <= 0) return null;
@@ -104,7 +110,7 @@ export function FundWaterfallPanel({ data }: Props) {
                 return (
                   <div
                     key={tier.key}
-                    className="rounded-[18px] border border-white/10 bg-white/[0.03] p-4"
+                    className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4"
                   >
                     <div className="flex items-center justify-between">
                       <span
@@ -114,17 +120,21 @@ export function FundWaterfallPanel({ data }: Props) {
                       </span>
                       <Badge tone={color.badge}>{`${tier.sharePct.toFixed(1)}%`}</Badge>
                     </div>
-                    <div className="mt-3 text-2xl font-semibold text-white">
+                    <div className="mt-3 text-2xl font-semibold text-[hsl(var(--foreground))]">
                       {formatCurrency(tier.totalKrw)}
                     </div>
-                    <div className="mt-2 space-y-1 text-xs text-slate-400">
+                    <div className="mt-2 space-y-1 text-xs text-[hsl(var(--muted))]">
                       <div className="flex justify-between">
                         <span>LP</span>
-                        <span className="text-slate-200">{formatCurrency(tier.lpAmountKrw)}</span>
+                        <span className="text-[hsl(var(--foreground))]">
+                          {formatCurrency(tier.lpAmountKrw)}
+                        </span>
                       </div>
                       <div className="flex justify-between">
                         <span>GP</span>
-                        <span className="text-slate-200">{formatCurrency(tier.gpAmountKrw)}</span>
+                        <span className="text-[hsl(var(--foreground))]">
+                          {formatCurrency(tier.gpAmountKrw)}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -133,7 +143,7 @@ export function FundWaterfallPanel({ data }: Props) {
             </div>
           </div>
         ) : (
-          <div className="rounded-[18px] border border-white/10 bg-white/[0.02] p-6 text-sm text-slate-400">
+          <div className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-6 text-sm text-[hsl(var(--muted))]">
             No distributions have been recorded yet. Waterfall tiers will populate once the fund
             begins returning capital to limited partners.
           </div>
@@ -144,52 +154,66 @@ export function FundWaterfallPanel({ data }: Props) {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="eyebrow">Investor Ledger</div>
-            <h3 className="mt-2 text-xl font-semibold text-white">Commitments by LP</h3>
+            <h3 className="mt-2 text-xl font-semibold text-[hsl(var(--foreground))]">
+              Commitments by LP
+            </h3>
           </div>
           <Badge tone="neutral">{`${investors.length} investors`}</Badge>
         </div>
         {investors.length === 0 ? (
-          <div className="rounded-[18px] border border-white/10 bg-white/[0.02] p-6 text-sm text-slate-400">
+          <div className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-6 text-sm text-[hsl(var(--muted))]">
             No commitments have been booked against this fund.
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] text-left text-sm">
               <thead>
-                <tr className="text-[11px] font-mono uppercase tracking-[0.2em] text-slate-500">
-                  <th className="border-b border-white/10 px-3 py-3">Investor</th>
-                  <th className="border-b border-white/10 px-3 py-3 text-right">Committed</th>
-                  <th className="border-b border-white/10 px-3 py-3 text-right">Called</th>
-                  <th className="border-b border-white/10 px-3 py-3 text-right">Distributed</th>
-                  <th className="border-b border-white/10 px-3 py-3 text-right">Remaining</th>
-                  <th className="border-b border-white/10 px-3 py-3 text-right">% of Fund</th>
+                <tr className="text-[11px] font-mono uppercase tracking-[0.2em] text-[hsl(var(--muted))]">
+                  <th className="border-b border-[hsl(var(--border))] px-3 py-3">Investor</th>
+                  <th className="border-b border-[hsl(var(--border))] px-3 py-3 text-right">
+                    Committed
+                  </th>
+                  <th className="border-b border-[hsl(var(--border))] px-3 py-3 text-right">
+                    Called
+                  </th>
+                  <th className="border-b border-[hsl(var(--border))] px-3 py-3 text-right">
+                    Distributed
+                  </th>
+                  <th className="border-b border-[hsl(var(--border))] px-3 py-3 text-right">
+                    Remaining
+                  </th>
+                  <th className="border-b border-[hsl(var(--border))] px-3 py-3 text-right">
+                    % of Fund
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {investors.map((investor) => (
-                  <tr key={investor.investorId} className="text-slate-200">
-                    <td className="border-b border-white/5 px-3 py-3">
-                      <div className="font-medium text-white">{investor.investorName}</div>
-                      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                  <tr key={investor.investorId} className="text-[hsl(var(--foreground))]">
+                    <td className="border-b border-[hsl(var(--border))] px-3 py-3">
+                      <div className="font-medium text-[hsl(var(--foreground))]">
+                        {investor.investorName}
+                      </div>
+                      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-[hsl(var(--muted))]">
                         <span className="font-mono uppercase tracking-[0.18em]">
                           {investor.investorCode}
                         </span>
                         {investor.investorType ? <span>{investor.investorType}</span> : null}
                       </div>
                     </td>
-                    <td className="border-b border-white/5 px-3 py-3 text-right">
+                    <td className="border-b border-[hsl(var(--border))] px-3 py-3 text-right">
                       {formatCurrency(investor.committedKrw)}
                     </td>
-                    <td className="border-b border-white/5 px-3 py-3 text-right">
+                    <td className="border-b border-[hsl(var(--border))] px-3 py-3 text-right">
                       {formatCurrency(investor.calledKrw)}
                     </td>
-                    <td className="border-b border-white/5 px-3 py-3 text-right">
+                    <td className="border-b border-[hsl(var(--border))] px-3 py-3 text-right">
                       {formatCurrency(investor.distributedKrw)}
                     </td>
-                    <td className="border-b border-white/5 px-3 py-3 text-right">
+                    <td className="border-b border-[hsl(var(--border))] px-3 py-3 text-right">
                       {formatCurrency(investor.remainingCommitmentKrw)}
                     </td>
-                    <td className="border-b border-white/5 px-3 py-3 text-right font-mono text-xs text-cyan-200">
+                    <td className="border-b border-[hsl(var(--border))] px-3 py-3 text-right font-mono text-xs text-cyan-200">
                       {investor.sharePct.toFixed(2)}%
                     </td>
                   </tr>

@@ -76,7 +76,7 @@ export function TenantDemandForm() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="eyebrow">Record requirement</div>
-          <p className="mt-1 text-sm text-slate-400">
+          <p className="mt-1 text-sm text-[hsl(var(--muted))]">
             Capture a named tenant requirement from a leasing-broker call. Status defaults to
             ACTIVE; flip to SIGNED when the lease closes (kept on file as historical demand).
           </p>
@@ -113,7 +113,7 @@ export function TenantDemandForm() {
           <select
             value={form.assetClass}
             onChange={(e) => setForm((p) => ({ ...p, assetClass: e.target.value }))}
-            className="w-full rounded-[14px] border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white"
+            className="w-full rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2 text-sm text-[hsl(var(--foreground))]"
           >
             <option value="">—</option>
             {Object.values(AssetClass).map((value) => (
@@ -153,7 +153,7 @@ export function TenantDemandForm() {
           <select
             value={form.status}
             onChange={(e) => setForm((p) => ({ ...p, status: e.target.value }))}
-            className="w-full rounded-[14px] border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white"
+            className="w-full rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2 text-sm text-[hsl(var(--foreground))]"
           >
             {STATUSES.map((value) => (
               <option key={value} value={value}>
@@ -175,7 +175,7 @@ export function TenantDemandForm() {
           <textarea
             value={form.notes}
             onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
-            className="w-full rounded-[14px] border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white"
+            className="w-full rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2 text-sm text-[hsl(var(--foreground))]"
             rows={3}
             placeholder="Currently in 강남 GFC 4F, lease ends 2026Q4. Wants 5,000 sqm for AI training pod, prefers single-tenant floor."
           />
@@ -192,6 +192,8 @@ export function TenantDemandForm() {
 
 function Label({ children }: { children: React.ReactNode }) {
   return (
-    <label className="mb-1 block text-xs uppercase tracking-wide text-slate-500">{children}</label>
+    <label className="mb-1 block text-xs uppercase tracking-wide text-[hsl(var(--muted))]">
+      {children}
+    </label>
   );
 }

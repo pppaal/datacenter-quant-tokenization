@@ -214,7 +214,7 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <div className="eyebrow">Pipeline</div>
-              <h2 className="mt-2 text-2xl font-semibold text-white">
+              <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
                 Stage, timing, and next move
               </h2>
             </div>
@@ -228,10 +228,10 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
                 className={[
                   'rounded-[22px] border p-4 text-sm',
                   item.isCurrent
-                    ? 'border-accent/40 bg-accent/10 text-white'
+                    ? 'border-accent/40 bg-accent/10 text-[hsl(var(--foreground))]'
                     : item.isCompleted
                       ? 'border-[hsl(var(--success)/0.25)] bg-[hsl(var(--success-tint))] text-[hsl(var(--success))]'
-                      : 'border-white/10 bg-white/[0.03] text-slate-400'
+                      : 'border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] text-[hsl(var(--muted))]'
                 ].join(' ')}
               >
                 <div className="fine-print">
@@ -245,35 +245,35 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
           <div className="grid gap-3 md:grid-cols-4">
             <div className="metric-card">
               <div className="fine-print">Open Tasks</div>
-              <div className="mt-3 text-3xl font-semibold text-white">
+              <div className="mt-3 text-3xl font-semibold text-[hsl(var(--foreground))]">
                 {formatNumber(snapshot.openTaskCount, 0)}
               </div>
             </div>
             <div className="metric-card">
               <div className="fine-print">Urgent Tasks</div>
-              <div className="mt-3 text-3xl font-semibold text-white">
+              <div className="mt-3 text-3xl font-semibold text-[hsl(var(--foreground))]">
                 {formatNumber(snapshot.urgentTaskCount, 0)}
               </div>
             </div>
             <div className="metric-card">
               <div className="fine-print">Open Risks</div>
-              <div className="mt-3 text-3xl font-semibold text-white">
+              <div className="mt-3 text-3xl font-semibold text-[hsl(var(--foreground))]">
                 {formatNumber(snapshot.openRiskCount, 0)}
               </div>
             </div>
             <div className="metric-card">
               <div className="fine-print">Target Close</div>
-              <div className="mt-3 text-base font-semibold text-white">
+              <div className="mt-3 text-base font-semibold text-[hsl(var(--foreground))]">
                 {formatDate(deal.targetCloseDate)}
               </div>
             </div>
           </div>
 
-          <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+          <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <div className="fine-print">Origination Discipline</div>
-                <div className="mt-2 text-base font-semibold text-white">
+                <div className="mt-2 text-base font-semibold text-[hsl(var(--foreground))]">
                   {origination.headline}
                 </div>
               </div>
@@ -290,27 +290,27 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
               </Badge>
             </div>
             <div className="mt-4 grid gap-3 md:grid-cols-4">
-              <div className="rounded-[20px] border border-white/10 bg-slate-950/35 p-4">
+              <div className="rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4">
                 <div className="fine-print">Source</div>
-                <div className="mt-2 text-sm font-semibold text-white">
+                <div className="mt-2 text-sm font-semibold text-[hsl(var(--foreground))]">
                   {origination.sourceLabel}
                 </div>
               </div>
-              <div className="rounded-[20px] border border-white/10 bg-slate-950/35 p-4">
+              <div className="rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4">
                 <div className="fine-print">Coverage</div>
-                <div className="mt-2 text-sm font-semibold text-white">
+                <div className="mt-2 text-sm font-semibold text-[hsl(var(--foreground))]">
                   {origination.relationshipCoverageLabel}
                 </div>
               </div>
-              <div className="rounded-[20px] border border-white/10 bg-slate-950/35 p-4">
+              <div className="rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4">
                 <div className="fine-print">Exclusivity</div>
-                <div className="mt-2 text-sm font-semibold text-white">
+                <div className="mt-2 text-sm font-semibold text-[hsl(var(--foreground))]">
                   {origination.exclusivityLabel}
                 </div>
               </div>
-              <div className="rounded-[20px] border border-white/10 bg-slate-950/35 p-4">
+              <div className="rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4">
                 <div className="fine-print">Latest Touch</div>
-                <div className="mt-2 text-sm font-semibold text-white">
+                <div className="mt-2 text-sm font-semibold text-[hsl(var(--foreground))]">
                   {origination.lastTouchLabel}
                 </div>
               </div>
@@ -329,7 +329,7 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
                       </div>
                     ))
                   ) : (
-                    <div className="rounded-[18px] border border-white/10 bg-slate-950/35 p-3 text-sm text-slate-500">
+                    <div className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-3 text-sm text-[hsl(var(--muted))]">
                       No strengths are logged yet.
                     </div>
                   )}
@@ -348,7 +348,7 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
                       </div>
                     ))
                   ) : (
-                    <div className="rounded-[18px] border border-white/10 bg-slate-950/35 p-3 text-sm text-slate-500">
+                    <div className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-3 text-sm text-[hsl(var(--muted))]">
                       No origination blockers are flagged.
                     </div>
                   )}
@@ -358,7 +358,7 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
           </div>
 
           <form
-            className="grid gap-4 rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+            className="grid gap-4 rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5"
             onSubmit={(event) => {
               event.preventDefault();
               void run('stage', async () => {
@@ -398,7 +398,7 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
           </form>
 
           <form
-            className="grid gap-4 rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+            className="grid gap-4 rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5"
             onSubmit={(event) => {
               event.preventDefault();
               void run('control', async () => {
@@ -488,7 +488,7 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
               </label>
             </div>
             <div className="flex items-center justify-between gap-4">
-              <div className="text-sm text-slate-400">
+              <div className="text-sm text-[hsl(var(--muted))]">
                 {snapshot.nextTask
                   ? `Next queued task: ${snapshot.nextTask.title}`
                   : 'No task queued yet.'}
@@ -499,11 +499,11 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
             </div>
           </form>
 
-          <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+          <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5">
             <div className="flex items-center justify-between gap-4">
               <div>
                 <div className="fine-print">Required Checklist</div>
-                <div className="mt-2 text-base font-semibold text-white">
+                <div className="mt-2 text-base font-semibold text-[hsl(var(--foreground))]">
                   What must be true in this stage
                 </div>
               </div>
@@ -524,11 +524,15 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
               {snapshot.stageChecklist.map((item) => (
                 <div
                   key={item.key}
-                  className="flex items-start justify-between gap-4 rounded-[20px] border border-white/10 bg-slate-950/35 p-4"
+                  className="flex items-start justify-between gap-4 rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4"
                 >
                   <div>
-                    <div className="text-sm font-semibold text-white">{item.title}</div>
-                    <p className="mt-2 text-sm leading-7 text-slate-400">{item.description}</p>
+                    <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
+                      {item.title}
+                    </div>
+                    <p className="mt-2 text-sm leading-7 text-[hsl(var(--muted))]">
+                      {item.description}
+                    </p>
                   </div>
                   <Badge
                     tone={
@@ -547,14 +551,16 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
           <div className="flex items-center justify-between gap-4">
             <div>
               <div className="eyebrow">Tasks</div>
-              <h2 className="mt-2 text-2xl font-semibold text-white">Operator checklist</h2>
+              <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
+                Operator checklist
+              </h2>
             </div>
             <Badge tone={snapshot.urgentTaskCount > 0 ? 'warn' : 'neutral'}>
               {snapshot.urgentTaskCount > 0 ? `${snapshot.urgentTaskCount} urgent` : 'in flight'}
             </Badge>
           </div>
           <form
-            className="grid gap-4 rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+            className="grid gap-4 rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5"
             onSubmit={(event) => {
               event.preventDefault();
               void run('task-create', async () => {
@@ -608,12 +614,14 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
             {deal.tasks.map((task) => (
               <div
                 key={task.id}
-                className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+                className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5"
               >
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
-                    <div className="text-base font-semibold text-white">{task.title}</div>
-                    <p className="mt-2 text-sm leading-7 text-slate-400">
+                    <div className="text-base font-semibold text-[hsl(var(--foreground))]">
+                      {task.title}
+                    </div>
+                    <p className="mt-2 text-sm leading-7 text-[hsl(var(--muted))]">
                       {task.description ?? 'No detail yet.'}
                     </p>
                   </div>
@@ -633,7 +641,7 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
                   </div>
                 </div>
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
-                  <div className="text-sm text-slate-400">
+                  <div className="text-sm text-[hsl(var(--muted))]">
                     {task.dueDate ? `Due ${formatDate(task.dueDate)}` : 'No due date'}
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -667,7 +675,7 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
           <div className="flex items-center justify-between gap-4">
             <div>
               <div className="eyebrow">DD Requests</div>
-              <h2 className="mt-2 text-2xl font-semibold text-white">
+              <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
                 Requested diligence materials
               </h2>
             </div>
@@ -676,7 +684,7 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
             </Badge>
           </div>
           <form
-            className="grid gap-4 rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+            className="grid gap-4 rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5"
             onSubmit={(event) => {
               event.preventDefault();
               void run('request-create', async () => {
@@ -769,29 +777,29 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
                 return (
                   <div
                     key={requestItem.id}
-                    className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+                    className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5"
                   >
                     <div className="flex flex-wrap items-start justify-between gap-4">
                       <div>
-                        <div className="text-base font-semibold text-white">
+                        <div className="text-base font-semibold text-[hsl(var(--foreground))]">
                           {requestItem.title}
                         </div>
-                        <div className="mt-1 text-sm text-slate-400">
+                        <div className="mt-1 text-sm text-[hsl(var(--muted))]">
                           {requestItem.category ?? 'General DD'}
                           {requestItem.counterparty ? ` / ${requestItem.counterparty.name}` : ''}
                         </div>
                         {requestItem.notes ? (
-                          <p className="mt-3 text-sm leading-7 text-slate-400">
+                          <p className="mt-3 text-sm leading-7 text-[hsl(var(--muted))]">
                             {requestItem.notes}
                           </p>
                         ) : null}
-                        <div className="mt-3 text-sm text-slate-500">
+                        <div className="mt-3 text-sm text-[hsl(var(--muted))]">
                           Requested {formatDate(requestItem.requestedAt)} / Due{' '}
                           {formatDate(requestItem.dueDate)} / Received{' '}
                           {formatDate(requestItem.receivedAt)}
                         </div>
                         {requestItem.document ? (
-                          <div className="mt-2 text-sm text-slate-300">
+                          <div className="mt-2 text-sm text-[hsl(var(--foreground-muted))]">
                             Linked document: {requestItem.document.title}
                           </div>
                         ) : null}
@@ -915,14 +923,16 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
           <div className="flex items-center justify-between gap-4">
             <div>
               <div className="eyebrow">Risk Flags</div>
-              <h2 className="mt-2 text-2xl font-semibold text-white">Closing blockers</h2>
+              <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
+                Closing blockers
+              </h2>
             </div>
             <Badge tone={openRisks.length > 0 ? 'warn' : 'good'}>
               {openRisks.length > 0 ? `${openRisks.length} open` : 'clear'}
             </Badge>
           </div>
           <form
-            className="grid gap-4 rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+            className="grid gap-4 rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5"
             onSubmit={(event) => {
               event.preventDefault();
               void run('risk-create', async () => {
@@ -969,12 +979,14 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
             {deal.riskFlags.map((risk) => (
               <div
                 key={risk.id}
-                className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+                className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5"
               >
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
-                    <div className="text-base font-semibold text-white">{risk.title}</div>
-                    <p className="mt-2 text-sm leading-7 text-slate-400">
+                    <div className="text-base font-semibold text-[hsl(var(--foreground))]">
+                      {risk.title}
+                    </div>
+                    <p className="mt-2 text-sm leading-7 text-[hsl(var(--muted))]">
                       {risk.detail ?? 'No detail yet.'}
                     </p>
                   </div>
@@ -1010,14 +1022,16 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
           <div className="flex items-center justify-between gap-4">
             <div>
               <div className="eyebrow">Bid Revisions</div>
-              <h2 className="mt-2 text-2xl font-semibold text-white">Negotiation history</h2>
+              <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
+                Negotiation history
+              </h2>
             </div>
             <Badge tone={liveBidRevisions.length > 0 ? 'warn' : 'neutral'}>
               {deal.bidRevisions.length > 0 ? `${deal.bidRevisions.length} logged` : 'empty'}
             </Badge>
           </div>
           <form
-            className="grid gap-4 rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+            className="grid gap-4 rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5"
             onSubmit={(event) => {
               event.preventDefault();
               void run('bid-create', async () => {
@@ -1137,22 +1151,24 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
             {deal.bidRevisions.map((bidRevision) => (
               <div
                 key={bidRevision.id}
-                className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+                className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5"
               >
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
-                    <div className="text-base font-semibold text-white">{bidRevision.label}</div>
-                    <div className="mt-1 text-sm text-slate-400">
+                    <div className="text-base font-semibold text-[hsl(var(--foreground))]">
+                      {bidRevision.label}
+                    </div>
+                    <div className="mt-1 text-sm text-[hsl(var(--muted))]">
                       {bidRevision.counterparty ? `${bidRevision.counterparty.name} / ` : ''}
                       Submitted {formatDate(bidRevision.submittedAt)}
                     </div>
-                    <div className="mt-3 text-sm text-slate-300">
+                    <div className="mt-3 text-sm text-[hsl(var(--foreground-muted))]">
                       {formatCurrency(bidRevision.bidPriceKrw)}
                       {bidRevision.depositKrw
                         ? ` / deposit ${formatCurrency(bidRevision.depositKrw)}`
                         : ''}
                     </div>
-                    <div className="mt-2 text-sm text-slate-500">
+                    <div className="mt-2 text-sm text-[hsl(var(--muted))]">
                       {bidRevision.exclusivityDays
                         ? `${bidRevision.exclusivityDays}d exclusivity`
                         : 'No exclusivity term'}
@@ -1166,7 +1182,9 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
                         : 'No close timeline'}
                     </div>
                     {bidRevision.notes ? (
-                      <p className="mt-3 text-sm leading-7 text-slate-400">{bidRevision.notes}</p>
+                      <p className="mt-3 text-sm leading-7 text-[hsl(var(--muted))]">
+                        {bidRevision.notes}
+                      </p>
                     ) : null}
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -1205,14 +1223,16 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
           <div className="flex items-center justify-between gap-4">
             <div>
               <div className="eyebrow">Lender Quotes</div>
-              <h2 className="mt-2 text-2xl font-semibold text-white">Financing process</h2>
+              <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
+                Financing process
+              </h2>
             </div>
             <Badge tone={liveLenderQuotes.length > 0 ? 'warn' : 'neutral'}>
               {deal.lenderQuotes.length > 0 ? `${deal.lenderQuotes.length} tracked` : 'empty'}
             </Badge>
           </div>
           <form
-            className="grid gap-4 rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+            className="grid gap-4 rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5"
             onSubmit={(event) => {
               event.preventDefault();
               void run('lender-create', async () => {
@@ -1356,24 +1376,24 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
             {deal.lenderQuotes.map((lenderQuote) => (
               <div
                 key={lenderQuote.id}
-                className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+                className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5"
               >
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
-                    <div className="text-base font-semibold text-white">
+                    <div className="text-base font-semibold text-[hsl(var(--foreground))]">
                       {lenderQuote.facilityLabel}
                     </div>
-                    <div className="mt-1 text-sm text-slate-400">
+                    <div className="mt-1 text-sm text-[hsl(var(--muted))]">
                       {lenderQuote.counterparty ? `${lenderQuote.counterparty.name} / ` : ''}
                       Quoted {formatDate(lenderQuote.quotedAt)}
                     </div>
-                    <div className="mt-3 text-sm text-slate-300">
+                    <div className="mt-3 text-sm text-[hsl(var(--foreground-muted))]">
                       {formatCurrency(lenderQuote.amountKrw)}
                       {lenderQuote.ltvPct != null
                         ? ` / ${formatNumber(lenderQuote.ltvPct, 1)}% LTV`
                         : ''}
                     </div>
-                    <div className="mt-2 text-sm text-slate-500">
+                    <div className="mt-2 text-sm text-[hsl(var(--muted))]">
                       {lenderQuote.spreadBps != null
                         ? `${formatNumber(lenderQuote.spreadBps, 0)} bps spread`
                         : 'No spread'}
@@ -1386,7 +1406,7 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
                         ? `${formatNumber(lenderQuote.dscrFloor, 2)}x DSCR floor`
                         : 'No DSCR floor'}
                     </div>
-                    <div className="mt-2 text-sm text-slate-500">
+                    <div className="mt-2 text-sm text-[hsl(var(--muted))]">
                       {lenderQuote.termMonths != null
                         ? `${formatNumber(lenderQuote.termMonths, 0)}m term`
                         : 'No term'}
@@ -1396,7 +1416,9 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
                         : 'No IO period'}
                     </div>
                     {lenderQuote.notes ? (
-                      <p className="mt-3 text-sm leading-7 text-slate-400">{lenderQuote.notes}</p>
+                      <p className="mt-3 text-sm leading-7 text-[hsl(var(--muted))]">
+                        {lenderQuote.notes}
+                      </p>
                     ) : null}
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -1439,7 +1461,7 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
           <div className="flex items-center justify-between gap-4">
             <div>
               <div className="eyebrow">Negotiation Events</div>
-              <h2 className="mt-2 text-2xl font-semibold text-white">
+              <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
                 Seller counters and exclusivity clock
               </h2>
             </div>
@@ -1450,7 +1472,7 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
             </Badge>
           </div>
           <form
-            className="grid gap-4 rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+            className="grid gap-4 rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5"
             onSubmit={(event) => {
               event.preventDefault();
               void run('negotiation-create', async () => {
@@ -1545,23 +1567,27 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
             {deal.negotiationEvents.map((event) => (
               <div
                 key={event.id}
-                className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+                className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5"
               >
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
-                    <div className="text-base font-semibold text-white">{event.title}</div>
-                    <div className="mt-1 text-sm text-slate-400">
+                    <div className="text-base font-semibold text-[hsl(var(--foreground))]">
+                      {event.title}
+                    </div>
+                    <div className="mt-1 text-sm text-[hsl(var(--muted))]">
                       {event.counterparty ? `${event.counterparty.name} / ` : ''}
                       Effective {formatDate(event.effectiveAt)}
                       {event.expiresAt ? ` / Expires ${formatDate(event.expiresAt)}` : ''}
                     </div>
                     {event.bidRevision ? (
-                      <div className="mt-2 text-sm text-slate-500">
+                      <div className="mt-2 text-sm text-[hsl(var(--muted))]">
                         Linked bid: {event.bidRevision.label}
                       </div>
                     ) : null}
                     {event.summary ? (
-                      <p className="mt-3 text-sm leading-7 text-slate-400">{event.summary}</p>
+                      <p className="mt-3 text-sm leading-7 text-[hsl(var(--muted))]">
+                        {event.summary}
+                      </p>
                     ) : null}
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -1629,14 +1655,16 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
           <div className="flex items-center justify-between gap-4">
             <div>
               <div className="eyebrow">Counterparties</div>
-              <h2 className="mt-2 text-2xl font-semibold text-white">Contacts on the process</h2>
+              <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
+                Contacts on the process
+              </h2>
             </div>
             <Badge tone={deal.counterparties.length > 0 ? 'good' : 'neutral'}>
               {deal.counterparties.length} tracked
             </Badge>
           </div>
           <form
-            className="grid gap-4 rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+            className="grid gap-4 rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5"
             onSubmit={(event) => {
               event.preventDefault();
               void run('counterparty-create', async () => {
@@ -1731,7 +1759,7 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
             {deal.counterparties.map((counterparty) => (
               <div
                 key={counterparty.id}
-                className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+                className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5"
               >
                 <form
                   className="space-y-4"
@@ -1761,8 +1789,10 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
                 >
                   <div className="flex flex-wrap items-center justify-between gap-4">
                     <div>
-                      <div className="text-base font-semibold text-white">{counterparty.name}</div>
-                      <div className="mt-1 text-sm text-slate-400">
+                      <div className="text-base font-semibold text-[hsl(var(--foreground))]">
+                        {counterparty.name}
+                      </div>
+                      <div className="mt-1 text-sm text-[hsl(var(--muted))]">
                         {counterparty.role}{' '}
                         {counterparty.company ? `/ ${counterparty.company}` : ''}
                       </div>
@@ -1814,7 +1844,7 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
                     defaultValue={counterparty.notes ?? ''}
                     placeholder="Internal relationship notes"
                   />
-                  <div className="flex items-center justify-between gap-4 text-sm text-slate-400">
+                  <div className="flex items-center justify-between gap-4 text-sm text-[hsl(var(--muted))]">
                     <div>
                       Latest touch{' '}
                       {counterparty.lastContactAt
@@ -1839,7 +1869,7 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
           <div className="flex items-center justify-between gap-4">
             <div>
               <div className="eyebrow">Notes</div>
-              <h2 className="mt-2 text-2xl font-semibold text-white">
+              <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
                 Broker / seller / buyer notes
               </h2>
             </div>
@@ -1854,7 +1884,7 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
             </Badge>
           </div>
           <form
-            className="grid gap-4 rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+            className="grid gap-4 rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5"
             onSubmit={(event) => {
               event.preventDefault();
               if (!noteCounterpartyId) {
@@ -1922,10 +1952,10 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
             {snapshot.notesByRole.map((group) => (
               <div
                 key={group.role}
-                className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+                className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5"
               >
                 <div className="flex items-center justify-between gap-4">
-                  <div className="text-lg font-semibold text-white">
+                  <div className="text-lg font-semibold text-[hsl(var(--foreground))]">
                     {toSentenceCase(group.role)}
                   </div>
                   <Badge>{group.notes.length}</Badge>
@@ -1935,24 +1965,28 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
                     group.notes.slice(0, 4).map((entry) => (
                       <div
                         key={entry.id}
-                        className="rounded-[20px] border border-white/10 bg-slate-950/35 p-4"
+                        className="rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4"
                       >
                         <div className="flex items-center justify-between gap-3">
-                          <div className="text-sm font-semibold text-white">{entry.title}</div>
-                          <div className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                          <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
+                            {entry.title}
+                          </div>
+                          <div className="text-xs uppercase tracking-[0.18em] text-[hsl(var(--muted))]">
                             {formatDate(entry.createdAt)}
                           </div>
                         </div>
-                        <div className="mt-2 text-sm text-slate-400">
+                        <div className="mt-2 text-sm text-[hsl(var(--muted))]">
                           {entry.counterparty?.name ?? 'Unknown counterparty'}
                         </div>
-                        <p className="mt-3 text-sm leading-7 text-slate-300">
+                        <p className="mt-3 text-sm leading-7 text-[hsl(var(--foreground-muted))]">
                           {entry.body ?? 'No body.'}
                         </p>
                       </div>
                     ))
                   ) : (
-                    <div className="text-sm text-slate-500">No notes for this role yet.</div>
+                    <div className="text-sm text-[hsl(var(--muted))]">
+                      No notes for this role yet.
+                    </div>
                   )}
                 </div>
               </div>
@@ -1962,24 +1996,28 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
 
         <Card className="space-y-5">
           <div className="eyebrow">Activity</div>
-          <h2 className="text-2xl font-semibold text-white">Recent log</h2>
+          <h2 className="text-2xl font-semibold text-[hsl(var(--foreground))]">Recent log</h2>
           <div className="space-y-3">
             {deal.activityLogs.map((activity) => (
               <div
                 key={activity.id}
-                className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+                className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5"
               >
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div>
-                    <div className="text-sm font-semibold text-white">{activity.title}</div>
-                    <div className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">
+                    <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
+                      {activity.title}
+                    </div>
+                    <div className="mt-1 text-xs uppercase tracking-[0.18em] text-[hsl(var(--muted))]">
                       {toSentenceCase(activity.activityType)} / {formatDate(activity.createdAt)}
                     </div>
                   </div>
                   {activity.counterparty ? <Badge>{activity.counterparty.role}</Badge> : null}
                 </div>
                 {activity.body ? (
-                  <p className="mt-3 text-sm leading-7 text-slate-300">{activity.body}</p>
+                  <p className="mt-3 text-sm leading-7 text-[hsl(var(--foreground-muted))]">
+                    {activity.body}
+                  </p>
                 ) : null}
               </div>
             ))}
@@ -1988,23 +2026,25 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
 
         <Card className="space-y-4">
           <div className="eyebrow">Pricing Frame</div>
-          <h2 className="text-2xl font-semibold text-white">Commercial guardrails</h2>
+          <h2 className="text-2xl font-semibold text-[hsl(var(--foreground))]">
+            Commercial guardrails
+          </h2>
           <div className="grid gap-4 md:grid-cols-3">
             <div className="metric-card">
               <div className="fine-print">Seller Guidance</div>
-              <div className="mt-3 text-base font-semibold text-white">
+              <div className="mt-3 text-base font-semibold text-[hsl(var(--foreground))]">
                 {formatCurrency(deal.sellerGuidanceKrw)}
               </div>
             </div>
             <div className="metric-card">
               <div className="fine-print">Bid Guidance</div>
-              <div className="mt-3 text-base font-semibold text-white">
+              <div className="mt-3 text-base font-semibold text-[hsl(var(--foreground))]">
                 {formatCurrency(deal.bidGuidanceKrw)}
               </div>
             </div>
             <div className="metric-card">
               <div className="fine-print">Target Purchase</div>
-              <div className="mt-3 text-base font-semibold text-white">
+              <div className="mt-3 text-base font-semibold text-[hsl(var(--foreground))]">
                 {formatCurrency(deal.purchasePriceKrw)}
               </div>
             </div>
@@ -2013,29 +2053,31 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
 
         <Card className="space-y-5">
           <div className="eyebrow">Archive / Close-out</div>
-          <h2 className="text-2xl font-semibold text-white">End the process cleanly</h2>
+          <h2 className="text-2xl font-semibold text-[hsl(var(--foreground))]">
+            End the process cleanly
+          </h2>
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+            <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5">
               <div className="fine-print">Current Status</div>
               <div
-                className="mt-3 text-base font-semibold text-white"
+                className="mt-3 text-base font-semibold text-[hsl(var(--foreground))]"
                 data-testid="deal-current-status"
               >
                 {deal.statusLabel}
               </div>
-              <div className="mt-2 text-sm text-slate-400">
+              <div className="mt-2 text-sm text-[hsl(var(--muted))]">
                 Archived {formatDate(deal.archivedAt)} / Closed {formatDate(deal.closedAt)}
               </div>
             </div>
-            <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+            <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5">
               <div className="fine-print">Close Summary</div>
-              <div className="mt-3 text-sm leading-7 text-slate-300">
+              <div className="mt-3 text-sm leading-7 text-[hsl(var(--foreground-muted))]">
                 {deal.closeSummary ?? 'No close-out summary yet.'}
               </div>
             </div>
           </div>
           <form
-            className="grid gap-4 rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+            className="grid gap-4 rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5"
             onSubmit={(event) => {
               event.preventDefault();
               void run('close-out', async () => {

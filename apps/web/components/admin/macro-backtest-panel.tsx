@@ -15,10 +15,10 @@ export function MacroBacktestPanel({ backtest }: { backtest: MacroBacktest }) {
       <div className="flex items-center justify-between gap-4">
         <div>
           <div className="eyebrow">Macro Backtest</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">
+          <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
             Forecast vs actual direction check
           </h2>
-          <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-400">
+          <p className="mt-2 max-w-2xl text-sm leading-7 text-[hsl(var(--muted))]">
             Uses historical macro factor snapshots to measure whether the last observed macro
             direction held into the next observation. This is the first validation layer for the
             macro engine.
@@ -48,10 +48,13 @@ export function MacroBacktestPanel({ backtest }: { backtest: MacroBacktest }) {
             'Markets below 45% hit rate'
           ]
         ].map(([label, value, subline]) => (
-          <div key={label} className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+          <div
+            key={label}
+            className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5"
+          >
             <div className="fine-print">{label}</div>
-            <div className="mt-3 text-3xl font-semibold text-white">{value}</div>
-            <p className="mt-2 text-sm text-slate-400">{subline}</p>
+            <div className="mt-3 text-3xl font-semibold text-[hsl(var(--foreground))]">{value}</div>
+            <p className="mt-2 text-sm text-[hsl(var(--muted))]">{subline}</p>
           </div>
         ))}
       </div>
@@ -61,12 +64,14 @@ export function MacroBacktestPanel({ backtest }: { backtest: MacroBacktest }) {
           backtest.markets.slice(0, 6).map((market) => (
             <div
               key={market.market}
-              className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+              className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5"
             >
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <div className="text-lg font-semibold text-white">{market.market}</div>
-                  <div className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">
+                  <div className="text-lg font-semibold text-[hsl(var(--foreground))]">
+                    {market.market}
+                  </div>
+                  <div className="mt-1 text-xs uppercase tracking-[0.18em] text-[hsl(var(--muted))]">
                     {market.latestObservationDate
                       ? `latest ${formatDate(market.latestObservationDate)}`
                       : 'history unavailable'}
@@ -81,33 +86,33 @@ export function MacroBacktestPanel({ backtest }: { backtest: MacroBacktest }) {
               </div>
 
               <div className="mt-4 grid gap-3 md:grid-cols-[160px_1fr_1fr]">
-                <div className="rounded-[20px] border border-white/10 bg-slate-950/35 p-4">
+                <div className="rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4">
                   <div className="fine-print">Coverage</div>
-                  <div className="mt-3 text-2xl font-semibold text-white">
+                  <div className="mt-3 text-2xl font-semibold text-[hsl(var(--foreground))]">
                     {formatNumber(market.factorCoverage, 0)} factors
                   </div>
-                  <p className="mt-2 text-xs text-slate-500">
+                  <p className="mt-2 text-xs text-[hsl(var(--muted))]">
                     Stable {formatNumber(market.stableFactorCount, 0)} / Unstable{' '}
                     {formatNumber(market.unstableFactorCount, 0)}
                   </p>
                 </div>
-                <div className="rounded-[20px] border border-white/10 bg-slate-950/35 p-4">
+                <div className="rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4">
                   <div className="fine-print">Best Factor</div>
-                  <div className="mt-3 text-base font-semibold text-white">
+                  <div className="mt-3 text-base font-semibold text-[hsl(var(--foreground))]">
                     {market.bestFactor?.label ?? 'N/A'}
                   </div>
-                  <p className="mt-2 text-xs text-slate-500">
+                  <p className="mt-2 text-xs text-[hsl(var(--muted))]">
                     {market.bestFactor
                       ? `${formatNumber(market.bestFactor.hitRatePct, 1)}% over ${formatNumber(market.bestFactor.transitionCount, 0)} transitions`
                       : 'No historical transitions yet'}
                   </p>
                 </div>
-                <div className="rounded-[20px] border border-white/10 bg-slate-950/35 p-4">
+                <div className="rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4">
                   <div className="fine-print">Weakest Factor</div>
-                  <div className="mt-3 text-base font-semibold text-white">
+                  <div className="mt-3 text-base font-semibold text-[hsl(var(--foreground))]">
                     {market.weakestFactor?.label ?? 'N/A'}
                   </div>
-                  <p className="mt-2 text-xs text-slate-500">
+                  <p className="mt-2 text-xs text-[hsl(var(--muted))]">
                     {market.weakestFactor
                       ? `${formatNumber(market.weakestFactor.hitRatePct, 1)}% over ${formatNumber(market.weakestFactor.transitionCount, 0)} transitions`
                       : 'No historical transitions yet'}
@@ -117,7 +122,7 @@ export function MacroBacktestPanel({ backtest }: { backtest: MacroBacktest }) {
             </div>
           ))
         ) : (
-          <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5 text-sm text-slate-400">
+          <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5 text-sm text-[hsl(var(--muted))]">
             No repeated macro factor history yet. Keep ingesting macro observations to unlock
             forecast-vs-actual validation.
           </div>

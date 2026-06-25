@@ -60,7 +60,9 @@ export function DealPipelinePanel({ summary }: Props) {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="eyebrow">Deal Pipeline</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">Live execution queue</h2>
+          <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
+            Live execution queue
+          </h2>
         </div>
         <Link href="/admin/deals">
           <Button variant="ghost">Open Deals</Button>
@@ -68,39 +70,39 @@ export function DealPipelinePanel({ summary }: Props) {
       </div>
 
       <div className="mt-5 grid gap-4 md:grid-cols-4 xl:grid-cols-5">
-        <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+        <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5">
           <div className="fine-print">Tracked Deals</div>
-          <div className="mt-3 text-3xl font-semibold text-white">
+          <div className="mt-3 text-3xl font-semibold text-[hsl(var(--foreground))]">
             {formatNumber(summary.totalDeals, 0)}
           </div>
         </div>
-        <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+        <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5">
           <div className="fine-print">Urgent</div>
-          <div className="mt-3 text-3xl font-semibold text-white">
+          <div className="mt-3 text-3xl font-semibold text-[hsl(var(--foreground))]">
             {formatNumber(summary.urgentDeals, 0)}
           </div>
         </div>
-        <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+        <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5">
           <div className="fine-print">Blocked</div>
-          <div className="mt-3 text-3xl font-semibold text-white">
+          <div className="mt-3 text-3xl font-semibold text-[hsl(var(--foreground))]">
             {formatNumber(summary.blockedDeals, 0)}
           </div>
         </div>
-        <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+        <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5">
           <div className="fine-print">Closing</div>
-          <div className="mt-3 text-3xl font-semibold text-white">
+          <div className="mt-3 text-3xl font-semibold text-[hsl(var(--foreground))]">
             {formatNumber(summary.closingDeals, 0)}
           </div>
         </div>
-        <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+        <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5">
           <div className="fine-print">Origination Gaps</div>
-          <div className="mt-3 text-3xl font-semibold text-white">
+          <div className="mt-3 text-3xl font-semibold text-[hsl(var(--foreground))]">
             {formatNumber(
               summary.lowOriginationCoverageDeals + summary.processProtectionGapDeals,
               0
             )}
           </div>
-          <p className="mt-2 text-sm text-slate-400">
+          <p className="mt-2 text-sm text-[hsl(var(--muted))]">
             {formatNumber(summary.directOrProprietaryDeals, 0)} direct/proprietary and{' '}
             {formatNumber(summary.liveExclusivityDeals, 0)} live exclusivity
           </p>
@@ -111,10 +113,10 @@ export function DealPipelinePanel({ summary }: Props) {
         {summary.byStage.map((item) => (
           <div
             key={item.stage}
-            className="rounded-[20px] border border-white/10 bg-slate-950/35 p-4"
+            className="rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4"
           >
             <div className="fine-print">{formatDealStage(item.stage)}</div>
-            <div className="mt-3 text-2xl font-semibold text-white">
+            <div className="mt-3 text-2xl font-semibold text-[hsl(var(--foreground))]">
               {formatNumber(item.count, 0)}
             </div>
           </div>
@@ -127,19 +129,21 @@ export function DealPipelinePanel({ summary }: Props) {
             <Link
               key={deal.id}
               href={`/admin/deals/${deal.id}`}
-              className="flex items-center justify-between gap-4 rounded-[24px] border border-white/10 bg-white/[0.03] p-5 transition hover:border-white/20 hover:bg-white/[0.05]"
+              className="flex items-center justify-between gap-4 rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5 transition hover:border-[hsl(var(--border-strong))] hover:bg-[hsl(var(--surface-hover))]"
             >
               <div className="max-w-2xl">
                 <div className="flex flex-wrap items-center gap-3">
-                  <div className="text-sm font-semibold text-white">{deal.title}</div>
+                  <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
+                    {deal.title}
+                  </div>
                   <Badge tone={getDealStageTone(deal.stage)}>{formatDealStage(deal.stage)}</Badge>
                   <Badge>{deal.dealCode}</Badge>
                 </div>
-                <p className="mt-2 text-sm leading-7 text-slate-400">
+                <p className="mt-2 text-sm leading-7 text-[hsl(var(--muted))]">
                   {deal.nextAction ?? 'No next action set yet.'}
                 </p>
               </div>
-              <div className="grid gap-2 text-right text-sm text-slate-300 md:grid-cols-3 md:text-left">
+              <div className="grid gap-2 text-right text-sm text-[hsl(var(--foreground-muted))] md:grid-cols-3 md:text-left">
                 <div>
                   <div className="fine-print">Close</div>
                   <div className="mt-1">{formatDate(deal.targetCloseDate)}</div>
@@ -229,7 +233,7 @@ export function DealPipelinePanel({ summary }: Props) {
             </Link>
           ))
         ) : (
-          <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5 text-sm text-slate-400">
+          <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5 text-sm text-[hsl(var(--muted))]">
             No deals are tracked yet. Open the first execution record from `/admin/deals`.
           </div>
         )}

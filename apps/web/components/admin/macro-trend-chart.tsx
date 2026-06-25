@@ -115,11 +115,11 @@ export function MacroTrendChart({ title, subtitle, series }: Props) {
     <Card className="space-y-4">
       <div>
         <div className="eyebrow">{subtitle}</div>
-        <h3 className="mt-2 text-2xl font-semibold text-white">{title}</h3>
+        <h3 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">{title}</h3>
       </div>
       {series.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-3 rounded-[22px] border border-dashed border-white/10 bg-white/[0.02] px-6 py-10 text-center">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04]">
+        <div className="flex flex-col items-center justify-center gap-3 rounded-[22px] border border-dashed border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-6 py-10 text-center">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))]">
             <svg
               viewBox="0 0 24 24"
               className="h-5 w-5 stroke-slate-400"
@@ -133,7 +133,7 @@ export function MacroTrendChart({ title, subtitle, series }: Props) {
               <path d="M14 7h7v7" />
             </svg>
           </div>
-          <div className="text-sm font-medium text-slate-200">No data yet</div>
+          <div className="text-sm font-medium text-[hsl(var(--foreground))]">No data yet</div>
           <div className="fine-print max-w-[260px]">
             Macro trend series will appear here once indicators are published.
           </div>
@@ -147,7 +147,7 @@ export function MacroTrendChart({ title, subtitle, series }: Props) {
             return (
               <div
                 key={s.seriesKey}
-                className="space-y-2 rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+                className="space-y-2 rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4"
               >
                 <div className="flex items-center justify-between">
                   <div className="fine-print">{s.label}</div>
@@ -155,7 +155,7 @@ export function MacroTrendChart({ title, subtitle, series }: Props) {
                     {directionArrow(s.changeDirection)} {Math.abs(s.changePct).toFixed(1)}%
                   </Badge>
                 </div>
-                <div className="text-2xl font-semibold text-white">
+                <div className="text-2xl font-semibold text-[hsl(var(--foreground))]">
                   {s.latestValue.toFixed(s.unit === '%' ? 1 : 2)}
                   {s.unit}
                 </div>
@@ -206,11 +206,11 @@ export function MacroTrendChart({ title, subtitle, series }: Props) {
                     />
                   </svg>
                 ) : (
-                  <div className="flex h-16 items-center justify-center text-xs text-slate-500">
+                  <div className="flex h-16 items-center justify-center text-xs text-[hsl(var(--muted))]">
                     Insufficient data points
                   </div>
                 )}
-                <div className="flex justify-between text-xs text-slate-500">
+                <div className="flex justify-between text-xs text-[hsl(var(--muted))]">
                   <span>{s.points[0]?.date ?? '\u2014'}</span>
                   <span>{s.points[s.points.length - 1]?.date ?? '\u2014'}</span>
                 </div>

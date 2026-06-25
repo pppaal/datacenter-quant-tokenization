@@ -23,7 +23,7 @@ export function DealCloseProbabilityHistoryPanel({ history }: Props) {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="eyebrow">Execution Momentum History</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">
+          <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
             How execution certainty is moving
           </h2>
         </div>
@@ -45,28 +45,30 @@ export function DealCloseProbabilityHistoryPanel({ history }: Props) {
       <div className="grid gap-4 md:grid-cols-4">
         <div className="metric-card">
           <div className="fine-print">Latest P(Close)</div>
-          <div className="mt-3 text-3xl font-semibold text-white">
+          <div className="mt-3 text-3xl font-semibold text-[hsl(var(--foreground))]">
             {latest ? `${formatNumber(latest.scorePct, 0)}%` : 'N/A'}
           </div>
         </div>
         <div className="metric-card">
           <div className="fine-print">Latest Readiness</div>
-          <div className="mt-3 text-3xl font-semibold text-white">
+          <div className="mt-3 text-3xl font-semibold text-[hsl(var(--foreground))]">
             {latest ? `${formatNumber(latest.readinessScorePct, 0)}%` : 'N/A'}
           </div>
         </div>
         <div className="metric-card">
           <div className="fine-print">Current Blockers</div>
-          <div className="mt-3 text-3xl font-semibold text-white">
+          <div className="mt-3 text-3xl font-semibold text-[hsl(var(--foreground))]">
             {latest ? formatNumber(latest.blockerCount, 0) : '0'}
           </div>
         </div>
         <div className="metric-card">
           <div className="fine-print">Latest Snapshot</div>
-          <div className="mt-3 text-base font-semibold text-white">
+          <div className="mt-3 text-base font-semibold text-[hsl(var(--foreground))]">
             {formatDate(latest?.createdAt ?? null)}
           </div>
-          <p className="mt-2 text-sm text-slate-400">{latest?.reason ?? 'No snapshots yet.'}</p>
+          <p className="mt-2 text-sm text-[hsl(var(--muted))]">
+            {latest?.reason ?? 'No snapshots yet.'}
+          </p>
         </div>
       </div>
 
@@ -78,15 +80,19 @@ export function DealCloseProbabilityHistoryPanel({ history }: Props) {
             return (
               <div
                 key={point.id}
-                className="flex items-start justify-between gap-4 rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+                className="flex items-start justify-between gap-4 rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5"
               >
                 <div className="max-w-2xl">
                   <div className="flex flex-wrap items-center gap-3">
-                    <div className="text-sm font-semibold text-white">{point.reason}</div>
+                    <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
+                      {point.reason}
+                    </div>
                     <Badge tone={getBandTone(point.band)}>{point.band.toLowerCase()}</Badge>
                     <Badge>{point.stage.toLowerCase().replaceAll('_', ' ')}</Badge>
                   </div>
-                  <p className="mt-3 text-sm leading-7 text-slate-300">{point.headline}</p>
+                  <p className="mt-3 text-sm leading-7 text-[hsl(var(--foreground-muted))]">
+                    {point.headline}
+                  </p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {point.flags.length > 0 ? (
                       point.flags.map((flag) => <Badge key={flag}>{flag}</Badge>)
@@ -95,7 +101,7 @@ export function DealCloseProbabilityHistoryPanel({ history }: Props) {
                     )}
                   </div>
                 </div>
-                <div className="grid gap-2 text-right text-sm text-slate-300 md:grid-cols-4 md:text-left">
+                <div className="grid gap-2 text-right text-sm text-[hsl(var(--foreground-muted))] md:grid-cols-4 md:text-left">
                   <div>
                     <div className="fine-print">As Of</div>
                     <div className="mt-1">{formatDate(point.createdAt)}</div>
@@ -124,7 +130,7 @@ export function DealCloseProbabilityHistoryPanel({ history }: Props) {
             );
           })
         ) : (
-          <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5 text-sm text-slate-400">
+          <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5 text-sm text-[hsl(var(--muted))]">
             No execution momentum snapshots yet. The first new stage, task, risk, bid, lender, or
             negotiation update will start the trend.
           </div>

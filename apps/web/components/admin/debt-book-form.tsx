@@ -269,12 +269,12 @@ export function DebtBookForm({
         {facilities.map((facility, index) => (
           <div
             key={facility.localId}
-            className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+            className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5"
           >
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <div className="eyebrow">Debt Facility {index + 1}</div>
-                <h4 className="mt-2 text-xl font-semibold text-white">
+                <h4 className="mt-2 text-xl font-semibold text-[hsl(var(--foreground))]">
                   {facility.lenderName || facility.facilityType || `Facility ${index + 1}`}
                 </h4>
               </div>
@@ -462,18 +462,18 @@ export function DebtBookForm({
                   }
                 />
               </label>
-              <div className="rounded-2xl border border-white/10 bg-slate-950/30 px-4 py-3 text-sm text-slate-400 md:col-span-2 xl:col-span-3">
+              <div className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-4 py-3 text-sm text-[hsl(var(--muted))] md:col-span-2 xl:col-span-3">
                 Add explicit draws if construction funding does not follow a generic two-draw
                 pattern. If no facility is entered, valuation falls back to the synthetic
                 underwriting debt package.
               </div>
             </div>
 
-            <div className="mt-5 rounded-[22px] border border-white/10 bg-slate-950/25 p-4">
+            <div className="mt-5 rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <div className="eyebrow">Debt Draw Schedule</div>
-                  <div className="mt-1 text-sm text-slate-400">
+                  <div className="mt-1 text-sm text-[hsl(var(--muted))]">
                     Year and month timing for each debt draw.
                   </div>
                 </div>
@@ -486,10 +486,12 @@ export function DebtBookForm({
                 {facility.draws.map((draw, drawIndex) => (
                   <div
                     key={draw.localId}
-                    className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"
+                    className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4"
                   >
                     <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div className="text-sm font-medium text-white">Draw {drawIndex + 1}</div>
+                      <div className="text-sm font-medium text-[hsl(var(--foreground))]">
+                        Draw {drawIndex + 1}
+                      </div>
                       <Button
                         type="button"
                         variant="secondary"
@@ -578,8 +580,8 @@ export function DebtBookForm({
         ))}
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-4">
-        <p className="max-w-3xl text-sm text-slate-400">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[hsl(var(--border))] pt-4">
+        <p className="max-w-3xl text-sm text-[hsl(var(--muted))]">
           Capture actual debt terms so DSCR, reserve requirement, and ending balance stop leaning on
           the synthetic facility fallback.
         </p>

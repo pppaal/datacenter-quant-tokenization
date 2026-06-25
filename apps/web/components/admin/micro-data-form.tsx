@@ -165,7 +165,9 @@ export function MicroDataForm({
         <section className="space-y-4">
           <div>
             <div className="eyebrow">Power Micro</div>
-            <h4 className="mt-2 text-xl font-semibold text-white">Utility and energy certainty</h4>
+            <h4 className="mt-2 text-xl font-semibold text-[hsl(var(--foreground))]">
+              Utility and energy certainty
+            </h4>
           </div>
           <div className="grid gap-4 md:grid-cols-2">{powerFields.map(renderField)}</div>
         </section>
@@ -173,7 +175,7 @@ export function MicroDataForm({
         <section className="space-y-4">
           <div>
             <div className="eyebrow">Permit Micro</div>
-            <h4 className="mt-2 text-xl font-semibold text-white">
+            <h4 className="mt-2 text-xl font-semibold text-[hsl(var(--foreground))]">
               Approval timing and blocker tracking
             </h4>
           </div>
@@ -192,7 +194,7 @@ export function MicroDataForm({
       <section className="space-y-4">
         <div>
           <div className="eyebrow">Legal Micro</div>
-          <h4 className="mt-2 text-xl font-semibold text-white">
+          <h4 className="mt-2 text-xl font-semibold text-[hsl(var(--foreground))]">
             Ownership, liens, and planning constraints
           </h4>
         </div>
@@ -220,8 +222,8 @@ export function MicroDataForm({
         </div>
       </section>
 
-      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-4">
-        <p className="max-w-2xl text-sm text-slate-400">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[hsl(var(--border))] pt-4">
+        <p className="max-w-2xl text-sm text-[hsl(var(--muted))]">
           This panel captures the non-lease micro layer for site, entitlement, building-services,
           and legal cleanliness without changing the broader intake form. Monetary inputs are
           entered in {inputCurrency} and normalized to KRW internally. Editing any row sends it back

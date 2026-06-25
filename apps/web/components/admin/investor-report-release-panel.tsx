@@ -96,18 +96,20 @@ function ReleaseRow({ report }: { report: InvestorReportRecord }) {
 
   return (
     <div
-      className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+      className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4"
       data-testid="investor-report-release-row"
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <div className="text-sm font-semibold text-white">{report.title}</div>
+            <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
+              {report.title}
+            </div>
             <Badge tone={toneForRelease(report.releaseStatus)}>
               {report.releaseStatus.toLowerCase().replaceAll('_', ' ')}
             </Badge>
           </div>
-          <div className="mt-1 text-xs text-slate-400">
+          <div className="mt-1 text-xs text-[hsl(var(--muted))]">
             {report.reportType.toLowerCase().replaceAll('_', ' ')} /{' '}
             {formatDateValue(report.periodEnd)}
             {report.investor ? ` / ${report.investor.name}` : ''}
@@ -174,14 +176,14 @@ export function InvestorReportReleasePanel({ reports }: InvestorReportReleasePan
   return (
     <Card>
       <div className="eyebrow">Investor Reporting Release Workflow</div>
-      <p className="mt-3 text-sm leading-7 text-slate-400">
+      <p className="mt-3 text-sm leading-7 text-[hsl(var(--muted))]">
         Keep LP communications in controlled draft, internal review, ready, and released states.
         Released reports stay immutable in the workflow and preserve their publication timestamp.
       </p>
 
       <div className="mt-6 space-y-3">
         {unreleasedReports.length === 0 ? (
-          <div className="rounded-[20px] border border-dashed border-white/10 bg-white/[0.02] p-4 text-sm text-slate-400">
+          <div className="rounded-[20px] border border-dashed border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4 text-sm text-[hsl(var(--muted))]">
             No unreleased investor report is currently staged.
           </div>
         ) : (

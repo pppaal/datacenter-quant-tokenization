@@ -39,10 +39,10 @@ export function AssetSustainabilityPanel({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="eyebrow">ESG, Insurance &amp; LP Terms</div>
-          <h3 className="mt-2 text-2xl font-semibold text-white">
+          <h3 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
             Risk transfer, carbon footprint, and side-letter obligations
           </h3>
-          <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400">
+          <p className="mt-3 max-w-3xl text-sm leading-7 text-[hsl(var(--muted))]">
             Insurance program limits, Scope 1-3 carbon footprint, and LP side-letter terms that bind
             this asset.
           </p>
@@ -65,15 +65,15 @@ export function AssetSustainabilityPanel({
             {insurancePolicies.map((policy) => (
               <div
                 key={policy.id}
-                className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4"
+                className="rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="text-sm font-semibold text-white">
+                  <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
                     {toSentenceCase(policy.policyType)} / {policy.insurer}
                   </div>
                   <Badge tone={policyTone(policy.status)}>{toSentenceCase(policy.status)}</Badge>
                 </div>
-                <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-slate-400">
+                <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-[hsl(var(--muted))]">
                   <div>Limit: {money(policy.coverageKrw)}</div>
                   <div>Premium: {money(policy.premiumKrw)}</div>
                   <div>Deductible: {money(policy.deductibleKrw)}</div>
@@ -91,15 +91,15 @@ export function AssetSustainabilityPanel({
               {carbonRecords.map((record) => (
                 <div
                   key={record.id}
-                  className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4"
+                  className="rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="text-sm font-semibold text-white">
+                    <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
                       Scope {record.scope} / {toSentenceCase(record.category)}
                     </div>
                     <Badge tone="neutral">FY{record.vintageYear}</Badge>
                   </div>
-                  <div className="mt-2 text-xs text-slate-400">
+                  <div className="mt-2 text-xs text-[hsl(var(--muted))]">
                     {formatNumber(record.tco2e, 1)} tCO2e
                     {record.methodology ? ` / ${record.methodology}` : ''}
                     {record.verifiedBy ? ` / verified ${record.verifiedBy}` : ''}
@@ -115,16 +115,20 @@ export function AssetSustainabilityPanel({
               {sideLetters.map((letter) => (
                 <div
                   key={letter.id}
-                  className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4"
+                  className="rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="text-sm font-semibold text-white">{letter.lpName}</div>
+                    <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
+                      {letter.lpName}
+                    </div>
                     <div className="flex gap-2">
                       <Badge tone="neutral">{toSentenceCase(letter.termCategory)}</Badge>
                       {letter.mfnEligible ? <Badge tone="warn">MFN</Badge> : null}
                     </div>
                   </div>
-                  <p className="mt-2 text-xs leading-6 text-slate-400">{letter.termSummary}</p>
+                  <p className="mt-2 text-xs leading-6 text-[hsl(var(--muted))]">
+                    {letter.termSummary}
+                  </p>
                 </div>
               ))}
             </>

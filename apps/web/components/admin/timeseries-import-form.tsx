@@ -66,7 +66,7 @@ export function TimeseriesImportForm() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="eyebrow">Time-series import</div>
-          <p className="mt-1 text-sm text-slate-400">
+          <p className="mt-1 text-sm text-[hsl(var(--muted))]">
             Paste CSV from a REB / MOLIT historical Excel, an internally-tracked rate sheet, or a
             cross-market vendor pull. Header row required: target / market / indicatorKey /
             observationDate / value (rest optional). Re-import is safe — rows upsert on (market,
@@ -79,7 +79,7 @@ export function TimeseriesImportForm() {
         value={csv}
         onChange={(e) => setCsv(e.target.value)}
         rows={14}
-        className="w-full rounded-[16px] border border-white/10 bg-slate-950/60 p-3 font-mono text-xs text-slate-100"
+        className="w-full rounded-[16px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-3 font-mono text-xs text-[hsl(var(--foreground))]"
         spellCheck={false}
       />
       <div className="flex flex-wrap gap-3">
@@ -100,20 +100,20 @@ export function TimeseriesImportForm() {
           <div className="mb-1 font-semibold text-[hsl(var(--warning))]">
             {errors.length} parse errors
           </div>
-          <ul className="space-y-1 text-slate-300">
+          <ul className="space-y-1 text-[hsl(var(--foreground-muted))]">
             {errors.slice(0, 8).map((e) => (
               <li key={`${e.line}:${e.reason}`}>
                 line {e.line}: {e.reason}
               </li>
             ))}
             {errors.length > 8 ? (
-              <li className="text-slate-500">… +{errors.length - 8} more</li>
+              <li className="text-[hsl(var(--muted))]">… +{errors.length - 8} more</li>
             ) : null}
           </ul>
         </div>
       ) : null}
       {summary ? (
-        <div className="grid grid-cols-2 gap-2 rounded-[16px] border border-white/10 bg-white/[0.03] p-3 text-xs md:grid-cols-5">
+        <div className="grid grid-cols-2 gap-2 rounded-[16px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-3 text-xs md:grid-cols-5">
           <Stat label="Macro inserted" value={summary.macroInserted} />
           <Stat label="Macro updated" value={summary.macroUpdated} />
           <Stat label="Market inserted" value={summary.marketInserted} />
@@ -128,8 +128,8 @@ export function TimeseriesImportForm() {
 function Stat({ label, value }: { label: string; value: number }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wide text-slate-500">{label}</div>
-      <div className="mt-1 text-lg font-semibold text-white">{value}</div>
+      <div className="text-[10px] uppercase tracking-wide text-[hsl(var(--muted))]">{label}</div>
+      <div className="mt-1 text-lg font-semibold text-[hsl(var(--foreground))]">{value}</div>
     </div>
   );
 }

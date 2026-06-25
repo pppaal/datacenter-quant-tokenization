@@ -16,10 +16,10 @@ export function AssetInsightsPanel({ aiInsights, pipelineProjects }: Props) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="eyebrow">AI Insights &amp; Supply Pipeline</div>
-          <h3 className="mt-2 text-2xl font-semibold text-white">
+          <h3 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
             Model-generated signals and competing supply
           </h3>
-          <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400">
+          <p className="mt-3 max-w-3xl text-sm leading-7 text-[hsl(var(--muted))]">
             AI-surfaced risks and market signals alongside competing development pipeline that could
             pressure stabilized rents at exit.
           </p>
@@ -33,15 +33,15 @@ export function AssetInsightsPanel({ aiInsights, pipelineProjects }: Props) {
             {aiInsights.map((insight) => (
               <div
                 key={insight.id}
-                className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4"
+                className="rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="text-sm font-semibold text-white">
+                  <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
                     {insight.title ?? toSentenceCase(insight.insightType)}
                   </div>
                   <Badge tone="neutral">{insight.modelName}</Badge>
                 </div>
-                <p className="mt-2 text-xs leading-6 text-slate-400">{insight.content}</p>
+                <p className="mt-2 text-xs leading-6 text-[hsl(var(--muted))]">{insight.content}</p>
               </div>
             ))}
           </div>
@@ -53,15 +53,17 @@ export function AssetInsightsPanel({ aiInsights, pipelineProjects }: Props) {
             {pipelineProjects.map((project) => (
               <div
                 key={project.id}
-                className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4"
+                className="rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="text-sm font-semibold text-white">{project.projectName}</div>
+                  <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
+                    {project.projectName}
+                  </div>
                   {project.stageLabel ? (
                     <Badge tone="neutral">{toSentenceCase(project.stageLabel)}</Badge>
                   ) : null}
                 </div>
-                <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-slate-400">
+                <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-[hsl(var(--muted))]">
                   <div>{project.region ?? project.market}</div>
                   <div>Delivery: {formatDate(project.expectedDeliveryDate)}</div>
                   {project.expectedPowerMw !== null ? (

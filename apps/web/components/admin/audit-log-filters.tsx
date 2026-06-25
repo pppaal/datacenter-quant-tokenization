@@ -65,8 +65,10 @@ export function AuditLogFilters({ initial }: Props) {
     <Card className="space-y-5">
       <div>
         <div className="eyebrow">Filters</div>
-        <h2 className="mt-2 text-xl font-semibold text-white">Refine the audit ledger</h2>
-        <p className="mt-1 text-sm text-slate-400">
+        <h2 className="mt-2 text-xl font-semibold text-[hsl(var(--foreground))]">
+          Refine the audit ledger
+        </h2>
+        <p className="mt-1 text-sm text-[hsl(var(--muted))]">
           Combine actor, entity, severity, and date range to scope the audit feed.
         </p>
       </div>

@@ -78,7 +78,7 @@ export function AdminIdentityBindingForm({
 
   return (
     <div
-      className="mt-4 space-y-3 rounded-[20px] border border-white/10 bg-slate-950/40 p-4"
+      className="mt-4 space-y-3 rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4"
       data-testid="identity-binding-form"
     >
       <div className="fine-print">Map to canonical operator</div>
@@ -113,7 +113,7 @@ export function AdminIdentityBindingForm({
           {submitting === 'clear' ? 'Clearing...' : 'Clear Mapping'}
         </Button>
       </div>
-      <div className="text-xs leading-6 text-slate-500">
+      <div className="text-xs leading-6 text-[hsl(var(--muted))]">
         Snapshot: {emailSnapshot ?? identifierSnapshot}. Mapping this subject makes review
         attribution and operator analytics user-bound.
       </div>

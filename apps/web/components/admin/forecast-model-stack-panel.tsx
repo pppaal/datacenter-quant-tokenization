@@ -23,7 +23,9 @@ export function ForecastModelStackPanel({ stack }: { stack: ForecastModelStack }
       <div className="flex items-center justify-between gap-4">
         <div>
           <div className="eyebrow">Forecast Stack</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">Beyond Monte Carlo</h2>
+          <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
+            Beyond Monte Carlo
+          </h2>
         </div>
         <Badge tone={stack.summary.liveModels > 0 ? 'good' : 'neutral'}>
           {formatNumber(stack.summary.liveModels, 0)} live /{' '}
@@ -50,10 +52,13 @@ export function ForecastModelStackPanel({ stack }: { stack: ForecastModelStack }
             'Counterparty statement histories'
           ]
         ].map(([label, value, subline]) => (
-          <div key={label} className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+          <div
+            key={label}
+            className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5"
+          >
             <div className="fine-print">{label}</div>
-            <div className="mt-3 text-3xl font-semibold text-white">{value}</div>
-            <p className="mt-2 text-sm text-slate-400">{subline}</p>
+            <div className="mt-3 text-3xl font-semibold text-[hsl(var(--foreground))]">{value}</div>
+            <p className="mt-2 text-sm text-[hsl(var(--muted))]">{subline}</p>
           </div>
         ))}
       </div>
@@ -62,12 +67,14 @@ export function ForecastModelStackPanel({ stack }: { stack: ForecastModelStack }
         {stack.models.map((model) => (
           <div
             key={model.key}
-            className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+            className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5"
           >
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <div className="text-lg font-semibold text-white">{model.label}</div>
-                <div className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">
+                <div className="text-lg font-semibold text-[hsl(var(--foreground))]">
+                  {model.label}
+                </div>
+                <div className="mt-1 text-xs uppercase tracking-[0.18em] text-[hsl(var(--muted))]">
                   #{model.ranking} / {model.family} / {model.cadence}
                 </div>
               </div>
@@ -79,35 +86,39 @@ export function ForecastModelStackPanel({ stack }: { stack: ForecastModelStack }
                 <Badge>{formatNumber(model.readinessScore, 0)} / 100</Badge>
               </div>
             </div>
-            <p className="mt-4 text-sm leading-7 text-slate-300">{model.currentUse}</p>
+            <p className="mt-4 text-sm leading-7 text-[hsl(var(--foreground-muted))]">
+              {model.currentUse}
+            </p>
             <div className="mt-4 grid gap-3 md:grid-cols-2">
-              <div className="rounded-[20px] border border-white/10 bg-slate-950/35 p-4">
+              <div className="rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4">
                 <div className="fine-print">Required Data</div>
-                <div className="mt-3 space-y-1 text-xs text-slate-500">
+                <div className="mt-3 space-y-1 text-xs text-[hsl(var(--muted))]">
                   {model.requiredData.map((item) => (
                     <div key={item}>{item}</div>
                   ))}
                 </div>
               </div>
-              <div className="rounded-[20px] border border-white/10 bg-slate-950/35 p-4">
+              <div className="rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4">
                 <div className="fine-print">Next Unlock</div>
-                <div className="mt-3 space-y-1 text-xs text-slate-500">
+                <div className="mt-3 space-y-1 text-xs text-[hsl(var(--muted))]">
                   {model.unlockCriteria.map((item) => (
                     <div key={item}>{item}</div>
                   ))}
                 </div>
               </div>
             </div>
-            <div className="mt-4 rounded-[20px] border border-white/10 bg-slate-950/35 p-4">
+            <div className="mt-4 rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="fine-print">Validation</div>
-                <div className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                <div className="text-xs uppercase tracking-[0.18em] text-[hsl(var(--muted))]">
                   {model.validationScore === null
                     ? 'not yet validated'
                     : `${formatNumber(model.validationScore, 0)} / 100`}
                 </div>
               </div>
-              <p className="mt-3 text-sm leading-7 text-slate-300">{model.rankingNote}</p>
+              <p className="mt-3 text-sm leading-7 text-[hsl(var(--foreground-muted))]">
+                {model.rankingNote}
+              </p>
             </div>
           </div>
         ))}

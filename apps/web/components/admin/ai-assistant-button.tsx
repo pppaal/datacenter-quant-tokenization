@@ -106,7 +106,7 @@ export function AiAssistantButton({ kind, entityId }: Props) {
           {loading ? 'Thinking...' : buttonLabel}
         </Button>
         {result?.kind === 'research' && result.data.cached ? (
-          <span className="text-xs uppercase tracking-wide text-slate-400">Cached</span>
+          <span className="text-xs uppercase tracking-wide text-[hsl(var(--muted))]">Cached</span>
         ) : null}
       </div>
 
@@ -117,10 +117,12 @@ export function AiAssistantButton({ kind, entityId }: Props) {
       ) : null}
 
       {result?.kind === 'research' ? (
-        <div className="rounded-md border border-slate-700/60 bg-slate-900/60 p-5 space-y-4">
-          <p className="text-sm leading-relaxed text-slate-100">{result.data.summary}</p>
+        <div className="rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5 space-y-4">
+          <p className="text-sm leading-relaxed text-[hsl(var(--foreground))]">
+            {result.data.summary}
+          </p>
           {result.data.bullets.length > 0 ? (
-            <ul className="list-disc space-y-1 pl-5 text-sm text-slate-200">
+            <ul className="list-disc space-y-1 pl-5 text-sm text-[hsl(var(--foreground))]">
               {result.data.bullets.map((bullet, index) => (
                 <li key={`${index}-${bullet.slice(0, 12)}`}>{bullet}</li>
               ))}
@@ -138,19 +140,23 @@ function DealScorePanel({ data }: { data: DealScoreResult }) {
   const tone = scoreRingTone(data.score);
 
   return (
-    <div className="rounded-md border border-slate-700/60 bg-slate-900/60 p-5 space-y-5">
+    <div className="rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5 space-y-5">
       <div className="flex flex-wrap items-center gap-6">
         <div
-          className={`flex h-24 w-24 items-center justify-center rounded-full border-4 ${tone.ring} bg-slate-950/60`}
+          className={`flex h-24 w-24 items-center justify-center rounded-full border-4 ${tone.ring} bg-[hsl(var(--panel-alt))]`}
         >
           <div className="text-center">
             <div className={`text-3xl font-semibold ${tone.text}`}>{data.score}</div>
-            <div className="text-[10px] uppercase tracking-wider text-slate-400">of 100</div>
+            <div className="text-[10px] uppercase tracking-wider text-[hsl(var(--muted))]">
+              of 100
+            </div>
           </div>
         </div>
         <div className="flex-1 min-w-[200px]">
           <div className={`text-xs uppercase tracking-wide ${tone.text}`}>{tone.label}</div>
-          <p className="mt-1 text-sm leading-relaxed text-slate-100">{data.reasoning}</p>
+          <p className="mt-1 text-sm leading-relaxed text-[hsl(var(--foreground))]">
+            {data.reasoning}
+          </p>
         </div>
       </div>
 

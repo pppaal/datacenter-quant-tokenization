@@ -125,7 +125,7 @@ export function SponsorForms({ sponsors }: { sponsors: Sponsor[] }) {
       <Card className="space-y-4">
         <div>
           <div className="eyebrow">Add sponsor</div>
-          <p className="mt-1 text-sm text-slate-400">
+          <p className="mt-1 text-sm text-[hsl(var(--muted))]">
             Top-of-funnel: capture the manager identity. Prior-deal entries below build the track
             record the IM card aggregates (avg multiple, avg IRR, vintage range).
           </p>
@@ -193,7 +193,7 @@ export function SponsorForms({ sponsors }: { sponsors: Sponsor[] }) {
                 value={sponsorForm.notes}
                 onChange={(e) => setSponsorForm((p) => ({ ...p, notes: e.target.value }))}
                 rows={2}
-                className="w-full rounded-[14px] border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white"
+                className="w-full rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2 text-sm text-[hsl(var(--foreground))]"
               />
             </Field>
           </div>
@@ -209,7 +209,7 @@ export function SponsorForms({ sponsors }: { sponsors: Sponsor[] }) {
         <Card className="space-y-4">
           <div>
             <div className="eyebrow">Add prior deal</div>
-            <p className="mt-1 text-sm text-slate-400">
+            <p className="mt-1 text-sm text-[hsl(var(--muted))]">
               One row per realized or active deal. EXITED deals with disclosed equity multiple +
               gross IRR are what the IM averages — LIVE deals show on the timeline but don't skew
               the track record.
@@ -220,7 +220,7 @@ export function SponsorForms({ sponsors }: { sponsors: Sponsor[] }) {
               <select
                 value={dealForm.sponsorId}
                 onChange={(e) => setDealForm((p) => ({ ...p, sponsorId: e.target.value }))}
-                className="w-full rounded-[14px] border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white"
+                className="w-full rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2 text-sm text-[hsl(var(--foreground))]"
               >
                 {sponsors.map((s) => (
                   <option key={s.id} value={s.id}>
@@ -257,7 +257,7 @@ export function SponsorForms({ sponsors }: { sponsors: Sponsor[] }) {
               <select
                 value={dealForm.assetClass}
                 onChange={(e) => setDealForm((p) => ({ ...p, assetClass: e.target.value }))}
-                className="w-full rounded-[14px] border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white"
+                className="w-full rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2 text-sm text-[hsl(var(--foreground))]"
               >
                 <option value="">—</option>
                 {Object.values(AssetClass).map((v) => (
@@ -303,7 +303,7 @@ export function SponsorForms({ sponsors }: { sponsors: Sponsor[] }) {
               <select
                 value={dealForm.status}
                 onChange={(e) => setDealForm((p) => ({ ...p, status: e.target.value }))}
-                className="w-full rounded-[14px] border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white"
+                className="w-full rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2 text-sm text-[hsl(var(--foreground))]"
               >
                 {STATUSES.map((s) => (
                   <option key={s} value={s}>
@@ -327,7 +327,9 @@ export function SponsorForms({ sponsors }: { sponsors: Sponsor[] }) {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="mb-1 block text-xs uppercase tracking-wide text-slate-500">{label}</label>
+      <label className="mb-1 block text-xs uppercase tracking-wide text-[hsl(var(--muted))]">
+        {label}
+      </label>
       {children}
     </div>
   );

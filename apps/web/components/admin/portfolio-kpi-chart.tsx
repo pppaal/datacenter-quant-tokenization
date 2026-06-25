@@ -48,11 +48,11 @@ export function PortfolioKpiChart({ title, subtitle, rows, maxValue }: Props) {
     <Card className="space-y-4">
       <div>
         <div className="eyebrow">{subtitle}</div>
-        <h3 className="mt-2 text-2xl font-semibold text-white">{title}</h3>
+        <h3 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">{title}</h3>
       </div>
       {rows.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-3 rounded-[22px] border border-dashed border-white/10 bg-white/[0.02] px-6 py-10 text-center">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04]">
+        <div className="flex flex-col items-center justify-center gap-3 rounded-[22px] border border-dashed border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-6 py-10 text-center">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))]">
             <svg
               viewBox="0 0 24 24"
               className="h-5 w-5 stroke-slate-400"
@@ -68,7 +68,7 @@ export function PortfolioKpiChart({ title, subtitle, rows, maxValue }: Props) {
               <path d="M22 20H2" />
             </svg>
           </div>
-          <div className="text-sm font-medium text-slate-200">No KPI rows yet</div>
+          <div className="text-sm font-medium text-[hsl(var(--foreground))]">No KPI rows yet</div>
           <div className="fine-print max-w-[260px]">
             KPI performance against target will render here once portfolio metrics are ingested.
           </div>
@@ -82,12 +82,12 @@ export function PortfolioKpiChart({ title, subtitle, rows, maxValue }: Props) {
             return (
               <div
                 key={row.assetCode}
-                className="group space-y-1 rounded-[16px] px-2 py-1.5 transition-colors hover:bg-white/[0.03]"
+                className="group space-y-1 rounded-[16px] px-2 py-1.5 transition-colors hover:bg-[hsl(var(--surface-hover))]"
               >
                 <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium text-white">{row.assetName}</span>
+                  <span className="font-medium text-[hsl(var(--foreground))]">{row.assetName}</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-slate-400">
+                    <span className="text-[hsl(var(--muted))]">
                       {row.value.toFixed(1)}
                       {row.unit}
                     </span>
@@ -96,7 +96,7 @@ export function PortfolioKpiChart({ title, subtitle, rows, maxValue }: Props) {
                     </Badge>
                   </div>
                 </div>
-                <div className="relative h-6 overflow-visible rounded-full bg-white/[0.06]">
+                <div className="relative h-6 overflow-visible rounded-full bg-[hsl(var(--panel-alt))]">
                   <div className="absolute inset-0 overflow-hidden rounded-full">
                     <div
                       className={`h-full rounded-full transition-[width] duration-700 ease-out ${getBarColor(tone)} ${getBarGlow(tone)}`}
@@ -104,11 +104,11 @@ export function PortfolioKpiChart({ title, subtitle, rows, maxValue }: Props) {
                     />
                   </div>
                   <div
-                    className="pointer-events-none absolute -top-1 bottom-[-4px] w-0.5 bg-white/50 transition-opacity group-hover:bg-white/80"
+                    className="pointer-events-none absolute -top-1 bottom-[-4px] w-0.5 bg-[hsl(var(--border-strong))] transition-opacity group-hover:bg-[hsl(var(--foreground-muted))]"
                     style={{ left: `${targetPct}%` }}
                   />
                   <div
-                    className="pointer-events-none absolute -top-4 -translate-x-1/2 whitespace-nowrap rounded-full border border-white/10 bg-slate-900/80 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-slate-300 opacity-80 transition-opacity group-hover:opacity-100"
+                    className="pointer-events-none absolute -top-4 -translate-x-1/2 whitespace-nowrap rounded-full border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-[hsl(var(--foreground-muted))] opacity-80 transition-opacity group-hover:opacity-100"
                     style={{ left: `${targetPct}%` }}
                   >
                     Tgt {row.target.toFixed(1)}

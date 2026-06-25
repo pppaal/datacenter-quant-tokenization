@@ -97,7 +97,7 @@ export function ReadinessActionPanel({ assetId }: { assetId: string }) {
           {feedback.message}
         </div>
       ) : null}
-      <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4 text-sm leading-7 text-slate-400 md:col-span-3">
+      <div className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4 text-sm leading-7 text-[hsl(var(--muted))] md:col-span-3">
         Readiness remains registry-only. Valuations, files, and extracted text stay offchain while
         the workflow stages a deterministic packet fingerprint and anchors document integrity hashes
         onchain.

@@ -22,7 +22,7 @@ export function AdminNav({ items }: { items: AdminNavItem[] }) {
             'rounded-full border px-4 py-2 text-sm transition',
             pathname === item.href || pathname.startsWith(`${item.href}/`)
               ? 'border-accent/40 bg-accent/10 text-accent shadow-[0_0_0_1px_rgba(34,211,238,0.12)]'
-              : 'border-white/10 bg-white/[0.03] text-slate-300 hover:border-white/20 hover:bg-white/[0.06] hover:text-white'
+              : 'border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] text-[hsl(var(--foreground-muted))] hover:border-[hsl(var(--border-strong))] hover:bg-[hsl(var(--surface-hover))] hover:text-[hsl(var(--foreground))]'
           )}
         >
           {item.label}

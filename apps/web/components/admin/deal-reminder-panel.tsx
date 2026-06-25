@@ -33,7 +33,7 @@ export function DealReminderPanel({ summary }: Props) {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="eyebrow">Deal Reminders</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">
+          <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
             What needs operator attention now
           </h2>
         </div>
@@ -43,33 +43,33 @@ export function DealReminderPanel({ summary }: Props) {
       </div>
 
       <div className="mt-5 grid gap-4 md:grid-cols-5">
-        <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+        <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5">
           <div className="fine-print">Overdue Deals</div>
-          <div className="mt-3 text-3xl font-semibold text-white">
+          <div className="mt-3 text-3xl font-semibold text-[hsl(var(--foreground))]">
             {formatNumber(summary.overdueDeals, 0)}
           </div>
         </div>
-        <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+        <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5">
           <div className="fine-print">Due Soon</div>
-          <div className="mt-3 text-3xl font-semibold text-white">
+          <div className="mt-3 text-3xl font-semibold text-[hsl(var(--foreground))]">
             {formatNumber(summary.dueSoonDeals, 0)}
           </div>
         </div>
-        <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+        <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5">
           <div className="fine-print">Missing Next Action</div>
-          <div className="mt-3 text-3xl font-semibold text-white">
+          <div className="mt-3 text-3xl font-semibold text-[hsl(var(--foreground))]">
             {formatNumber(summary.missingNextActionDeals, 0)}
           </div>
         </div>
-        <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+        <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5">
           <div className="fine-print">Stale</div>
-          <div className="mt-3 text-3xl font-semibold text-white">
+          <div className="mt-3 text-3xl font-semibold text-[hsl(var(--foreground))]">
             {formatNumber(summary.staleDeals, 0)}
           </div>
         </div>
-        <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+        <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5">
           <div className="fine-print">Archived</div>
-          <div className="mt-3 text-3xl font-semibold text-white">
+          <div className="mt-3 text-3xl font-semibold text-[hsl(var(--foreground))]">
             {formatNumber(summary.archivedDeals, 0)}
           </div>
         </div>
@@ -81,11 +81,13 @@ export function DealReminderPanel({ summary }: Props) {
             <Link
               key={deal.id}
               href={`/admin/deals/${deal.id}`}
-              className="flex items-center justify-between gap-4 rounded-[24px] border border-white/10 bg-white/[0.03] p-5 transition hover:border-white/20 hover:bg-white/[0.05]"
+              className="flex items-center justify-between gap-4 rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5 transition hover:border-[hsl(var(--border-strong))] hover:bg-[hsl(var(--surface-hover))]"
             >
               <div className="max-w-2xl">
                 <div className="flex flex-wrap items-center gap-3">
-                  <div className="text-sm font-semibold text-white">{deal.title}</div>
+                  <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
+                    {deal.title}
+                  </div>
                   <Badge>{deal.dealCode}</Badge>
                   <Badge
                     tone={
@@ -100,9 +102,11 @@ export function DealReminderPanel({ summary }: Props) {
                   </Badge>
                   {deal.isStale ? <Badge tone="warn">stale</Badge> : null}
                 </div>
-                <p className="mt-3 text-sm leading-7 text-slate-300">{deal.reminder}</p>
+                <p className="mt-3 text-sm leading-7 text-[hsl(var(--foreground-muted))]">
+                  {deal.reminder}
+                </p>
               </div>
-              <div className="grid gap-2 text-right text-sm text-slate-300 md:grid-cols-3 md:text-left">
+              <div className="grid gap-2 text-right text-sm text-[hsl(var(--foreground-muted))] md:grid-cols-3 md:text-left">
                 <div>
                   <div className="fine-print">Next Due</div>
                   <div className="mt-1">{formatDate(deal.nextDueAt ?? deal.nextActionAt)}</div>
@@ -119,7 +123,7 @@ export function DealReminderPanel({ summary }: Props) {
             </Link>
           ))
         ) : (
-          <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5 text-sm text-slate-400">
+          <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5 text-sm text-[hsl(var(--muted))]">
             No immediate deal reminders right now.
           </div>
         )}
