@@ -245,6 +245,57 @@ test('per-LP IRR/TVPI/DPI/RVPI correct on a known dated single-LP fixture', () =
   assert.ok(lp.irrPct != null && Math.abs(lp.irrPct - 30) < 0.5, `IRR ${lp.irrPct}`);
 });
 
+test('an underwater (negative) NAV floors RVPI/TVPI at 0, never negative', () => {
+  // Fund debt swamps assets → negative NAV. RVPI/TVPI are value-to-paid-in
+  // multiples and cannot be negative under LP limited liability; they floor at 0
+  // (the loss shows up as TVPI well below 1, not as a negative multiple).
+  const nav = navFixture(-50_000_000_000);
+  const pcap = buildPcap({
+    commitments: [
+      {
+        investorId: 'lp1',
+        commitmentKrw: 100_000_000_000,
+        calledKrw: 100_000_000_000,
+        distributedKrw: 0
+      }
+    ],
+    fundCapitalCalls: [{ date: daysAgo(365), amountKrw: 100_000_000_000 }],
+    fundDistributions: [],
+    nav
+  });
+
+  const lp = pcap.investors[0]!;
+  // Signed NAV share is preserved for display, but the multiples floor at 0.
+  assert.ok(lp.navShareKrw < 0, 'signed NAV share stays negative for display');
+  assert.equal(lp.rvpiMultiple, 0);
+  assert.equal(lp.tvpiMultiple, 0);
+  assert.equal(lp.dpiMultiple, 0);
+  // Fund-level totals floor too.
+  assert.equal(pcap.totals.rvpiMultiple, 0);
+  assert.equal(pcap.totals.tvpiMultiple, 0);
+});
+
+test('a partial loss keeps TVPI below 1 but non-negative', () => {
+  // Called 100, distributed 10, NAV 30 → TVPI = (10 + 30)/100 = 0.4, RVPI 0.3.
+  const nav = navFixture(30_000_000_000);
+  const pcap = buildPcap({
+    commitments: [
+      {
+        investorId: 'lp1',
+        commitmentKrw: 100_000_000_000,
+        calledKrw: 100_000_000_000,
+        distributedKrw: 10_000_000_000
+      }
+    ],
+    fundCapitalCalls: [{ date: daysAgo(365), amountKrw: 100_000_000_000 }],
+    fundDistributions: [{ date: daysAgo(30), amountKrw: 10_000_000_000 }],
+    nav
+  });
+  const lp = pcap.investors[0]!;
+  assert.ok(Math.abs(lp.rvpiMultiple - 0.3) < 1e-6);
+  assert.ok(Math.abs(lp.tvpiMultiple - 0.4) < 1e-6);
+});
+
 test('per-LP allocations override pro-rata when present', () => {
   const nav = navFixture(0);
   const pcap = buildPcap({
