@@ -91,6 +91,60 @@ test('computeLeaseRollSummary computes WALT + weighted rent + MTM gap', () => {
   assert.ok(Math.abs(summary.markToMarketGapPct! - 9.5238095) < 1e-3);
 });
 
+test('computeLeaseRollSummary leaseCount reconciles with the active (underwritten) set', () => {
+  const summary = computeLeaseRollSummary([
+    {
+      tenantName: 'Active',
+      leasedKw: 10,
+      startYear: 1,
+      termYears: 10,
+      baseRatePerKwKrw: 220_000,
+      annualEscalationPct: 2,
+      status: 'ACTIVE'
+    },
+    {
+      tenantName: 'Expired',
+      leasedKw: 50,
+      startYear: 1,
+      termYears: 5,
+      baseRatePerKwKrw: 100_000,
+      annualEscalationPct: 2,
+      status: 'EXPIRED'
+    },
+    {
+      tenantName: 'Terminated',
+      leasedKw: 30,
+      startYear: 1,
+      termYears: 3,
+      baseRatePerKwKrw: 90_000,
+      annualEscalationPct: 2,
+      status: 'TERMINATED'
+    }
+  ]);
+  // WALT/rent/capacity reflect only the single ACTIVE lease, so leaseCount
+  // must too — not the full 3-lease roster including EXPIRED/TERMINATED.
+  assert.equal(summary.totalLeasedKw, 10);
+  assert.equal(summary.weightedAvgTermYears, 10);
+  assert.equal(summary.leaseCount, 1);
+});
+
+test('computeLeaseRollSummary leaseCount is 0 when every lease is excluded', () => {
+  const summary = computeLeaseRollSummary([
+    {
+      tenantName: 'Dead',
+      leasedKw: 10,
+      startYear: 1,
+      termYears: 5,
+      baseRatePerKwKrw: 100_000,
+      annualEscalationPct: 2,
+      status: 'CANCELLED'
+    }
+  ]);
+  assert.equal(summary.totalLeasedKw, 0);
+  // Zero-capacity WALT must not be backed by a phantom lease count.
+  assert.equal(summary.leaseCount, 0);
+});
+
 test('computeCapitalStructure: weighted rate by commitment + drawn pct', () => {
   const cs = computeCapitalStructure([
     {

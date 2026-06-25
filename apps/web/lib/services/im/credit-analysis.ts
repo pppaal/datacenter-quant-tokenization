@@ -66,7 +66,14 @@ export function buildIncomeStatement(stmt: FinancialStatementLike): IncomeStatem
   const revenueKrw = toNum(stmt.revenueKrw);
   const ebitdaKrw = toNum(stmt.ebitdaKrw);
   const interestExpenseKrw = toNum(stmt.interestExpenseKrw);
-  const ebitdaMarginPct = revenueKrw && ebitdaKrw ? (ebitdaKrw / revenueKrw) * 100 : null;
+  // Margin is defined whenever both lines are present and revenue is non-zero.
+  // A legitimately reported zero (or negative) EBITDA is a real data point —
+  // a `revenueKrw && ebitdaKrw` truthiness gate would mis-report break-even
+  // (EBITDA = 0) as "Insufficient inputs" instead of 0%.
+  const ebitdaMarginPct =
+    revenueKrw !== null && revenueKrw !== 0 && ebitdaKrw !== null
+      ? (ebitdaKrw / revenueKrw) * 100
+      : null;
   const preTaxIncomeProxyKrw =
     ebitdaKrw !== null && interestExpenseKrw !== null ? ebitdaKrw - interestExpenseKrw : null;
   return {

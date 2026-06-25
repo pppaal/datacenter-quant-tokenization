@@ -159,9 +159,19 @@ export function buildTaxWalk(
   const total = rows.reduce((s, r) => s + r.totalCashOutflowKrw, 0);
   // Effective drag on pre-tax gross profit (NOI + exit gain over basis).
   // This is what an LP feels on equity returns, not a flow+stock blend.
+  //
+  // The drag numerator is TAX only: the insurance row is an operating expense
+  // (already inside the pro-forma NOI), so folding it into the "tax drag"
+  // metric would both overstate the tax burden and double-count insurance
+  // against gross profit. It stays in `totalCashOutflowKrw` and as a row.
+  const taxOutflowKrw = rows.reduce(
+    (s, r) => (r.category === 'insurance' ? s : s + r.totalCashOutflowKrw),
+    0
+  );
   const grossProfitKrw =
     inputs.cumulativeNoiKrw + Math.max(0, inputs.exitValueKrw - inputs.purchasePriceKrw);
-  const effectiveDragOnGrossPct = grossProfitKrw > 0 ? (total / grossProfitKrw) * 100 : null;
+  const effectiveDragOnGrossPct =
+    grossProfitKrw > 0 ? (taxOutflowKrw / grossProfitKrw) * 100 : null;
 
   const basisSource = inputs.basisSource ?? 'purchase_price';
   const basisCaveat =
