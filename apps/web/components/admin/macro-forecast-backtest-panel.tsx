@@ -9,6 +9,17 @@ function toneForHitRate(hitRatePct: number) {
   return 'neutral' as const;
 }
 
+// Skill vs a naive persistence baseline: > 0 beats "do nothing", < 0 is worse.
+function toneForSkill(skillPct: number | null) {
+  if (skillPct === null) return 'neutral' as const;
+  if (skillPct > 0) return 'good' as const;
+  return 'warn' as const;
+}
+
+function formatSkill(skillPct: number | null) {
+  return skillPct === null ? 'n/a' : `${formatNumber(skillPct, 1)}%`;
+}
+
 export function MacroForecastBacktestPanel({ backtest }: { backtest: MacroForecastBacktest }) {
   return (
     <Card>
@@ -20,16 +31,22 @@ export function MacroForecastBacktestPanel({ backtest }: { backtest: MacroForeca
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-400">
             Uses a simple momentum forecast on macro factor values and compares the predicted next
-            reading against the realized next reading. This is the first numeric forecast validation
-            layer.
+            reading against the realized next reading, then scores that momentum forecast against a
+            naive random-walk (persistence) baseline. Direction hit rate alone is not skill — the
+            skill vs naive figure is whether the forecast beats simply assuming no change.
           </p>
         </div>
-        <Badge tone={toneForHitRate(backtest.summary.directionalHitRatePct)}>
-          {formatNumber(backtest.summary.directionalHitRatePct, 1)}% direction hit
-        </Badge>
+        <div className="flex flex-wrap gap-2">
+          <Badge tone={toneForHitRate(backtest.summary.directionalHitRatePct)}>
+            {formatNumber(backtest.summary.directionalHitRatePct, 1)}% direction hit
+          </Badge>
+          <Badge tone={toneForSkill(backtest.summary.skillVsNaivePct)}>
+            {formatSkill(backtest.summary.skillVsNaivePct)} skill vs naive
+          </Badge>
+        </div>
       </div>
 
-      <div className="mt-5 grid gap-4 md:grid-cols-4">
+      <div className="mt-5 grid gap-4 md:grid-cols-5">
         {[
           [
             'Markets',
@@ -50,6 +67,11 @@ export function MacroForecastBacktestPanel({ backtest }: { backtest: MacroForeca
             'Mean Error',
             formatNumber(backtest.summary.meanAbsoluteErrorPct, 1) + '%',
             'Average normalized next-value error'
+          ],
+          [
+            'Skill vs Naive',
+            formatSkill(backtest.summary.skillVsNaivePct),
+            'Forecast error reduction vs a no-change persistence baseline'
           ]
         ].map(([label, value, subline]) => (
           <div key={label} className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
@@ -81,6 +103,9 @@ export function MacroForecastBacktestPanel({ backtest }: { backtest: MacroForeca
                     {formatNumber(market.directionalHitRatePct, 1)}% direction
                   </Badge>
                   <Badge>{formatNumber(market.meanAbsoluteErrorPct, 1)}% mae</Badge>
+                  <Badge tone={toneForSkill(market.skillVsNaivePct)}>
+                    {formatSkill(market.skillVsNaivePct)} skill
+                  </Badge>
                 </div>
               </div>
 

@@ -29,6 +29,9 @@ export function PortfolioOptimizationPanel({ lab }: Props) {
       <div className="eyebrow">Portfolio Optimization Lab</div>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <Badge tone="warn">{lab.methodologyLabel}</Badge>
+        {lab.isHeuristicScreen ? (
+          <Badge tone="warn">heuristic screen · not mean-variance</Badge>
+        ) : null}
         <Badge
           tone={
             lab.objectiveScorePct >= 68 ? 'good' : lab.objectiveScorePct >= 52 ? 'warn' : 'danger'
@@ -43,6 +46,7 @@ export function PortfolioOptimizationPanel({ lab }: Props) {
         ) : null}
       </div>
       <p className="mt-3 text-sm leading-7 text-slate-300">{lab.summary}</p>
+      <p className="mt-2 text-xs leading-6 text-slate-500">{lab.methodology}</p>
 
       <div className="mt-5 grid gap-4 xl:grid-cols-2">
         <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">

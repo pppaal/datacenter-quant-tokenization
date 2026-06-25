@@ -71,6 +71,8 @@ test('forecast ensemble policy ranks models by use case from readiness and valid
         sampleCount: 20,
         directionalHitRatePct: 68,
         meanAbsoluteErrorPct: 7,
+        baselineMeanAbsoluteErrorPct: 9,
+        skillVsNaivePct: 22.2,
         latestActualDate: '2026-03-01T00:00:00.000Z'
       },
       markets: []
