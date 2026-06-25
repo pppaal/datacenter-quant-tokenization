@@ -6,15 +6,7 @@ import {
   runResearchWorkspaceSync,
   type ResearchSyncScope
 } from '@/lib/services/research/workspace';
-
-function isAuthorized(request: Request, expectedToken: string) {
-  const bearer = request.headers
-    .get('authorization')
-    ?.replace(/^Bearer\s+/i, '')
-    .trim();
-  const headerToken = request.headers.get('x-ops-cron-token')?.trim();
-  return bearer === expectedToken || headerToken === expectedToken;
-}
+import { isOpsRequestAuthorized } from '../_auth';
 
 /**
  * Shared handler for the scoped research-sync cron variants. Each route
@@ -31,7 +23,7 @@ export async function runScopedResearchSyncRoute(
     return NextResponse.json({ error: 'OPS_CRON_TOKEN is not configured' }, { status: 503 });
   }
 
-  if (!isAuthorized(request, expectedToken)) {
+  if (!isOpsRequestAuthorized(request, expectedToken)) {
     return NextResponse.json({ error: 'Unauthorized cron trigger' }, { status: 401 });
   }
 

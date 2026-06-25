@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { recordAuditEvent } from '@/lib/services/audit';
 import { genericErrorResponse } from '@/lib/security/error-response';
 import { evictExpiredAiResponses } from '@/lib/services/ai/response-cache';
+import { isOpsRequestAuthorized } from '../_auth';
 
 /**
  * Cron-triggered eviction of expired AiResponseCache rows.
@@ -18,21 +19,12 @@ import { evictExpiredAiResponses } from '@/lib/services/ai/response-cache';
  * pattern with every other ops cron route.
  */
 
-function isAuthorized(request: Request, expectedToken: string) {
-  const bearer = request.headers
-    .get('authorization')
-    ?.replace(/^Bearer\s+/i, '')
-    .trim();
-  const headerToken = request.headers.get('x-ops-cron-token')?.trim();
-  return bearer === expectedToken || headerToken === expectedToken;
-}
-
 export async function POST(request: Request) {
   const expectedToken = process.env.OPS_CRON_TOKEN?.trim();
   if (!expectedToken) {
     return NextResponse.json({ error: 'OPS_CRON_TOKEN is not configured' }, { status: 503 });
   }
-  if (!isAuthorized(request, expectedToken)) {
+  if (!isOpsRequestAuthorized(request, expectedToken)) {
     return NextResponse.json({ error: 'Unauthorized cron trigger' }, { status: 401 });
   }
 

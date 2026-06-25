@@ -4,15 +4,7 @@ import { genericErrorResponse } from '@/lib/security/error-response';
 import { backfillDeltas, runQuarterlyAggregate } from '@/lib/services/quarterly-report/aggregator';
 import { generateNarrative } from '@/lib/services/quarterly-report/narrative';
 import { LAWD_CODES } from '@/lib/services/quarterly-report/connectors/molit-transactions';
-
-function isAuthorized(request: Request, expectedToken: string) {
-  const bearer = request.headers
-    .get('authorization')
-    ?.replace(/^Bearer\s+/i, '')
-    .trim();
-  const headerToken = request.headers.get('x-ops-cron-token')?.trim();
-  return bearer === expectedToken || headerToken === expectedToken;
-}
+import { isOpsRequestAuthorized } from '../_auth';
 
 function previousQuarter(): string {
   const d = new Date();
@@ -33,7 +25,7 @@ export async function POST(request: Request) {
   if (!expectedToken) {
     return NextResponse.json({ error: 'OPS_CRON_TOKEN is not configured' }, { status: 503 });
   }
-  if (!isAuthorized(request, expectedToken)) {
+  if (!isOpsRequestAuthorized(request, expectedToken)) {
     return NextResponse.json({ error: 'Unauthorized cron trigger' }, { status: 401 });
   }
 

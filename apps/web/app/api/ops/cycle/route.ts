@@ -2,15 +2,7 @@ import { NextResponse } from 'next/server';
 import { recordAuditEvent } from '@/lib/services/audit';
 import { genericErrorResponse } from '@/lib/security/error-response';
 import { runOpsCycle } from '@/lib/services/ops-worker';
-
-function isAuthorized(request: Request, expectedToken: string) {
-  const bearer = request.headers
-    .get('authorization')
-    ?.replace(/^Bearer\s+/i, '')
-    .trim();
-  const headerToken = request.headers.get('x-ops-cron-token')?.trim();
-  return bearer === expectedToken || headerToken === expectedToken;
-}
+import { isOpsRequestAuthorized } from '../_auth';
 
 export async function POST(request: Request) {
   const expectedToken = process.env.OPS_CRON_TOKEN?.trim();
@@ -18,7 +10,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'OPS_CRON_TOKEN is not configured' }, { status: 503 });
   }
 
-  if (!isAuthorized(request, expectedToken)) {
+  if (!isOpsRequestAuthorized(request, expectedToken)) {
     return NextResponse.json({ error: 'Unauthorized cron trigger' }, { status: 401 });
   }
 
