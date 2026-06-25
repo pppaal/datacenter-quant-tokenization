@@ -46,6 +46,70 @@ test('buildScenarioDiff returns empty when no scenarios', () => {
   assert.deepEqual(buildScenarioDiff([]), []);
 });
 
+test('buildScenarioDiff does not duplicate a scenario as both Base and Bull/Bear', () => {
+  // No scenario named "base": the base fallback must not collapse onto the
+  // matched bull/bear and emit the same scenario twice with a 0% delta.
+  const rows = buildScenarioDiff([
+    {
+      name: 'Bull Case',
+      valuationKrw: 120,
+      impliedYieldPct: 5.0,
+      exitCapRatePct: 4.5,
+      debtServiceCoverage: 1.6,
+      notes: 'bull'
+    },
+    {
+      name: 'Bear Case',
+      valuationKrw: 80,
+      impliedYieldPct: 6.0,
+      exitCapRatePct: 5.5,
+      debtServiceCoverage: 1.1,
+      notes: 'bear'
+    }
+  ]);
+  // Exactly one row per distinct scenario — never the same valuation twice.
+  const valuations = rows.map((r) => r.valuationKrw);
+  assert.equal(new Set(valuations).size, valuations.length);
+  // Bull and Bear must each appear exactly once.
+  assert.equal(rows.filter((r) => r.name === 'Bull').length, 1);
+  assert.equal(rows.filter((r) => r.name === 'Bear').length, 1);
+});
+
+test('buildScenarioDiff keeps an unnamed middle scenario as Base for named bull/bear', () => {
+  const rows = buildScenarioDiff([
+    {
+      name: 'Upside',
+      valuationKrw: 110,
+      impliedYieldPct: 5.0,
+      exitCapRatePct: 4.5,
+      debtServiceCoverage: 1.6,
+      notes: 'bull'
+    },
+    {
+      name: 'Core View',
+      valuationKrw: 100,
+      impliedYieldPct: 5.5,
+      exitCapRatePct: 5.0,
+      debtServiceCoverage: 1.4,
+      notes: 'mid'
+    },
+    {
+      name: 'Downside',
+      valuationKrw: 90,
+      impliedYieldPct: 6.0,
+      exitCapRatePct: 5.5,
+      debtServiceCoverage: 1.1,
+      notes: 'bear'
+    }
+  ]);
+  // 'Upside' matches bull, 'Downside' matches bear; the unnamed 'Core View'
+  // must anchor Base (delta 0) rather than a bull/bear being reused.
+  const base = rows.find((r) => r.name === 'Base');
+  assert.ok(base);
+  assert.equal(base!.valuationKrw, 100);
+  assert.equal(base!.valueDeltaPct, 0);
+});
+
 test('buildSensitivityGrid maps shockLabel "row / col" to 2D cells', () => {
   const grid = buildSensitivityGrid({
     id: 'r1',

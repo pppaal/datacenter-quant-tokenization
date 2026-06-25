@@ -34,18 +34,61 @@ function findByPrefix(scenarios: ScenarioLike[], needle: string): ScenarioLike |
 
 export function buildScenarioDiff(scenarios: ScenarioLike[]): ScenarioDiffRow[] {
   if (scenarios.length === 0) return [];
-  const base =
-    findByPrefix(scenarios, 'base') ?? scenarios[Math.min(1, scenarios.length - 1)] ?? scenarios[0];
-  if (!base) return [];
 
+  // Assign each role (Bull / Base / Bear) to a DISTINCT scenario. Prefer the
+  // explicit name match; for any role left unmatched, fall back to a valuation
+  // ranking over the not-yet-claimed scenarios (highest = Bull, lowest = Bear,
+  // remaining = Base). The previous positional `scenarios[Math.min(1, ...)]`
+  // base fallback could collapse Base onto the matched Bull/Bear — emitting
+  // the same scenario twice with a meaningless 0% delta.
+  const claimed = new Set<ScenarioLike>();
+  const claim = (row: ScenarioLike | null): ScenarioLike | null => {
+    if (!row || claimed.has(row)) return null;
+    claimed.add(row);
+    return row;
+  };
+
+  let bull = claim(findByPrefix(scenarios, 'bull'));
+  let bear = claim(findByPrefix(scenarios, 'bear'));
+  let base = claim(findByPrefix(scenarios, 'base'));
+
+  // Fill unmatched roles from the remaining scenarios by valuation rank.
+  const unclaimedByValue = scenarios
+    .filter((s) => !claimed.has(s))
+    .sort((a, b) => b.valuationKrw - a.valuationKrw);
+  if (!bull && unclaimedByValue.length > 0) bull = claim(unclaimedByValue.shift()!);
+  if (!bear && unclaimedByValue.length > 0) bear = claim(unclaimedByValue.pop()!);
+  if (!base && unclaimedByValue.length > 0) base = claim(unclaimedByValue.shift()!);
+
+  // When fewer than three distinct scenarios exist, Base anchors on whatever
+  // remains (bull/bear first, else the only scenario) so deltas stay defined.
+  const resolvedBase = base ?? bull ?? bear ?? scenarios[0]!;
+  return emitRows(bull, resolvedBase, bear);
+}
+
+function emitRows(
+  bull: ScenarioLike | null,
+  base: ScenarioLike,
+  bear: ScenarioLike | null
+): ScenarioDiffRow[] {
   const order: Array<{ key: string; row: ScenarioLike | null }> = [
-    { key: 'Bull', row: findByPrefix(scenarios, 'bull') },
+    { key: 'Bull', row: bull },
     { key: 'Base', row: base },
-    { key: 'Bear', row: findByPrefix(scenarios, 'bear') }
+    { key: 'Bear', row: bear }
   ];
 
+  // Never emit the same scenario object under two labels (e.g. a single- or
+  // two-scenario set where Base falls back onto Bull/Bear). Dedupe by first
+  // occurrence in display order so Bull/Bear stay visible; every delta is
+  // still computed relative to `base`.
+  const seen = new Set<ScenarioLike>();
   return order
-    .filter(({ row }) => row !== null)
+    .filter(({ row }) => {
+      if (row === null) return false;
+      if (seen.has(row)) return false;
+      seen.add(row);
+      return true;
+    })
     .map(({ key, row }) => {
       const r = row!;
       const valueDeltaPct =
