@@ -55,7 +55,10 @@ export class LiveKosisMacroMicro implements MacroMicroConnector {
     return {
       ...base,
       // Override only the figures KOSIS authoritatively provides; submarket
-      // rent/vacancy/cap stay with R-ONE (or the mock baseline).
+      // rent/vacancy/cap stay with the mock baseline (no live KOSIS series for
+      // those yet). Because those survey fields remain synthetic even when this
+      // adapter is keyed, resolveConnectorMode() reports macroMicro as 'mock'
+      // so provenance never labels them 'live' (see registry.ts).
       constructionCostPerSqmKrw: Number.isFinite(constructionPerSqm)
         ? Math.round(constructionPerSqm)
         : base.constructionCostPerSqmKrw,
