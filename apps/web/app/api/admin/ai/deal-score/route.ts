@@ -1,80 +1,35 @@
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import { prisma } from '@/lib/db/prisma';
-import {
-  getRequestIpAddress,
-  resolveVerifiedAdminActorFromHeaders
-} from '@/lib/security/admin-request';
-import { recordAuditEvent } from '@/lib/services/audit';
-import { hasRequiredAdminRole } from '@/lib/security/admin-auth';
-import { genericErrorResponse } from '@/lib/security/error-response';
+import { withAdminApi } from '@/lib/security/with-admin-api';
 import { OpenAIConfigurationError, scoreDeal } from '@/lib/services/ai-assistant';
 
-export async function POST(request: Request) {
-  const actor = await resolveVerifiedAdminActorFromHeaders(request.headers, prisma, {
-    allowBasic: false,
-    requireActiveSeat: true
-  });
-  const ipAddress = getRequestIpAddress(request.headers);
+const DealScoreSchema = z.object({
+  dealId: z.string().trim().min(1)
+});
 
-  if (!actor || !hasRequiredAdminRole(actor.role, 'ANALYST')) {
-    return NextResponse.json({ error: 'Admin analyst session required.' }, { status: 401 });
-  }
-
-  let dealId: string | null = null;
-
-  try {
-    const body = (await request.json().catch(() => null)) as { dealId?: unknown } | null;
-    if (!body || typeof body.dealId !== 'string' || body.dealId.trim().length === 0) {
-      return NextResponse.json({ error: 'dealId is required.' }, { status: 400 });
-    }
-    dealId = body.dealId.trim();
-
-    const result = await scoreDeal(dealId, prisma);
-
-    await recordAuditEvent({
-      actorIdentifier: actor.identifier,
-      actorRole: actor.role,
-      action: 'ai.deal.score',
-      entityType: 'Deal',
-      entityId: dealId,
-      requestPath: new URL(request.url).pathname,
-      requestMethod: request.method,
-      ipAddress,
-      metadata: {
-        score: result.score,
-        redFlagCount: result.redFlags.length,
-        greenFlagCount: result.greenFlags.length
+export const POST = withAdminApi({
+  requiredRole: 'ANALYST',
+  bodySchema: DealScoreSchema,
+  auditAction: 'ai.deal.score',
+  auditEntityType: 'Deal',
+  auditEntityIdFromBody: (body) => body.dealId,
+  async handler({ body, requestId }) {
+    try {
+      const result = await scoreDeal(body.dealId, prisma);
+      return NextResponse.json(result);
+    } catch (error) {
+      // OpenAIConfigurationError is a known operator-facing config signal
+      // (503); its message is safe to surface. Everything else is unexpected
+      // and is rethrown so `withAdminApi` genericizes it (generic message +
+      // requestId) instead of leaking raw/Prisma internals to the client.
+      if (error instanceof OpenAIConfigurationError) {
+        return NextResponse.json(
+          { error: error.message },
+          { status: 503, headers: { 'X-Request-Id': requestId } }
+        );
       }
-    });
-
-    return NextResponse.json(result);
-  } catch (error) {
-    const isConfigError = error instanceof OpenAIConfigurationError;
-
-    await recordAuditEvent({
-      actorIdentifier: actor.identifier,
-      actorRole: actor.role,
-      action: 'ai.deal.score',
-      entityType: 'Deal',
-      entityId: dealId,
-      requestPath: new URL(request.url).pathname,
-      requestMethod: request.method,
-      ipAddress,
-      statusLabel: 'FAILED',
-      metadata: {
-        error: error instanceof Error ? error.message : 'Failed to score deal'
-      }
-    });
-
-    // OpenAIConfigurationError is a known operator-facing config signal (503);
-    // its message is safe to surface. Everything else is unexpected and is
-    // genericized so raw/Prisma internals don't leak to the client.
-    if (isConfigError) {
-      return NextResponse.json({ error: (error as Error).message }, { status: 503 });
+      throw error;
     }
-    return genericErrorResponse(error, {
-      status: 500,
-      context: { route: '/api/admin/ai/deal-score', dealId }
-    });
   }
-}
+});

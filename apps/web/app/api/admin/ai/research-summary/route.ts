@@ -1,79 +1,35 @@
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import { prisma } from '@/lib/db/prisma';
-import {
-  getRequestIpAddress,
-  resolveVerifiedAdminActorFromHeaders
-} from '@/lib/security/admin-request';
-import { recordAuditEvent } from '@/lib/services/audit';
-import { hasRequiredAdminRole } from '@/lib/security/admin-auth';
-import { genericErrorResponse } from '@/lib/security/error-response';
+import { withAdminApi } from '@/lib/security/with-admin-api';
 import { OpenAIConfigurationError, summarizeResearchSnapshot } from '@/lib/services/ai-assistant';
 
-export async function POST(request: Request) {
-  const actor = await resolveVerifiedAdminActorFromHeaders(request.headers, prisma, {
-    allowBasic: false,
-    requireActiveSeat: true
-  });
-  const ipAddress = getRequestIpAddress(request.headers);
+const ResearchSummarySchema = z.object({
+  snapshotId: z.string().trim().min(1)
+});
 
-  if (!actor || !hasRequiredAdminRole(actor.role, 'ANALYST')) {
-    return NextResponse.json({ error: 'Admin analyst session required.' }, { status: 401 });
-  }
-
-  let snapshotId: string | null = null;
-
-  try {
-    const body = (await request.json().catch(() => null)) as { snapshotId?: unknown } | null;
-    if (!body || typeof body.snapshotId !== 'string' || body.snapshotId.trim().length === 0) {
-      return NextResponse.json({ error: 'snapshotId is required.' }, { status: 400 });
-    }
-    snapshotId = body.snapshotId.trim();
-
-    const result = await summarizeResearchSnapshot(snapshotId, prisma);
-
-    await recordAuditEvent({
-      actorIdentifier: actor.identifier,
-      actorRole: actor.role,
-      action: 'ai.research.summarize',
-      entityType: 'ResearchSnapshot',
-      entityId: snapshotId,
-      requestPath: new URL(request.url).pathname,
-      requestMethod: request.method,
-      ipAddress,
-      metadata: {
-        cached: result.cached,
-        bulletCount: result.bullets.length
+export const POST = withAdminApi({
+  requiredRole: 'ANALYST',
+  bodySchema: ResearchSummarySchema,
+  auditAction: 'ai.research.summarize',
+  auditEntityType: 'ResearchSnapshot',
+  auditEntityIdFromBody: (body) => body.snapshotId,
+  async handler({ body, requestId }) {
+    try {
+      const result = await summarizeResearchSnapshot(body.snapshotId, prisma);
+      return NextResponse.json(result);
+    } catch (error) {
+      // OpenAIConfigurationError is a known operator-facing config signal
+      // (503); its message is safe to surface. Everything else is unexpected
+      // and is rethrown so `withAdminApi` genericizes it (generic message +
+      // requestId) instead of leaking raw/Prisma internals to the client.
+      if (error instanceof OpenAIConfigurationError) {
+        return NextResponse.json(
+          { error: error.message },
+          { status: 503, headers: { 'X-Request-Id': requestId } }
+        );
       }
-    });
-
-    return NextResponse.json(result);
-  } catch (error) {
-    const isConfigError = error instanceof OpenAIConfigurationError;
-
-    await recordAuditEvent({
-      actorIdentifier: actor.identifier,
-      actorRole: actor.role,
-      action: 'ai.research.summarize',
-      entityType: 'ResearchSnapshot',
-      entityId: snapshotId,
-      requestPath: new URL(request.url).pathname,
-      requestMethod: request.method,
-      ipAddress,
-      statusLabel: 'FAILED',
-      metadata: {
-        error: error instanceof Error ? error.message : 'Failed to summarize research snapshot'
-      }
-    });
-
-    // OpenAIConfigurationError is a known operator-facing config signal (503);
-    // its message is safe to surface. Everything else is unexpected and is
-    // genericized so raw/Prisma internals don't leak to the client.
-    if (isConfigError) {
-      return NextResponse.json({ error: (error as Error).message }, { status: 503 });
+      throw error;
     }
-    return genericErrorResponse(error, {
-      status: 500,
-      context: { route: '/api/admin/ai/research-summary', snapshotId }
-    });
   }
-}
+});

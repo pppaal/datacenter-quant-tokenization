@@ -63,6 +63,13 @@ export type WithAdminApiOptions<
   handler: (
     context: WithAdminApiContext<TSchema extends ZodTypeAny ? z.infer<TSchema> : undefined, TParams>
   ) => Promise<HandlerResult>;
+  /**
+   * Test-only seam: override the actor resolver. Defaults to the real
+   * header/DB-backed resolver. Production callers never set this; it exists so
+   * unit tests can deterministically exercise the 401 (no actor) vs 403
+   * (insufficient role) branches without standing up a database.
+   */
+  resolveActor?: (request: Request) => Promise<AdminActor | null>;
 };
 
 /**
@@ -102,10 +109,12 @@ export function withAdminApi<
   return async (request: Request, routeContext?: WithAdminApiRouteContext<TParams>) => {
     const requestId = readRequestId(request);
     return withRequestContext({ requestId }, async () => {
-      const actor = await resolveVerifiedAdminActorFromHeaders(request.headers, prisma, {
-        allowBasic: options.allowBasic ?? false,
-        requireActiveSeat: options.requireActiveSeat ?? true
-      });
+      const actor = options.resolveActor
+        ? await options.resolveActor(request)
+        : await resolveVerifiedAdminActorFromHeaders(request.headers, prisma, {
+            allowBasic: options.allowBasic ?? false,
+            requireActiveSeat: options.requireActiveSeat ?? true
+          });
       if (!actor) {
         return NextResponse.json(
           { error: 'Active operator session required.' },
