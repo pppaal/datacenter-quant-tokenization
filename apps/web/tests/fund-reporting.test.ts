@@ -40,6 +40,46 @@ test('updateInvestorReportRelease stamps review metadata and publish timestamp o
   assert.equal(result.fundId, 'fund-1');
 });
 
+test('editing an already-released report does not overwrite the original releaser', async () => {
+  let capturedUpdate: any = null;
+
+  await updateInvestorReportRelease(
+    'report-3',
+    {
+      // No releaseStatus change — just editing the review notes.
+      reviewNotes: 'Added a clarifying footnote'
+    },
+    {
+      // A different actor with no userId edits the released report.
+      userId: null,
+      identifier: 'ops@nexusseoul.local'
+    },
+    {
+      investorReport: {
+        findUnique: async () => ({
+          id: 'report-3',
+          fundId: 'fund-1',
+          releaseStatus: 'RELEASED',
+          publishedAt: new Date('2026-04-01'),
+          reviewedAt: new Date('2026-03-30')
+        }),
+        update: async (args: any) => {
+          capturedUpdate = args;
+          return { id: 'report-3', fundId: 'fund-1', ...args.data };
+        }
+      }
+    } as any
+  );
+
+  assert.equal(capturedUpdate.data.releaseStatus, 'RELEASED');
+  // releasedById and reviewedById must be left UNCHANGED (undefined), not set to
+  // null / the editing actor — the original attribution is preserved.
+  assert.equal(capturedUpdate.data.releasedById, undefined);
+  assert.equal(capturedUpdate.data.reviewedById, undefined);
+  // Existing publish/review timestamps are preserved too.
+  assert.deepEqual(capturedUpdate.data.publishedAt, new Date('2026-04-01'));
+});
+
 test('updateInvestorReportRelease does not allow released reports to move backward', async () => {
   await assert.rejects(
     () =>

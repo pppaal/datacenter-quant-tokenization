@@ -50,6 +50,21 @@ export async function updateInvestorReportRelease(
       ? (existing.publishedAt ?? now)
       : existing.publishedAt;
 
+  // Attribution must be stamped only on the *transition into* a state, never on
+  // every subsequent edit:
+  //  - reviewedById: stamp when the report first leaves DRAFT (reviewedAt was
+  //    null); clear when moving back to DRAFT; otherwise leave unchanged so
+  //    editing notes on an already-reviewed report does not re-assign the
+  //    reviewer (and does not erase it when the editor has no userId).
+  //  - releasedById: stamp only on the transition into RELEASED; otherwise leave
+  //    unchanged so editing an already-released report's notes does not overwrite
+  //    or null out the original releaser.
+  const isReleaseTransition =
+    nextReleaseStatus === InvestorReportReleaseStatus.RELEASED &&
+    existing.releaseStatus !== InvestorReportReleaseStatus.RELEASED;
+  const isReviewTransition =
+    nextReleaseStatus !== InvestorReportReleaseStatus.DRAFT && existing.reviewedAt == null;
+
   return db.investorReport.update({
     where: { id: reportId },
     data: {
@@ -60,12 +75,11 @@ export async function updateInvestorReportRelease(
       reviewedById:
         nextReleaseStatus === InvestorReportReleaseStatus.DRAFT
           ? null
-          : (actor.userId ?? undefined),
+          : isReviewTransition
+            ? (actor.userId ?? undefined)
+            : undefined,
       publishedAt,
-      releasedById:
-        nextReleaseStatus === InvestorReportReleaseStatus.RELEASED
-          ? (actor.userId ?? null)
-          : undefined
+      releasedById: isReleaseTransition ? (actor.userId ?? null) : undefined
     }
   });
 }
