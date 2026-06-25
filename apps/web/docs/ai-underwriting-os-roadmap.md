@@ -79,10 +79,10 @@ Create a stable underwriting data model that can represent most income-producing
 
 ### Code areas
 
-- [schema.prisma](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/prisma/schema.prisma)
-- [asset.ts](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/lib/validations/asset.ts)
-- [documents.ts](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/lib/services/documents.ts)
-- [feature-promotion.ts](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/lib/services/feature-promotion.ts)
+- [schema.prisma](../prisma/schema.prisma)
+- [asset.ts](../lib/validations/asset.ts)
+- [documents.ts](../lib/services/documents.ts)
+- [feature-promotion.ts](../lib/services/feature-promotion.ts)
 
 ### Exit criteria
 
@@ -139,10 +139,10 @@ The system should be able to answer:
 
 ### Code areas
 
-- [sources.ts](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/lib/services/sources.ts)
-- [valuation/inputs.ts](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/lib/services/valuation/inputs.ts)
-- [document-extraction.ts](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/lib/services/document-extraction.ts)
-- [feature-assumption-mapping.ts](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/lib/valuation/feature-assumption-mapping.ts)
+- [sources.ts](../lib/services/sources.ts)
+- [valuation/inputs.ts](../lib/services/valuation/inputs.ts)
+- [document-extraction.ts](../lib/services/document-extraction.ts)
+- [feature-assumption-mapping.ts](../lib/services/valuation/feature-assumption-mapping.ts)
 
 ### Exit criteria
 
@@ -185,9 +185,9 @@ Move from simple base/bull/bear scenarios to real sensitivity testing and downsi
 ### Code areas
 
 - new `lib/services/sensitivity/*`
-- [valuations.ts](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/lib/services/valuations.ts)
-- [valuation-engine.ts](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/lib/services/valuation-engine.ts)
-- [admin/valuations/[id]/page.tsx](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/app/admin/valuations/[id]/page.tsx)
+- [valuations.ts](../lib/services/valuations.ts)
+- [valuation-engine.ts](../lib/services/valuation-engine.ts)
+- [admin/valuations/[id]/page.tsx](../app/admin/valuations/[id]/page.tsx)
 
 ### UI additions
 
@@ -245,8 +245,8 @@ The system should be able to say:
 ### Code areas
 
 - new `lib/services/financials/*`
-- [documents.ts](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/lib/services/documents.ts)
-- [openai.ts](/c:/Users/pjyrh/OneDrive/Desktop/datacenter-quant-tokenization/apps/web/lib/ai/openai.ts)
+- [documents.ts](../lib/services/documents.ts)
+- [openai.ts](../lib/ai/openai.ts)
 - new admin credit views
 
 ### Exit criteria
