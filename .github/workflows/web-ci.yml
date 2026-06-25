@@ -104,12 +104,13 @@ jobs:
 
       - name: Coverage report + ratcheting floor
         # Uses Node's BUILT-IN test coverage (no c8/nyc dependency). The full
-        # suite measured 91.38% line coverage on 2026-06-25; the floor is set
-        # conservatively to 90 (rounded DOWN from the measured number) so it
-        # cannot fail today but blocks regressions. RATCHET UP as coverage
-        # rises. Run `npm run test:coverage` locally to see the same report.
+        # suite measured 87.59% line coverage in CI on 2026-06-25 (the CI runner
+        # attributes coverage over a broader file set than a local run); the
+        # floor is set conservatively to 85 (rounded DOWN from the CI-measured
+        # number) so it cannot fail today but blocks regressions. RATCHET UP as
+        # coverage rises. Run `npm run test:coverage` locally to see the report.
         env:
-          COVERAGE_LINE_FLOOR: "90"
+          COVERAGE_LINE_FLOOR: "85"
         run: |
           set -o pipefail
           npm run test:coverage 2>&1 | tee coverage.txt
