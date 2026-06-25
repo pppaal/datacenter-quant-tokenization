@@ -51,10 +51,10 @@ export function DealCloseProbabilityPanel({ summary }: Props) {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="eyebrow">Execution Momentum</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">
+          <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
             Which live deals are most likely to break
           </h2>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-[hsl(var(--muted))]">
             Heuristic momentum score from stage + activity signals — not a calibrated probability.
           </p>
         </div>
@@ -64,21 +64,21 @@ export function DealCloseProbabilityPanel({ summary }: Props) {
       </div>
 
       <div className="mt-5 grid gap-4 md:grid-cols-3">
-        <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+        <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5">
           <div className="fine-print">High Momentum</div>
-          <div className="mt-3 text-3xl font-semibold text-white">
+          <div className="mt-3 text-3xl font-semibold text-[hsl(var(--foreground))]">
             {formatNumber(summary.highProbabilityCount, 0)}
           </div>
         </div>
-        <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+        <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5">
           <div className="fine-print">Medium Momentum</div>
-          <div className="mt-3 text-3xl font-semibold text-white">
+          <div className="mt-3 text-3xl font-semibold text-[hsl(var(--foreground))]">
             {formatNumber(summary.mediumProbabilityCount, 0)}
           </div>
         </div>
-        <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+        <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5">
           <div className="fine-print">Low Momentum</div>
-          <div className="mt-3 text-3xl font-semibold text-white">
+          <div className="mt-3 text-3xl font-semibold text-[hsl(var(--foreground))]">
             {formatNumber(summary.lowProbabilityCount, 0)}
           </div>
         </div>
@@ -90,11 +90,13 @@ export function DealCloseProbabilityPanel({ summary }: Props) {
             <Link
               key={deal.id}
               href={`/admin/deals/${deal.id}`}
-              className="flex items-center justify-between gap-4 rounded-[24px] border border-white/10 bg-white/[0.03] p-5 transition hover:border-white/20 hover:bg-white/[0.05]"
+              className="flex items-center justify-between gap-4 rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5 transition hover:border-[hsl(var(--border-strong))] hover:bg-[hsl(var(--surface-hover))]"
             >
               <div className="max-w-2xl">
                 <div className="flex flex-wrap items-center gap-3">
-                  <div className="text-sm font-semibold text-white">{deal.title}</div>
+                  <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
+                    {deal.title}
+                  </div>
                   <Badge>{deal.dealCode}</Badge>
                   <Badge tone={getDealStageTone(deal.stage)}>{formatDealStage(deal.stage)}</Badge>
                   <Badge tone={getProbabilityTone(deal.probability.band)}>
@@ -102,14 +104,16 @@ export function DealCloseProbabilityPanel({ summary }: Props) {
                     {deal.probability.band.toLowerCase()}
                   </Badge>
                 </div>
-                <p className="mt-3 text-sm leading-7 text-slate-300">{deal.probability.headline}</p>
-                <div className="mt-3 space-y-1 text-xs text-slate-500">
+                <p className="mt-3 text-sm leading-7 text-[hsl(var(--foreground-muted))]">
+                  {deal.probability.headline}
+                </p>
+                <div className="mt-3 space-y-1 text-xs text-[hsl(var(--muted))]">
                   {deal.probability.drivers.slice(0, 3).map((driver) => (
                     <div key={driver}>{driver}</div>
                   ))}
                 </div>
               </div>
-              <div className="grid gap-2 text-right text-sm text-slate-300 md:grid-cols-3 md:text-left">
+              <div className="grid gap-2 text-right text-sm text-[hsl(var(--foreground-muted))] md:grid-cols-3 md:text-left">
                 <div>
                   <div className="fine-print">Close</div>
                   <div className="mt-1">{formatDate(deal.targetCloseDate)}</div>
@@ -141,7 +145,7 @@ export function DealCloseProbabilityPanel({ summary }: Props) {
             </Link>
           ))
         ) : (
-          <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5 text-sm text-slate-400">
+          <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5 text-sm text-[hsl(var(--muted))]">
             No live execution deals beyond screening yet.
           </div>
         )}

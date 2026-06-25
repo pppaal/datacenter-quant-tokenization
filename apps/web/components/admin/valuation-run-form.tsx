@@ -53,7 +53,7 @@ export function ValuationRunForm({ assetId }: { assetId: string }) {
         />
       </label>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="max-w-md text-sm text-slate-400">
+        <p className="max-w-md text-sm text-[hsl(var(--muted))]">
           This runs the return analysis through the Next.js API route and refreshes the asset
           dossier with a new generated IM.
         </p>

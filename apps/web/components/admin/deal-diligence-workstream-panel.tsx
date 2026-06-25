@@ -136,10 +136,10 @@ export function DealDiligenceWorkstreamPanel({
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="eyebrow">Due Diligence</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">
+          <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
             Specialist workstreams and sign-off
           </h2>
-          <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400">
+          <p className="mt-3 max-w-3xl text-sm leading-7 text-[hsl(var(--muted))]">
             Track legal, technical, environmental, tax, insurance, leasing, and financing
             workstreams as explicit diligence lanes. This keeps specialist sign-off tied to the same
             deal record before committee and closing.
@@ -160,7 +160,7 @@ export function DealDiligenceWorkstreamPanel({
       ) : null}
 
       <form
-        className="grid gap-4 rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+        className="grid gap-4 rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5"
         onSubmit={(event) => {
           event.preventDefault();
           void run(
@@ -262,7 +262,7 @@ export function DealDiligenceWorkstreamPanel({
         {workstreams.map((workstream) => (
           <form
             key={workstream.id}
-            className="grid gap-4 rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+            className="grid gap-4 rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5"
             data-testid="diligence-workstream-card"
             data-workstream-id={workstream.id}
             onSubmit={(event) => {
@@ -293,10 +293,10 @@ export function DealDiligenceWorkstreamPanel({
           >
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
-                <div className="text-base font-semibold text-white">
+                <div className="text-base font-semibold text-[hsl(var(--foreground))]">
                   {toSentenceCase(workstream.workstreamType)}
                 </div>
-                <div className="mt-1 text-sm text-slate-400">
+                <div className="mt-1 text-sm text-[hsl(var(--muted))]">
                   {workstream.advisorName ?? 'No external advisor set'} / due{' '}
                   {formatDate(workstream.dueDate)}
                 </div>
@@ -358,34 +358,36 @@ export function DealDiligenceWorkstreamPanel({
               defaultValue={workstream.notes ?? ''}
               placeholder="Internal notes"
             />
-            <div className="space-y-3 rounded-[18px] border border-white/10 bg-slate-950/35 p-4">
+            <div className="space-y-3 rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4">
               <div className="fine-print">Linked Deliverables</div>
               <div className="space-y-2" data-testid="diligence-deliverables-list">
                 {workstream.deliverables.length > 0 ? (
                   workstream.deliverables.map((deliverable) => (
                     <div
                       key={deliverable.id}
-                      className="rounded-[16px] border border-white/10 bg-black/20 p-3 text-sm text-slate-300"
+                      className="rounded-[16px] border border-[hsl(var(--border))] bg-black/20 p-3 text-sm text-[hsl(var(--foreground-muted))]"
                       data-testid="diligence-deliverable-row"
                     >
                       <div
-                        className="font-semibold text-white"
+                        className="font-semibold text-[hsl(var(--foreground))]"
                         data-testid="diligence-deliverable-title"
                       >
                         {deliverable.document.title}
                       </div>
-                      <div className="mt-1 text-xs text-slate-400">
+                      <div className="mt-1 text-xs text-[hsl(var(--muted))]">
                         {toSentenceCase(deliverable.document.documentType)} / v
                         {deliverable.document.currentVersion} /{' '}
                         {deliverable.document.documentHash.slice(0, 12)}
                       </div>
                       {deliverable.note ? (
-                        <div className="mt-2 text-xs text-slate-400">{deliverable.note}</div>
+                        <div className="mt-2 text-xs text-[hsl(var(--muted))]">
+                          {deliverable.note}
+                        </div>
                       ) : null}
                     </div>
                   ))
                 ) : (
-                  <div className="text-sm text-slate-500">
+                  <div className="text-sm text-[hsl(var(--muted))]">
                     No specialist deliverables are linked yet.
                   </div>
                 )}
@@ -439,7 +441,7 @@ export function DealDiligenceWorkstreamPanel({
                   {busy === `deliverable-${workstream.id}` ? 'Linking...' : 'Link Deliverable'}
                 </Button>
               </div>
-              <div className="grid gap-3 rounded-[16px] border border-white/10 bg-black/20 p-3 lg:grid-cols-[1.2fr_0.9fr_1fr_1fr_auto]">
+              <div className="grid gap-3 rounded-[16px] border border-[hsl(var(--border))] bg-black/20 p-3 lg:grid-cols-[1.2fr_0.9fr_1fr_1fr_auto]">
                 <Input
                   name={`upload-title-${workstream.id}`}
                   placeholder="Upload new external deliverable title"
@@ -520,7 +522,7 @@ export function DealDiligenceWorkstreamPanel({
                 </Button>
               </div>
             </div>
-            <div className="flex items-center justify-between gap-4 text-sm text-slate-400">
+            <div className="flex items-center justify-between gap-4 text-sm text-[hsl(var(--muted))]">
               <div>
                 Requested {formatDate(workstream.requestedAt)} / signed off by{' '}
                 {workstream.signedOffByLabel ?? 'not yet'}
@@ -536,7 +538,7 @@ export function DealDiligenceWorkstreamPanel({
           </form>
         ))}
         {workstreams.length === 0 ? (
-          <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5 text-sm text-slate-400">
+          <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5 text-sm text-[hsl(var(--muted))]">
             No specialist workstreams are open yet. Start legal, commercial, technical, or
             environmental diligence before the process gets deeper.
           </div>

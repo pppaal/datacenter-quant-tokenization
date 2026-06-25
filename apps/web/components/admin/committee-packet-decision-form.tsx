@@ -58,7 +58,7 @@ export function CommitteePacketDecisionForm({ packetId }: { packetId: string }) 
 
   return (
     <div
-      className="mt-3 space-y-3 rounded-[18px] border border-white/10 bg-slate-950/35 p-3"
+      className="mt-3 space-y-3 rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-3"
       data-testid="ic-packet-decision-form"
     >
       <div className="fine-print">Committee Decision</div>
@@ -91,7 +91,9 @@ export function CommitteePacketDecisionForm({ packetId }: { packetId: string }) 
         {error ? (
           <div className="text-xs text-[hsl(var(--danger))]">{error}</div>
         ) : (
-          <div className="text-xs text-slate-500">Write the IC outcome into packet lineage.</div>
+          <div className="text-xs text-[hsl(var(--muted))]">
+            Write the IC outcome into packet lineage.
+          </div>
         )}
         <Button
           type="button"

@@ -306,7 +306,7 @@ export function PropertyMap({
         : 'Schematic view';
 
   return (
-    <div className="relative min-h-[480px] overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.18),_transparent_38%),linear-gradient(180deg,rgba(8,47,73,0.65),rgba(15,23,42,0.92))]">
+    <div className="relative min-h-[480px] overflow-hidden rounded-[28px] border border-[hsl(var(--border))] bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.18),_transparent_38%),linear-gradient(180deg,rgba(8,47,73,0.65),rgba(15,23,42,0.92))]">
       <div ref={containerRef} className="absolute inset-0 z-0 h-full w-full" aria-hidden="true" />
 
       {status !== 'ready' ? (
@@ -314,10 +314,10 @@ export function PropertyMap({
       ) : null}
 
       <div className="pointer-events-none absolute left-6 top-6 z-20 flex flex-wrap items-center gap-2">
-        <span className="rounded-full border border-white/10 bg-slate-950/70 px-4 py-2 text-xs uppercase tracking-[0.28em] text-slate-300">
+        <span className="rounded-full border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-4 py-2 text-xs uppercase tracking-[0.28em] text-[hsl(var(--foreground-muted))]">
           Seoul / Incheon / Pangyo screen
         </span>
-        <span className="rounded-full border border-white/10 bg-slate-950/70 px-3 py-2 text-[10px] uppercase tracking-[0.22em] text-slate-400">
+        <span className="rounded-full border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2 text-[10px] uppercase tracking-[0.22em] text-[hsl(var(--muted))]">
           {providerLabel}
         </span>
       </div>
@@ -356,17 +356,19 @@ export function PropertyMap({
       ) : null}
 
       {onMapClick && status === 'ready' ? (
-        <div className="pointer-events-none absolute right-6 top-6 z-20 rounded-full border border-white/10 bg-slate-950/70 px-3 py-2 text-[10px] uppercase tracking-[0.22em] text-slate-300">
+        <div className="pointer-events-none absolute right-6 top-6 z-20 rounded-full border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2 text-[10px] uppercase tracking-[0.22em] text-[hsl(var(--foreground-muted))]">
           Click any point to analyze
         </div>
       ) : null}
 
       {selected ? (
-        <div className="pointer-events-none absolute bottom-6 left-6 right-6 z-20 grid gap-3 rounded-[24px] border border-white/10 bg-slate-950/80 p-4 backdrop-blur">
+        <div className="pointer-events-none absolute bottom-6 left-6 right-6 z-20 grid gap-3 rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4 backdrop-blur">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <div className="fine-print">Selected candidate</div>
-              <div className="mt-2 text-xl font-semibold text-white">{selected.name}</div>
+              <div className="mt-2 text-xl font-semibold text-[hsl(var(--foreground))]">
+                {selected.name}
+              </div>
             </div>
             <div className="flex flex-wrap gap-2">
               <Badge>{toSentenceCase(selected.assetClass)}</Badge>
@@ -375,7 +377,9 @@ export function PropertyMap({
               </Badge>
             </div>
           </div>
-          <p className="text-sm leading-7 text-slate-300">{selected.screenSummary}</p>
+          <p className="text-sm leading-7 text-[hsl(var(--foreground-muted))]">
+            {selected.screenSummary}
+          </p>
         </div>
       ) : null}
     </div>

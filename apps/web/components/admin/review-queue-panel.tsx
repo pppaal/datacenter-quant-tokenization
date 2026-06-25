@@ -36,10 +36,10 @@ export function ReviewQueuePanel({
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="eyebrow">{title}</div>
-          <h3 className="mt-2 text-2xl font-semibold text-white">
+          <h3 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
             Approve normalized evidence before it enters the approved feature layer
           </h3>
-          <p className="mt-2 max-w-3xl text-sm leading-7 text-slate-400">
+          <p className="mt-2 max-w-3xl text-sm leading-7 text-[hsl(var(--muted))]">
             Review normalized site, legal, lease, and asset-level evidence before valuation, IC
             material, and readiness packaging rely on it.
           </p>
@@ -48,7 +48,7 @@ export function ReviewQueuePanel({
       </div>
 
       {summaries.length === 0 ? (
-        <div className="mt-5 rounded-[24px] border border-white/10 bg-white/[0.03] p-5 text-sm leading-7 text-slate-400">
+        <div className="mt-5 rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5 text-sm leading-7 text-[hsl(var(--muted))]">
           {emptyMessage}
         </div>
       ) : (
@@ -56,17 +56,19 @@ export function ReviewQueuePanel({
           {summaries.map((summary) => (
             <div
               key={summary.assetId}
-              className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+              className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5"
               data-testid="review-asset-summary"
             >
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <div className="eyebrow">{summary.assetCode}</div>
-                  <h4 className="mt-2 text-xl font-semibold text-white">{summary.assetName}</h4>
+                  <h4 className="mt-2 text-xl font-semibold text-[hsl(var(--foreground))]">
+                    {summary.assetName}
+                  </h4>
                   <div className="mt-2">
                     <Badge>{summary.assetClassLabel}</Badge>
                   </div>
-                  <p className="mt-2 text-sm text-slate-400">
+                  <p className="mt-2 text-sm text-[hsl(var(--muted))]">
                     {summary.totals.approved} approved · {summary.totals.pending} pending ·{' '}
                     {summary.totals.rejected} rejected
                   </p>
@@ -107,12 +109,14 @@ export function ReviewQueuePanel({
                   .map((discipline) => (
                     <div
                       key={discipline.key}
-                      className="rounded-[20px] border border-white/10 bg-slate-950/25 p-4"
+                      className="rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4"
                     >
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <div>
-                          <div className="text-sm font-semibold text-white">{discipline.label}</div>
-                          <div className="mt-1 text-xs text-slate-500">
+                          <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
+                            {discipline.label}
+                          </div>
+                          <div className="mt-1 text-xs text-[hsl(var(--muted))]">
                             {discipline.approvedCount} approved · {discipline.pendingCount} pending
                             · {discipline.rejectedCount} rejected
                           </div>
@@ -123,28 +127,30 @@ export function ReviewQueuePanel({
                         {discipline.items.map((item) => (
                           <div
                             key={item.recordId}
-                            className="rounded-[18px] border border-white/10 bg-white/[0.03] p-4"
+                            className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4"
                             data-testid="review-item"
                           >
                             <div className="flex flex-wrap items-start justify-between gap-3">
                               <div className="space-y-2">
                                 <div className="flex flex-wrap items-center gap-2">
-                                  <div className="text-sm font-semibold text-white">
+                                  <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
                                     {item.title}
                                   </div>
                                   <Badge tone={toneForStatus(item.reviewStatus)}>
                                     {item.reviewStatus}
                                   </Badge>
                                 </div>
-                                <div className="text-sm text-slate-400">{item.detail}</div>
-                                <div className="text-xs text-slate-500">
+                                <div className="text-sm text-[hsl(var(--muted))]">
+                                  {item.detail}
+                                </div>
+                                <div className="text-xs text-[hsl(var(--muted))]">
                                   Updated {formatDate(item.updatedAt)}
                                   {item.sourceUpdatedAt
                                     ? ` · source ${formatDate(item.sourceUpdatedAt)}`
                                     : ''}
                                 </div>
                                 {item.reviewNotes ? (
-                                  <div className="rounded-2xl border border-white/10 bg-slate-950/30 px-3 py-2 text-xs text-slate-400">
+                                  <div className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2 text-xs text-[hsl(var(--muted))]">
                                     Current note: {item.reviewNotes}
                                   </div>
                                 ) : null}

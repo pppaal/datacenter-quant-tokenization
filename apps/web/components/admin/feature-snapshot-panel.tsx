@@ -46,7 +46,7 @@ export function FeatureSnapshotPanel({
       <div className="flex items-center justify-between gap-3">
         <div>
           <div className="eyebrow">{title}</div>
-          <p className="mt-2 max-w-3xl text-sm leading-7 text-slate-400">
+          <p className="mt-2 max-w-3xl text-sm leading-7 text-[hsl(var(--muted))]">
             These promoted namespaces are the approved underwriting layer used first by valuation,
             IC material, and readiness packaging.
           </p>
@@ -54,7 +54,7 @@ export function FeatureSnapshotPanel({
         <Badge>{formatNumber(snapshots.length, 0)} namespaces</Badge>
       </div>
       {snapshots.length === 0 ? (
-        <div className="mt-4 rounded-[22px] border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
+        <div className="mt-4 rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4 text-sm text-[hsl(var(--muted))]">
           {emptyMessage}
         </div>
       ) : (
@@ -62,18 +62,18 @@ export function FeatureSnapshotPanel({
           {snapshots.map((snapshot) => (
             <div
               key={snapshot.id}
-              className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+              className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4"
             >
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <div className="text-sm font-semibold text-white">
+                  <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
                     {toLabel(snapshot.featureNamespace)}
                   </div>
-                  <div className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">
+                  <div className="mt-1 text-xs uppercase tracking-[0.18em] text-[hsl(var(--muted))]">
                     {snapshot.sourceVersion ?? 'manual snapshot'}
                   </div>
                 </div>
-                <div className="text-right text-xs text-slate-500">
+                <div className="text-right text-xs text-[hsl(var(--muted))]">
                   <div>{formatDate(snapshot.snapshotDate)}</div>
                   <div className="mt-1">{formatNumber(snapshot.values.length, 0)} values</div>
                 </div>
@@ -82,12 +82,14 @@ export function FeatureSnapshotPanel({
                 {snapshot.values.slice(0, 4).map((value) => (
                   <div
                     key={value.id}
-                    className="rounded-2xl border border-border bg-slate-950/40 p-3"
+                    className="rounded-2xl border border-border bg-[hsl(var(--panel-alt))] p-3"
                   >
-                    <div className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                    <div className="text-[11px] uppercase tracking-[0.18em] text-[hsl(var(--muted))]">
                       {value.key}
                     </div>
-                    <div className="mt-2 text-sm text-white">{formatFeatureValue(value)}</div>
+                    <div className="mt-2 text-sm text-[hsl(var(--foreground))]">
+                      {formatFeatureValue(value)}
+                    </div>
                   </div>
                 ))}
               </div>

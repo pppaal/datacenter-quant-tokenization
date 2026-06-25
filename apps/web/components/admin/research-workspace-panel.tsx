@@ -49,12 +49,12 @@ export function ResearchWorkspacePanel({ data, activeTab, canApproveHouseView = 
             <Badge>asset sync {data.status.latestAssetSyncAt.toISOString().slice(0, 10)}</Badge>
           ) : null}
         </div>
-        <p className="mt-3 text-sm leading-7 text-slate-400">{data.status.headline}</p>
+        <p className="mt-3 text-sm leading-7 text-[hsl(var(--muted))]">{data.status.headline}</p>
         {data.status.staleOfficialSourceCount > 0 || data.status.staleAssetDossierCount > 0 ? (
-          <p className="mt-2 text-xs leading-6 text-slate-500">
+          <p className="mt-2 text-xs leading-6 text-[hsl(var(--muted))]">
             Research sync now runs explicitly. Use{' '}
-            <span className="text-slate-300">Run Research Sync</span> to refresh official sources
-            and dossier staging when coverage is stale.
+            <span className="text-[hsl(var(--foreground-muted))]">Run Research Sync</span> to
+            refresh official sources and dossier staging when coverage is stale.
           </p>
         ) : null}
         {data.status.recentRuns.length > 0 ? (
@@ -62,10 +62,10 @@ export function ResearchWorkspacePanel({ data, activeTab, canApproveHouseView = 
             {data.status.recentRuns.slice(0, 4).map((run) => (
               <div
                 key={run.id}
-                className="rounded-[18px] border border-white/10 bg-white/[0.03] p-4"
+                className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="text-sm font-semibold text-white">
+                  <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
                     {run.triggerType.replaceAll('_', ' ')}
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -83,12 +83,12 @@ export function ResearchWorkspacePanel({ data, activeTab, canApproveHouseView = 
                     <Badge>{run.startedAt.toISOString().slice(0, 16).replace('T', ' ')}</Badge>
                   </div>
                 </div>
-                <div className="mt-2 text-xs leading-6 text-slate-400">
+                <div className="mt-2 text-xs leading-6 text-[hsl(var(--muted))]">
                   {run.officialSourceCount} official sources / {run.assetDossierCount} asset
                   dossiers / {run.staleOfficialSourceCount} stale source tasks /{' '}
                   {run.staleAssetDossierCount} stale asset dossiers
                 </div>
-                <div className="mt-2 text-xs text-slate-500">
+                <div className="mt-2 text-xs text-[hsl(var(--muted))]">
                   {run.refreshedByActor ? `actor ${run.refreshedByActor}` : 'system run'}
                   {run.errorSummary ? ` / ${run.errorSummary}` : ''}
                 </div>
@@ -106,7 +106,7 @@ export function ResearchWorkspacePanel({ data, activeTab, canApproveHouseView = 
             className={`rounded-full border px-4 py-2 text-sm transition ${
               activeTab === tab
                 ? 'border-accent/40 bg-accent/10 text-accent shadow-[0_0_0_1px_rgba(34,211,238,0.12)]'
-                : 'border-white/10 bg-white/[0.03] text-slate-300 hover:border-white/20 hover:bg-white/[0.06] hover:text-white'
+                : 'border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] text-[hsl(var(--foreground-muted))] hover:border-[hsl(var(--border-strong))] hover:bg-[hsl(var(--surface-hover))] hover:text-[hsl(var(--foreground))]'
             }`}
           >
             {tab === 'assets'
@@ -121,19 +121,21 @@ export function ResearchWorkspacePanel({ data, activeTab, canApproveHouseView = 
       {activeTab === 'macro' ? (
         <Card>
           <div className="eyebrow">Macro Coverage</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">
+          <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
             Official-source macro and national research fabric
           </h2>
           <div className="mt-5 grid gap-4">
             {data.macro.snapshots.map((snapshot) => (
               <div
                 key={snapshot.id}
-                className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+                className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4"
               >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <div className="text-sm font-semibold text-white">{snapshot.title}</div>
-                    <div className="mt-1 text-xs text-slate-500">
+                    <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
+                      {snapshot.title}
+                    </div>
+                    <div className="mt-1 text-xs text-[hsl(var(--muted))]">
                       {snapshot.sourceSystem ?? 'research'} /{' '}
                       {snapshot.snapshotDate.toISOString().slice(0, 10)}
                     </div>
@@ -146,7 +148,9 @@ export function ResearchWorkspacePanel({ data, activeTab, canApproveHouseView = 
                     <Badge>{snapshot.provenanceCount} provenance rows</Badge>
                   </div>
                 </div>
-                <p className="mt-3 text-sm leading-7 text-slate-400">{snapshot.summary}</p>
+                <p className="mt-3 text-sm leading-7 text-[hsl(var(--muted))]">
+                  {snapshot.summary}
+                </p>
                 {snapshot.highlights.length > 0 ? (
                   <div className="mt-3 flex flex-wrap gap-2">
                     {snapshot.highlights.map((item) => (
@@ -164,7 +168,7 @@ export function ResearchWorkspacePanel({ data, activeTab, canApproveHouseView = 
               </div>
             ))}
             {data.macro.snapshots.length === 0 ? (
-              <div className="rounded-[22px] border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-slate-300">
+              <div className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-4 py-3 text-sm text-[hsl(var(--foreground-muted))]">
                 No official-source macro snapshots are persisted yet.
               </div>
             ) : null}
@@ -175,17 +179,21 @@ export function ResearchWorkspacePanel({ data, activeTab, canApproveHouseView = 
       {activeTab === 'markets' ? (
         <Card>
           <div className="eyebrow">Market Universes</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">Asset-class market coverage</h2>
+          <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
+            Asset-class market coverage
+          </h2>
           <div className="mt-5 grid gap-4 md:grid-cols-2">
             {data.markets.map((market) => (
               <div
                 key={market.id}
-                className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+                className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4"
               >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <div className="text-sm font-semibold text-white">{market.label}</div>
-                    <div className="mt-1 text-xs text-slate-500">{market.marketKey}</div>
+                    <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
+                      {market.label}
+                    </div>
+                    <div className="mt-1 text-xs text-[hsl(var(--muted))]">{market.marketKey}</div>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {market.assetClass ? (
@@ -214,11 +222,11 @@ export function ResearchWorkspacePanel({ data, activeTab, canApproveHouseView = 
                     />
                   </div>
                 ) : null}
-                <p className="mt-3 text-sm leading-7 text-slate-400">
+                <p className="mt-3 text-sm leading-7 text-[hsl(var(--muted))]">
                   {market.snapshot?.summary ?? market.thesis ?? 'No market thesis yet.'}
                 </p>
                 {market.houseView?.thesisAgeDays != null ? (
-                  <div className="mt-2 text-xs text-slate-500">
+                  <div className="mt-2 text-xs text-[hsl(var(--muted))]">
                     House thesis age {market.houseView.thesisAgeDays}d
                     {market.sourceView?.freshnessLabel
                       ? ` / source view ${market.sourceView.freshnessLabel}`
@@ -237,7 +245,7 @@ export function ResearchWorkspacePanel({ data, activeTab, canApproveHouseView = 
               </div>
             ))}
             {data.markets.length === 0 ? (
-              <div className="rounded-[22px] border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-slate-300">
+              <div className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-4 py-3 text-sm text-[hsl(var(--foreground-muted))]">
                 No market universes are staged yet.
               </div>
             ) : null}
@@ -248,17 +256,21 @@ export function ResearchWorkspacePanel({ data, activeTab, canApproveHouseView = 
       {activeTab === 'submarkets' ? (
         <Card>
           <div className="eyebrow">Submarket Universes</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">City and district coverage</h2>
+          <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
+            City and district coverage
+          </h2>
           <div className="mt-5 grid gap-4 md:grid-cols-2">
             {data.submarkets.map((submarket) => (
               <div
                 key={submarket.id}
-                className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+                className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4"
               >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <div className="text-sm font-semibold text-white">{submarket.label}</div>
-                    <div className="mt-1 text-xs text-slate-500">
+                    <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
+                      {submarket.label}
+                    </div>
+                    <div className="mt-1 text-xs text-[hsl(var(--muted))]">
                       {[submarket.city, submarket.district].filter(Boolean).join(' / ') || 'Korea'}
                     </div>
                   </div>
@@ -289,18 +301,18 @@ export function ResearchWorkspacePanel({ data, activeTab, canApproveHouseView = 
                     />
                   </div>
                 ) : null}
-                <p className="mt-3 text-sm leading-7 text-slate-400">
+                <p className="mt-3 text-sm leading-7 text-[hsl(var(--muted))]">
                   {submarket.snapshot?.summary ?? submarket.thesis ?? 'No submarket thesis yet.'}
                 </p>
                 {submarket.houseView?.thesisAgeDays != null ? (
-                  <div className="mt-2 text-xs text-slate-500">
+                  <div className="mt-2 text-xs text-[hsl(var(--muted))]">
                     House thesis age {submarket.houseView.thesisAgeDays}d
                   </div>
                 ) : null}
               </div>
             ))}
             {data.submarkets.length === 0 ? (
-              <div className="rounded-[22px] border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-slate-300">
+              <div className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-4 py-3 text-sm text-[hsl(var(--foreground-muted))]">
                 No submarkets are staged yet.
               </div>
             ) : null}
@@ -311,7 +323,7 @@ export function ResearchWorkspacePanel({ data, activeTab, canApproveHouseView = 
       {activeTab === 'assets' ? (
         <Card>
           <div className="eyebrow">Asset Dossiers</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">
+          <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
             Asset-level research coverage and blockers
           </h2>
           <div className="mt-5 grid gap-4">
@@ -319,12 +331,14 @@ export function ResearchWorkspacePanel({ data, activeTab, canApproveHouseView = 
               <Link
                 key={asset.assetId}
                 href={`/admin/assets/${asset.assetId}`}
-                className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4 transition hover:border-white/20 hover:bg-white/[0.05]"
+                className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4 transition hover:border-[hsl(var(--border-strong))] hover:bg-[hsl(var(--surface-hover))]"
               >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <div className="text-sm font-semibold text-white">{asset.assetName}</div>
-                    <div className="mt-1 text-xs text-slate-500">
+                    <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
+                      {asset.assetName}
+                    </div>
+                    <div className="mt-1 text-xs text-[hsl(var(--muted))]">
                       {asset.assetCode} / {asset.assetClass.replaceAll('_', ' ')}
                     </div>
                   </div>
@@ -364,15 +378,17 @@ export function ResearchWorkspacePanel({ data, activeTab, canApproveHouseView = 
                     />
                   </div>
                 ) : null}
-                <p className="mt-3 text-sm leading-7 text-slate-400">{asset.marketThesis}</p>
-                <div className="mt-2 text-xs text-slate-500">
+                <p className="mt-3 text-sm leading-7 text-[hsl(var(--muted))]">
+                  {asset.marketThesis}
+                </p>
+                <div className="mt-2 text-xs text-[hsl(var(--muted))]">
                   Latest valuation: {asset.latestValuationId ?? 'not run yet'}
                   {asset.thesisAgeDays != null ? ` / thesis age ${asset.thesisAgeDays}d` : ''}
                 </div>
               </Link>
             ))}
             {data.assetDossiers.length === 0 ? (
-              <div className="rounded-[22px] border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-slate-300">
+              <div className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-4 py-3 text-sm text-[hsl(var(--foreground-muted))]">
                 No asset dossiers are available yet.
               </div>
             ) : null}
@@ -383,10 +399,10 @@ export function ResearchWorkspacePanel({ data, activeTab, canApproveHouseView = 
       {activeTab === 'optimization' ? (
         <Card>
           <div className="eyebrow">Allocation Screening</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">
+          <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
             Portfolio allocation screening and scenario exploration
           </h2>
-          <p className="mt-3 text-sm leading-7 text-slate-400">
+          <p className="mt-3 text-sm leading-7 text-[hsl(var(--muted))]">
             This tab runs a deterministic allocation screening heuristic on current held portfolios
             using operating KPIs, covenant pressure, research blockers, and official market signal
             freshness. It is a screening aid for operator decision support — it does not estimate
@@ -397,14 +413,14 @@ export function ResearchWorkspacePanel({ data, activeTab, canApproveHouseView = 
               <Link
                 key={portfolio.portfolioId}
                 href={`/admin/portfolio/${portfolio.portfolioId}`}
-                className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4 transition hover:border-white/20 hover:bg-white/[0.05]"
+                className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4 transition hover:border-[hsl(var(--border-strong))] hover:bg-[hsl(var(--surface-hover))]"
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <div className="text-sm font-semibold text-white">
+                    <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
                       {portfolio.portfolioName}
                     </div>
-                    <div className="mt-1 text-xs text-slate-500">
+                    <div className="mt-1 text-xs text-[hsl(var(--muted))]">
                       {portfolio.portfolioCode} / {portfolio.assetCount} held assets
                     </div>
                   </div>
@@ -432,11 +448,13 @@ export function ResearchWorkspacePanel({ data, activeTab, canApproveHouseView = 
                 <div className="mt-4 grid gap-3 xl:grid-cols-2">
                   <div>
                     <div className="fine-print">Primary Move</div>
-                    <p className="mt-2 text-sm leading-7 text-slate-300">{portfolio.topMove}</p>
+                    <p className="mt-2 text-sm leading-7 text-[hsl(var(--foreground-muted))]">
+                      {portfolio.topMove}
+                    </p>
                   </div>
                   <div>
                     <div className="fine-print">Defensive Move</div>
-                    <p className="mt-2 text-sm leading-7 text-slate-300">
+                    <p className="mt-2 text-sm leading-7 text-[hsl(var(--foreground-muted))]">
                       {portfolio.defensiveMove}
                     </p>
                   </div>
@@ -458,7 +476,7 @@ export function ResearchWorkspacePanel({ data, activeTab, canApproveHouseView = 
                   ) : null}
                 </div>
                 {portfolio.fragileScenario ? (
-                  <p className="mt-3 text-xs leading-6 text-slate-500">
+                  <p className="mt-3 text-xs leading-6 text-[hsl(var(--muted))]">
                     {portfolio.fragileScenario.commentary} Value impact{' '}
                     {portfolio.fragileScenario.weightedValueImpactPct.toFixed(1)}% / DSCR impact{' '}
                     {portfolio.fragileScenario.weightedDscrImpactPct.toFixed(1)}%.
@@ -467,7 +485,7 @@ export function ResearchWorkspacePanel({ data, activeTab, canApproveHouseView = 
               </Link>
             ))}
             {data.optimization.length === 0 ? (
-              <div className="rounded-[22px] border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-slate-300">
+              <div className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-4 py-3 text-sm text-[hsl(var(--foreground-muted))]">
                 No held portfolios are available for optimization research yet.
               </div>
             ) : null}
@@ -478,19 +496,21 @@ export function ResearchWorkspacePanel({ data, activeTab, canApproveHouseView = 
       {activeTab === 'coverage' ? (
         <Card>
           <div className="eyebrow">Coverage Queue</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">
+          <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
             Open research tasks and freshness exceptions
           </h2>
           <div className="mt-5 grid gap-4">
             {data.coverageQueue.map((task) => (
               <div
                 key={task.id}
-                className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+                className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4"
               >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <div className="text-sm font-semibold text-white">{task.title}</div>
-                    <div className="mt-1 text-xs text-slate-500">
+                    <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
+                      {task.title}
+                    </div>
+                    <div className="mt-1 text-xs text-[hsl(var(--muted))]">
                       {task.scopeLabel} / {task.taskType}
                     </div>
                   </div>
@@ -506,7 +526,7 @@ export function ResearchWorkspacePanel({ data, activeTab, canApproveHouseView = 
                     {task.sourceSystem ? <Badge>{task.sourceSystem}</Badge> : null}
                   </div>
                 </div>
-                <p className="mt-3 text-sm leading-7 text-slate-400">
+                <p className="mt-3 text-sm leading-7 text-[hsl(var(--muted))]">
                   {task.notes ?? 'No operator note yet.'}
                 </p>
               </div>

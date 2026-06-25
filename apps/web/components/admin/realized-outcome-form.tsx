@@ -137,8 +137,8 @@ export function RealizedOutcomeForm({
         />
       </label>
 
-      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-4">
-        <p className="max-w-2xl text-sm text-slate-400">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[hsl(var(--border))] pt-4">
+        <p className="max-w-2xl text-sm text-[hsl(var(--muted))]">
           Capture actual post-underwriting outcomes so the macro and forecast layers can be checked
           against realized occupancy, value, and DSCR. Monetary inputs are entered in{' '}
           {inputCurrency} and normalized to KRW internally.

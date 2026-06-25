@@ -426,12 +426,12 @@ export function LeaseBookForm({
           <div
             id={lease.id ? `lease-${lease.id}` : undefined}
             key={lease.localId}
-            className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5 scroll-mt-24"
+            className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5 scroll-mt-24"
           >
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <div className="eyebrow">Lease {index + 1}</div>
-                <h4 className="mt-2 text-xl font-semibold text-white">
+                <h4 className="mt-2 text-xl font-semibold text-[hsl(var(--foreground))]">
                   {lease.tenantName || `Contracted load tranche ${index + 1}`}
                 </h4>
                 {lease.reviewStatus ? (
@@ -448,7 +448,7 @@ export function LeaseBookForm({
                       {lease.reviewStatus}
                     </Badge>
                     {lease.reviewNotes ? (
-                      <span className="text-xs text-slate-500">
+                      <span className="text-xs text-[hsl(var(--muted))]">
                         Review note: {lease.reviewNotes}
                       </span>
                     ) : null}
@@ -763,7 +763,7 @@ export function LeaseBookForm({
                   }
                 />
               </label>
-              <div className="rounded-2xl border border-white/10 bg-slate-950/30 px-4 py-3 text-sm text-slate-400">
+              <div className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-4 py-3 text-sm text-[hsl(var(--muted))]">
                 Each lease row feeds the DCF directly. Save signed, active, and pipeline tranches
                 separately so the revenue stack stops leaning on synthetic residual ramp
                 assumptions.
@@ -780,11 +780,11 @@ export function LeaseBookForm({
               />
             </label>
 
-            <div className="mt-5 rounded-[22px] border border-white/10 bg-slate-950/25 p-4">
+            <div className="mt-5 rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <div className="eyebrow">Step Schedule</div>
-                  <div className="mt-2 text-sm text-slate-300">
+                  <div className="mt-2 text-sm text-[hsl(var(--foreground-muted))]">
                     Use steps for staged rent, phased ramp, or occupancy-specific contract periods.
                   </div>
                 </div>
@@ -794,7 +794,7 @@ export function LeaseBookForm({
               </div>
 
               {lease.steps.length === 0 ? (
-                <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-slate-400">
+                <div className="mt-4 rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-4 py-3 text-sm text-[hsl(var(--muted))]">
                   No lease steps yet. If rent, load, or occupancy changes over time, add staged
                   steps here.
                 </div>
@@ -803,10 +803,12 @@ export function LeaseBookForm({
                   {lease.steps.map((step, stepIndex) => (
                     <div
                       key={step.localId}
-                      className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"
+                      className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4"
                     >
                       <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div className="text-sm font-semibold text-white">Step {stepIndex + 1}</div>
+                        <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
+                          Step {stepIndex + 1}
+                        </div>
                         <Button
                           type="button"
                           variant="secondary"
@@ -1182,8 +1184,8 @@ export function LeaseBookForm({
         ))}
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-4">
-        <p className="max-w-3xl text-sm text-slate-400">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[hsl(var(--border))] pt-4">
+        <p className="max-w-3xl text-sm text-[hsl(var(--muted))]">
           Capture each tenant or capacity tranche separately. Monetary inputs are entered in{' '}
           {inputCurrency} and normalized to KRW internally before the valuation engine rebuilds
           revenue micro snapshots. Saving a row sends it back to the review queue.

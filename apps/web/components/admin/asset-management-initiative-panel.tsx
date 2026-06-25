@@ -102,13 +102,15 @@ function InitiativeRow({
 
   return (
     <div
-      className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+      className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4"
       data-testid="initiative-row"
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <div className="text-sm font-semibold text-white">{initiative.title}</div>
+            <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
+              {initiative.title}
+            </div>
             <Badge tone={toneForStatus(status)}>{status.toLowerCase().replaceAll('_', ' ')}</Badge>
             <Badge
               tone={priority === 'URGENT' ? 'danger' : priority === 'HIGH' ? 'warn' : 'neutral'}
@@ -116,7 +118,7 @@ function InitiativeRow({
               {priority.toLowerCase()}
             </Badge>
           </div>
-          <div className="mt-1 text-xs text-slate-400">
+          <div className="mt-1 text-xs text-[hsl(var(--muted))]">
             {(initiative.category ?? 'general').replaceAll('_', ' ')} /{' '}
             {initiative.summary ?? 'Execution workflow item'}
           </div>
@@ -252,7 +254,7 @@ export function AssetManagementInitiativePanel({
   return (
     <Card>
       <div className="eyebrow">Asset Management Initiatives</div>
-      <p className="mt-3 text-sm leading-7 text-slate-400">
+      <p className="mt-3 text-sm leading-7 text-[hsl(var(--muted))]">
         Track leasing, capex, refinance, and disposition initiatives for {assetName}. Blocked items
         should move into the firm-wide action center before the next committee or investor-reporting
         cycle.
@@ -318,7 +320,7 @@ export function AssetManagementInitiativePanel({
 
       <div className="mt-6 space-y-3">
         {initiatives.length === 0 ? (
-          <div className="rounded-[20px] border border-dashed border-white/10 bg-white/[0.02] p-4 text-sm text-slate-400">
+          <div className="rounded-[20px] border border-dashed border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4 text-sm text-[hsl(var(--muted))]">
             No active asset-management initiative is staged for this hold asset yet.
           </div>
         ) : (

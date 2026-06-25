@@ -103,10 +103,10 @@ export function CounterpartyCashflowPanel({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="eyebrow">Counterparty Cash Flow</div>
-          <h3 className="mt-2 text-2xl font-semibold text-white">
+          <h3 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
             10-year CFADS and DSCR projection
           </h3>
-          <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400">
+          <p className="mt-3 max-w-3xl text-sm leading-7 text-[hsl(var(--muted))]">
             Forward debt-service coverage projected from each counterparty&apos;s latest statement,
             grown at their own historical revenue CAGR. Lowest projected DSCR flags the tightest
             coverage year.
@@ -118,14 +118,14 @@ export function CounterpartyCashflowPanel({
         {projections.map((projection) => (
           <div
             key={projection.counterparty.id}
-            className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+            className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5"
           >
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <div className="text-lg font-semibold text-white">
+                <div className="text-lg font-semibold text-[hsl(var(--foreground))]">
                   {projection.counterparty.name}
                 </div>
-                <div className="mt-1 text-xs uppercase tracking-[0.2em] text-slate-500">
+                <div className="mt-1 text-xs uppercase tracking-[0.2em] text-[hsl(var(--muted))]">
                   Growth {formatNumber(projection.revenueGrowthPct, 1)}% / Rate{' '}
                   {formatNumber(projection.interestRatePct, 1)}%
                 </div>
@@ -139,7 +139,7 @@ export function CounterpartyCashflowPanel({
             <div className="mt-4 overflow-x-auto">
               <table className="min-w-full text-sm">
                 <thead>
-                  <tr className="text-left text-xs uppercase tracking-[0.16em] text-slate-500">
+                  <tr className="text-left text-xs uppercase tracking-[0.16em] text-[hsl(var(--muted))]">
                     <th className="px-3 py-2">Year</th>
                     <th className="px-3 py-2 text-right">EBITDA</th>
                     <th className="px-3 py-2 text-right">Operating CF</th>
@@ -151,22 +151,26 @@ export function CounterpartyCashflowPanel({
                 </thead>
                 <tbody>
                   {projection.rows.map((row) => (
-                    <tr key={row.year} className="border-t border-white/5">
-                      <td className="px-3 py-2 font-mono text-slate-300">{row.year}</td>
-                      <td className="px-3 py-2 text-right text-slate-200">
+                    <tr key={row.year} className="border-t border-[hsl(var(--border))]">
+                      <td className="px-3 py-2 font-mono text-[hsl(var(--foreground-muted))]">
+                        {row.year}
+                      </td>
+                      <td className="px-3 py-2 text-right text-[hsl(var(--foreground))]">
                         {money(row.ebitdaKrw)}
                       </td>
-                      <td className="px-3 py-2 text-right text-slate-200">
+                      <td className="px-3 py-2 text-right text-[hsl(var(--foreground))]">
                         {money(row.cashFlowOperatingKrw)}
                       </td>
-                      <td className="px-3 py-2 text-right text-slate-200">
+                      <td className="px-3 py-2 text-right text-[hsl(var(--foreground))]">
                         {money(row.freeCashFlowKrw)}
                       </td>
-                      <td className="px-3 py-2 text-right text-slate-200">{money(row.cfadsKrw)}</td>
-                      <td className="px-3 py-2 text-right text-slate-200">
+                      <td className="px-3 py-2 text-right text-[hsl(var(--foreground))]">
+                        {money(row.cfadsKrw)}
+                      </td>
+                      <td className="px-3 py-2 text-right text-[hsl(var(--foreground))]">
                         {money(row.debtServiceKrw)}
                       </td>
-                      <td className="px-3 py-2 text-right font-semibold text-white">
+                      <td className="px-3 py-2 text-right font-semibold text-[hsl(var(--foreground))]">
                         {row.cfadsDscr !== null ? `${formatNumber(row.cfadsDscr, 2)}x` : 'N/A'}
                       </td>
                     </tr>

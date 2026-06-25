@@ -56,10 +56,15 @@ export function KeyValueRow({
   if (variant === 'panel') {
     return (
       <div
-        className={cn('rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-3', className)}
+        className={cn(
+          'rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-4 py-3',
+          className
+        )}
       >
         <div className="fine-print">{label}</div>
-        <div className={`mt-2 text-sm text-white ${mono ? 'font-mono' : ''}`}>{content}</div>
+        <div className={`mt-2 text-sm text-[hsl(var(--foreground))] ${mono ? 'font-mono' : ''}`}>
+          {content}
+        </div>
       </div>
     );
   }
@@ -67,12 +72,12 @@ export function KeyValueRow({
     return (
       <div
         className={cn(
-          'flex items-center justify-between gap-4 rounded-[14px] border border-white/5 bg-white/[0.02] px-3 py-2 text-sm',
+          'flex items-center justify-between gap-4 rounded-[14px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2 text-sm',
           className
         )}
       >
-        <dt className="text-xs uppercase tracking-wide text-slate-500">{label}</dt>
-        <dd className="font-mono text-sm text-white">{content}</dd>
+        <dt className="text-xs uppercase tracking-wide text-[hsl(var(--muted))]">{label}</dt>
+        <dd className="font-mono text-sm text-[hsl(var(--foreground))]">{content}</dd>
       </div>
     );
   }
@@ -90,9 +95,14 @@ export function KeyValueRow({
   }
 
   return (
-    <div className={cn('rounded-[18px] border border-white/10 bg-white/[0.03] p-3', className)}>
-      <dt className="text-xs uppercase tracking-wide text-slate-500">{label}</dt>
-      <dd className="mt-1 font-mono text-xs text-slate-200">{content}</dd>
+    <div
+      className={cn(
+        'rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-3',
+        className
+      )}
+    >
+      <dt className="text-xs uppercase tracking-wide text-[hsl(var(--muted))]">{label}</dt>
+      <dd className="mt-1 font-mono text-xs text-[hsl(var(--foreground))]">{content}</dd>
     </div>
   );
 }

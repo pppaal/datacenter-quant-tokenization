@@ -133,12 +133,12 @@ export function AssetMediaManager({
       ) : null}
 
       <form onSubmit={upload} className="grid gap-3 md:grid-cols-[1fr_1fr_1fr_auto]">
-        <label className="flex flex-col gap-1 text-xs text-slate-400">
+        <label className="flex flex-col gap-1 text-xs text-[hsl(var(--muted))]">
           Kind
           <select
             value={kind}
             onChange={(e) => setKind(e.target.value as (typeof KINDS)[number])}
-            className="rounded-[12px] border border-white/10 bg-slate-950/60 px-3 py-2 text-sm text-white"
+            className="rounded-[12px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2 text-sm text-[hsl(var(--foreground))]"
           >
             {KINDS.map((k) => (
               <option key={k} value={k}>
@@ -147,7 +147,7 @@ export function AssetMediaManager({
             ))}
           </select>
         </label>
-        <label className="flex flex-col gap-1 text-xs text-slate-400">
+        <label className="flex flex-col gap-1 text-xs text-[hsl(var(--muted))]">
           Caption
           <Input
             value={caption}
@@ -155,7 +155,7 @@ export function AssetMediaManager({
             placeholder="optional"
           />
         </label>
-        <label className="flex flex-col gap-1 text-xs text-slate-400">
+        <label className="flex flex-col gap-1 text-xs text-[hsl(var(--muted))]">
           Sort order
           <Input
             type="number"
@@ -164,13 +164,13 @@ export function AssetMediaManager({
             placeholder="0"
           />
         </label>
-        <label className="flex flex-col gap-1 text-xs text-slate-400">
+        <label className="flex flex-col gap-1 text-xs text-[hsl(var(--muted))]">
           File
           <input
             type="file"
             accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml,application/pdf"
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-            className="text-sm text-slate-200"
+            className="text-sm text-[hsl(var(--foreground))]"
           />
         </label>
         <div className="md:col-span-4">
@@ -182,14 +182,14 @@ export function AssetMediaManager({
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {items.length === 0 ? (
-          <p className="text-sm text-slate-400">No media uploaded yet.</p>
+          <p className="text-sm text-[hsl(var(--muted))]">No media uploaded yet.</p>
         ) : (
           items.map((m) => (
             <div
               key={m.id}
-              className="overflow-hidden rounded-[18px] border border-white/10 bg-slate-950/60"
+              className="overflow-hidden rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))]"
             >
-              <div className="aspect-video w-full bg-slate-900">
+              <div className="aspect-video w-full bg-[hsl(var(--panel-alt))]">
                 {m.mimeType.startsWith('image/') ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
                   <img
@@ -198,7 +198,7 @@ export function AssetMediaManager({
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center text-xs text-slate-500">
+                  <div className="flex h-full w-full items-center justify-center text-xs text-[hsl(var(--muted))]">
                     {m.mimeType}
                   </div>
                 )}
@@ -206,11 +206,13 @@ export function AssetMediaManager({
               <div className="space-y-2 p-3">
                 <div className="flex items-center justify-between gap-2">
                   <Badge>{m.kind}</Badge>
-                  <span className="text-[10px] text-slate-500">
+                  <span className="text-[10px] text-[hsl(var(--muted))]">
                     {(m.sizeBytes / 1024).toFixed(0)} KB
                   </span>
                 </div>
-                {m.caption ? <p className="text-sm text-slate-300">{m.caption}</p> : null}
+                {m.caption ? (
+                  <p className="text-sm text-[hsl(var(--foreground-muted))]">{m.caption}</p>
+                ) : null}
                 <button
                   onClick={() => remove(m.id)}
                   disabled={busy}

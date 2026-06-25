@@ -174,10 +174,10 @@ export function FinancialStatementsPanel({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="eyebrow">Counterparty Financials</div>
-          <h3 className="mt-2 text-2xl font-semibold text-white">
+          <h3 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
             Financial statements and credit screens
           </h3>
-          <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400">
+          <p className="mt-3 max-w-3xl text-sm leading-7 text-[hsl(var(--muted))]">
             Tenant, sponsor, and lender financials ingested from the data room (and manual entry),
             normalized to {displayCurrency} with the latest credit assessment per statement.
           </p>
@@ -190,7 +190,7 @@ export function FinancialStatementsPanel({
       </div>
 
       {statements.length === 0 ? (
-        <div className="mt-5 rounded-[22px] border border-white/10 bg-white/[0.03] p-5 text-sm text-slate-400">
+        <div className="mt-5 rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5 text-sm text-[hsl(var(--muted))]">
           No financial statements ingested yet. Upload a counterparty financial document to the data
           room, or capture one manually — extracted statements and their credit screens will appear
           here automatically.
@@ -206,13 +206,15 @@ export function FinancialStatementsPanel({
             return (
               <div
                 key={counterparty.id}
-                className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+                className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5"
                 data-testid="financial-statements-counterparty"
               >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <div className="text-lg font-semibold text-white">{counterparty.name}</div>
-                    <div className="mt-1 text-xs uppercase tracking-[0.2em] text-slate-500">
+                    <div className="text-lg font-semibold text-[hsl(var(--foreground))]">
+                      {counterparty.name}
+                    </div>
+                    <div className="mt-1 text-xs uppercase tracking-[0.2em] text-[hsl(var(--muted))]">
                       {toSentenceCase(counterparty.role)}
                     </div>
                   </div>
@@ -273,11 +275,11 @@ export function FinancialStatementsPanel({
                     return (
                       <div
                         key={statement.id}
-                        className="rounded-[20px] border border-white/10 bg-slate-950/40 p-4"
+                        className="rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4"
                         data-testid="financial-statement-row"
                       >
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-sm font-semibold text-white">
+                          <span className="text-sm font-semibold text-[hsl(var(--foreground))]">
                             FY{statement.fiscalYear ?? '—'}
                             {statement.fiscalPeriod &&
                             !/^(FY|ANNUAL)$/i.test(statement.fiscalPeriod)
@@ -292,7 +294,7 @@ export function FinancialStatementsPanel({
                               : statement.currency}
                           </Badge>
                           {statement.provenanceSystem ? (
-                            <span className="text-[10px] uppercase tracking-[0.2em] text-slate-500">
+                            <span className="text-[10px] uppercase tracking-[0.2em] text-[hsl(var(--muted))]">
                               {statement.provenanceSystem}
                             </span>
                           ) : null}
@@ -303,10 +305,10 @@ export function FinancialStatementsPanel({
                             {headlineRows.map(([label, value]) => (
                               <div
                                 key={label}
-                                className="rounded-[16px] border border-white/10 bg-white/[0.03] px-4 py-3"
+                                className="rounded-[16px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-4 py-3"
                               >
                                 <div className="fine-print">{label}</div>
-                                <div className="mt-2 text-base font-semibold text-white">
+                                <div className="mt-2 text-base font-semibold text-[hsl(var(--foreground))]">
                                   {value}
                                 </div>
                               </div>
@@ -319,7 +321,7 @@ export function FinancialStatementsPanel({
                             {creditRows.map(([label, value]) => (
                               <span
                                 key={label}
-                                className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs text-slate-300"
+                                className="rounded-full border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-1.5 text-xs text-[hsl(var(--foreground-muted))]"
                               >
                                 {label} {value}
                               </span>
@@ -341,18 +343,18 @@ export function FinancialStatementsPanel({
                         ) : null}
 
                         {statement.lineItems.length > 0 ? (
-                          <div className="mt-4 overflow-hidden rounded-[16px] border border-white/10">
+                          <div className="mt-4 overflow-hidden rounded-[16px] border border-[hsl(var(--border))]">
                             <table className="w-full text-sm">
                               <tbody>
                                 {statement.lineItems.map((lineItem) => (
                                   <tr
                                     key={lineItem.id}
-                                    className="border-b border-white/5 last:border-0"
+                                    className="border-b border-[hsl(var(--border))] last:border-0"
                                   >
-                                    <td className="px-4 py-2 text-slate-300">
+                                    <td className="px-4 py-2 text-[hsl(var(--foreground-muted))]">
                                       {lineItem.lineLabel}
                                     </td>
-                                    <td className="px-4 py-2 text-right font-mono text-slate-200">
+                                    <td className="px-4 py-2 text-right font-mono text-[hsl(var(--foreground))]">
                                       {money(lineItem.valueKrw)}
                                     </td>
                                   </tr>
@@ -363,7 +365,7 @@ export function FinancialStatementsPanel({
                         ) : null}
 
                         {statement.creditAssessments[0]?.summary ? (
-                          <p className="mt-4 text-sm leading-7 text-slate-400">
+                          <p className="mt-4 text-sm leading-7 text-[hsl(var(--muted))]">
                             {statement.creditAssessments[0].summary}
                           </p>
                         ) : null}

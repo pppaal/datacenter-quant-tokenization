@@ -138,7 +138,7 @@ export function NotificationBell() {
         aria-label="Notifications"
         aria-expanded={open}
         onClick={() => setOpen((prev) => !prev)}
-        className="relative inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/12 bg-white/[0.04] text-slate-200 transition hover:-translate-y-0.5 hover:border-accent/40 hover:bg-white/[0.08]"
+        className="relative inline-flex h-11 w-11 items-center justify-center rounded-full border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] text-[hsl(var(--foreground))] transition hover:-translate-y-0.5 hover:border-accent/40 hover:bg-[hsl(var(--surface-hover))]"
         data-testid="admin-notification-bell"
       >
         <svg
@@ -156,17 +156,19 @@ export function NotificationBell() {
           <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
         </svg>
         {badgeLabel ? (
-          <span className="absolute -right-1 -top-1 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full border border-slate-950 bg-rose-500 px-1.5 text-[10px] font-semibold leading-none text-white">
+          <span className="absolute -right-1 -top-1 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full border border-slate-950 bg-rose-500 px-1.5 text-[10px] font-semibold leading-none text-[hsl(var(--foreground))]">
             {badgeLabel}
           </span>
         ) : null}
       </button>
       {open ? (
-        <div className="absolute right-0 z-40 mt-3 w-[360px] max-w-[92vw] rounded-[22px] border border-white/10 bg-slate-950/95 p-4 shadow-2xl backdrop-blur-xl">
-          <div className="flex items-center justify-between gap-3 border-b border-white/10 pb-3">
+        <div className="absolute right-0 z-40 mt-3 w-[360px] max-w-[92vw] rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4 shadow-2xl backdrop-blur-xl">
+          <div className="flex items-center justify-between gap-3 border-b border-[hsl(var(--border))] pb-3">
             <div>
-              <div className="text-sm font-semibold text-white">Notifications</div>
-              <div className="text-[11px] uppercase tracking-[0.22em] text-slate-500">
+              <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
+                Notifications
+              </div>
+              <div className="text-[11px] uppercase tracking-[0.22em] text-[hsl(var(--muted))]">
                 {unreadCount > 0 ? `${unreadCount} unread` : 'All caught up'}
               </div>
             </div>
@@ -181,7 +183,7 @@ export function NotificationBell() {
           </div>
           <div className="mt-3 max-h-[420px] space-y-2 overflow-y-auto pr-1">
             {loading && notifications.length === 0 ? (
-              <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-4 text-xs text-slate-500">
+              <div className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4 text-xs text-[hsl(var(--muted))]">
                 Loading notifications...
               </div>
             ) : null}
@@ -191,7 +193,7 @@ export function NotificationBell() {
               </div>
             ) : null}
             {!loading && !error && notifications.length === 0 ? (
-              <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-4 text-xs text-slate-500">
+              <div className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4 text-xs text-[hsl(var(--muted))]">
                 No notifications yet.
               </div>
             ) : null}
@@ -202,7 +204,9 @@ export function NotificationBell() {
                   key={item.id}
                   className={cn(
                     'rounded-2xl border p-3 transition',
-                    isUnread ? 'border-white/12 bg-white/[0.05]' : 'border-white/5 bg-white/[0.02]'
+                    isUnread
+                      ? 'border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))]'
+                      : 'border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))]'
                   )}
                 >
                   <div className="flex items-start gap-3">
@@ -218,17 +222,19 @@ export function NotificationBell() {
                         <div
                           className={cn(
                             'text-sm font-semibold leading-snug',
-                            isUnread ? 'text-white' : 'text-slate-300'
+                            isUnread
+                              ? 'text-[hsl(var(--foreground))]'
+                              : 'text-[hsl(var(--foreground-muted))]'
                           )}
                         >
                           {item.title}
                         </div>
-                        <div className="shrink-0 text-[10px] uppercase tracking-[0.18em] text-slate-500">
+                        <div className="shrink-0 text-[10px] uppercase tracking-[0.18em] text-[hsl(var(--muted))]">
                           {formatRelative(item.createdAt)}
                         </div>
                       </div>
                       {item.body ? (
-                        <div className="mt-1 text-xs leading-relaxed text-slate-400">
+                        <div className="mt-1 text-xs leading-relaxed text-[hsl(var(--muted))]">
                           {item.body}
                         </div>
                       ) : null}

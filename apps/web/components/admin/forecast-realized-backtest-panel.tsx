@@ -14,10 +14,10 @@ export function ForecastRealizedBacktestPanel({
       <div className="flex items-center justify-between gap-4">
         <div>
           <div className="eyebrow">ML Forecast Validation</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">
+          <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
             Gradient boosting forecast vs realized outcomes
           </h2>
-          <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-400">
+          <p className="mt-2 max-w-2xl text-sm leading-7 text-[hsl(var(--muted))]">
             Each row uses only the valuation history available at that run date, then compares the
             predicted 12-month drift against the first realized asset outcome that followed. This is
             the cleanest backtest for the learned forecast layer.
@@ -29,43 +29,43 @@ export function ForecastRealizedBacktestPanel({
       </div>
 
       <div className="mt-5 grid gap-4 md:grid-cols-4">
-        <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+        <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5">
           <div className="fine-print">Matched Forecasts</div>
-          <div className="mt-3 text-3xl font-semibold text-white">
+          <div className="mt-3 text-3xl font-semibold text-[hsl(var(--foreground))]">
             {formatNumber(backtest.summary.matchedForecastCount, 0)}
           </div>
-          <p className="mt-2 text-sm text-slate-400">
+          <p className="mt-2 text-sm text-[hsl(var(--muted))]">
             Run/outcome pairs with a valid ML forecast and realized result.
           </p>
         </div>
-        <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+        <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5">
           <div className="fine-print">Asset Coverage</div>
-          <div className="mt-3 text-3xl font-semibold text-white">
+          <div className="mt-3 text-3xl font-semibold text-[hsl(var(--foreground))]">
             {formatNumber(backtest.summary.assetCoverage, 0)}
           </div>
-          <p className="mt-2 text-sm text-slate-400">
+          <p className="mt-2 text-sm text-[hsl(var(--muted))]">
             Distinct assets contributing to forecast validation.
           </p>
         </div>
-        <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+        <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5">
           <div className="fine-print">Directional Hit Rate</div>
-          <div className="mt-3 text-3xl font-semibold text-white">
+          <div className="mt-3 text-3xl font-semibold text-[hsl(var(--foreground))]">
             {backtest.summary.directionalHitRatePct === null
               ? 'N/A'
               : formatPercent(backtest.summary.directionalHitRatePct)}
           </div>
-          <p className="mt-2 text-sm text-slate-400">
+          <p className="mt-2 text-sm text-[hsl(var(--muted))]">
             How often the forecast got the sign of the value move right.
           </p>
         </div>
-        <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+        <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5">
           <div className="fine-print">Mean Abs Value Error</div>
-          <div className="mt-3 text-3xl font-semibold text-white">
+          <div className="mt-3 text-3xl font-semibold text-[hsl(var(--foreground))]">
             {backtest.summary.meanAbsoluteValueErrorPct === null
               ? 'N/A'
               : formatPercent(backtest.summary.meanAbsoluteValueErrorPct)}
           </div>
-          <p className="mt-2 text-sm text-slate-400">
+          <p className="mt-2 text-sm text-[hsl(var(--muted))]">
             {backtest.summary.meanAbsoluteDscrErrorPct === null
               ? 'DSCR error not available yet.'
               : `DSCR error ${formatPercent(backtest.summary.meanAbsoluteDscrErrorPct)}`}
@@ -79,16 +79,18 @@ export function ForecastRealizedBacktestPanel({
             <Link
               key={`${row.runId}-${row.outcomeDate}`}
               href={`/admin/valuations/${row.runId}`}
-              className="flex items-center justify-between gap-4 rounded-[24px] border border-white/10 bg-white/[0.03] p-5 transition hover:border-white/20 hover:bg-white/[0.05]"
+              className="flex items-center justify-between gap-4 rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5 transition hover:border-[hsl(var(--border-strong))] hover:bg-[hsl(var(--surface-hover))]"
             >
               <div>
-                <div className="text-sm font-semibold text-white">{row.assetName}</div>
-                <div className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">
+                <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
+                  {row.assetName}
+                </div>
+                <div className="mt-1 text-xs uppercase tracking-[0.18em] text-[hsl(var(--muted))]">
                   {row.assetCode} / {row.assetClass.replaceAll('_', ' ')} / outcome{' '}
                   {formatDate(row.outcomeDate)}
                 </div>
               </div>
-              <div className="grid gap-2 text-right text-sm text-slate-300 md:grid-cols-4 md:text-left">
+              <div className="grid gap-2 text-right text-sm text-[hsl(var(--foreground-muted))] md:grid-cols-4 md:text-left">
                 <div>
                   <div className="fine-print">Horizon</div>
                   <div className="mt-1">{formatNumber(row.horizonDays, 0)}d</div>
@@ -109,7 +111,7 @@ export function ForecastRealizedBacktestPanel({
             </Link>
           ))
         ) : (
-          <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5 text-sm text-slate-400">
+          <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5 text-sm text-[hsl(var(--muted))]">
             No run has enough sequential history plus a later realized outcome yet. Keep adding
             valuation history and realized observations.
           </div>

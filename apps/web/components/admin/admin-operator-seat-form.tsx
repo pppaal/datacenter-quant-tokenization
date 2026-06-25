@@ -114,7 +114,7 @@ export function AdminOperatorSeatForm({
 
   return (
     <div
-      className="mt-4 space-y-3 rounded-[20px] border border-white/10 bg-slate-950/40 p-4"
+      className="mt-4 space-y-3 rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4"
       data-testid="operator-seat-form"
     >
       <div className="grid gap-3 md:grid-cols-2">
@@ -158,7 +158,9 @@ export function AdminOperatorSeatForm({
         >
           Revoke Sessions
         </Button>
-        <div className="text-xs text-slate-500">session version {sessionVersion ?? 1}</div>
+        <div className="text-xs text-[hsl(var(--muted))]">
+          session version {sessionVersion ?? 1}
+        </div>
       </div>
       {feedback ? (
         <div

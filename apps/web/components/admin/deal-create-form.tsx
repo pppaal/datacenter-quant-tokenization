@@ -91,8 +91,10 @@ export function DealCreateForm({ assets }: Props) {
     <form className="space-y-6" onSubmit={form.handleSubmit(onSubmit)}>
       <div>
         <div className="eyebrow">New Deal</div>
-        <h2 className="mt-3 text-2xl font-semibold text-white">Open a live execution record</h2>
-        <p className="mt-3 text-sm leading-7 text-slate-400">
+        <h2 className="mt-3 text-2xl font-semibold text-[hsl(var(--foreground))]">
+          Open a live execution record
+        </h2>
+        <p className="mt-3 text-sm leading-7 text-[hsl(var(--muted))]">
           Start from a teaser, link an existing asset if one already exists, and keep the next
           action visible from day one.
         </p>
@@ -223,12 +225,12 @@ export function DealCreateForm({ assets }: Props) {
       </div>
 
       {selectedAsset ? (
-        <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5 text-sm text-slate-300">
+        <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5 text-sm text-[hsl(var(--foreground-muted))]">
           <div className="fine-print">Linked Asset Context</div>
-          <div className="mt-3 text-white">
+          <div className="mt-3 text-[hsl(var(--foreground))]">
             {selectedAsset.assetCode} / {selectedAsset.name}
           </div>
-          <div className="mt-2 text-slate-400">
+          <div className="mt-2 text-[hsl(var(--muted))]">
             {selectedAsset.assetClass.replaceAll('_', ' ')} /{' '}
             {selectedAsset.city ?? selectedAsset.market} / {selectedAsset.country ?? 'N/A'}
           </div>
@@ -244,8 +246,8 @@ export function DealCreateForm({ assets }: Props) {
         </p>
       ) : null}
 
-      <div className="flex items-center justify-between gap-4 border-t border-white/10 pt-5">
-        <p className="max-w-2xl text-sm text-slate-400">
+      <div className="flex items-center justify-between gap-4 border-t border-[hsl(var(--border))] pt-5">
+        <p className="max-w-2xl text-sm text-[hsl(var(--muted))]">
           This creates the execution record only. Detailed diligence tasks, counterparties, notes,
           and risks are added on the deal page.
         </p>

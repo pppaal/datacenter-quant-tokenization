@@ -149,12 +149,12 @@ export function CapexBookForm({
         {items.map((item, index) => (
           <div
             key={item.localId}
-            className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+            className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5"
           >
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <div className="eyebrow">CAPEX Item {index + 1}</div>
-                <h4 className="mt-2 text-xl font-semibold text-white">
+                <h4 className="mt-2 text-xl font-semibold text-[hsl(var(--foreground))]">
                   {item.label || `CAPEX tranche ${index + 1}`}
                 </h4>
               </div>
@@ -225,7 +225,7 @@ export function CapexBookForm({
                   onChange={(event) => updateItem(item.localId, 'spendYear', event.target.value)}
                 />
               </label>
-              <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-950/30 px-4 py-3 text-sm text-slate-200">
+              <label className="flex items-center gap-3 rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-4 py-3 text-sm text-[hsl(var(--foreground))]">
                 <input
                   type="checkbox"
                   checked={item.isEmbedded}
@@ -233,7 +233,7 @@ export function CapexBookForm({
                 />
                 Embedded cost
               </label>
-              <div className="rounded-2xl border border-white/10 bg-slate-950/30 px-4 py-3 text-sm text-slate-400 xl:col-span-3">
+              <div className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-4 py-3 text-sm text-[hsl(var(--muted))] xl:col-span-3">
                 Land and contingency directly affect the downside floor. Electrical, mechanical,
                 shell/core, and IT fit-out drive retained hard cost and replacement value.
               </div>
@@ -252,8 +252,8 @@ export function CapexBookForm({
         ))}
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-4">
-        <p className="max-w-3xl text-sm text-slate-400">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[hsl(var(--border))] pt-4">
+        <p className="max-w-3xl text-sm text-[hsl(var(--muted))]">
           Split development cost into land, shell/core, electrical, mechanical, IT fit-out, soft
           cost, and contingency so the replacement floor reflects real spend structure instead of
           fallback allocation.

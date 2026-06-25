@@ -45,17 +45,19 @@ export function PortfolioOptimizationPanel({ lab }: Props) {
           </Badge>
         ) : null}
       </div>
-      <p className="mt-3 text-sm leading-7 text-slate-300">{lab.summary}</p>
-      <p className="mt-2 text-xs leading-6 text-slate-500">{lab.methodology}</p>
+      <p className="mt-3 text-sm leading-7 text-[hsl(var(--foreground-muted))]">{lab.summary}</p>
+      <p className="mt-2 text-xs leading-6 text-[hsl(var(--muted))]">{lab.methodology}</p>
 
       <div className="mt-5 grid gap-4 xl:grid-cols-2">
-        <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+        <div className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4">
           <div className="fine-print">Primary Move</div>
-          <p className="mt-2 text-sm leading-7 text-white">{lab.topMove}</p>
+          <p className="mt-2 text-sm leading-7 text-[hsl(var(--foreground))]">{lab.topMove}</p>
         </div>
-        <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+        <div className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4">
           <div className="fine-print">Defensive Move</div>
-          <p className="mt-2 text-sm leading-7 text-white">{lab.defensiveMove}</p>
+          <p className="mt-2 text-sm leading-7 text-[hsl(var(--foreground))]">
+            {lab.defensiveMove}
+          </p>
         </div>
       </div>
 
@@ -65,16 +67,18 @@ export function PortfolioOptimizationPanel({ lab }: Props) {
           {lab.assetRows.map((row) => (
             <div
               key={row.portfolioAssetId}
-              className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4"
+              className="rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4"
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <div className="text-sm font-semibold text-white">{row.assetName}</div>
+                    <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
+                      {row.assetName}
+                    </div>
                     <Badge>{row.assetCode}</Badge>
                     <Badge tone="neutral">{row.assetClass.replaceAll('_', ' ')}</Badge>
                   </div>
-                  <div className="mt-1 text-xs text-slate-500">{row.marketLabel}</div>
+                  <div className="mt-1 text-xs text-[hsl(var(--muted))]">{row.marketLabel}</div>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Badge tone={toneForRecommendation(row.recommendation)}>
@@ -94,35 +98,37 @@ export function PortfolioOptimizationPanel({ lab }: Props) {
               <div className="mt-3 grid gap-3 md:grid-cols-5">
                 <div>
                   <div className="fine-print">Current</div>
-                  <div className="mt-1 text-sm text-white">
+                  <div className="mt-1 text-sm text-[hsl(var(--foreground))]">
                     {formatPercent(row.currentWeightPct)}
                   </div>
                 </div>
                 <div>
                   <div className="fine-print">Target</div>
-                  <div className="mt-1 text-sm text-white">
+                  <div className="mt-1 text-sm text-[hsl(var(--foreground))]">
                     {formatPercent(row.targetWeightPct)}
                   </div>
                 </div>
                 <div>
                   <div className="fine-print">Delta</div>
-                  <div className="mt-1 text-sm text-white">
+                  <div className="mt-1 text-sm text-[hsl(var(--foreground))]">
                     {row.deltaPct >= 0 ? '+' : ''}
                     {formatPercent(row.deltaPct)}
                   </div>
                 </div>
                 <div>
                   <div className="fine-print">Signal</div>
-                  <div className="mt-1 text-sm text-white">{formatPercent(row.scorePct)}</div>
+                  <div className="mt-1 text-sm text-[hsl(var(--foreground))]">
+                    {formatPercent(row.scorePct)}
+                  </div>
                 </div>
                 <div>
                   <div className="fine-print">Stress Load</div>
-                  <div className="mt-1 text-sm text-white">
+                  <div className="mt-1 text-sm text-[hsl(var(--foreground))]">
                     {formatPercent(row.stressPenaltyPct)}
                   </div>
                 </div>
               </div>
-              <ul className="mt-3 space-y-1 text-xs leading-6 text-slate-400">
+              <ul className="mt-3 space-y-1 text-xs leading-6 text-[hsl(var(--muted))]">
                 {row.reasons.map((reason) => (
                   <li key={`${row.portfolioAssetId}-${reason}`}>{reason}</li>
                 ))}
@@ -136,10 +142,12 @@ export function PortfolioOptimizationPanel({ lab }: Props) {
           {lab.scenarioRows.map((scenario) => (
             <div
               key={scenario.label}
-              className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4"
+              className="rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4"
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="text-sm font-semibold text-white">{scenario.label}</div>
+                <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
+                  {scenario.label}
+                </div>
                 <Badge
                   tone={
                     scenario.weightedStressScore >= 18
@@ -155,42 +163,44 @@ export function PortfolioOptimizationPanel({ lab }: Props) {
               <div className="mt-3 grid gap-3 md:grid-cols-2">
                 <div>
                   <div className="fine-print">Cap Rate Shock</div>
-                  <div className="mt-1 text-sm text-white">
+                  <div className="mt-1 text-sm text-[hsl(var(--foreground))]">
                     {formatNumber(scenario.capRateShockBps, 0)} bps
                   </div>
                 </div>
                 <div>
                   <div className="fine-print">Occupancy Shock</div>
-                  <div className="mt-1 text-sm text-white">
+                  <div className="mt-1 text-sm text-[hsl(var(--foreground))]">
                     {formatPercent(scenario.occupancyShockPct)}
                   </div>
                 </div>
                 <div>
                   <div className="fine-print">Debt Spread</div>
-                  <div className="mt-1 text-sm text-white">
+                  <div className="mt-1 text-sm text-[hsl(var(--foreground))]">
                     {formatNumber(scenario.debtSpreadShockBps, 0)} bps
                   </div>
                 </div>
                 <div>
                   <div className="fine-print">Lead Asset</div>
-                  <div className="mt-1 text-sm text-white">
+                  <div className="mt-1 text-sm text-[hsl(var(--foreground))]">
                     {scenario.leadAssetName ?? 'Portfolio-wide'}
                   </div>
                 </div>
                 <div>
                   <div className="fine-print">Value Impact</div>
-                  <div className="mt-1 text-sm text-white">
+                  <div className="mt-1 text-sm text-[hsl(var(--foreground))]">
                     {formatPercent(scenario.weightedValueImpactPct)}
                   </div>
                 </div>
                 <div>
                   <div className="fine-print">DSCR Impact</div>
-                  <div className="mt-1 text-sm text-white">
+                  <div className="mt-1 text-sm text-[hsl(var(--foreground))]">
                     {formatPercent(scenario.weightedDscrImpactPct)}
                   </div>
                 </div>
               </div>
-              <p className="mt-3 text-xs leading-6 text-slate-400">{scenario.commentary}</p>
+              <p className="mt-3 text-xs leading-6 text-[hsl(var(--muted))]">
+                {scenario.commentary}
+              </p>
             </div>
           ))}
         </div>

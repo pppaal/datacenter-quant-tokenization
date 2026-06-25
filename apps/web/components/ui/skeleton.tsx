@@ -1,7 +1,9 @@
 import { cn } from '@/lib/utils';
 
 export function Skeleton({ className }: { className?: string }) {
-  return <div className={cn('animate-pulse rounded-[18px] bg-white/[0.06]', className)} />;
+  return (
+    <div className={cn('animate-pulse rounded-[18px] bg-[hsl(var(--surface-hover))]', className)} />
+  );
 }
 
 export function MetricSkeleton() {
@@ -15,7 +17,7 @@ export function MetricSkeleton() {
 
 export function PanelSkeleton({ rows = 3 }: { rows?: number }) {
   return (
-    <div className="space-y-5 rounded-[28px] border border-white/10 bg-white/[0.02] p-6 md:p-8">
+    <div className="space-y-5 rounded-[28px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-6 md:p-8">
       <div className="space-y-3">
         <Skeleton className="h-3 w-24" />
         <Skeleton className="h-7 w-64" />

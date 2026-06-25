@@ -119,8 +119,10 @@ export function AuditLogPanel({ data, filters }: Props) {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="eyebrow">Audit Trail</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">Admin event ledger</h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
+          <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
+            Admin event ledger
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-[hsl(var(--muted))]">
             Inspect operator actions, system mutations, and security events captured by the audit
             pipeline.
           </p>
@@ -139,14 +141,14 @@ export function AuditLogPanel({ data, filters }: Props) {
             return (
               <span
                 key={`${chip.key}-${chip.value}`}
-                className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5 text-[11px] font-mono uppercase tracking-[0.2em] text-slate-200"
+                className="inline-flex items-center gap-2 rounded-full border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-1.5 text-[11px] font-mono uppercase tracking-[0.2em] text-[hsl(var(--foreground))]"
               >
-                <span className="text-slate-400">{chip.label}</span>
-                <span className="text-white">{chip.value}</span>
+                <span className="text-[hsl(var(--muted))]">{chip.label}</span>
+                <span className="text-[hsl(var(--foreground))]">{chip.value}</span>
                 <Link
                   href={removeHref}
                   aria-label={`Clear ${chip.label} filter`}
-                  className="text-slate-400 transition hover:text-[hsl(var(--danger))]"
+                  className="text-[hsl(var(--muted))] transition hover:text-[hsl(var(--danger))]"
                 >
                   x
                 </Link>
@@ -155,7 +157,7 @@ export function AuditLogPanel({ data, filters }: Props) {
           })}
           <Link
             href="/admin/audit"
-            className="inline-flex items-center rounded-full border border-white/10 px-3 py-1.5 text-[11px] font-mono uppercase tracking-[0.2em] text-slate-300 transition hover:border-rose-400/40 hover:text-rose-200"
+            className="inline-flex items-center rounded-full border border-[hsl(var(--border))] px-3 py-1.5 text-[11px] font-mono uppercase tracking-[0.2em] text-[hsl(var(--foreground-muted))] transition hover:border-rose-400/40 hover:text-rose-200"
           >
             Clear all
           </Link>
@@ -163,19 +165,19 @@ export function AuditLogPanel({ data, filters }: Props) {
       ) : null}
 
       {events.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] p-8 text-center">
+        <div className="rounded-2xl border border-dashed border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-8 text-center">
           <div className="eyebrow">No Events</div>
-          <h3 className="mt-2 text-xl font-semibold text-white">
+          <h3 className="mt-2 text-xl font-semibold text-[hsl(var(--foreground))]">
             No audit events match the current filters
           </h3>
-          <p className="mt-2 text-sm text-slate-400">
+          <p className="mt-2 text-sm text-[hsl(var(--muted))]">
             Adjust the filter form above or clear filters to widen the search.
           </p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-white/10">
+        <div className="overflow-hidden rounded-2xl border border-[hsl(var(--border))]">
           <table className="w-full table-fixed text-left text-sm">
-            <thead className="bg-white/[0.04] text-[11px] uppercase tracking-[0.18em] text-slate-400">
+            <thead className="bg-[hsl(var(--panel-alt))] text-[11px] uppercase tracking-[0.18em] text-[hsl(var(--muted))]">
               <tr>
                 <th className="w-44 px-4 py-3 font-medium">Time</th>
                 <th className="w-48 px-4 py-3 font-medium">Actor</th>
@@ -187,20 +189,22 @@ export function AuditLogPanel({ data, filters }: Props) {
             </thead>
             <tbody className="divide-y divide-white/5">
               {events.map((event) => (
-                <tr key={event.id} className="align-top text-slate-200">
-                  <td className="px-4 py-4 font-mono text-[11px] text-slate-300">
+                <tr key={event.id} className="align-top text-[hsl(var(--foreground))]">
+                  <td className="px-4 py-4 font-mono text-[11px] text-[hsl(var(--foreground-muted))]">
                     {formatTimestamp(event.createdAt)}
                   </td>
                   <td className="px-4 py-4">
-                    <div className="text-sm text-white">{event.actorIdentifier}</div>
+                    <div className="text-sm text-[hsl(var(--foreground))]">
+                      {event.actorIdentifier}
+                    </div>
                     <div className="fine-print mt-1">{event.actorRole}</div>
                   </td>
                   <td className="px-4 py-4">
-                    <div className="text-sm text-white">{event.entityType}</div>
+                    <div className="text-sm text-[hsl(var(--foreground))]">{event.entityType}</div>
                     <div className="fine-print mt-1">{event.action}</div>
                   </td>
                   <td className="px-4 py-4">
-                    <div className="truncate font-mono text-[11px] text-slate-300">
+                    <div className="truncate font-mono text-[11px] text-[hsl(var(--foreground-muted))]">
                       {event.entityId ?? 'n/a'}
                     </div>
                     {event.assetId ? (
@@ -215,7 +219,7 @@ export function AuditLogPanel({ data, filters }: Props) {
                       <summary className="cursor-pointer text-xs font-semibold uppercase tracking-[0.18em] text-accent transition group-open:text-cyan-300">
                         View detail
                       </summary>
-                      <pre className="mt-3 max-h-72 overflow-auto rounded-xl border border-white/10 bg-slate-950/80 p-3 text-[11px] leading-5 text-slate-200">
+                      <pre className="mt-3 max-h-72 overflow-auto rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-3 text-[11px] leading-5 text-[hsl(var(--foreground))]">
                         {formatPayload(event)}
                       </pre>
                     </details>
@@ -231,7 +235,7 @@ export function AuditLogPanel({ data, filters }: Props) {
         <div className="flex justify-center">
           <Link
             href={loadMoreHref}
-            className="inline-flex min-h-11 items-center justify-center rounded-full border border-white/12 bg-white/[0.04] px-6 py-2.5 text-sm font-semibold tracking-[-0.01em] text-slate-100 transition hover:-translate-y-0.5 hover:border-accent/40 hover:bg-white/[0.08]"
+            className="inline-flex min-h-11 items-center justify-center rounded-full border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-6 py-2.5 text-sm font-semibold tracking-[-0.01em] text-[hsl(var(--foreground))] transition hover:-translate-y-0.5 hover:border-accent/40 hover:bg-[hsl(var(--surface-hover))]"
           >
             Load more events
           </Link>

@@ -48,8 +48,10 @@ export function OperatorDashboardPanel({ data }: Props) {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="metric-card">
           <div className="fine-print">AUM (NAV)</div>
-          <div className="mt-3 text-4xl font-semibold text-white">{krw(portfolio.totalAumKrw)}</div>
-          <p className="mt-2 text-sm text-slate-400">
+          <div className="mt-3 text-4xl font-semibold text-[hsl(var(--foreground))]">
+            {krw(portfolio.totalAumKrw)}
+          </div>
+          <p className="mt-2 text-sm text-[hsl(var(--muted))]">
             Avg NOI yield{' '}
             {portfolio.avgNoiYieldPct > 0 ? `${portfolio.avgNoiYieldPct.toFixed(1)}%` : 'N/A'}
             {portfolio.aumUsedCostFallback ? ' · some assets at cost basis' : ''}
@@ -60,7 +62,7 @@ export function OperatorDashboardPanel({ data }: Props) {
           <div className="mt-3 text-4xl font-semibold text-cyan-300">
             {formatNumber(pipeline.totalActive, 0)}
           </div>
-          <p className="mt-2 text-sm text-slate-400">
+          <p className="mt-2 text-sm text-[hsl(var(--muted))]">
             Across {pipeline.stages.filter((s) => s.count > 0).length} pipeline stages
           </p>
         </div>
@@ -69,7 +71,7 @@ export function OperatorDashboardPanel({ data }: Props) {
           <div className="mt-3 text-4xl font-semibold text-[hsl(var(--success))]">
             {formatNumber(portfolio.totalAssets, 0)}
           </div>
-          <p className="mt-2 text-sm text-slate-400">
+          <p className="mt-2 text-sm text-[hsl(var(--muted))]">
             Avg occupancy{' '}
             {portfolio.avgOccupancyPct > 0 ? formatPercent(portfolio.avgOccupancyPct) : 'N/A'}
           </p>
@@ -79,7 +81,7 @@ export function OperatorDashboardPanel({ data }: Props) {
           <div className="mt-3 text-4xl font-semibold text-[hsl(var(--warning))]">
             {krw(capital.totalCommittedKrw)}
           </div>
-          <p className="mt-2 text-sm text-slate-400">
+          <p className="mt-2 text-sm text-[hsl(var(--muted))]">
             Called {krw(capital.totalCalledKrw)} / Distributed {krw(capital.totalDistributedKrw)}
           </p>
         </div>
@@ -90,7 +92,9 @@ export function OperatorDashboardPanel({ data }: Props) {
           <div className="flex items-center justify-between gap-4">
             <div>
               <div className="eyebrow">Deal Pipeline</div>
-              <h2 className="mt-2 text-2xl font-semibold text-white">Stage distribution</h2>
+              <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
+                Stage distribution
+              </h2>
             </div>
             <Badge tone={pipeline.totalActive > 0 ? 'good' : 'neutral'}>
               {formatNumber(pipeline.totalActive, 0)} active
@@ -98,7 +102,7 @@ export function OperatorDashboardPanel({ data }: Props) {
           </div>
           <div className="mt-5 space-y-3">
             {pipeline.totalActive === 0 ? (
-              <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5 text-sm text-slate-400">
+              <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5 text-sm text-[hsl(var(--muted))]">
                 No live deals in the pipeline yet. Seed a sourced opportunity to populate the
                 funnel.
               </div>
@@ -109,17 +113,17 @@ export function OperatorDashboardPanel({ data }: Props) {
                 return (
                   <div
                     key={stage.stage}
-                    className="rounded-[20px] border border-white/10 bg-slate-950/35 p-4"
+                    className="rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4"
                   >
                     <div className="flex items-center justify-between gap-3">
-                      <div className="text-sm font-semibold text-white">
+                      <div className="text-sm font-semibold text-[hsl(var(--foreground))]">
                         {stageLabel(stage.stage)}
                       </div>
-                      <div className="font-mono text-sm text-slate-300">
+                      <div className="font-mono text-sm text-[hsl(var(--foreground-muted))]">
                         {formatNumber(stage.count, 0)}
                       </div>
                     </div>
-                    <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/[0.05]">
+                    <div className="mt-3 h-2 overflow-hidden rounded-full bg-[hsl(var(--panel-alt))]">
                       <div
                         className="h-full rounded-full bg-gradient-to-r from-cyan-400/60 via-cyan-300/80 to-emerald-300/70"
                         style={{ width: `${widthPct}%` }}
@@ -136,7 +140,7 @@ export function OperatorDashboardPanel({ data }: Props) {
           <div className="flex items-center justify-between gap-4">
             <div>
               <div className="eyebrow">Action Items</div>
-              <h2 className="mt-2 text-2xl font-semibold text-white">
+              <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
                 Queues needing operator attention
               </h2>
             </div>
@@ -154,7 +158,7 @@ export function OperatorDashboardPanel({ data }: Props) {
           </div>
           <div className="mt-5 grid gap-3">
             {actionItems.every((item) => item.count === 0) ? (
-              <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5 text-sm text-slate-400">
+              <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5 text-sm text-[hsl(var(--muted))]">
                 All queues are clear. Committee, research, task, and diligence workflows are up to
                 date.
               </div>
@@ -163,7 +167,7 @@ export function OperatorDashboardPanel({ data }: Props) {
                 <Link
                   key={item.key}
                   href={item.href}
-                  className="rounded-[22px] border border-white/10 bg-slate-950/35 p-4 transition hover:border-white/20 hover:bg-white/[0.05]"
+                  className="rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4 transition hover:border-[hsl(var(--border-strong))] hover:bg-[hsl(var(--surface-hover))]"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
@@ -180,8 +184,12 @@ export function OperatorDashboardPanel({ data }: Props) {
                           {item.severity === 'good' ? 'clear' : item.severity}
                         </Badge>
                       </div>
-                      <div className="mt-3 text-sm font-semibold text-white">{item.label}</div>
-                      <p className="mt-1 text-sm leading-6 text-slate-400">{item.description}</p>
+                      <div className="mt-3 text-sm font-semibold text-[hsl(var(--foreground))]">
+                        {item.label}
+                      </div>
+                      <p className="mt-1 text-sm leading-6 text-[hsl(var(--muted))]">
+                        {item.description}
+                      </p>
                     </div>
                     <div className="text-right">
                       <div
@@ -208,7 +216,9 @@ export function OperatorDashboardPanel({ data }: Props) {
         <div className="flex items-center justify-between gap-4">
           <div>
             <div className="eyebrow">Recent Activity</div>
-            <h2 className="mt-2 text-2xl font-semibold text-white">Latest audit events</h2>
+            <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
+              Latest audit events
+            </h2>
           </div>
           <Badge tone={recentActivity.length > 0 ? 'good' : 'neutral'}>
             {recentActivity.length} events
@@ -216,14 +226,14 @@ export function OperatorDashboardPanel({ data }: Props) {
         </div>
         <div className="mt-5 grid gap-2">
           {recentActivity.length === 0 ? (
-            <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5 text-sm text-slate-400">
+            <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5 text-sm text-[hsl(var(--muted))]">
               No audit events recorded yet. Operator actions will appear here as they happen.
             </div>
           ) : (
             recentActivity.map((event) => (
               <div
                 key={event.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-[20px] border border-white/10 bg-slate-950/35 p-4"
+                className="flex flex-wrap items-center justify-between gap-3 rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4"
               >
                 <div className="flex min-w-0 flex-wrap items-center gap-3">
                   <Badge
@@ -237,14 +247,16 @@ export function OperatorDashboardPanel({ data }: Props) {
                     }
                   />
                   <div className="min-w-0">
-                    <div className="truncate text-sm font-semibold text-white">{event.action}</div>
-                    <div className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">
+                    <div className="truncate text-sm font-semibold text-[hsl(var(--foreground))]">
+                      {event.action}
+                    </div>
+                    <div className="mt-1 text-xs uppercase tracking-[0.18em] text-[hsl(var(--muted))]">
                       {event.actor}
                       {event.entityId ? ` / ${event.entityId}` : ''}
                     </div>
                   </div>
                 </div>
-                <div className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                <div className="text-xs uppercase tracking-[0.18em] text-[hsl(var(--muted))]">
                   {formatRelativeTimestamp(event.createdAt)}
                 </div>
               </div>

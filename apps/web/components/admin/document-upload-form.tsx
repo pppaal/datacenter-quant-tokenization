@@ -110,8 +110,8 @@ export function DocumentUploadForm({ assetId, dealId }: { assetId?: string; deal
         />
       </label>
 
-      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-4">
-        <p className="max-w-xl text-sm text-slate-400">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[hsl(var(--border))] pt-4">
+        <p className="max-w-xl text-sm text-[hsl(var(--muted))]">
           Uploads are stored through the Next.js backend and immediately linked into document
           history, summaries, and future memo evidence.
         </p>

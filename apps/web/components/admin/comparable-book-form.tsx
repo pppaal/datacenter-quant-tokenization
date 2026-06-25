@@ -215,12 +215,12 @@ export function ComparableBookForm({
         {entries.map((entry, index) => (
           <div
             key={entry.localId}
-            className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+            className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5"
           >
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <div className="eyebrow">Comparable {index + 1}</div>
-                <h4 className="mt-2 text-xl font-semibold text-white">
+                <h4 className="mt-2 text-xl font-semibold text-[hsl(var(--foreground))]">
                   {entry.label || `Peer ${index + 1}`}
                 </h4>
               </div>
@@ -407,8 +407,8 @@ export function ComparableBookForm({
         ))}
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-4">
-        <p className="max-w-3xl text-sm text-slate-400">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[hsl(var(--border))] pt-4">
+        <p className="max-w-3xl text-sm text-[hsl(var(--muted))]">
           Add at least three comparables with usable pricing signals. Valuation, price per MW, and
           monthly rate inputs are entered in {inputCurrency} and normalized to KRW internally.
         </p>

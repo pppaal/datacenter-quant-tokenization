@@ -16,12 +16,12 @@ type Props = {
   as?: 'h2' | 'h3';
   /**
    * Override the title classes. Defaults to the ubiquitous
-   * `mt-2 text-2xl font-semibold text-white`.
+   * `mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]`.
    */
   titleClassName?: string;
   /**
    * Override the description classes. Defaults to the repeated
-   * `mt-3 max-w-3xl text-sm leading-7 text-slate-400`.
+   * `mt-3 max-w-3xl text-sm leading-7 text-[hsl(var(--muted))]`.
    */
   descriptionClassName?: string;
   /** Extra classes on the outer wrapper. */
@@ -53,11 +53,18 @@ export function Section({
   const headerContent = (
     <>
       {eyebrow ? <div className="eyebrow">{eyebrow}</div> : null}
-      <Heading className={cn('mt-2 text-2xl font-semibold text-white', titleClassName)}>
+      <Heading
+        className={cn('mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]', titleClassName)}
+      >
         {title}
       </Heading>
       {description ? (
-        <p className={cn('mt-3 max-w-3xl text-sm leading-7 text-slate-400', descriptionClassName)}>
+        <p
+          className={cn(
+            'mt-3 max-w-3xl text-sm leading-7 text-[hsl(var(--muted))]',
+            descriptionClassName
+          )}
+        >
           {description}
         </p>
       ) : null}

@@ -43,14 +43,16 @@ export function PortfolioRiskHeatmap({ assets }: Props) {
     <Card className="space-y-4">
       <div>
         <div className="eyebrow">Risk Surface</div>
-        <h3 className="mt-2 text-2xl font-semibold text-white">Portfolio risk heatmap</h3>
-        <p className="mt-2 text-sm text-slate-400">
+        <h3 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
+          Portfolio risk heatmap
+        </h3>
+        <p className="mt-2 text-sm text-[hsl(var(--muted))]">
           Occupancy risk vs market risk. Each dot is an active portfolio asset.
         </p>
       </div>
 
       <div className="flex gap-2">
-        <div className="flex flex-col items-stretch justify-between py-1 pr-2 text-right font-mono text-[10px] uppercase tracking-[0.2em] text-slate-500">
+        <div className="flex flex-col items-stretch justify-between py-1 pr-2 text-right font-mono text-[10px] uppercase tracking-[0.2em] text-[hsl(var(--muted))]">
           {[...riskLevels].reverse().map((level) => (
             <span key={`y-${level}`} className="flex h-full items-center justify-end">
               {axisLabels[level]}
@@ -68,10 +70,10 @@ export function PortfolioRiskHeatmap({ assets }: Props) {
                 return (
                   <div
                     key={`${marketLevel}-${occupancyLevel}`}
-                    className={`flex min-h-[80px] flex-wrap content-center items-center justify-center gap-2 rounded-[16px] border p-3 transition-colors hover:bg-white/[0.05] ${cellBg(occupancyLevel, marketLevel)}`}
+                    className={`flex min-h-[80px] flex-wrap content-center items-center justify-center gap-2 rounded-[16px] border p-3 transition-colors hover:bg-[hsl(var(--surface-hover))] ${cellBg(occupancyLevel, marketLevel)}`}
                   >
                     {isEmpty ? (
-                      <span className="font-mono text-lg text-slate-600/60">&mdash;</span>
+                      <span className="font-mono text-lg text-[hsl(var(--muted))]/60">&mdash;</span>
                     ) : (
                       cellAssets.map((asset) => (
                         <div
@@ -86,18 +88,18 @@ export function PortfolioRiskHeatmap({ assets }: Props) {
               })
             )}
           </div>
-          <div className="mt-2 flex justify-between font-mono text-[10px] uppercase tracking-[0.2em] text-slate-500">
+          <div className="mt-2 flex justify-between font-mono text-[10px] uppercase tracking-[0.2em] text-[hsl(var(--muted))]">
             {riskLevels.map((level) => (
               <span key={`x-${level}`}>{axisLabels[level]}</span>
             ))}
           </div>
-          <div className="mt-1 text-center font-mono text-[10px] uppercase tracking-[0.22em] text-slate-500">
+          <div className="mt-1 text-center font-mono text-[10px] uppercase tracking-[0.22em] text-[hsl(var(--muted))]">
             Occupancy risk &rarr;
           </div>
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-4 border-t border-white/10 pt-4 font-mono text-[10px] uppercase tracking-[0.2em] text-slate-400">
+      <div className="flex flex-wrap items-center gap-4 border-t border-[hsl(var(--border))] pt-4 font-mono text-[10px] uppercase tracking-[0.2em] text-[hsl(var(--muted))]">
         <span className="flex items-center gap-2">
           <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.5)]" />
           Healthy

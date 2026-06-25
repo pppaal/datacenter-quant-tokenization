@@ -55,8 +55,8 @@ export function InvestorReportPanel({ fundId, fundName, metrics }: Props) {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="eyebrow">Investor Reporting</div>
-          <h3 className="mt-2 text-2xl font-semibold text-white">{fundName}</h3>
-          <p className="mt-2 text-sm text-slate-400">
+          <h3 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">{fundName}</h3>
+          <p className="mt-2 text-sm text-[hsl(var(--muted))]">
             Generate and download investor reports with current fund metrics.
           </p>
         </div>
@@ -80,7 +80,7 @@ export function InvestorReportPanel({ fundId, fundName, metrics }: Props) {
         ).map(([label, value]) => (
           <div key={label} className="metric-card">
             <div className="fine-print">{label}</div>
-            <div className="mt-2 text-lg font-semibold text-white">{value}</div>
+            <div className="mt-2 text-lg font-semibold text-[hsl(var(--foreground))]">{value}</div>
           </div>
         ))}
       </div>

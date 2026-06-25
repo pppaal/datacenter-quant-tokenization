@@ -26,10 +26,10 @@ export function MacroForecastBacktestPanel({ backtest }: { backtest: MacroForeca
       <div className="flex items-center justify-between gap-4">
         <div>
           <div className="eyebrow">Macro Forecast vs Actual</div>
-          <h2 className="mt-2 text-2xl font-semibold text-white">
+          <h2 className="mt-2 text-2xl font-semibold text-[hsl(var(--foreground))]">
             One-step value prediction check
           </h2>
-          <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-400">
+          <p className="mt-2 max-w-2xl text-sm leading-7 text-[hsl(var(--muted))]">
             Uses a simple momentum forecast on macro factor values and compares the predicted next
             reading against the realized next reading, then scores that momentum forecast against a
             naive random-walk (persistence) baseline. Direction hit rate alone is not skill — the
@@ -74,10 +74,13 @@ export function MacroForecastBacktestPanel({ backtest }: { backtest: MacroForeca
             'Forecast error reduction vs a no-change persistence baseline'
           ]
         ].map(([label, value, subline]) => (
-          <div key={label} className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+          <div
+            key={label}
+            className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5"
+          >
             <div className="fine-print">{label}</div>
-            <div className="mt-3 text-3xl font-semibold text-white">{value}</div>
-            <p className="mt-2 text-sm text-slate-400">{subline}</p>
+            <div className="mt-3 text-3xl font-semibold text-[hsl(var(--foreground))]">{value}</div>
+            <p className="mt-2 text-sm text-[hsl(var(--muted))]">{subline}</p>
           </div>
         ))}
       </div>
@@ -87,12 +90,14 @@ export function MacroForecastBacktestPanel({ backtest }: { backtest: MacroForeca
           backtest.markets.slice(0, 6).map((market) => (
             <div
               key={market.market}
-              className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+              className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5"
             >
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <div className="text-lg font-semibold text-white">{market.market}</div>
-                  <div className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">
+                  <div className="text-lg font-semibold text-[hsl(var(--foreground))]">
+                    {market.market}
+                  </div>
+                  <div className="mt-1 text-xs uppercase tracking-[0.18em] text-[hsl(var(--muted))]">
                     {market.latestActualDate
                       ? `latest ${formatDate(market.latestActualDate)}`
                       : 'history unavailable'}
@@ -110,32 +115,32 @@ export function MacroForecastBacktestPanel({ backtest }: { backtest: MacroForeca
               </div>
 
               <div className="mt-4 grid gap-3 md:grid-cols-[160px_1fr_1fr]">
-                <div className="rounded-[20px] border border-white/10 bg-slate-950/35 p-4">
+                <div className="rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4">
                   <div className="fine-print">Coverage</div>
-                  <div className="mt-3 text-2xl font-semibold text-white">
+                  <div className="mt-3 text-2xl font-semibold text-[hsl(var(--foreground))]">
                     {formatNumber(market.factorCoverage, 0)} factors
                   </div>
-                  <p className="mt-2 text-xs text-slate-500">
+                  <p className="mt-2 text-xs text-[hsl(var(--muted))]">
                     {formatNumber(market.sampleCount, 0)} forecast samples
                   </p>
                 </div>
-                <div className="rounded-[20px] border border-white/10 bg-slate-950/35 p-4">
+                <div className="rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4">
                   <div className="fine-print">Strongest Factor</div>
-                  <div className="mt-3 text-base font-semibold text-white">
+                  <div className="mt-3 text-base font-semibold text-[hsl(var(--foreground))]">
                     {market.strongestFactor?.label ?? 'N/A'}
                   </div>
-                  <p className="mt-2 text-xs text-slate-500">
+                  <p className="mt-2 text-xs text-[hsl(var(--muted))]">
                     {market.strongestFactor
                       ? `${formatNumber(market.strongestFactor.directionalHitRatePct, 1)}% hit / ${formatNumber(market.strongestFactor.meanAbsoluteErrorPct, 1)}% mae`
                       : 'No forecast samples yet'}
                   </p>
                 </div>
-                <div className="rounded-[20px] border border-white/10 bg-slate-950/35 p-4">
+                <div className="rounded-[20px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4">
                   <div className="fine-print">Weakest Factor</div>
-                  <div className="mt-3 text-base font-semibold text-white">
+                  <div className="mt-3 text-base font-semibold text-[hsl(var(--foreground))]">
                     {market.weakestFactor?.label ?? 'N/A'}
                   </div>
-                  <p className="mt-2 text-xs text-slate-500">
+                  <p className="mt-2 text-xs text-[hsl(var(--muted))]">
                     {market.weakestFactor
                       ? `${formatNumber(market.weakestFactor.directionalHitRatePct, 1)}% hit / ${formatNumber(market.weakestFactor.meanAbsoluteErrorPct, 1)}% mae`
                       : 'No forecast samples yet'}
@@ -145,7 +150,7 @@ export function MacroForecastBacktestPanel({ backtest }: { backtest: MacroForeca
             </div>
           ))
         ) : (
-          <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5 text-sm text-slate-400">
+          <div className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5 text-sm text-[hsl(var(--muted))]">
             No factor history long enough to run forecast-vs-actual checks yet.
           </div>
         )}
