@@ -18,8 +18,8 @@ export function StatCard({ label, primary, detail }: Props) {
   return (
     <Card className="space-y-2">
       <div className="fine-print">{label}</div>
-      <div className="text-2xl font-semibold text-white">{primary}</div>
-      <div className="text-xs text-slate-500">{detail}</div>
+      <div className="text-2xl font-semibold text-[hsl(var(--foreground))]">{primary}</div>
+      <div className="text-xs text-[hsl(var(--muted))]">{detail}</div>
     </Card>
   );
 }
