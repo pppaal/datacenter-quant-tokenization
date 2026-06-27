@@ -1,5 +1,6 @@
 import { AdminAccessScopeType } from '@prisma/client';
 import type { AuthorizedAdminActor } from '@/lib/security/admin-auth';
+import { env } from '@/lib/env';
 
 type AccessGrantDb = {
   adminAccessGrant: {
@@ -46,11 +47,42 @@ export async function hasScopedAccessRestriction(
   return grantedScopeIds.length > 0;
 }
 
+/**
+ * How an un-granted non-ADMIN actor is treated for a given scope check.
+ *
+ *  - `'read'`     — the un-granted actor is UNRESTRICTED (fail-open): scope
+ *                   grants are an opt-in allowlist that only ever *narrows*
+ *                   visibility. Keeps un-granted/SCIM-provisioned analysts able
+ *                   to SEE assets/deals/funds (so they aren't locked out of
+ *                   everything), while a granted analyst is narrowed to their
+ *                   grants. This is the historical behavior; reads default here.
+ *
+ *  - `'mutation'` — the un-granted actor is DENIED (fail-closed) by default:
+ *                   least-privilege for writes. An ADMIN must explicitly grant
+ *                   the scope before a non-ADMIN can mutate it ("ADMIN-must-grant"
+ *                   model). A granted analyst may mutate only their granted
+ *                   scopes. This is the secure default; all `assertActorScopeAccess`
+ *                   callers (every one is a write path) use it.
+ */
+export type ScopeAccessMode = 'read' | 'mutation';
+
+/**
+ * Legacy escape hatch: when `ADMIN_SCOPE_ALLOW_UNGRANTED_MUTATIONS` is truthy,
+ * un-granted mutations fall back to the historical fail-OPEN behavior. This is a
+ * migration aid ONLY — it lets an org that hasn't provisioned per-scope grants
+ * yet keep working while they roll grants out. The DEFAULT (unset) is the
+ * secure fail-CLOSED behavior. Production should leave this unset.
+ */
+function ungrantedMutationsAllowed(): boolean {
+  return env().ADMIN_SCOPE_ALLOW_UNGRANTED_MUTATIONS;
+}
+
 export async function canActorAccessScope(
   actor: AuthorizedAdminActor | null | undefined,
   scopeType: AdminAccessScopeType,
   scopeId: string,
-  db: AccessGrantDb
+  db: AccessGrantDb,
+  mode: ScopeAccessMode = 'read'
 ) {
   if (!actor) {
     return false;
@@ -60,36 +92,54 @@ export async function canActorAccessScope(
     return true;
   }
 
-  // SECURITY MODEL (intentional): scope grants are an OPTIONAL allowlist. A
-  // non-ADMIN actor with NO grants for this scope type is treated as
-  // unrestricted (sees all assets/deals/funds of that type); grants only ever
-  // *narrow* access. This is by design (see `hasScopedAccessRestriction`), not a
-  // fail-open bug — but it means row-level scoping is opt-in per user.
-  //
   // The highest-consequence, irreversible actions are NOT governed by this
   // function: tokenization mint/burn/forceTransfer, on-chain valuation
   // anchoring, and the KYC→chain bridge are ADMIN-gated at the route layer
   // (see getRequiredAdminRoleForPath), so an un-granted ANALYST cannot reach
   // them regardless of this allowlist.
-  //
-  // To switch to least-privilege (deny when no grants), change the early return
-  // below to `return false` AND audit every caller + the SCIM default role —
-  // it would lock out every newly provisioned analyst until explicitly granted.
   const grantedScopeIds = await listGrantedScopeIdsForUser(actor.userId, scopeType, db);
+
   if (grantedScopeIds.length === 0) {
+    // No grants for this scope type. Reads stay opt-in (fail-open) so analysts
+    // aren't locked out of visibility; mutations fail-CLOSED (least-privilege)
+    // unless the documented legacy escape hatch is enabled.
+    if (mode === 'mutation') {
+      return ungrantedMutationsAllowed();
+    }
     return true;
   }
 
   return grantedScopeIds.includes(scopeId);
 }
 
+/**
+ * Assert access to a scope, throwing when denied.
+ *
+ * `mode` selects the un-granted behavior (see `ScopeAccessMode`):
+ *   - pass `'mutation'` from WRITE handlers (POST/PATCH/PUT/DELETE) to get the
+ *     fail-CLOSED least-privilege model (un-granted non-ADMIN denied);
+ *   - pass `'read'` (the default) from GET handlers to keep visibility opt-in.
+ *
+ * NOTE (scoped migration): the default is `'read'` so this change is strictly
+ * non-breaking for the EXISTING callers — `assertActorScopeAccess` is currently
+ * used from several GET read handlers (deals/[id], assets/[id],
+ * funds/[id]/investor-report, deals/[id]/workpaper) as well as the write
+ * handlers, and they all call it 4-arg. Defaulting to `'mutation'` here would
+ * fail-close those reads for un-granted analysts (an availability regression).
+ * The fail-CLOSED machinery + secure env default are in place; flipping the
+ * write call sites to `mode: 'mutation'` is a per-route follow-up (each write
+ * route passes `'mutation'`; the GET routes keep the default). Until then a
+ * write caller opts in explicitly, e.g.
+ * `assertActorScopeAccess(actor, scope, id, prisma, 'mutation')`.
+ */
 export async function assertActorScopeAccess(
   actor: AuthorizedAdminActor | null | undefined,
   scopeType: AdminAccessScopeType,
   scopeId: string,
-  db: AccessGrantDb
+  db: AccessGrantDb,
+  mode: ScopeAccessMode = 'read'
 ) {
-  const allowed = await canActorAccessScope(actor, scopeType, scopeId, db);
+  const allowed = await canActorAccessScope(actor, scopeType, scopeId, db, mode);
   if (!allowed) {
     throw new Error(`Access to ${scopeType.toLowerCase()} scope is not granted for this operator.`);
   }

@@ -54,6 +54,12 @@ const envSchema = z.object({
   ADMIN_SESSION_SECRET: optionalString,
   ADMIN_SESSION_TTL_HOURS: optionalNumber('ADMIN_SESSION_TTL_HOURS'),
   ADMIN_ALLOW_UNBOUND_BROWSER_SESSION: optionalBool,
+  // Legacy escape hatch for row-level scope access on WRITE paths. When truthy,
+  // a non-ADMIN actor with NO grants for a scope type may still mutate it
+  // (historical fail-OPEN). Default (unset) is the secure fail-CLOSED behavior:
+  // an ADMIN must grant the scope first. Migration aid only; leave unset in
+  // production. See `canActorAccessScope` in lib/security/admin-access.ts.
+  ADMIN_SCOPE_ALLOW_UNGRANTED_MUTATIONS: optionalBool,
 
   // Ops cron / queue
   OPS_CRON_TOKEN: optionalString,
