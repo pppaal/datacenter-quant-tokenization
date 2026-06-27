@@ -207,10 +207,28 @@ export function buildCorrelatedAdverseShock(
     }
   }
 
-  // The conditional mean of the projection over its adverse half is ~0.8σ of the
-  // projection scale; rescale the averaged oriented vector so the adverse axis
-  // sits at ~sigmaMultiple σ, matching the documented tail severity.
-  const meanFoldToSigma = sigmaMultiple / 0.7979;
+  // σ of the adverse axis itself. The projection s = aᵀx (a = the adverseSign
+  // vector) is a linear combination of correlated draws, so its variance is
+  // Var(s) = aᵀΣa — NOT 1. The previous code rescaled by sigmaMultiple/0.7979
+  // alone, implicitly assuming aᵀΣa = 1, so the realized adverse-axis severity
+  // tracked the (arbitrary) covariance scale instead of sitting at sigmaMultiple
+  // σ. We normalize the averaged oriented vector by √(aᵀΣa) so the adverse axis
+  // lives on a unit-σ scale, THEN apply the half-normal mean-fold correction.
+  let axisVar = 0;
+  for (let i = 0; i < dim; i++) {
+    for (let j = 0; j < dim; j++) {
+      axisVar += (adverseSigns[i] ?? 1) * (adverseSigns[j] ?? 1) * (covariance[i]?.[j] ?? 0);
+    }
+  }
+  const axisSigma = axisVar > 0 ? Math.sqrt(axisVar) : 0;
+  if (axisSigma === 0) return new Array<number>(dim).fill(0);
+
+  // The conditional mean of the (now unit-σ) projection over its adverse half is
+  // E[|N(0,1)|] = √(2/π) ≈ 0.7979. Dividing the averaged oriented vector by
+  // (0.7979·axisSigma) and scaling by sigmaMultiple places the adverse axis at
+  // exactly sigmaMultiple σ of its own scale — invariant to an overall
+  // covariance scale factor by construction.
+  const meanFoldToSigma = sigmaMultiple / (0.7979 * axisSigma);
   return accum.map((v) => (v / ensemble) * meanFoldToSigma);
 }
 
