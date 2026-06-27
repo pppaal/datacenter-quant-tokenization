@@ -16,14 +16,18 @@
  *   use-zone           → VWORLD_API_KEY        (V-World 토지이용계획)
  *   land-pricing       → VWORLD_API_KEY        (V-World 개별공시지가)
  *   rent-comps         → RONE_API_KEY          (한국부동산원 R-ONE 임대동향)
- *   macro-micro        → (always 'mock')       (통계청 KOSIS; see note below)
+ *   macro-micro        → KOSIS_API_KEY → 'partial' (통계청 KOSIS; see note below)
  *
  * NOTE on macro-micro: KOSIS_API_KEY enables a genuinely-live construction-cost
  * figure inside the snapshot, but the submarket survey fields (vacancy /
- * rent-growth / cap-rate) still come from the mock baseline. Because those
- * survey fields are the only macro-micro inputs surfaced as provenance, the
- * connector's mode is reported as 'mock' so no synthetic value is ever labeled
- * 'live'. It will flip to 'live' once the survey fields are genuinely sourced.
+ * rent-growth / cap-rate) still come from the mock baseline. We report the
+ * connector as 'partial' when keyed: construction-cost is live, the submarket
+ * survey is mock. The 'partial' tier exists precisely so we can be honest about
+ * this split WITHOUT labeling any synthetic survey value 'live' — consumers map
+ * 'partial' to a non-LIVE tier for the survey-derived fields (cap-rate /
+ * occupancy) and surface the live construction-cost figure as its own provenance
+ * row. It flips to a clean 'live' once the survey fields are genuinely sourced.
+ * Unkeyed, the whole connector stays 'mock'.
  *
  * All seven connectors now have a live adapter under `live/`; each returns
  * empty/null (or, for the non-nullable macro snapshot, delegates to the mock)
@@ -64,7 +68,17 @@ export type ConnectorBundle = {
 };
 
 export type ConnectorKind = keyof ConnectorBundle;
-export type ConnectorMode = 'live' | 'mock';
+/**
+ * Provenance mode for a connector:
+ *   - 'live'    — every surfaced field is genuinely sourced.
+ *   - 'mock'    — every surfaced field is synthetic/seed.
+ *   - 'partial' — some surfaced fields are live, others are still mock. Used by
+ *     macro-micro (KOSIS): construction-cost is live, the submarket survey is
+ *     mock. Consumers MUST NOT label a 'partial' connector's mock sub-fields as
+ *     'live' — they map the survey fields to a non-LIVE tier and surface the
+ *     live sub-field (construction-cost) separately.
+ */
+export type ConnectorMode = 'live' | 'mock' | 'partial';
 
 export type ConnectorModeReport = Record<ConnectorKind, ConnectorMode>;
 
@@ -78,17 +92,16 @@ export function resolveConnectorMode(): ConnectorModeReport {
       process.env.KEPCO_SUBSTATION_DATA_PATH || process.env.KEPCO_SUBSTATION_DATA_URL
         ? 'live'
         : 'mock',
-    // macroMicro is deliberately NOT flipped to 'live' on KOSIS_API_KEY. The
-    // KOSIS adapter only sources construction-cost authoritatively; the
-    // submarket survey fields (vacancy / rent-growth / cap-rate) ALWAYS come
-    // from the mock baseline (see LiveKosisMacroMicro.fetch). Those survey
-    // fields are the only macro-micro inputs surfaced as provenance (the
-    // IMPUTED cap-rate / occupancy tiers in bundle-assembler), so reporting
-    // 'live' here would label synthetic values as live. ConnectorMode has no
-    // per-field / 'partial' state, so we keep 'mock' until the survey fields
-    // are genuinely live. Construction-cost stays honestly live in the
-    // snapshot data itself; it is not surfaced as its own provenance tier.
-    macroMicro: 'mock',
+    // macroMicro is 'partial' when keyed, never a blanket 'live'. The KOSIS
+    // adapter sources construction-cost authoritatively; the submarket survey
+    // fields (vacancy / rent-growth / cap-rate) ALWAYS come from the mock
+    // baseline (see LiveKosisMacroMicro.fetch). 'partial' lets consumers be
+    // honest about the split: the live construction-cost figure surfaces as its
+    // own provenance row, while the survey-derived cap-rate / occupancy stay on
+    // a non-LIVE tier so no synthetic value is ever labeled 'live'. Unkeyed it
+    // is fully 'mock'. It graduates to a clean 'live' only when the survey
+    // fields are genuinely sourced.
+    macroMicro: process.env.KOSIS_API_KEY ? 'partial' : 'mock',
     transactionComps: process.env.RTMS_SERVICE_KEY ? 'live' : 'mock'
   };
 }
@@ -104,11 +117,11 @@ export function getConnectorBundle(): ConnectorBundle {
     landPricing: mode.landPricing === 'live' ? new LiveVworldLandPricing() : new MockLandPricing(),
     rentComps: mode.rentComps === 'live' ? new LiveReoneRentComps() : new MockRentComps(),
     grid: mode.grid === 'live' ? new LiveKepcoGridAccess() : new MockGridAccess(),
-    // macroMicro mode is reported as 'mock' for provenance honesty (the survey
-    // sub-fields are always synthetic — see resolveConnectorMode), but the live
-    // KOSIS adapter is still wired when the key is present so the genuinely-live
-    // construction-cost figure is fetched. The adapter self-delegates to the
-    // mock when unkeyed, so this is safe either way.
+    // macroMicro mode is reported as 'partial' when keyed (construction-cost
+    // live, survey sub-fields still synthetic — see resolveConnectorMode). The
+    // live KOSIS adapter is wired whenever the key is present so the
+    // genuinely-live construction-cost figure is fetched; it self-delegates to
+    // the mock when unkeyed, so this is safe either way.
     macroMicro: process.env.KOSIS_API_KEY ? new LiveKosisMacroMicro() : new MockMacroMicro(),
     transactionComps:
       mode.transactionComps === 'live' ? new LiveRtmsTransactionComps() : new MockTransactionComps()

@@ -96,15 +96,16 @@ test('registry flips each connector to live only when its key is present', () =>
   assert.equal(live.rentComps, 'live');
   assert.equal(live.useZone, 'live'); // V-World powers both use-zone and land-pricing
   assert.equal(live.landPricing, 'live');
-  // macroMicro stays 'mock' even with KOSIS_API_KEY set: only construction-cost
-  // is genuinely live; the survey sub-fields (vacancy/rent-growth/cap-rate) —
-  // the only macro-micro inputs surfaced as provenance — remain synthetic, so
-  // labeling them 'live' would be dishonest. See the honesty test below.
-  assert.equal(live.macroMicro, 'mock');
+  // macroMicro reports 'partial' (NOT a blanket 'live') with KOSIS_API_KEY set:
+  // only construction-cost is genuinely live; the survey sub-fields
+  // (vacancy/rent-growth/cap-rate) remain synthetic, so labeling them 'live'
+  // would be dishonest. 'partial' surfaces the live construction-cost figure
+  // honestly while keeping the survey fields non-LIVE. See the honesty test.
+  assert.equal(live.macroMicro, 'partial');
 
   // getConnectorBundle still wires the LIVE KOSIS adapter when keyed (so the
-  // genuinely-live construction-cost figure is fetched), even though the
-  // reported provenance mode is 'mock'.
+  // genuinely-live construction-cost figure is fetched); the reported provenance
+  // mode is 'partial'.
   const bundle = getConnectorBundle();
   assert.equal(bundle.rentComps instanceof LiveReoneRentComps, true);
   assert.equal(bundle.useZone instanceof LiveVworldUseZone, true);
@@ -117,14 +118,15 @@ test('macro-micro provenance: KOSIS-keyed submarket survey sub-fields are NEVER 
   // Key KOSIS (and only KOSIS) so any leak would be macro-micro–specific.
   process.env.KOSIS_API_KEY = 'k';
 
-  // The mode that drives provenance labeling must report 'mock' for macroMicro,
-  // because the survey sub-fields it sources are always synthetic.
-  assert.equal(resolveConnectorMode().macroMicro, 'mock');
+  // The mode that drives provenance labeling reports 'partial' for macroMicro:
+  // construction-cost is live, but the survey sub-fields it sources are synthetic.
+  assert.equal(resolveConnectorMode().macroMicro, 'partial');
 
   // End-to-end: feed the KOSIS-keyed mode through the provenance builder with a
   // bundle whose ONLY cap-rate / occupancy evidence is the (mock) submarket
   // survey. Both must come back IMPUTED and sourced as 'macro-micro (mock)' —
-  // i.e. no synthetic value wears a 'live' label.
+  // i.e. no synthetic survey value wears a 'live' label, even though the
+  // connector is 'partial' and its construction-cost row IS live.
   const modes = resolveConnectorMode();
   const prov = buildAnalysisProvenance(
     {
@@ -177,14 +179,24 @@ test('macro-micro provenance: KOSIS-keyed submarket survey sub-fields are NEVER 
   assert.ok(cap, 'expected a capRate provenance field');
   assert.ok(occ, 'expected an occupancy provenance field');
 
-  // The whole point: these macro-micro–sourced values must not be 'LIVE'.
+  // The whole point: these macro-micro SURVEY values must not be 'LIVE'.
   assert.notEqual(cap!.tier, 'LIVE');
   assert.notEqual(occ!.tier, 'LIVE');
   assert.equal(cap!.source, 'macro-micro (mock)');
   assert.equal(occ!.source, 'macro-micro (mock)');
 
-  // And no provenance field anywhere claims macro-micro is live.
+  // The construction-cost row, by contrast, IS the genuinely-live half of the
+  // 'partial' connector and SHOULD be labeled live — that's the honest split.
+  const construction = prov.fields.find((f) => f.field === 'constructionCost');
+  assert.ok(construction, 'expected a constructionCost provenance field');
+  assert.equal(construction!.tier, 'LIVE');
+  assert.equal(construction!.source, 'macro-micro (live)');
+
+  // No SURVEY-derived field (cap-rate / occupancy) may claim macro-micro is live.
   for (const f of prov.fields) {
-    assert.notEqual(f.source, 'macro-micro (live)');
+    if (f.field === 'capRate' || f.field === 'occupancy') {
+      assert.notEqual(f.source, 'macro-micro (live)');
+      assert.notEqual(f.tier, 'LIVE');
+    }
   }
 });

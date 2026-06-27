@@ -230,13 +230,17 @@ test('rich bundle with comps + live connectors flags far fewer estimates', () =>
   assert.equal(field(prov, 'capRate').tier, 'LIVE');
   assert.equal(field(prov, 'occupancy').tier, 'LIVE');
   assert.equal(field(prov, 'zoning').tier, 'LIVE');
+  // Construction cost is sourced from macro-micro; with macroMicro 'live' it is LIVE.
+  assert.equal(field(prov, 'constructionCost').tier, 'LIVE');
   // Financing is still a hard fallback (no live debt-cost feed).
   assert.equal(field(prov, 'financingRate').tier, 'FALLBACK');
 
-  // Only financing is estimated → 1 of 7.
+  // Only financing is estimated → 1 of 8 (construction-cost adds an 8th tracked
+  // input, but it is LIVE so the estimated count is unchanged).
   assert.equal(prov.estimatedCount, 1);
+  assert.equal(prov.totalCount, 8);
   assert.equal(prov.confidence, 'high');
-  assert.match(prov.trustHint, /1 of 7 key inputs are imputed\/fallback/);
+  assert.match(prov.trustHint, /1 of 8 key inputs are imputed\/fallback/);
 });
 
 test('official-land-price-only path is IMPUTED (not a hard fallback)', () => {
