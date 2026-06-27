@@ -25,11 +25,23 @@ following is missing:
 | Sessions         | `ADMIN_SESSION_SECRET` (>= 32 chars, not the dev placeholder)                                         |
 | Cron auth        | `OPS_CRON_TOKEN` (>= 24 chars)                                                                        |
 | Document storage | `DOCUMENT_STORAGE_BUCKET` (S3-compatible)                                                             |
+| Rate limiting    | `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` (cross-instance throttling)                     |
 | Blockchain       | `BLOCKCHAIN_RPC_URL` + `BLOCKCHAIN_PRIVATE_KEY` + `BLOCKCHAIN_REGISTRY_ADDRESS` (mock mode forbidden) |
+| Crash reporting  | at least one of `SENTRY_DSN` or `ERROR_REPORT_WEBHOOK_URL`                                            |
+| Ops paging       | `OPS_ALERT_WEBHOOK_URL` (failed cron / source-refresh runs page through it)                           |
 | Escape hatches   | `PLAYWRIGHT_ALLOW_HOSTED_MUTATIONS=false`, `ADMIN_ALLOW_UNBOUND_BROWSER_SESSION` unset                |
 
-Warnings (not failures) are emitted for missing OIDC, missing IP allowlists,
-missing alert / error webhooks, and basic-auth fallback usage.
+Warnings (not failures) are emitted for missing OIDC SSO, missing IP allowlists,
+and basic-auth fallback usage. (Crash reporting and ops paging were previously
+warnings; they are now hard requirements — a prod deploy must not run blind.)
+
+This gate is wired in CI as the **`production preflight`** job in
+`.github/workflows/prod-preflight.yml`. It runs on push to `main`, on manual
+dispatch, and on production deployments (against the protected `production`
+GitHub Environment's secrets). To make it block promotion, mark
+`production preflight` as a required status check on `main` (Settings → Branches
+→ branch protection). A true Vercel deployment-protection gate additionally
+needs Vercel dashboard config, which lives outside this repo.
 
 ---
 

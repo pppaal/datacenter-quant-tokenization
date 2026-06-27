@@ -17,6 +17,7 @@ import type {
   UseZone
 } from '@/lib/services/public-data/types';
 import type { UnderwritingBundle } from '@/lib/services/valuation/types';
+import type { ConnectorMode } from '@/lib/services/public-data/registry';
 import { classifyFreshness, type FreshnessBand } from '@/lib/services/im/freshness';
 import { resolveSeismicZone } from '@/lib/services/dc-intel/seismic-zone';
 
@@ -198,14 +199,20 @@ function estimateAnnualRevenue(input: AssemblerInput): number {
   return Math.round(gfa * 60_000 * 12 * occ); // fallback
 }
 
-/** Per-connector live/mock mode, as resolved by the public-data registry. */
+/** Per-connector mode, as resolved by the public-data registry. */
 export type ConnectorModeMap = {
-  buildingRegistry?: 'live' | 'mock';
-  useZone?: 'live' | 'mock';
-  landPricing?: 'live' | 'mock';
-  rentComps?: 'live' | 'mock';
-  grid?: 'live' | 'mock';
-  macroMicro?: 'live' | 'mock';
+  buildingRegistry?: ConnectorMode;
+  useZone?: ConnectorMode;
+  landPricing?: ConnectorMode;
+  rentComps?: ConnectorMode;
+  grid?: ConnectorMode;
+  /**
+   * macro-micro is 'partial' when KOSIS is keyed: construction-cost is live,
+   * the submarket survey (vacancy / rent-growth / cap-rate) is mock. The
+   * survey-derived provenance fields treat 'partial' as non-LIVE; the live
+   * construction-cost figure surfaces as its own row.
+   */
+  macroMicro?: ConnectorMode;
 };
 
 export type ProvenanceContext = {
@@ -219,10 +226,25 @@ export type ProvenanceContext = {
 
 /**
  * Map a connector mode to the tier used when that connector DID return data.
- * A live connector that returned a value is LIVE; a mock one is SEED.
+ * Only a fully-'live' connector earns LIVE. A 'partial' connector (some live,
+ * some mock sub-fields) maps to SEED for whichever field is being labeled here,
+ * because the field-level live/mock split is handled at the call site (the live
+ * sub-field surfaces its own row); defaulting 'partial' to non-LIVE keeps the
+ * invariant that no synthetic value is ever labeled 'live'. A 'mock' or unset
+ * connector is SEED.
  */
-function connectorTier(mode: 'live' | 'mock' | undefined): ProvenanceTier {
+function connectorTier(mode: ConnectorMode | undefined): ProvenanceTier {
   return mode === 'live' ? 'LIVE' : 'SEED';
+}
+
+/**
+ * Source label for a macro-micro SURVEY sub-field (vacancy / rent-growth /
+ * cap-rate). These are mock even when the connector is 'partial' (only
+ * construction-cost is live in that case), so they must report 'mock' — never
+ * 'partial' or 'live' — to avoid implying a synthetic value is sourced.
+ */
+function macroSurveySource(mode: ConnectorMode | undefined): string {
+  return `macro-micro (${mode === 'live' ? 'live' : 'mock'})`;
 }
 
 function withFreshness(field: Omit<ProvenanceField, 'freshness'>): ProvenanceField {
@@ -379,9 +401,9 @@ export function buildAnalysisProvenance(
         label: 'Cap rate',
         value: `${input.macroMicro.submarketCapRatePct.toFixed(2)}%`,
         tier: 'IMPUTED',
-        source: `macro-micro (${modes.macroMicro ?? 'mock'})`,
+        source: macroSurveySource(modes.macroMicro),
         asOf: null,
-        note: 'No comp cap rate; submarket cap rate used.'
+        note: 'No comp cap rate; submarket cap rate used (survey is mock even when KOSIS construction-cost is live).'
       })
     );
   } else {
@@ -419,9 +441,9 @@ export function buildAnalysisProvenance(
         label: 'Occupancy',
         value: `${100 - input.macroMicro.submarketVacancyPct}%`,
         tier: 'IMPUTED',
-        source: `macro-micro (${modes.macroMicro ?? 'mock'})`,
+        source: macroSurveySource(modes.macroMicro),
         asOf: null,
-        note: 'Occupancy = 100% − submarket vacancy.'
+        note: 'Occupancy = 100% − submarket vacancy (survey is mock even when KOSIS construction-cost is live).'
       })
     );
   } else {
@@ -434,6 +456,30 @@ export function buildAnalysisProvenance(
         source: 'fallback-constant',
         asOf: null,
         note: 'No occupancy evidence; default 85% applied (also used in revenue).'
+      })
+    );
+  }
+
+  // --- construction cost (macro-micro live sub-field) --------------------
+  // When macro-micro is 'partial' (KOSIS keyed) the construction-cost figure IS
+  // genuinely live, even though the submarket survey sub-fields above are not.
+  // Surface it as its own provenance row so the live half of a 'partial'
+  // connector is honestly represented — this is the only place macro-micro can
+  // legitimately wear a LIVE tier.
+  if (input.macroMicro.constructionCostPerSqmKrw != null) {
+    const macroMode = modes.macroMicro;
+    const constructionLive = macroMode === 'live' || macroMode === 'partial';
+    fields.push(
+      withFreshness({
+        field: 'constructionCost',
+        label: 'Construction cost',
+        value: `${Math.round(input.macroMicro.constructionCostPerSqmKrw).toLocaleString()} KRW/㎡`,
+        tier: constructionLive ? 'LIVE' : 'SEED',
+        source: `macro-micro (${constructionLive ? 'live' : 'mock'})`,
+        asOf: null,
+        note: constructionLive
+          ? 'Construction cost sourced live from KOSIS.'
+          : 'Seed construction-cost baseline (KOSIS not configured).'
       })
     );
   }
