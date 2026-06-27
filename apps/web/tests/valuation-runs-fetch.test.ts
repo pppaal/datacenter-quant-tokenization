@@ -1,34 +1,28 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { getValuationRunById, listValuationRuns } from '@/lib/services/valuations';
+import { makeReadFake } from './helpers/fake-prisma';
 
 test('listValuationRuns stitches asset + scenarios + sensitivity relations and orders newest first', async () => {
-  let receivedArgs: any;
-  const fakeDb = {
-    valuationRun: {
-      async findMany(args: any) {
-        receivedArgs = args;
-        return [
-          {
-            id: 'run_2',
-            assetId: 'asset_1',
-            asset: { id: 'asset_1', address: { city: 'Seoul' }, siteProfile: { zoning: 'M1' } },
-            scenarios: [{ id: 'sc_1', name: 'Base', scenarioOrder: 0 }],
-            sensitivityRuns: [{ id: 'sr_1', points: [{ id: 'p_1', sortOrder: 0 }] }]
-          },
-          {
-            id: 'run_1',
-            assetId: 'asset_1',
-            asset: { id: 'asset_1', address: null, siteProfile: null },
-            scenarios: [],
-            sensitivityRuns: []
-          }
-        ];
-      }
+  const { db, call } = makeReadFake('valuationRun', 'findMany', [
+    {
+      id: 'run_2',
+      assetId: 'asset_1',
+      asset: { id: 'asset_1', address: { city: 'Seoul' }, siteProfile: { zoning: 'M1' } },
+      scenarios: [{ id: 'sc_1', name: 'Base', scenarioOrder: 0 }],
+      sensitivityRuns: [{ id: 'sr_1', points: [{ id: 'p_1', sortOrder: 0 }] }]
+    },
+    {
+      id: 'run_1',
+      assetId: 'asset_1',
+      asset: { id: 'asset_1', address: null, siteProfile: null },
+      scenarios: [],
+      sensitivityRuns: []
     }
-  };
+  ]);
 
-  const result = await listValuationRuns(fakeDb as never);
+  const result = await listValuationRuns(db);
+  const receivedArgs = call.args as any;
 
   // ordering + nested ordering directives are part of the stitched contract
   assert.deepEqual(receivedArgs.orderBy, { createdAt: 'desc' });
@@ -51,29 +45,22 @@ test('listValuationRuns stitches asset + scenarios + sensitivity relations and o
 });
 
 test('getValuationRunById fetches by id with the deep underwriting relation graph', async () => {
-  let receivedArgs: any;
-  const fakeDb = {
-    valuationRun: {
-      async findUnique(args: any) {
-        receivedArgs = args;
-        return {
-          id: 'run_1',
-          assetId: 'asset_1',
-          asset: {
-            id: 'asset_1',
-            address: { city: 'Seoul' },
-            transactionComps: [{ id: 'tc_1' }],
-            creditAssessments: [{ id: 'ca_1', counterparty: { name: 'Acme' } }],
-            featureSnapshots: [{ id: 'fs_1', values: [{ key: 'a' }] }]
-          },
-          scenarios: [{ id: 'sc_1', scenarioOrder: 0 }],
-          sensitivityRuns: [{ id: 'sr_1', points: [] }]
-        };
-      }
-    }
-  };
+  const { db, call } = makeReadFake('valuationRun', 'findUnique', {
+    id: 'run_1',
+    assetId: 'asset_1',
+    asset: {
+      id: 'asset_1',
+      address: { city: 'Seoul' },
+      transactionComps: [{ id: 'tc_1' }],
+      creditAssessments: [{ id: 'ca_1', counterparty: { name: 'Acme' } }],
+      featureSnapshots: [{ id: 'fs_1', values: [{ key: 'a' }] }]
+    },
+    scenarios: [{ id: 'sc_1', scenarioOrder: 0 }],
+    sensitivityRuns: [{ id: 'sr_1', points: [] }]
+  });
 
-  const result = await getValuationRunById('run_1', fakeDb as never);
+  const result = await getValuationRunById('run_1', db);
+  const receivedArgs = call.args as any;
 
   assert.deepEqual(receivedArgs.where, { id: 'run_1' });
   // bounded relation pulls (take limits) are load-bearing for the underwriting view
@@ -97,14 +84,7 @@ test('getValuationRunById fetches by id with the deep underwriting relation grap
 });
 
 test('getValuationRunById returns null when the run does not exist', async () => {
-  const fakeDb = {
-    valuationRun: {
-      async findUnique() {
-        return null;
-      }
-    }
-  };
-
-  const result = await getValuationRunById('missing', fakeDb as never);
+  const { db } = makeReadFake('valuationRun', 'findUnique', null);
+  const result = await getValuationRunById('missing', db);
   assert.equal(result, null);
 });
