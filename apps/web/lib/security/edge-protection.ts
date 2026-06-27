@@ -20,20 +20,75 @@ export type EdgeRequestLike = {
 };
 
 /**
+ * Number of trusted reverse-proxy hops in front of this app. Each trusted proxy
+ * APPENDS the address it received the connection from to `x-forwarded-for`, so
+ * with N trusted proxies the real client IP is the Nth-from-the-right entry; any
+ * entries to the LEFT of that are attacker-controlled (a client can send a
+ * pre-populated `x-forwarded-for` header that the proxies merely extend).
+ *
+ * Default 1 matches Vercel's single edge proxy. Behind two proxies (e.g. a CDN
+ * in front of Vercel) set `TRUSTED_PROXY_HOP_COUNT=2`. Setting it too LOW only
+ * ever makes IP resolution MORE conservative (it trusts a proxy-inserted hop
+ * rather than a client-supplied one); setting it too HIGH would trust a hop the
+ * client controls, so err low if unsure.
+ */
+const DEFAULT_TRUSTED_PROXY_HOP_COUNT = 1;
+
+function getTrustedProxyHopCount(): number {
+  const raw = process.env.TRUSTED_PROXY_HOP_COUNT?.trim();
+  if (!raw) return DEFAULT_TRUSTED_PROXY_HOP_COUNT;
+  const n = Number(raw);
+  if (!Number.isInteger(n) || n < 1) return DEFAULT_TRUSTED_PROXY_HOP_COUNT;
+  return n;
+}
+
+/**
  * Resolve the originating client IP from edge headers. Returns `null` when
  * no upstream proxy populated a forwarded-for-style header (e.g. local dev).
+ *
+ * SECURITY: `x-forwarded-for` is a client-spoofable, comma-separated chain
+ * `client, proxy1, proxy2, ...` where each trusted proxy APPENDS on the right.
+ * Trusting the leftmost (`split(',')[0]`) entry lets any client forge its
+ * source IP — bypassing the IP allowlist and per-IP rate limiter. We instead
+ * trust only the entry inserted by the configured trusted-proxy hop count
+ * (`TRUSTED_PROXY_HOP_COUNT`, default 1 = Vercel's single proxy): the
+ * Nth-from-the-right entry. `x-vercel-forwarded-for` is preferred when present
+ * because Vercel sets it past its own proxy and a client cannot forge it.
  */
 export function resolveClientIp(request: EdgeRequestLike): string | null {
-  const candidates = [
-    request.headers.get(HEADER_VERCEL_IP),
-    request.headers.get(HEADER_FORWARDED_FOR),
-    request.headers.get(HEADER_REAL_IP)
-  ];
-  for (const raw of candidates) {
-    if (!raw) continue;
-    const first = raw.split(',')[0]?.trim();
+  // Vercel's own header is set past its edge proxy and is not client-forgeable;
+  // prefer it outright when present. Take its leftmost entry (Vercel populates
+  // it with the true client IP).
+  const vercel = request.headers.get(HEADER_VERCEL_IP);
+  if (vercel) {
+    const first = vercel.split(',')[0]?.trim();
     if (first) return first;
   }
+
+  const forwardedFor = request.headers.get(HEADER_FORWARDED_FOR);
+  if (forwardedFor) {
+    const chain = forwardedFor
+      .split(',')
+      .map((entry) => entry.trim())
+      .filter((entry) => entry.length > 0);
+    if (chain.length > 0) {
+      // The trusted proxy inserted the Nth-from-the-right entry. Clamp the index
+      // to the start of the chain so a short chain (fewer hops than configured)
+      // still resolves to the leftmost *proxy-observed* address rather than
+      // reading undefined.
+      const hopCount = getTrustedProxyHopCount();
+      const index = Math.max(0, chain.length - hopCount);
+      const trusted = chain[index];
+      if (trusted) return trusted;
+    }
+  }
+
+  const realIp = request.headers.get(HEADER_REAL_IP);
+  if (realIp) {
+    const first = realIp.split(',')[0]?.trim();
+    if (first) return first;
+  }
+
   return null;
 }
 

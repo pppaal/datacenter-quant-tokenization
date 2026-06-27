@@ -54,6 +54,12 @@ const envSchema = z.object({
   ADMIN_SESSION_SECRET: optionalString,
   ADMIN_SESSION_TTL_HOURS: optionalNumber('ADMIN_SESSION_TTL_HOURS'),
   ADMIN_ALLOW_UNBOUND_BROWSER_SESSION: optionalBool,
+  // Legacy escape hatch for row-level scope access on WRITE paths. When truthy,
+  // a non-ADMIN actor with NO grants for a scope type may still mutate it
+  // (historical fail-OPEN). Default (unset) is the secure fail-CLOSED behavior:
+  // an ADMIN must grant the scope first. Migration aid only; leave unset in
+  // production. See `canActorAccessScope` in lib/security/admin-access.ts.
+  ADMIN_SCOPE_ALLOW_UNGRANTED_MUTATIONS: optionalBool,
 
   // Ops cron / queue
   OPS_CRON_TOKEN: optionalString,
@@ -87,6 +93,12 @@ const envSchema = z.object({
   // Edge protection
   ADMIN_IP_ALLOWLIST: optionalString,
   OPS_IP_ALLOWLIST: optionalString,
+  // Number of trusted reverse-proxy hops in front of the app. Bounds how far
+  // into `x-forwarded-for` we trust when resolving the client IP (the Nth-from-
+  // the-right entry). Default 1 = Vercel's single edge proxy. Read directly from
+  // process.env in the Edge runtime (`edge-protection.ts`); listed here for
+  // typing/documentation.
+  TRUSTED_PROXY_HOP_COUNT: optionalNumber('TRUSTED_PROXY_HOP_COUNT'),
   ADMIN_API_RATE_WINDOW_MS: optionalNumber('ADMIN_API_RATE_WINDOW_MS'),
   ADMIN_API_RATE_MAX: optionalNumber('ADMIN_API_RATE_MAX'),
   OPS_API_RATE_WINDOW_MS: optionalNumber('OPS_API_RATE_WINDOW_MS'),
