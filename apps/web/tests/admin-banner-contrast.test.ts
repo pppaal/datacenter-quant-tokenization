@@ -5,20 +5,23 @@ import { test } from 'node:test';
 
 /**
  * a11y guard: admin status banners must not render light semantic text
- * (text-{emerald,amber,rose}-{50,100,200}) over a light semantic tint
- * (bg-{emerald,amber,rose}-{500,400}/{5,10}). On the light theme the Tailwind
- * compat layer does NOT remap the emerald/amber/rose ramps, so that combination
- * is light-on-light and fails WCAG contrast. Banners must use the semantic
- * tokens instead, e.g. `bg-[hsl(var(--success-tint))] text-[hsl(var(--success))]`.
+ * (text-{emerald,amber,rose,sky}-{50,100,200}) over a light semantic tint
+ * (bg-{emerald,amber,rose,sky}-{400,500}/{5,10,20,30}). On the light theme the
+ * Tailwind compat layer does NOT remap the emerald/amber/rose/sky ramps, so
+ * that combination is light-on-light and fails WCAG contrast. Banners (and
+ * markers) must use the semantic tokens instead, e.g.
+ * `bg-[hsl(var(--success-tint))] text-[hsl(var(--success))]`.
  *
  * This test scans apps/web/components/admin and asserts ZERO occurrences of the
- * offending combo on a single className string (in either order).
+ * offending combo on a single className string (in either order). The tint
+ * opacities now also include /20 and /30 (which the original /5,/10-only guard
+ * missed — e.g. the property-map markers regression) and the sky ramp.
  */
 
 const ADMIN_DIR = path.join(__dirname, '..', 'components', 'admin');
 
-const LIGHT_TEXT = String.raw`text-(?:emerald|amber|rose)-(?:50|100|200)`;
-const LIGHT_TINT_BG = String.raw`bg-(?:emerald|amber|rose)-(?:500|400)/(?:5|10)\b`;
+const LIGHT_TEXT = String.raw`text-(?:emerald|amber|rose|sky)-(?:50|100|200)`;
+const LIGHT_TINT_BG = String.raw`bg-(?:emerald|amber|rose|sky)-(?:500|400)/(?:5|10|20|30)\b`;
 
 // Match the offending pair within one className string (forward and reverse).
 const OFFENDING = new RegExp(
