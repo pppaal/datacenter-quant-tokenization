@@ -5,6 +5,7 @@ import { persistKycEvent } from '@/lib/services/kyc/bridge';
 import { getKycProvider } from '@/lib/services/kyc/registry';
 import { createRateLimiter, RateLimitError } from '@/lib/security/rate-limit';
 import { checkDistributedRateLimit } from '@/lib/security/distributed-rate-limit';
+import { genericErrorResponse } from '@/lib/security/error-response';
 
 // The webhook is public (authenticity comes from the provider signature, not a
 // cookie), so an attacker who cannot forge a signature can still flood it to
@@ -20,6 +21,21 @@ const webhookRateLimiter = createRateLimiter('kyc-webhook', {
   windowMs: WEBHOOK_RATE_WINDOW_MS,
   maxRequests: WEBHOOK_RATE_MAX
 });
+
+/**
+ * Best-effort failure-path audit. The error response must not depend on the
+ * audit write succeeding: if audit itself throws (e.g. the same DB outage that
+ * caused the persist failure), swallowing it here keeps us on the client-safe
+ * branch instead of escaping the handler and surfacing an unhandled error
+ * (which could leak a stack). Success-path audits stay strict (awaited) above.
+ */
+async function recordFailureAuditSafe(input: Parameters<typeof recordAuditEvent>[0]) {
+  try {
+    await recordAuditEvent(input);
+  } catch {
+    // Intentionally swallowed: audit is observability, not the control path.
+  }
+}
 
 function tooManyRequests(retryAfterMs: number) {
   return NextResponse.json(
@@ -80,7 +96,7 @@ export async function POST(request: Request, context: { params: Promise<{ provid
   try {
     await provider.verifySignature(rawBody, request.headers);
   } catch (error) {
-    await recordAuditEvent({
+    await recordFailureAuditSafe({
       actorIdentifier: `kyc-webhook:${provider.name}`,
       actorRole: 'system',
       action: 'kyc.webhook_signature_failed',
@@ -101,8 +117,35 @@ export async function POST(request: Request, context: { params: Promise<{ provid
     return NextResponse.json({ error: 'body is not valid JSON' }, { status: 400 });
   }
 
+  // Parse is provider-facing: the payload comes from the provider, so its shape
+  // errors (zod) and benign mapping errors (e.g. unknown country code) are safe
+  // to echo back as a 400 so the provider can correct its payload (per the
+  // documented decision to keep provider-facing parse-shape messages).
+  let event;
   try {
-    const event = await provider.parseEvent(body);
+    event = await provider.parseEvent(body);
+  } catch (error) {
+    await recordFailureAuditSafe({
+      actorIdentifier: `kyc-webhook:${provider.name}`,
+      actorRole: 'system',
+      action: 'kyc.webhook_failed',
+      entityType: 'KycRecord',
+      requestPath: new URL(request.url).pathname,
+      requestMethod: request.method,
+      ipAddress,
+      statusLabel: 'FAILED',
+      metadata: { error: error instanceof Error ? error.message : 'parse failed' }
+    });
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'invalid payload' },
+      { status: 400 }
+    );
+  }
+
+  // Persist touches our database: failures here (e.g. Prisma errors) can embed
+  // internal table/column/connection detail, so they must NOT be echoed. Log
+  // the real error server-side and return a generic message + requestId.
+  try {
     const { record, idempotentNoop } = await persistKycEvent(event);
 
     await recordAuditEvent({
@@ -126,7 +169,7 @@ export async function POST(request: Request, context: { params: Promise<{ provid
 
     return NextResponse.json({ kycRecordId: record.id, status: record.status, idempotentNoop });
   } catch (error) {
-    await recordAuditEvent({
+    await recordFailureAuditSafe({
       actorIdentifier: `kyc-webhook:${provider.name}`,
       actorRole: 'system',
       action: 'kyc.webhook_failed',
@@ -135,11 +178,12 @@ export async function POST(request: Request, context: { params: Promise<{ provid
       requestMethod: request.method,
       ipAddress,
       statusLabel: 'FAILED',
-      metadata: { error: error instanceof Error ? error.message : 'parse/persist failed' }
+      metadata: { error: error instanceof Error ? error.message : 'persist failed' }
     });
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'invalid payload' },
-      { status: 400 }
-    );
+    return genericErrorResponse(error, {
+      status: 500,
+      message: 'Failed to persist KYC event.',
+      context: { route: 'kyc.webhook', provider: provider.name }
+    });
   }
 }
