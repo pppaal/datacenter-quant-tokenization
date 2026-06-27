@@ -18,7 +18,17 @@ import { test } from 'node:test';
  * missed — e.g. the property-map markers regression) and the sky ramp.
  */
 
-const ADMIN_DIR = path.join(__dirname, '..', 'components', 'admin');
+// Light-themed admin surfaces: the shared admin components AND the admin route
+// pages (which render on the light `app-shell`). The public `app/property-analyze`
+// page is intentionally dark-themed, so its light-text-on-tint is correct and is
+// deliberately NOT scanned here.
+const SCAN_DIRS = [
+  path.join(__dirname, '..', 'components', 'admin'),
+  path.join(__dirname, '..', 'app', 'admin'),
+  path.join(__dirname, '..', 'app', '(auth)', 'admin')
+];
+
+const SCAN_ROOT = path.join(__dirname, '..');
 
 const LIGHT_TEXT = String.raw`text-(?:emerald|amber|rose|sky)-(?:50|100|200)`;
 const LIGHT_TINT_BG = String.raw`bg-(?:emerald|amber|rose|sky)-(?:500|400)/(?:5|10|20|30)\b`;
@@ -44,13 +54,15 @@ function collectTsxFiles(dir: string): string[] {
 test('admin banners do not use light semantic text over light semantic tint', () => {
   const offenders: string[] = [];
 
-  for (const file of collectTsxFiles(ADMIN_DIR)) {
-    const lines = readFileSync(file, 'utf8').split('\n');
-    lines.forEach((line, index) => {
-      if (OFFENDING.test(line)) {
-        offenders.push(`${path.relative(ADMIN_DIR, file)}:${index + 1}`);
-      }
-    });
+  for (const dir of SCAN_DIRS) {
+    for (const file of collectTsxFiles(dir)) {
+      const lines = readFileSync(file, 'utf8').split('\n');
+      lines.forEach((line, index) => {
+        if (OFFENDING.test(line)) {
+          offenders.push(`${path.relative(SCAN_ROOT, file)}:${index + 1}`);
+        }
+      });
+    }
   }
 
   assert.deepEqual(
@@ -58,4 +70,27 @@ test('admin banners do not use light semantic text over light semantic tint', ()
     [],
     `Found light-on-light status banner classes (fix to semantic tokens):\n${offenders.join('\n')}`
   );
+});
+
+// The admin login + security error banners are status messages: they must carry
+// role="alert" so assistive tech announces auth/config failures, and they must
+// render via the semantic danger tokens (readable on the light app-shell).
+test('admin login + security error banners are announced and use danger tokens', () => {
+  const banners = [
+    path.join(SCAN_ROOT, 'app', '(auth)', 'admin', 'login', 'page.tsx'),
+    path.join(SCAN_ROOT, 'app', 'admin', 'security', 'page.tsx')
+  ];
+  for (const file of banners) {
+    const src = readFileSync(file, 'utf8');
+    assert.match(
+      src,
+      /role="alert"/,
+      `${path.relative(SCAN_ROOT, file)} must mark its error banner role="alert"`
+    );
+    assert.match(
+      src,
+      /bg-\[hsl\(var\(--danger-tint\)\)\][^"'`]*text-\[hsl\(var\(--danger\)\)\]/,
+      `${path.relative(SCAN_ROOT, file)} must use the --danger-tint / --danger token pair`
+    );
+  }
 });
