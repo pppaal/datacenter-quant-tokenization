@@ -26,7 +26,7 @@ export async function PATCH(
     if (!actor) {
       return NextResponse.json({ error: 'Active operator session required.' }, { status: 401 });
     }
-    await assertActorScopeAccess(actor, AdminAccessScopeType.DEAL, id, prisma);
+    await assertActorScopeAccess(actor, AdminAccessScopeType.DEAL, id, prisma, 'mutation');
     const payload = await request.json();
     const workstream = await updateDealDiligenceWorkstream(id, workstreamId, payload);
     await recordAuditEvent({

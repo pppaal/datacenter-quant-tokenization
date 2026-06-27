@@ -51,7 +51,13 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: parsed.error.message }, { status: 400 });
   }
   try {
-    await assertActorScopeAccess(actor, AdminAccessScopeType.ASSET, parsed.data.assetId, prisma);
+    await assertActorScopeAccess(
+      actor,
+      AdminAccessScopeType.ASSET,
+      parsed.data.assetId,
+      prisma,
+      'mutation'
+    );
     const row = await requireDeploymentByAssetId(parsed.data.assetId);
     const identity = await getIdentity(toDeploymentRow(row), parsed.data.wallet);
     return NextResponse.json({ wallet: parsed.data.wallet, identity });
@@ -87,7 +93,13 @@ export async function POST(request: Request) {
   }
 
   try {
-    await assertActorScopeAccess(actor, AdminAccessScopeType.ASSET, parsed.assetId, prisma);
+    await assertActorScopeAccess(
+      actor,
+      AdminAccessScopeType.ASSET,
+      parsed.assetId,
+      prisma,
+      'mutation'
+    );
     const row = await requireDeploymentByAssetId(parsed.assetId);
     const deployment = toDeploymentRow(row);
 

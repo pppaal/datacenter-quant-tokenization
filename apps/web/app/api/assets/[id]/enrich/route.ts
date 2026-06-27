@@ -20,7 +20,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   }
   try {
     const { id } = await params;
-    await assertActorScopeAccess(actor, AdminAccessScopeType.ASSET, id, prisma);
+    await assertActorScopeAccess(actor, AdminAccessScopeType.ASSET, id, prisma, 'mutation');
     const asset = await enrichAssetFromSources(id);
     await recordAuditEvent({
       actorIdentifier: actor?.identifier,

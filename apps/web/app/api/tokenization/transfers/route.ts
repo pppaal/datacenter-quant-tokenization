@@ -119,7 +119,13 @@ export async function POST(request: Request) {
 
   const requestPath = new URL(request.url).pathname;
   try {
-    await assertActorScopeAccess(actor, AdminAccessScopeType.ASSET, parsed.assetId, prisma);
+    await assertActorScopeAccess(
+      actor,
+      AdminAccessScopeType.ASSET,
+      parsed.assetId,
+      prisma,
+      'mutation'
+    );
 
     if (parsed.action === 'open') {
       const ticket = await openTicket({

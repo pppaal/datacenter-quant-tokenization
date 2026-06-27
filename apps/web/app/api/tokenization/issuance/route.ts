@@ -65,7 +65,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'assetId is required' }, { status: 400 });
   }
   try {
-    await assertActorScopeAccess(actor, AdminAccessScopeType.ASSET, assetId, prisma);
+    await assertActorScopeAccess(actor, AdminAccessScopeType.ASSET, assetId, prisma, 'mutation');
     const row = await requireDeploymentByAssetId(assetId);
     const supply = await readTokenSupply(toDeploymentRow(row));
     return NextResponse.json({
@@ -115,7 +115,13 @@ export async function POST(request: Request) {
   }
 
   try {
-    await assertActorScopeAccess(actor, AdminAccessScopeType.ASSET, parsed.assetId, prisma);
+    await assertActorScopeAccess(
+      actor,
+      AdminAccessScopeType.ASSET,
+      parsed.assetId,
+      prisma,
+      'mutation'
+    );
     const row = await requireDeploymentByAssetId(parsed.assetId);
     const deployment = toDeploymentRow(row);
 

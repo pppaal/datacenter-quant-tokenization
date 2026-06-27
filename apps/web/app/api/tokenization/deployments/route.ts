@@ -72,7 +72,13 @@ export async function POST(request: Request) {
   }
 
   try {
-    await assertActorScopeAccess(actor, AdminAccessScopeType.ASSET, parsed.assetId, prisma);
+    await assertActorScopeAccess(
+      actor,
+      AdminAccessScopeType.ASSET,
+      parsed.assetId,
+      prisma,
+      'mutation'
+    );
     const row = await upsertTokenizedAsset(parsed);
     await recordAuditEvent({
       actorIdentifier: actor.identifier,

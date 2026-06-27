@@ -5,6 +5,7 @@ import { autoAnalyzeProperty } from '@/lib/services/property-analyzer/auto-analy
 import { buildFullReport } from '@/lib/services/property-analyzer/full-report';
 import { createRateLimiter, RateLimitError } from '@/lib/security/rate-limit';
 import { checkDistributedRateLimit } from '@/lib/security/distributed-rate-limit';
+import { resolveClientIp } from '@/lib/security/edge-protection';
 import { recordAuditEvent } from '@/lib/services/audit';
 import { LruCache, hashCacheKey } from '@/lib/services/property-analyzer/report-cache';
 import { persistAnalysisSnapshot } from '@/lib/services/property-analyzer/snapshot';
@@ -44,8 +45,11 @@ const bodySchema = z
   });
 
 function clientKey(request: Request): string {
-  const forwarded = request.headers.get('x-forwarded-for');
-  if (forwarded) return forwarded.split(',')[0]!.trim();
+  // Hardened, hop-aware resolution so the per-IP rate-limit key can't be
+  // defeated by rotating a spoofed leftmost x-forwarded-for entry on this
+  // expensive public endpoint (honors TRUSTED_PROXY_HOP_COUNT).
+  const resolved = resolveClientIp(request);
+  if (resolved) return resolved;
   const realIp = request.headers.get('x-real-ip');
   if (realIp) return realIp.trim();
   return 'anonymous';

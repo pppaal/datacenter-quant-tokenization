@@ -95,7 +95,7 @@ export function getAdminAuthConfig(env: NodeJS.ProcessEnv = process.env): AdminA
   };
 }
 
-function safeEqual(left: string, right: string) {
+export function safeEqual(left: string, right: string) {
   const maxLength = Math.max(left.length, right.length);
   let difference = left.length === right.length ? 0 : 1;
 

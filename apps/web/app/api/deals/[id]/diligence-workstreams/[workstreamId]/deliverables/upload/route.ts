@@ -35,7 +35,7 @@ export async function POST(
   try {
     uploadRateLimiter.check(actor.identifier);
 
-    await assertActorScopeAccess(actor, AdminAccessScopeType.DEAL, id, prisma);
+    await assertActorScopeAccess(actor, AdminAccessScopeType.DEAL, id, prisma, 'mutation');
 
     const deal = await prisma.deal.findUnique({
       where: { id },

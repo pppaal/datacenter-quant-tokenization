@@ -1,4 +1,5 @@
 import { AdminAccessScopeType, UserRole } from '@prisma/client';
+import { safeEqual } from '@/lib/security/admin-auth';
 
 export type ScimProvisionedGrantInput = {
   scopeType: AdminAccessScopeType;
@@ -196,7 +197,10 @@ export function authorizeAdminScimRequest(request: Request, env: NodeJS.ProcessE
       .get('authorization')
       ?.replace(/^Bearer\s+/i, '')
       .trim() ?? '';
-  return bearer === config.token;
+  // Constant-time compare: this token authorizes creating/activating ADMIN
+  // users, so it must not leak via a `===` timing oracle like every other
+  // secret comparison in the codebase.
+  return safeEqual(bearer, config.token);
 }
 
 export async function upsertProvisionedAdminUser(input: ScimProvisionedUserInput, db: ScimDb) {

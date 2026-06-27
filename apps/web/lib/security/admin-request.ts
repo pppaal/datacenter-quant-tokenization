@@ -1,5 +1,6 @@
 import type { AdminAccessRole, AuthorizedAdminActor } from '@/lib/security/admin-auth';
 import { resolveAdminActorSeat } from '@/lib/security/admin-identity';
+import { resolveClientIp } from '@/lib/security/edge-protection';
 
 type HeaderCarrier =
   | Headers
@@ -36,11 +37,11 @@ export function getAdminActorFromHeaders(headers: HeaderCarrier): AuthorizedAdmi
 }
 
 export function getRequestIpAddress(headers: HeaderCarrier) {
-  const forwardedFor = headers.get('x-forwarded-for')?.trim();
-  if (forwardedFor) {
-    return forwardedFor.split(',')[0]?.trim() ?? null;
-  }
-
+  // Resolve through the hardened, hop-aware resolver so audit-log IP attribution
+  // and any rate-limit keying honor TRUSTED_PROXY_HOP_COUNT and can't be spoofed
+  // via a client-supplied leftmost x-forwarded-for entry. Falls back to x-real-ip.
+  const fromForwarded = resolveClientIp({ headers: { get: (name) => headers.get(name) ?? null } });
+  if (fromForwarded) return fromForwarded;
   return headers.get('x-real-ip')?.trim() ?? null;
 }
 

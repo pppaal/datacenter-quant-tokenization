@@ -43,7 +43,8 @@ export async function PATCH(
       actor,
       AdminAccessScopeType.PORTFOLIO,
       portfolioAsset.portfolioId,
-      prisma
+      prisma,
+      'mutation'
     );
     const payload = await request.json();
     const initiative = await updateAssetManagementInitiative(id, initiativeId, payload, prisma);

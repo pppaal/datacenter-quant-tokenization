@@ -29,7 +29,7 @@ export async function POST(request: Request, { params }: Props) {
 
   try {
     const { id } = await params;
-    await assertActorScopeAccess(actor, AdminAccessScopeType.DEAL, id, prisma);
+    await assertActorScopeAccess(actor, AdminAccessScopeType.DEAL, id, prisma, 'mutation');
     const body = await request.json().catch(() => ({}));
     const deal = await restoreDeal(id, body);
     if (!deal) {

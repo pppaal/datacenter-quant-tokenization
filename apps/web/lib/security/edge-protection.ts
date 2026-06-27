@@ -55,7 +55,9 @@ function getTrustedProxyHopCount(): number {
  * Nth-from-the-right entry. `x-vercel-forwarded-for` is preferred when present
  * because Vercel sets it past its own proxy and a client cannot forge it.
  */
-export function resolveClientIp(request: EdgeRequestLike): string | null {
+export function resolveClientIp(request: {
+  headers: { get(name: string): string | null };
+}): string | null {
   // Vercel's own header is set past its edge proxy and is not client-forgeable;
   // prefer it outright when present. Take its leftmost entry (Vercel populates
   // it with the true client IP).

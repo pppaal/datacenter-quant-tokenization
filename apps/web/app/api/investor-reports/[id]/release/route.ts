@@ -37,7 +37,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       return NextResponse.json({ error: 'Investor report not found.' }, { status: 404 });
     }
 
-    await assertActorScopeAccess(actor, AdminAccessScopeType.FUND, report.fundId, prisma);
+    await assertActorScopeAccess(
+      actor,
+      AdminAccessScopeType.FUND,
+      report.fundId,
+      prisma,
+      'mutation'
+    );
     const payload = await request.json();
     const updatedReport = await updateInvestorReportRelease(
       report.id,
