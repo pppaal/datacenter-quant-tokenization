@@ -7,6 +7,7 @@ import {
   toDeploymentRow,
   upsertTokenizedAsset
 } from '@/lib/services/onchain/tokenization-repo';
+import { makeModelFake } from './helpers/fake-prisma';
 
 function deploymentRow(overrides: Record<string, unknown> = {}) {
   return {
@@ -40,53 +41,35 @@ test('toDeploymentRow projects the on-chain address tuple and defaults country m
 });
 
 test('getDeploymentByAssetId queries tokenizedAsset by assetId and passes the row through', async () => {
-  let receivedWhere: unknown;
-  const fakeDb = {
-    tokenizedAsset: {
-      async findUnique(args: any) {
-        receivedWhere = args.where;
-        return deploymentRow();
-      }
-    }
-  };
+  const { db, calls } = makeModelFake('tokenizedAsset', {
+    findUnique: () => deploymentRow()
+  });
 
-  const result = await getDeploymentByAssetId('asset_1', fakeDb as never);
+  const result = await getDeploymentByAssetId('asset_1', db);
 
-  assert.deepEqual(receivedWhere, { assetId: 'asset_1' });
+  assert.deepEqual((calls.findUnique.args as any).where, { assetId: 'asset_1' });
   assert.equal(result?.assetId, 'asset_1');
   assert.equal(result?.tokenAddress, '0x1111111111111111111111111111111111111111');
 });
 
 test('getDeploymentByAssetId returns null when no deployment exists', async () => {
-  const fakeDb = {
-    tokenizedAsset: {
-      async findUnique() {
-        return null;
-      }
-    }
-  };
+  const { db } = makeModelFake('tokenizedAsset', { findUnique: () => null });
 
-  const result = await getDeploymentByAssetId('missing', fakeDb as never);
+  const result = await getDeploymentByAssetId('missing', db);
   assert.equal(result, null);
 });
 
 test('requireDeploymentByAssetId stitches the asset relation onto the deployment', async () => {
-  let receivedInclude: unknown;
-  const fakeDb = {
-    tokenizedAsset: {
-      async findUnique(args: any) {
-        receivedInclude = args.include;
-        return {
-          ...deploymentRow(),
-          asset: { assetCode: 'DC-001', name: 'Seoul DC One' }
-        };
-      }
-    }
-  };
+  const { db, calls } = makeModelFake('tokenizedAsset', {
+    findUnique: () => ({
+      ...deploymentRow(),
+      asset: { assetCode: 'DC-001', name: 'Seoul DC One' }
+    })
+  });
 
-  const result = await requireDeploymentByAssetId('asset_1', fakeDb as never);
+  const result = await requireDeploymentByAssetId('asset_1', db);
 
-  assert.deepEqual(receivedInclude, {
+  assert.deepEqual((calls.findUnique.args as any).include, {
     asset: { select: { assetCode: true, name: true } }
   });
   assert.equal(result.asset.assetCode, 'DC-001');
@@ -95,30 +78,18 @@ test('requireDeploymentByAssetId stitches the asset relation onto the deployment
 });
 
 test('requireDeploymentByAssetId throws a descriptive error when the deployment is missing', async () => {
-  const fakeDb = {
-    tokenizedAsset: {
-      async findUnique() {
-        return null;
-      }
-    }
-  };
+  const { db } = makeModelFake('tokenizedAsset', { findUnique: () => null });
 
   await assert.rejects(
-    () => requireDeploymentByAssetId('asset_404', fakeDb as never),
+    () => requireDeploymentByAssetId('asset_404', db),
     /No tokenization deployment recorded for assetId=asset_404/
   );
 });
 
 test('upsertTokenizedAsset builds matching create/update payloads and defaults optional modules to null', async () => {
-  let upsertArgs: any;
-  const fakeDb = {
-    tokenizedAsset: {
-      async upsert(args: any) {
-        upsertArgs = args;
-        return deploymentRow({ assetId: args.where.assetId });
-      }
-    }
-  };
+  const { db, calls } = makeModelFake('tokenizedAsset', {
+    upsert: (args: any) => deploymentRow({ assetId: args.where.assetId })
+  });
 
   const result = await upsertTokenizedAsset(
     {
@@ -130,9 +101,10 @@ test('upsertTokenizedAsset builds matching create/update payloads and defaults o
       complianceAddress: '0xccc',
       deploymentBlock: 555
     },
-    fakeDb as never
+    db
   );
 
+  const upsertArgs = calls.upsert.args as any;
   assert.deepEqual(upsertArgs.where, { assetId: 'asset_9' });
   // optional module addresses + txHash default to null in both branches
   assert.equal(upsertArgs.create.maxHoldersModuleAddress, null);
@@ -149,15 +121,9 @@ test('upsertTokenizedAsset builds matching create/update payloads and defaults o
 });
 
 test('upsertTokenizedAsset preserves provided optional module + txHash values', async () => {
-  let upsertArgs: any;
-  const fakeDb = {
-    tokenizedAsset: {
-      async upsert(args: any) {
-        upsertArgs = args;
-        return deploymentRow();
-      }
-    }
-  };
+  const { db, calls } = makeModelFake('tokenizedAsset', {
+    upsert: () => deploymentRow()
+  });
 
   await upsertTokenizedAsset(
     {
@@ -173,9 +139,10 @@ test('upsertTokenizedAsset preserves provided optional module + txHash values', 
       deploymentBlock: 1,
       deploymentTxHash: '0x123'
     },
-    fakeDb as never
+    db
   );
 
+  const upsertArgs = calls.upsert.args as any;
   assert.equal(upsertArgs.create.maxHoldersModuleAddress, '0xddd');
   assert.equal(upsertArgs.create.countryRestrictModuleAddress, '0xeee');
   assert.equal(upsertArgs.create.lockupModuleAddress, '0xfff');
@@ -184,24 +151,19 @@ test('upsertTokenizedAsset preserves provided optional module + txHash values', 
 });
 
 test('listTokenizedAssets returns asset-joined rows ordered by createdAt desc', async () => {
-  let receivedArgs: any;
-  const fakeDb = {
-    tokenizedAsset: {
-      async findMany(args: any) {
-        receivedArgs = args;
-        return [
-          { ...deploymentRow(), asset: { assetCode: 'DC-002', name: 'Busan DC' } },
-          {
-            ...deploymentRow({ assetId: 'asset_0' }),
-            asset: { assetCode: 'DC-001', name: 'Seoul DC' }
-          }
-        ];
+  const { db, calls } = makeModelFake('tokenizedAsset', {
+    findMany: () => [
+      { ...deploymentRow(), asset: { assetCode: 'DC-002', name: 'Busan DC' } },
+      {
+        ...deploymentRow({ assetId: 'asset_0' }),
+        asset: { assetCode: 'DC-001', name: 'Seoul DC' }
       }
-    }
-  };
+    ]
+  });
 
-  const result = await listTokenizedAssets(fakeDb as never);
+  const result = await listTokenizedAssets(db);
 
+  const receivedArgs = calls.findMany.args as any;
   assert.deepEqual(receivedArgs.include, {
     asset: { select: { assetCode: true, name: true } }
   });
