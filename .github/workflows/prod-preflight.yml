@@ -11,13 +11,26 @@ name: prod-preflight
 # environment's secrets — run it (and require it green) before promoting a
 # deployment to production traffic.
 #
-# SETUP REQUIRED (one-time): populate the `production` GitHub Environment
-# (Settings → Environments → production) with the secrets below. Until then this
-# workflow will (correctly) fail, because the preflight refuses to pass on an
-# incomplete production configuration.
+# SETUP REQUIRED (one-time):
+#   1. Populate the `production` GitHub Environment (Settings → Environments →
+#      production) with the secrets mapped below. Until then this workflow will
+#      (correctly) fail, because the preflight refuses to pass on an incomplete
+#      production configuration.
+#   2. Mark this job a REQUIRED status check so it actually gates promotion:
+#      Settings → Branches → branch protection for `main` → "Require status
+#      checks to pass" → add "production preflight". GitHub branch protection is
+#      the in-repo gate we can wire; a true Vercel promotion gate (block the
+#      production deployment on a red check) needs the Vercel dashboard's
+#      "Git → Ignored Build Step" / deployment-protection settings, which live
+#      outside this repo. The `deployment` trigger below still surfaces a red
+#      check on every production deployment so a bad config is visible.
 
 on:
   workflow_dispatch: {}
+  # Run on every push to main (the release path), so the production config is
+  # validated continuously and the check can be marked required on `main`.
+  push:
+    branches: [main]
   # Also run when a GitHub deployment to PRODUCTION is created, so promotion is
   # gated. Note: Vercel creates a GitHub `deployment` for *every* preview build
   # too, so the job below is guarded to skip non-production deployments —
@@ -28,11 +41,12 @@ on:
 jobs:
   preflight:
     name: production preflight
-    # Run on manual dispatch, or only for deployments targeting production.
-    # Vercel labels its production environment "Production"; preview builds use
-    # "Preview"/"Preview – <project>", which are skipped here.
+    # Run on manual dispatch, on push to main, or only for deployments targeting
+    # production. Vercel labels its production environment "Production"; preview
+    # builds use "Preview"/"Preview – <project>", which are skipped here.
     if: >-
       github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'push' ||
       startsWith(github.event.deployment.environment, 'Production') ||
       startsWith(github.event.deployment.environment, 'production')
     runs-on: ubuntu-latest
@@ -48,10 +62,21 @@ jobs:
       APP_BASE_URL: ${{ secrets.APP_BASE_URL }}
       DOCUMENT_STORAGE_BUCKET: ${{ secrets.DOCUMENT_STORAGE_BUCKET }}
       OPS_CRON_TOKEN: ${{ secrets.OPS_CRON_TOKEN }}
-      # Distributed rate limiting (login brute-force / webhook). Preflight should
-      # warn when unset; populate to make throttling effective across instances.
+      # Distributed rate limiting (login brute-force / webhook). Required by the
+      # preflight so cross-instance throttling is actually in force in prod.
       UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}
       UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
+      # On-chain config. Required unless BLOCKCHAIN_MOCK_MODE (which is itself
+      # forbidden in production), so they must be present for the gate to pass.
+      BLOCKCHAIN_RPC_URL: ${{ secrets.BLOCKCHAIN_RPC_URL }}
+      BLOCKCHAIN_PRIVATE_KEY: ${{ secrets.BLOCKCHAIN_PRIVATE_KEY }}
+      BLOCKCHAIN_REGISTRY_ADDRESS: ${{ secrets.BLOCKCHAIN_REGISTRY_ADDRESS }}
+      # Observability — now hard-required by the preflight (see
+      # scripts/run-production-preflight.ts). Crash reporting: AT LEAST ONE of
+      # SENTRY_DSN / ERROR_REPORT_WEBHOOK_URL. Ops paging: OPS_ALERT_WEBHOOK_URL.
+      SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+      ERROR_REPORT_WEBHOOK_URL: ${{ secrets.ERROR_REPORT_WEBHOOK_URL }}
+      OPS_ALERT_WEBHOOK_URL: ${{ secrets.OPS_ALERT_WEBHOOK_URL }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
