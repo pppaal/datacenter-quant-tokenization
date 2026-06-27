@@ -4,6 +4,7 @@
 // BOK (Bank of Korea) ECOS API and US FRED API.
 // These fetch real-time macro series data to replace seed/hardcoded values.
 
+import { env } from '@/lib/env';
 import { safeFetch } from '@/lib/security/safe-fetch';
 import {
   electricityMapsZoneForMarket,
@@ -43,11 +44,11 @@ export type DataProviderResult = {
 const REQUEST_TIMEOUT_MS = 15_000;
 
 function getBokApiKey(): string | null {
-  return process.env.BOK_ECOS_API_KEY ?? null;
+  return env().BOK_ECOS_API_KEY ?? null;
 }
 
 function getFredApiKey(): string | null {
-  return process.env.FRED_API_KEY ?? null;
+  return env().FRED_API_KEY ?? null;
 }
 
 export function isBokConfigured(): boolean {

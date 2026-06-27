@@ -44,10 +44,15 @@ export default [
       ...tsPlugin.configs['recommended'].rules,
       ...nextPlugin.configs['core-web-vitals'].rules,
       ...prettierConfig.rules,
-      // The codebase uses `as any` / `as unknown as X` defensively for Prisma
-      // input casts; tighten progressively once the typed input builders
-      // mentioned in CLAUDE.md land.
-      '@typescript-eslint/no-explicit-any': 'off',
+      // no-explicit-any ratchet. The codebase uses `as any` / `as unknown as X`
+      // defensively for Prisma input casts, so a global `error` would block CI on
+      // pre-existing debt. Instead this is a *warn* (visible in `lint` output,
+      // does NOT fail the zero-ERROR CI gate) so NO NEW unflagged `any` slips in
+      // unnoticed, while a scoped `error`-level override below hard-blocks new
+      // `any` in already-clean directories (`lib/blockchain/**`). Tighten the
+      // scoped allowlist outward (or flip the global to `error`) as directories
+      // are cleaned — that is the ratchet. See CLAUDE.md "no-explicit-any".
+      '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-empty-object-type': 'off',
       // Empty error blocks are intentional for fire-and-forget paths.
       'no-empty': ['error', { allowEmptyCatch: true }],
@@ -70,6 +75,23 @@ export default [
       // Scripts and tests routinely log; relax rules that fight that.
       'no-console': 'off',
       '@typescript-eslint/no-require-imports': 'off'
+    }
+  },
+  // ---------------------------------------------------------------------------
+  // no-explicit-any ratchet — clean-subset hard gate.
+  //
+  // `@typescript-eslint/no-explicit-any` is a global `warn` (above) because the
+  // wider codebase still carries defensive `as any` Prisma casts. This block
+  // promotes it to `error` for `lib/blockchain/**`, which is verified `any`-free
+  // today (the on-chain registry / ERC-3643 tokenization stack — the highest-
+  // consequence code in the repo). Any NEW `any` introduced there fails CI.
+  // Extend this `files` glob to additional already-clean directories as the
+  // ratchet tightens.
+  // ---------------------------------------------------------------------------
+  {
+    files: ['lib/blockchain/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'error'
     }
   },
   // ---------------------------------------------------------------------------
@@ -109,20 +131,34 @@ export default [
     }
   },
   // Tolerated-existing allowlist: lib files that still read raw `process.env`
-  // and were NOT migrated in the conventions-adoption pass. Each is left as-is
-  // because it either (a) reads dozens of bespoke domain keys not worth adding
-  // to the schema yet (data connectors / source adapters), (b) uses a
-  // `process.env` injection seam as a default parameter for test fakes
-  // (e.g. `getSanctionsProvider(env = process.env)`), (c) does dynamic
-  // `process.env[name]` access the loader can't model, or (d) runs in a context
-  // where coupling to the full-schema `env()` parse is undesirable (logger,
-  // edge-protection, prisma bootstrap). NEW raw `process.env` in any OTHER
-  // `lib/**` file still fails CI via the rule above; trimming this list as
-  // files migrate is the ratchet.
+  // and were NOT migrated to env(). Each remaining entry is left as-is because
+  // it either (a) reads bespoke per-source domain keys not worth schematizing
+  // yet (data connectors / source adapters), (b) uses a `process.env` injection
+  // seam as a default parameter for test fakes — e.g.
+  // `getSanctionsProvider(env = process.env)`, `getAdminAuthConfig`,
+  // `getAdminSsoConfig`, `getDocumentUploadPolicy`, the currency/ops-alerts/
+  // ops-worker/audit/readiness helpers — flipping these to env() would break the
+  // tests that inject a fake env, (c) does dynamic `process.env[name]` access the
+  // loader can't model (e.g. `lib/ai/models.ts`, `lib/services/sources.ts`),
+  // (d) passes the whole `process.env` to a child process
+  // (`lib/services/python-valuation.ts`), or (e) runs in a context where coupling
+  // to the full-schema `env()` parse is undesirable (logger, edge-protection,
+  // prisma bootstrap). NEW raw `process.env` in any OTHER `lib/**` file still
+  // fails CI via the rule above; trimming this list as files migrate is the
+  // ratchet.
+  //
+  // Migrated to env() in the conventions burn-down (removed from this list):
+  //   lib/blockchain/config.ts, lib/security/rate-limit.ts,
+  //   lib/storage/local.ts, lib/services/onchain/ipfs.ts,
+  //   lib/services/kyc/registry.ts, lib/services/valuation-runner.ts,
+  //   lib/services/source-refresh.ts, lib/services/macro/data-providers.ts,
+  //   lib/services/research/research-tools.ts,
+  //   lib/services/dc-intel/{openaq,overpass-poi,peeringdb,thinkhazard}.ts,
+  //   lib/services/quarterly-report/connectors/{dart,dart-financials,ecos,
+  //   molit-transactions}.ts.
   {
     files: [
       'lib/ai/models.ts',
-      'lib/blockchain/config.ts',
       'lib/blockchain/mock-mode.ts',
       'lib/db/prisma.ts',
       'lib/finance/currency.ts',
@@ -136,19 +172,11 @@ export default [
       'lib/security/admin-session.ts',
       'lib/security/admin-sso.ts',
       'lib/security/edge-protection.ts',
-      'lib/security/rate-limit.ts',
       'lib/security/upload-policy.ts',
       'lib/services/aml/screening.ts',
       'lib/services/audit.ts',
-      'lib/services/dc-intel/openaq.ts',
-      'lib/services/dc-intel/overpass-poi.ts',
-      'lib/services/dc-intel/peeringdb.ts',
-      'lib/services/dc-intel/thinkhazard.ts',
       'lib/services/geocode/kakao-geocode.ts',
       'lib/services/geocode/osm-geocode.ts',
-      'lib/services/kyc/registry.ts',
-      'lib/services/macro/data-providers.ts',
-      'lib/services/onchain/ipfs.ts',
       'lib/services/ops-alerts.ts',
       'lib/services/ops-queue.ts',
       'lib/services/ops-worker.ts',
@@ -161,15 +189,8 @@ export default [
       'lib/services/public-data/live/vworld-use-zone.ts',
       'lib/services/public-data/registry.ts',
       'lib/services/python-valuation.ts',
-      'lib/services/quarterly-report/connectors/dart-financials.ts',
-      'lib/services/quarterly-report/connectors/dart.ts',
-      'lib/services/quarterly-report/connectors/ecos.ts',
-      'lib/services/quarterly-report/connectors/molit-transactions.ts',
       'lib/services/readiness.ts',
-      'lib/services/research/research-tools.ts',
-      'lib/services/source-refresh.ts',
       'lib/services/sources.ts',
-      'lib/services/valuation-runner.ts',
       'lib/sources/adapters/building.ts',
       'lib/sources/adapters/climate.ts',
       'lib/sources/adapters/cross-market.ts',
@@ -186,8 +207,7 @@ export default [
       'lib/sources/adapters/market.ts',
       'lib/sources/adapters/power-grid.ts',
       'lib/sources/adapters/world-bank.ts',
-      'lib/sources/http.ts',
-      'lib/storage/local.ts'
+      'lib/sources/http.ts'
     ],
     rules: {
       'no-restricted-syntax': 'off'

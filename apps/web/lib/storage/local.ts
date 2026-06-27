@@ -8,6 +8,7 @@ import {
   type S3ClientConfig
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { env } from '@/lib/env';
 import { isRealProduction } from '@/lib/runtime-env';
 
 export type UploadableFile = {
@@ -83,7 +84,7 @@ function buildObjectKey(input: StorageSaveInput): string {
  * the serverless filesystem is non-durable outside `/tmp`.
  */
 export function createLocalDocumentStorage(
-  rootDir: string = process.env.DOCUMENT_STORAGE_DIR?.trim() || DEFAULT_LOCAL_ROOT
+  rootDir: string = env().DOCUMENT_STORAGE_DIR || DEFAULT_LOCAL_ROOT
 ): DocumentStorageAdapter {
   const absoluteRoot = path.isAbsolute(rootDir) ? rootDir : path.resolve(process.cwd(), rootDir);
 
@@ -138,7 +139,7 @@ export type S3StorageConfig = {
  */
 export function createS3DocumentStorage(config: S3StorageConfig): DocumentStorageAdapter {
   const clientConfig: S3ClientConfig = {
-    region: config.region ?? process.env.AWS_REGION ?? 'us-east-1',
+    region: config.region ?? env().AWS_REGION ?? 'us-east-1',
     endpoint: config.endpoint,
     forcePathStyle: config.forcePathStyle ?? Boolean(config.endpoint)
   };
@@ -212,16 +213,17 @@ export function createS3DocumentStorage(config: S3StorageConfig): DocumentStorag
  * rejects that flag, so local storage can never ship to real prod.
  */
 export function createDocumentStorageFromEnv(): DocumentStorageAdapter {
-  const bucket = process.env.DOCUMENT_STORAGE_BUCKET?.trim();
+  const config = env();
+  const bucket = config.DOCUMENT_STORAGE_BUCKET;
   if (bucket) {
     return createS3DocumentStorage({
       bucket,
-      region: process.env.DOCUMENT_STORAGE_REGION?.trim() || process.env.AWS_REGION?.trim(),
-      endpoint: process.env.DOCUMENT_STORAGE_ENDPOINT?.trim() || undefined,
-      accessKeyId: process.env.DOCUMENT_STORAGE_ACCESS_KEY_ID?.trim() || undefined,
-      secretAccessKey: process.env.DOCUMENT_STORAGE_SECRET_ACCESS_KEY?.trim() || undefined,
-      prefix: process.env.DOCUMENT_STORAGE_PREFIX?.trim() || undefined,
-      forcePathStyle: process.env.DOCUMENT_STORAGE_FORCE_PATH_STYLE === 'true'
+      region: config.DOCUMENT_STORAGE_REGION || config.AWS_REGION,
+      endpoint: config.DOCUMENT_STORAGE_ENDPOINT || undefined,
+      accessKeyId: config.DOCUMENT_STORAGE_ACCESS_KEY_ID || undefined,
+      secretAccessKey: config.DOCUMENT_STORAGE_SECRET_ACCESS_KEY || undefined,
+      prefix: config.DOCUMENT_STORAGE_PREFIX || undefined,
+      forcePathStyle: config.DOCUMENT_STORAGE_FORCE_PATH_STYLE
     });
   }
   if (isRealProduction()) {

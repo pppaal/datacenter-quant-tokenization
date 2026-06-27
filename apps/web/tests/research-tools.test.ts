@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { __resetEnvCache } from '@/lib/env';
 import {
   combineToolsets,
   createHttpToolset,
@@ -115,6 +116,7 @@ test('createHttpToolset: search returns empty when no vendor API key is set', as
   const prevSerper = process.env.SERPER_API_KEY;
   delete process.env.TAVILY_API_KEY;
   delete process.env.SERPER_API_KEY;
+  __resetEnvCache();
   try {
     const http = createHttpToolset();
     const results = await http.searchNews('anything');
@@ -122,12 +124,14 @@ test('createHttpToolset: search returns empty when no vendor API key is set', as
   } finally {
     if (prevTavily !== undefined) process.env.TAVILY_API_KEY = prevTavily;
     if (prevSerper !== undefined) process.env.SERPER_API_KEY = prevSerper;
+    __resetEnvCache();
   }
 });
 
 test('createHttpToolset: tavily adapter shapes results when key is set', async () => {
   const prevKey = process.env.TAVILY_API_KEY;
   process.env.TAVILY_API_KEY = 'test-key';
+  __resetEnvCache();
   const originalFetch = globalThis.fetch;
   globalThis.fetch = (async () =>
     new Response(
@@ -155,12 +159,14 @@ test('createHttpToolset: tavily adapter shapes results when key is set', async (
     globalThis.fetch = originalFetch;
     if (prevKey === undefined) delete process.env.TAVILY_API_KEY;
     else process.env.TAVILY_API_KEY = prevKey;
+    __resetEnvCache();
   }
 });
 
 test('createHttpToolset: tavily adapter degrades to [] on vendor error', async () => {
   const prevKey = process.env.TAVILY_API_KEY;
   process.env.TAVILY_API_KEY = 'test-key';
+  __resetEnvCache();
   const originalFetch = globalThis.fetch;
   globalThis.fetch = (async () =>
     new Response('upstream blew up', {
@@ -175,6 +181,7 @@ test('createHttpToolset: tavily adapter degrades to [] on vendor error', async (
     globalThis.fetch = originalFetch;
     if (prevKey === undefined) delete process.env.TAVILY_API_KEY;
     else process.env.TAVILY_API_KEY = prevKey;
+    __resetEnvCache();
   }
 });
 

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { SourceRefreshTriggerType } from '@prisma/client';
+import { __resetEnvCache } from '@/lib/env';
 import {
   getSourceRefreshHealth,
   runScheduledSourceRefresh,
@@ -10,6 +11,7 @@ import {
 test('scheduled source refresh selects stale assets and reports stale source systems', async () => {
   process.env.SOURCE_REFRESH_STALE_HOURS = '24';
   process.env.SOURCE_REFRESH_BATCH_SIZE = '2';
+  __resetEnvCache();
 
   const now = new Date('2026-03-21T06:00:00.000Z');
   const refreshedIds: string[] = [];
@@ -118,6 +120,7 @@ test('scheduled source refresh selects stale assets and reports stale source sys
 test('runSourceRefreshJob persists refresh run summary and actor metadata', async () => {
   process.env.SOURCE_REFRESH_STALE_HOURS = '24';
   process.env.SOURCE_REFRESH_BATCH_SIZE = '3';
+  __resetEnvCache();
 
   const persistedRuns: Array<Record<string, unknown>> = [];
 

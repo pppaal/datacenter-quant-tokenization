@@ -86,9 +86,25 @@ const envSchema = z.object({
   BLOCKCHAIN_CHAIN_ID: optionalNumber('BLOCKCHAIN_CHAIN_ID'),
   BLOCKCHAIN_CHAIN_NAME: optionalString,
   BLOCKCHAIN_RPC_URL: optionalString,
+  // Comma-separated list of fallback RPC endpoints appended after the primary
+  // BLOCKCHAIN_RPC_URL for the fallback transport. See lib/blockchain/config.ts.
+  BLOCKCHAIN_RPC_URLS: optionalString,
   BLOCKCHAIN_REGISTRY_ADDRESS: optionalString,
   BLOCKCHAIN_PRIVATE_KEY: optionalString,
   BLOCKCHAIN_METADATA_BASE_URL: optionalString,
+
+  // On-chain metadata pinning (IPFS). IPFS_PROVIDER selects the pinning backend
+  // ('pinata' | 'w3s' | 'none'); 'none' (default) skips pinning. See
+  // lib/services/onchain/ipfs.ts.
+  IPFS_PROVIDER: optionalString,
+  PINATA_JWT: optionalString,
+  W3S_TOKEN: optionalString,
+
+  // KYC webhook verification. See lib/services/kyc/registry.ts.
+  KYC_WEBHOOK_TS_SKEW_SECONDS: optionalNumber('KYC_WEBHOOK_TS_SKEW_SECONDS'),
+  KYC_MOCK_WEBHOOK_SECRET: optionalString,
+  KYC_MOCK_SKIP_SIG: optionalString,
+  KYC_SUMSUB_WEBHOOK_SECRET: optionalString,
 
   // Edge protection
   ADMIN_IP_ALLOWLIST: optionalString,
@@ -163,6 +179,41 @@ const envSchema = z.object({
   OPENAI_MODEL: optionalString,
   ANTHROPIC_API_KEY: optionalString,
   ANTHROPIC_NARRATIVE_MODEL: optionalString,
+
+  // Valuation engine. 'auto' (default) runs the Python cross-check for data
+  // centers; 'typescript' skips it; 'python' requires it. See
+  // lib/services/valuation-runner.ts.
+  VALUATION_ENGINE_MODE: optionalString,
+
+  // Source refresh tuning. See lib/services/source-refresh.ts.
+  SOURCE_REFRESH_STALE_HOURS: optionalNumber('SOURCE_REFRESH_STALE_HOURS'),
+  SOURCE_REFRESH_BATCH_SIZE: optionalNumber('SOURCE_REFRESH_BATCH_SIZE'),
+
+  // Quarterly-report / macro data connectors (optional API keys). When unset,
+  // the connectors return null and the pipeline falls back to seeded data.
+  DART_API_KEY: optionalString,
+  ECOS_API_KEY: optionalString,
+  MOLIT_API_KEY: optionalString,
+  BOK_ECOS_API_KEY: optionalString,
+  FRED_API_KEY: optionalString,
+
+  // Research toolset (optional web-search providers). See
+  // lib/services/research/research-tools.ts.
+  TAVILY_API_KEY: optionalString,
+  SERPER_API_KEY: optionalString,
+
+  // Data-center intelligence connectors. Each ENABLE_* flag is off by default so
+  // CI/dev stay on deterministic fixtures. See lib/services/dc-intel/*.
+  OPENAQ_API_KEY: optionalString,
+  ENABLE_OVERPASS_POI: optionalBool,
+  OVERPASS_API_URL: optionalString,
+  ENABLE_PEERINGDB: optionalBool,
+  THINKHAZARD_API_BASE: optionalString,
+  ENABLE_THINKHAZARD: optionalBool,
+
+  // S3 / AWS default region fallback for the S3 document storage client (used
+  // when DOCUMENT_STORAGE_REGION is unset). See lib/storage/local.ts.
+  AWS_REGION: optionalString,
 
   // Vercel / deployment metadata (provided by Vercel runtime)
   VERCEL_ENV: optionalString,

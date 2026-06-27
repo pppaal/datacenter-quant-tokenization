@@ -46,6 +46,7 @@
  *     proxy, not a registry.
  */
 
+import { env } from '@/lib/env';
 import { fetchJsonWithRetry, type Fetcher } from '@/lib/sources/http';
 import { logger } from '@/lib/observability/logger';
 import { clamp } from '@/lib/math';
@@ -159,12 +160,11 @@ const SCORE_VOLUME_WEIGHT = 0.6; // weight of raw amenity volume
 const SCORE_DIVERSITY_WEIGHT = 0.4; // weight of category breadth
 
 function isEnabled(): boolean {
-  const raw = process.env.ENABLE_OVERPASS_POI?.trim().toLowerCase();
-  return raw === '1' || raw === 'true' || raw === 'yes' || raw === 'on';
+  return env().ENABLE_OVERPASS_POI;
 }
 
 function endpointUrl(): string {
-  return process.env.OVERPASS_API_URL?.trim() || OVERPASS_API_DEFAULT_URL;
+  return env().OVERPASS_API_URL?.trim() || OVERPASS_API_DEFAULT_URL;
 }
 
 function roundTo(value: number, decimals: number): number {

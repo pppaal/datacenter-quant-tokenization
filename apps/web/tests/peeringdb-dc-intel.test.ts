@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { __resetEnvCache } from '@/lib/env';
 import {
   fetchInterconnectionSignal,
   parseFacilities,
@@ -86,6 +87,7 @@ test('scoreInterconnectionDensity is deterministic, bounded, and monotonic', () 
 
 test('fetchInterconnectionSignal parses the sample and computes the score (enabled)', async () => {
   process.env.ENABLE_PEERINGDB = 'true';
+  __resetEnvCache();
   const result = await fetchInterconnectionSignal(SEOUL, {
     fetcher: jsonFetcher(SAMPLE_FAC_BODY)
   });
@@ -98,6 +100,7 @@ test('fetchInterconnectionSignal parses the sample and computes the score (enabl
 
 test('fetchInterconnectionSignal returns empty (no throw) on fetch error', async () => {
   process.env.ENABLE_PEERINGDB = 'true';
+  __resetEnvCache();
   const result = await fetchInterconnectionSignal(SEOUL, {
     fetcher: async () => {
       throw new Error('network down');
@@ -115,6 +118,7 @@ test('fetchInterconnectionSignal returns empty (no throw) on fetch error', async
 
 test('fetchInterconnectionSignal returns empty (no throw) on HTTP 500', async () => {
   process.env.ENABLE_PEERINGDB = 'true';
+  __resetEnvCache();
   const result = await fetchInterconnectionSignal(SEOUL, {
     fetcher: async () => new Response('upstream error', { status: 500 }),
     timeoutMs: 50
@@ -126,6 +130,7 @@ test('fetchInterconnectionSignal returns empty (no throw) on HTTP 500', async ()
 
 test('fetchInterconnectionSignal is gated off when ENABLE_PEERINGDB is unset', async () => {
   delete process.env.ENABLE_PEERINGDB;
+  __resetEnvCache();
   let called = false;
   const result = await fetchInterconnectionSignal(SEOUL, {
     fetcher: async () => {

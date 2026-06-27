@@ -1,3 +1,4 @@
+import { env } from '@/lib/env';
 import { isRealProduction } from '@/lib/runtime-env';
 import { MockKycProvider } from './mock-provider';
 import { SumsubProvider } from './sumsub-provider';
@@ -14,9 +15,8 @@ const DEFAULT_WEBHOOK_TS_SKEW_SECONDS = 300;
  * disabling the replay check.
  */
 function resolveSkewSeconds(): number {
-  const raw = process.env.KYC_WEBHOOK_TS_SKEW_SECONDS?.trim();
-  if (!raw) return DEFAULT_WEBHOOK_TS_SKEW_SECONDS;
-  const parsed = Number(raw);
+  const parsed = env().KYC_WEBHOOK_TS_SKEW_SECONDS;
+  if (parsed === undefined) return DEFAULT_WEBHOOK_TS_SKEW_SECONDS;
   if (!Number.isFinite(parsed) || parsed <= 0) return DEFAULT_WEBHOOK_TS_SKEW_SECONDS;
   return Math.floor(parsed);
 }
@@ -33,16 +33,16 @@ export function getKycProvider(name: string): KycProvider {
     if (isRealProduction()) {
       throw new Error('The mock KYC provider must not be used in production.');
     }
-    const webhookSecret = process.env.KYC_MOCK_WEBHOOK_SECRET?.trim();
+    const webhookSecret = env().KYC_MOCK_WEBHOOK_SECRET?.trim();
     if (!webhookSecret) {
       throw new Error('KYC_MOCK_WEBHOOK_SECRET is required for the mock KYC provider.');
     }
     provider = new MockKycProvider({
       webhookSecret,
-      allowUnsignedLocal: !isRealProduction() && process.env.KYC_MOCK_SKIP_SIG === '1'
+      allowUnsignedLocal: !isRealProduction() && env().KYC_MOCK_SKIP_SIG === '1'
     });
   } else if (key === 'sumsub') {
-    const secret = process.env.KYC_SUMSUB_WEBHOOK_SECRET;
+    const secret = env().KYC_SUMSUB_WEBHOOK_SECRET;
     if (!secret) {
       throw new Error('KYC_SUMSUB_WEBHOOK_SECRET is required for the Sumsub provider');
     }
@@ -52,7 +52,7 @@ export function getKycProvider(name: string): KycProvider {
     // the env var is explicitly set, so fixtures with fixed timestamps don't
     // decay — mirroring the `allowUnsignedLocal` escape hatch the mock provider
     // uses.
-    const enforceFreshness = isRealProduction() || Boolean(process.env.KYC_WEBHOOK_TS_SKEW_SECONDS);
+    const enforceFreshness = isRealProduction() || env().KYC_WEBHOOK_TS_SKEW_SECONDS !== undefined;
     provider = new SumsubProvider({
       webhookSecret: secret,
       maxTimestampSkewSeconds: enforceFreshness ? resolveSkewSeconds() : undefined

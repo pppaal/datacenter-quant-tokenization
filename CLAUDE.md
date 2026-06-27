@@ -267,10 +267,23 @@ confidence-scale timeline fix, KYC webhook gating).
   `uploadRateLimiter` (5/60s, `lib/security/rate-limit.ts`) colliding with
   serial-mode retries — reset/raise it under E2E, then un-quarantine. Note that
   per-process limiter is also a no-op across multi-instance deploys.
-- **Convention adoption (P2).** `env()` is used in ~1 file (~72 raw
-  `process.env` reads remain); `withAdminApi` covers ~half of admin routes (the
-  rest hand-roll auth+audit and some return 401 where 403 is correct). Migrate
-  incrementally.
+- **Convention adoption (P2) — env() burn-down IN PROGRESS.** The `lib/**`
+  `no-restricted-syntax` ban on raw `process.env` is now a *burn-down*: 17 clean,
+  statically-schematizable files were migrated to `env()` and removed from the
+  `eslint.config.mjs` off-list (blockchain/config, security/rate-limit,
+  storage/local, onchain/ipfs, kyc/registry, valuation-runner, source-refresh,
+  macro/data-providers, research/research-tools, the four dc-intel connectors,
+  and the four quarterly-report connectors), with their keys added to the
+  `lib/env.ts` zod schema + `.env.example`. The off-list now holds only genuinely
+  non-schematizable files: test-injection seams (`env = process.env` defaults),
+  dynamic `process.env[name]` access, child-process env passthrough, and
+  Edge/logger/prisma-bootstrap contexts — each documented inline in the config.
+  NEW raw `process.env` in any OTHER `lib/**` file fails CI. `no-explicit-any` is
+  now a global `warn` (visible, non-blocking) with a scoped `error` over the
+  `any`-free `lib/blockchain/**` tree so no new `any` lands there — extend that
+  glob outward as directories are cleaned. `withAdminApi` covers ~half of admin
+  routes (the rest hand-roll auth+audit and some return 401 where 403 is
+  correct); migrate incrementally.
 - **Login brute-force (P2).** DONE. `POST /api/admin/session` now throttles per
   client IP via the in-process `authRateLimiter` (10/min, relaxed under E2E) plus
   `checkDistributedRateLimit('admin-login', ...)` (soft-fails open when Upstash is

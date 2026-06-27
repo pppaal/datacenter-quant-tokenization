@@ -14,6 +14,8 @@
  * skip that here (costly; let the narrative generator re-query on demand).
  */
 
+import { env } from '@/lib/env';
+
 const DART_LIST = 'https://opendart.fss.or.kr/api/list.json';
 
 type DartListRow = {
@@ -47,7 +49,7 @@ export type DartQuarterSlice = {
 };
 
 function resolveKey(): string | null {
-  return process.env.DART_API_KEY?.trim() || null;
+  return env().DART_API_KEY?.trim() || null;
 }
 
 function quarterBounds(quarter: string): { begin: string; end: string } {
