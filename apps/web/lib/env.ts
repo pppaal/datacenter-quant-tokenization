@@ -87,6 +87,12 @@ const envSchema = z.object({
   // Edge protection
   ADMIN_IP_ALLOWLIST: optionalString,
   OPS_IP_ALLOWLIST: optionalString,
+  // Number of trusted reverse-proxy hops in front of the app. Bounds how far
+  // into `x-forwarded-for` we trust when resolving the client IP (the Nth-from-
+  // the-right entry). Default 1 = Vercel's single edge proxy. Read directly from
+  // process.env in the Edge runtime (`edge-protection.ts`); listed here for
+  // typing/documentation.
+  TRUSTED_PROXY_HOP_COUNT: optionalNumber('TRUSTED_PROXY_HOP_COUNT'),
   ADMIN_API_RATE_WINDOW_MS: optionalNumber('ADMIN_API_RATE_WINDOW_MS'),
   ADMIN_API_RATE_MAX: optionalNumber('ADMIN_API_RATE_MAX'),
   OPS_API_RATE_WINDOW_MS: optionalNumber('OPS_API_RATE_WINDOW_MS'),
