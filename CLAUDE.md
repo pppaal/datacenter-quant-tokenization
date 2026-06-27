@@ -258,19 +258,26 @@ Tracked findings not yet actioned. The P0 security/correctness fixes from the
 same audit shipped separately (isRealProduction self-enforcement, the 0–10
 confidence-scale timeline fix, KYC webhook gating).
 
-- **`router.refresh()` UX staleness (P1).** ~40 admin mutation forms do
-  `await fetch(); router.refresh()` fire-and-forget with no pending state, so a
-  slow refresh can leave the screen stale. Wrap in `useTransition` +
-  surface an "updating" state (precedent: `compliance-modules-panel.tsx`,
-  `tenant-demand-form.tsx`). This would also let the e2e drop its
-  reload-after-mutation crutch.
-- **E2E coverage debt (P1).** 6 `test.fixme` flows in
+- **`router.refresh()` UX staleness (P1) — DONE.** The fire-and-forget
+  `await fetch(); router.refresh()` pattern (which cleared its in-flight flag
+  before the refreshed server data painted, leaving the screen stale) has been
+  retired. The shared `useRouterRefresh` hook (`lib/hooks/use-router-refresh.ts`)
+  wraps `router.refresh()` in a `useTransition` and exposes an `isRefreshing`
+  flag; callers combine it with their local in-flight state
+  (`const pending = busy || isRefreshing`) to keep the control busy until the
+  refresh settles. ~44 admin forms/buttons now adopt it and **zero** callers
+  remain on the raw fire-and-forget pattern (CI greps would catch a regression).
+  Pattern reference: `tenant-demand-form.tsx`.
+- **E2E coverage debt (P1) — DONE.** The 6 previously-`test.fixme` flows in
   `e2e/operator-mutation.spec.ts` (IC packet lock/decision/release, DD
   completeness gating, security seat/identity, explorer bootstrap, research,
-  committee). Root cause of the DD upload failure is the in-process
-  `uploadRateLimiter` (5/60s, `lib/security/rate-limit.ts`) colliding with
-  serial-mode retries — reset/raise it under E2E, then un-quarantine. Note that
-  per-process limiter is also a no-op across multi-instance deploys.
+  committee) are un-quarantined — the spec carries **zero** `test.fixme`. Root
+  cause (the in-process `uploadRateLimiter` 5/60s in `lib/security/rate-limit.ts`
+  colliding with serial-mode retries) is fixed by relaxing the auth/mutation/
+  upload limiters under the `E2E_PRODUCTION_BUILD` flag (`maxReq(prod, e2e)`),
+  which the production preflight forbids, so real deployments keep the tight
+  defaults. Note the per-process limiter is still a no-op across multi-instance
+  deploys (the distributed Upstash limiter is the cross-instance backstop).
 - **Convention adoption (P2) — env() burn-down IN PROGRESS.** The `lib/**`
   `no-restricted-syntax` ban on raw `process.env` is now a *burn-down*: 17 clean,
   statically-schematizable files were migrated to `env()` and removed from the
@@ -293,9 +300,16 @@ confidence-scale timeline fix, KYC webhook gating).
   `checkDistributedRateLimit('admin-login', ...)` (soft-fails open when Upstash is
   unconfigured, so CI/dev are unaffected). Covered by
   `tests/admin-session-rate-limit.test.ts`.
-- **Client error leakage (P2).** Several admin/ops routes return raw
-  `error.message` (incl. Prisma errors) to the client; return a generic message
-  - `requestId` and log details server-side.
+- **Client error leakage (P2) — DONE.** Tracks the same sweep as
+  "Remaining error-leakage (P2) — DONE" above. Audited the admin/ops handlers:
+  client responses now surface only *typed, safe* errors (`OpenAIConfigurationError`
+  503, `RateLimitError` 429, `SegregationOfDutiesError` 403,
+  `CommitmentEligibilityError`/currency 422, `validationOrGenericError`'s zod field
+  summaries) and rethrow everything else so `withAdminApi` / the handler returns a
+  generic message + `requestId` (real error logged server-side). The remaining raw
+  `error.message` occurrences are all in server-side `logger`/`recordAuditEvent`
+  metadata, not client bodies. Intentionally left as provider-/ops-facing:
+  the KYC webhook's 404/parse messages and the health endpoint's `detail`.
 
 Note: the residual local `round` / `toNumber` / `clamp` variants in
 `macro`/`forecast` are **intentional** domain conventions (2-dp macro rounding,
