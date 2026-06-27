@@ -31,6 +31,7 @@
  * accounts are simply ignored (graceful, never throws into callers).
  */
 
+import { env } from '@/lib/env';
 import { fetchJsonWithRetry, type Fetcher } from '@/lib/sources/http';
 import type { IndustrySector, TenantFinancials } from '@/lib/services/valuation/tenant-credit';
 
@@ -119,7 +120,7 @@ export type DartFinancialSnapshot = {
 };
 
 function resolveKey(): string | null {
-  return process.env.DART_API_KEY?.trim() || null;
+  return env().DART_API_KEY?.trim() || null;
 }
 
 /**

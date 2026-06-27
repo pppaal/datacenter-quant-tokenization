@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { __resetEnvCache } from '@/lib/env';
 import {
   fetchSiteHazards,
   parseHazardReport,
@@ -77,6 +78,7 @@ test('scoreSiteHazards is deterministic, bounded, and monotonic', () => {
 
 test('fetchSiteHazards fetches the report for an explicit adminId and scores', async () => {
   process.env.ENABLE_THINKHAZARD = 'true';
+  __resetEnvCache();
   let reportUrl = '';
   const result = await fetchSiteHazards(
     { adminId: 1234 },
@@ -99,6 +101,7 @@ test('fetchSiteHazards returns empty for coordinate input without calling the AP
   // The public ThinkHazard API has no coordinate→division lookup, so a
   // coordinate-only call must fail soft to empty and make NO request.
   process.env.ENABLE_THINKHAZARD = 'true';
+  __resetEnvCache();
   let called = false;
   const result = await fetchSiteHazards(
     { latitude: 37.5665, longitude: 126.978 },
@@ -118,6 +121,7 @@ test('fetchSiteHazards returns empty for coordinate input without calling the AP
 
 test('fetchSiteHazards returns empty (no throw) on fetch error', async () => {
   process.env.ENABLE_THINKHAZARD = 'true';
+  __resetEnvCache();
   const result = await fetchSiteHazards(
     { adminId: 1234 },
     {
@@ -138,6 +142,7 @@ test('fetchSiteHazards returns empty (no throw) on fetch error', async () => {
 
 test('fetchSiteHazards returns empty (no throw) on HTTP 500', async () => {
   process.env.ENABLE_THINKHAZARD = 'true';
+  __resetEnvCache();
   const result = await fetchSiteHazards(
     { adminId: 1234 },
     { fetcher: async () => new Response('upstream error', { status: 500 }), timeoutMs: 50 }
@@ -148,6 +153,7 @@ test('fetchSiteHazards returns empty (no throw) on HTTP 500', async () => {
 
 test('fetchSiteHazards is gated off when ENABLE_THINKHAZARD is unset', async () => {
   delete process.env.ENABLE_THINKHAZARD;
+  __resetEnvCache();
   let called = false;
   const result = await fetchSiteHazards(
     { adminId: 1234 },

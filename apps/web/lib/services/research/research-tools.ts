@@ -24,6 +24,7 @@ import type {
   ResearchToolset
 } from '@/lib/services/research/research-agent';
 import { semanticSearch } from '@/lib/services/research/document-indexer';
+import { env } from '@/lib/env';
 import { safeFetch } from '@/lib/security/safe-fetch';
 
 // ---------------------------------------------------------------------------
@@ -426,8 +427,8 @@ function tryHostname(url: string): string | null {
 }
 
 export function createHttpToolset(): ResearchToolset {
-  const tavilyKey = process.env.TAVILY_API_KEY?.trim();
-  const serperKey = process.env.SERPER_API_KEY?.trim();
+  const tavilyKey = env().TAVILY_API_KEY?.trim();
+  const serperKey = env().SERPER_API_KEY?.trim();
   return {
     async searchNews(query: string): Promise<ResearchSource[]> {
       const trimmed = query.trim();

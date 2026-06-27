@@ -29,6 +29,7 @@
  *     known-good vs. known-poor sites before relying on absolute values.
  */
 
+import { env } from '@/lib/env';
 import { fetchJsonWithRetry, type Fetcher } from '@/lib/sources/http';
 import { logger } from '@/lib/observability/logger';
 import { clamp } from '@/lib/math';
@@ -97,8 +98,7 @@ const SCORE_FACILITY_WEIGHT = 0.45; // weight of facility breadth
 const SCORE_NETWORK_WEIGHT = 0.55; // weight of network depth
 
 function isEnabled(): boolean {
-  const raw = process.env.ENABLE_PEERINGDB?.trim().toLowerCase();
-  return raw === '1' || raw === 'true' || raw === 'yes' || raw === 'on';
+  return env().ENABLE_PEERINGDB;
 }
 
 function roundTo(value: number, decimals: number): number {

@@ -1,3 +1,4 @@
+import { env } from '@/lib/env';
 import { runPythonValuation } from '@/lib/services/python-valuation';
 import {
   buildValuationAnalysis,
@@ -8,7 +9,7 @@ import {
 export async function runValuationAnalysis(
   bundle: UnderwritingBundle
 ): Promise<{ analysis: UnderwritingAnalysis; engineVersion: string }> {
-  const mode = (process.env.VALUATION_ENGINE_MODE || 'auto').toLowerCase();
+  const mode = (env().VALUATION_ENGINE_MODE || 'auto').toLowerCase();
   const pythonEligible = bundle.asset.assetClass === 'DATA_CENTER';
 
   // The TypeScript engine is the single canonical valuation: its strategies

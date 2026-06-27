@@ -14,6 +14,8 @@
  * value plus the YoY change where applicable.
  */
 
+import { env } from '@/lib/env';
+
 const ECOS_BASE = 'https://ecos.bok.or.kr/api';
 
 type EcosRow = {
@@ -44,7 +46,7 @@ export type EcosMacroSnapshot = {
 };
 
 function resolveKey(): string | null {
-  return process.env.ECOS_API_KEY?.trim() || null;
+  return env().ECOS_API_KEY?.trim() || null;
 }
 
 async function fetchSeries(

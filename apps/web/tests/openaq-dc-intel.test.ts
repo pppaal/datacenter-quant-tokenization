@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { __resetEnvCache } from '@/lib/env';
 import {
   fetchAirQuality,
   parseAirQuality,
@@ -77,6 +78,7 @@ test('parseAirQuality asOf is the chronologically latest reading across UTC offs
 
 test('fetchAirQuality parses the live two-step payload (key set)', async () => {
   process.env.OPENAQ_API_KEY = 'test-key';
+  __resetEnvCache();
   const calls: string[] = [];
   const fetcher = async (url: string, init?: RequestInit) => {
     calls.push(url);
@@ -109,6 +111,7 @@ test('fetchAirQuality parses the live two-step payload (key set)', async () => {
 
 test('fetchAirQuality fails closed (no key → empty, no network call)', async () => {
   delete process.env.OPENAQ_API_KEY;
+  __resetEnvCache();
   let called = false;
   const result = await fetchAirQuality(SEOUL, {
     fetcher: async () => {
@@ -123,6 +126,7 @@ test('fetchAirQuality fails closed (no key → empty, no network call)', async (
 
 test('fetchAirQuality returns empty (no throw) on fetch error', async () => {
   process.env.OPENAQ_API_KEY = 'test-key';
+  __resetEnvCache();
   const result = await fetchAirQuality(SEOUL, {
     fetcher: async () => {
       throw new Error('network down');
@@ -135,6 +139,7 @@ test('fetchAirQuality returns empty (no throw) on fetch error', async () => {
 
 test('fetchAirQuality returns empty (no throw) on HTTP 500', async () => {
   process.env.OPENAQ_API_KEY = 'test-key';
+  __resetEnvCache();
   const result = await fetchAirQuality(SEOUL, {
     fetcher: async () => new Response('upstream error', { status: 500 }),
     timeoutMs: 50
@@ -146,6 +151,7 @@ test('fetchAirQuality returns empty (no throw) on HTTP 500', async () => {
 
 test('fetchAirQuality short-circuits when no stations are nearby', async () => {
   process.env.OPENAQ_API_KEY = 'test-key';
+  __resetEnvCache();
   let latestCalled = false;
   const result = await fetchAirQuality(SEOUL, {
     fetcher: async (url: string) => {

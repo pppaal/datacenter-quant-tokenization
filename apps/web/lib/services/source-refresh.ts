@@ -1,4 +1,5 @@
 import { SourceRefreshTriggerType, type PrismaClient } from '@prisma/client';
+import { env } from '@/lib/env';
 import { prisma } from '@/lib/db/prisma';
 import { enrichAssetFromSources } from '@/lib/services/assets';
 import { listSourceStatus } from '@/lib/services/sources';
@@ -65,12 +66,12 @@ type RefreshDeps = {
 };
 
 function getStaleThresholdHours() {
-  const raw = Number(process.env.SOURCE_REFRESH_STALE_HOURS ?? 24);
+  const raw = env().SOURCE_REFRESH_STALE_HOURS ?? 24;
   return Number.isFinite(raw) && raw > 0 ? raw : 24;
 }
 
 function getBatchSize() {
-  const raw = Number(process.env.SOURCE_REFRESH_BATCH_SIZE ?? 4);
+  const raw = env().SOURCE_REFRESH_BATCH_SIZE ?? 4;
   return Number.isFinite(raw) && raw > 0 ? raw : 4;
 }
 

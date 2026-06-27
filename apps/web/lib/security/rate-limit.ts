@@ -1,3 +1,5 @@
+import { env } from '@/lib/env';
+
 type RateLimitEntry = {
   count: number;
   resetAt: number;
@@ -61,7 +63,7 @@ export function createRateLimiter(name: string, config: RateLimitConfig) {
 // trips these per-process limiters. Relax them only under the E2E build flag
 // (which the production preflight forbids), so real deployments keep the tight
 // defaults.
-const E2E_RELAXED = process.env.E2E_PRODUCTION_BUILD?.trim().toLowerCase() === 'true';
+const E2E_RELAXED = env().E2E_PRODUCTION_BUILD;
 const maxReq = (production: number, e2e: number) => (E2E_RELAXED ? e2e : production);
 
 export const authRateLimiter = createRateLimiter('auth', {

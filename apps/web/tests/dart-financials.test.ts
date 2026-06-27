@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { __resetEnvCache } from '@/lib/env';
 import type { Fetcher } from '@/lib/sources/http';
 import {
   fetchDartFinancials,
@@ -205,9 +206,11 @@ function makeFetcher(): Fetcher {
 function withKey<T>(fn: () => Promise<T>): Promise<T> {
   const prior = process.env.DART_API_KEY;
   process.env.DART_API_KEY = 'test-key';
+  __resetEnvCache();
   return fn().finally(() => {
     if (prior === undefined) delete process.env.DART_API_KEY;
     else process.env.DART_API_KEY = prior;
+    __resetEnvCache();
   });
 }
 
@@ -260,6 +263,7 @@ test('fetchDartTenantFinancials feeds the credit engine and yields an investment
 test('fail-closed: missing DART_API_KEY returns null without calling the network', async () => {
   const prior = process.env.DART_API_KEY;
   delete process.env.DART_API_KEY;
+  __resetEnvCache();
   try {
     let called = false;
     const spyFetcher: Fetcher = async () => {
@@ -271,6 +275,7 @@ test('fail-closed: missing DART_API_KEY returns null without calling the network
     assert.equal(called, false, 'no fetch should occur without a key');
   } finally {
     if (prior !== undefined) process.env.DART_API_KEY = prior;
+    __resetEnvCache();
   }
 });
 

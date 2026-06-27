@@ -1,4 +1,5 @@
 import type { Address, Hex } from 'viem';
+import { env } from '@/lib/env';
 import { isTokenizationMockMode } from './mock-mode';
 
 export type BlockchainConfig = {
@@ -16,13 +17,13 @@ export type BlockchainConfig = {
 const MOCK_PRIVATE_KEY: Hex = '0x0000000000000000000000000000000000000000000000000000000000000001';
 const MOCK_REGISTRY_ADDRESS: Address = '0x000000000000000000000000000000000000dEaD';
 
-function readRequiredEnv(name: string) {
-  const value = process.env[name]?.trim();
-  if (!value) {
+function requireValue(value: string | undefined, name: string) {
+  const trimmed = value?.trim();
+  if (!trimmed) {
     throw new Error(`${name} is required for blockchain registry actions.`);
   }
 
-  return value;
+  return trimmed;
 }
 
 function normalizeHex(value: string, expectedBytes: number, label: string): Hex {
@@ -44,7 +45,7 @@ function normalizeHex(value: string, expectedBytes: number, label: string): Hex 
  * configured primary and only fans out on failure.
  */
 function resolveRpcUrls(primary: string): string[] {
-  const extras = (process.env.BLOCKCHAIN_RPC_URLS ?? '')
+  const extras = (env().BLOCKCHAIN_RPC_URLS ?? '')
     .split(',')
     .map((value) => value.trim())
     .filter((value) => value.length > 0);
@@ -60,47 +61,51 @@ function resolveRpcUrls(primary: string): string[] {
 }
 
 export function getBlockchainConfig(): BlockchainConfig {
+  const config = env();
   const metadataBaseUrl = (
-    process.env.BLOCKCHAIN_METADATA_BASE_URL ??
-    process.env.APP_BASE_URL ??
+    config.BLOCKCHAIN_METADATA_BASE_URL ??
+    config.APP_BASE_URL ??
     'http://localhost:3000'
   )
     .trim()
     .replace(/\/$/, '');
 
   if (isTokenizationMockMode()) {
-    const rpcUrl = process.env.BLOCKCHAIN_RPC_URL?.trim() ?? 'http://localhost:0';
+    const rpcUrl = config.BLOCKCHAIN_RPC_URL?.trim() ?? 'http://localhost:0';
     return {
-      chainId: Number(process.env.BLOCKCHAIN_CHAIN_ID?.trim() ?? '31337'),
-      chainName: process.env.BLOCKCHAIN_CHAIN_NAME?.trim() ?? 'mock-registry',
+      chainId: config.BLOCKCHAIN_CHAIN_ID ?? 31337,
+      chainName: config.BLOCKCHAIN_CHAIN_NAME?.trim() ?? 'mock-registry',
       rpcUrl,
       rpcUrls: resolveRpcUrls(rpcUrl),
       registryAddress:
-        (process.env.BLOCKCHAIN_REGISTRY_ADDRESS?.trim() as Address | undefined) ??
+        (config.BLOCKCHAIN_REGISTRY_ADDRESS?.trim() as Address | undefined) ??
         MOCK_REGISTRY_ADDRESS,
       privateKey: MOCK_PRIVATE_KEY,
       metadataBaseUrl
     };
   }
 
-  const chainId = Number(readRequiredEnv('BLOCKCHAIN_CHAIN_ID'));
+  const chainId = config.BLOCKCHAIN_CHAIN_ID;
+  if (chainId === undefined) {
+    throw new Error('BLOCKCHAIN_CHAIN_ID is required for blockchain registry actions.');
+  }
   if (!Number.isInteger(chainId) || chainId <= 0) {
     throw new Error('BLOCKCHAIN_CHAIN_ID must be a positive integer.');
   }
 
-  const rpcUrl = readRequiredEnv('BLOCKCHAIN_RPC_URL');
+  const rpcUrl = requireValue(config.BLOCKCHAIN_RPC_URL, 'BLOCKCHAIN_RPC_URL');
   return {
     chainId,
-    chainName: readRequiredEnv('BLOCKCHAIN_CHAIN_NAME'),
+    chainName: requireValue(config.BLOCKCHAIN_CHAIN_NAME, 'BLOCKCHAIN_CHAIN_NAME'),
     rpcUrl,
     rpcUrls: resolveRpcUrls(rpcUrl),
     registryAddress: normalizeHex(
-      readRequiredEnv('BLOCKCHAIN_REGISTRY_ADDRESS'),
+      requireValue(config.BLOCKCHAIN_REGISTRY_ADDRESS, 'BLOCKCHAIN_REGISTRY_ADDRESS'),
       20,
       'BLOCKCHAIN_REGISTRY_ADDRESS'
     ) as Address,
     privateKey: normalizeHex(
-      readRequiredEnv('BLOCKCHAIN_PRIVATE_KEY'),
+      requireValue(config.BLOCKCHAIN_PRIVATE_KEY, 'BLOCKCHAIN_PRIVATE_KEY'),
       32,
       'BLOCKCHAIN_PRIVATE_KEY'
     ),

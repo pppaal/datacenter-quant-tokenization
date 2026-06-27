@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { __resetEnvCache } from '@/lib/env';
 import {
   buildOverpassQuery,
   fetchPoiDensity,
@@ -120,6 +121,7 @@ test('scoreAmenityDensity is deterministic, bounded, and monotonic', () => {
 
 test('fetchPoiDensity parses the sample and computes the score (enabled)', async () => {
   process.env.ENABLE_OVERPASS_POI = 'true';
+  __resetEnvCache();
   const result = await fetchPoiDensity(SEOUL, { fetcher: jsonFetcher(SAMPLE_COUNT_BODY) });
 
   assert.equal(result.totalPoi, SAMPLE_TOTAL);
@@ -131,6 +133,7 @@ test('fetchPoiDensity parses the sample and computes the score (enabled)', async
 
 test('fetchPoiDensity returns empty (no throw) on fetch error', async () => {
   process.env.ENABLE_OVERPASS_POI = 'true';
+  __resetEnvCache();
   const result = await fetchPoiDensity(SEOUL, {
     fetcher: async () => {
       throw new Error('network down');
@@ -145,6 +148,7 @@ test('fetchPoiDensity returns empty (no throw) on fetch error', async () => {
 
 test('fetchPoiDensity returns empty (no throw) on HTTP 500', async () => {
   process.env.ENABLE_OVERPASS_POI = 'true';
+  __resetEnvCache();
   const result = await fetchPoiDensity(SEOUL, {
     fetcher: async () => new Response('upstream error', { status: 500 }),
     timeoutMs: 50
@@ -156,6 +160,7 @@ test('fetchPoiDensity returns empty (no throw) on HTTP 500', async () => {
 
 test('fetchPoiDensity returns empty on invalid location', async () => {
   process.env.ENABLE_OVERPASS_POI = 'true';
+  __resetEnvCache();
   let called = false;
   const result = await fetchPoiDensity(
     { latitude: Number.NaN, longitude: 200 },
@@ -173,6 +178,7 @@ test('fetchPoiDensity returns empty on invalid location', async () => {
 
 test('fetchPoiDensity is gated off when ENABLE_OVERPASS_POI is unset', async () => {
   delete process.env.ENABLE_OVERPASS_POI;
+  __resetEnvCache();
   let called = false;
   const result = await fetchPoiDensity(SEOUL, {
     fetcher: async () => {

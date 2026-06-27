@@ -8,13 +8,15 @@
  *     a null CID and still compute and anchor the content hash; the metadataRef
  *     just falls back to a non-IPFS URL in that case.
  */
+import { env } from '@/lib/env';
+
 export type IpfsUploadResult = { cid: string; url: string } | null;
 
 export async function pinCanonicalJson(
   fileName: string,
   canonicalJson: string
 ): Promise<IpfsUploadResult> {
-  const provider = (process.env.IPFS_PROVIDER ?? 'none').trim().toLowerCase();
+  const provider = (env().IPFS_PROVIDER ?? 'none').trim().toLowerCase();
   if (provider === 'none' || provider === '') return null;
 
   if (provider === 'pinata') return pinToPinata(fileName, canonicalJson);
@@ -23,7 +25,7 @@ export async function pinCanonicalJson(
 }
 
 async function pinToPinata(fileName: string, body: string): Promise<IpfsUploadResult> {
-  const jwt = process.env.PINATA_JWT?.trim();
+  const jwt = env().PINATA_JWT?.trim();
   if (!jwt) throw new Error('PINATA_JWT is required when IPFS_PROVIDER=pinata');
 
   const form = new FormData();
@@ -47,7 +49,7 @@ async function pinToPinata(fileName: string, body: string): Promise<IpfsUploadRe
 }
 
 async function pinToWeb3Storage(fileName: string, body: string): Promise<IpfsUploadResult> {
-  const token = process.env.W3S_TOKEN?.trim();
+  const token = env().W3S_TOKEN?.trim();
   if (!token) throw new Error('W3S_TOKEN is required when IPFS_PROVIDER=w3s');
 
   const res = await fetch('https://api.web3.storage/upload', {

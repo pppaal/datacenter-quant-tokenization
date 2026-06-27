@@ -48,6 +48,7 @@
  *   - `radius` is capped by the API at 25_000m. We clamp to that.
  */
 
+import { env } from '@/lib/env';
 import { fetchJsonWithRetry, type Fetcher } from '@/lib/sources/http';
 import { logger } from '@/lib/observability/logger';
 
@@ -101,7 +102,7 @@ const EMPTY_RESULT: AirQualityResult = {
 };
 
 function apiKey(): string | null {
-  const raw = process.env.OPENAQ_API_KEY?.trim();
+  const raw = env().OPENAQ_API_KEY?.trim();
   return raw && raw.length > 0 ? raw : null;
 }
 

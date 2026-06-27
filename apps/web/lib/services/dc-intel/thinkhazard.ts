@@ -47,12 +47,12 @@
  * (World Bank). Each result carries `source: 'GFDRR ThinkHazard!'`.
  */
 
+import { env } from '@/lib/env';
 import { fetchJsonWithRetry, type Fetcher } from '@/lib/sources/http';
 import { logger } from '@/lib/observability/logger';
 import { clamp } from '@/lib/math';
 
-export const THINKHAZARD_API_BASE =
-  process.env.THINKHAZARD_API_BASE?.trim() || 'https://thinkhazard.org';
+export const THINKHAZARD_API_BASE = env().THINKHAZARD_API_BASE?.trim() || 'https://thinkhazard.org';
 
 export const THINKHAZARD_SOURCE = 'GFDRR ThinkHazard!';
 
@@ -140,8 +140,7 @@ const HAZARD_WEIGHTS: Record<ThinkHazardType, number> = {
 };
 
 function isEnabled(): boolean {
-  const raw = process.env.ENABLE_THINKHAZARD?.trim().toLowerCase();
-  return raw === '1' || raw === 'true' || raw === 'yes' || raw === 'on';
+  return env().ENABLE_THINKHAZARD;
 }
 
 function roundTo(value: number, decimals: number): number {

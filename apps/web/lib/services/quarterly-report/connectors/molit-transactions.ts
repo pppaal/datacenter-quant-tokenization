@@ -10,6 +10,7 @@
  */
 
 import { XMLParser } from 'fast-xml-parser';
+import { env } from '@/lib/env';
 
 const COMMERCIAL_ENDPOINT =
   'https://apis.data.go.kr/1613000/RTMSDataSvcNrgTrade/getRTMSDataSvcNrgTrade';
@@ -76,7 +77,7 @@ export const LAWD_CODES: Record<string, string> = {
 };
 
 function resolveKey(): string | null {
-  return process.env.MOLIT_API_KEY?.trim() || null;
+  return env().MOLIT_API_KEY?.trim() || null;
 }
 
 function median(xs: number[]): number | null {
