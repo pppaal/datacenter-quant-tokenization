@@ -1,5 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { EmptyState } from '@/components/ui/empty-state';
 import type { FundWaterfallData, FundWaterfallTier } from '@/lib/services/fund-waterfall';
 import { formatCurrency, formatNumber, formatPercent } from '@/lib/utils';
 
@@ -143,10 +144,10 @@ export function FundWaterfallPanel({ data }: Props) {
             </div>
           </div>
         ) : (
-          <div className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-6 text-sm text-[hsl(var(--muted))]">
+          <EmptyState className="p-6 text-[hsl(var(--muted))]">
             No distributions have been recorded yet. Waterfall tiers will populate once the fund
             begins returning capital to limited partners.
-          </div>
+          </EmptyState>
         )}
       </Card>
 
@@ -161,9 +162,9 @@ export function FundWaterfallPanel({ data }: Props) {
           <Badge tone="neutral">{`${investors.length} investors`}</Badge>
         </div>
         {investors.length === 0 ? (
-          <div className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-6 text-sm text-[hsl(var(--muted))]">
+          <EmptyState className="p-6 text-[hsl(var(--muted))]">
             No commitments have been booked against this fund.
-          </div>
+          </EmptyState>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] text-left text-sm">

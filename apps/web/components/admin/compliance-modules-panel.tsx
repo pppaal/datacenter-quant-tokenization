@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { EmptyState } from '@/components/ui/empty-state';
 import { shortenHash } from '@/lib/blockchain/registry';
 import { useRouterRefresh } from '@/lib/hooks/use-router-refresh';
 
@@ -109,10 +110,10 @@ export function ComplianceModulesPanel({
           Attached modules ({modules.length})
         </div>
         {modules.length === 0 ? (
-          <div className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-4 py-3 text-sm text-[hsl(var(--muted))]">
+          <EmptyState className="px-4 py-3 text-[hsl(var(--muted))]">
             No compliance modules attached. Add one below to enforce holder, country, or lockup
             rules.
-          </div>
+          </EmptyState>
         ) : (
           <ul className="space-y-2">
             {modules.map((address) => (
@@ -176,10 +177,10 @@ export function ComplianceModulesPanel({
           Country restrictions
         </div>
         {countryRestrictModuleAddress === null ? (
-          <div className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-4 py-3 text-sm text-[hsl(var(--muted))]">
+          <EmptyState className="px-4 py-3 text-[hsl(var(--muted))]">
             CountryRestrictModule is not attached to this deployment. Attach a module first to
             manage country-level blocks.
-          </div>
+          </EmptyState>
         ) : (
           <>
             <div className="font-mono text-xs text-[hsl(var(--muted))]">
