@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { AdminAccessScopeType } from '@prisma/client';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { useRouterRefresh } from '@/lib/hooks/use-router-refresh';
 import type { AdminAccessGrantSummary } from '@/lib/security/admin-access';
 
 type SeatOption = {
@@ -34,8 +34,9 @@ function formatDate(date: Date | string) {
 }
 
 export function AccessGrantsPanel({ grants, seats }: Props) {
-  const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const { isRefreshing, refresh } = useRouterRefresh();
+  const [creating, setCreating] = useState(false);
+  const pending = creating || isRefreshing;
   const [error, setError] = useState<string | null>(null);
   const [busyGrantId, setBusyGrantId] = useState<string | null>(null);
   const [form, setForm] = useState({
@@ -51,22 +52,27 @@ export function AccessGrantsPanel({ grants, seats }: Props) {
       setError('Operator and scope id are both required.');
       return;
     }
-    const response = await fetch('/api/admin/access-grants', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        userId: form.userId,
-        scopeType: form.scopeType,
-        scopeId: form.scopeId.trim()
-      })
-    });
-    if (!response.ok) {
-      const body = await response.json().catch(() => ({}));
-      setError(body.error ?? `Create failed (HTTP ${response.status}).`);
-      return;
+    setCreating(true);
+    try {
+      const response = await fetch('/api/admin/access-grants', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: form.userId,
+          scopeType: form.scopeType,
+          scopeId: form.scopeId.trim()
+        })
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        setError(body.error ?? `Create failed (HTTP ${response.status}).`);
+        return;
+      }
+      setForm((prev) => ({ ...prev, scopeId: '' }));
+      refresh();
+    } finally {
+      setCreating(false);
     }
-    setForm((prev) => ({ ...prev, scopeId: '' }));
-    startTransition(() => router.refresh());
   }
 
   async function handleRevoke(grantId: string) {
@@ -81,7 +87,7 @@ export function AccessGrantsPanel({ grants, seats }: Props) {
         setError(body.error ?? `Revoke failed (HTTP ${response.status}).`);
         return;
       }
-      startTransition(() => router.refresh());
+      refresh();
     } finally {
       setBusyGrantId(null);
     }
@@ -214,7 +220,7 @@ export function AccessGrantsPanel({ grants, seats }: Props) {
                       type="button"
                       variant="secondary"
                       onClick={() => handleRevoke(grant.id)}
-                      disabled={busyGrantId === grant.id}
+                      disabled={busyGrantId === grant.id || isRefreshing}
                     >
                       {busyGrantId === grant.id ? 'Revoking…' : 'Revoke'}
                     </Button>

@@ -1,21 +1,21 @@
 'use client';
 
-import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { AssetClass } from '@prisma/client';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { useRouterRefresh } from '@/lib/hooks/use-router-refresh';
 
 type Sponsor = { id: string; name: string };
 
 const STATUSES = ['LIVE', 'EXITED', 'WRITE_DOWN', 'WORKING_OUT'] as const;
 
 export function SponsorForms({ sponsors }: { sponsors: Sponsor[] }) {
-  const router = useRouter();
-  const [, startTransition] = useTransition();
+  const { isRefreshing, refresh } = useRouterRefresh();
   const [busy, setBusy] = useState(false);
+  const pending = busy || isRefreshing;
   const [banner, setBanner] = useState<{ tone: 'good' | 'warn'; text: string } | null>(null);
 
   const [sponsorForm, setSponsorForm] = useState({
@@ -68,7 +68,7 @@ export function SponsorForms({ sponsors }: { sponsors: Sponsor[] }) {
       }
       setBanner({ tone: 'good', text: `Sponsor ${sponsorForm.name} created.` });
       setSponsorForm((p) => ({ ...p, name: '', shortName: '', notes: '' }));
-      startTransition(() => router.refresh());
+      refresh();
     } finally {
       setBusy(false);
     }
@@ -108,7 +108,7 @@ export function SponsorForms({ sponsors }: { sponsors: Sponsor[] }) {
         equityMultiple: '',
         grossIrrPct: ''
       }));
-      startTransition(() => router.refresh());
+      refresh();
     } finally {
       setBusy(false);
     }
@@ -198,8 +198,8 @@ export function SponsorForms({ sponsors }: { sponsors: Sponsor[] }) {
             </Field>
           </div>
           <div className="md:col-span-2 flex justify-end">
-            <Button type="submit" disabled={busy}>
-              {busy ? 'Saving…' : 'Add sponsor'}
+            <Button type="submit" disabled={pending}>
+              {pending ? 'Saving…' : 'Add sponsor'}
             </Button>
           </div>
         </form>
@@ -313,8 +313,8 @@ export function SponsorForms({ sponsors }: { sponsors: Sponsor[] }) {
               </select>
             </Field>
             <div className="md:col-span-2 flex justify-end">
-              <Button type="submit" disabled={busy}>
-                {busy ? 'Saving…' : 'Add prior deal'}
+              <Button type="submit" disabled={pending}>
+                {pending ? 'Saving…' : 'Add prior deal'}
               </Button>
             </div>
           </form>

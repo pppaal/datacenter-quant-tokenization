@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { shortenHash } from '@/lib/blockchain/registry';
+import { useRouterRefresh } from '@/lib/hooks/use-router-refresh';
 
 type Props = {
   assetId: string;
@@ -29,10 +29,12 @@ export function ComplianceModulesPanel({
   modules,
   blockedCountries
 }: Props) {
-  const router = useRouter();
-  const [, startTransition] = useTransition();
+  const { isRefreshing, refresh } = useRouterRefresh();
   const [banner, setBanner] = useState<Banner>(null);
   const [busyKey, setBusyKey] = useState<string | null>(null);
+  // A mutation control is busy while its own request is in flight OR while the
+  // post-mutation router refresh is still settling (so the screen isn't stale).
+  const isBusy = (key: string) => busyKey === key || isRefreshing;
   const [moduleAddress, setModuleAddress] = useState('');
   const [countryCode, setCountryCode] = useState<number | ''>('');
   const [previewFrom, setPreviewFrom] = useState('');
@@ -58,7 +60,7 @@ export function ComplianceModulesPanel({
         tone: 'good',
         text: `${label} submitted. txHash ${shortenHash(body.txHash, 6)}`
       });
-      startTransition(() => router.refresh());
+      refresh();
     } finally {
       setBusyKey(null);
     }
@@ -121,7 +123,7 @@ export function ComplianceModulesPanel({
                 <div className="font-mono text-sm text-[hsl(var(--foreground))]">{address}</div>
                 <Button
                   variant="ghost"
-                  disabled={busyKey === `remove:${address}`}
+                  disabled={isBusy(`remove:${address}`)}
                   onClick={() =>
                     callCompliance(
                       { action: 'removeModule', assetId, moduleAddress: address },
@@ -163,7 +165,7 @@ export function ComplianceModulesPanel({
               placeholder="0x..."
             />
           </div>
-          <Button type="submit" disabled={busyKey === 'add'}>
+          <Button type="submit" disabled={isBusy('add')}>
             {busyKey === 'add' ? 'Adding...' : 'Attach module'}
           </Button>
         </form>
@@ -201,7 +203,7 @@ export function ComplianceModulesPanel({
                   </div>
                   <Button
                     variant="ghost"
-                    disabled={busyKey === `country:${row.code}`}
+                    disabled={isBusy(`country:${row.code}`)}
                     onClick={() =>
                       callCompliance(
                         {
@@ -252,7 +254,7 @@ export function ComplianceModulesPanel({
                   max={65535}
                 />
               </div>
-              <Button type="submit" disabled={busyKey === 'block-new'}>
+              <Button type="submit" disabled={isBusy('block-new')}>
                 {busyKey === 'block-new' ? 'Blocking...' : 'Block country'}
               </Button>
             </form>
