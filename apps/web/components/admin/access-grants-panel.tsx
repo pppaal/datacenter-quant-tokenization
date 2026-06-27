@@ -91,11 +91,11 @@ export function AccessGrantsPanel({ grants, seats }: Props) {
     <Card className="space-y-4">
       <div className="flex items-baseline justify-between">
         <h2 className="text-lg font-semibold">Row-level access grants</h2>
-        <span className="text-xs text-zinc-500">
+        <span className="text-xs text-[hsl(var(--muted))]">
           {grants.length} {grants.length === 1 ? 'grant' : 'grants'} active
         </span>
       </div>
-      <p className="text-xs text-zinc-500">
+      <p className="text-xs text-[hsl(var(--muted))]">
         Restricts an operator (non-ADMIN role) to a specific asset / deal / portfolio / fund.
         ADMIN-role users bypass all grants. Adding a grant does not remove existing access — the
         operator simply must satisfy at least one grant for each scoped surface they reach.
@@ -103,9 +103,9 @@ export function AccessGrantsPanel({ grants, seats }: Props) {
 
       <form onSubmit={handleCreate} className="grid gap-3 md:grid-cols-[2fr_1fr_2fr_auto]">
         <label className="space-y-1 text-xs">
-          <span className="text-zinc-500">Operator</span>
+          <span className="text-[hsl(var(--muted))]">Operator</span>
           <select
-            className="w-full rounded border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-sm"
+            className="w-full rounded border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-2 py-1.5 text-sm"
             value={form.userId}
             onChange={(e) => setForm((prev) => ({ ...prev, userId: e.target.value }))}
           >
@@ -121,9 +121,9 @@ export function AccessGrantsPanel({ grants, seats }: Props) {
           </select>
         </label>
         <label className="space-y-1 text-xs">
-          <span className="text-zinc-500">Scope</span>
+          <span className="text-[hsl(var(--muted))]">Scope</span>
           <select
-            className="w-full rounded border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-sm"
+            className="w-full rounded border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-2 py-1.5 text-sm"
             value={form.scopeType}
             onChange={(e) =>
               setForm((prev) => ({
@@ -140,7 +140,9 @@ export function AccessGrantsPanel({ grants, seats }: Props) {
           </select>
         </label>
         <label className="space-y-1 text-xs">
-          <span className="text-zinc-500">Scope id (Asset/Deal/Portfolio/Fund cuid)</span>
+          <span className="text-[hsl(var(--muted))]">
+            Scope id (Asset/Deal/Portfolio/Fund cuid)
+          </span>
           <Input
             value={form.scopeId}
             onChange={(e) => setForm((prev) => ({ ...prev, scopeId: e.target.value }))}
@@ -155,14 +157,14 @@ export function AccessGrantsPanel({ grants, seats }: Props) {
       </form>
 
       {error && (
-        <div className="rounded border border-red-800 bg-red-950/30 px-3 py-2 text-xs text-red-200">
+        <div className="rounded border border-[hsl(var(--danger))] bg-[hsl(var(--danger-tint))] px-3 py-2 text-xs text-[hsl(var(--danger))]">
           {error}
         </div>
       )}
 
-      <div className="overflow-x-auto rounded border border-zinc-800">
+      <div className="overflow-x-auto rounded border border-[hsl(var(--border))]">
         <table className="min-w-full text-sm">
-          <thead className="bg-zinc-900/70 text-xs uppercase tracking-wide text-zinc-500">
+          <thead className="bg-[hsl(var(--panel-alt))] text-xs uppercase tracking-wide text-[hsl(var(--muted))]">
             <tr>
               <th scope="col" className="px-3 py-2 text-left">
                 Operator
@@ -182,16 +184,18 @@ export function AccessGrantsPanel({ grants, seats }: Props) {
           <tbody>
             {grants.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-3 py-6 text-center text-xs text-zinc-500">
+                <td colSpan={5} className="px-3 py-6 text-center text-xs text-[hsl(var(--muted))]">
                   No row-level grants configured. Non-ADMIN operators currently see all rows.
                 </td>
               </tr>
             ) : (
               grants.map((grant) => (
-                <tr key={grant.id} className="border-t border-zinc-800">
+                <tr key={grant.id} className="border-t border-[hsl(var(--border))]">
                   <td className="px-3 py-2">
-                    <div className="font-medium text-zinc-100">{grant.userName}</div>
-                    <div className="text-xs text-zinc-500">
+                    <div className="font-medium text-[hsl(var(--foreground))]">
+                      {grant.userName}
+                    </div>
+                    <div className="text-xs text-[hsl(var(--muted))]">
                       {grant.userEmail} · {grant.userRole}
                     </div>
                   </td>
@@ -199,10 +203,12 @@ export function AccessGrantsPanel({ grants, seats }: Props) {
                     <Badge tone="neutral">{grant.scopeType}</Badge>
                   </td>
                   <td className="px-3 py-2 font-mono text-xs">
-                    <div className="text-zinc-200">{grant.scopeLabel}</div>
-                    <div className="text-zinc-600">{grant.scopeId}</div>
+                    <div className="text-[hsl(var(--foreground))]">{grant.scopeLabel}</div>
+                    <div className="text-[hsl(var(--muted))]">{grant.scopeId}</div>
                   </td>
-                  <td className="px-3 py-2 text-xs text-zinc-400">{formatDate(grant.updatedAt)}</td>
+                  <td className="px-3 py-2 text-xs text-[hsl(var(--muted))]">
+                    {formatDate(grant.updatedAt)}
+                  </td>
                   <td className="px-3 py-2 text-right">
                     <Button
                       type="button"
