@@ -305,6 +305,19 @@ export function computeXirr(
     amount: c.amountKrw
   }));
 
+  // The bisection fallback converges on |xnpv|, which carries the same KRW scale
+  // as the flows. A FIXED absolute threshold (the old `< 1`) is not
+  // scale-invariant: for SUB-WON test/scaled flows 1 won exceeds the entire flow
+  // set, so the check fires on the first midpoint and "converges" on the bracket
+  // centre (~49.5 → 4950%) — a garbage rate — instead of letting bisection
+  // narrow. Scale the threshold to the flow magnitude: ε·Σ|amount|. For
+  // ordinary/large flows this is far below the 1e-7 RATE-width check that already
+  // gates convergence, so existing results are unchanged; for tiny flows it
+  // shrinks proportionally and no longer misfires. The `> 0` guard avoids a
+  // zero tolerance on an all-zero (already rejected) flow set.
+  const flowScale = flows.reduce((s, f) => s + Math.abs(f.amount), 0);
+  const npvTolerance = flowScale > 0 ? flowScale * 1e-10 : 1;
+
   let rate = 0.1;
   for (let i = 0; i < maxIterations; i++) {
     const f = xnpv(rate, flows);
@@ -327,7 +340,7 @@ export function computeXirr(
   for (let i = 0; i < 300; i++) {
     const mid = (lo + hi) / 2;
     const fMid = xnpv(mid, flows);
-    if (Math.abs(fMid) < 1 || (hi - lo) / 2 < tolerance) {
+    if (Math.abs(fMid) < npvTolerance || (hi - lo) / 2 < tolerance) {
       return Number((mid * 100).toFixed(4));
     }
     if (fLo * fMid < 0) {

@@ -89,8 +89,53 @@ export type HedonicFit = {
   inference?: Record<string, CoefficientInference>;
   /** Fitted ln(price/sqm) at the query point. */
   fittedLogPricePerSqm: number;
-  /** exp(fittedLogPricePerSqm) — the IM-renderable headline. */
+  /**
+   * exp(fittedLogPricePerSqm) — the IM-renderable headline. NOTE: this is the
+   * NAIVE retransformation, i.e. the conditional MEDIAN price (not the mean),
+   * because exp() of the fitted log mean drops the Jensen / log-normal
+   * correction. Left unchanged for backwards compatibility; for the unbiased
+   * mean estimate use {@link fittedPricePerSqmKrwBiasCorrected}.
+   */
   fittedPricePerSqmKrw: number;
+  /**
+   * Bias-corrected retransformation of the fitted price (KRW/sqm) — the
+   * conditional MEAN price. ADDITIVE (2026-06 quant audit). The naive
+   * `exp(fittedLogPricePerSqm)` understates the mean of a log-normal by the
+   * Jensen gap: E[price] = exp(μ̂)·E[exp(ε)] ≈ exp(μ̂)·exp(σ̂²/2). We multiply
+   * the naive fit by the smearing factor {@link retransformationFactor} so the
+   * headline level is an unbiased estimate of the expected price, not its
+   * median. (Duan's non-parametric smearing — the mean of exp(residuals) — is
+   * asymptotically equivalent under log-normal errors; the closed-form
+   * exp(σ̂²/2) is used here.) `null` when σ̂² is unavailable (df ≤ 0).
+   */
+  fittedPricePerSqmKrwBiasCorrected: number | null;
+  /**
+   * Smearing / retransformation factor exp(σ̂²/2) applied to the naive fit to
+   * recover the conditional mean (≥ 1; `null` when df ≤ 0). ADDITIVE.
+   */
+  retransformationFactor: number | null;
+  /**
+   * Prediction standard error of the fitted LOG price at the query point:
+   * σ̂·√(1 + xᵀ(XᵀX)⁻¹x). Combines the irreducible noise (the leading 1) with
+   * parameter-estimation uncertainty (the leverage term xᵀ(XᵀX)⁻¹x). ADDITIVE;
+   * `null` when σ̂² is unavailable. Distinct from — and always wider than — the
+   * confidence SE of the mean, which omits the leading 1.
+   */
+  predictionStdErrLog: number | null;
+  /**
+   * 95% prediction interval for the LOG price at the query point:
+   * fittedLog ± t_{0.975, df}·predictionStdErrLog. ADDITIVE; `null` when the
+   * prediction SE is unavailable.
+   */
+  predictionIntervalLog: { lower: number; upper: number } | null;
+  /**
+   * 95% prediction interval for the PRICE (KRW/sqm) — the exponentiated log
+   * interval. Because exp() is monotone the bounds map directly; the interval is
+   * therefore asymmetric (multiplicative) in level space. ADDITIVE; `null` when
+   * unavailable. Reported on the naive/median scale so it brackets the
+   * `fittedPricePerSqmKrw` headline.
+   */
+  predictionIntervalPriceKrw: { lower: number; upper: number } | null;
   /** Coefficient of determination on the fit set. */
   rSquared: number;
   /** Number of observations used. */
@@ -227,6 +272,12 @@ function invertSymmetric(A: number[][]): { inverse: number[][]; conditionNumber:
 function regularizedIncompleteBeta(x: number, a: number, b: number): number {
   if (x <= 0) return 0;
   if (x >= 1) return 1;
+  // Symmetry I_{1/2}(a, a) = 1/2. The continued-fraction branch below recurses
+  // as I_x(a,b) = 1 − I_{1−x}(b,a); when a == b and x == 1/2 the swapped call is
+  // identical (x ↔ 1−x and a ↔ b leave the arguments fixed), so it would recurse
+  // forever. Return the exact value directly. This corner is hit by the df = 1
+  // Student-t (a = b = 1/2) at t² = df, i.e. exactly the t-critical bracketing.
+  if (a === b && x === 0.5) return 0.5;
   const lnBeta = logGamma(a) + logGamma(b) - logGamma(a + b);
   const front = Math.exp(a * Math.log(x) + b * Math.log(1 - x) - lnBeta) / a;
   // Continued fraction for the symmetric tail that converges fastest.
@@ -306,6 +357,34 @@ function twoSidedTPValue(t: number, df: number): number {
   if (!Number.isFinite(t) || df <= 0) return Number.NaN;
   const x = df / (df + t * t);
   return regularizedIncompleteBeta(x, df / 2, 0.5);
+}
+
+/**
+ * Two-sided critical value t* such that Pr(|T_df| > t*) = `alpha`, i.e. the
+ * upper (1 − alpha/2) quantile of a Student-t with `df` degrees of freedom.
+ * Used to size the prediction interval. Solved by bisection on the monotone
+ * two-sided tail probability `twoSidedTPValue` (which decreases in t), so it is
+ * exact to numeric tolerance for any df without a closed-form inverse-beta.
+ * Returns NaN when df ≤ 0.
+ */
+function studentTCritical(alpha: number, df: number): number {
+  if (df <= 0 || !(alpha > 0 && alpha < 1)) return Number.NaN;
+  // twoSidedTPValue(0) = 1, → 0 as t → ∞. Bracket then bisect. The bracket is
+  // capped at t = 1024: for any df ≥ 1 the two-sided 5% critical value is ≤ 12.71
+  // (df = 1), so 1024 is a generous ceiling that also keeps the incomplete-beta
+  // evaluation away from the x → 1 corner where its recursion is numerically
+  // fragile.
+  let lo = 0;
+  let hi = 1;
+  while (twoSidedTPValue(hi, df) > alpha && hi < 1024) hi *= 2;
+  for (let i = 0; i < 200; i += 1) {
+    const mid = (lo + hi) / 2;
+    const tail = twoSidedTPValue(mid, df);
+    if (Math.abs(tail - alpha) < 1e-12 || hi - lo < 1e-12) return mid;
+    if (tail > alpha) lo = mid;
+    else hi = mid;
+  }
+  return (lo + hi) / 2;
 }
 
 /** Multiply a p×p matrix by a length-p vector. */
@@ -563,11 +642,50 @@ export function fitHedonic(comps: CompRow[], query: HedonicQuery): HedonicFit | 
   }
   const wellConditioned = !conditionBad && !vifBad;
 
+  // ---- Prediction interval + retransformation-bias correction (2026-06 audit).
+  // Leverage at the query point: h = xᵀ(XᵀX)⁻¹x (always ≥ 0 for an SPD inverse).
+  const invX = matVec(inverse, queryRow);
+  let leverage = 0;
+  for (let j = 0; j < p; j += 1) leverage += queryRow[j]! * invX[j]!;
+  leverage = Math.max(0, leverage);
+
+  const sigmaHat = Number.isFinite(sigma2) && sigma2 >= 0 ? Math.sqrt(sigma2) : null;
+
+  // Prediction SE of the log price: σ̂·√(1 + h). The leading 1 is the irreducible
+  // observation noise; h is the parameter-estimation contribution.
+  const predictionStdErrLog = sigmaHat !== null ? sigmaHat * Math.sqrt(1 + leverage) : null;
+
+  // 95% prediction interval: fittedLog ± t_{0.975, df}·predSE, exponentiated.
+  let predictionIntervalLog: { lower: number; upper: number } | null = null;
+  let predictionIntervalPriceKrw: { lower: number; upper: number } | null = null;
+  if (predictionStdErrLog !== null && df > 0) {
+    const tStar = studentTCritical(0.05, df);
+    if (Number.isFinite(tStar)) {
+      const half = tStar * predictionStdErrLog;
+      const lowerLog = fittedLog - half;
+      const upperLog = fittedLog + half;
+      predictionIntervalLog = { lower: lowerLog, upper: upperLog };
+      predictionIntervalPriceKrw = { lower: Math.exp(lowerLog), upper: Math.exp(upperLog) };
+    }
+  }
+
+  // Retransformation bias: the naive exp(fittedLog) is the conditional median.
+  // Under log-normal errors the conditional MEAN is exp(fittedLog)·exp(σ̂²/2).
+  const retransformationFactor =
+    Number.isFinite(sigma2) && sigma2 >= 0 ? Math.exp(sigma2 / 2) : null;
+  const fittedPricePerSqmKrwBiasCorrected =
+    retransformationFactor !== null ? Math.exp(fittedLog) * retransformationFactor : null;
+
   return {
     coefficients,
     inference,
     fittedLogPricePerSqm: fittedLog,
     fittedPricePerSqmKrw: Math.exp(fittedLog),
+    fittedPricePerSqmKrwBiasCorrected,
+    retransformationFactor,
+    predictionStdErrLog,
+    predictionIntervalLog,
+    predictionIntervalPriceKrw,
     rSquared,
     adjustedRSquared: adjusted,
     n,

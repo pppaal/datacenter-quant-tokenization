@@ -27,6 +27,34 @@ export type { DatedCashflow };
 // Number coercion (Float | Prisma.Decimal | number | null)
 // ---------------------------------------------------------------------------
 
+/** Coerce a Float | Prisma.Decimal | numeric-string to a `Prisma.Decimal`,
+ *  defaulting to 0 for null/undefined/non-finite — the Decimal analogue of
+ *  `toNumber`. Used to run the NAV / PCAP money roll-ups in exact Decimal space
+ *  so KRW sums above 2^53 (≈ 9.0×10^15 ≈ ₩9 quadrillion) keep full precision
+ *  instead of accumulating IEEE-754 float error; the result is coerced back to a
+ *  `number` only at the display boundary (the public return types are unchanged).
+ */
+function toDecimal(value: unknown, fallback = 0): Prisma.Decimal {
+  if (value == null) return new Prisma.Decimal(fallback);
+  if (value instanceof Prisma.Decimal)
+    return value.isFinite() ? value : new Prisma.Decimal(fallback);
+  // Duck-typed Decimal-likes (e.g. a Prisma.Decimal serialized/re-hydrated, or a
+  // test fake) carry only `.toNumber()`. Mirror `toNumber`'s handling so the
+  // Decimal path accepts exactly what the number path did. (The .toNumber()
+  // round-trip is lossless for in-range values; true >2^53 precision is retained
+  // when a real Prisma.Decimal — handled above — flows through.)
+  if (typeof (value as { toNumber?: unknown }).toNumber === 'function') {
+    const n = (value as { toNumber(): number }).toNumber();
+    return Number.isFinite(n) ? new Prisma.Decimal(n) : new Prisma.Decimal(fallback);
+  }
+  try {
+    const d = new Prisma.Decimal(value as Prisma.Decimal.Value);
+    return d.isFinite() ? d : new Prisma.Decimal(fallback);
+  } catch {
+    return new Prisma.Decimal(fallback);
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Fair-value NAV
 // ---------------------------------------------------------------------------
@@ -124,27 +152,33 @@ export function computeFundNavDetail(fund: FundNavInput): FundNavResult {
   const lines: FundAssetNavLine[] = [];
   const fallbackAssets: string[] = [];
 
+  // Aggregate the gross asset value in exact Decimal space (KRW funds routinely
+  // exceed 2^53, where summing JS numbers drops won; the per-line `fairValueKrw`
+  // number is the display projection only).
+  let grossAssetValueDec = new Prisma.Decimal(0);
+
   for (const pa of assets) {
     const ownershipPct = pa.ownershipPct == null ? 100 : pa.ownershipPct;
     const ownershipFraction = Math.max(0, ownershipPct) / 100;
     const asset = pa.asset ?? ({} as NavPortfolioAsset['asset']);
 
     let source: FundAssetNavLine['source'] = 'NONE';
-    let fairValueFull = 0;
+    let fairValueFullDec = new Prisma.Decimal(0);
     let valuationDate: string | null = null;
 
-    const holdOverride = toNumber(pa.currentHoldValueKrw);
+    const holdOverrideDec = toDecimal(pa.currentHoldValueKrw);
     const latest = latestValuationKrw(asset.valuations);
-    const cost = toNumber(asset.purchasePriceKrw);
+    const costDec = toDecimal(asset.purchasePriceKrw);
 
-    if (holdOverride > 0) {
+    if (holdOverrideDec.greaterThan(0)) {
       // Hold-value override is already a fund-share figure; do not re-apply ownership.
       source = 'HOLD_VALUE_OVERRIDE';
+      grossAssetValueDec = grossAssetValueDec.plus(holdOverrideDec);
       lines.push({
         assetId: asset.id ?? null,
         assetName: asset.name ?? null,
         assetCode: asset.assetCode ?? null,
-        fairValueKrw: holdOverride,
+        fairValueKrw: holdOverrideDec.toNumber(),
         ownershipFraction: 1,
         source,
         valuationDate: null
@@ -154,35 +188,37 @@ export function computeFundNavDetail(fund: FundNavInput): FundNavResult {
 
     if (latest && latest.value > 0) {
       source = 'VALUATION';
-      fairValueFull = latest.value;
+      fairValueFullDec = toDecimal(latest.value);
       valuationDate = latest.date;
-    } else if (cost > 0) {
+    } else if (costDec.greaterThan(0)) {
       source = 'COST_BASIS_FALLBACK';
-      fairValueFull = cost;
+      fairValueFullDec = costDec;
       fallbackAssets.push(asset.assetCode ?? asset.name ?? asset.id ?? 'unknown-asset');
     }
+
+    const fairValueDec = fairValueFullDec.mul(ownershipFraction);
+    grossAssetValueDec = grossAssetValueDec.plus(fairValueDec);
 
     lines.push({
       assetId: asset.id ?? null,
       assetName: asset.name ?? null,
       assetCode: asset.assetCode ?? null,
-      fairValueKrw: fairValueFull * ownershipFraction,
+      fairValueKrw: fairValueDec.toNumber(),
       ownershipFraction,
       source,
       valuationDate
     });
   }
 
-  const grossAssetValueKrw = lines.reduce((sum, l) => sum + l.fairValueKrw, 0);
-  const otherNetAssetsKrw = toNumber(fund.otherNetAssetsKrw);
-  const fundDebtKrw = toNumber(fund.fundDebtKrw);
-  const navKrw = grossAssetValueKrw + otherNetAssetsKrw - fundDebtKrw;
+  const otherNetAssetsDec = toDecimal(fund.otherNetAssetsKrw);
+  const fundDebtDec = toDecimal(fund.fundDebtKrw);
+  const navDec = grossAssetValueDec.plus(otherNetAssetsDec).minus(fundDebtDec);
 
   return {
-    navKrw,
-    grossAssetValueKrw,
-    otherNetAssetsKrw,
-    fundDebtKrw,
+    navKrw: navDec.toNumber(),
+    grossAssetValueKrw: grossAssetValueDec.toNumber(),
+    otherNetAssetsKrw: otherNetAssetsDec.toNumber(),
+    fundDebtKrw: fundDebtDec.toNumber(),
     lines,
     usedCostBasisFallback: fallbackAssets.length > 0,
     costBasisFallbackAssets: fallbackAssets
@@ -197,22 +233,6 @@ export function computeFundNavKrw(fund: FundNavInput): number {
 // ---------------------------------------------------------------------------
 // Single tokenized-asset NAV (for on-chain NAV attestation)
 // ---------------------------------------------------------------------------
-
-/** Coerce a Float | Prisma.Decimal | numeric-string to a `Prisma.Decimal`,
- *  defaulting to 0 for null/undefined/non-finite — the Decimal analogue of
- *  `toNumber`, used so the attestation path never round-trips through a lossy
- *  JS `number` before the on-chain 18-decimal scaling. */
-function toDecimal(value: unknown, fallback = 0): Prisma.Decimal {
-  if (value == null) return new Prisma.Decimal(fallback);
-  if (value instanceof Prisma.Decimal)
-    return value.isFinite() ? value : new Prisma.Decimal(fallback);
-  try {
-    const d = new Prisma.Decimal(value as Prisma.Decimal.Value);
-    return d.isFinite() ? d : new Prisma.Decimal(fallback);
-  } catch {
-    return new Prisma.Decimal(fallback);
-  }
-}
 
 export type TokenizedAssetNavResult = {
   /**
@@ -360,8 +380,20 @@ export type PcapResult = {
   investors: LpStatement[];
 };
 
-function multiple(numerator: number, denominator: number): number {
-  return denominator > 0 ? Number((numerator / denominator).toFixed(4)) : 0;
+/**
+ * TVPI / DPI / RVPI ratio, computed in exact Decimal space so a >2^53 KRW
+ * numerator/denominator does not lose precision in the division before the 4dp
+ * round. Accepts Decimal or number for either operand; returns a `number` (4dp)
+ * to keep the public `*Multiple` field types unchanged.
+ */
+function multiple(
+  numerator: Prisma.Decimal | number,
+  denominator: Prisma.Decimal | number
+): number {
+  const num = toDecimal(numerator);
+  const den = toDecimal(denominator);
+  if (!den.greaterThan(0)) return 0;
+  return Number(num.div(den).toFixed(4));
 }
 
 /**
@@ -369,9 +401,10 @@ function multiple(numerator: number, denominator: number): number {
  * mark-to-market loss drives the multiple below 1x, it does not produce a
  * *negative* RVPI/TVPI. Floor the NAV (residual value) contribution at 0 so the
  * reported multiples stay >= 0; the loss is already reflected by TVPI < 1.
+ * Computed in Decimal so it composes with the exact money roll-ups.
  */
-function residualValue(navKrw: number): number {
-  return Math.max(navKrw, 0);
+function residualValueDec(nav: Prisma.Decimal): Prisma.Decimal {
+  return nav.greaterThan(0) ? nav : new Prisma.Decimal(0);
 }
 
 /**
@@ -400,20 +433,35 @@ export function buildPcap(params: {
   const asOf = params.asOf ?? new Date();
   const nav = params.nav;
 
-  const totalCommitted = params.commitments.reduce((s, c) => s + toNumber(c.commitmentKrw), 0);
+  // Money roll-ups run in exact Decimal space (KRW funds exceed 2^53; float sums
+  // and ratios drop won). Per-investor `*Krw`/`*Multiple` outputs are coerced
+  // back to `number` at the boundary so the public types are unchanged.
+  const navDec = toDecimal(nav.navKrw);
+  const totalCommittedDec = params.commitments.reduce(
+    (s, c) => s.plus(toDecimal(c.commitmentKrw)),
+    new Prisma.Decimal(0)
+  );
+  const totalCommitted = totalCommittedDec.toNumber();
 
   // Determine whether cashflows are per-investor or fund-level.
   const callsHaveInvestor = params.fundCapitalCalls.some((c) => c.investorId != null);
   const distrosHaveInvestor = params.fundDistributions.some((d) => d.investorId != null);
 
   const investors: LpStatement[] = params.commitments.map((commitment) => {
-    const committedKrw = toNumber(commitment.commitmentKrw);
-    const calledKrw = toNumber(commitment.calledKrw);
-    const distributedKrw = toNumber(commitment.distributedKrw);
+    const committedDec = toDecimal(commitment.commitmentKrw);
+    const calledDec = toDecimal(commitment.calledKrw);
+    const distributedDec = toDecimal(commitment.distributedKrw);
+    const committedKrw = committedDec.toNumber();
+    const calledKrw = calledDec.toNumber();
+    const distributedKrw = distributedDec.toNumber();
     const recallableKrw = toNumber(commitment.recallableKrw);
-    const sharePct = totalCommitted > 0 ? (committedKrw / totalCommitted) * 100 : 0;
-    const shareFraction = totalCommitted > 0 ? committedKrw / totalCommitted : 0;
-    const navShareKrw = nav.navKrw * shareFraction;
+    const shareFractionDec = totalCommittedDec.greaterThan(0)
+      ? committedDec.div(totalCommittedDec)
+      : new Prisma.Decimal(0);
+    const shareFraction = shareFractionDec.toNumber();
+    const sharePct = shareFractionDec.mul(100).toNumber();
+    const navShareDec = navDec.mul(shareFractionDec);
+    const navShareKrw = navShareDec.toNumber();
 
     // Assemble this LP's dated cashflows for XIRR.
     const lpFlows: DatedCashflow[] = [];
@@ -458,10 +506,12 @@ export function buildPcap(params: {
 
     const irrPct = computeXirr(irrFlows);
 
-    const dpiMultiple = multiple(distributedKrw, calledKrw);
-    const rvpiMultiple = multiple(residualValue(navShareKrw), calledKrw);
-    const tvpiMultiple = multiple(distributedKrw + residualValue(navShareKrw), calledKrw);
+    const residualDec = residualValueDec(navShareDec);
+    const dpiMultiple = multiple(distributedDec, calledDec);
+    const rvpiMultiple = multiple(residualDec, calledDec);
+    const tvpiMultiple = multiple(distributedDec.plus(residualDec), calledDec);
 
+    const unfundedDec = committedDec.minus(calledDec);
     return {
       investorId: commitment.investorId,
       investorCode: commitment.investorCode ?? null,
@@ -470,7 +520,7 @@ export function buildPcap(params: {
       committedKrw,
       calledKrw,
       distributedKrw,
-      unfundedKrw: Math.max(committedKrw - calledKrw, 0),
+      unfundedKrw: unfundedDec.greaterThan(0) ? unfundedDec.toNumber() : 0,
       recallableKrw,
       navShareKrw,
       sharePct: Number(sharePct.toFixed(4)),
@@ -482,10 +532,17 @@ export function buildPcap(params: {
     };
   });
 
-  const sum = (pick: (s: LpStatement) => number) => investors.reduce((s2, i) => s2 + pick(i), 0);
-  const totalCalled = sum((i) => i.calledKrw);
-  const totalDistributed = sum((i) => i.distributedKrw);
-  const totalNavShare = sum((i) => i.navShareKrw);
+  // Sum the money columns in exact Decimal space, then project to number.
+  const sumDec = (pick: (s: LpStatement) => number) =>
+    investors.reduce((s2, i) => s2.plus(toDecimal(pick(i))), new Prisma.Decimal(0));
+  const totalCalledDec = sumDec((i) => i.calledKrw);
+  const totalDistributedDec = sumDec((i) => i.distributedKrw);
+  const totalNavShareDec = sumDec((i) => i.navShareKrw);
+  const totalUnfundedDec = sumDec((i) => i.unfundedKrw);
+  const totalRecallableDec = sumDec((i) => i.recallableKrw);
+  const totalCalled = totalCalledDec.toNumber();
+  const totalDistributed = totalDistributedDec.toNumber();
+  const totalNavShare = totalNavShareDec.toNumber();
 
   // Fund-level IRR: aggregate dated calls (−) + distributions (+) + ending NAV.
   const fundFlows: DatedCashflow[] = [
@@ -516,12 +573,15 @@ export function buildPcap(params: {
       committedKrw: totalCommitted,
       calledKrw: totalCalled,
       distributedKrw: totalDistributed,
-      unfundedKrw: sum((i) => i.unfundedKrw),
-      recallableKrw: sum((i) => i.recallableKrw),
+      unfundedKrw: totalUnfundedDec.toNumber(),
+      recallableKrw: totalRecallableDec.toNumber(),
       navShareKrw: totalNavShare,
-      tvpiMultiple: multiple(totalDistributed + residualValue(totalNavShare), totalCalled),
-      dpiMultiple: multiple(totalDistributed, totalCalled),
-      rvpiMultiple: multiple(residualValue(totalNavShare), totalCalled),
+      tvpiMultiple: multiple(
+        totalDistributedDec.plus(residualValueDec(totalNavShareDec)),
+        totalCalledDec
+      ),
+      dpiMultiple: multiple(totalDistributedDec, totalCalledDec),
+      rvpiMultiple: multiple(residualValueDec(totalNavShareDec), totalCalledDec),
       irrPct: fundIrrPct
     },
     investors
