@@ -99,7 +99,9 @@ function readRequestId(request: Request): string {
 // types against its own auto-generated `RouteContext`. A precisely-typed
 // second parameter (even when optional) trips that validator. The runtime
 // check below covers the actual shape — TParams is enforced on the option
-// callbacks that consume `params`.
+// callbacks that consume `params`. Disabled inline (not via the off-list) so
+// the rest of `lib/security/**` can stay under the no-explicit-any error gate.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AdminApiHandler = (request: Request, routeContext?: any) => Promise<Response>;
 
 export function withAdminApi<
