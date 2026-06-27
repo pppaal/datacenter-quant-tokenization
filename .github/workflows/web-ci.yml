@@ -102,33 +102,33 @@ jobs:
       - name: Unit tests
         run: npm test
 
-      - name: Coverage report + ratcheting floor
-        # Uses Node's BUILT-IN test coverage (no c8/nyc dependency). The full
-        # suite measured 87.59% line coverage in CI on 2026-06-25 (the CI runner
-        # attributes coverage over a broader file set than a local run); the
-        # floor is set conservatively to 85 (rounded DOWN from the CI-measured
-        # number) so it cannot fail today but blocks regressions. RATCHET UP as
-        # coverage rises. Run `npm run test:coverage` locally to see the report.
+      - name: Coverage report + ratcheting floor (line + branch)
+        # Uses Node's BUILT-IN test coverage (no c8/nyc dependency). The
+        # parsing + floor gate + low-file surfacing live in the dependency-free
+        # `scripts/check-coverage.mjs` (Node stdlib only).
+        #
+        # LINE floor: the suite measured 87.59% line coverage in CI on
+        # 2026-06-25 (the CI runner attributes coverage over a broader file set
+        # than a local run); floor set to 85, rounded DOWN from the CI-measured
+        # number, so it cannot fail today but blocks regressions.
+        #
+        # BRANCH floor: local `npm run test:coverage` measured ~78.8% branch on
+        # 2026-06-27; floor set conservatively to 75 (a few points below,
+        # rounded down) so it cannot fail today but blocks branch-coverage
+        # regressions. RATCHET BOTH UP as coverage rises.
+        #
+        # The script ALSO emits ::warning annotations for the lowest-coverage
+        # source files (line% < COVERAGE_FILE_WARN) so localized / newly-added
+        # gaps surface at review time without failing the build. It fails CLOSED
+        # if the "# all files" summary row cannot be parsed.
         env:
           COVERAGE_LINE_FLOOR: "85"
+          COVERAGE_BRANCH_FLOOR: "75"
+          COVERAGE_FILE_WARN: "50"
         run: |
           set -o pipefail
           npm run test:coverage 2>&1 | tee coverage.txt
-          # Node prints: "# all files | <line> | <branch> | <func> |"
-          LINE_PCT=$(grep -E '# all files' coverage.txt \
-            | tail -1 \
-            | awk -F'|' '{gsub(/ /,"",$2); print $2}')
-          if [ -z "$LINE_PCT" ]; then
-            echo "Could not parse line coverage from report; failing closed."
-            exit 1
-          fi
-          echo "Measured line coverage: ${LINE_PCT}% (floor: ${COVERAGE_LINE_FLOOR}%)"
-          # Integer-truncated comparison avoids a bc dependency.
-          if [ "${LINE_PCT%.*}" -lt "${COVERAGE_LINE_FLOOR}" ]; then
-            echo "::error::Line coverage ${LINE_PCT}% is below floor ${COVERAGE_LINE_FLOOR}%"
-            exit 1
-          fi
-          echo "Line coverage ${LINE_PCT}% meets floor ${COVERAGE_LINE_FLOOR}%."
+          node scripts/check-coverage.mjs coverage.txt
 
       - name: Production build
         run: npm run build
