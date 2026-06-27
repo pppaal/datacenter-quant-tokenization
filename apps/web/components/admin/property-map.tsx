@@ -123,9 +123,11 @@ function loadKakao(appkey: string): Promise<unknown> {
 }
 
 function markerTone(assetClass: AssetClass, hasLiveDossier: boolean) {
-  if (hasLiveDossier) return 'border-emerald-400 bg-emerald-500/30 text-emerald-100';
-  if (assetClass === AssetClass.DATA_CENTER) return 'border-sky-400 bg-sky-500/30 text-sky-100';
-  return 'border-amber-300 bg-amber-400/30 text-amber-100';
+  if (hasLiveDossier)
+    return 'border-[hsl(var(--success))] bg-[hsl(var(--success-tint))] text-[hsl(var(--success))]';
+  if (assetClass === AssetClass.DATA_CENTER)
+    return 'border-[hsl(var(--info))] bg-[hsl(var(--info-tint))] text-[hsl(var(--info))]';
+  return 'border-[hsl(var(--warning))] bg-[hsl(var(--warning-tint))] text-[hsl(var(--warning))]';
 }
 
 export function PropertyMap({

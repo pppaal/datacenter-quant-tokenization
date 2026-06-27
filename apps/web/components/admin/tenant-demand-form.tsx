@@ -1,21 +1,21 @@
 'use client';
 
-import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { AssetClass } from '@prisma/client';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { useRouterRefresh } from '@/lib/hooks/use-router-refresh';
 
 type Banner = { tone: 'good' | 'warn'; text: string } | null;
 
 const STATUSES = ['ACTIVE', 'SIGNED', 'WITHDRAWN', 'STALLED'] as const;
 
 export function TenantDemandForm() {
-  const router = useRouter();
-  const [, startTransition] = useTransition();
+  const { isRefreshing, refresh } = useRouterRefresh();
   const [busy, setBusy] = useState(false);
+  const pending = busy || isRefreshing;
   const [banner, setBanner] = useState<Banner>(null);
   const [form, setForm] = useState({
     tenantName: '',
@@ -65,7 +65,7 @@ export function TenantDemandForm() {
       }
       setBanner({ tone: 'good', text: `Recorded ${form.tenantName}.` });
       setForm((prev) => ({ ...prev, tenantName: '', region: '', notes: '', source: '' }));
-      startTransition(() => router.refresh());
+      refresh();
     } finally {
       setBusy(false);
     }
@@ -181,8 +181,8 @@ export function TenantDemandForm() {
           />
         </div>
         <div className="md:col-span-2 flex justify-end">
-          <Button type="submit" disabled={busy}>
-            {busy ? 'Recording…' : 'Record requirement'}
+          <Button type="submit" disabled={pending}>
+            {pending ? 'Recording…' : 'Record requirement'}
           </Button>
         </div>
       </form>

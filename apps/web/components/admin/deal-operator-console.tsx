@@ -40,6 +40,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
@@ -329,9 +330,9 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
                       </div>
                     ))
                   ) : (
-                    <div className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-3 text-sm text-[hsl(var(--muted))]">
+                    <EmptyState className="p-3 text-[hsl(var(--muted))]">
                       No strengths are logged yet.
-                    </div>
+                    </EmptyState>
                   )}
                 </div>
               </div>
@@ -348,9 +349,9 @@ export function DealOperatorConsole({ deal, snapshot, origination }: Props) {
                       </div>
                     ))
                   ) : (
-                    <div className="rounded-[18px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-3 text-sm text-[hsl(var(--muted))]">
+                    <EmptyState className="p-3 text-[hsl(var(--muted))]">
                       No origination blockers are flagged.
-                    </div>
+                    </EmptyState>
                   )}
                 </div>
               </div>

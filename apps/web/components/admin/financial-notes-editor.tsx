@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { useRouterRefresh } from '@/lib/hooks/use-router-refresh';
 
 export type FinancialNoteView = {
   id: string;
@@ -27,49 +27,60 @@ type Props = {
  * Mutations refresh the server component so the list stays authoritative.
  */
 export function FinancialNotesEditor({ fundId, assetId, notes, canEdit = true }: Props) {
-  const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const { isRefreshing, refresh } = useRouterRefresh();
+  const [submitting, setSubmitting] = useState(false);
+  const pending = submitting || isRefreshing;
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState<{ title: string; body: string }>({ title: '', body: '' });
   const [error, setError] = useState<string | null>(null);
 
   async function save(id?: string) {
     setError(null);
-    const res = await fetch('/api/admin/financial-notes', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'same-origin',
-      body: JSON.stringify({
-        id,
-        fundId,
-        assetId,
-        noteKey: (draft.title || 'note').toLowerCase().replace(/\s+/g, '-').slice(0, 60),
-        title: draft.title,
-        body: draft.body,
-        orderIndex: id ? undefined : notes.length
-      })
-    });
-    if (!res.ok) {
-      const d = await res.json().catch(() => null);
-      setError(d?.error ?? '저장 실패');
-      return;
+    setSubmitting(true);
+    try {
+      const res = await fetch('/api/admin/financial-notes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          id,
+          fundId,
+          assetId,
+          noteKey: (draft.title || 'note').toLowerCase().replace(/\s+/g, '-').slice(0, 60),
+          title: draft.title,
+          body: draft.body,
+          orderIndex: id ? undefined : notes.length
+        })
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => null);
+        setError(d?.error ?? '저장 실패');
+        return;
+      }
+      setEditing(null);
+      setDraft({ title: '', body: '' });
+      refresh();
+    } finally {
+      setSubmitting(false);
     }
-    setEditing(null);
-    setDraft({ title: '', body: '' });
-    startTransition(() => router.refresh());
   }
 
   async function remove(id: string) {
     setError(null);
-    const res = await fetch(`/api/admin/financial-notes/${id}`, {
-      method: 'DELETE',
-      credentials: 'same-origin'
-    });
-    if (!res.ok) {
-      setError('삭제 실패');
-      return;
+    setSubmitting(true);
+    try {
+      const res = await fetch(`/api/admin/financial-notes/${id}`, {
+        method: 'DELETE',
+        credentials: 'same-origin'
+      });
+      if (!res.ok) {
+        setError('삭제 실패');
+        return;
+      }
+      refresh();
+    } finally {
+      setSubmitting(false);
     }
-    startTransition(() => router.refresh());
   }
 
   return (
