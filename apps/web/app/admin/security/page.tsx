@@ -141,7 +141,10 @@ export default async function AdminSecurityPage() {
               </span>
             </div>
             {authConfig.errors.length > 0 ? (
-              <div className="rounded-[20px] border border-rose-400/30 bg-rose-500/10 p-4 text-rose-200">
+              <div
+                role="alert"
+                className="rounded-[20px] border border-[hsl(var(--danger)/0.25)] bg-[hsl(var(--danger-tint))] p-4 text-[hsl(var(--danger))]"
+              >
                 {authConfig.errors.join(' ')}
               </div>
             ) : null}

@@ -61,7 +61,10 @@ export default async function AdminLoginPage({
             </div>
             <div className="space-y-4">
               {errorMessage ? (
-                <div className="rounded-[18px] border border-rose-400/30 bg-rose-500/10 p-3 text-sm text-rose-200">
+                <div
+                  role="alert"
+                  className="rounded-[18px] border border-[hsl(var(--danger)/0.25)] bg-[hsl(var(--danger-tint))] p-3 text-sm text-[hsl(var(--danger))]"
+                >
                   {errorMessage}
                 </div>
               ) : null}
