@@ -157,11 +157,15 @@ apps/web run typecheck && npx --prefix apps/web prisma migrate deploy`
 - **`lib/services/deals.ts`** — DONE. View builders extracted as
   `deals/views.ts` (`buildDealExecutionSnapshot`, `buildDealDataCoverage`,
   `buildDealClosingReadiness`, `buildDealCloseProbability`,
-  `buildDealCloseProbabilityHistory`, `buildDealOriginationProfile`,
-  `buildDealDiligenceWorkpaper` + serializer), alongside the earlier
-  `timeline.ts`, `stage.ts`, `diligence-summary.ts`. `deals.ts` is now
-  ~2,567 LOC: CRUD mutations stay there because they own the validation
-  schema imports + audit boilerplate.
+  `buildDealCloseProbabilityHistory`, `buildDealOriginationProfile`),
+  alongside the earlier `timeline.ts`, `stage.ts`, `diligence-summary.ts`.
+  `deals.ts` is now ~2,576 LOC: CRUD mutations stay there because they own
+  the validation schema imports + audit boilerplate. The workpaper builders
+  (`buildDealDiligenceWorkpaper` + `serializeDealDiligenceWorkpaperToMarkdown`
+  and their workpaper-specific types) also deliberately remain in `deals.ts` —
+  they have a separate dependency surface (`DiligenceWorkstreamLike`) and lower
+  marginal extraction value (the rationale is recorded in `deals/views.ts`'s
+  module header). Do not split them out without a stronger reason.
 
 ### Candidates still worth attention
 
