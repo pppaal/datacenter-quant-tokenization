@@ -82,14 +82,17 @@ export default [
   //
   // `@typescript-eslint/no-explicit-any` is a global `warn` (above) because the
   // wider codebase still carries defensive `as any` Prisma casts. This block
-  // promotes it to `error` for `lib/blockchain/**`, which is verified `any`-free
-  // today (the on-chain registry / ERC-3643 tokenization stack — the highest-
-  // consequence code in the repo). Any NEW `any` introduced there fails CI.
+  // promotes it to `error` for the highest-consequence trees, each verified
+  // `any`-free today:
+  //   - `lib/blockchain/**` — the on-chain registry / ERC-3643 tokenization stack.
+  //   - `lib/security/**`   — the auth / edge-protection / admin-API gate. Its
+  //     one justified `any` (the Next.js route-context validator in
+  //     with-admin-api.ts) is suppressed inline, so any NEW `any` here fails CI.
   // Extend this `files` glob to additional already-clean directories as the
   // ratchet tightens.
   // ---------------------------------------------------------------------------
   {
-    files: ['lib/blockchain/**/*.ts'],
+    files: ['lib/blockchain/**/*.ts', 'lib/security/**/*.ts'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'error'
     }
