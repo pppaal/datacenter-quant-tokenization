@@ -192,6 +192,22 @@ export async function middleware(request: NextRequest) {
 
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-request-id', requestId);
+
+  // SECURITY: strip EVERY inbound `x-admin-*` header before we set our own.
+  // Handlers trust these headers as the authenticated actor identity; a
+  // client-supplied `x-admin-role: ADMIN` / `x-admin-session-id` must never
+  // survive into a route. We overwrite the fields we always derive from the
+  // session below, but the optional ones (subject/email/user-id/session-id/
+  // session-version/auth-provider) are only conditionally set — so without an
+  // unconditional delete a spoofed value for an absent field could pass
+  // through. Delete-then-set closes that: any `x-admin-*` not re-set below is
+  // guaranteed absent downstream.
+  for (const name of [...requestHeaders.keys()]) {
+    if (name.toLowerCase().startsWith('x-admin-')) {
+      requestHeaders.delete(name);
+    }
+  }
+
   requestHeaders.set('x-admin-actor', actor.identifier);
   requestHeaders.set('x-admin-role', actor.role);
   requestHeaders.set('x-admin-required-role', requiredRole);
