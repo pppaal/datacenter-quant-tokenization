@@ -38,6 +38,15 @@ function toDecimal(value: unknown, fallback = 0): Prisma.Decimal {
   if (value == null) return new Prisma.Decimal(fallback);
   if (value instanceof Prisma.Decimal)
     return value.isFinite() ? value : new Prisma.Decimal(fallback);
+  // Duck-typed Decimal-likes (e.g. a Prisma.Decimal serialized/re-hydrated, or a
+  // test fake) carry only `.toNumber()`. Mirror `toNumber`'s handling so the
+  // Decimal path accepts exactly what the number path did. (The .toNumber()
+  // round-trip is lossless for in-range values; true >2^53 precision is retained
+  // when a real Prisma.Decimal — handled above — flows through.)
+  if (typeof (value as { toNumber?: unknown }).toNumber === 'function') {
+    const n = (value as { toNumber(): number }).toNumber();
+    return Number.isFinite(n) ? new Prisma.Decimal(n) : new Prisma.Decimal(fallback);
+  }
   try {
     const d = new Prisma.Decimal(value as Prisma.Decimal.Value);
     return d.isFinite() ? d : new Prisma.Decimal(fallback);
