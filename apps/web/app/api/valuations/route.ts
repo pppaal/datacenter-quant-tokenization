@@ -30,7 +30,8 @@ export async function POST(request: Request) {
         actor,
         AdminAccessScopeType.ASSET,
         payload.assetId.trim(),
-        prisma
+        prisma,
+        'mutation'
       );
     }
     const run = await createValuationRun(payload);

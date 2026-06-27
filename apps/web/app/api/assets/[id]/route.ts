@@ -45,7 +45,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
   try {
     const { id } = await params;
-    await assertActorScopeAccess(actor, AdminAccessScopeType.ASSET, id, prisma);
+    await assertActorScopeAccess(actor, AdminAccessScopeType.ASSET, id, prisma, 'mutation');
     const payload = await request.json();
     const asset = await updateAsset(id, payload);
     await recordAuditEvent({

@@ -40,7 +40,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       actor,
       AdminAccessScopeType.PORTFOLIO,
       portfolioAsset.portfolioId,
-      prisma
+      prisma,
+      'mutation'
     );
     const payload = await request.json();
     const initiative = await createAssetManagementInitiative(portfolioAsset.id, payload, prisma);

@@ -23,7 +23,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   try {
     const { id } = await params;
-    await assertActorScopeAccess(actor, AdminAccessScopeType.DEAL, id, prisma);
+    await assertActorScopeAccess(actor, AdminAccessScopeType.DEAL, id, prisma, 'mutation');
     const payload = await request.json().catch(() => ({}));
     const deal = await archiveDeal(id, payload);
     if (!deal) {

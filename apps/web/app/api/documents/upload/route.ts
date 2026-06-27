@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     const payload = Object.fromEntries(formData.entries());
     const assetId = typeof payload.assetId === 'string' ? payload.assetId.trim() : '';
     if (assetId) {
-      await assertActorScopeAccess(actor, AdminAccessScopeType.ASSET, assetId, prisma);
+      await assertActorScopeAccess(actor, AdminAccessScopeType.ASSET, assetId, prisma, 'mutation');
     }
     const buffer = Buffer.from(await file.arrayBuffer());
     const document = await uploadDocumentVersion(payload, {
