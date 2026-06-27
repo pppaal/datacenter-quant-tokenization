@@ -19,6 +19,15 @@ import { test } from 'node:test';
 
 process.env.KYC_MOCK_WEBHOOK_SECRET = process.env.KYC_MOCK_WEBHOOK_SECRET ?? 'test-mock-secret';
 process.env.KYC_MOCK_SKIP_SIG = '1';
+// Force the persist-failure path deterministically and network-free, regardless
+// of ambient env: in CI `DATABASE_URL` points at a live, migrated Postgres, so
+// the write would SUCCEED and the route would return 200 — not the 500 this test
+// asserts. `node --test` isolates each test file in its own process, so removing
+// it here affects only this file. The Prisma singleton (constructed on first use
+// by the dynamically-imported route below) then throws "Environment variable not
+// found: DATABASE_URL", exercising the exact persist failure that must be
+// genericized.
+delete process.env.DATABASE_URL;
 
 function validMockWebhookRequest(ip: string) {
   const body = JSON.stringify({
