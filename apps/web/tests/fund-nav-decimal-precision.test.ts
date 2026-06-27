@@ -15,9 +15,9 @@ test('NAV gross-asset aggregation retains precision a float sum would lose', () 
   const fund = {
     portfolio: {
       assets: [
-        { ownershipPct: 100, currentHoldValueKrw: new Prisma.Decimal(TWO_POW_53) },
-        { ownershipPct: 100, currentHoldValueKrw: new Prisma.Decimal(1) },
-        { ownershipPct: 100, currentHoldValueKrw: new Prisma.Decimal(1) }
+        { ownershipPct: 100, currentHoldValueKrw: new Prisma.Decimal(TWO_POW_53), asset: {} },
+        { ownershipPct: 100, currentHoldValueKrw: new Prisma.Decimal(1), asset: {} },
+        { ownershipPct: 100, currentHoldValueKrw: new Prisma.Decimal(1), asset: {} }
       ]
     }
   };
@@ -37,7 +37,9 @@ test('NAV gross-asset aggregation retains precision a float sum would lose', () 
 test('NAV nets other-assets and debt in Decimal (no float drift at scale)', () => {
   const fund = {
     portfolio: {
-      assets: [{ ownershipPct: 100, currentHoldValueKrw: new Prisma.Decimal(TWO_POW_53) }]
+      assets: [
+        { ownershipPct: 100, currentHoldValueKrw: new Prisma.Decimal(TWO_POW_53), asset: {} }
+      ]
     },
     otherNetAssetsKrw: 3 as number,
     fundDebtKrw: 1 as number
@@ -128,7 +130,7 @@ test('in-range outputs are unchanged by the Decimal promotion', () => {
   const fund = {
     portfolio: {
       assets: [
-        { ownershipPct: 50, currentHoldValueKrw: 8_000_000_000 },
+        { ownershipPct: 50, currentHoldValueKrw: 8_000_000_000, asset: {} },
         {
           ownershipPct: 100,
           asset: {
