@@ -44,10 +44,15 @@ export default [
       ...tsPlugin.configs['recommended'].rules,
       ...nextPlugin.configs['core-web-vitals'].rules,
       ...prettierConfig.rules,
-      // The codebase uses `as any` / `as unknown as X` defensively for Prisma
-      // input casts; tighten progressively once the typed input builders
-      // mentioned in CLAUDE.md land.
-      '@typescript-eslint/no-explicit-any': 'off',
+      // no-explicit-any ratchet. The codebase uses `as any` / `as unknown as X`
+      // defensively for Prisma input casts, so a global `error` would block CI on
+      // pre-existing debt. Instead this is a *warn* (visible in `lint` output,
+      // does NOT fail the zero-ERROR CI gate) so NO NEW unflagged `any` slips in
+      // unnoticed, while a scoped `error`-level override below hard-blocks new
+      // `any` in already-clean directories (`lib/blockchain/**`). Tighten the
+      // scoped allowlist outward (or flip the global to `error`) as directories
+      // are cleaned — that is the ratchet. See CLAUDE.md "no-explicit-any".
+      '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-empty-object-type': 'off',
       // Empty error blocks are intentional for fire-and-forget paths.
       'no-empty': ['error', { allowEmptyCatch: true }],
@@ -70,6 +75,23 @@ export default [
       // Scripts and tests routinely log; relax rules that fight that.
       'no-console': 'off',
       '@typescript-eslint/no-require-imports': 'off'
+    }
+  },
+  // ---------------------------------------------------------------------------
+  // no-explicit-any ratchet — clean-subset hard gate.
+  //
+  // `@typescript-eslint/no-explicit-any` is a global `warn` (above) because the
+  // wider codebase still carries defensive `as any` Prisma casts. This block
+  // promotes it to `error` for `lib/blockchain/**`, which is verified `any`-free
+  // today (the on-chain registry / ERC-3643 tokenization stack — the highest-
+  // consequence code in the repo). Any NEW `any` introduced there fails CI.
+  // Extend this `files` glob to additional already-clean directories as the
+  // ratchet tightens.
+  // ---------------------------------------------------------------------------
+  {
+    files: ['lib/blockchain/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'error'
     }
   },
   // ---------------------------------------------------------------------------
