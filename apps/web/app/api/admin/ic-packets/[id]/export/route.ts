@@ -2,17 +2,9 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { committeePacketInclude } from '@/lib/services/ic';
 import { withAdminApi } from '@/lib/security/with-admin-api';
+import { csvEscape } from '@/lib/security/csv';
 
 export const dynamic = 'force-dynamic';
-
-function csvEscape(value: string | number | null | undefined | Date) {
-  if (value === null || value === undefined) return '';
-  const str = value instanceof Date ? value.toISOString() : String(value);
-  if (/[",\r\n]/.test(str)) {
-    return `"${str.replace(/"/g, '""')}"`;
-  }
-  return str;
-}
 
 function escapeHtml(value: string) {
   return value

@@ -23,6 +23,15 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return NextResponse.json({ error: 'Patch payload is required.' }, { status: 400 });
   }
 
+  // Capture the prior privilege state BEFORE the update so a role escalation
+  // (e.g. ANALYST -> ADMIN) or reactivation (isActive false -> true) is
+  // attributable in the tamper-evident audit chain. Without a before-snapshot a
+  // SCIM-driven privilege change is unattributable.
+  const before = await prisma.user.findUnique({
+    where: { id },
+    select: { id: true, name: true, email: true, role: true, isActive: true }
+  });
+
   const user = await prisma.user.update({
     where: {
       id
@@ -51,6 +60,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     requestPath: new URL(request.url).pathname,
     requestMethod: request.method,
     ipAddress: getRequestIpAddress(request.headers),
+    before: before ? { role: before.role, isActive: before.isActive } : null,
+    after: { role: user.role, isActive: user.isActive },
     metadata: {
       role: user.role,
       isActive: user.isActive
