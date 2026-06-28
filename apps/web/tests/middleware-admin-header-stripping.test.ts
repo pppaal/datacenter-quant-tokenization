@@ -125,3 +125,41 @@ test('inbound x-admin-* for a field the session lacks is dropped, not passed thr
   assert.notEqual(forwardedHeader(response, 'x-admin-subject'), 'attacker-subject');
   assert.notEqual(forwardedHeader(response, 'x-admin-session-id'), 'attacker-session');
 });
+
+test('inbound x-admin-* is stripped on the PUBLIC passthrough branch too', async () => {
+  // A public API path (no admin cookie) must still not let a client forge an
+  // identity header into the handler. Previously these branches returned a bare
+  // NextResponse.next() and left the raw headers intact.
+  const request = new NextRequest('https://app.example.com/api/property-analyze', {
+    method: 'POST',
+    headers: new Headers({
+      'x-admin-role': 'ADMIN',
+      'x-admin-actor': 'attacker@evil.test',
+      'x-admin-user-id': 'attacker-user'
+    })
+  });
+
+  const response = await middleware(request);
+
+  // The passthrough ran (request-id is always stamped), so the absence checks
+  // below are meaningful rather than vacuous on an error response.
+  assert.ok(response.headers.get('X-Request-Id'), 'expected the passthrough to stamp a request id');
+  const names = overriddenNames(response);
+  assert.equal(
+    names.includes('x-admin-role'),
+    false,
+    'x-admin-role must be stripped on public paths'
+  );
+  assert.equal(
+    names.includes('x-admin-actor'),
+    false,
+    'x-admin-actor must be stripped on public paths'
+  );
+  assert.equal(
+    names.includes('x-admin-user-id'),
+    false,
+    'x-admin-user-id must be stripped on public paths'
+  );
+  assert.equal(forwardedHeader(response, 'x-admin-role'), null);
+  assert.equal(forwardedHeader(response, 'x-admin-actor'), null);
+});

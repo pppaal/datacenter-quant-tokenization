@@ -119,6 +119,33 @@ test('legacy ADMIN_SCOPE_ALLOW_UNGRANTED_MUTATIONS restores fail-open for un-gra
   );
 });
 
+test('real production hard-disables the fail-open hatch even when the flag is set', async () => {
+  // A leaked/copied prod env with the flag on must NOT re-open fail-open writes:
+  // ungrantedMutationsAllowed() self-guards via isRealProduction().
+  // NODE_ENV is typed readonly; assign through a widened view of process.env.
+  const procEnv = process.env as Record<string, string | undefined>;
+  const origNodeEnv = procEnv.NODE_ENV;
+  const origVercelEnv = procEnv.VERCEL_ENV;
+  procEnv.ADMIN_SCOPE_ALLOW_UNGRANTED_MUTATIONS = 'true';
+  procEnv.NODE_ENV = 'production';
+  procEnv.VERCEL_ENV = 'production'; // makes isRealProduction() true
+  __resetEnvCache();
+  try {
+    const db = fakeDb([]); // no grants
+    assert.equal(
+      await canActorAccessScope(ANALYST, AdminAccessScopeType.DEAL, 'deal-123', db, 'mutation'),
+      false,
+      'production must ignore the fail-open escape hatch'
+    );
+  } finally {
+    procEnv.NODE_ENV = origNodeEnv;
+    if (origVercelEnv === undefined) delete procEnv.VERCEL_ENV;
+    else procEnv.VERCEL_ENV = origVercelEnv;
+    delete procEnv.ADMIN_SCOPE_ALLOW_UNGRANTED_MUTATIONS;
+    __resetEnvCache();
+  }
+});
+
 test('no actor is always denied', async () => {
   const db = fakeDb([]);
   assert.equal(
