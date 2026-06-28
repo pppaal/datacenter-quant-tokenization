@@ -77,6 +77,11 @@ export async function replayOpsWorkItem(
     data: {
       status: OpsWorkStatus.QUEUED,
       scheduledFor: new Date(),
+      // Reset the retry budget: a DEAD_LETTER item has attemptCount ==
+      // maxAttempts, so without this the very next run computes
+      // attemptNumber = maxAttempts + 1 >= maxAttempts and immediately
+      // re-dead-letters after a single attempt, defeating the manual replay.
+      attemptCount: 0,
       lockedAt: null,
       startedAt: null,
       finishedAt: null,
@@ -161,16 +166,40 @@ export async function drainOpsWorkQueue(
       break;
     }
 
-    const runningItem = await db.opsWorkItem.update({
+    // Claim the item with a CONDITIONAL transition guarded on status: QUEUED.
+    // The select above is not a lock, so two concurrent drains (an overlapping
+    // cron tick, or the poll daemon racing a one-shot worker) can both read the
+    // same row; an unconditional update would let both run it and double-apply
+    // its side effects (OPS_CYCLE / SOURCE_REFRESH) and alerts. updateMany only
+    // flips the row if it is still QUEUED, so exactly one drain wins (count===1);
+    // the loser skips to the next queued item.
+    const claimedAt = new Date();
+    const claim = await db.opsWorkItem.updateMany({
       where: {
-        id: nextItem.id
+        id: nextItem.id,
+        status: OpsWorkStatus.QUEUED
       },
       data: {
         status: OpsWorkStatus.RUNNING,
-        lockedAt: new Date(),
-        startedAt: new Date()
+        lockedAt: claimedAt,
+        startedAt: claimedAt
       }
     });
+
+    if (claim.count !== 1) {
+      // Another drain claimed this row first — try the next queued item.
+      continue;
+    }
+
+    // The claim changed only status/lockedAt/startedAt; every other field
+    // (attemptCount, maxAttempts, kind, payload, ...) is unchanged from the row
+    // we just read, so reconstruct the running record without a re-fetch.
+    const runningItem = {
+      ...nextItem,
+      status: OpsWorkStatus.RUNNING,
+      lockedAt: claimedAt,
+      startedAt: claimedAt
+    };
 
     const attemptNumber = runningItem.attemptCount + 1;
     const attempt = await db.opsWorkAttempt.create({
