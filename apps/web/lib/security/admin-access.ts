@@ -1,6 +1,7 @@
 import { AdminAccessScopeType } from '@prisma/client';
 import type { AuthorizedAdminActor } from '@/lib/security/admin-auth';
 import { env } from '@/lib/env';
+import { isRealProduction } from '@/lib/runtime-env';
 
 type AccessGrantDb = {
   adminAccessGrant: {
@@ -72,8 +73,15 @@ export type ScopeAccessMode = 'read' | 'mutation';
  * migration aid ONLY — it lets an org that hasn't provisioned per-scope grants
  * yet keep working while they roll grants out. The DEFAULT (unset) is the
  * secure fail-CLOSED behavior. Production should leave this unset.
+ *
+ * SELF-ENFORCING: the hatch is hard-disabled under real production regardless of
+ * the env value, so a leaked/copied prod env can never re-open fail-open writes.
+ * This matches every other dangerous flag (BLOCKCHAIN_MOCK_MODE, local storage,
+ * KYC mock, seed guard) which all self-guard via `isRealProduction()`. The
+ * production preflight also forbids it as a second layer.
  */
 function ungrantedMutationsAllowed(): boolean {
+  if (isRealProduction()) return false;
   return env().ADMIN_SCOPE_ALLOW_UNGRANTED_MUTATIONS;
 }
 

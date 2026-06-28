@@ -106,6 +106,28 @@ function generateRequestId(): string {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
 }
 
+/**
+ * Build a passthrough that ALSO strips every inbound `x-admin-*` identity header
+ * from the request seen by the handler. Handlers trust `x-admin-*` as the
+ * authenticated actor identity (see the authenticated branch below), so a
+ * client-supplied `x-admin-role: ADMIN` must never survive — even on the public
+ * / public-admin / ops branches, which previously returned a bare
+ * `NextResponse.next()` and left the raw headers intact. These branches set no
+ * `x-admin-*` of their own, so the guarantee here is simply "none present".
+ */
+function strippedPassthrough(request: NextRequest, requestId: string): NextResponse {
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-request-id', requestId);
+  for (const name of [...requestHeaders.keys()]) {
+    if (name.toLowerCase().startsWith('x-admin-')) {
+      requestHeaders.delete(name);
+    }
+  }
+  const passthrough = NextResponse.next({ request: { headers: requestHeaders } });
+  passthrough.headers.set('X-Request-Id', requestId);
+  return passthrough;
+}
+
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const clientIp = resolveClientIp(request);
@@ -137,21 +159,15 @@ export async function middleware(request: NextRequest) {
   }
 
   if (isPublicApiPath(pathname)) {
-    const passthrough = NextResponse.next();
-    passthrough.headers.set('X-Request-Id', requestId);
-    return passthrough;
+    return strippedPassthrough(request, requestId);
   }
 
   if (isPublicAdminPath(pathname)) {
-    const passthrough = NextResponse.next();
-    passthrough.headers.set('X-Request-Id', requestId);
-    return passthrough;
+    return strippedPassthrough(request, requestId);
   }
 
   if (isAuthorizedOpsRequest(request)) {
-    const passthrough = NextResponse.next();
-    passthrough.headers.set('X-Request-Id', requestId);
-    return passthrough;
+    return strippedPassthrough(request, requestId);
   }
 
   const config = getAdminAuthConfig();

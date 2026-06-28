@@ -193,12 +193,25 @@ export function checkEdgeRateLimit(
   return null;
 }
 
-const ADMIN_API_RATE_WINDOW_MS = Number(process.env.ADMIN_API_RATE_WINDOW_MS ?? 60_000);
-const ADMIN_API_RATE_MAX = Number(process.env.ADMIN_API_RATE_MAX ?? 240);
-const OPS_API_RATE_WINDOW_MS = Number(process.env.OPS_API_RATE_WINDOW_MS ?? 60_000);
-const OPS_API_RATE_MAX = Number(process.env.OPS_API_RATE_MAX ?? 60);
-const PUBLIC_API_RATE_WINDOW_MS = Number(process.env.PUBLIC_API_RATE_WINDOW_MS ?? 60_000);
-const PUBLIC_API_RATE_MAX = Number(process.env.PUBLIC_API_RATE_MAX ?? 60);
+/**
+ * Parse a positive-number env override, falling back to `fallback` when the
+ * value is missing, non-numeric, non-finite, or <= 0. Without this guard a
+ * misconfigured value (e.g. `ADMIN_API_RATE_MAX="240 "` or `"60s"`) yields
+ * `NaN`, and every `count >= NaN` / `now >= now+NaN` comparison in
+ * `checkEdgeRateLimit` is false — i.e. the limiter silently FAILS OPEN. Mirrors
+ * the guard in `getTrustedProxyHopCount` and the `env.ts` optionalNumber transform.
+ */
+function rateNum(raw: string | undefined, fallback: number): number {
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? n : fallback;
+}
+
+const ADMIN_API_RATE_WINDOW_MS = rateNum(process.env.ADMIN_API_RATE_WINDOW_MS, 60_000);
+const ADMIN_API_RATE_MAX = rateNum(process.env.ADMIN_API_RATE_MAX, 240);
+const OPS_API_RATE_WINDOW_MS = rateNum(process.env.OPS_API_RATE_WINDOW_MS, 60_000);
+const OPS_API_RATE_MAX = rateNum(process.env.OPS_API_RATE_MAX, 60);
+const PUBLIC_API_RATE_WINDOW_MS = rateNum(process.env.PUBLIC_API_RATE_WINDOW_MS, 60_000);
+const PUBLIC_API_RATE_MAX = rateNum(process.env.PUBLIC_API_RATE_MAX, 60);
 
 export type EdgeRateDecision = {
   category: 'admin-api' | 'ops-api' | 'public-api' | null;

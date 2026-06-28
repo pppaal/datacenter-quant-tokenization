@@ -188,6 +188,12 @@ export function collectPreflightIssues(env: Env): Issue[] {
     issues,
     'E2E_PRODUCTION_BUILD=true disables production-only hard-blocks (mock blockchain writes, local document storage); it is an E2E-only escape hatch and must be off in production.'
   );
+  forbid(
+    env,
+    'ADMIN_SCOPE_ALLOW_UNGRANTED_MUTATIONS',
+    issues,
+    'ADMIN_SCOPE_ALLOW_UNGRANTED_MUTATIONS=true reverts row-level write authorization to fail-OPEN (un-granted non-ADMIN analysts may mutate any scope); it is a migration aid only and must be off in production. (The runtime also self-disables it under real production.)'
+  );
 
   // 7. IP / WAF posture
   recommend(

@@ -202,6 +202,10 @@ const analystAdminPaths = [
 export function getRequiredAdminRoleForPath(pathname: string): AdminAccessRole {
   if (pathname.startsWith('/admin/security')) return 'ADMIN';
   if (pathname.startsWith('/api/admin/identity-bindings')) return 'ADMIN';
+  // Privilege administration (create/revoke per-scope ADMIN grants) — gate at the
+  // middleware as ADMIN to match the handler-level `requiredRole: 'ADMIN'` and
+  // keep middleware.ts the single source of truth for the role gate.
+  if (pathname.startsWith('/api/admin/access-grants')) return 'ADMIN';
   if (pathname.startsWith('/api/admin/operators')) return 'ADMIN';
   if (pathname.startsWith('/api/admin/ops-alert-deliveries')) return 'ADMIN';
   if (pathname.startsWith('/api/admin/ops-work-items')) return 'ADMIN';

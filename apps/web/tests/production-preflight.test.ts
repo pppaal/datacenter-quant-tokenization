@@ -39,6 +39,24 @@ test('a fully-configured production env produces no errors', () => {
   assert.deepEqual(errorKeys(issues), [], 'expected no preflight errors for a valid prod env');
 });
 
+test('escape hatch: ADMIN_SCOPE_ALLOW_UNGRANTED_MUTATIONS=true is a hard error in production', () => {
+  const env = validProdEnv();
+  env.ADMIN_SCOPE_ALLOW_UNGRANTED_MUTATIONS = 'true';
+  const issues = collectPreflightIssues(env);
+  assert.ok(
+    errorKeys(issues).includes('ADMIN_SCOPE_ALLOW_UNGRANTED_MUTATIONS'),
+    'the fail-open write escape hatch must be forbidden in production'
+  );
+});
+
+test('escape hatch: ADMIN_SCOPE_ALLOW_UNGRANTED_MUTATIONS unset is fine', () => {
+  const issues = collectPreflightIssues(validProdEnv());
+  assert.ok(
+    !errorKeys(issues).includes('ADMIN_SCOPE_ALLOW_UNGRANTED_MUTATIONS'),
+    'unset escape hatch must not error'
+  );
+});
+
 test('crash reporting: errors when BOTH SENTRY_DSN and ERROR_REPORT_WEBHOOK_URL are unset', () => {
   const env = validProdEnv();
   delete env.SENTRY_DSN;
