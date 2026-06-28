@@ -82,13 +82,22 @@ export function computeEquityWaterfall(
   const exitTaxKrw = exitGainKrw * (prepared.taxProfile.exitTaxPct / 100);
   const prePromoteExitProceedsKrw =
     grossExitValueKrw - debtSchedule.endingDebtBalanceKrw - exitTaxKrw;
-  const promoteApplies =
-    prepared.spvProfile.promoteThresholdPct > 0 &&
-    prePromoteExitProceedsKrw >
-      prepared.capexBreakdown.totalCapexKrw * (1 + prepared.spvProfile.promoteThresholdPct / 100);
-  const promoteFeeKrw = promoteApplies
-    ? prePromoteExitProceedsKrw * (prepared.spvProfile.promoteSharePct / 100)
-    : 0;
+  // Promote/carry is charged on the EXCESS above the hurdle, never on gross
+  // proceeds. The hurdle = invested basis (totalCapex) grossed up by the promote
+  // threshold, so the base (a) excludes the LP's RETURNED CAPITAL — GP does not
+  // carry a slice of returned principal — and (b) is CONTINUOUS across the
+  // threshold: crossing the hurdle by 1 KRW no longer instantly carves ~15-20%
+  // off the entire equity exit (the prior gross-proceeds form was both
+  // non-monotonic and over-charged). This mirrors the tiered engines
+  // (waterfall-european / waterfall-engine), which take carry only on the
+  // residual above return-of-capital + pref.
+  const promoteHurdleKrw =
+    prepared.capexBreakdown.totalCapexKrw * (1 + prepared.spvProfile.promoteThresholdPct / 100);
+  const promoteBaseKrw =
+    prepared.spvProfile.promoteThresholdPct > 0
+      ? Math.max(prePromoteExitProceedsKrw - promoteHurdleKrw, 0)
+      : 0;
+  const promoteFeeKrw = promoteBaseKrw * (prepared.spvProfile.promoteSharePct / 100);
   const performanceFeeKrw =
     Math.max(prePromoteExitProceedsKrw, 0) * (prepared.spvProfile.performanceFeePct / 100);
   const withholdingKrw =
