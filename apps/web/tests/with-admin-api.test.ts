@@ -137,6 +137,77 @@ test('withAdminApi ADMIN gate returns 403 for VIEWER and ANALYST (operators/iden
   }
 });
 
+test('withAdminApi records a 4xx in-handler denial as FAILED, not SUCCESS', async () => {
+  // A handler that returns a 4xx WITHOUT throwing (e.g. 422 eligibility, 409
+  // duplicate) must be written to the tamper-evident audit chain as FAILED with
+  // the status code — not a clean SUCCESS.
+  const captured: Array<{ statusLabel?: string | null; metadata?: unknown }> = [];
+  const handler = withAdminApi({
+    requiredRole: 'ANALYST',
+    resolveActor: async () => actor('ANALYST'),
+    auditAction: 'commitment.create',
+    auditEntityType: 'Commitment',
+    recordAudit: async (input) => {
+      captured.push({ statusLabel: input.statusLabel, metadata: input.metadata });
+    },
+    async handler() {
+      return NextResponse.json({ error: 'ineligible' }, { status: 422 });
+    }
+  });
+
+  const response = await handler(jsonRequest({}));
+  assert.equal(response.status, 422);
+  assert.equal(captured.length, 1);
+  assert.equal(captured[0]!.statusLabel, 'FAILED', '4xx must be audited as FAILED');
+  assert.equal((captured[0]!.metadata as { statusCode?: number }).statusCode, 422);
+});
+
+test('withAdminApi records a 2xx response as SUCCESS', async () => {
+  const captured: Array<{ statusLabel?: string | null }> = [];
+  const handler = withAdminApi({
+    requiredRole: 'ANALYST',
+    resolveActor: async () => actor('ANALYST'),
+    auditAction: 'thing.do',
+    auditEntityType: 'Thing',
+    recordAudit: async (input) => {
+      captured.push({ statusLabel: input.statusLabel });
+    },
+    async handler() {
+      return NextResponse.json({ ok: true });
+    }
+  });
+
+  const response = await handler(jsonRequest({}));
+  assert.equal(response.status, 200);
+  assert.equal(captured[0]!.statusLabel, 'SUCCESS');
+});
+
+test('withAdminApi: a failing audit insert does NOT convert a committed 2xx into a 500', async () => {
+  // The handler's mutation has already committed by the time the audit write
+  // runs; a throwing recordAuditEvent must be swallowed (logged out-of-band),
+  // never turned into a 500 the client retries and double-applies.
+  let ran = false;
+  const handler = withAdminApi({
+    requiredRole: 'ANALYST',
+    resolveActor: async () => actor('ANALYST'),
+    auditAction: 'thing.do',
+    auditEntityType: 'Thing',
+    recordAudit: async () => {
+      throw new Error('transient audit DB failure');
+    },
+    async handler() {
+      ran = true;
+      return NextResponse.json({ ok: true }, { status: 200 });
+    }
+  });
+
+  const response = await handler(jsonRequest({}));
+  assert.equal(ran, true);
+  assert.equal(response.status, 200, 'audit-persist failure must not become a 500');
+  const payload = (await response.json()) as { ok?: boolean };
+  assert.equal(payload.ok, true, 'the original successful response body is preserved');
+});
+
 test('withAdminApi enforces auth before body validation (401 on missing actor + bad body)', async () => {
   const handler = withAdminApi({
     requiredRole: 'ANALYST',

@@ -26,7 +26,7 @@
 import { NextResponse } from 'next/server';
 import { z, type ZodTypeAny } from 'zod';
 import { prisma } from '@/lib/db/prisma';
-import { withRequestContext } from '@/lib/observability/logger';
+import { withRequestContext, reportError } from '@/lib/observability/logger';
 import { getRequestIpAddress, resolveVerifiedAdminActorFromHeaders } from './admin-request';
 import {
   hasRequiredAdminRole,
@@ -70,6 +70,13 @@ export type WithAdminApiOptions<
    * (insufficient role) branches without standing up a database.
    */
   resolveActor?: (request: Request) => Promise<AdminActor | null>;
+  /**
+   * Test-only seam: override the audit recorder. Defaults to the real
+   * `recordAuditEvent`. Production callers never set this; it lets unit tests
+   * assert the success/failure status labeling and the swallow-on-audit-error
+   * behavior without a database.
+   */
+  recordAudit?: (input: Parameters<typeof recordAuditEvent>[0]) => Promise<unknown>;
 };
 
 /**
@@ -101,6 +108,33 @@ function readRequestId(request: Request): string {
 // check below covers the actual shape — TParams is enforced on the option
 // callbacks that consume `params`.
 type AdminApiHandler = (request: Request, routeContext?: any) => Promise<Response>;
+
+/**
+ * Record an audit event WITHOUT letting a persistence failure escape. The
+ * handler's mutation commits independently and before the audit write, so a
+ * throwing `recordAuditEvent` (transient DB error, append-only trigger
+ * contention, hash-chain tip read failure) must never (a) turn a committed
+ * mutation's response into a 500 the client retries and double-applies, nor
+ * (b) write a misleading FAILED row for an operation that succeeded. The
+ * failure is reported out-of-band instead. Mirrors the KYC webhook's
+ * recordFailureAuditSafe.
+ */
+type AuditRecorder = (input: Parameters<typeof recordAuditEvent>[0]) => Promise<unknown>;
+
+async function recordAuditEventSafe(
+  record: AuditRecorder,
+  input: Parameters<typeof recordAuditEvent>[0]
+): Promise<void> {
+  try {
+    await record(input);
+  } catch (auditError) {
+    void reportError(auditError, {
+      scope: 'withAdminApi.audit',
+      action: input.action,
+      statusLabel: input.statusLabel ?? 'SUCCESS'
+    });
+  }
+}
 
 export function withAdminApi<
   TSchema extends ZodTypeAny | undefined = undefined,
@@ -172,7 +206,13 @@ export function withAdminApi<
         const before = isWrapped ? (handlerResult as { before?: unknown }).before : undefined;
         const after = isWrapped ? (handlerResult as { after?: unknown }).after : undefined;
         if (options.auditAction && options.auditEntityType) {
-          await recordAuditEvent({
+          // A handler may return a 4xx denial/rejection (e.g. 422 eligibility,
+          // 409 duplicate) WITHOUT throwing. Those are not successes — record
+          // them as FAILED with the status code so the tamper-evident audit
+          // chain stays accurate. before/after snapshots are only meaningful on
+          // an applied (2xx) mutation.
+          const isError = response.status >= 400;
+          await recordAuditEventSafe(options.recordAudit ?? recordAuditEvent, {
             actorIdentifier: actor.identifier,
             actorRole: actor.role,
             action: options.auditAction,
@@ -181,16 +221,21 @@ export function withAdminApi<
             requestPath: new URL(request.url).pathname,
             requestMethod: request.method,
             ipAddress,
-            metadata: { requestId },
-            before: (before ?? undefined) as Parameters<typeof recordAuditEvent>[0]['before'],
-            after: (after ?? undefined) as Parameters<typeof recordAuditEvent>[0]['after']
+            statusLabel: isError ? 'FAILED' : 'SUCCESS',
+            metadata: isError ? { requestId, statusCode: response.status } : { requestId },
+            before: (isError ? undefined : (before ?? undefined)) as Parameters<
+              typeof recordAuditEvent
+            >[0]['before'],
+            after: (isError ? undefined : (after ?? undefined)) as Parameters<
+              typeof recordAuditEvent
+            >[0]['after']
           });
         }
         response.headers.set('X-Request-Id', requestId);
         return response;
       } catch (error) {
         if (options.auditAction && options.auditEntityType) {
-          await recordAuditEvent({
+          await recordAuditEventSafe(options.recordAudit ?? recordAuditEvent, {
             actorIdentifier: actor.identifier,
             actorRole: actor.role,
             action: options.auditAction,
