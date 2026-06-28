@@ -127,27 +127,38 @@ export function aggregateCommercialRows(items: MolitCommercialRow[]): {
   return { transactionCount, volumeKrw, pricesPerSqm };
 }
 
-export async function fetchMolitCommercialMonth(
-  district: string,
-  yyyymm: string
-): Promise<MolitTransactionAggregate | null> {
-  const key = resolveKey();
-  if (!key) return null;
-  const lawd = LAWD_CODES[district];
-  if (!lawd) {
-    throw new Error(`No LAWD_CD for district "${district}". Add it to LAWD_CODES.`);
-  }
+// Pagination + timeout knobs. The MOLIT API caps a page at numOfRows; a busy
+// 구 (e.g. 강남구) routinely exceeds 1,000 commercial deals in a month, so a
+// single page silently truncated the roll-up — understating transactionCount /
+// transactionVolumeKrw and biasing medianPriceKrwPerSqm (which feed the
+// quarterly narrative). Drive pagination off the response totalCount, mirroring
+// the sibling RTMS connector. maxPages is a runaway guard far beyond reality.
+const MOLIT_NUM_OF_ROWS = 1000;
+const MOLIT_MAX_PAGES = 20;
+const MOLIT_TIMEOUT_MS = 15_000;
 
+async function fetchMolitPage(
+  district: string,
+  lawd: string,
+  yyyymm: string,
+  key: string,
+  pageNo: number
+): Promise<{ items: MolitCommercialRow[]; totalCount: number }> {
   const params = new URLSearchParams({
     serviceKey: key,
     LAWD_CD: lawd,
     DEAL_YMD: yyyymm,
-    numOfRows: '500',
-    pageNo: '1'
+    numOfRows: String(MOLIT_NUM_OF_ROWS),
+    pageNo: String(pageNo)
   });
   const url = `${COMMERCIAL_ENDPOINT}?${params.toString()}`;
 
-  const res = await fetch(url, { cache: 'no-store' });
+  // Bound each request so a slow/hung upstream can't stall the quarterly job;
+  // matches the http.ts per-attempt AbortSignal.timeout convention.
+  const res = await fetch(url, {
+    cache: 'no-store',
+    signal: AbortSignal.timeout(MOLIT_TIMEOUT_MS)
+  });
   if (!res.ok) {
     throw new Error(`MOLIT ${district} ${yyyymm} HTTP ${res.status}`);
   }
@@ -168,8 +179,38 @@ export async function fetchMolitCommercialMonth(
     : rawItems
       ? [rawItems]
       : [];
+  const parsedTotal = Number(String(parsed.response?.body?.totalCount ?? '').trim());
+  const totalCount = Number.isFinite(parsedTotal) ? parsedTotal : 0;
+  return { items, totalCount };
+}
 
-  const { transactionCount, volumeKrw, pricesPerSqm } = aggregateCommercialRows(items);
+export async function fetchMolitCommercialMonth(
+  district: string,
+  yyyymm: string
+): Promise<MolitTransactionAggregate | null> {
+  const key = resolveKey();
+  if (!key) return null;
+  const lawd = LAWD_CODES[district];
+  if (!lawd) {
+    throw new Error(`No LAWD_CD for district "${district}". Add it to LAWD_CODES.`);
+  }
+
+  const allItems: MolitCommercialRow[] = [];
+  let totalCount = Number.POSITIVE_INFINITY;
+  for (
+    let pageNo = 1;
+    pageNo <= MOLIT_MAX_PAGES && (pageNo - 1) * MOLIT_NUM_OF_ROWS < totalCount;
+    pageNo += 1
+  ) {
+    const page = await fetchMolitPage(district, lawd, yyyymm, key, pageNo);
+    if (totalCount === Number.POSITIVE_INFINITY) totalCount = page.totalCount;
+    allItems.push(...page.items);
+    // Defensive: stop if the upstream returns an empty page before totalCount is
+    // reached (avoids spinning to maxPages on a flaky/over-stated totalCount).
+    if (page.items.length === 0) break;
+  }
+
+  const { transactionCount, volumeKrw, pricesPerSqm } = aggregateCommercialRows(allItems);
 
   return {
     submarket: district,

@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { aggregateCommercialRows } from '@/lib/services/quarterly-report/connectors/molit-transactions';
+import {
+  aggregateCommercialRows,
+  fetchMolitCommercialMonth
+} from '@/lib/services/quarterly-report/connectors/molit-transactions';
+import { __resetEnvCache } from '@/lib/env';
 
 /**
  * aggregateCommercialRows is the pure row-level math behind the MOLIT 실거래가
@@ -73,4 +77,39 @@ test('empty input yields zero count and no prices', () => {
   assert.equal(result.transactionCount, 0);
   assert.equal(result.volumeKrw, 0);
   assert.deepEqual(result.pricesPerSqm, []);
+});
+
+test('fetchMolitCommercialMonth paginates past the first page (no silent truncation)', async () => {
+  // A month with 1,500 deals must be fetched across two pages (numOfRows=1000),
+  // not truncated at page 1. Drive the loop off the upstream totalCount.
+  const TOTAL = 1500;
+  const PAGE_SIZE = 1000;
+  const itemXml = '<item><거래금액>500,000</거래금액><건물면적>100</건물면적></item>';
+  const pageUrls: string[] = [];
+
+  const originalFetch = globalThis.fetch;
+  process.env.MOLIT_API_KEY = 'test-molit-key';
+  __resetEnvCache();
+  globalThis.fetch = (async (input: string | URL | Request) => {
+    const url = String(input);
+    pageUrls.push(url);
+    const pageNo = Number(new URL(url).searchParams.get('pageNo'));
+    const rows = pageNo === 1 ? PAGE_SIZE : TOTAL - PAGE_SIZE; // 1000 then 500
+    const body = `<response><header><resultCode>000</resultCode></header><body><totalCount>${TOTAL}</totalCount><items>${itemXml.repeat(rows)}</items></body></response>`;
+    return new Response(body, { status: 200 });
+  }) as typeof fetch;
+
+  try {
+    const result = await fetchMolitCommercialMonth('강남구', '202601');
+    assert.ok(result, 'expected an aggregate');
+    // All 1,500 rows aggregated (each row has a valid 거래금액), proving both
+    // pages were fetched and merged.
+    assert.equal(result!.transactionCount, TOTAL);
+    assert.equal(pageUrls.length, 2, 'expected exactly two page fetches');
+    assert.equal(Number(new URL(pageUrls[1]!).searchParams.get('pageNo')), 2);
+  } finally {
+    globalThis.fetch = originalFetch;
+    delete process.env.MOLIT_API_KEY;
+    __resetEnvCache();
+  }
 });
