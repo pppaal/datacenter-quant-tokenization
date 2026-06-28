@@ -123,6 +123,41 @@ test('buildNavAttestation rejects a negative valuation instead of signing a garb
   );
 });
 
+test('buildNavAttestation refuses a zero NAV the on-chain NavAttestor would reject', () => {
+  // navPerShare === 0 reverts with InvalidNav() on-chain; signing it would
+  // broadcast a guaranteed-revert tx (and mint a fake "success" mock txHash).
+  assert.throws(
+    () =>
+      buildNavAttestation({
+        valuationRun: {
+          id: 'r0',
+          navValueKrw: 0,
+          totalSharesScaled: ONE_TO_ONE_SUPPLY,
+          createdAt: new Date(0)
+        },
+        asset: { assetCode: 'A' }
+      }),
+    /navPerShare resolved to 0/
+  );
+});
+
+test('buildNavAttestation refuses a dust NAV that floors to zero per share', () => {
+  // navValueKrw too small for the supply → navPerShare floors to 0.
+  assert.throws(
+    () =>
+      buildNavAttestation({
+        valuationRun: {
+          id: 'rdust',
+          navValueKrw: 1,
+          totalSharesScaled: 10n ** 40n, // astronomically large supply
+          createdAt: new Date(0)
+        },
+        asset: { assetCode: 'A' }
+      }),
+    /navPerShare resolved to 0/
+  );
+});
+
 test('buildNavAttestation rejects non-finite valuation', () => {
   for (const bad of [NaN, Infinity, -Infinity]) {
     assert.throws(
