@@ -13,7 +13,7 @@
  * detail is a later layer; this is the always-available comparative core.
  */
 import { round, toNumberOrNull } from '@/lib/math';
-import type { XlsxWorkbookSpec } from '@/lib/services/exports/xlsx';
+import type { XlsxSheet, XlsxWorkbookSpec } from '@/lib/services/exports/xlsx';
 
 /** One period's stored figures, already coerced to numbers (KRW). */
 export type StatementPeriodInput = {
@@ -317,6 +317,8 @@ export function buildStatementView(periods: StatementPeriodInput[]): StatementVi
 
 /** A structural subset of the Prisma FinancialStatement payload (Decimal-bearing). */
 type AssetStatementLike = {
+  counterpartyId?: string | null;
+  counterparty?: { name: string | null } | null;
   fiscalYear: number | null;
   fiscalPeriod: string | null;
   revenueKrw: unknown;
@@ -404,4 +406,64 @@ export function statementViewToXlsxSpec(view: StatementView, title: string): Xls
       };
     })
   };
+}
+
+/** Coerce a sheet name to Excel's rules: <=31 chars, none of : \ / ? * [ ], unique. */
+function uniqueSheetName(name: string, used: Set<string>): string {
+  const clean = (s: string) =>
+    s
+      .replace(/[:\\/?*[\]]/g, ' ')
+      .trim()
+      .slice(0, 31) || 'Sheet';
+  let candidate = clean(name);
+  let n = 2;
+  while (used.has(candidate)) {
+    const suffix = ` (${n})`;
+    candidate = clean(name.slice(0, 31 - suffix.length)) + suffix;
+    n += 1;
+  }
+  used.add(candidate);
+  return candidate;
+}
+
+/**
+ * Build a comparative-statement workbook from an asset's stored statements,
+ * grouped BY COUNTERPARTY. Each entity gets its own sheet-set built from a single
+ * buildStatementView over that entity's strictly newest-first period series.
+ *
+ * Feeding multiple counterparties into ONE view is wrong: the YoY/CAGR math reads
+ * adjacent columns as consecutive periods of the same entity, and labels (built
+ * from fiscalYear+period only) collide across tenants. When more than one
+ * counterparty is present, sheet names are prefixed with the counterparty name to
+ * disambiguate; a single-entity export is unchanged.
+ */
+export function assetStatementsToWorkbookSpec(
+  statements: AssetStatementLike[],
+  title: string
+): XlsxWorkbookSpec {
+  const groups = new Map<string, AssetStatementLike[]>();
+  for (const s of statements) {
+    const key = s.counterpartyId ?? '__unassigned__';
+    const list = groups.get(key);
+    if (list) list.push(s);
+    else groups.set(key, [s]);
+  }
+
+  const multi = groups.size > 1;
+  const ordered = [...groups.values()].sort((a, b) =>
+    (a[0]?.counterparty?.name ?? '').localeCompare(b[0]?.counterparty?.name ?? '')
+  );
+
+  const sheets: XlsxSheet[] = [];
+  const used = new Set<string>();
+  for (const group of ordered) {
+    const spec = statementViewToXlsxSpec(buildStatementView(fromAssetStatements(group)), title);
+    const cpName = group[0]?.counterparty?.name ?? '';
+    for (const sheet of spec.sheets) {
+      const base = multi && cpName ? `${cpName}·${sheet.name}` : sheet.name;
+      sheets.push({ ...sheet, name: uniqueSheetName(base, used) });
+    }
+  }
+
+  return { title, sheets };
 }
