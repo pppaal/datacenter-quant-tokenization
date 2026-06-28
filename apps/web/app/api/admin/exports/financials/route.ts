@@ -9,11 +9,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withAdminApi } from '@/lib/security/with-admin-api';
 import { getAssetFinancialStatements } from '@/lib/services/financial-statements';
-import {
-  buildStatementView,
-  fromAssetStatements,
-  statementViewToXlsxSpec
-} from '@/lib/services/financials/statement-view';
+import { assetStatementsToWorkbookSpec } from '@/lib/services/financials/statement-view';
 import { buildXlsx, xlsxFilename } from '@/lib/services/exports/xlsx';
 
 export const dynamic = 'force-dynamic';
@@ -40,9 +36,17 @@ export const POST = withAdminApi({
         { status: 404 }
       );
     }
-    const view = buildStatementView(fromAssetStatements(rows));
-    const title = body.title ?? `재무제표 — ${rows[0]?.counterparty?.name ?? body.assetId}`;
-    const buffer = await buildXlsx(statementViewToXlsxSpec(view, title));
+    // Title: a single-counterparty export names the entity; a multi-entity
+    // export (no counterpartyId filter) names the asset, since the workbook now
+    // carries one grouped sheet-set per counterparty rather than one mislabeled
+    // blended view.
+    const distinctCounterparties = new Set(rows.map((s) => s.counterpartyId ?? '__unassigned__'));
+    const title =
+      body.title ??
+      (distinctCounterparties.size === 1
+        ? `재무제표 — ${rows[0]?.counterparty?.name ?? body.assetId}`
+        : `재무제표 — ${body.assetId}`);
+    const buffer = await buildXlsx(assetStatementsToWorkbookSpec(rows, title));
     return new Response(new Uint8Array(buffer), {
       status: 200,
       headers: {
