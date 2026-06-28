@@ -490,14 +490,23 @@ function buildRiskMemoSections(bundle: DealReportBundle): ReportSection[] {
         {
           label: 'Confidence',
           value: latestRun ? `${formatNumber(latestRun.confidenceScore, 1)} / 10` : 'N/A',
-          tone: (latestRun?.confidenceScore ?? 0) < 5.5 ? 'danger' : 'warn'
+          // Absent run = unknown, not critical. Don't paint a red danger flag on
+          // missing data (the `?? 0` form made "no valuation" read as a 0 score).
+          tone: latestRun == null ? 'neutral' : latestRun.confidenceScore < 5.5 ? 'danger' : 'warn'
         },
         {
           label: 'Base DSCR',
           value: latestRun?.baseScenario?.debtServiceCoverage
             ? `${formatNumber(latestRun.baseScenario.debtServiceCoverage, 2)}x`
             : 'N/A',
-          tone: (latestRun?.baseScenario?.debtServiceCoverage ?? 0) < 1.15 ? 'danger' : 'neutral'
+          // Missing DSCR = unknown, not a breach. Only flag danger when the metric
+          // is actually present and below the covenant floor.
+          tone:
+            latestRun?.baseScenario?.debtServiceCoverage == null
+              ? 'neutral'
+              : latestRun.baseScenario.debtServiceCoverage < 1.15
+                ? 'danger'
+                : 'neutral'
         },
         {
           label: `${playbook.checklistLabels.legal} Coverage`,
