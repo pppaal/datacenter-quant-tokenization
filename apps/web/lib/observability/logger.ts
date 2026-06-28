@@ -58,17 +58,42 @@ function resolveMinLevel(): number {
 }
 
 function safeStringify(value: unknown): string {
-  return JSON.stringify(value, (_key, val) => {
-    if (typeof val === 'bigint') return val.toString();
-    if (val instanceof Error) {
-      return {
-        name: val.name,
-        message: val.message,
-        stack: val.stack
-      };
-    }
-    return val;
-  });
+  // An observability helper must NEVER throw — a logged value with a circular
+  // reference (a Prisma entity with back-refs, an undici fetch error whose
+  // request<->response reference each other, a request-context object) would
+  // otherwise make JSON.stringify throw "Converting circular structure to JSON"
+  // and propagate synchronously into every logger.* caller. Track seen objects
+  // and emit '[Circular]' for repeats; wrap the whole thing so a pathological
+  // value degrades to a minimal fallback line instead of crashing the caller.
+  const seen = new WeakSet<object>();
+  try {
+    return JSON.stringify(value, (_key, val) => {
+      if (typeof val === 'bigint') return val.toString();
+      if (val instanceof Error) {
+        return {
+          name: val.name,
+          message: val.message,
+          stack: val.stack
+        };
+      }
+      if (typeof val === 'object' && val !== null) {
+        if (seen.has(val)) return '[Circular]';
+        seen.add(val);
+      }
+      return val;
+    });
+  } catch (error) {
+    const msg =
+      value && typeof value === 'object' && 'msg' in value
+        ? (value as { msg?: unknown }).msg
+        : undefined;
+    return JSON.stringify({
+      level: 'error',
+      timestamp: new Date().toISOString(),
+      msg: typeof msg === 'string' ? msg : 'log_serialize_failed',
+      _serializeError: error instanceof Error ? error.message : 'unknown'
+    });
+  }
 }
 
 function emit(level: LogLevel, msg: string, fields?: Record<string, unknown>): void {
@@ -105,6 +130,9 @@ export const logger = {
     emit('error', msg, fields);
   }
 };
+
+/** Deadline for the error-report webhook POST so it can never hang a caller. */
+const REPORT_WEBHOOK_TIMEOUT_MS = 5_000;
 
 /**
  * Forwards an error to the configured error backend(s):
@@ -155,7 +183,12 @@ export async function reportError(
             ? { name: error.name, message: error.message, stack: error.stack }
             : { message: String(error) },
         context: context ?? {}
-      })
+      }),
+      // Bound the POST so a slow/hung error-report endpoint can't hold the
+      // connection open or block an awaiting caller (e.g. the audit-prune cron
+      // route awaits reportError). The catch below swallows the AbortError. This
+      // mirrors the http.ts per-attempt AbortSignal.timeout convention.
+      signal: AbortSignal.timeout(REPORT_WEBHOOK_TIMEOUT_MS)
     });
   } catch {
     // Swallow: error reporting itself must never throw.
