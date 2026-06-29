@@ -41,12 +41,16 @@ function buildPacket(overrides: Record<string, unknown> = {}) {
 function buildDecideDb(packet: ReturnType<typeof buildPacket>) {
   const decisionCreates: any[] = [];
   const packetUpdates: any[] = [];
+  let state = { ...packet };
   const txModels = {
     investmentCommitteePacket: {
-      update: async ({ data }: any) => {
+      updateMany: async ({ where, data }: any) => {
+        if (where.status && where.status !== state.status) return { count: 0 };
+        state = { ...state, ...data };
         packetUpdates.push(data);
-        return { ...packet, ...data };
-      }
+        return { count: 1 };
+      },
+      findUniqueOrThrow: async () => state
     },
     investmentCommitteeDecision: {
       create: async ({ data }: any) => {
@@ -57,8 +61,7 @@ function buildDecideDb(packet: ReturnType<typeof buildPacket>) {
   };
   const db = {
     investmentCommitteePacket: {
-      findUnique: async () => packet,
-      update: txModels.investmentCommitteePacket.update
+      findUnique: async () => packet
     },
     investmentCommitteeDecision: {
       create: txModels.investmentCommitteeDecision.create
@@ -70,13 +73,17 @@ function buildDecideDb(packet: ReturnType<typeof buildPacket>) {
 
 function buildReleaseDb(packet: ReturnType<typeof buildPacket>) {
   const packetUpdates: any[] = [];
+  let state = { ...packet };
   const db = {
     investmentCommitteePacket: {
-      findUnique: async () => packet,
-      update: async ({ data }: any) => {
+      findUnique: async () => state,
+      updateMany: async ({ where, data }: any) => {
+        if (where.status && where.status !== state.status) return { count: 0 };
+        state = { ...state, ...data };
         packetUpdates.push(data);
-        return { ...packet, ...data };
-      }
+        return { count: 1 };
+      },
+      findUniqueOrThrow: async () => state
     }
   } as any;
   return { db, packetUpdates };

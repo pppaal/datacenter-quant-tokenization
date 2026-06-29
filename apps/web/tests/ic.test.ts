@@ -9,7 +9,8 @@ import { buildCommitteeActionItems, buildCommitteeDashboard } from '@/lib/servic
 import {
   buildCommitteePacketLockReadiness,
   decideCommitteePacket,
-  releaseCommitteePacket
+  releaseCommitteePacket,
+  CommitteePacketConflictError
 } from '@/lib/services/ic';
 
 test('committee dashboard surfaces locked, conditional, and candidate packet actions', () => {
@@ -328,13 +329,18 @@ test('committee decision transitions locked packets and release only allows deci
 
   const decisionCreates: any[] = [];
   const packetUpdates: any[] = [];
+  let decideState = { ...packet };
 
   const txModels = {
     investmentCommitteePacket: {
-      update: async ({ data }: any) => {
+      // CAS: only matches while the packet is still in the expected status.
+      updateMany: async ({ where, data }: any) => {
+        if (where.status && where.status !== decideState.status) return { count: 0 };
+        decideState = { ...decideState, ...data };
         packetUpdates.push(data);
-        return { ...packet, ...data };
-      }
+        return { count: 1 };
+      },
+      findUniqueOrThrow: async () => decideState
     },
     investmentCommitteeDecision: {
       create: async ({ data }: any) => {
@@ -346,8 +352,7 @@ test('committee decision transitions locked packets and release only allows deci
 
   const db = {
     investmentCommitteePacket: {
-      findUnique: async () => packet,
-      update: txModels.investmentCommitteePacket.update
+      findUnique: async () => packet
     },
     investmentCommitteeDecision: {
       create: txModels.investmentCommitteeDecision.create
@@ -370,13 +375,67 @@ test('committee decision transitions locked packets and release only allows deci
   assert.equal(decisionCreates[0].outcome, CommitteeDecisionOutcome.APPROVED);
   assert.equal(decided.status, CommitteePacketStatus.APPROVED);
 
+  let releaseState = { ...packet, status: CommitteePacketStatus.APPROVED };
   const released = await releaseCommitteePacket(packet.id, 'IC Chair', {
     investmentCommitteePacket: {
-      findUnique: async () => ({ ...packet, status: CommitteePacketStatus.APPROVED }),
-      update: async ({ data }: any) => ({ ...packet, ...data })
+      findUnique: async () => releaseState,
+      updateMany: async ({ where, data }: any) => {
+        if (where.status && where.status !== releaseState.status) return { count: 0 };
+        releaseState = { ...releaseState, ...data };
+        return { count: 1 };
+      },
+      findUniqueOrThrow: async () => releaseState
     }
   } as any);
 
   assert.equal(released.status, CommitteePacketStatus.RELEASED);
   assert.ok(released.releasedAt instanceof Date);
+});
+
+test('decideCommitteePacket fails with a conflict when a concurrent transition wins the CAS', async () => {
+  // The packet reads as LOCKED (passes the pre-check), but the guarded
+  // updateMany matches 0 rows — a concurrent operator already moved it. The
+  // transaction (including the just-created decision row) must roll back and the
+  // caller must see a conflict, not a silent duplicate decision.
+  const packet = {
+    id: 'packet-race',
+    status: CommitteePacketStatus.LOCKED,
+    preparedByLabel: 'Alice (ADMIN)',
+    decisionSummary: null,
+    followUpSummary: null,
+    decisions: []
+  };
+  let decisionCreated = false;
+  const txModels = {
+    investmentCommitteePacket: {
+      updateMany: async () => ({ count: 0 }), // lost the race
+      findUniqueOrThrow: async () => packet
+    },
+    investmentCommitteeDecision: {
+      create: async () => {
+        decisionCreated = true;
+        return {};
+      }
+    }
+  };
+  const db = {
+    investmentCommitteePacket: { findUnique: async () => packet },
+    investmentCommitteeDecision: { create: txModels.investmentCommitteeDecision.create },
+    $transaction: async (fn: any) => fn(txModels)
+  } as any;
+
+  await assert.rejects(
+    () =>
+      decideCommitteePacket(
+        packet.id,
+        { outcome: CommitteeDecisionOutcome.APPROVED, notes: null, followUpActions: null },
+        'Bob (ADMIN)',
+        db
+      ),
+    CommitteePacketConflictError
+  );
+  // The decision create ran inside the tx but the conflict throw rolls the whole
+  // tx back, so no duplicate decision is persisted (here: create was attempted,
+  // but a real DB rolls it back; the CAS guarantees only one tx commits).
+  assert.equal(decisionCreated, true, 'decision create runs then rolls back on conflict');
 });
