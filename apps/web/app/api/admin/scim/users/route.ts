@@ -4,7 +4,8 @@ import { prisma } from '@/lib/db/prisma';
 import {
   authorizeAdminScimRequest,
   listProvisionedAdminUsers,
-  upsertProvisionedAdminUser
+  upsertProvisionedAdminUser,
+  ScimValidationError
 } from '@/lib/security/admin-scim';
 import { getRequestIpAddress } from '@/lib/security/admin-request';
 import { recordAuditEvent } from '@/lib/services/audit';
@@ -49,18 +50,26 @@ export async function POST(request: Request) {
     );
   }
 
-  const user = await upsertProvisionedAdminUser(
-    {
-      provider: payload.provider?.trim() || undefined,
-      externalId: payload.externalId.trim(),
-      email: payload.email.trim(),
-      name: payload.name.trim(),
-      role: payload.role,
-      isActive: typeof payload.isActive === 'boolean' ? payload.isActive : undefined,
-      grants: payload.grants?.filter((grant) => grant.scopeId?.trim())
-    },
-    prisma
-  );
+  let user;
+  try {
+    user = await upsertProvisionedAdminUser(
+      {
+        provider: payload.provider?.trim() || undefined,
+        externalId: payload.externalId.trim(),
+        email: payload.email.trim(),
+        name: payload.name.trim(),
+        role: payload.role,
+        isActive: typeof payload.isActive === 'boolean' ? payload.isActive : undefined,
+        grants: payload.grants?.filter((grant) => grant.scopeId?.trim())
+      },
+      prisma
+    );
+  } catch (error) {
+    if (error instanceof ScimValidationError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+    throw error;
+  }
 
   await recordAuditEvent({
     actorIdentifier: `scim:${payload.provider?.trim() || 'provider'}`,
