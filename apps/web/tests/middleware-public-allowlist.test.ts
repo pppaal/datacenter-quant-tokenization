@@ -25,7 +25,9 @@ const PUBLIC_API_PATHS = [
   '/api/property-analyze',
   '/api/kyc/webhook/sumsub',
   '/api/public/im-deck',
-  '/api/public/asset-media/abc'
+  '/api/public/asset-media/abc',
+  // Holder self-claim Merkle proof (GET-only, public by design).
+  '/api/tokenization/distributions/dist_1/proofs/0xabc'
 ];
 
 // Sensitive routes that MUST stay behind the auth gate. Each is a plausible
@@ -42,6 +44,10 @@ const MUST_NOT_BE_PUBLIC = [
   // onchain / tokenization — irreversible writes, never public
   '/api/onchain/mint',
   '/api/tokenization/issue',
+  // only the exact `.../proofs/<holder>` GET is public — siblings stay gated
+  '/api/tokenization/distributions/dist_1',
+  '/api/tokenization/distributions/dist_1/proofs', // bare, no holder
+  '/api/tokenization/distributions', // collection root
   // ops cron surface — gated by OPS_CRON_TOKEN, never cookie-public
   '/api/ops/run',
   // KYC non-webhook surface — only the webhook prefix is public

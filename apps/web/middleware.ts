@@ -23,9 +23,17 @@ export function isPublicApiPath(pathname: string) {
     // Provider KYC webhooks carry no admin cookie; the route handler verifies a
     // per-provider HMAC signature and audits failures itself.
     pathname.startsWith('/api/kyc/webhook/') ||
+    // Holder self-claim Merkle proof: a GET-only, intentionally public endpoint
+    // (the proof is useless without the holder's wallet signature, and the
+    // on-chain claim authenticates msg.sender natively). All OTHER /api/tokenization
+    // paths stay ADMIN-gated. The route exports only GET, so non-GET 404s anyway.
+    DISTRIBUTION_PROOF_PATH.test(pathname) ||
     pathname.startsWith('/api/public/')
   );
 }
+
+/** `/api/tokenization/distributions/<id>/proofs/<holder>` — the public proof GET. */
+const DISTRIBUTION_PROOF_PATH = /^\/api\/tokenization\/distributions\/[^/]+\/proofs\/[^/]+$/;
 
 export function isPublicAdminPath(pathname: string) {
   return pathname === '/admin/login';

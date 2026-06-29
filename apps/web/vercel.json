@@ -12,7 +12,7 @@
   },
   "crons": [
     {
-      "path": "/api/ops/cycle/trigger",
+      "path": "/api/ops/cycle",
       "schedule": "*/15 * * * *"
     },
     {
