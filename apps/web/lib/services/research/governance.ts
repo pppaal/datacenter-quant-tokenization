@@ -74,92 +74,102 @@ export async function approveResearchHouseViewSnapshot(
     throw new Error('Snapshot is already approved. Create a new draft to supersede.');
   }
 
-  const previousApproved = await db.researchSnapshot.findFirst({
-    where: {
-      id: {
-        not: snapshot.id
-      },
-      assetId: snapshot.assetId ?? null,
-      marketUniverseId: snapshot.marketUniverseId ?? null,
-      submarketId: snapshot.submarketId ?? null,
-      snapshotType: snapshot.snapshotType,
-      viewType: 'HOUSE',
-      approvalStatus: 'APPROVED'
-    },
-    orderBy: [
-      {
-        approvedAt: 'desc'
-      },
-      {
-        createdAt: 'desc'
-      }
-    ],
-    select: {
-      id: true
-    }
-  });
-
-  const approvedSnapshot = await db.$transaction(async (tx) => {
-    if (previousApproved) {
-      await tx.researchSnapshot.update({
-        where: { id: previousApproved.id },
-        data: {
-          approvalStatus: 'SUPERSEDED'
+  const approvedSnapshot = await db.$transaction(
+    async (tx) => {
+      // Read the current APPROVED row INSIDE the Serializable transaction. Done
+      // outside (the prior behavior), two concurrent approvals of different DRAFT
+      // snapshots in the same (asset, universe, submarket, type) scope could both
+      // observe no/the-same prior APPROVED and each create a second active HOUSE
+      // view — breaking the single-active-house-view invariant. Under Serializable
+      // the losing transaction aborts with a serialization failure (P2034) instead
+      // of silently duplicating.
+      const previousApproved = await tx.researchSnapshot.findFirst({
+        where: {
+          id: {
+            not: snapshot.id
+          },
+          assetId: snapshot.assetId ?? null,
+          marketUniverseId: snapshot.marketUniverseId ?? null,
+          submarketId: snapshot.submarketId ?? null,
+          snapshotType: snapshot.snapshotType,
+          viewType: 'HOUSE',
+          approvalStatus: 'APPROVED'
+        },
+        orderBy: [
+          {
+            approvedAt: 'desc'
+          },
+          {
+            createdAt: 'desc'
+          }
+        ],
+        select: {
+          id: true
         }
       });
-    }
 
-    const approvedAt = new Date();
-    const lineagePayload =
-      snapshot.provenance && typeof snapshot.provenance === 'object'
-        ? {
-            ...(snapshot.provenance as Record<string, unknown>),
-            approvedByIdentifier: approver.identifier,
-            approvedAt: approvedAt.toISOString(),
-            approvedFromSnapshotId: snapshot.id,
-            supersedesSnapshotId: previousApproved?.id ?? null
+      if (previousApproved) {
+        await tx.researchSnapshot.update({
+          where: { id: previousApproved.id },
+          data: {
+            approvalStatus: 'SUPERSEDED'
           }
-        : {
-            approvedByIdentifier: approver.identifier,
-            approvedAt: approvedAt.toISOString(),
-            approvedFromSnapshotId: snapshot.id,
-            supersedesSnapshotId: previousApproved?.id ?? null
-          };
-
-    const approvedSnapshot = await tx.researchSnapshot.create({
-      data: {
-        snapshotKey: `${snapshot.snapshotKey}:approved:${approvedAt.getTime()}`,
-        assetId: snapshot.assetId,
-        marketUniverseId: snapshot.marketUniverseId,
-        submarketId: snapshot.submarketId,
-        snapshotType: snapshot.snapshotType,
-        viewType: 'HOUSE',
-        approvalStatus: 'APPROVED',
-        title: snapshot.title,
-        summary: snapshot.summary,
-        snapshotDate: snapshot.snapshotDate,
-        sourceSystem: snapshot.sourceSystem,
-        freshnessStatus: snapshot.freshnessStatus,
-        freshnessLabel: snapshot.freshnessLabel,
-        approvedAt,
-        approvedById: approver.userId,
-        supersedesSnapshotId: previousApproved?.id ?? null,
-        metrics: snapshot.metrics as never,
-        provenance: lineagePayload as never
+        });
       }
-    });
 
-    await tx.researchSnapshot.update({
-      where: { id: snapshot.id },
-      data: {
-        approvalStatus: 'DRAFT',
-        approvedAt: null,
-        approvedById: null
-      }
-    });
+      const approvedAt = new Date();
+      const lineagePayload =
+        snapshot.provenance && typeof snapshot.provenance === 'object'
+          ? {
+              ...(snapshot.provenance as Record<string, unknown>),
+              approvedByIdentifier: approver.identifier,
+              approvedAt: approvedAt.toISOString(),
+              approvedFromSnapshotId: snapshot.id,
+              supersedesSnapshotId: previousApproved?.id ?? null
+            }
+          : {
+              approvedByIdentifier: approver.identifier,
+              approvedAt: approvedAt.toISOString(),
+              approvedFromSnapshotId: snapshot.id,
+              supersedesSnapshotId: previousApproved?.id ?? null
+            };
 
-    return approvedSnapshot;
-  });
+      const approvedSnapshot = await tx.researchSnapshot.create({
+        data: {
+          snapshotKey: `${snapshot.snapshotKey}:approved:${approvedAt.getTime()}`,
+          assetId: snapshot.assetId,
+          marketUniverseId: snapshot.marketUniverseId,
+          submarketId: snapshot.submarketId,
+          snapshotType: snapshot.snapshotType,
+          viewType: 'HOUSE',
+          approvalStatus: 'APPROVED',
+          title: snapshot.title,
+          summary: snapshot.summary,
+          snapshotDate: snapshot.snapshotDate,
+          sourceSystem: snapshot.sourceSystem,
+          freshnessStatus: snapshot.freshnessStatus,
+          freshnessLabel: snapshot.freshnessLabel,
+          approvedAt,
+          approvedById: approver.userId,
+          supersedesSnapshotId: previousApproved?.id ?? null,
+          metrics: snapshot.metrics as never,
+          provenance: lineagePayload as never
+        }
+      });
+
+      await tx.researchSnapshot.update({
+        where: { id: snapshot.id },
+        data: {
+          approvalStatus: 'DRAFT',
+          approvedAt: null,
+          approvedById: null
+        }
+      });
+
+      return approvedSnapshot;
+    },
+    { isolationLevel: 'Serializable' }
+  );
 
   try {
     await createNotification({
