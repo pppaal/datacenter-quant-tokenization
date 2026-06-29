@@ -34,6 +34,7 @@
     "audit:prune:dry": "tsx scripts/run-audit-log-pruner.ts --dry-run",
     "ingest:korea": "tsx scripts/run-korea-ingest.ts",
     "data:smoke": "tsx scripts/data-smoke.ts",
+    "ai:eval": "npx -y promptfoo@latest eval -c ai-evals/promptfooconfig.yaml",
     "setup:env": "node scripts/setup-env.mjs",
     "design:tokens": "tsx scripts/export-figma-tokens.ts",
     "env:preflight": "tsx scripts/run-environment-preflight.ts",
