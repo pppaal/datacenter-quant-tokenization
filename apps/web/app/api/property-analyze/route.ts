@@ -114,19 +114,28 @@ export async function POST(request: Request) {
   ]);
 
   try {
+    // The LRU cache only skips the expensive recompute (geocode + connectors +
+    // Monte Carlo). It must NOT change the response contract: a cache HIT still
+    // persists an append-only snapshot row (so within-TTL re-analyses are kept
+    // for the backtest harness) and still returns a `snapshotId` stable URL —
+    // previously the hit path returned a bare report with `snapshotId: undefined`
+    // and skipped persistence entirely.
     const cached = reportCache.get(cacheKey);
-    if (cached) {
-      return NextResponse.json(cached, { headers: { 'x-cache': 'hit' } });
-    }
+    const cacheStatus: 'hit' | 'miss' = cached ? 'hit' : 'miss';
 
-    const auto = await autoAnalyzeProperty({
-      address: parsedBody.address,
-      location: parsedBody.location,
-      includeAlternatives: parsedBody.includeAlternatives ?? 0,
-      overrideAssetClass: parsedBody.overrideAssetClass
-    });
-    const report = await buildFullReport(auto);
-    reportCache.set(cacheKey, report);
+    let report: FullReport;
+    if (cached) {
+      report = cached;
+    } else {
+      const auto = await autoAnalyzeProperty({
+        address: parsedBody.address,
+        location: parsedBody.location,
+        includeAlternatives: parsedBody.includeAlternatives ?? 0,
+        overrideAssetClass: parsedBody.overrideAssetClass
+      });
+      report = await buildFullReport(auto);
+      reportCache.set(cacheKey, report);
+    }
 
     // Persist an immutable system-of-record snapshot of this analysis. Done
     // before the response so the returned `snapshotId` is a stable URL, but
@@ -159,7 +168,7 @@ export async function POST(request: Request) {
       }
     }).catch(() => {});
 
-    return NextResponse.json({ ...report, snapshotId }, { headers: { 'x-cache': 'miss' } });
+    return NextResponse.json({ ...report, snapshotId }, { headers: { 'x-cache': cacheStatus } });
   } catch (error) {
     console.error('[property-analyze] failure', error);
     recordAuditEvent({

@@ -955,6 +955,40 @@ test('updateDealDocumentRequest marks a request received', async () => {
   assert.ok(updatedData.receivedAt instanceof Date || typeof updatedData.receivedAt === 'object');
 });
 
+test('updateDealDocumentRequest rejects a documentId not belonging to the deal asset', async () => {
+  // #13: the update path must mirror the create-path guard — a linked document
+  // must belong to this deal's asset (no cross-asset/cross-tenant link).
+  let updateCalled = false;
+  const fakeDb = {
+    dealDocumentRequest: {
+      async findFirst() {
+        return { id: 'req_1', dealId: 'deal_1', status: 'REQUESTED', receivedAt: null };
+      },
+      async update() {
+        updateCalled = true;
+        return {};
+      }
+    },
+    deal: {
+      async findUnique() {
+        return { assetId: 'asset_1' };
+      }
+    },
+    document: {
+      // foreign document (belongs to a different asset) → not found for asset_1
+      async findFirst() {
+        return null;
+      }
+    }
+  };
+
+  await assert.rejects(
+    () => updateDealDocumentRequest('deal_1', 'req_1', { documentId: 'doc_other' }, fakeDb as any),
+    /Document not found for linked asset/
+  );
+  assert.equal(updateCalled, false, 'must not write a cross-asset document link');
+});
+
 test('upsertDealDiligenceWorkstream creates or updates a specialist workstream', async () => {
   let upsertArgs: any;
   const fakeDb = {
