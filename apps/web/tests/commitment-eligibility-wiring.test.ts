@@ -15,18 +15,30 @@ import type { LpStatement } from '@/lib/services/fund-nav';
 function makeCommitmentDb(opts: {
   accreditationStatus?: string | null;
   screeningStatus?: string | null;
+  /** When set, the investor is wallet-linked → KYC resolves SERVER-SIDE. */
+  wallet?: string | null;
+  /** Latest KycRecord.status for that wallet (server-side KYC source). */
+  kycRecordStatus?: string | null;
 }): CreateCommitmentDeps & { created: unknown[] } {
   const created: unknown[] = [];
   return {
     created,
     investor: {
       async findUnique() {
-        return { accreditationStatus: opts.accreditationStatus ?? null } as never;
+        return {
+          accreditationStatus: opts.accreditationStatus ?? null,
+          wallet: opts.wallet ?? null
+        } as never;
       }
     } as never,
     screeningResult: {
       async findFirst() {
         return opts.screeningStatus ? ({ status: opts.screeningStatus } as never) : null;
+      }
+    } as never,
+    kycRecord: {
+      async findFirst() {
+        return opts.kycRecordStatus ? ({ status: opts.kycRecordStatus } as never) : null;
       }
     } as never,
     commitment: {
@@ -115,6 +127,48 @@ test('gate ALLOWS a fully-cleared investor and returns audit before/after', asyn
     vehicleId: null,
     commitmentKrw: 5_000
   });
+});
+
+test('wallet-linked investor: client kycStatus CANNOT override a server REJECTED KycRecord (#38)', async () => {
+  // The caller lies with kycStatus:'APPROVED', but the investor has a wallet
+  // whose latest KycRecord is REJECTED → server-side KYC wins, commitment refused.
+  const db = makeCommitmentDb({
+    screeningStatus: 'CLEAR',
+    accreditationStatus: 'PROFESSIONAL',
+    wallet: '0xabc',
+    kycRecordStatus: 'REJECTED'
+  });
+  await assert.rejects(
+    () =>
+      createCommitmentWithEligibility(
+        { fundId: 'f1', investorId: 'inv1', committedKrw: 5_000, kycStatus: 'APPROVED' },
+        {},
+        db
+      ),
+    (err: unknown) => {
+      assert.ok(err instanceof CommitmentEligibilityError);
+      assert.ok(err.reasons.includes('KYC_NOT_APPROVED'), 'server KYC must override client value');
+      return true;
+    }
+  );
+  assert.equal(db.created.length, 0, 'spoofed client KYC must not onboard an un-KYC’d investor');
+});
+
+test('wallet-linked investor: a server APPROVED KycRecord clears the gate regardless of client value', async () => {
+  const db = makeCommitmentDb({
+    screeningStatus: 'CLEAR',
+    accreditationStatus: 'PROFESSIONAL',
+    wallet: '0xabc',
+    kycRecordStatus: 'APPROVED'
+  });
+  const result = await createCommitmentWithEligibility(
+    // client even omits/contradicts kyc — server record governs
+    { fundId: 'f1', investorId: 'inv1', committedKrw: 5_000, kycStatus: 'PENDING' },
+    {},
+    db
+  );
+  assert.equal(db.created.length, 1);
+  assert.equal(result.commitment.id, 'cmt_1');
 });
 
 test('gate enforces accreditation when required', async () => {

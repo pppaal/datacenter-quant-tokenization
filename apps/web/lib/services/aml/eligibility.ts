@@ -100,12 +100,12 @@ export type ResolveEligibilityOptions = {
 export async function resolveCommitmentEligibility(
   investorId: string,
   options: ResolveEligibilityOptions = {},
-  db: Pick<PrismaClient, 'investor' | 'screeningResult'> = prisma
+  db: Pick<PrismaClient, 'investor' | 'screeningResult' | 'kycRecord'> = prisma
 ): Promise<EligibilityResult> {
   const [investor, latestScreening] = await Promise.all([
     db.investor.findUnique({
       where: { id: investorId },
-      select: { accreditationStatus: true }
+      select: { accreditationStatus: true, wallet: true }
     }),
     db.screeningResult.findFirst({
       where: { investorId },
@@ -114,8 +114,23 @@ export async function resolveCommitmentEligibility(
     })
   ]);
 
+  // KYC: when the investor has a linked wallet, resolve the status SERVER-SIDE
+  // from the latest KycRecord (authoritative). The client-supplied
+  // `kycStatusOverride` is only honored as a fallback for genuinely wallet-less
+  // investors — it can NEVER satisfy the gate for a wallet-linked investor, so a
+  // caller cannot pass `kycStatus: 'APPROVED'` to onboard an un-KYC'd party.
+  let kycStatus = options.kycStatusOverride ?? null;
+  if (investor?.wallet) {
+    const kyc = await db.kycRecord.findFirst({
+      where: { wallet: investor.wallet },
+      orderBy: { createdAt: 'desc' },
+      select: { status: true }
+    });
+    kycStatus = kyc?.status ?? null;
+  }
+
   return evaluateCommitmentEligibility({
-    kycStatus: options.kycStatusOverride ?? null,
+    kycStatus,
     screeningStatus: latestScreening?.status ?? null,
     accreditationStatus: investor?.accreditationStatus ?? null,
     requireAccreditation: options.requireAccreditation,
@@ -127,7 +142,7 @@ export async function resolveCommitmentEligibility(
 export async function assertCommitmentEligibility(
   investorId: string,
   options: ResolveEligibilityOptions = {},
-  db: Pick<PrismaClient, 'investor' | 'screeningResult'> = prisma
+  db: Pick<PrismaClient, 'investor' | 'screeningResult' | 'kycRecord'> = prisma
 ): Promise<void> {
   const result = await resolveCommitmentEligibility(investorId, options, db);
   if (!result.eligible) {
