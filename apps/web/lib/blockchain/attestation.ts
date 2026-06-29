@@ -200,6 +200,19 @@ export function buildNavAttestation(opts: {
     .div(totalShares.toString());
   const navPerShare = BigInt(navPerShareDecimal.toFixed(0, Prisma.Decimal.ROUND_DOWN));
 
+  // The on-chain NavAttestor / NavOracle revert with InvalidNav() when
+  // navPerShare == 0 (NavAttestor.sol / NavOracle.sol). A zero/dust NAV
+  // (navValueKrw == 0 — e.g. fund-nav source 'NONE' — or navValueKrw too small
+  // for totalShares) floors to 0 here, so refuse to sign it off-chain rather
+  // than broadcast a guaranteed-revert tx — and, critically, so mock mode can't
+  // record a deterministic "successful" mock txHash for a NAV the real chain
+  // would never accept.
+  if (navPerShare <= 0n) {
+    throw new Error(
+      'navPerShare resolved to 0 (NAV is zero or too small for the share count); refusing to sign an attestation the on-chain NavAttestor rejects with InvalidNav.'
+    );
+  }
+
   const symbol = opts.quoteSymbol ?? 'KRW';
   const navTimestamp = BigInt(Math.floor(opts.valuationRun.createdAt.getTime() / 1000));
   const nonce = opts.valuationRun.nonce ?? BigInt(opts.valuationRun.createdAt.getTime());

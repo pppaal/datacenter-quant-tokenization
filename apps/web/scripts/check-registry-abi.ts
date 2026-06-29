@@ -12,15 +12,39 @@ import { logger } from '@/lib/observability/logger';
 import { dataCenterAssetRegistryAbi } from '@/lib/blockchain/abi';
 import abiJson from '@/lib/blockchain/abi.json';
 
+type AbiParam = {
+  type?: string;
+  components?: ReadonlyArray<AbiParam>;
+};
+
 type AbiEntry = {
   type?: string;
   name?: string;
-  inputs?: ReadonlyArray<{ type?: string }>;
+  inputs?: ReadonlyArray<AbiParam>;
+  outputs?: ReadonlyArray<AbiParam>;
 };
 
+/**
+ * Serialize a param type, recursing into tuple `components` so a struct's field
+ * layout is part of the key — `tuple` alone would hide a field reorder/retype.
+ * `tuple`, `tuple[]`, `tuple[N]` all carry their layout in `components`.
+ */
+function serializeType(param: AbiParam): string {
+  const base = param.type ?? '?';
+  if (base.startsWith('tuple') && param.components && param.components.length > 0) {
+    const inner = param.components.map(serializeType).join(',');
+    return `(${inner})${base.slice('tuple'.length)}`;
+  }
+  return base;
+}
+
 function signatureKey(entry: AbiEntry): string {
-  const args = (entry.inputs ?? []).map((i) => i.type ?? '?').join(',');
-  return `${entry.type ?? '?'}:${entry.name ?? '_'}(${args})`;
+  const args = (entry.inputs ?? []).map(serializeType).join(',');
+  // Include OUTPUT types too: the view functions (getAsset/getDocument) return
+  // structs, and a return-struct drift (field reorder/retype) would otherwise go
+  // undetected because the key matched on name + argument types only.
+  const rets = (entry.outputs ?? []).map(serializeType).join(',');
+  return `${entry.type ?? '?'}:${entry.name ?? '_'}(${args}):(${rets})`;
 }
 
 function main() {
