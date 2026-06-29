@@ -2355,6 +2355,12 @@ model OnchainRecord {
   createdAt          DateTime        @default(now())
   readinessProject   ReadinessProject @relation(fields: [readinessProjectId], references: [id], onDelete: Cascade)
   document           Document?       @relation(fields: [documentId], references: [id], onDelete: SetNull)
+
+  // Index both FK columns: onchain records are looked up by project (per-asset
+  // readiness/anchor views) and by document (anchor-status joins); without these
+  // both are sequential scans as the table grows.
+  @@index([readinessProjectId])
+  @@index([documentId])
 }
 
 // Cursor for the chain → DB event indexer. One row per
