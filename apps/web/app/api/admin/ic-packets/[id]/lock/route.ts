@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { validationOrGenericError } from '@/lib/security/error-response';
 import { prisma } from '@/lib/db/prisma';
 import { recordAuditEvent } from '@/lib/services/audit';
-import { lockCommitteePacket } from '@/lib/services/ic';
+import { lockCommitteePacket, CommitteePacketConflictError } from '@/lib/services/ic';
 import {
   getRequestIpAddress,
   resolveVerifiedAdminActorFromHeaders
@@ -68,6 +68,9 @@ export async function POST(
   } catch (error) {
     if (error instanceof RateLimitError) {
       return NextResponse.json({ error: error.message }, { status: 429 });
+    }
+    if (error instanceof CommitteePacketConflictError) {
+      return NextResponse.json({ error: error.message }, { status: 409 });
     }
 
     await recordAuditEvent({

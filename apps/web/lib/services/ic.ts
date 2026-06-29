@@ -27,6 +27,20 @@ export class SegregationOfDutiesError extends Error {
 }
 
 /**
+ * Thrown when a packet state transition (lock / decide / release) loses a
+ * compare-and-swap race: the packet was read in one status but a concurrent
+ * operator already transitioned it before this request's guarded update ran.
+ * Routes map this to HTTP 409 (conflict). Prevents two concurrent ADMINs from
+ * both recording a decision (or double-transitioning) under Read Committed.
+ */
+export class CommitteePacketConflictError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'CommitteePacketConflictError';
+  }
+}
+
+/**
  * Compares two recorded actor identities for SoD purposes.
  *
  * Limitation: the IC packet/decision models persist only an actor *label*
@@ -369,8 +383,11 @@ export async function lockCommitteePacket(
 
   const fingerprint = buildCommitteePacketFingerprint(packet, readiness);
 
-  const updated = await db.investmentCommitteePacket.update({
-    where: { id: packetId },
+  // Compare-and-swap on the status we read: only transition if the packet is
+  // still in that status. A concurrent lock/decide/release that already moved it
+  // matches 0 rows here, so we fail with a conflict instead of clobbering.
+  const claim = await db.investmentCommitteePacket.updateMany({
+    where: { id: packetId, status: packet.status },
     data: {
       status: CommitteePacketStatus.LOCKED,
       lockedAt: new Date(),
@@ -378,7 +395,15 @@ export async function lockCommitteePacket(
       packetFingerprint: packet.packetFingerprint ?? fingerprint,
       reportFingerprint: packet.reportFingerprint ?? fingerprint,
       reviewPacketFingerprint: packet.reviewPacketFingerprint ?? fingerprint
-    },
+    }
+  });
+  if (claim.count !== 1) {
+    throw new CommitteePacketConflictError(
+      'Packet was modified by another operator. Reload and retry.'
+    );
+  }
+  const updated = await db.investmentCommitteePacket.findUniqueOrThrow({
+    where: { id: packetId },
     include: committeePacketInclude
   });
 
@@ -456,13 +481,25 @@ export async function decideCommitteePacket(
       }
     });
 
-    return tx.investmentCommitteePacket.update({
-      where: { id: packet.id },
+    // Compare-and-swap: the packet must still be LOCKED. If a concurrent decide
+    // already moved it, this matches 0 rows → throw → the whole tx (including the
+    // decision row just created) rolls back, so we never record two decisions or
+    // double-transition the packet.
+    const claim = await tx.investmentCommitteePacket.updateMany({
+      where: { id: packet.id, status: CommitteePacketStatus.LOCKED },
       data: {
         status: nextStatus,
         decisionSummary: input.notes?.trim() || packet.decisionSummary,
         followUpSummary: input.followUpActions?.trim() || packet.followUpSummary
-      },
+      }
+    });
+    if (claim.count !== 1) {
+      throw new CommitteePacketConflictError(
+        'Packet was decided by another operator. Reload and retry.'
+      );
+    }
+    return tx.investmentCommitteePacket.findUniqueOrThrow({
+      where: { id: packet.id },
       include: committeePacketInclude
     });
   });
@@ -525,15 +562,25 @@ export async function releaseCommitteePacket(
     );
   }
 
-  const released = await db.investmentCommitteePacket.update({
-    where: { id: packet.id },
+  // Compare-and-swap on the decided status we read, so a concurrent release (or
+  // any other transition) can't double-release the packet.
+  const claim = await db.investmentCommitteePacket.updateMany({
+    where: { id: packet.id, status: packet.status },
     data: {
       status: CommitteePacketStatus.RELEASED,
       releasedAt: new Date()
       // NOTE: deliberately do NOT overwrite `preparedByLabel` here. That field
       // records the locker (maker) identity used for decide-step SoD; clobbering
       // it on release would destroy the audit trail of who locked the packet.
-    },
+    }
+  });
+  if (claim.count !== 1) {
+    throw new CommitteePacketConflictError(
+      'Packet was modified by another operator. Reload and retry.'
+    );
+  }
+  const released = await db.investmentCommitteePacket.findUniqueOrThrow({
+    where: { id: packet.id },
     include: committeePacketInclude
   });
 

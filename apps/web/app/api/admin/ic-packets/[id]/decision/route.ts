@@ -9,7 +9,11 @@ import {
   resolveVerifiedAdminActorFromHeaders
 } from '@/lib/security/admin-request';
 import { recordAuditEvent } from '@/lib/services/audit';
-import { decideCommitteePacket, SegregationOfDutiesError } from '@/lib/services/ic';
+import {
+  decideCommitteePacket,
+  SegregationOfDutiesError,
+  CommitteePacketConflictError
+} from '@/lib/services/ic';
 import { mutationRateLimiter, RateLimitError } from '@/lib/security/rate-limit';
 
 const packetDecisionSchema = z.object({
@@ -97,6 +101,9 @@ export async function POST(
     // actor, not a validation error — surface as 403 (insufficient permission).
     if (error instanceof SegregationOfDutiesError) {
       return NextResponse.json({ error: error.message }, { status: 403 });
+    }
+    if (error instanceof CommitteePacketConflictError) {
+      return NextResponse.json({ error: error.message }, { status: 409 });
     }
 
     return validationOrGenericError(error, { message: 'Failed to record committee decision.' });

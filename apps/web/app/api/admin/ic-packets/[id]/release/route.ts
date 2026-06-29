@@ -2,7 +2,11 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { mutationRateLimiter, RateLimitError } from '@/lib/security/rate-limit';
 import { withAdminApi } from '@/lib/security/with-admin-api';
-import { releaseCommitteePacket, SegregationOfDutiesError } from '@/lib/services/ic';
+import {
+  releaseCommitteePacket,
+  SegregationOfDutiesError,
+  CommitteePacketConflictError
+} from '@/lib/services/ic';
 
 export const POST = withAdminApi<undefined, { id: string }>({
   requiredRole: 'ADMIN',
@@ -32,6 +36,12 @@ export const POST = withAdminApi<undefined, { id: string }>({
         return NextResponse.json(
           { error: error.message },
           { status: 403, headers: { 'X-Request-Id': requestId } }
+        );
+      }
+      if (error instanceof CommitteePacketConflictError) {
+        return NextResponse.json(
+          { error: error.message },
+          { status: 409, headers: { 'X-Request-Id': requestId } }
         );
       }
       throw error;
