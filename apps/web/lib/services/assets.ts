@@ -806,136 +806,141 @@ export async function enrichAssetFromSources(assetId: string, db: PrismaClient =
     }
   });
 
-  await Promise.all([
-    db.transactionComp.deleteMany({
-      where: {
-        assetId,
-        sourceSystem: marketData.sourceSystem
-      }
-    }),
-    db.rentComp.deleteMany({
-      where: {
-        assetId,
-        sourceSystem: marketData.sourceSystem
-      }
-    }),
-    db.marketIndicatorSeries.deleteMany({
-      where: {
-        assetId,
-        sourceSystem: marketData.sourceSystem
-      }
-    })
-  ]);
+  // Atomic: delete-then-recreate the sourced comps/indicators in one
+  // transaction so a mid-way create failure can't leave the asset with its
+  // prior comps wiped and nothing to replace them (permanent data loss).
+  await db.$transaction(async (tx) => {
+    await Promise.all([
+      tx.transactionComp.deleteMany({
+        where: {
+          assetId,
+          sourceSystem: marketData.sourceSystem
+        }
+      }),
+      tx.rentComp.deleteMany({
+        where: {
+          assetId,
+          sourceSystem: marketData.sourceSystem
+        }
+      }),
+      tx.marketIndicatorSeries.deleteMany({
+        where: {
+          assetId,
+          sourceSystem: marketData.sourceSystem
+        }
+      })
+    ]);
 
-  if (marketData.data.transactionComps.length > 0) {
-    await db.transactionComp.createMany({
-      data: marketData.data.transactionComps.map((comp) => ({
-        assetId,
-        market: asset.market,
-        region: comp.region,
-        // Tier classifier runs at intake so the cap-rate aggregator's
-        // submarket × tier matrix can group on real values from day one
-        // instead of waiting for a separate backfill pass.
-        assetClass: asset.assetClass,
-        assetTier: classifyAssetTier({
-          comparableType: comp.comparableType,
+    if (marketData.data.transactionComps.length > 0) {
+      await tx.transactionComp.createMany({
+        data: marketData.data.transactionComps.map((comp) => ({
+          assetId,
+          market: asset.market,
+          region: comp.region,
+          // Tier classifier runs at intake so the cap-rate aggregator's
+          // submarket × tier matrix can group on real values from day one
+          // instead of waiting for a separate backfill pass.
           assetClass: asset.assetClass,
-          grossFloorAreaSqm: asset.grossFloorAreaSqm
-        }),
-        comparableType: comp.comparableType,
-        transactionDate: comp.transactionDate ? new Date(comp.transactionDate) : null,
-        priceKrw: comp.priceKrw ?? null,
-        pricePerSqmKrw: comp.pricePerSqmKrw ?? null,
-        pricePerMwKrw: comp.pricePerMwKrw ?? null,
-        capRatePct: comp.capRatePct ?? null,
-        buyerType: comp.buyerType ?? null,
-        sellerType: comp.sellerType ?? null,
-        sourceLink: comp.sourceLink ?? null,
-        sourceSystem: marketData.sourceSystem,
-        sourceStatus: marketData.status
-      }))
-    });
-  }
+          assetTier: classifyAssetTier({
+            comparableType: comp.comparableType,
+            assetClass: asset.assetClass,
+            grossFloorAreaSqm: asset.grossFloorAreaSqm
+          }),
+          comparableType: comp.comparableType,
+          transactionDate: comp.transactionDate ? new Date(comp.transactionDate) : null,
+          priceKrw: comp.priceKrw ?? null,
+          pricePerSqmKrw: comp.pricePerSqmKrw ?? null,
+          pricePerMwKrw: comp.pricePerMwKrw ?? null,
+          capRatePct: comp.capRatePct ?? null,
+          buyerType: comp.buyerType ?? null,
+          sellerType: comp.sellerType ?? null,
+          sourceLink: comp.sourceLink ?? null,
+          sourceSystem: marketData.sourceSystem,
+          sourceStatus: marketData.status
+        }))
+      });
+    }
 
-  if (marketData.data.rentComps.length > 0) {
-    await db.rentComp.createMany({
-      data: marketData.data.rentComps.map((comp) => ({
-        assetId,
-        market: asset.market,
-        region: comp.region,
-        comparableType: comp.comparableType,
-        observationDate: comp.observationDate ? new Date(comp.observationDate) : null,
-        monthlyRentPerSqmKrw: comp.monthlyRentPerSqmKrw ?? null,
-        monthlyRatePerKwKrw: comp.monthlyRatePerKwKrw ?? null,
-        occupancyPct: comp.occupancyPct ?? null,
-        escalationPct: comp.escalationPct ?? null,
-        sourceLink: comp.sourceLink ?? null,
-        sourceSystem: marketData.sourceSystem,
-        sourceStatus: marketData.status
-      }))
-    });
-  }
+    if (marketData.data.rentComps.length > 0) {
+      await tx.rentComp.createMany({
+        data: marketData.data.rentComps.map((comp) => ({
+          assetId,
+          market: asset.market,
+          region: comp.region,
+          comparableType: comp.comparableType,
+          observationDate: comp.observationDate ? new Date(comp.observationDate) : null,
+          monthlyRentPerSqmKrw: comp.monthlyRentPerSqmKrw ?? null,
+          monthlyRatePerKwKrw: comp.monthlyRatePerKwKrw ?? null,
+          occupancyPct: comp.occupancyPct ?? null,
+          escalationPct: comp.escalationPct ?? null,
+          sourceLink: comp.sourceLink ?? null,
+          sourceSystem: marketData.sourceSystem,
+          sourceStatus: marketData.status
+        }))
+      });
+    }
 
-  if (marketData.data.indicators.length > 0) {
-    await db.marketIndicatorSeries.createMany({
-      data: marketData.data.indicators.map((indicator) => ({
-        assetId,
-        market: asset.market,
-        region: indicator.region ?? marketData.data.metroRegion ?? macro.data.metroRegion,
-        indicatorKey: indicator.indicatorKey,
-        observationDate: indicator.observationDate
-          ? new Date(indicator.observationDate)
-          : sourceUpdatedAt,
-        value: indicator.value,
-        unit: indicator.unit ?? null,
-        sourceSystem: marketData.sourceSystem,
-        sourceStatus: marketData.status
-      }))
-    });
-  }
+    if (marketData.data.indicators.length > 0) {
+      await tx.marketIndicatorSeries.createMany({
+        data: marketData.data.indicators.map((indicator) => ({
+          assetId,
+          market: asset.market,
+          region: indicator.region ?? marketData.data.metroRegion ?? macro.data.metroRegion,
+          indicatorKey: indicator.indicatorKey,
+          observationDate: indicator.observationDate
+            ? new Date(indicator.observationDate)
+            : sourceUpdatedAt,
+          value: indicator.value,
+          unit: indicator.unit ?? null,
+          sourceSystem: marketData.sourceSystem,
+          sourceStatus: marketData.status
+        }))
+      });
+    }
 
-  if (
-    (asset.comparableSet?.entries.length ?? 0) === 0 &&
-    marketData.data.transactionComps.length > 0
-  ) {
-    const comparableSet = await db.comparableSet.upsert({
-      where: {
-        assetId
-      },
-      update: {
-        name: marketData.data.comparableSetName ?? `${asset.name} market comparable set`,
-        notes: marketData.data.comparableSetNotes ?? asset.comparableSet?.notes ?? null
-      },
-      create: {
-        assetId,
-        name: marketData.data.comparableSetName ?? `${asset.name} market comparable set`,
-        notes: marketData.data.comparableSetNotes ?? null,
-        calibrationMode: 'Weighted market calibration'
-      }
-    });
+    if (
+      (asset.comparableSet?.entries.length ?? 0) === 0 &&
+      marketData.data.transactionComps.length > 0
+    ) {
+      const comparableSet = await tx.comparableSet.upsert({
+        where: {
+          assetId
+        },
+        update: {
+          name: marketData.data.comparableSetName ?? `${asset.name} market comparable set`,
+          notes: marketData.data.comparableSetNotes ?? asset.comparableSet?.notes ?? null
+        },
+        create: {
+          assetId,
+          name: marketData.data.comparableSetName ?? `${asset.name} market comparable set`,
+          notes: marketData.data.comparableSetNotes ?? null,
+          calibrationMode: 'Weighted market calibration'
+        }
+      });
 
-    await db.comparableEntry.deleteMany({
-      where: {
-        comparableSetId: comparableSet.id
-      }
-    });
+      await tx.comparableEntry.deleteMany({
+        where: {
+          comparableSetId: comparableSet.id
+        }
+      });
 
-    await db.comparableEntry.createMany({
-      data: marketData.data.transactionComps.map((comp, index) => ({
-        comparableSetId: comparableSet.id,
-        label: comp.label,
-        location: comp.region,
-        assetType: comp.comparableType,
-        stage: asset.stage,
-        sourceLink: comp.sourceLink ?? null,
-        grossFloorAreaSqm: comp.grossFloorAreaSqm ?? null,
-        valuationKrw: comp.priceKrw ?? null,
-        capRatePct: comp.capRatePct ?? null,
-        weightPct: Number((100 / marketData.data.transactionComps.length).toFixed(2)),
-        notes: `Auto-seeded from ${marketData.sourceSystem} market comp ${index + 1}.`
-      }))
-    });
-  }
+      await tx.comparableEntry.createMany({
+        data: marketData.data.transactionComps.map((comp, index) => ({
+          comparableSetId: comparableSet.id,
+          label: comp.label,
+          location: comp.region,
+          assetType: comp.comparableType,
+          stage: asset.stage,
+          sourceLink: comp.sourceLink ?? null,
+          grossFloorAreaSqm: comp.grossFloorAreaSqm ?? null,
+          valuationKrw: comp.priceKrw ?? null,
+          capRatePct: comp.capRatePct ?? null,
+          weightPct: Number((100 / marketData.data.transactionComps.length).toFixed(2)),
+          notes: `Auto-seeded from ${marketData.sourceSystem} market comp ${index + 1}.`
+        }))
+      });
+    }
+  });
 
   try {
     await promoteAssetSnapshotsToFeatures(assetId, db);
