@@ -1342,6 +1342,19 @@ export async function updateDealDocumentRequest(
     if (!counterparty) throw new Error('Counterparty not found for this deal');
   }
 
+  // Mirror the create-path guard: a linked documentId must belong to this deal's
+  // asset. The update path previously wrote documentId unchecked, letting a
+  // request be linked to ANY document id (cross-asset / cross-tenant leak).
+  if (parsed.documentId) {
+    const deal = await db.deal.findUnique({ where: { id: dealId }, select: { assetId: true } });
+    if (deal?.assetId) {
+      const document = await db.document.findFirst({
+        where: { id: parsed.documentId, assetId: deal.assetId }
+      });
+      if (!document) throw new Error('Document not found for linked asset');
+    }
+  }
+
   const nextStatus = parsed.status ?? request.status;
   const shouldClearMatchSuggestion =
     parsed.documentId !== undefined ||
