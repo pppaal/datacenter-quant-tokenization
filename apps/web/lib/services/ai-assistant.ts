@@ -1,4 +1,5 @@
 import type { PrismaClient } from '@prisma/client';
+import { z } from 'zod';
 import { prisma } from '@/lib/db/prisma';
 import {
   OPENAI_MODEL,
@@ -53,6 +54,39 @@ function toStringArray(value: unknown): string[] {
   return value
     .map((item) => (typeof item === 'string' ? item.trim() : ''))
     .filter((item) => item.length > 0);
+}
+
+/**
+ * The LLM is asked for a JSON object (OpenAI `response_format: json_object`), but
+ * defend the boundary anyway: require a JSON OBJECT (reject a bare array/scalar a
+ * misbehaving model might emit) before extracting fields. Field-level coercion
+ * (`clampScore`, `toStringArray`, required-string checks) then sanitizes the
+ * contents. Exported + pure so the contract is unit-testable without an API key.
+ */
+const LlmObjectSchema = z.record(z.unknown());
+
+export function parseResearchSummary(raw: string): Omit<ResearchSnapshotSummary, 'cached'> {
+  const data = LlmObjectSchema.parse(JSON.parse(raw));
+  const summary = typeof data.summary === 'string' ? data.summary.trim() : '';
+  const bullets = toStringArray(data.bullets);
+  if (!summary) {
+    throw new Error('AI assistant returned an invalid summary payload.');
+  }
+  return { summary, bullets };
+}
+
+export function parseDealScore(raw: string): DealScore {
+  const data = LlmObjectSchema.parse(JSON.parse(raw));
+  const reasoning = typeof data.reasoning === 'string' ? data.reasoning.trim() : '';
+  if (!reasoning) {
+    throw new Error('AI assistant returned an invalid deal score payload.');
+  }
+  return {
+    score: clampScore(data.score),
+    reasoning,
+    redFlags: toStringArray(data.redFlags),
+    greenFlags: toStringArray(data.greenFlags)
+  };
 }
 
 function clampScore(value: unknown): number {
@@ -155,15 +189,7 @@ export async function summarizeResearchSnapshot(
       freshnessLabel: snapshot.freshnessLabel,
       metrics: snapshot.metrics
     },
-    parse: (raw) => {
-      const data = JSON.parse(raw) as Record<string, unknown>;
-      const summary = typeof data.summary === 'string' ? data.summary.trim() : '';
-      const bullets = toStringArray(data.bullets);
-      if (!summary) {
-        throw new Error('AI assistant returned an invalid summary payload.');
-      }
-      return { summary, bullets };
-    }
+    parse: parseResearchSummary
   });
 
   writeToCache(summaryCache, snapshotId, parsed);
@@ -228,19 +254,7 @@ export async function scoreDeal(dealId: string, db: AssistantDb = prisma): Promi
       purchasePriceKrw: deal.purchasePriceKrw,
       targetCloseDate: deal.targetCloseDate?.toISOString() ?? null
     },
-    parse: (raw) => {
-      const data = JSON.parse(raw) as Record<string, unknown>;
-      const reasoning = typeof data.reasoning === 'string' ? data.reasoning.trim() : '';
-      if (!reasoning) {
-        throw new Error('AI assistant returned an invalid deal score payload.');
-      }
-      return {
-        score: clampScore(data.score),
-        reasoning,
-        redFlags: toStringArray(data.redFlags),
-        greenFlags: toStringArray(data.greenFlags)
-      };
-    }
+    parse: parseDealScore
   });
 }
 
