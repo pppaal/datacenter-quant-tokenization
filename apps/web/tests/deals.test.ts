@@ -2415,6 +2415,30 @@ test('closeOutDeal stores loss reason taxonomy for closed-lost deals', async () 
   assert.equal(updatedData.lossReason, DealLossReason.PRICE);
 });
 
+test('closeOutDeal rejects re-closing an already-closed deal (no state flip)', async () => {
+  const fakeDb = {
+    deal: {
+      async findUnique() {
+        return {
+          id: 'deal_1',
+          stage: DealStage.ASSET_MANAGEMENT,
+          closeOutcome: 'CLOSED_WON',
+          closedAt: new Date()
+        };
+      },
+      async update() {
+        throw new Error('update must not run on an already-closed deal');
+      }
+    }
+  };
+
+  await assert.rejects(
+    () =>
+      closeOutDeal('deal_1', { outcome: 'CLOSED_LOST', summary: 'attempted flip' }, fakeDb as any),
+    /already closed out/
+  );
+});
+
 test('buildDealTimeline mixes activities and valuations in reverse time order', () => {
   const now = new Date('2026-03-26T12:00:00.000Z');
   const timeline = buildDealTimeline({

@@ -168,7 +168,14 @@ export function buildHeroFacts(bundle: DealReportBundle, kind: ReportKind): Repo
         value: baseScenario?.debtServiceCoverage
           ? `${formatNumber(baseScenario.debtServiceCoverage, 2)}x`
           : 'N/A',
-        tone: (baseScenario?.debtServiceCoverage ?? 0) < 1.15 ? 'danger' : 'neutral'
+        // Missing DSCR is unknown, not a covenant breach — don't flag danger on
+        // absent data (the `?? 0` form rendered "no data" as 0x → false danger).
+        tone:
+          baseScenario?.debtServiceCoverage == null
+            ? 'neutral'
+            : baseScenario.debtServiceCoverage < 1.15
+              ? 'danger'
+              : 'neutral'
       },
       {
         label: 'Anchored Docs',

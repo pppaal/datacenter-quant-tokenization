@@ -2405,6 +2405,14 @@ export async function closeOutDeal(dealId: string, input: unknown, db: PrismaCli
   const deal = await db.deal.findUnique({ where: { id: dealId } });
   if (!deal) throw new Error('Deal not found');
 
+  // Close-out is terminal and idempotent-by-rejection: an already-closed deal
+  // must not be re-closed (which would overwrite closeOutcome/lossReason, re-stamp
+  // closedAt, write a contradictory activity log, and duplicate the follow-up
+  // task). Reject so a CLOSED_WON deal can't be silently flipped to CLOSED_LOST.
+  if (deal.closeOutcome || deal.closedAt) {
+    throw new Error('Deal is already closed out');
+  }
+
   if (
     parsed.outcome === 'CLOSED_WON' &&
     deal.stage !== DealStage.CLOSING &&
