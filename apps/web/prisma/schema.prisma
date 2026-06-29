@@ -3197,6 +3197,12 @@ model Investor {
   contactName   String?
   contactEmail  String?
   notes         String?
+  // 0x-prefixed, lower-cased wallet linking this investor to its on-chain KYC
+  // (KycRecord.wallet). When set, the commitment eligibility gate resolves KYC
+  // status SERVER-SIDE from the latest KycRecord instead of trusting a
+  // client-supplied status. Null = wallet-less investor (KYC resolved by the
+  // legacy provided-status path).
+  wallet        String?
   // Accreditation / suitability (적격투자자 · 전문투자자). Null = unassessed.
   accreditationStatus String? // e.g. "PROFESSIONAL" | "QUALIFIED" | "RETAIL"
   accreditedAt  DateTime?

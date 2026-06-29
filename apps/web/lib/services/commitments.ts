@@ -25,7 +25,7 @@ export type CreateCommitmentInput = {
 
 export type CreateCommitmentDeps = Pick<
   PrismaClient,
-  'commitment' | 'investor' | 'screeningResult'
+  'commitment' | 'investor' | 'screeningResult' | 'kycRecord'
 >;
 
 /**
