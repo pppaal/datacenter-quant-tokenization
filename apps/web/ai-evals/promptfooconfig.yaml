@@ -1,0 +1,64 @@
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+#
+# LLM output-contract evals for the AI underwriting/research assistant
+# (lib/services/ai-assistant.ts). Promptfoo runs the REAL system prompts against
+# sample inputs and asserts the output honors the contract the parsers enforce
+# (parseResearchSummary / parseDealScore) plus the "no retail/return-guarantee
+# language" instruction.
+#
+# Run locally / in a keyed environment:  npm run ai:eval   (needs OPENAI_API_KEY)
+# Not a CI gate — CI has no model key (see ai-evals/README.md).
+description: AI assistant output-contract evals (research summary + deal score)
+
+providers:
+  - id: openai:gpt-4o-mini # matches OPENAI_DEFAULT_MODEL
+    config:
+      temperature: 0.2
+      response_format:
+        type: json_object
+
+prompts:
+  - id: research-summary
+    label: Research snapshot summary
+    raw: |
+      [
+        {"role":"system","content":"You are an institutional research analyst for a Korean real-estate investment firm. Summarize research snapshots for the investment committee. Return JSON with keys: \"summary\" (a 2-4 sentence prose summary) and \"bullets\" (an array of 3-6 concise action-oriented insight strings). Use neutral diligence language. Do not use retail offering or return-guarantee language."},
+        {"role":"user","content":"{{input}}"}
+      ]
+  - id: deal-score
+    label: Deal conviction score
+    raw: |
+      [
+        {"role":"system","content":"You are an institutional investment-committee analyst scoring a Korean real-estate deal. Return JSON with keys: \"score\" (integer 0-100 where higher is stronger conviction), \"reasoning\" (2-4 sentence prose rationale), \"redFlags\" (array of concise concern strings), and \"greenFlags\" (array of concise positive strings). Use institutional diligence language. Avoid retail offering or return-guarantee language."},
+        {"role":"user","content":"{{input}}"}
+      ]
+
+# Applied to every prompt × every test.
+defaultTest:
+  assert:
+    - type: is-json
+    # No retail-offering / return-guarantee language (matches the system-prompt rule).
+    - type: not-icontains
+      value: 'guaranteed return'
+    - type: not-icontains
+      value: '수익 보장'
+    # Shape contract — mirrors parseResearchSummary / parseDealScore.
+    - type: javascript
+      value: |
+        const d = JSON.parse(output);
+        if ('summary' in d) {
+          return typeof d.summary === 'string' && d.summary.trim().length > 0 && Array.isArray(d.bullets);
+        }
+        if ('score' in d) {
+          return typeof d.score === 'number' && d.score >= 0 && d.score <= 100
+            && typeof d.reasoning === 'string' && d.reasoning.trim().length > 0;
+        }
+        return false;
+
+tests:
+  - description: Core office snapshot
+    vars:
+      input: '{"title":"Yeouido Prime Office","summary":"Core office, 95% occupancy, 5y WALT","snapshotType":"market-thesis"}'
+  - description: Data-center deal
+    vars:
+      input: '{"title":"Gangseo Data Center","stage":"DD","assetClass":"DATA_CENTER","headline":"40MW hyperscale pre-lease"}'
