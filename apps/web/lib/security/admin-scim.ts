@@ -203,7 +203,29 @@ export function authorizeAdminScimRequest(request: Request, env: NodeJS.ProcessE
   return safeEqual(bearer, config.token);
 }
 
+/** Throws on a role that is not a valid `UserRole`. Defense-in-depth: the SCIM
+ *  payload is JSON from the IdP, and an arbitrary string would otherwise reach
+ *  Prisma's `role` column unvalidated. */
+export function assertValidScimRole(role: unknown): asserts role is UserRole | undefined {
+  if (role === undefined) return;
+  if (typeof role !== 'string' || !Object.values(UserRole).includes(role as UserRole)) {
+    throw new ScimValidationError(
+      `Invalid role "${String(role)}"; must be one of ${Object.values(UserRole).join(', ')}.`
+    );
+  }
+}
+
+/** Thrown for malformed SCIM provisioning input (e.g. an invalid role). Routes
+ *  map this to HTTP 400 rather than leaking a 500. */
+export class ScimValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ScimValidationError';
+  }
+}
+
 export async function upsertProvisionedAdminUser(input: ScimProvisionedUserInput, db: ScimDb) {
+  assertValidScimRole(input.role);
   const provider = input.provider?.trim() || 'scim';
   const existingBinding = await db.adminProvisioningBinding.findUnique({
     where: {
@@ -218,39 +240,60 @@ export async function upsertProvisionedAdminUser(input: ScimProvisionedUserInput
     }
   });
 
-  const matchedUser =
-    (existingBinding?.userId
-      ? await db.user.findUnique({
-          where: {
-            id: existingBinding.userId
-          },
-          select: {
-            id: true,
-            email: true
-          }
-        })
-      : null) ??
-    (await db.user.findFirst({
-      where: {
-        email: input.email
-      },
-      select: {
-        id: true,
-        email: true
-      }
-    }));
+  // A user already owned by THIS (provider, externalId) binding is fully
+  // SCIM-managed — its role/active state may be updated from the payload.
+  const boundUser = existingBinding?.userId
+    ? await db.user.findUnique({
+        where: {
+          id: existingBinding.userId
+        },
+        select: {
+          id: true,
+          email: true
+        }
+      })
+    : null;
+
+  // Fall back to an email match ONLY when no binding already owns this external
+  // id. An email collision with a pre-existing, UNBOUND account (e.g. a
+  // locally-created operator) must NOT be silently claimed with the incoming
+  // role/active flags — that would let a SCIM POST carrying a NEW externalId
+  // rebind and downgrade/disable an existing admin (account takeover). For that
+  // path we bind the identity and refresh name/email only, PRESERVING the
+  // account's current role and isActive. A later SCIM update via the now-existing
+  // binding can change role explicitly (the bound-user path above).
+  const emailUser = boundUser
+    ? null
+    : await db.user.findFirst({
+        where: {
+          email: input.email
+        },
+        select: {
+          id: true,
+          email: true
+        }
+      });
+
+  const matchedUser = boundUser ?? emailUser;
+  const adoptingUnboundAccount = !boundUser && Boolean(emailUser);
 
   const user = matchedUser
     ? await db.user.update({
         where: {
           id: matchedUser.id
         },
-        data: {
-          email: input.email,
-          name: input.name,
-          role: input.role ?? UserRole.ANALYST,
-          isActive: input.isActive ?? true
-        },
+        data: adoptingUnboundAccount
+          ? {
+              // Identity-bind + name refresh only; do not mutate privilege/active.
+              email: input.email,
+              name: input.name
+            }
+          : {
+              email: input.email,
+              name: input.name,
+              role: input.role ?? UserRole.ANALYST,
+              isActive: input.isActive ?? true
+            },
         select: {
           id: true,
           name: true,
