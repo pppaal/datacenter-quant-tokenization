@@ -7,6 +7,8 @@ test('approveResearchHouseViewSnapshot creates immutable approved lineage and su
   const creates: Array<Record<string, unknown>> = [];
 
   const txSnapshot = {
+    // The prior-approved lookup now runs INSIDE the (Serializable) transaction.
+    findFirst: async () => ({ id: 'approved-old' }),
     update: async ({ where, data }: { where: { id: string }; data: Record<string, unknown> }) => {
       updates.push({ where, data });
       return { id: where.id, ...data };
@@ -143,6 +145,7 @@ test('approveResearchHouseViewSnapshot works when no previous approved snapshot 
 
   const baseTx = {
     researchSnapshot: {
+      findFirst: async () => null, // no previous approved, resolved inside the txn
       update: async ({ where, data }: { where: { id: string }; data: Record<string, unknown> }) => {
         updates.push({ where, data });
         return { id: where.id, ...data };
