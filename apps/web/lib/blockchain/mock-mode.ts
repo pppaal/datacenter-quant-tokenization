@@ -3,6 +3,19 @@ import type { Hex } from 'viem';
 import { isRealProduction } from '@/lib/runtime-env';
 
 /**
+ * Returns true when the on-chain layer is turned OFF entirely (no real chain and
+ * no mock). Distinct from mock mode: "disabled" means the tokenization / registry
+ * / NAV-attestation features are simply unavailable, so a production deploy
+ * WITHOUT a chain is a first-class, safe configuration. `getBlockchainConfig`
+ * refuses to build a config in this mode, and the production preflight skips the
+ * RPC-key requirement (emitting a warning instead of an error).
+ */
+export function isBlockchainDisabled(env: NodeJS.ProcessEnv = process.env): boolean {
+  const value = env.BLOCKCHAIN_DISABLED?.trim().toLowerCase();
+  return value === '1' || value === 'true' || value === 'yes';
+}
+
+/**
  * Returns true when the deployment is allowed to short-circuit chain writes
  * through deterministic mock transactions. Mock mode is only honored outside a
  * real production runtime — `lib/services/readiness.ts` enforces the same

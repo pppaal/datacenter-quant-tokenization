@@ -1,6 +1,6 @@
 import type { Address, Hex } from 'viem';
 import { env } from '@/lib/env';
-import { isTokenizationMockMode } from './mock-mode';
+import { isBlockchainDisabled, isTokenizationMockMode } from './mock-mode';
 
 export type BlockchainConfig = {
   chainId: number;
@@ -62,6 +62,17 @@ function resolveRpcUrls(primary: string): string[] {
 
 export function getBlockchainConfig(): BlockchainConfig {
   const config = env();
+
+  // On-chain layer explicitly turned off: refuse to build a config so any
+  // tokenization/registry call fails with a clear, actionable message rather
+  // than a confusing "RPC required" deep in a write path.
+  if (isBlockchainDisabled()) {
+    throw new Error(
+      'On-chain features are disabled (BLOCKCHAIN_DISABLED=true). Unset it and configure ' +
+        'BLOCKCHAIN_RPC_URL + BLOCKCHAIN_PRIVATE_KEY + BLOCKCHAIN_REGISTRY_ADDRESS to enable tokenization.'
+    );
+  }
+
   const metadataBaseUrl = (
     config.BLOCKCHAIN_METADATA_BASE_URL ??
     config.APP_BASE_URL ??
