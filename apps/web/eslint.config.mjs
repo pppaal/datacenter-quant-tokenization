@@ -174,6 +174,7 @@ export default [
       'lib/security/admin-scim.ts',
       'lib/security/admin-session.ts',
       'lib/security/admin-sso.ts',
+      'lib/security/investor-token.ts',
       'lib/security/edge-protection.ts',
       'lib/security/upload-policy.ts',
       'lib/services/aml/screening.ts',
