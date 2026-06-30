@@ -78,21 +78,43 @@ and on licensed transfer-agent / secondary-liquidity credibility.
 - **AI finance agents**: Hebbia, Rogo, AlphaSense, Brightwave, **Apers (CRE-specific copilot)**.
 - **RWA oracle / compliance**: Chainlink (Proof-of-Reserve/CCIP), Chronicle, Tokeny/ONCHAINID.
 
+## Adoption status (2026-06-30)
+
+The first wave of `NOW` items shipped or was confirmed already-built:
+
+- **Shipped** — #7 portfolio stress test (`lib/services/portfolio/stress-test.ts`),
+  #6 Korea regulatory capital & feasibility calculator
+  (`lib/services/feasibility/korea-capital.ts`), #11 ILPA-style PCAP roll-forward
+  (`lib/services/pcap-statement.ts` + xlsx spec), #3 valuation confidence band +
+  comp-quality score (`lib/services/valuation/valuation-confidence-band.ts`, surfaced on
+  `/property-analyze`), #8 comp→underwriting cap-rate benchmark bridge
+  (`lib/services/research/cap-rate-benchmark.ts`).
+- **Already built (no new work)** — #2 single-source fund ledger / NAV
+  (`computeFundNavDetail` + `buildPcap` are the canonical pair) and #9 configurable
+  waterfall + per-investor allocation (`computeFundWaterfallTiers` with per-fund
+  hurdle/carry overrides + `DistributionAllocation`).
+- **Remaining `NOW` items are architectural / large** and want a design decision before
+  building: #1 LP portal (needs an external-investor auth scope), #4 digital subscription /
+  onboarding, #5 AI document ingestion, #10 AI co-GP agent. #8's assumption-injection +
+  IC-memo surfacing is a tracked follow-up to the shipped bridge.
+
 ## Benchmark backlog (prioritized; `NOW` = buildable in our codebase today)
+
+Status key: ✅ shipped · 🟢 already-built · ⬜ open.
 
 | #   | value | effort | where   | item                                                                                                                                                                                                 |
 | --- | ----- | ------ | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | P0    | L      | NOW     | **White-label LP portal** (capital accounts, NAV history, notices, doc vault) — add an external investor-auth scope beside the admin gate; render existing capital-account/NAV/report data read-only |
-| 2   | P0    | M      | NOW     | **Single-data-model fund ledger** — call/distribution notices + NAV derive from one source (no reconciliation gap)                                                                                   |
-| 3   | P0    | M      | NOW     | **Surface valuation confidence band + comp-quality score** on every `/property-analyze` report (wire `im/confidence.ts` + realized-outcome backtest)                                                 |
-| 4   | P1    | L      | NOW     | **Digital subscription docs + reusable LP onboarding profile** feeding ERC-3643 identity (Anduin-style)                                                                                              |
-| 5   | P1    | L      | NOW     | **AI document ingestion** (rent rolls, T-12s, OMs, DART filings) auto-populating underwriting inputs + NL evidence search                                                                            |
-| 6   | P1    | M      | NOW     | **Korean regulatory capital & feasibility calculator** (Capital Markets Act tiers, ASA 5% retention) — a wedge no competitor models                                                                  |
-| 7   | P1    | M      | NOW     | **Portfolio-level stress testing** (flex rev/exp/cap-rate/vacancy/rate → DSCR/debt-yield/LTV/DCF across assets+portfolio)                                                                            |
-| 8   | P1    | M      | NOW     | **Compounding Korea comps/benchmark DB** surfaced back into underwriting assumptions + IC memos (productize RTMS/DART)                                                                               |
-| 9   | P2    | M      | NOW     | **Configurable waterfall library + per-investor distribution allocation** (close underwriting→capital-ops loop)                                                                                      |
-| 10  | P2    | M      | NOW     | **AI cross-module "co-GP" agent** (draft IC memos, prep notices, LP Q&A from the data room)                                                                                                          |
-| 11  | P2    | S      | NOW     | **ILPA-style PCAP / capital-account-statement export** alongside the KRW `.xlsx`                                                                                                                     |
+| 1   | P0    | L      | NOW ⬜  | **White-label LP portal** (capital accounts, NAV history, notices, doc vault) — add an external investor-auth scope beside the admin gate; render existing capital-account/NAV/report data read-only |
+| 2   | P0    | M      | NOW 🟢  | **Single-data-model fund ledger** — call/distribution notices + NAV derive from one source (no reconciliation gap)                                                                                   |
+| 3   | P0    | M      | NOW ✅  | **Surface valuation confidence band + comp-quality score** on every `/property-analyze` report (wire `im/confidence.ts` + realized-outcome backtest)                                                 |
+| 4   | P1    | L      | NOW ⬜  | **Digital subscription docs + reusable LP onboarding profile** feeding ERC-3643 identity (Anduin-style)                                                                                              |
+| 5   | P1    | L      | NOW ⬜  | **AI document ingestion** (rent rolls, T-12s, OMs, DART filings) auto-populating underwriting inputs + NL evidence search                                                                            |
+| 6   | P1    | M      | NOW ✅  | **Korean regulatory capital & feasibility calculator** (Capital Markets Act tiers, ASA 5% retention) — a wedge no competitor models                                                                  |
+| 7   | P1    | M      | NOW ✅  | **Portfolio-level stress testing** (flex rev/exp/cap-rate/vacancy/rate → DSCR/debt-yield/LTV/DCF across assets+portfolio)                                                                            |
+| 8   | P1    | M      | NOW ✅  | **Compounding Korea comps/benchmark DB** surfaced back into underwriting assumptions + IC memos (productize RTMS/DART)                                                                               |
+| 9   | P2    | M      | NOW 🟢  | **Configurable waterfall library + per-investor distribution allocation** (close underwriting→capital-ops loop)                                                                                      |
+| 10  | P2    | M      | NOW ⬜  | **AI cross-module "co-GP" agent** (draft IC memos, prep notices, LP Q&A from the data room)                                                                                                          |
+| 11  | P2    | S      | NOW ✅  | **ILPA-style PCAP / capital-account-statement export** alongside the KRW `.xlsx`                                                                                                                     |
 | 12  | P1    | L      | roadmap | **ERC-3643 / ONCHAINID canonical interop** (adapter) so tokens plug into institutional rails                                                                                                         |
 | 13  | P1    | L      | roadmap | **Path-to-liquidity / KDX-NXT feeder** GTM positioning (pre-listing origination pipe)                                                                                                                |
 | 14  | P2    | L      | roadmap | **KSD / 전자증권 reconciliation bridge + 신탁사 connectors**                                                                                                                                         |
@@ -100,13 +122,21 @@ and on licensed transfer-agent / secondary-liquidity credibility.
 
 ## Recommended next builds (focused PRs, in order)
 
-1. **#3 confidence band (P0/M)** — highest credibility-per-effort; infra exists; demo-relevant.
-   (Note: Monte-Carlo IRR distribution + a `data-quality-panel` already ship — scope this to
-   the _value_ uncertainty band + `buildConfidenceBreakdown` signals, avoid duplicating those.)
-2. **#2 single-data-model fund ledger (P0/M)** — unlocks #1 portal and #9/#11.
-3. **#1 LP-facing read portal (P0/L)** — the biggest table-stakes gap; needs an external-investor
-   auth scope (design first).
-4. **#6 Korea regulatory capital calculator (P1/M)** — a defensible wedge + strong review narrative.
+The quick-win `NOW` wave (#3/#6/#7/#8/#11) is shipped and #2/#9 were already built, so the
+remaining `NOW` items are all large/architectural and need a design decision before code:
+
+1. **#1 LP-facing read portal (P0/L)** — the biggest table-stakes gap. Blocked on one
+   architectural choice: how external investors authenticate (a new investor-auth scope
+   beside the admin session gate — magic-link vs. dedicated session vs. SSO). Design first;
+   the underlying capital-account/NAV/report data already exists read-only.
+2. **#5 AI document ingestion (P1/L)** — rent rolls / T-12s / OMs / DART → underwriting
+   inputs + NL evidence search. Builds on `pdf-parse` + the OpenAI client; needs a
+   parse→map→confirm pipeline design.
+3. **#10 AI co-GP agent (P2/M)** — draft IC memos / notices / LP Q&A from the data room;
+   the most additive (extends `ai-assistant.ts`), lowest blast radius.
+4. **#4 digital subscription + LP onboarding (P1/L)** — pairs with #1's external-auth scope.
+5. **#8 follow-up** — inject the cap-rate benchmark as a stabilized-income assumption
+   fallback + show it beside the model cap rate in IC memos / the confidence band.
 
 Roadmap items (#12–#15) pair with the **funded external audit + chain deploy + KDX/NXT
 partnership** — not bolted on pre-deploy.
