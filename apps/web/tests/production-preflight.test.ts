@@ -112,6 +112,37 @@ test('OIDC absence remains a WARNING, not an error', () => {
   );
 });
 
+test('blockchain: missing RPC keys is a hard error by default', () => {
+  const env = validProdEnv();
+  delete env.BLOCKCHAIN_RPC_URL;
+  delete env.BLOCKCHAIN_PRIVATE_KEY;
+  delete env.BLOCKCHAIN_REGISTRY_ADDRESS;
+  const keys = errorKeys(collectPreflightIssues(env));
+  assert.ok(keys.includes('BLOCKCHAIN_RPC_URL'), 'missing chain config must error by default');
+});
+
+test('blockchain: BLOCKCHAIN_DISABLED=true allows a no-chain deploy (warn, not error)', () => {
+  const env = validProdEnv();
+  delete env.BLOCKCHAIN_RPC_URL;
+  delete env.BLOCKCHAIN_PRIVATE_KEY;
+  delete env.BLOCKCHAIN_REGISTRY_ADDRESS;
+  env.BLOCKCHAIN_DISABLED = 'true';
+  const issues = collectPreflightIssues(env);
+  // No chain-related errors when explicitly disabled...
+  assert.deepEqual(errorKeys(issues), [], 'disabled on-chain must not produce preflight errors');
+  // ...and the disabled state is surfaced as a warning.
+  const disabled = issues.find((i) => i.key === 'BLOCKCHAIN_DISABLED');
+  assert.ok(disabled && disabled.severity === 'warn', 'expected a BLOCKCHAIN_DISABLED warning');
+});
+
+test('blockchain: mock mode stays a hard error even when disabled is also set', () => {
+  const env = validProdEnv();
+  env.BLOCKCHAIN_MOCK_MODE = 'true';
+  env.BLOCKCHAIN_DISABLED = 'true';
+  const keys = errorKeys(collectPreflightIssues(env));
+  assert.ok(keys.includes('BLOCKCHAIN_MOCK_MODE'), 'mock mode must never pass in production');
+});
+
 test('an empty env hard-fails, including the new observability errors', () => {
   const issues = collectPreflightIssues({ NODE_ENV: 'production' });
   const keys = errorKeys(issues);
