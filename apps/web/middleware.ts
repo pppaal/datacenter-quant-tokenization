@@ -6,6 +6,7 @@ import {
   hasRequiredAdminRole
 } from '@/lib/security/admin-auth';
 import { ADMIN_SESSION_COOKIE, parseAdminSessionToken } from '@/lib/security/admin-session';
+import { INVESTOR_TOKEN_COOKIE, verifyInvestorToken } from '@/lib/security/investor-token';
 import { applyEdgeRateLimit, isAllowedIp, resolveClientIp } from '@/lib/security/edge-protection';
 
 export function isPublicApiPath(pathname: string) {
@@ -176,6 +177,36 @@ export async function middleware(request: NextRequest) {
 
   if (isAuthorizedOpsRequest(request)) {
     return strippedPassthrough(request, requestId);
+  }
+
+  // ── LP portal: an investor-scoped, READ-ONLY surface gated by a SEPARATE
+  // signed token (INVESTOR_TOKEN_SECRET), fully orthogonal to the admin gate
+  // below. Admin paths never reach here; portal paths never hit the admin gate.
+  // Fail-closed: a missing / invalid / expired token → 401. Inbound x-investor-*
+  // (and x-admin-*) are stripped before we stamp the derived investor identity,
+  // mirroring the admin branch's delete-then-set guarantee.
+  if (pathname.startsWith('/api/portal/')) {
+    const investor = await verifyInvestorToken(request.cookies.get(INVESTOR_TOKEN_COOKIE)?.value);
+    if (!investor) {
+      return NextResponse.json(
+        { error: 'Investor authentication required' },
+        { status: 401, headers: { 'X-Request-Id': requestId } }
+      );
+    }
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set('x-request-id', requestId);
+    for (const name of [...requestHeaders.keys()]) {
+      const lower = name.toLowerCase();
+      if (lower.startsWith('x-admin-') || lower.startsWith('x-investor-')) {
+        requestHeaders.delete(name);
+      }
+    }
+    requestHeaders.set('x-investor-id', investor.investorId);
+    requestHeaders.set('x-investor-role', 'LP');
+    if (investor.investorCode) requestHeaders.set('x-investor-code', investor.investorCode);
+    const response = NextResponse.next({ request: { headers: requestHeaders } });
+    response.headers.set('X-Request-Id', requestId);
+    return response;
   }
 
   const config = getAdminAuthConfig();
