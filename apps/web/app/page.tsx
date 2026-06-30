@@ -80,6 +80,14 @@ function assetClassMeta(assetClass: AssetClass): {
   }
 }
 
+// Shared surface treatments, expressed once against the light-theme tokens so the
+// marketing page renders crisply without leaning on the dark→light compat shim.
+const TILE = 'rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5';
+const ROW =
+  'flex items-center justify-between rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-4 py-3';
+const TEXT_MUTED = 'text-[hsl(var(--foreground-muted))]';
+const TEXT_FAINT = 'text-[hsl(var(--muted))]';
+
 export default async function LandingPage() {
   const { assets, summary } = await getLandingData();
   const fxRateMap = await getFxRateMap(
@@ -115,22 +123,22 @@ export default async function LandingPage() {
               </div>
 
               <div className="space-y-5">
-                <h1 className="max-w-5xl text-5xl font-semibold leading-[0.95] tracking-[-0.05em] text-white md:text-7xl">
+                <h1 className="max-w-5xl text-5xl font-semibold leading-[0.95] tracking-[-0.05em] text-[hsl(var(--foreground))] md:text-7xl">
                   부동산 투자의 모든 단계를
                   <br />
                   하나의 운영 시스템에서.
                 </h1>
-                <p className="max-w-3xl text-lg leading-8 text-slate-300">
+                <p className={`max-w-3xl text-lg leading-8 ${TEXT_MUTED}`}>
                   Nexus Seoul은 한국 부동산 투자팀을 위한 AI 네이티브 운영 시스템입니다. 리서치
                   인테이크, 증거 검토, 언더라이팅, 딜 실행, 포트폴리오 관리, 자본조달 워크플로를
                   단일 애플리케이션에서 운영합니다.
                 </p>
-                <p className="max-w-3xl text-base leading-7 text-slate-400">
+                <p className={`max-w-3xl text-base leading-7 ${TEXT_FAINT}`}>
                   데이터센터·오피스·산업/물류·랜드 자산군을 동일한 검토 게이팅(review-gated) 증거
                   모델 위에서 다룹니다. 스프레드시트로 흩어지는 가정·문서·메모를 자산 레코드 하나에
                   묶어 위원회가 읽는 그 숫자가 어디서 왔는지 항상 추적 가능하게 만듭니다.
                 </p>
-                <p className="max-w-3xl text-sm leading-7 text-slate-500">
+                <p className={`max-w-3xl text-sm leading-7 ${TEXT_FAINT}`}>
                   문서·추출 텍스트·평가 로직·워크플로는 모두 오프체인에 머무릅니다. 레지스트리
                   식별자, 문서 해시, 패킷 메타데이터만 온체인에 앵커링되는 registry-only 구조입니다.
                 </p>
@@ -166,12 +174,9 @@ export default async function LandingPage() {
               <div className="eyebrow">What You Get</div>
               <div className="mt-4 grid gap-4">
                 {outputs.map((item) => (
-                  <div
-                    key={item.label}
-                    className="rounded-[24px] border border-white/10 bg-slate-950/45 p-5"
-                  >
+                  <div key={item.label} className={TILE}>
                     <div className="fine-print">{item.label}</div>
-                    <p className="mt-3 text-sm leading-7 text-slate-300">{item.detail}</p>
+                    <p className={`mt-3 text-sm leading-7 ${TEXT_MUTED}`}>{item.detail}</p>
                   </div>
                 ))}
               </div>
@@ -183,12 +188,14 @@ export default async function LandingPage() {
                 {workflow.map((item) => (
                   <div
                     key={item.step}
-                    className="flex gap-4 rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+                    className="flex gap-4 rounded-[22px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-4 transition-colors duration-300 hover:border-accent/30"
                   >
                     <div className="font-mono text-sm text-accent">{item.step}</div>
                     <div>
-                      <div className="text-base font-semibold text-white">{item.title}</div>
-                      <div className="mt-1 text-sm leading-6 text-slate-400">{item.body}</div>
+                      <div className="text-base font-semibold text-[hsl(var(--foreground))]">
+                        {item.title}
+                      </div>
+                      <div className={`mt-1 text-sm leading-6 ${TEXT_FAINT}`}>{item.body}</div>
                     </div>
                   </div>
                 ))}
@@ -224,14 +231,14 @@ export default async function LandingPage() {
           <div>
             <div className="eyebrow">자산 파이프라인</div>
             <h2 className="section-title mt-3">현재 언더라이팅 · 리서치 진행 중인 자산</h2>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-400">
+            <p className={`mt-3 max-w-2xl text-sm leading-7 ${TEXT_FAINT}`}>
               아래 모든 자산이 동일한 운영 체인 — 인테이크 · 리서치 보강 · 증거 검토 · 언더라이팅 ·
               실행 · 준비 패키징 — 을 통과합니다.
             </p>
           </div>
           <Link
             href="/product"
-            className="fine-print rounded-full border border-white/10 px-4 py-3 transition hover:border-white/20 hover:text-white"
+            className="fine-print rounded-full border border-[hsl(var(--border))] px-4 py-3 transition hover:border-[hsl(var(--border-strong))] hover:text-[hsl(var(--foreground))]"
           >
             제품 개요 보기
           </Link>
@@ -247,7 +254,7 @@ export default async function LandingPage() {
             return (
               <Card
                 key={asset.id}
-                className="group overflow-hidden transition duration-300 hover:-translate-y-1 hover:border-accent/30"
+                className="group overflow-hidden transition duration-300 hover:-translate-y-1 hover:border-accent/30 hover:shadow-[var(--shadow-lg)]"
               >
                 <div className="fine-print">Asset {String(index + 1).padStart(2, '0')}</div>
                 <div className="mt-4 flex items-center justify-between gap-4">
@@ -255,25 +262,27 @@ export default async function LandingPage() {
                   <span className="fine-print">{asset.assetCode}</span>
                 </div>
                 <div className="mt-5">
-                  <h3 className="text-2xl font-semibold text-white transition-colors duration-300 group-hover:text-accent">
+                  <h3 className="text-2xl font-semibold text-[hsl(var(--foreground))] transition-colors duration-300 group-hover:text-accent">
                     {asset.name}
                   </h3>
-                  <p className="mt-3 text-sm leading-7 text-slate-400">{asset.description}</p>
+                  <p className={`mt-3 text-sm leading-7 ${TEXT_FAINT}`}>{asset.description}</p>
                 </div>
-                <div className="mt-6 grid gap-3 text-sm text-slate-300">
-                  <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.02] px-4 py-3">
+                <div className={`mt-6 grid gap-3 text-sm ${TEXT_MUTED}`}>
+                  <div className={ROW}>
                     <span>위치</span>
                     <span>{asset.address?.city}</span>
                   </div>
-                  <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.02] px-4 py-3">
+                  <div className={ROW}>
                     <span>{metricLabel}</span>
-                    <span className="font-semibold text-white">{metricValue}</span>
+                    <span className="font-semibold text-[hsl(var(--foreground))]">
+                      {metricValue}
+                    </span>
                   </div>
-                  <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.02] px-4 py-3">
+                  <div className={ROW}>
                     <span>Cap Rate</span>
                     <span>{formatPercent(asset.marketSnapshot?.capRatePct)}</span>
                   </div>
-                  <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.02] px-4 py-3">
+                  <div className={ROW}>
                     <span>최신 베이스 케이스</span>
                     <span className="font-semibold text-accent">
                       {formatCurrencyFromKrwAtRate(
@@ -295,7 +304,7 @@ export default async function LandingPage() {
           <Card>
             <div className="eyebrow">플랫폼 구성</div>
             <h2 className="section-title mt-3">분석, 메모 생성, 검토를 위한 하나의 제품.</h2>
-            <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-400">
+            <p className={`mt-4 max-w-2xl text-sm leading-7 ${TEXT_FAINT}`}>
               단일 Next.js 애플리케이션이 자산 인테이크, 보강, 수익 분석, IM 생성, 문서 워크플로를
               모두 담당합니다. 프론트엔드는 운영 제품처럼 읽히고, 백엔드는 실제 서비스 레이어에 직접
               연결되어 있습니다.
@@ -322,13 +331,15 @@ export default async function LandingPage() {
               ].map(([label, route, detail]) => (
                 <div
                   key={route}
-                  className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5"
+                  className="rounded-[24px] border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] p-5 transition-colors duration-300 hover:border-accent/30"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="text-lg font-semibold text-white">{label}</div>
+                    <div className="text-lg font-semibold text-[hsl(var(--foreground))]">
+                      {label}
+                    </div>
                     <span className="fine-print">{route}</span>
                   </div>
-                  <p className="mt-3 text-sm leading-7 text-slate-400">{detail}</p>
+                  <p className={`mt-3 text-sm leading-7 ${TEXT_FAINT}`}>{detail}</p>
                 </div>
               ))}
             </div>
@@ -343,10 +354,7 @@ export default async function LandingPage() {
                 '모델 출력에 직결된 IM(투자 메모)을 자동 생성해 숫자와 내러티브가 분리되지 않게 합니다.',
                 '가정·DD 문서·생성된 산출물 모두를 하나의 자산 레코드 안에서 관리합니다.'
               ].map((line) => (
-                <div
-                  key={line}
-                  className="rounded-[22px] border border-white/10 bg-slate-950/45 p-5 text-sm leading-7 text-slate-300"
-                >
+                <div key={line} className={`${TILE} text-sm leading-7 ${TEXT_MUTED}`}>
                   {line}
                 </div>
               ))}
@@ -360,7 +368,7 @@ export default async function LandingPage() {
           <div>
             <div className="eyebrow">기관 문의</div>
             <h2 className="section-title mt-3">워크플로와 샘플 IM을 직접 확인하세요.</h2>
-            <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-400">
+            <p className={`mt-4 max-w-2xl text-sm leading-7 ${TEXT_FAINT}`}>
               분석 흐름, 자동 생성된 메모, 운영 콘솔을 둘러보세요. 문의 기록은 플랫폼의 다른
               산출물과 같은 백엔드에 저장됩니다.
             </p>
@@ -374,7 +382,7 @@ export default async function LandingPage() {
           <div>
             <div className="eyebrow">시작하기</div>
             <h2 className="section-title mt-3">분석을 실행하고 그 자리에서 메모를 엽니다.</h2>
-            <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300">
+            <p className={`mt-4 max-w-2xl text-sm leading-7 ${TEXT_MUTED}`}>
               인테이크, 보강, 평가, 리스크 요약, 투자 메모 생성이 부동산 언더라이팅을 위한 하나의
               운영 워크플로 안에 모입니다.
             </p>
