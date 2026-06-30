@@ -93,7 +93,10 @@ test('text fact maps and trims into documentFeatures.permitStatusNote', () => {
       confidenceScore: 0.8
     })
   ]);
-  assert.equal((r.partial.documentFeatures as Record<string, unknown>).permitStatusNote, '전력 인입 승인 완료');
+  assert.equal(
+    (r.partial.documentFeatures as Record<string, unknown>).permitStatusNote,
+    '전력 인입 승인 완료'
+  );
 });
 
 test('budget_krw and capex_krw share the capexKrw target; higher confidence wins', () => {
