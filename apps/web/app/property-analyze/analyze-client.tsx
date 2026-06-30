@@ -7,6 +7,7 @@ import { PropertyMap, type MapCoordinate } from '@/components/admin/property-map
 import { StatCard } from './_sections/headline';
 import { VerdictBadge, krw, pct } from './_sections/shared';
 import { ValuationSummary } from './_sections/valuation-summary';
+import { ValuationConfidenceBandSection } from './_sections/valuation-confidence-band';
 import { DataQualityPanel } from './_sections/data-quality-panel';
 import { ThreeApproachSection } from './_sections/three-approach';
 import { MemoSection } from './_sections/memo-section';
@@ -153,6 +154,7 @@ export default function PropertyAnalyzePage({ mapConfig }: { mapConfig: MapProvi
   const refi = report?.refinancing;
   const wf = report?.gpLpWaterfall;
   const dq = report?.assumptionsQuality ?? report?.autoAnalyze?.provenance;
+  const confidenceBand = report?.valuationConfidenceBand;
 
   // Headline metrics (defensive: the analysis payload is loosely typed).
   const scenarios = (a?.scenarios ?? []) as Array<Record<string, unknown>>;
@@ -404,6 +406,7 @@ export default function PropertyAnalyzePage({ mapConfig }: { mapConfig: MapProvi
 
               <div id="valuation" className="mt-6 scroll-mt-24 space-y-6">
                 <ValuationSummary a={a} resolved={resolved} cls={cls} />
+                {confidenceBand && <ValuationConfidenceBandSection band={confidenceBand} />}
                 {dq && <DataQualityPanel dq={dq} />}
                 {a.threeApproach && <ThreeApproachSection a={a} />}
                 {memo && <MemoSection memo={memo} />}
