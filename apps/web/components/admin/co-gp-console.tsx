@@ -51,7 +51,7 @@ function useGenerator<T>() {
 
 function Pre({ value }: { value: unknown }) {
   return (
-    <pre className="mt-3 max-h-96 overflow-auto rounded-xl bg-slate-950/60 p-4 text-xs text-slate-200">
+    <pre className="mt-3 max-h-96 overflow-auto rounded-xl bg-[hsl(var(--panel-alt))] p-4 text-xs text-slate-200">
       {JSON.stringify(value, null, 2)}
     </pre>
   );
@@ -68,7 +68,7 @@ function PanelShell({
 }) {
   return (
     <Card className="p-6">
-      <h2 className="text-lg font-semibold text-white">{title}</h2>
+      <h2 className="text-lg font-semibold text-[hsl(var(--foreground))]">{title}</h2>
       <p className="mt-1 text-sm text-slate-400">{description}</p>
       <div className="mt-4 space-y-3">{children}</div>
     </Card>
@@ -107,7 +107,7 @@ function NoticePanel() {
       description="Draft an LP notice for a specific capital-call or distribution record."
     >
       <select
-        className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 text-sm text-slate-100"
+        className="w-full rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--panel-alt))] px-3 py-2 text-sm text-[hsl(var(--foreground))]"
         value={kind}
         onChange={(e) => setKind(e.target.value as 'CAPITAL_CALL' | 'DISTRIBUTION')}
       >
