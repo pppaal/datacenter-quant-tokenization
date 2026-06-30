@@ -88,6 +88,11 @@ import {
   type IdiosyncraticRiskReport,
   type RentRollEntry
 } from '@/lib/services/valuation/idiosyncratic-risk';
+import { buildValuationQualitySummary } from '@/lib/services/valuation/quality';
+import {
+  buildValuationConfidenceBand,
+  type ValuationConfidenceBand
+} from '@/lib/services/valuation/valuation-confidence-band';
 
 const COVENANT_DSCR = 1.15;
 
@@ -145,6 +150,13 @@ export type FullReport = {
    * backward-compatible; mirrors `autoAnalyze.provenance`.
    */
   assumptionsQuality?: AnalysisProvenance;
+  /**
+   * Value-uncertainty band (low/base/high) + comparable-quality score for the headline
+   * valuation. Answers "how well-supported is the point estimate?" — distinct from the
+   * Monte-Carlo RETURN distribution and the field-level data-quality panel. Optional +
+   * additive so older serialized reports remain valid.
+   */
+  valuationConfidenceBand?: ValuationConfidenceBand;
 };
 
 export type BuildFullReportOptions = {
@@ -617,6 +629,26 @@ export async function buildFullReport(
     })
   };
 
+  // Value-uncertainty band: comparable dispersion + evidence coverage around the
+  // headline value. Reuses the existing quality summary as the coverage signal (no
+  // duplication of the field-level data-quality panel or the Monte-Carlo return dist).
+  const qualitySummary = buildValuationQualitySummary(
+    {
+      leases: bundle.leases,
+      capexLineItems: bundle.capexLineItems,
+      comparableSet: bundle.comparableSet,
+      energySnapshot: bundle.energySnapshot,
+      permitSnapshot: bundle.permitSnapshot
+    },
+    primary.assumptions,
+    primary.provenance
+  );
+  const valuationConfidenceBand = buildValuationConfidenceBand({
+    baseValueKrw: primary.baseCaseValueKrw,
+    comparables: bundle.comparableSet?.entries ?? [],
+    quality: qualitySummary
+  });
+
   return {
     autoAnalyze: auto,
     proForma,
@@ -649,6 +681,7 @@ export async function buildFullReport(
     idiosyncraticRisk,
     // Surface the provenance captured during bundle assembly. Optional on the
     // type so older callers/serialized reports remain valid.
-    assumptionsQuality: auto.provenance
+    assumptionsQuality: auto.provenance,
+    valuationConfidenceBand
   };
 }
