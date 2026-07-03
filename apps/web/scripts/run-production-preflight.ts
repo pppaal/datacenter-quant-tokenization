@@ -119,7 +119,17 @@ export function collectPreflightIssues(env: Env): Issue[] {
       severity: 'error',
       key: 'BLOCKCHAIN_MOCK_MODE',
       detail:
-        'BLOCKCHAIN_MOCK_MODE=true must not be used in production. Configure BLOCKCHAIN_RPC_URL + BLOCKCHAIN_PRIVATE_KEY + BLOCKCHAIN_REGISTRY_ADDRESS instead.'
+        'BLOCKCHAIN_MOCK_MODE=true must not be used in production. Either configure a real chain (BLOCKCHAIN_RPC_URL + BLOCKCHAIN_PRIVATE_KEY + BLOCKCHAIN_REGISTRY_ADDRESS) or turn the on-chain layer off entirely with BLOCKCHAIN_DISABLED=true.'
+    });
+  } else if (isTrue(env.BLOCKCHAIN_DISABLED)) {
+    // Explicit no-chain deploy: the tokenization/registry/NAV-attestation routes
+    // are unavailable, but the rest of the platform ships. Allowed (warn, not
+    // error) so a chain isn't a hard prerequisite for going live.
+    issues.push({
+      severity: 'warn',
+      key: 'BLOCKCHAIN_DISABLED',
+      detail:
+        'On-chain features are DISABLED for this deploy. Tokenization / registry / NAV-attestation routes are unavailable. Unset BLOCKCHAIN_DISABLED and configure BLOCKCHAIN_RPC_URL + BLOCKCHAIN_PRIVATE_KEY + BLOCKCHAIN_REGISTRY_ADDRESS to enable them.'
     });
   } else {
     require(env, 'BLOCKCHAIN_RPC_URL', issues);

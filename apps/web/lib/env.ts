@@ -83,6 +83,11 @@ const envSchema = z.object({
 
   // Blockchain
   BLOCKCHAIN_MOCK_MODE: optionalBool,
+  // When true, the on-chain layer (tokenization / registry / NAV attestation) is
+  // turned OFF entirely — distinct from mock mode (which fakes writes). Lets the
+  // platform deploy to production WITHOUT a chain; the production preflight then
+  // does not require RPC keys, and `getBlockchainConfig` refuses on-chain calls.
+  BLOCKCHAIN_DISABLED: optionalBool,
   BLOCKCHAIN_CHAIN_ID: optionalNumber('BLOCKCHAIN_CHAIN_ID'),
   BLOCKCHAIN_CHAIN_NAME: optionalString,
   BLOCKCHAIN_RPC_URL: optionalString,
