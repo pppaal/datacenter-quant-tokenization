@@ -2,8 +2,11 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { useRouterRefresh } from '@/lib/hooks/use-router-refresh';
+
+const PASSWORD_MIN_LENGTH = 12;
 
 type AdminOperatorSeatFormProps = {
   userId: string;
@@ -21,6 +24,7 @@ export function AdminOperatorSeatForm({
   const { isRefreshing, refresh } = useRouterRefresh();
   const [role, setRole] = useState(currentRole);
   const [active, setActive] = useState(isActive);
+  const [newPassword, setNewPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -66,6 +70,52 @@ export function AdminOperatorSeatForm({
     } catch (caughtError) {
       setError(
         caughtError instanceof Error ? caughtError.message : 'Failed to update operator seat.'
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function resetPassword() {
+    if (newPassword.length < PASSWORD_MIN_LENGTH) {
+      setError(`New password must be at least ${PASSWORD_MIN_LENGTH} characters.`);
+      return;
+    }
+
+    const confirmed = window.confirm(
+      'Reset this operator seat password? All current browser sessions for the seat will be invalidated.'
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    setSubmitting(true);
+    setFeedback(null);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/admin/operators', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          userId,
+          newPassword
+        })
+      });
+
+      const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+      if (!response.ok) {
+        throw new Error(payload?.error ?? 'Failed to reset operator password.');
+      }
+
+      setNewPassword('');
+      setFeedback('Operator password reset. Existing sessions were revoked.');
+      refresh();
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error ? caughtError.message : 'Failed to reset operator password.'
       );
     } finally {
       setSubmitting(false);
@@ -161,6 +211,26 @@ export function AdminOperatorSeatForm({
         <div className="text-xs text-[hsl(var(--muted))]">
           session version {sessionVersion ?? 1}
         </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-3">
+        <Input
+          className="max-w-xs"
+          value={newPassword}
+          onChange={(event) => setNewPassword(event.target.value)}
+          placeholder={`New password (min ${PASSWORD_MIN_LENGTH} chars)`}
+          type="password"
+          autoComplete="new-password"
+          data-testid="operator-seat-new-password"
+        />
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={resetPassword}
+          disabled={submitting || isRefreshing}
+          data-testid="operator-seat-reset-password"
+        >
+          Reset Password
+        </Button>
       </div>
       {feedback ? (
         <div

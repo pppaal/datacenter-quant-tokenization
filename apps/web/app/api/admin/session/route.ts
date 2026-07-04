@@ -1,8 +1,16 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
-import { authorizeAdminCredentials, getAdminAuthConfig } from '@/lib/security/admin-auth';
+import {
+  authorizeAdminCredentials,
+  getAdminAuthConfig,
+  type AuthorizedAdminActor
+} from '@/lib/security/admin-auth';
 import { resolveAdminActorSeat } from '@/lib/security/admin-identity';
+import {
+  burnOperatorPasswordVerification,
+  verifyOperatorPassword
+} from '@/lib/security/operator-credentials';
 import {
   getRequestIpAddress,
   resolveVerifiedAdminActorFromHeaders
@@ -26,6 +34,40 @@ import {
 // soft-fails open when Redis is unconfigured (CI/dev are unaffected).
 const LOGIN_RATE_WINDOW_MS = 60_000;
 const LOGIN_RATE_MAX = 10;
+
+/**
+ * DB-backed credential fallback: operators provisioned from /admin/security
+ * carry a scrypt `passwordHash` on their canonical `User` seat and sign in with
+ * their seat email — no env edit or redeploy. Env credentials stay the
+ * bootstrap path (this only runs when the env list did not match), and the
+ * timing burn keeps "unknown email" indistinguishable from "wrong password".
+ */
+async function authorizeSeatPasswordCredentials(
+  user: string,
+  password: string
+): Promise<AuthorizedAdminActor | null> {
+  if (!user || !password) return null;
+
+  const seat = await prisma.user.findUnique({
+    where: { email: user },
+    select: { id: true, email: true, role: true, isActive: true, passwordHash: true }
+  });
+
+  if (!seat?.passwordHash || !seat.isActive) {
+    await burnOperatorPasswordVerification(password);
+    return null;
+  }
+
+  const valid = await verifyOperatorPassword(password, seat.passwordHash);
+  if (!valid) return null;
+
+  return {
+    identifier: seat.email,
+    role: seat.role,
+    provider: 'basic',
+    email: seat.email
+  };
+}
 
 function rateLimitedResponse(retryAfterMs: number) {
   const retryAfterSeconds = Math.max(1, Math.ceil(retryAfterMs / 1000));
@@ -78,7 +120,9 @@ export async function POST(request: Request) {
     return rateLimitedResponse(distributed.retryAfterMs);
   }
 
-  const actor = authorizeAdminCredentials(user, password, config);
+  const actor =
+    authorizeAdminCredentials(user, password, config) ??
+    (await authorizeSeatPasswordCredentials(user, password));
   if (!actor) {
     return NextResponse.json({ error: 'Invalid operator credentials.' }, { status: 401 });
   }

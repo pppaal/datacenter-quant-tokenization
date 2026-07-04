@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db/prisma';
+import { env } from '@/lib/env';
 import { withAdminApi } from '@/lib/security/with-admin-api';
 import {
   mintInvestorToken,
@@ -24,7 +25,7 @@ export const POST = withAdminApi({
   auditAction: 'portal.issue_token',
   auditEntityType: 'Investor',
   auditEntityIdFromBody: (body) => body.investorId,
-  async handler({ body }) {
+  async handler({ body, request }) {
     const investor = await prisma.investor.findUnique({
       where: { id: body.investorId },
       select: { id: true, code: true }
@@ -39,8 +40,14 @@ export const POST = withAdminApi({
         { status: 503 }
       );
     }
+    // Ready-to-share magic link: /portal/access redeems the token into the
+    // portal cookie and lands the LP on the rendered /portal page.
+    const baseUrl = env().APP_BASE_URL?.trim() || new URL(request.url).origin;
+    const portalUrl = new URL('/portal/access', baseUrl);
+    portalUrl.searchParams.set('token', token);
     return NextResponse.json({
       token,
+      portalUrl: portalUrl.toString(),
       cookieName: INVESTOR_TOKEN_COOKIE,
       expiresInSeconds: getInvestorTokenCookieOptions().maxAge
     });

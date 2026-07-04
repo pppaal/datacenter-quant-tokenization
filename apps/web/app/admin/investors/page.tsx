@@ -1,5 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { InvestorPortalLinkButton } from '@/components/admin/investor-portal-link-button';
 import { listInvestors, type InvestorRecord } from '@/lib/services/capital';
 import {
   buildInvestorComplianceView,
@@ -83,6 +84,9 @@ export default async function InvestorsPage() {
               <div className="mt-4 text-sm text-slate-400">
                 {formatNumber(investor.investorReports.length, 0)} recent reports /{' '}
                 {formatNumber(investor.ddqResponses.length, 0)} DDQ responses
+              </div>
+              <div className="mt-4">
+                <InvestorPortalLinkButton investorId={investor.id} />
               </div>
 
               {(() => {

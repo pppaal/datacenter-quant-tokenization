@@ -359,6 +359,7 @@ model User {
   role          UserRole          @default(ANALYST)
   isActive      Boolean           @default(true)
   sessionVersion Int              @default(1)
+  passwordHash  String?
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
   valuationRuns ValuationRun[]

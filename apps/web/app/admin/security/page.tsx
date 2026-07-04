@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { AccessGrantsPanel } from '@/components/admin/access-grants-panel';
 import { AdminIdentityBindingForm } from '@/components/admin/admin-identity-binding-form';
+import { AdminOperatorCreateForm } from '@/components/admin/admin-operator-create-form';
 import { AdminOperatorSeatForm } from '@/components/admin/admin-operator-seat-form';
 import { OpsAlertReplayButton } from '@/components/admin/ops-alert-replay-button';
 import { OpsWorkItemReplayButton } from '@/components/admin/ops-work-item-replay-button';
@@ -494,6 +495,9 @@ export default async function AdminSecurityPage() {
             </p>
           </div>
           <Badge tone="neutral">{formatNumber(security.operatorSeats.length, 0)} seats</Badge>
+        </div>
+        <div className="mt-5">
+          <AdminOperatorCreateForm />
         </div>
         <div className="mt-5 space-y-3">
           {security.operatorSeats.length > 0 ? (

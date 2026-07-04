@@ -604,6 +604,27 @@ export function listFreeMacroSourceCatalog(): FreeMacroSourceCatalogItem[] {
   ];
 }
 
+export type SourceDataOrigin = 'live' | 'fallback' | 'manual' | 'unknown';
+
+/**
+ * Classify what a cached source row is actually serving. Adapters persist the
+ * envelope's freshnessLabel (not `mode`), so this maps the label conventions
+ * every adapter uses ('fallback dataset' / market's 'market feed unavailable'
+ * for built-in demo data, 'manual override' for operator overrides) back to a
+ * data origin the UI can badge. Anything unrecognized stays 'unknown' rather
+ * than being presented as live.
+ */
+export function classifySourceDataOrigin(
+  freshnessLabel: string | null | undefined
+): SourceDataOrigin {
+  const label = freshnessLabel?.trim().toLowerCase() ?? '';
+  if (!label) return 'unknown';
+  if (label.includes('fallback') || label === 'market feed unavailable') return 'fallback';
+  if (label.includes('manual override')) return 'manual';
+  if (label === 'fresh api' || label === 'identity rate') return 'live';
+  return 'unknown';
+}
+
 export async function listSourceStatus(db: PrismaClient = prisma, now: Date = new Date()) {
   const caches = await db.sourceCache.findMany({
     orderBy: {
@@ -633,6 +654,9 @@ export async function listSourceStatus(db: PrismaClient = prisma, now: Date = ne
       status: effectiveStatus,
       freshnessLabel:
         expired && latest ? 'expired (past TTL)' : (latest?.freshnessLabel ?? 'not yet queried'),
+      // Classified from the STORED label (pre-expiry rewrite) so "expired
+      // fallback" still reads as fallback, never as live.
+      dataOrigin: latest ? classifySourceDataOrigin(latest.freshnessLabel) : ('unknown' as const),
       fetchedAt: latest?.fetchedAt ?? null,
       expiresAt: latest?.expiresAt ?? null,
       cacheKey: latest?.cacheKey ?? null

@@ -53,6 +53,7 @@ export default async function SourcesPage() {
     (connector) => connector.status === 'CONFIGURED'
   ).length;
   const partialCount = macroConnectors.filter((connector) => connector.status === 'PARTIAL').length;
+  const fallbackSystems = rows.filter((row) => row.dataOrigin === 'fallback');
 
   return (
     <div className="space-y-6">
@@ -71,6 +72,24 @@ export default async function SourcesPage() {
           </div>
         ) : null}
       </div>
+
+      {fallbackSystems.length > 0 ? (
+        <div
+          className="rounded-[22px] border border-[hsl(var(--warning)/0.35)] bg-[hsl(var(--warning-tint))] p-4"
+          data-testid="fallback-data-banner"
+          role="alert"
+        >
+          <div className="text-sm font-semibold text-[hsl(var(--warning))]">
+            {fallbackSystems.length} source system
+            {fallbackSystems.length === 1 ? ' is' : 's are'} serving built-in fallback/demo data
+          </div>
+          <p className="mt-2 text-sm leading-6 text-[hsl(var(--warning))]">
+            Dashboards and underwriting views fed by these adapters do NOT reflect live market
+            feeds: {fallbackSystems.map((row) => row.sourceSystem).join(', ')}. Configure the
+            missing provider keys below to replace them with real data.
+          </p>
+        </div>
+      ) : null}
 
       <div className="grid gap-4 md:grid-cols-3">
         <div className="metric-card">
@@ -471,19 +490,28 @@ export default async function SourcesPage() {
           <Card key={row.sourceSystem}>
             <div className="flex items-center justify-between">
               <div className="font-semibold text-white">{row.sourceSystem}</div>
-              <Badge
-                tone={
-                  row.status === 'FRESH'
-                    ? 'good'
-                    : row.status === 'STALE'
-                      ? 'warn'
-                      : row.status === 'NOT_QUERIED'
-                        ? 'neutral'
-                        : 'danger'
-                }
-              >
-                {row.status === 'NOT_QUERIED' ? 'Not queried' : row.status}
-              </Badge>
+              <div className="flex flex-wrap items-center gap-2">
+                {row.dataOrigin === 'fallback' ? (
+                  <Badge tone="danger" data-testid="fallback-data-badge">
+                    fallback data
+                  </Badge>
+                ) : row.dataOrigin === 'manual' ? (
+                  <Badge tone="warn">manual override</Badge>
+                ) : null}
+                <Badge
+                  tone={
+                    row.status === 'FRESH'
+                      ? 'good'
+                      : row.status === 'STALE'
+                        ? 'warn'
+                        : row.status === 'NOT_QUERIED'
+                          ? 'neutral'
+                          : 'danger'
+                  }
+                >
+                  {row.status === 'NOT_QUERIED' ? 'Not queried' : row.status}
+                </Badge>
+              </div>
             </div>
             <div className="mt-4 text-sm text-slate-400">
               <div>Freshness: {row.freshnessLabel}</div>
