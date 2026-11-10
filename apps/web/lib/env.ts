@@ -185,6 +185,14 @@ const envSchema = z.object({
   ANTHROPIC_API_KEY: optionalString,
   ANTHROPIC_NARRATIVE_MODEL: optionalString,
 
+  // Deal-document analyzer service (holdco-analyzer, Python). The OS forwards
+  // deal documents to it and proxies its read/analysis endpoints under
+  // /api/deals/[id]/analyzer/*. Unset = analyzer panel reports "not configured"
+  // and nothing is forwarded. See docs/analyzer-integration.md.
+  ANALYZER_URL: optionalString,
+  ANALYZER_SERVICE_TOKEN: optionalString,
+  ANALYZER_TIMEOUT_MS: optionalNumber('ANALYZER_TIMEOUT_MS'),
+
   // Valuation engine. 'auto' (default) runs the Python cross-check for data
   // centers; 'typescript' skips it; 'python' requires it. See
   // lib/services/valuation-runner.ts.
