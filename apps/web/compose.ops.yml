@@ -32,3 +32,27 @@ services:
       GLOBAL_MACRO_API_KEY: ${GLOBAL_MACRO_API_KEY:-}
     volumes:
       - .:/workspace
+
+  # Deal-document analyzer (holdco-analyzer, Python/FastAPI). Build the image from
+  # the analyzer repo: `docker build -t holdco-analyzer:latest .` — it reads deal
+  # documents, keeps page notes/facts with verified citations, and generates the
+  # pre-consultation memo and the semi-annual back-leverage model. The OS calls it
+  # with ANALYZER_URL=http://analyzer:8000 and the shared service token; the
+  # analyzer's own NDA gate decides whether anything may be sent to an AI model.
+  analyzer:
+    image: holdco-analyzer:latest
+    environment:
+      HOLDCO_SERVICE_TOKEN: ${ANALYZER_SERVICE_TOKEN}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      HOLDCO_NOTES_MODEL: ${HOLDCO_NOTES_MODEL:-claude-haiku-5-5}
+      HOLDCO_REVIEW_MODEL: ${HOLDCO_REVIEW_MODEL:-claude-sonnet-5-5}
+    volumes:
+      - analyzer-deals:/app/deals
+      - analyzer-logs:/app/logs
+    ports:
+      - '127.0.0.1:8008:8000'
+    restart: unless-stopped
+
+volumes:
+  analyzer-deals:
+  analyzer-logs:

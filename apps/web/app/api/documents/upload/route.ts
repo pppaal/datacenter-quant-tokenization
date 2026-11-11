@@ -4,6 +4,7 @@ import { AdminAccessScopeType } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { assertActorScopeAccess } from '@/lib/security/admin-access';
 import { uploadDocumentVersion } from '@/lib/services/documents';
+import { forwardDocumentForAsset, forwardDocumentForDeal } from '@/lib/services/analyzer';
 import {
   getRequestIpAddress,
   resolveVerifiedAdminActorFromHeaders
@@ -40,6 +41,19 @@ export async function POST(request: Request) {
       size: file.size,
       buffer
     });
+    // Forward to the document analyzer: the deal named in the form, else every open
+    // deal on the asset. Never blocks or fails the upload.
+    const forwardInput = {
+      operator: { identifier: actor.identifier, role: actor.role },
+      fileName: file.name,
+      contentType: file.type,
+      bytes: buffer
+    };
+    if (typeof payload.dealId === 'string' && payload.dealId.trim()) {
+      void forwardDocumentForDeal(prisma, { ...forwardInput, dealId: payload.dealId.trim() });
+    } else {
+      void forwardDocumentForAsset(prisma, { ...forwardInput, assetId: document.assetId });
+    }
     await recordAuditEvent({
       actorIdentifier: actor?.identifier,
       actorRole: actor?.role,
