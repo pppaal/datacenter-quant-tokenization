@@ -17,9 +17,17 @@ type Action = {
   label: string;
   method: 'GET' | 'POST';
   path: string;
+  body?: Record<string, unknown>;
   pick: (json: Record<string, unknown>) => string;
   hint: string;
 };
+
+type MemoSpec = 'prememo' | 'icmemo';
+
+const MEMOS: { spec: MemoSpec; label: string }[] = [
+  { spec: 'prememo', label: '사전협의서' },
+  { spec: 'icmemo', label: '투자심의 메모' }
+];
 
 function pickMarkdown(json: Record<string, unknown>): string {
   const md = json.markdown;
@@ -77,6 +85,40 @@ const ACTIONS: Action[] = [
     pick: (json) =>
       `${pickMarkdown(json)}\n\n${typeof json.check_markdown === 'string' ? json.check_markdown : ''}`,
     hint: '스폰서 엑셀을 다시 계산해 대조한 반기 현금흐름'
+  },
+  {
+    key: 'icmemo',
+    label: '투자심의 메모 초안',
+    method: 'POST',
+    path: 'docs/prememo',
+    body: { spec: 'icmemo' },
+    pick: (json) =>
+      `${typeof json.out === 'string' ? `생성: ${json.out}\n\n` : ''}${pickMarkdown(json)}`,
+    hint: '부동산 투자심의 서식 docx (물건 개요·임대차·수익성·리스크)'
+  },
+  {
+    key: 'kr_docs',
+    label: '한국 서류 파싱',
+    method: 'POST',
+    path: 'docs/kr_docs',
+    pick: pickMarkdown,
+    hint: '등기부등본·건축물대장·임대차계약서를 규칙으로 읽어 사실 사전에 넣음 (토큰 0)'
+  },
+  {
+    key: 'rentroll',
+    label: '렌트롤·운영수지',
+    method: 'POST',
+    path: 'docs/rentroll',
+    pick: pickMarkdown,
+    hint: '임차인별 행 + 연임대료·임대율·WAULT·집중도·만기 분포 (계산값은 구성 행이 원문에 있어야 검증)'
+  },
+  {
+    key: 'injection',
+    label: '숨은 글자·지시 점검',
+    method: 'POST',
+    path: 'docs/injection',
+    pick: pickMarkdown,
+    hint: 'AI를 겨냥한 지시문, 흰 글씨·초소형 글씨, 보이지 않는 글자, 숨은 시트를 찾아 적음'
   }
 ];
 
@@ -85,6 +127,7 @@ export function DealAnalyzerPanel({ dealId, analyzerDealId, configured }: Props)
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [output, setOutput] = useState<{ title: string; text: string } | null>(null);
+  const [saved, setSaved] = useState<string | null>(null);
 
   const call = useCallback(
     async (method: 'GET' | 'POST', path: string, body?: Record<string, unknown>) => {
@@ -129,9 +172,26 @@ export function DealAnalyzerPanel({ dealId, analyzerDealId, configured }: Props)
     setBusy(action.key);
     setError(null);
     try {
-      const json = await call(action.method, action.path, {});
+      const json = await call(action.method, action.path, action.body ?? {});
       setOutput({ title: action.label, text: action.pick(json) });
       await refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const saveMemo = async (spec: MemoSpec, label: string) => {
+    setBusy(`save-${spec}`);
+    setError(null);
+    setSaved(null);
+    try {
+      const json = await call('POST', 'save-memo', { spec });
+      const version = typeof json.version === 'number' ? ` v${json.version}` : '';
+      setSaved(
+        `${label} 초안을 딜 문서(보고서)로 저장했습니다${version}. IC 패킷 검토 때 딜 문서 목록에서 열 수 있습니다.`
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -155,8 +215,10 @@ export function DealAnalyzerPanel({ dealId, analyzerDealId, configured }: Props)
 
   const gate = overview?.gate ?? null;
   const aiAllowed = gate?.extract?.allowed ?? false;
-  const prememoName = `prememo_${analyzerDealId}_draft.docx`;
-  const hasPrememo = Boolean(overview?.outputs?.[prememoName]);
+  const memoFiles = MEMOS.map((memo) => {
+    const name = `${memo.spec}_${analyzerDealId}_draft.docx`;
+    return { ...memo, name, ready: Boolean(overview?.outputs?.[name]) };
+  });
 
   return (
     <Card className="space-y-5">
@@ -212,18 +274,34 @@ export function DealAnalyzerPanel({ dealId, analyzerDealId, configured }: Props)
             </div>
           </div>
           <div className="metric-card">
-            <div className="fine-print">사전협의서</div>
-            <div className="mt-3 text-sm text-[hsl(var(--foreground))]">
-              {hasPrememo ? (
-                <a
-                  className="underline"
-                  href={`/api/deals/${dealId}/analyzer/docs/outputs/${prememoName}`}
-                >
-                  docx 내려받기
-                </a>
-              ) : (
-                '아직 없음'
-              )}
+            <div className="fine-print">메모 초안</div>
+            <div className="mt-3 space-y-2 text-sm text-[hsl(var(--foreground))]">
+              {memoFiles.map((memo) => (
+                <div key={memo.spec} className="flex flex-wrap items-center gap-2">
+                  <span>{memo.label}</span>
+                  {memo.ready ? (
+                    <>
+                      <a
+                        className="underline"
+                        href={`/api/deals/${dealId}/analyzer/docs/outputs/${memo.name}`}
+                      >
+                        docx
+                      </a>
+                      <Button
+                        variant="ghost"
+                        type="button"
+                        disabled={busy !== null}
+                        title="딜에 연결된 자산의 문서(보고서)로 저장 — 버전 관리, IC 패킷 검토용"
+                        onClick={() => void saveMemo(memo.spec, memo.label)}
+                      >
+                        {busy === `save-${memo.spec}` ? '저장 중…' : '딜 문서로 저장'}
+                      </Button>
+                    </>
+                  ) : (
+                    <span className="text-[hsl(var(--foreground-muted))]">아직 없음</span>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -250,6 +328,7 @@ export function DealAnalyzerPanel({ dealId, analyzerDealId, configured }: Props)
       </div>
 
       {error ? <p className="text-sm text-[hsl(var(--danger))]">{error}</p> : null}
+      {saved ? <p className="text-sm text-[hsl(var(--success))]">{saved}</p> : null}
 
       {output ? (
         <div className="space-y-2">

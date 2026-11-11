@@ -119,6 +119,20 @@ test('proxy allow-list: deal-scoped reads and runs only, nothing else', () => {
   assert.ok(bad);
   assert.equal(bad.route.target('cottonwood', bad.match), null);
 
+  for (const name of ['kr_docs', 'rentroll', 'injection']) {
+    const run = matchProxyRoute('POST', `docs/${name}`);
+    assert.ok(run, name);
+    assert.equal(run.route.target('cottonwood', run.match), `/api/docs/${name}`);
+    assert.equal(run.route.minRole, 'ANALYST');
+    assert.equal(run.route.mutation, true);
+  }
+  const ic = matchProxyRoute('GET', 'docs/outputs/icmemo_cottonwood_draft.docx');
+  assert.ok(ic);
+  assert.equal(
+    ic.route.target('cottonwood', ic.match),
+    '/api/docs/outputs/cottonwood/icmemo_cottonwood_draft.docx'
+  );
+  assert.equal(matchProxyRoute('GET', 'docs/kr_docs'), null);
   assert.equal(matchProxyRoute('GET', 'docs/digest'), null);
   assert.equal(matchProxyRoute('POST', 'docs/overview'), null);
   assert.equal(matchProxyRoute('POST', 'compliance/destroy'), null);

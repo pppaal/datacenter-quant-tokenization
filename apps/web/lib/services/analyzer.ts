@@ -148,7 +148,7 @@ export const PROXY_ROUTES: ProxyRoute[] = [
   },
   {
     method: 'POST',
-    path: /^docs\/(digest|review|index|gaps|prememo|model_bl|extract_pack|fullread_plan|fullread_pack|review2_pack)$/,
+    path: /^docs\/(digest|review|index|gaps|prememo|model_bl|extract_pack|fullread_plan|fullread_pack|review2_pack|kr_docs|rentroll|injection)$/,
     target: (_d, m) => `/api/docs/${m[1]}`,
     mutation: true,
     minRole: 'ANALYST'
@@ -192,12 +192,14 @@ export async function analyzerFetch(
     headers: Record<string, string>;
     body?: BodyInit;
     timeoutMs?: number;
+    /** Test seam; defaults to the global fetch. */
+    fetchImpl?: typeof fetch;
   }
 ): Promise<Response> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), init.timeoutMs ?? cfg.timeoutMs);
   try {
-    return await fetch(`${cfg.url}${path}`, {
+    return await (init.fetchImpl ?? fetch)(`${cfg.url}${path}`, {
       method: init.method,
       headers: init.headers,
       body: init.body,
@@ -209,7 +211,7 @@ export async function analyzerFetch(
   }
 }
 
-async function readErrorDetail(response: Response): Promise<string> {
+export async function readErrorDetail(response: Response): Promise<string> {
   try {
     const text = await response.text();
     try {

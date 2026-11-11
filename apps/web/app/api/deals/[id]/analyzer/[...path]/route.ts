@@ -90,7 +90,8 @@ async function proxy(
   let upstream: Response;
   try {
     if (method === 'GET') {
-      const url = `${target}?operator=${encodeURIComponent(operator.identifier)}`;
+      const sep = target.includes('?') ? '&' : '?';
+      const url = `${target}${sep}operator=${encodeURIComponent(operator.identifier)}`;
       upstream = await analyzerFetch(cfg, url, {
         method: 'GET',
         headers: analyzerHeaders(cfg, operator)

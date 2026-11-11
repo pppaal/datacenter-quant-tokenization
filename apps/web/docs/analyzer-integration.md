@@ -31,16 +31,39 @@ shows the gate state ("AI 읽기 허용/차단") so operators can see what may b
 
 ## Proxy surface (`/api/deals/[id]/analyzer/<path>`)
 
-| Method | path                                                                                                                                                                           | analyzer endpoint                                      | role    |
-| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------ | ------- |
-| GET    | `docs/overview`                                                                                                                                                                | `/api/docs/overview/{deal}`                            | VIEWER  |
-| GET    | `docs/outputs/<name>`                                                                                                                                                          | `/api/docs/outputs/{deal}/{name}` (allow-listed names) | VIEWER  |
-| GET    | `docs/facts`                                                                                                                                                                   | `/api/docs/facts/{deal}`                               | VIEWER  |
-| POST   | `docs/digest`, `docs/review`, `docs/index`, `docs/gaps`, `docs/prememo`, `docs/model_bl`, `docs/extract_pack`, `docs/fullread_plan`, `docs/fullread_pack`, `docs/review2_pack` | same name under `/api/` with `deal_id` injected        | ANALYST |
-| POST   | `docs/fullread_apply`, `docs/fullread_api`, `docs/second_api`, `docs/review2_api`                                                                                              | same, API paths are gated by the analyzer              | ANALYST |
-| POST   | `compliance/nda`                                                                                                                                                               | `/api/compliance/nda` (register the deal's NDA)        | ADMIN   |
+| Method | path                                                                                                                                                                           | analyzer endpoint                                                                                           | role    |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- | ------- |
+| GET    | `docs/overview`                                                                                                                                                                | `/api/docs/overview/{deal}`                                                                                 | VIEWER  |
+| GET    | `docs/outputs/<name>`                                                                                                                                                          | `/api/docs/outputs/{deal}/{name}` (allow-listed names)                                                      | VIEWER  |
+| GET    | `docs/facts`                                                                                                                                                                   | `/api/docs/facts/{deal}`                                                                                    | VIEWER  |
+| POST   | `docs/digest`, `docs/review`, `docs/index`, `docs/gaps`, `docs/prememo`, `docs/model_bl`, `docs/extract_pack`, `docs/fullread_plan`, `docs/fullread_pack`, `docs/review2_pack` | same name under `/api/` with `deal_id` injected                                                             | ANALYST |
+| POST   | `docs/fullread_apply`, `docs/fullread_api`, `docs/second_api`, `docs/review2_api`                                                                                              | same, API paths are gated by the analyzer                                                                   | ANALYST |
+| POST   | `docs/kr_docs`, `docs/rentroll`, `docs/injection`                                                                                                                              | rule parsers (등기부·대장·임대차, 렌트롤·T12) and the hidden-text / prompt-injection scan; local, no tokens | ANALYST |
+| POST   | `compliance/nda`                                                                                                                                                               | `/api/compliance/nda` (register the deal's NDA)                                                             | ADMIN   |
 
 The client never chooses `deal_id` or `operator`; the proxy injects both.
+
+`docs/prememo` takes an optional `spec`: `prememo` (사전협의서, default) or
+`icmemo` (투자심의 메모, real-estate format). The analyzer only accepts those
+two names. The drafts are served as `docs/outputs/prememo_<deal>_draft.docx`
+and `docs/outputs/icmemo_<deal>_draft.docx`.
+
+## Saving a memo draft into the deal's documents
+
+`POST /api/deals/[id]/analyzer/save-memo` with `{ "spec": "prememo" | "icmemo" }`
+(ANALYST, deal scope `mutation`) copies the analyzer docx into the deal's asset
+documents as a versioned `REPORT` (`lib/services/analyzer-memo.ts`). Saving
+again adds a new version of the same document. The IC packet review then sees
+it in the deal's document list. No extracted text is passed to the document
+pipeline, so the OS never sends the memo body to its own AI summarizer or
+extraction sidecar; the analyzer's NDA gate stays the only place that decides
+AI reads. A deal without a linked asset gets a 409 with a message asking to
+link the asset first.
+
+Not done on purpose: writing analyzer text into `ValuationRun.underwritingMemo`
+/ `keyRisks` / `ddChecklist`. Those fields belong to the valuation engine's
+runs, and mixing draft analyzer text into them would blur which numbers the
+engine produced. Decide that mapping explicitly before wiring it.
 
 ## Local run
 
