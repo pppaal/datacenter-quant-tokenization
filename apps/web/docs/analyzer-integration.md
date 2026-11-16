@@ -43,8 +43,9 @@ shows the gate state ("AI 읽기 허용/차단") so operators can see what may b
 
 The client never chooses `deal_id` or `operator`; the proxy injects both.
 
-`docs/prememo` takes an optional `spec`: `prememo` (사전협의서, default) or
-`icmemo` (투자심의 메모, real-estate format). The analyzer only accepts those
+`docs/prememo` takes an optional `spec`: `prememo` (사전협의서, default),
+`icmemo` (투자심의 메모, real-estate format) or `approval` (여신 승인신청서 for the
+심사역협의회). The analyzer only accepts those
 two names. The drafts are served as `docs/outputs/prememo_<deal>_draft.docx`
 and `docs/outputs/icmemo_<deal>_draft.docx`.
 
@@ -80,3 +81,16 @@ echo "ANALYZER_SERVICE_TOKEN=$ANALYZER_SERVICE_TOKEN" >> .env
 Phase 2 will add the IC-memo spec for the analyzer's document generator and populate
 `ValuationRun.underwritingMemo / keyRisks / ddChecklist`; phase 3 exposes the analyzer as
 MCP tools for the OS AI routes and unifies the audit trail.
+
+## Approval chain (우리팀 → 법인 → IB리스크심의회 → 심사역협의회)
+
+| Method | path                                                                      | analyzer endpoint                                                                                                   | role    |
+| ------ | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------- |
+| POST   | `docs/checklists`                                                         | build the bank checklists (IB리스크심의회 부의, 법률점검, 현장실사, 심사보고서, 적도원칙, K-택소노미) with evidence | ANALYST |
+| GET    | `docs/checklists`                                                         | `/api/docs/checklists/{deal}`                                                                                       | VIEWER  |
+| POST   | `docs/bank_metrics`                                                       | pricing/RORWA, period-weighted risk weight, BIS impact from participation.json (read-only)                          | ANALYST |
+| GET    | `workflow`                                                                | `/api/workflow/{deal}` current stage + gate report                                                                  | VIEWER  |
+| POST   | `workflow/gate`, `workflow/review`, `workflow/submit`, `workflow/comment` | stage gate, review points, submission, comments                                                                     | ANALYST |
+| POST   | `workflow/decide`                                                         | record a stage decision with conditions                                                                             | ADMIN   |
+
+Stage decisions require the OS ADMIN role so an analyst cannot approve their own submission through the OS. `save-memo` also accepts `{ "spec": "approval" }`.

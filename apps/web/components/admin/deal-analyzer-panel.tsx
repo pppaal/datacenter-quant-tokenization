@@ -22,11 +22,12 @@ type Action = {
   hint: string;
 };
 
-type MemoSpec = 'prememo' | 'icmemo';
+type MemoSpec = 'prememo' | 'icmemo' | 'approval';
 
 const MEMOS: { spec: MemoSpec; label: string }[] = [
   { spec: 'prememo', label: '사전협의서' },
-  { spec: 'icmemo', label: '투자심의 메모' }
+  { spec: 'icmemo', label: '투자심의 메모' },
+  { spec: 'approval', label: '여신 승인신청' }
 ];
 
 function pickMarkdown(json: Record<string, unknown>): string {
@@ -95,6 +96,41 @@ const ACTIONS: Action[] = [
     pick: (json) =>
       `${typeof json.out === 'string' ? `생성: ${json.out}\n\n` : ''}${pickMarkdown(json)}`,
     hint: '부동산 투자심의 서식 docx (물건 개요·임대차·수익성·리스크)'
+  },
+  {
+    key: 'approval',
+    label: '여신 승인신청 초안',
+    method: 'POST',
+    path: 'docs/prememo',
+    body: { spec: 'approval' },
+    pick: (json) =>
+      `${typeof json.out === 'string' ? `생성: ${json.out}\n\n` : ''}${pickMarkdown(json)}`,
+    hint: '심사역협의회 승인신청서 서식 docx (수익성·RWA·BIS, 별첨 체크리스트, 심사 예상 질의)'
+  },
+  {
+    key: 'checklists',
+    label: '체크리스트 점검',
+    method: 'POST',
+    path: 'docs/checklists',
+    pick: pickMarkdown,
+    hint: 'IB리스크심의회 부의·법률점검·현장실사·심사보고서·적도원칙·K-택소노미 항목을 근거와 함께 미리 판정'
+  },
+  {
+    key: 'bank_metrics',
+    label: '수익성·RWA 계산',
+    method: 'POST',
+    path: 'docs/bank_metrics',
+    pick: pickMarkdown,
+    hint: '조달 구조별 All-in 마진·RORWA, 기간 가중 위험가중치, BIS비율 영향 (participation.json 입력 기준)'
+  },
+  {
+    key: 'workflow',
+    label: '심사 단계 현황',
+    method: 'GET',
+    path: 'workflow',
+    pick: (json) =>
+      typeof json.text === 'string' && json.text.trim() ? json.text : pickMarkdown(json),
+    hint: '우리팀 → 법인 → IB리스크심의회 → 심사역협의회 현재 단계와 제출 점검'
   },
   {
     key: 'kr_docs',

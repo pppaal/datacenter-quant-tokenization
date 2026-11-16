@@ -148,7 +148,7 @@ export const PROXY_ROUTES: ProxyRoute[] = [
   },
   {
     method: 'POST',
-    path: /^docs\/(digest|review|index|gaps|prememo|model_bl|extract_pack|fullread_plan|fullread_pack|review2_pack|kr_docs|rentroll|injection)$/,
+    path: /^docs\/(digest|review|index|gaps|prememo|model_bl|extract_pack|fullread_plan|fullread_pack|review2_pack|kr_docs|rentroll|injection|checklists|bank_metrics)$/,
     target: (_d, m) => `/api/docs/${m[1]}`,
     mutation: true,
     minRole: 'ANALYST'
@@ -159,6 +159,35 @@ export const PROXY_ROUTES: ProxyRoute[] = [
     target: (_d, m) => `/api/docs/${m[1]}`,
     mutation: true,
     minRole: 'ANALYST'
+  },
+  {
+    method: 'GET',
+    path: /^docs\/checklists$/,
+    target: (d) => `/api/docs/checklists/${d}`,
+    mutation: false,
+    minRole: 'VIEWER'
+  },
+  {
+    method: 'GET',
+    path: /^workflow$/,
+    target: (d) => `/api/workflow/${d}`,
+    mutation: false,
+    minRole: 'VIEWER'
+  },
+  {
+    method: 'POST',
+    path: /^workflow\/(gate|review|submit|comment)$/,
+    target: (_d, m) => `/api/workflow/${m[1]}`,
+    mutation: true,
+    minRole: 'ANALYST'
+  },
+  {
+    // Stage decisions (법인 결재, 심의회·협의회 결과) are recorded by an OS admin, never by the submitting analyst's role alone.
+    method: 'POST',
+    path: /^workflow\/decide$/,
+    target: () => '/api/workflow/decide',
+    mutation: true,
+    minRole: 'ADMIN'
   },
   {
     method: 'POST',

@@ -1,5 +1,5 @@
 /**
- * POST /api/deals/:id/analyzer/save-memo  { spec: 'prememo' | 'icmemo' }
+ * POST /api/deals/:id/analyzer/save-memo  { spec: 'prememo' | 'icmemo' | 'approval' }
  *
  * Copies the analyzer's memo draft (docx) into the deal's asset documents as a
  * versioned REPORT, so it is reviewed alongside the deal's other documents in
@@ -18,7 +18,9 @@ import { AnalyzerMemoError, saveAnalyzerMemoAsDocument } from '@/lib/services/an
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const SaveMemoBody = z.object({ spec: z.enum(['prememo', 'icmemo']).default('prememo') });
+const SaveMemoBody = z.object({
+  spec: z.enum(['prememo', 'icmemo', 'approval']).default('prememo')
+});
 
 export const POST = withAdminApi<typeof SaveMemoBody, { id: string }>({
   requiredRole: 'ANALYST',

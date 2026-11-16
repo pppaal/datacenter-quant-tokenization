@@ -76,6 +76,8 @@ function fakeUpload(
 test('memo spec helpers: names follow the analyzer allow-list', () => {
   assert.equal(isAnalyzerMemoSpec('prememo'), true);
   assert.equal(isAnalyzerMemoSpec('icmemo'), true);
+  assert.equal(isAnalyzerMemoSpec('approval'), true);
+  assert.equal(analyzerMemoFileName('approval', 'cottonwood'), 'approval_cottonwood_draft.docx');
   assert.equal(isAnalyzerMemoSpec('../etc'), false);
   assert.equal(analyzerMemoFileName('icmemo', 'cottonwood'), 'icmemo_cottonwood_draft.docx');
   assert.ok(analyzerMemoTitle('prememo', 'COTTONWOOD').startsWith('사전협의서 초안'));

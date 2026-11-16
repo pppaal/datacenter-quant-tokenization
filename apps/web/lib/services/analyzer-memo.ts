@@ -26,7 +26,8 @@ import { uploadDocumentVersion } from '@/lib/services/documents';
 
 export const ANALYZER_MEMO_SPECS = {
   prememo: { prefix: 'prememo', title: '사전협의서 초안' },
-  icmemo: { prefix: 'icmemo', title: '투자심의 메모 초안' }
+  icmemo: { prefix: 'icmemo', title: '투자심의 메모 초안' },
+  approval: { prefix: 'approval', title: '여신 승인신청 초안' }
 } as const;
 
 export type AnalyzerMemoSpec = keyof typeof ANALYZER_MEMO_SPECS;

@@ -119,7 +119,7 @@ test('proxy allow-list: deal-scoped reads and runs only, nothing else', () => {
   assert.ok(bad);
   assert.equal(bad.route.target('cottonwood', bad.match), null);
 
-  for (const name of ['kr_docs', 'rentroll', 'injection']) {
+  for (const name of ['kr_docs', 'rentroll', 'injection', 'checklists', 'bank_metrics']) {
     const run = matchProxyRoute('POST', `docs/${name}`);
     assert.ok(run, name);
     assert.equal(run.route.target('cottonwood', run.match), `/api/docs/${name}`);
@@ -132,6 +132,23 @@ test('proxy allow-list: deal-scoped reads and runs only, nothing else', () => {
     ic.route.target('cottonwood', ic.match),
     '/api/docs/outputs/cottonwood/icmemo_cottonwood_draft.docx'
   );
+  const cl = matchProxyRoute('GET', 'docs/checklists');
+  assert.ok(cl);
+  assert.equal(cl.route.target('cottonwood', cl.match), '/api/docs/checklists/cottonwood');
+  const wf = matchProxyRoute('GET', 'workflow');
+  assert.ok(wf);
+  assert.equal(wf.route.target('cottonwood', wf.match), '/api/workflow/cottonwood');
+  assert.equal(wf.route.minRole, 'VIEWER');
+  for (const name of ['gate', 'review', 'submit', 'comment']) {
+    const w = matchProxyRoute('POST', `workflow/${name}`);
+    assert.ok(w, name);
+    assert.equal(w.route.target('cottonwood', w.match), `/api/workflow/${name}`);
+    assert.equal(w.route.minRole, 'ANALYST');
+  }
+  const decide = matchProxyRoute('POST', 'workflow/decide');
+  assert.ok(decide);
+  assert.equal(decide.route.minRole, 'ADMIN', 'stage decisions need an OS admin');
+  assert.equal(matchProxyRoute('POST', 'workflow/delete'), null);
   assert.equal(matchProxyRoute('GET', 'docs/kr_docs'), null);
   assert.equal(matchProxyRoute('GET', 'docs/digest'), null);
   assert.equal(matchProxyRoute('POST', 'docs/overview'), null);
