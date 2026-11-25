@@ -94,3 +94,19 @@ MCP tools for the OS AI routes and unifies the audit trail.
 | POST   | `workflow/decide`                                                         | record a stage decision with conditions                                                                             | ADMIN   |
 
 Stage decisions require the OS ADMIN role so an analyst cannot approve their own submission through the OS. `save-memo` also accepts `{ "spec": "approval" }`.
+
+## Agent company (딜부서 → 법인 → IB리스크심의회 → 심사부·심사역협의회, 감사)
+
+Role agents (deal analyst, deal head, entity risk/compliance, IB risk reviewer, credit officer, three committee members and a chair, and an independent auditor) work each approval-chain stage like departments: the maker builds, independent checkers re-check (re-computing numbers rather than trusting them), a department that finds the same issue co-signs it, and the auditor watches every step (hash chains, separation of duties, files changed after submission). Agents only **recommend and submit**; the stage decision is still `workflow/decide` (ADMIN), and the analyzer refuses any `agent:` operator for runs and finding handling.
+
+| Method | OS path                    | Analyzer                                      | What                                                                                    | Min role |
+| ------ | -------------------------- | --------------------------------------------- | --------------------------------------------------------------------------------------- | -------- |
+| GET    | `agents`                   | `/api/agents/{deal}`                          | where the ball is, open findings by department, human actions needed, latest work log   | VIEWER   |
+| GET    | `agents/org`               | `/api/agents/org`                             | org chart (departments, roles, who checks whom, stage flow, thresholds)                 | VIEWER   |
+| GET    | `agents/ledger`            | `/api/agents/{deal}/ledger` (latest 100)      | hash-chained work ledger with chain check                                               | VIEWER   |
+| GET    | `agents/simulation/ledger` | same, `simulation=true`                       | ledger of the last simulation                                                           | VIEWER   |
+| POST   | `agents/run`               | `/api/agents/run`                             | `{ "mode": "simulate" }` (writes only `agents/simulation/`) or `{ "mode": "official" }` | ANALYST  |
+| POST   | `agents/resolve`           | `/api/agents/resolve` (OS pins `waive:false`) | mark a finding fixed — the next run re-checks it                                        | ANALYST  |
+| POST   | `agents/waive`             | `/api/agents/resolve` (OS pins `waive:true`)  | waive a finding (risk accepted) — the next run no longer blocks on it                   | ADMIN    |
+
+`resolve` and `waive` take `{ "finding_id": "F-…", "note": "…" }`; the OS overrides `waive`, `deal_id` and `operator` whatever the client sends. Opinions and work logs download through `docs/outputs/` (`agents_timeline.md`, `agents_state.json`, `agents_opinion_<role>.md`, and the `agents_sim_*` equivalents).

@@ -18,6 +18,7 @@ import { withAdminApi } from '@/lib/security/with-admin-api';
 import {
   analyzerFetch,
   analyzerHeaders,
+  buildProxyBody,
   getAnalyzerConfig,
   matchProxyRoute,
   toAnalyzerDealId
@@ -97,11 +98,12 @@ async function proxy(
         headers: analyzerHeaders(cfg, operator)
       });
     } else {
-      const { deal_id: _dealId, operator: _operator, ...rest } = body;
       upstream = await analyzerFetch(cfg, target, {
         method: 'POST',
         headers: { ...analyzerHeaders(cfg, operator), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...rest, deal_id: analyzerDealId, operator: operator.identifier })
+        body: JSON.stringify(
+          buildProxyBody(matched.route, body, analyzerDealId, operator.identifier)
+        )
       });
     }
   } catch (error) {

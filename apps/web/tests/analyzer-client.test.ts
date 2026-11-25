@@ -3,6 +3,7 @@ import test from 'node:test';
 import { __resetEnvCache } from '@/lib/env';
 import {
   analyzerHeaders,
+  buildProxyBody,
   forwardDocumentToAnalyzer,
   getAnalyzerConfig,
   matchProxyRoute,
@@ -155,6 +156,71 @@ test('proxy allow-list: deal-scoped reads and runs only, nothing else', () => {
   assert.equal(matchProxyRoute('POST', 'compliance/destroy'), null);
   assert.equal(matchProxyRoute('GET', 'docs/deals'), null);
   assert.equal(matchProxyRoute('POST', 'login'), null);
+});
+
+test('agent company: reads for viewers, runs for analysts, waivers for admins only', () => {
+  const status = matchProxyRoute('GET', 'agents');
+  assert.ok(status);
+  assert.equal(status.route.minRole, 'VIEWER');
+  assert.equal(status.route.target('cottonwood', status.match), '/api/agents/cottonwood');
+  const org = matchProxyRoute('GET', 'agents/org');
+  assert.ok(org);
+  assert.equal(org.route.target('cottonwood', org.match), '/api/agents/org');
+  const ledger = matchProxyRoute('GET', 'agents/ledger');
+  assert.ok(ledger);
+  assert.equal(ledger.route.mutation, false);
+  assert.match(
+    ledger.route.target('cottonwood', ledger.match) ?? '',
+    /^\/api\/agents\/cottonwood\/ledger\?/
+  );
+  const simLedger = matchProxyRoute('GET', 'agents/simulation/ledger');
+  assert.ok(simLedger);
+  assert.match(simLedger.route.target('cottonwood', simLedger.match) ?? '', /simulation=true/);
+
+  const run = matchProxyRoute('POST', 'agents/run');
+  assert.ok(run);
+  assert.equal(run.route.minRole, 'ANALYST');
+  assert.equal(run.route.mutation, true);
+
+  const resolve = matchProxyRoute('POST', 'agents/resolve');
+  const waive = matchProxyRoute('POST', 'agents/waive');
+  assert.ok(resolve && waive);
+  assert.equal(resolve.route.minRole, 'ANALYST', 'marking fixed is re-checked on the next run');
+  assert.equal(waive.route.minRole, 'ADMIN', 'a waiver accepts the risk, like a stage decision');
+  assert.equal(resolve.route.target('d', resolve.match), '/api/agents/resolve');
+  assert.equal(waive.route.target('d', waive.match), '/api/agents/resolve');
+
+  // No agent route can record a stage decision; decide stays ADMIN-only on workflow/decide.
+  assert.equal(matchProxyRoute('POST', 'agents/decide'), null);
+  assert.equal(matchProxyRoute('GET', 'agents/run'), null);
+  assert.equal(matchProxyRoute('POST', 'agents/ledger'), null);
+  assert.equal(matchProxyRoute('GET', 'agents/../workflow'), null);
+});
+
+test('proxied POST body: the OS pins waive and always chooses deal and operator', () => {
+  const resolve = matchProxyRoute('POST', 'agents/resolve');
+  const waive = matchProxyRoute('POST', 'agents/waive');
+  assert.ok(resolve && waive);
+  const sneaky = {
+    finding_id: 'F-0123456789',
+    note: '확인함',
+    waive: true,
+    deal_id: 'other-deal',
+    operator: 'agent:deal_head'
+  };
+  const r = buildProxyBody(resolve.route, sneaky, 'cottonwood', '김분석');
+  assert.equal(r.waive, false, 'an analyst cannot turn a resolve into a waiver');
+  assert.equal(r.deal_id, 'cottonwood');
+  assert.equal(r.operator, '김분석');
+  assert.equal(r.finding_id, 'F-0123456789');
+  const w = buildProxyBody(waive.route, { ...sneaky, waive: false }, 'cottonwood', '박관리');
+  assert.equal(w.waive, true);
+  assert.equal(w.operator, '박관리');
+
+  const digest = matchProxyRoute('POST', 'docs/digest');
+  assert.ok(digest);
+  const d = buildProxyBody(digest.route, { budget: 3000, deal_id: 'x' }, 'cottonwood', 'op');
+  assert.deepEqual(d, { budget: 3000, deal_id: 'cottonwood', operator: 'op' });
 });
 
 test('forwarding is a no-op when the analyzer is not configured', async () => {

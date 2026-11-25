@@ -36,6 +36,72 @@ function pickMarkdown(json: Record<string, unknown>): string {
   return JSON.stringify(json, null, 2);
 }
 
+function stringList(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string') : [];
+}
+
+/** Agent company status/run: the analyzer's own summary text, then the latest work-log lines. */
+function pickAgents(json: Record<string, unknown>): string {
+  const status = (json.status ?? json) as Record<string, unknown>;
+  const text = typeof json.text === 'string' && json.text.trim() ? json.text : pickMarkdown(status);
+  const timeline = (status.timeline ?? {}) as Record<string, unknown>;
+  const lines = stringList(timeline.lines);
+  return lines.length ? `${text}\n\n업무일지 (최근 ${lines.length}줄)\n${lines.join('\n')}` : text;
+}
+
+/** Hash-chained work ledger, newest first, with the chain check result. */
+function pickLedger(json: Record<string, unknown>): string {
+  const entries = Array.isArray(json.entries) ? (json.entries as Record<string, unknown>[]) : [];
+  const verify = (json.verify ?? null) as Record<string, unknown> | null;
+  const head = verify
+    ? verify.ok
+      ? `해시 사슬 정상 · 기록 ${String(verify.count ?? entries.length)}건`
+      : `해시 사슬 깨짐 — ${String(verify.broken_at ?? '?')}번째 기록부터`
+    : `기록 ${entries.length}건`;
+  const rows = entries.map((e) => {
+    const what = [e.text, e.title, e.kind].find((v) => typeof v === 'string' && v) ?? '';
+    return `#${String(e.seq ?? '?')} ${String(e.ts ?? '').slice(0, 16)} · ${String(e.type ?? '')} · ${String(e.role ?? e.operator ?? '')} · ${String(what)}`;
+  });
+  return [head, '', ...rows].join('\n');
+}
+
+const AGENT_ACTIONS: Action[] = [
+  {
+    key: 'agents',
+    label: '에이전트 회사 현황',
+    method: 'GET',
+    path: 'agents',
+    pick: pickAgents,
+    hint: '딜부서 → 법인 → IB리스크심의회 → 심사부·심사역협의회, 감사가 전 과정 감시. 지금 공을 가진 곳·부서별 지적·사람 조치'
+  },
+  {
+    key: 'agents-simulate',
+    label: '모의 진행',
+    method: 'POST',
+    path: 'agents/run',
+    body: { mode: 'simulate' },
+    pick: pickAgents,
+    hint: '추천대로 결정된다고 가정하고 끝까지 — 승인 체인 기록은 건드리지 않음 (agents/simulation/ 에만 씀)'
+  },
+  {
+    key: 'agents-official',
+    label: '공식 진행',
+    method: 'POST',
+    path: 'agents/run',
+    body: { mode: 'official' },
+    pick: pickAgents,
+    hint: '지금 단계를 부서들이 점검·보완하고, 모두 서명하면 에이전트가 제출 → 사람 결재 대기에서 멈춤 (결정은 사람만)'
+  },
+  {
+    key: 'agents-ledger',
+    label: '업무 기록',
+    method: 'GET',
+    path: 'agents/ledger',
+    pick: pickLedger,
+    hint: '에이전트가 한 일·지적·넘김·사람 처리 기록 (붙이기만 하는 해시 사슬) 최근 100건'
+  }
+];
+
 const ACTIONS: Action[] = [
   {
     key: 'digest',
@@ -164,6 +230,8 @@ export function DealAnalyzerPanel({ dealId, analyzerDealId, configured }: Props)
   const [error, setError] = useState<string | null>(null);
   const [output, setOutput] = useState<{ title: string; text: string } | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
+  const [findingId, setFindingId] = useState('');
+  const [findingNote, setFindingNote] = useState('');
 
   const call = useCallback(
     async (method: 'GET' | 'POST', path: string, body?: Record<string, unknown>) => {
@@ -228,6 +296,34 @@ export function DealAnalyzerPanel({ dealId, analyzerDealId, configured }: Props)
       setSaved(
         `${label} 초안을 딜 문서(보고서)로 저장했습니다${version}. IC 패킷 검토 때 딜 문서 목록에서 열 수 있습니다.`
       );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const handleFinding = async (waive: boolean) => {
+    const id = findingId.trim();
+    const note = findingNote.trim();
+    if (!/^F-[0-9a-f]{6,16}$/.test(id) || !note) {
+      setError('지적 id(F-…)와 확인 메모를 모두 적어 주세요.');
+      return;
+    }
+    const key = waive ? 'agents-waive' : 'agents-resolve';
+    setBusy(key);
+    setError(null);
+    try {
+      const json = await call('POST', waive ? 'agents/waive' : 'agents/resolve', {
+        finding_id: id,
+        note
+      });
+      setOutput({
+        title: waive ? `지적 면제 ${id}` : `지적 해소 ${id}`,
+        text: pickAgents(json)
+      });
+      setFindingId('');
+      setFindingNote('');
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -361,6 +457,62 @@ export function DealAnalyzerPanel({ dealId, analyzerDealId, configured }: Props)
             {busy === action.key ? `${action.label}…` : action.label}
           </Button>
         ))}
+      </div>
+
+      <div className="space-y-3 rounded-xl border border-[hsl(var(--border))] p-4">
+        <div>
+          <div className="fine-print">에이전트 회사</div>
+          <p className="mt-1 text-xs text-[hsl(var(--foreground-muted))]">
+            부서 에이전트가 서로 점검하고 추천·제출까지만 합니다. 단계 결정(결재)은 승인 체인에서
+            사람이 기록합니다.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {AGENT_ACTIONS.map((action) => (
+            <Button
+              key={action.key}
+              type="button"
+              variant="secondary"
+              disabled={busy !== null || !overview?.exists}
+              title={action.hint}
+              onClick={() => void run(action)}
+            >
+              {busy === action.key ? `${action.label}…` : action.label}
+            </Button>
+          ))}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            className="w-40 rounded-md border border-[hsl(var(--border))] bg-transparent px-2 py-1 text-sm"
+            placeholder="지적 id (F-…)"
+            value={findingId}
+            onChange={(event) => setFindingId(event.target.value)}
+          />
+          <input
+            className="min-w-[16rem] flex-1 rounded-md border border-[hsl(var(--border))] bg-transparent px-2 py-1 text-sm"
+            placeholder="무엇을 확인했는지 (필수 — 업무 기록에 이름과 함께 남음)"
+            value={findingNote}
+            onChange={(event) => setFindingNote(event.target.value)}
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            disabled={busy !== null}
+            title="고쳤음 — 다음 실행에서 부서가 다시 점검합니다"
+            onClick={() => void handleFinding(false)}
+          >
+            {busy === 'agents-resolve' ? '처리 중…' : '지적 해소'}
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            disabled={busy !== null}
+            title="위험을 받아들임 — 다음 실행에서 막지 않습니다 (관리자만)"
+            onClick={() => void handleFinding(true)}
+          >
+            {busy === 'agents-waive' ? '처리 중…' : '지적 면제 (관리자)'}
+          </Button>
+        </div>
       </div>
 
       {error ? <p className="text-sm text-[hsl(var(--danger))]">{error}</p> : null}

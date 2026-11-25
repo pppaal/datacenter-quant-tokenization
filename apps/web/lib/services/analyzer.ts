@@ -109,6 +109,11 @@ export type ProxyRoute = {
   target: (analyzerDealId: string, match: RegExpMatchArray) => string | null;
   mutation: boolean;
   minRole: AdminAccessRole;
+  /**
+   * POST fields the OS pins, overriding anything the client sent. Used where one
+   * analyzer endpoint carries two privilege levels (agents/resolve vs agents/waive).
+   */
+  fixedBody?: Record<string, unknown>;
 };
 
 /**
@@ -189,6 +194,62 @@ export const PROXY_ROUTES: ProxyRoute[] = [
     mutation: true,
     minRole: 'ADMIN'
   },
+  // Agent company (딜부서 → 법인 → IB리스크심의회 → 심사부·심사역협의회, 감사). Agents only recommend and
+  // submit; the stage decision stays on workflow/decide (ADMIN). The analyzer refuses 'agent:' operators.
+  {
+    method: 'GET',
+    path: /^agents\/org$/,
+    target: () => '/api/agents/org',
+    mutation: false,
+    minRole: 'VIEWER'
+  },
+  {
+    method: 'GET',
+    path: /^agents$/,
+    target: (d) => `/api/agents/${d}`,
+    mutation: false,
+    minRole: 'VIEWER'
+  },
+  {
+    method: 'GET',
+    path: /^agents\/ledger$/,
+    target: (d) => `/api/agents/${d}/ledger?order=desc&limit=100`,
+    mutation: false,
+    minRole: 'VIEWER'
+  },
+  {
+    method: 'GET',
+    path: /^agents\/simulation\/ledger$/,
+    target: (d) => `/api/agents/${d}/ledger?order=desc&limit=100&simulation=true`,
+    mutation: false,
+    minRole: 'VIEWER'
+  },
+  {
+    // simulate (writes only agents/simulation/) or official (agents may submit; stops at the human decision).
+    method: 'POST',
+    path: /^agents\/run$/,
+    target: () => '/api/agents/run',
+    mutation: true,
+    minRole: 'ANALYST'
+  },
+  {
+    // "Fixed — check again next run": the next run re-inspects, so no risk is accepted here.
+    method: 'POST',
+    path: /^agents\/resolve$/,
+    target: () => '/api/agents/resolve',
+    mutation: true,
+    minRole: 'ANALYST',
+    fixedBody: { waive: false }
+  },
+  {
+    // Waiver = accepting the risk; the next run no longer blocks on it. Same level as a stage decision.
+    method: 'POST',
+    path: /^agents\/waive$/,
+    target: () => '/api/agents/resolve',
+    mutation: true,
+    minRole: 'ADMIN',
+    fixedBody: { waive: true }
+  },
   {
     method: 'POST',
     path: /^compliance\/nda$/,
@@ -197,6 +258,25 @@ export const PROXY_ROUTES: ProxyRoute[] = [
     minRole: 'ADMIN'
   }
 ];
+
+/**
+ * Body sent upstream for a proxied POST: the client's fields, then the route's
+ * pinned fields, then the OS-chosen deal id and operator (the client never picks those).
+ */
+export function buildProxyBody(
+  route: ProxyRoute,
+  body: Record<string, unknown>,
+  analyzerDealId: string,
+  operatorIdentifier: string
+): Record<string, unknown> {
+  const { deal_id: _dealId, operator: _operator, ...rest } = body;
+  return {
+    ...rest,
+    ...(route.fixedBody ?? {}),
+    deal_id: analyzerDealId,
+    operator: operatorIdentifier
+  };
+}
 
 export function matchProxyRoute(
   method: string,
