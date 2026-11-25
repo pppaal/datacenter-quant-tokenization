@@ -8,11 +8,13 @@ import { Card } from '@/components/ui/card';
 import { DealClosingReadinessPanel } from '@/components/admin/deal-closing-readiness-panel';
 import { DealCloseProbabilityHistoryPanel } from '@/components/admin/deal-close-probability-history-panel';
 import { DealDataCoveragePanel } from '@/components/admin/deal-data-coverage-panel';
+import { DealAnalyzerPanel } from '@/components/admin/deal-analyzer-panel';
 import { DealDiligenceWorkstreamPanel } from '@/components/admin/deal-diligence-workstream-panel';
 import { DealOperatorConsole } from '@/components/admin/deal-operator-console';
 import { DealTimelinePanel } from '@/components/admin/deal-timeline-panel';
 import { DocumentUploadForm } from '@/components/admin/document-upload-form';
 import { formatDealStage, getDealStageTone } from '@/lib/deals/config';
+import { isAnalyzerConfigured, toAnalyzerDealId } from '@/lib/services/analyzer';
 import { canActorAccessScope } from '@/lib/security/admin-access';
 import { prisma } from '@/lib/db/prisma';
 import { resolveVerifiedAdminActorFromHeaders } from '@/lib/security/admin-request';
@@ -257,6 +259,12 @@ export default async function DealDetailPage({ params }: Props) {
       <DealCloseProbabilityHistoryPanel history={closeProbabilityHistory} />
 
       <DealDataCoveragePanel coverage={coverage} />
+
+      <DealAnalyzerPanel
+        dealId={deal.id}
+        analyzerDealId={toAnalyzerDealId(deal.dealCode)}
+        configured={isAnalyzerConfigured()}
+      />
 
       {deal.asset ? (
         <Card>

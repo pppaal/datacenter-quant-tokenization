@@ -10,6 +10,7 @@ import {
 import { UploadPolicyError, validateDocumentUpload } from '@/lib/security/upload-policy';
 import { recordAuditEvent } from '@/lib/services/audit';
 import { uploadDocumentVersion } from '@/lib/services/documents';
+import { forwardDocumentForDeal } from '@/lib/services/analyzer';
 import { attachDealDiligenceDeliverable } from '@/lib/services/deals';
 import { uploadRateLimiter, RateLimitError } from '@/lib/security/rate-limit';
 
@@ -93,6 +94,16 @@ export async function POST(
       },
       prisma
     );
+
+    // Hand the stored file to the document analyzer (fire-and-forget; the upload
+    // has already succeeded and the analyzer can be re-indexed from the Deal page).
+    void forwardDocumentForDeal(prisma, {
+      dealId: id,
+      operator: { identifier: actor.identifier, role: actor.role },
+      fileName: file.name,
+      contentType: file.type,
+      bytes: buffer
+    });
 
     await recordAuditEvent({
       actorIdentifier: actor.identifier,
