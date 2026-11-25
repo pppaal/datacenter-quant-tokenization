@@ -77,10 +77,10 @@ test('memo spec helpers: names follow the analyzer allow-list', () => {
   assert.equal(isAnalyzerMemoSpec('prememo'), true);
   assert.equal(isAnalyzerMemoSpec('icmemo'), true);
   assert.equal(isAnalyzerMemoSpec('approval'), true);
-  assert.equal(analyzerMemoFileName('approval', 'cottonwood'), 'approval_cottonwood_draft.docx');
+  assert.equal(analyzerMemoFileName('approval', 'demo-deal'), 'approval_demo-deal_draft.docx');
   assert.equal(isAnalyzerMemoSpec('../etc'), false);
-  assert.equal(analyzerMemoFileName('icmemo', 'cottonwood'), 'icmemo_cottonwood_draft.docx');
-  assert.ok(analyzerMemoTitle('prememo', 'COTTONWOOD').startsWith('사전협의서 초안'));
+  assert.equal(analyzerMemoFileName('icmemo', 'demo-deal'), 'icmemo_demo-deal_draft.docx');
+  assert.ok(analyzerMemoTitle('prememo', 'DEMO-DEAL').startsWith('사전협의서 초안'));
   assert.ok(analyzerMemoTitle('icmemo', 'X'.repeat(300)).length <= 140);
 });
 
@@ -91,7 +91,7 @@ test('saveAnalyzerMemoAsDocument stores the analyzer docx as a REPORT on the dea
       input?: Record<string, unknown>;
       file?: { name: string; type: string; size: number };
     }[] = [];
-    const { db, calls } = fakeDb({ dealCode: 'Cottonwood', assetId: 'asset_1' });
+    const { db, calls } = fakeDb({ dealCode: 'Demo-Deal', assetId: 'asset_1' });
     const result = await saveAnalyzerMemoAsDocument(
       {
         dealId: 'deal_1',
@@ -104,7 +104,7 @@ test('saveAnalyzerMemoAsDocument stores the analyzer docx as a REPORT on the dea
     assert.equal(seen.length, 1);
     assert.ok(
       seen[0].url?.startsWith(
-        'http://analyzer.test:8000/api/docs/outputs/cottonwood/icmemo_cottonwood_draft.docx?operator='
+        'http://analyzer.test:8000/api/docs/outputs/demo-deal/icmemo_demo-deal_draft.docx?operator='
       )
     );
     assert.equal(seen[0].headers?.get('X-Service-Token'), TOKEN);
@@ -131,7 +131,7 @@ test('saveAnalyzerMemoAsDocument stores the analyzer docx as a REPORT on the dea
 test('saving again versions the existing document instead of creating a new one', async () => {
   await withAnalyzerEnv(async () => {
     const captured: { input?: Record<string, unknown> }[] = [];
-    const { db } = fakeDb({ dealCode: 'Cottonwood', assetId: 'asset_1' }, 'doc_existing');
+    const { db } = fakeDb({ dealCode: 'Demo-Deal', assetId: 'asset_1' }, 'doc_existing');
     const result = await saveAnalyzerMemoAsDocument(
       { dealId: 'deal_1', spec: 'prememo', operator: { identifier: 'kim', role: 'ANALYST' } },
       { db, fetchImpl: fakeFetch(200, DOCX_BYTES, []), upload: fakeUpload(captured) }
@@ -148,7 +148,7 @@ test('save-memo refuses deals without an asset, missing drafts and non-docx byte
       saveAnalyzerMemoAsDocument(
         { dealId: 'deal_1', spec: 'prememo', operator },
         {
-          db: fakeDb({ dealCode: 'Cottonwood', assetId: null }).db,
+          db: fakeDb({ dealCode: 'Demo-Deal', assetId: null }).db,
           fetchImpl: fakeFetch(200, DOCX_BYTES, []),
           upload: fakeUpload([])
         }
@@ -166,7 +166,7 @@ test('save-memo refuses deals without an asset, missing drafts and non-docx byte
       saveAnalyzerMemoAsDocument(
         { dealId: 'deal_1', spec: 'prememo', operator },
         {
-          db: fakeDb({ dealCode: 'Cottonwood', assetId: 'asset_1' }).db,
+          db: fakeDb({ dealCode: 'Demo-Deal', assetId: 'asset_1' }).db,
           fetchImpl: fakeFetch(404, new Uint8Array([1]), []),
           upload: fakeUpload([])
         }
@@ -178,7 +178,7 @@ test('save-memo refuses deals without an asset, missing drafts and non-docx byte
       saveAnalyzerMemoAsDocument(
         { dealId: 'deal_1', spec: 'prememo', operator },
         {
-          db: fakeDb({ dealCode: 'Cottonwood', assetId: 'asset_1' }).db,
+          db: fakeDb({ dealCode: 'Demo-Deal', assetId: 'asset_1' }).db,
           fetchImpl: fakeFetch(200, new Uint8Array([0x3c, 0x68, 0x74]), []),
           upload: fakeUpload(captured)
         }
